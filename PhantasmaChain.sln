@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2005
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaChain", "PhantasmaChain\PhantasmaChain.csproj", "{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaCLIWallet", "PhantasmaCLIWallet\PhantasmaCLIWallet.csproj", "{A649843B-2334-404D-A139-8D99019B0EAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A649843B-2334-404D-A139-8D99019B0EAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A649843B-2334-404D-A139-8D99019B0EAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A649843B-2334-404D-A139-8D99019B0EAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A649843B-2334-404D-A139-8D99019B0EAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EF23FF68-C1D9-4811-93C3-56AC25A6CA7A}
+	EndGlobalSection
+EndGlobal
