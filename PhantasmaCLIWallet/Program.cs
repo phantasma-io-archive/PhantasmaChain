@@ -58,7 +58,11 @@ namespace PhantasmaCLIWallet
 
             var tx = new TransferTransaction(owner.PublicKey, 0, 1, chain.NativeToken.ID, third.PublicKey, 5);
             tx.Sign(owner);
-            var block = new Block(DateTime.UtcNow.ToTimestamp(), miner.PublicKey, new List<Transaction>() { tx }, chain.lastBlock);
+
+            var nextHeight = chain.lastBlock.Height + 1;
+            Console.WriteLine("Mining block #" + nextHeight);
+
+            var block = ProofOfWork.MineBlock(chain, miner.PublicKey, new List<Transaction>() { tx });
             chain.AddBlock(block);
 
             PrintChain(chain);

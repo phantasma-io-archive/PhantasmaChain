@@ -8,7 +8,9 @@ namespace PhantasmaChain.Core
 {
     public class Block
     {
-        public static readonly BigInteger MinimumDifficulty = 0;
+        public static readonly BigInteger InitialDifficulty = 127;
+        public static readonly float IdealBlockTime = 5;
+        public static readonly float BlockTimeFlutuation = 0.2f;
 
         public readonly uint Height;
         public readonly byte[] PreviousHash;
@@ -38,11 +40,24 @@ namespace PhantasmaChain.Core
 
             if (previous != null)
             {
-                this.difficulty = previous.difficulty + previous.difficulty / 2048 * Math.Max(1 - (this.Timestamp - previous.Timestamp) / 10, -99) + (int)(Math.Pow(2, (this.Height / 100000) - 2));
+                var delta = this.Timestamp - previous.Timestamp;
+
+                if (delta < IdealBlockTime * (1.0f - BlockTimeFlutuation))
+                {
+                    this.difficulty = previous.difficulty - 1;
+                }
+                else
+                if (delta > IdealBlockTime * (1.0f + BlockTimeFlutuation))
+                {
+                    this.difficulty = previous.difficulty - 1;
+                }
+                else {
+                    this.difficulty = previous.difficulty;
+                }
             }
             else
             {
-                this.difficulty = MinimumDifficulty;
+                this.difficulty = InitialDifficulty;
             }
 
             this.UpdateHash(0);
@@ -75,7 +90,8 @@ namespace PhantasmaChain.Core
             this.Events.Add(evt);
         }
 
-        private void UpdateHash(uint nonce)
+        // TODO - Optimize this to avoid recalculating the arrays if only the nonce changed
+        internal void UpdateHash(uint nonce)
         {
             this.Nonce = nonce;
             var data = ToArray();
