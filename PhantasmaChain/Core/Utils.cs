@@ -273,6 +273,30 @@ namespace PhantasmaChain.Core
             return sum_value / sum_weight;
         }
 
+        public static ushort Adler16(IEnumerable<byte> data)
+        {
+            const byte mod = 251;
+            ushort a = 1, b = 0;
+            foreach (byte c in data)
+            {
+                a = (ushort)((a + c) % mod);
+                b = (ushort)((b + a) % mod);
+            }
+            return (ushort)((b << 16) | a);
+        }
+
+        public static uint Adler32(IEnumerable<byte> data)
+        {
+            const int mod = 65521;
+            uint a = 1, b = 0;
+            foreach (byte c in data)
+            {
+                a = (a + c) % mod;
+                b = (b + a) % mod;
+            }
+            return (b << 16) | a;
+        }
+
         internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, long> weightSelector, Func<T, long, TResult> resultSelector)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
