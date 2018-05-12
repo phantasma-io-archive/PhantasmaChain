@@ -49,6 +49,8 @@ namespace PhantasmaCLIWallet
             Console.WriteLine("Initializng chain...");
 
             var owner = KeyPair.Random();
+            Console.WriteLine("Genesis Address: " + owner.address);
+
             var chain = new Chain(owner, x => Console.WriteLine(x));
 
             var miner = KeyPair.Random();

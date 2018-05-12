@@ -26,7 +26,21 @@ namespace PhantasmaChain.Core
             var bytes = pKey.EncodePoint(true).ToArray();
             this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 
-            this.address = ChainUtils.PublicKeyToAddress(this.PublicKey);
+            var pubbytes = pKey.EncodePoint(true).ToArray();
+
+            var checkSum = pubbytes.Adler16();
+            var checkbytes = BitConverter.GetBytes(checkSum);
+
+            var addressBytes = new byte[1 + checkbytes.Length + pubbytes.Length];
+            addressBytes[0] = 50;
+            int ofs = 1;
+            Array.Copy(checkbytes, 0, addressBytes, ofs, checkbytes.Length);
+            ofs += checkbytes.Length;
+
+            Array.Copy(pubbytes, 0, addressBytes, ofs, pubbytes.Length);
+            ofs += pubbytes.Length;
+
+            this.address = ChainUtils.PublicKeyToAddress(addressBytes);
         }
 
         public static KeyPair Random()

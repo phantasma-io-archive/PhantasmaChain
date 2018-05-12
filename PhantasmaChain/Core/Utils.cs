@@ -273,7 +273,7 @@ namespace PhantasmaChain.Core
             return sum_value / sum_weight;
         }
 
-        public static ushort Adler16(IEnumerable<byte> data)
+        public static ushort Adler16(this IEnumerable<byte> data)
         {
             const byte mod = 251;
             ushort a = 1, b = 0;
@@ -285,7 +285,7 @@ namespace PhantasmaChain.Core
             return (ushort)((b << 16) | a);
         }
 
-        public static uint Adler32(IEnumerable<byte> data)
+        public static uint Adler32(this IEnumerable<byte> data)
         {
             const int mod = 65521;
             uint a = 1, b = 0;
