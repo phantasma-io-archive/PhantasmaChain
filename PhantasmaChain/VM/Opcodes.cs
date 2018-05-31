@@ -15,6 +15,7 @@ namespace Phantasma.VM
 
         // flow
         CALL,
+        EXTCALL,
         JMP,
         JMPIF,
         JMPNOT,

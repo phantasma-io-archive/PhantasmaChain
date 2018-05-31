@@ -24,7 +24,7 @@ namespace Phantasma.Utils
         {
             var bytes = Encoding.ASCII.GetBytes(method);
 
-            Emit(Opcode.CALL);
+            Emit(Opcode.EXTCALL);
             data.Add((byte)bytes.Length);
 
             foreach (var entry in bytes)
