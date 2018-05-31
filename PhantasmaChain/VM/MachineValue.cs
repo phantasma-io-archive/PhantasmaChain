@@ -2,7 +2,7 @@
 using System.Numerics;
 using System.Text;
 
-namespace PhantasmaChain.VM
+namespace Phantasma.VM
 {
     public struct MachineValue
     {

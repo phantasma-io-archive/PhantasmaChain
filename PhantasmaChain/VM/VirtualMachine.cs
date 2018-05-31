@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Phantasma.Contracts.Types;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace PhantasmaChain.VM
+namespace Phantasma.VM
 {
     public enum ExecutionState
     {
@@ -15,7 +16,7 @@ namespace PhantasmaChain.VM
         Halt
     }
 
-    public class VirtualMachine
+    public abstract class VirtualMachine
     {
         public const int MaxRegisterCount = 32;
 
@@ -38,6 +39,8 @@ namespace PhantasmaChain.VM
             this.gas = 0;
             this.script = script;
         }
+
+        public abstract bool ExecuteInterop(string method);
 
         public void Execute()
         {
@@ -164,7 +167,18 @@ namespace PhantasmaChain.VM
 
                     case Opcode.CALL:
                         {
-                            throw new NotImplementedException();                            
+                            var len = ReadByte(); // TODO read varint
+                            var bytes = ReadBytes(len);
+
+                            var method = Encoding.ASCII.GetString(bytes);
+
+                            if (!ExecuteInterop(method))
+                            {
+                                SetState(ExecutionState.Fault);
+                                return;
+                            }
+
+                            break;
                         }
 
                     case Opcode.JMP:

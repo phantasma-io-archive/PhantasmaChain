@@ -1,7 +1,7 @@
-﻿using PhantasmaChain.Utils;
+﻿using Phantasma.Utils;
 using System.IO;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     public enum EventKind
     {

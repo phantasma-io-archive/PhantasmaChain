@@ -1,8 +1,8 @@
-﻿using PhantasmaChain.Cryptography;
+﻿using Phantasma.Cryptography;
 using System;
 using System.Numerics;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     /*public class Order
     {

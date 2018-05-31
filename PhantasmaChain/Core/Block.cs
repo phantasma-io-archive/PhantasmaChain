@@ -1,11 +1,11 @@
-﻿using PhantasmaChain.Cryptography;
-using PhantasmaChain.Utils;
+﻿using Phantasma.Cryptography;
+using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     public class Block
     {

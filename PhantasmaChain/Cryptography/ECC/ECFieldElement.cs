@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using PhantasmaChain.Utils;
+using Phantasma.Utils;
 
-namespace PhantasmaChain.Cryptography.ECC
+namespace Phantasma.Cryptography.ECC
 {
     public class ECFieldElement : IComparable<ECFieldElement>, IEquatable<ECFieldElement>
     {

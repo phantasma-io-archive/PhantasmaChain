@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using PhantasmaChain.Utils;
+using Phantasma.Utils;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public abstract class UIntBase : IEquatable<UIntBase>
     {

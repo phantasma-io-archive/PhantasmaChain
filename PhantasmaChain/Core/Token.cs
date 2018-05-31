@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     public class Token
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PhantasmaChain.VM
+namespace Phantasma.VM
 {
     public enum Opcode
     {

@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
-using PhantasmaChain.Utils;
+using Phantasma.Utils;
 
-namespace PhantasmaChain.Cryptography.ECC
+namespace Phantasma.Cryptography.ECC
 {
     /// <summary>
     /// 提供椭圆曲线数字签名算法（ECDSA）的功能

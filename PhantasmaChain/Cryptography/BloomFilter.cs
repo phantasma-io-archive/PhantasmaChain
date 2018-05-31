@@ -1,8 +1,8 @@
-﻿using PhantasmaChain.Utils;
+﻿using Phantasma.Utils;
 using System.Collections;
 using System.Linq;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public class BloomFilter
     {

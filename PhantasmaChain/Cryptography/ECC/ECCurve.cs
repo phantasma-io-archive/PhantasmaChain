@@ -1,8 +1,8 @@
-﻿using PhantasmaChain.Utils;
+﻿using Phantasma.Utils;
 using System.Globalization;
 using System.Numerics;
 
-namespace PhantasmaChain.Cryptography.ECC
+namespace Phantasma.Cryptography.ECC
 {
     /// <summary>
     /// ECC椭圆曲线参数

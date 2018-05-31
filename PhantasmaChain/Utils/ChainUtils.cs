@@ -1,4 +1,4 @@
-﻿using PhantasmaChain.Cryptography;
+﻿using Phantasma.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,7 +8,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace PhantasmaChain.Utils
+namespace Phantasma.Utils
 {
     public delegate void Logger(string text);
 

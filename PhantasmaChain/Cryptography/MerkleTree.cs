@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using PhantasmaChain.Utils;
+using Phantasma.Utils;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public class MerkleTree
     {

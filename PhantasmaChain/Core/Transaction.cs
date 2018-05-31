@@ -1,11 +1,11 @@
-﻿using PhantasmaChain.Cryptography;
-using PhantasmaChain.Utils;
-using PhantasmaChain.VM;
+﻿using Phantasma.Cryptography;
+using Phantasma.Utils;
+using Phantasma.VM;
 using System;
 using System.IO;
 using System.Numerics;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     public class Transaction
     {

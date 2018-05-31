@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using PhantasmaChain.Utils;
+using Phantasma.Utils;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public class Murmur3 : HashAlgorithm
     {

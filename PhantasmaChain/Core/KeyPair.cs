@@ -1,9 +1,9 @@
-﻿using PhantasmaChain.Utils;
-using PhantasmaChain.Cryptography.ECC;
+﻿using Phantasma.Utils;
+using Phantasma.Cryptography.ECC;
 using System;
 using System.Linq;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     public class KeyPair 
     {

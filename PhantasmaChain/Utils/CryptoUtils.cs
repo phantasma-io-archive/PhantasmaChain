@@ -1,4 +1,4 @@
-﻿using PhantasmaChain.Cryptography;
+﻿using Phantasma.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-namespace PhantasmaChain.Utils
+namespace Phantasma.Utils
 {
     public static class CryptoUtils
     {

@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.IO;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public struct Fixed8 : IComparable<Fixed8>, IEquatable<Fixed8>, IFormattable
     {

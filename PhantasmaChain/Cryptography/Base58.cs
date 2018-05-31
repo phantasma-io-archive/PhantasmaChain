@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public static class Base58
     {

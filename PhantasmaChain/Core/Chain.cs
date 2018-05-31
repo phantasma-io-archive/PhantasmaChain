@@ -1,12 +1,12 @@
-﻿using PhantasmaChain.Cryptography;
-using PhantasmaChain.Utils;
+﻿using Phantasma.Cryptography;
+using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace PhantasmaChain.Core
+namespace Phantasma.Core
 {
     public class ChainException : Exception
     {

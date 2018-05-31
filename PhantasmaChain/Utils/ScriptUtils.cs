@@ -1,8 +1,8 @@
-﻿using PhantasmaChain.Core;
+﻿using Phantasma.Core;
 using System;
 using System.Numerics;
 
-namespace PhantasmaChain.Utils
+namespace Phantasma.Utils
 {
     public static class ScriptUtils
     {

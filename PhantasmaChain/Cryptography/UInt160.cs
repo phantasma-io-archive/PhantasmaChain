@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using PhantasmaChain.Utils;
+using Phantasma.Utils;
 
-namespace PhantasmaChain.Cryptography
+namespace Phantasma.Cryptography
 {
     public class UInt160 : UIntBase, IComparable<UInt160>, IEquatable<UInt160>
     {

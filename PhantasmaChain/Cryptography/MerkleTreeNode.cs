@@ -1,4 +1,4 @@
-﻿namespace PhantasmaChain.Cryptography
+﻿namespace Phantasma.Cryptography
 {
     internal class MerkleTreeNode
     {
