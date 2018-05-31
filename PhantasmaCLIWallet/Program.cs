@@ -55,7 +55,7 @@ namespace PhantasmaCLIWallet
             var miner = KeyPair.Random();
             var third = KeyPair.Random();
 
-            var tx = new Transaction(owner.PublicKey, ScriptUtils.TransferScript(chain.NativeToken.ID, owner.PublicKey, third.PublicKey, 5), 0, 0);
+            var tx = new Transaction(owner.PublicKey, ScriptUtils.TransferScript(chain.NativeToken.Symbol, owner.PublicKey, third.PublicKey, 5), 0, 0);
             tx.Sign(owner);
 
             var nextHeight = chain.lastBlock.Height + 1;

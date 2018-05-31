@@ -1,77 +1,79 @@
-﻿using System;
+﻿using Phantasma.Contracts;
+using System;
 using System.Numerics;
 
 namespace Phantasma.Core
 {
-    public class Token
+    public class Token: IFungibleToken
     {
-        [Flags]
-        public enum Attribute
-        {
-            None = 0x0,
-            Burnable = 0x1,
-            Mintable = 0x2,
-            Tradable = 0x4,
-            Infinite = 0x8,
-        }
+        public string Symbol { get; }
+        public string Name { get; }
+        public byte[] PublicKey { get; }
+        public byte[] OwnerPublicKey;
+        public TokenAttribute Attributes { get; }
+        public BigInteger MaxSupply { get; private set; }
+        public BigInteger CirculatingSupply { get; private set; }
+        public BigInteger Decimals { get; private set; }
 
-        public readonly byte[] ID;
-        public readonly string Name;
-        public readonly byte[] OwnerPublicKey;
-        public readonly Attribute Flags;
-        public BigInteger TotalSupply { get; private set; }
-        public BigInteger CurrentSupply { get; private set; }
-
-        public Token(byte[] ID, string name, BigInteger initialSupply, BigInteger totalSupply, Attribute flags, byte[] ownerPublicKey)
+        public Token(string symbol, string name, BigInteger initialSupply, BigInteger totalSupply, TokenAttribute flags, byte[] ownerPublicKey)
         {
-            this.ID = ID;
+            this.Symbol = symbol;
             this.Name = name;
-            this.CurrentSupply = initialSupply;
-            this.TotalSupply = totalSupply;
-            this.Flags = flags;
+            this.CirculatingSupply = initialSupply;
+            this.MaxSupply = totalSupply;
+            this.Attributes = flags;
             this.OwnerPublicKey = ownerPublicKey;
         }
 
-        public bool HasAttribute(Attribute attr)
+        public bool HasAttribute(TokenAttribute attr)
         {
-            return ((this.Flags & attr) == 0);
+            return ((this.Attributes & attr) == 0);
         }
 
         public bool Burn(BigInteger amount)
         {
-            if (this.CurrentSupply < amount || this.TotalSupply < amount)
+            if (this.CirculatingSupply < amount || this.MaxSupply < amount)
             {
                 return false;
             }
 
-            if (!HasAttribute(Attribute.Burnable))
+            if (!HasAttribute(TokenAttribute.Burnable))
             {
                 return false;
             }
 
-            this.CurrentSupply -= amount;
-            this.TotalSupply -= amount;
+            this.CirculatingSupply -= amount;
+            this.MaxSupply -= amount;
             return true;
         }
 
         public bool Mint(BigInteger amount)
         {
-            if (!HasAttribute(Attribute.Infinite))
+            if (!HasAttribute(TokenAttribute.Infinite))
             {
-                if (this.CurrentSupply + amount < this.TotalSupply)
+                if (this.CirculatingSupply + amount < this.MaxSupply)
                 {
                     return false;
                 }
             }
 
-            if (!HasAttribute(Attribute.Mintable))
+            if (!HasAttribute(TokenAttribute.Mintable))
             {
                 return false;
             }
 
-            this.CurrentSupply += amount;
+            this.CirculatingSupply += amount;
             return true;
         }
 
+        public bool Send(Address destination, BigInteger amount)
+        {
+            throw new NotImplementedException();
+        }
+
+        public BigInteger BalanceOf(Address address)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

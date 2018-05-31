@@ -1,8 +1,5 @@
-﻿using Phantasma.Contracts.Types;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Text;
 
@@ -42,6 +39,16 @@ namespace Phantasma.VM
         }
 
         public abstract bool ExecuteInterop(string method);
+
+        public MachineValue GetRegister(int index)
+        {
+            if (index<0 || index >= MaxRegisterCount)
+            {
+                throw new ArgumentException("Invalid index");
+            }
+
+            return registers[index];
+        }
 
         public void Execute()
         {
@@ -108,7 +115,7 @@ namespace Phantasma.VM
                 case 0xFD: val = Read16(); break;
                 case 0xFE: val = Read32(); break;
                 case 0xFF: val = Read64(); break;
-                default: val = Read8(); break;
+                default: val = n; break;
             }
 
             if (val > max)
@@ -148,7 +155,6 @@ namespace Phantasma.VM
         {
             try
             {
-
                 var opcode = (Opcode)Read8();
 
                 switch (opcode)
@@ -169,7 +175,6 @@ namespace Phantasma.VM
                             registers[dst] = registers[src];
                             break;
                         }
-
 
                     case Opcode.LOAD:
                         {

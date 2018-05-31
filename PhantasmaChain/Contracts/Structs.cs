@@ -1,7 +1,49 @@
 ﻿using System;
+using System.Numerics;
 
-namespace Phantasma.Contracts.Types
+namespace Phantasma.Contracts
 {
+    public abstract class Contract : IContract
+    {
+        public void Expect(bool assertion)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] PublicKey { get; }
+
+        public IRuntime Runtime;
+    }
+
+    public struct Address
+    {
+        public byte[] PublicKey { get; private set; }
+
+        public Address(byte[] publicKey)
+        {
+            this.PublicKey = publicKey;
+        }
+    }
+
+    public interface Surprise<T>
+    {
+        T Value { get; }
+        Timestamp Timestamp { get; }
+        bool Hidden { get; }
+    }
+
+    public interface Map<Key, Value>
+    {
+        void Put(Key key, Value val);
+        Value Get(Key key);
+        bool Remove(Key key);
+        bool Contains(Key key);
+        void Clear();
+        void Iterate(Action<Key, Value> visitor);
+
+        BigInteger Count { get; }
+    }
+
     public struct Timestamp
     {
         public readonly long Value;
@@ -36,25 +78,8 @@ namespace Phantasma.Contracts.Types
         public static bool operator >(Timestamp A, Timestamp B) { return A.Value > B.Value; }
 
         public static bool operator <=(Timestamp A, Timestamp B) { return A.Value <= B.Value; }
-         
-        public static bool operator >=(Timestamp A, Timestamp B) { return A.Value >= B.Value;}
-    }
 
-    public static class TimestampExtensions
-    {
-        public static Timestamp ToTimestamp(this DateTime value)
-        {
-            long val = (value.Ticks - 621355968000000000) / 10000000;
-            return new Timestamp(val);
-        }
-
-        private static readonly DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-
-        // Unix timestamp is seconds past epoch
-        public static DateTime ToDateTime(this long unixTimeStamp)
-        {
-            return epoch.AddSeconds(unixTimeStamp).ToUniversalTime();
-        }
+        public static bool operator >=(Timestamp A, Timestamp B) { return A.Value >= B.Value; }
     }
 
 }

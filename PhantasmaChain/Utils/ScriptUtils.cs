@@ -1,4 +1,5 @@
-﻿using Phantasma.Core;
+﻿using Phantasma.Contracts;
+using Phantasma.Core;
 using System;
 using System.Numerics;
 
@@ -6,7 +7,7 @@ namespace Phantasma.Utils
 {
     public static class ScriptUtils
     {
-        public static byte[] TokenIssueScript(string name, string symbol, BigInteger initialSupply, BigInteger maxSupply, Token.Attribute attributes)
+        public static byte[] TokenIssueScript(string name, string symbol, BigInteger initialSupply, BigInteger maxSupply, TokenAttribute attributes)
         {
             var sb = new ScriptBuilder();
             sb.Emit(0, name);
@@ -19,7 +20,7 @@ namespace Phantasma.Utils
             return sb.ToScript();
         }
 
-        public static byte[] TransferScript(byte[] id, byte[] fromKey, byte[] toKey, int amount)
+        public static byte[] TransferScript(string symbol, byte[] fromKey, byte[] toKey, int amount)
         {
             var sb = new ScriptBuilder();
             sb.Emit(VM.Opcode.RET);

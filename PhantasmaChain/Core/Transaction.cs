@@ -1,5 +1,4 @@
 ﻿using Phantasma.Contracts;
-using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 using System;
@@ -8,12 +7,12 @@ using System.Numerics;
 
 namespace Phantasma.Core
 {
-    public class Transaction
+    public class Transaction: ITransaction
     {
-        public readonly byte[] PublicKey;
-        public readonly BigInteger Fee;
-        public readonly BigInteger txOrder;
-        public readonly byte[] Script;
+        public byte[] PublicKey { get; }
+        public BigInteger Fee { get; }
+        public BigInteger Order { get; }
+        public byte[] Script { get; }
 
         public byte[] Signature { get; private set; }
         public byte[] Hash { get; private set; }
@@ -33,7 +32,7 @@ namespace Phantasma.Core
             writer.WriteByteArray(this.PublicKey);
             writer.WriteByteArray(this.Script);
             writer.WriteBigInteger(this.Fee);
-            writer.WriteBigInteger(this.txOrder);
+            writer.WriteBigInteger(this.Order);
 
             if (withSignature)
             {
@@ -55,7 +54,7 @@ namespace Phantasma.Core
 
         internal bool Execute(Chain chain, Action<Event> notify)
         {
-            var vm = new RuntimeVM(this);
+            var vm = new RuntimeVM(chain, this);
 
             vm.Execute();
 
@@ -83,7 +82,7 @@ namespace Phantasma.Core
             this.Script = script;
             this.PublicKey = publicKey;
             this.Fee = fee;
-            this.txOrder = txOrder;
+            this.Order = txOrder;
 
             this.UpdateHash();
         }

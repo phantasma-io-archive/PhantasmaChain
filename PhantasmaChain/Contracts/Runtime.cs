@@ -1,7 +1,8 @@
-﻿using Phantasma.Contracts.Interfaces;
-using Phantasma.Contracts.Types;
+﻿using Phantasma.Contracts;
 using Phantasma.Core;
 using Phantasma.VM;
+using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Phantasma.Contracts
@@ -19,22 +20,37 @@ namespace Phantasma.Contracts
 
     public class RuntimeVM : VirtualMachine, IRuntime
     {
-        private Transaction transaction;
+        public ITransaction Transaction { get; private set; }
+        public Chain Chain { get; private set; }
 
-        public RuntimeVM(Transaction tx) : base(tx.Script)
+        public RuntimeVM(Chain chain, Transaction tx) : base(tx.Script)
         {
-            this.transaction = tx;
+            this.Transaction = tx;
+            this.Chain = chain;
+
+            chain.RegisterInterop(this);
         }
 
-        public ITransaction Transaction => throw new System.NotImplementedException();
+        internal void RegisterMethod(string name, Action<VirtualMachine> handler)
+        {
+            handlers[name] = handler;
+        }
 
-        public IFungibleToken NativeToken => throw new System.NotImplementedException();
+        public IFungibleToken NativeToken => Chain.NativeToken;
 
-        public BigInteger CurrentHeight => throw new System.NotImplementedException();
+        public BigInteger CurrentHeight => Chain.Height;
+
+        private Dictionary<string, Action<VirtualMachine>> handlers = new Dictionary<string, Action<VirtualMachine>>();
 
         public override bool ExecuteInterop(string method)
         {
-            throw new System.NotImplementedException();
+            if (handlers.ContainsKey(method))
+            {
+                handlers[method](this);
+                return true;
+            }
+
+            return false;
         }
 
         public Block GetBlock(BigInteger height)
