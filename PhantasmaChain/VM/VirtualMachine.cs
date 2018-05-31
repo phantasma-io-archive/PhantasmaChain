@@ -20,11 +20,11 @@ namespace Phantasma.VM
         public uint InstructionPointer { get; private set; }
         public ExecutionState State { get; private set; }
 
-        private MachineValue[] registers = new MachineValue[MaxRegisterCount];
+        private VMObject[] registers = new VMObject[MaxRegisterCount];
 
         private byte[] script;
 
-        private Stack<MachineValue> valueStack = new Stack<MachineValue>();
+        private Stack<VMObject> valueStack = new Stack<VMObject>();
         private Stack<uint> callStack = new Stack<uint>();
 
         public BigInteger gas { get; private set; }
@@ -40,7 +40,7 @@ namespace Phantasma.VM
 
         public abstract bool ExecuteInterop(string method);
 
-        public MachineValue GetRegister(int index)
+        public VMObject GetRegister(int index)
         {
             if (index<0 || index >= MaxRegisterCount)
             {
@@ -161,6 +161,18 @@ namespace Phantasma.VM
                 {
                     case Opcode.NOP:
                         {
+                            break;
+                        }
+
+                    case Opcode.MOVE:
+                        {
+                            var src = Read8();
+                            var dst = Read8();
+
+                            Expect(src < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+
+                            registers[dst] = registers[src];
                             break;
                         }
 

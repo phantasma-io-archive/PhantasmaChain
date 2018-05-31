@@ -7,7 +7,8 @@ namespace Phantasma.VM
         NOP,
 
         // register
-        COPY,
+        MOVE,    // copy reference
+        COPY,   // copy by value
         LOAD,
         PUSH,
         POP,

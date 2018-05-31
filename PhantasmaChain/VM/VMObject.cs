@@ -202,6 +202,27 @@ namespace Phantasma.VM
             return !(a == b);
         }
 
+        internal void Copy(VMObject other)
+        {
+            if (other == null || other.Type == VMType.None)
+            {
+                this.Type = VMType.None;
+                this._data = null;
+                this._children = null;
+                return;
+            }
+
+            if (other.Type == VMType.Object)
+            {
+
+            }
+            else
+            {
+                var temp = other.Data;
+                _data = new byte[temp.Length];
+                Array.Copy(temp, _data, _data.Length);
+            }
+        }
     }
 
 }
