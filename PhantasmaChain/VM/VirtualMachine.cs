@@ -388,11 +388,40 @@ namespace Phantasma.VM
                         }
 
                     case Opcode.NOT:
+                        {
+                            break;
+                        }
+
                     case Opcode.AND:
                     case Opcode.OR:
                     case Opcode.XOR:
                         {
-                            throw new NotImplementedException();
+                            var srcA = Read8();
+                            var srcB = Read8();
+                            var dst = Read8();
+
+                            Expect(srcA < MaxRegisterCount);
+                            Expect(srcB < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+
+                            var a = registers[srcA].AsBool();
+                            var b = registers[srcA].AsBool();
+
+                            bool result;
+                            switch (opcode)
+                            {
+                                case Opcode.AND: result = (a && b); break;
+                                case Opcode.OR: result = (a || b); break;
+                                case Opcode.XOR: result = (a ^ b); break;
+                                default:
+                                    {
+                                        SetState(ExecutionState.Fault);
+                                        return;
+                                    }
+                            }
+
+                            registers[dst].SetValue(result);
+                            break;
                         }
 
                     case Opcode.EQUAL:
