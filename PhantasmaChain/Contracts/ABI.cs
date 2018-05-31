@@ -2,25 +2,16 @@
 using System.IO;
 using System.Linq;
 using Phantasma.Utils;
+using Phantasma.VM;
 
 namespace PhantasmaChain.Contracts
 {
-    public enum ContractArgumentType
-    {
-        None,
-        Object,
-        Bytes,
-        Number,
-        String,
-        Bool
-    }
-
     public struct ContractMethod
     {
         public readonly string name;
-        public readonly ContractArgumentType[] arguments;
+        public readonly VMType[] arguments;
 
-        public ContractMethod(string name, IEnumerable<ContractArgumentType> args)
+        public ContractMethod(string name, IEnumerable<VMType> args)
         {
             this.name = name;
             this.arguments = args.ToArray();
@@ -30,10 +21,10 @@ namespace PhantasmaChain.Contracts
         {
             var name = reader.ReadShortString();
             var len = reader.ReadByte();
-            var args = new ContractArgumentType[len];
+            var args = new VMType[len];
             for (int i=0; i < len; i++)
             {
-                args[i] = (ContractArgumentType)reader.ReadByte();
+                args[i] = (VMType)reader.ReadByte();
             }
 
             return new ContractMethod(name, args);
