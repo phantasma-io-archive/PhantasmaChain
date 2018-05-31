@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Contracts;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 using System;
@@ -54,7 +55,7 @@ namespace Phantasma.Core
 
         internal bool Execute(Chain chain, Action<Event> notify)
         {
-            var vm = new VirtualMachine(this.Script);
+            var vm = new RuntimeVM(this);
 
             vm.Execute();
 

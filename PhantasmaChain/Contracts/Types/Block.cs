@@ -3,11 +3,11 @@ using System.Numerics;
 
 namespace Phantasma.Contracts.Types
 {
-    public class Block
+    public interface IBlock
     {
-        public BigInteger Height { get; }
-        public byte[] Hash { get; }
-        public byte[] PreviousHash { get; }
-        public Timestamp Time;
+        BigInteger Height { get; }
+        byte[] Hash { get; }
+        byte[] PreviousHash { get; }
+        Timestamp Time { get; }
     }
 }

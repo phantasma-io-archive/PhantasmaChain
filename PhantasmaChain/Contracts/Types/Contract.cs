@@ -1,16 +1,21 @@
-﻿namespace Phantasma.Contracts.Types
+﻿using System;
+
+namespace Phantasma.Contracts.Types
 {
     public interface IContract
     {
-        Address GetAddress();
+        Address Address { get; }
     }
 
     public abstract class Contract: IContract 
     {
-        public extern void Expect(bool assertion);
+        public void Expect(bool assertion)
+        {
+            throw new NotImplementedException();
+        }
 
-        public extern Address Address { get; }
+        public Address Address { get; }
 
-        public extern Address GetAddress();
+        public IRuntime Runtime;
     }
 }

@@ -1,6 +1,6 @@
-﻿using PhantasmaChain.Core;
-using PhantasmaChain.Cryptography;
-using PhantasmaChain.Utils;
+﻿using Phantasma.Core;
+using Phantasma.Cryptography;
+using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
 

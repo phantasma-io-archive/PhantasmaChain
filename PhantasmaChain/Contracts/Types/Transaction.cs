@@ -6,7 +6,7 @@ namespace Phantasma.Contracts.Types
     public interface ITransaction
     {
         Address Source { get; }
-        Block Block { get; }
+        IBlock Block { get; }
     }
 
     public interface FungibleTransferTransaction : ITransaction
