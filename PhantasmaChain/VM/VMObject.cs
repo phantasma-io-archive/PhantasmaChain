@@ -130,7 +130,24 @@ namespace Phantasma.VM
                 _children = new Dictionary<string, VMObject>();
             }
 
-            _children[key] = obj;
+            var result = new VMObject();
+            result.Copy(obj);
+            _children[key] = result;
+        }
+
+        public VMObject GetKey(string key)
+        {
+            if (this.Type != VMType.Object || _children == null)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            if (_children.ContainsKey(key))
+            {
+                return _children[key];
+            }
+
+            return new VMObject();
         }
 
         public void SetKey(BigInteger key, VMObject obj)
@@ -212,9 +229,17 @@ namespace Phantasma.VM
                 return;
             }
 
+            this.Type = other.Type;
+
             if (other.Type == VMType.Object)
             {
-
+                this._children = new Dictionary<string, VMObject>();
+                foreach (var key in other._children.Keys)
+                {
+                    var temp = new VMObject();
+                    temp.Copy(other._children[key]);
+                    _children[key] = temp;
+                }
             }
             else
             {

@@ -30,11 +30,17 @@ namespace Phantasma.VM
         SIZE,
 
         // logical
-        INVERT,
+        NOT,
         AND,
         OR,
         XOR,
         EQUAL,
+        LT,
+        GT,
+        LTE,
+        GTE,
+        MIN,
+        MAX,
 
         // numeric
         INC,
@@ -49,11 +55,9 @@ namespace Phantasma.VM
         MOD,
         SHL,
         SHR,
-        LT,
-        GT,
-        LTE,
-        GTE,
-        MIN,
-        MAX
+
+        // array
+        PUT,
+        GET, // lookups a key and copies a reference into register
     }
 }

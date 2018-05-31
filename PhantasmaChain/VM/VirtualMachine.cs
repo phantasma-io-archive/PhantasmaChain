@@ -184,7 +184,7 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            registers[dst] = registers[src];
+                            registers[dst].Copy(registers[src]);
                             break;
                         }
 
@@ -387,12 +387,46 @@ namespace Phantasma.VM
                             break;
                         }
 
-                    case Opcode.INVERT:
+                    case Opcode.NOT:
                     case Opcode.AND:
                     case Opcode.OR:
                     case Opcode.XOR:
                         {
                             throw new NotImplementedException();
+                        }
+
+                    case Opcode.EQUAL:
+                    case Opcode.LT:
+                    case Opcode.GT:
+                        {
+                            var srcA = Read8();
+                            var srcB = Read8();
+                            var dst = Read8();
+
+                            Expect(srcA < MaxRegisterCount);
+                            Expect(srcB < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+
+                            var a = registers[srcA].AsNumber();
+                            var b = registers[srcA].AsNumber();
+
+                            bool result;
+                            switch (opcode)
+                            {
+                                case Opcode.EQUAL: result = (a == b); break;
+                                case Opcode.LT: result = (a < b); break;
+                                case Opcode.GT: result = (a > b); break;
+                                case Opcode.LTE: result = (a <= b); break;
+                                case Opcode.GTE: result = (a >= b); break;
+                                default:
+                                    {
+                                        SetState(ExecutionState.Fault);
+                                        return;
+                                    }
+                            }
+
+                            registers[dst].SetValue(result);
+                            break;
                         }
 
                     case Opcode.INC:
@@ -572,40 +606,6 @@ namespace Phantasma.VM
                             break;
                         }
 
-                    case Opcode.EQUAL:
-                    case Opcode.LT:
-                    case Opcode.GT:
-                        {
-                            var srcA = Read8();
-                            var srcB = Read8();
-                            var dst = Read8();
-
-                            Expect(srcA < MaxRegisterCount);
-                            Expect(srcB < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[srcA].AsNumber();
-                            var b = registers[srcA].AsNumber();
-
-                            bool result;
-                            switch (opcode)
-                            {
-                                case Opcode.EQUAL: result = (a == b); break;
-                                case Opcode.LT: result = (a < b); break;
-                                case Opcode.GT: result = (a > b); break;
-                                case Opcode.LTE: result = (a <= b); break;
-                                case Opcode.GTE: result = (a >= b); break;
-                                default:
-                                    {
-                                        SetState(ExecutionState.Fault);
-                                        return;
-                                    }
-                            }
-
-                            registers[dst].SetValue(result);
-                            break;
-                        }
-
                     case Opcode.MIN:
                         {
                             var srcA = Read8();
@@ -639,8 +639,38 @@ namespace Phantasma.VM
                             registers[dst].SetValue(a > b ? a : b);
                             break;
                         }
-   
-                default:
+
+                    case Opcode.PUT:
+                        {
+                            var src = Read8();
+                            var dst = Read8();
+                            var key = Read8();
+
+                            Expect(src < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+                            Expect(key < MaxRegisterCount);
+
+                            registers[dst].SetKey(registers[key].AsString(), registers[src]);
+
+                            break;
+                        }
+
+                    case Opcode.GET:
+                        {
+                            var src = Read8();
+                            var dst = Read8();
+                            var key = Read8();
+
+                            Expect(src < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+                            Expect(key < MaxRegisterCount);
+
+                            registers[dst] = registers[src].GetKey(registers[key].AsString());
+
+                            break;
+                        }
+
+                    default:
                         {
                             SetState(ExecutionState.Fault);
                             return;
