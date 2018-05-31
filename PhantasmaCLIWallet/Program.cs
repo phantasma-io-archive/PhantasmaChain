@@ -1,6 +1,6 @@
 ﻿using PhantasmaChain.Core;
 using PhantasmaChain.Cryptography;
-using PhantasmaChain.Transactions;
+using PhantasmaChain.Utils;
 using System;
 using System.Collections.Generic;
 
@@ -22,7 +22,6 @@ namespace PhantasmaCLIWallet
                 {
                     Console.WriteLine("\t\tTransaction #" + index);
                     Console.WriteLine("\t\tHash: " + Base58.Encode(tx.Hash));
-                    Console.WriteLine("\t\tKind: " + tx.Kind);
                     Console.WriteLine();
 
                     index++;
@@ -34,7 +33,7 @@ namespace PhantasmaCLIWallet
                 {
                     Console.WriteLine("\t\tEvent #" + index);
                     Console.WriteLine("\t\tKind: " + evt.Kind);
-                    Console.WriteLine("\t\tTarget: " + ChainUtils.PublicKeyToAddress(evt.PublicKey));
+                    Console.WriteLine("\t\tTarget: " + evt.PublicKey.PublicKeyToAddress());
                     Console.WriteLine();
 
                     index++;
@@ -56,7 +55,7 @@ namespace PhantasmaCLIWallet
             var miner = KeyPair.Random();
             var third = KeyPair.Random();
 
-            var tx = new TransferTransaction(owner.PublicKey, 0, 1, chain.NativeToken.ID, third.PublicKey, 5);
+            var tx = new Transaction(owner.PublicKey, ScriptUtils.TransferScript(chain.NativeToken.ID, owner.PublicKey, third.PublicKey, 5), 0, 0);
             tx.Sign(owner);
 
             var nextHeight = chain.lastBlock.Height + 1;

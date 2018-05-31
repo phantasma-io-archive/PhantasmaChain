@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PhantasmaChain.Utils;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 

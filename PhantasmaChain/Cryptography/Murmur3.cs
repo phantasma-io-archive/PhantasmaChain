@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using PhantasmaChain.Utils;
 
 namespace PhantasmaChain.Cryptography
 {

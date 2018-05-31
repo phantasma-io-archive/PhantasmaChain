@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using PhantasmaChain.Utils;
 
 namespace PhantasmaChain.Cryptography.ECC
 {

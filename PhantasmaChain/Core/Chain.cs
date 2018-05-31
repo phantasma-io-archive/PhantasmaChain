@@ -1,5 +1,5 @@
 ﻿using PhantasmaChain.Cryptography;
-using PhantasmaChain.Transactions;
+using PhantasmaChain.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +8,14 @@ using System.Text;
 
 namespace PhantasmaChain.Core
 {
+    public class ChainException : Exception
+    {
+        public ChainException(string msg) : base(msg)
+        {
+
+        }
+    }
+
     public class Chain
     {
         private Dictionary<byte[], Transaction> _transactions = new Dictionary<byte[], Transaction>(new ByteArrayComparer());
@@ -16,8 +24,6 @@ namespace PhantasmaChain.Core
 
         private Dictionary<byte[], Token> _tokenIDMap = new Dictionary<byte[], Token>(new ByteArrayComparer());
         private Dictionary<string, Token> _tokenNameMap = new Dictionary<string, Token>();
-
-        private List<Order> _orderBook = new List<Order>();
 
         public Token NativeToken { get; private set; }
         public IEnumerable<Block> Blocks => _blocks.Values;
@@ -83,7 +89,8 @@ namespace PhantasmaChain.Core
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
-            var tx = new CreateTransaction(owner.PublicKey, 0, 0, Encoding.UTF8.GetBytes("SOUL"), "SOUL", 100000000, 100000000, Token.Attribute.Burnable | Token.Attribute.Tradable);
+            var script = ScriptUtils.TokenIssueScript("Phantasma","SOUL", 100000000, 100000000, Token.Attribute.Burnable | Token.Attribute.Tradable);
+            var tx = new Transaction(owner.PublicKey, script, 0, 0);
             tx.Sign(owner);
 
             var block = new Block(DateTime.UtcNow.ToTimestamp(), owner.PublicKey, new Transaction[] { tx });
@@ -144,7 +151,7 @@ namespace PhantasmaChain.Core
             var token = new Token(ID, name, initialSupply, totalSupply, flags, witnessPublicKey);
             _tokenIDMap[ID] = token;
 
-            Log($"Creating token {name} with owner {ChainUtils.PublicKeyToAddress(witnessPublicKey)}");
+            Log($"Creating token {name} with owner {CryptoUtils.PublicKeyToAddress(witnessPublicKey)}");
 
             var account = GetOrCreateAccount(witnessPublicKey);
             account.Deposit(token, initialSupply, notify);
@@ -155,79 +162,6 @@ namespace PhantasmaChain.Core
             }
 
             return token;
-        }
-
-        internal Order CreateOrder(UInt256 orderID, byte[] ownerPublicKey, byte[] baseTokenID, byte[] quoteTokenID, OrderKind orderKind, OrderSide side, BigInteger amount, BigInteger price, uint expiration, Action<Event> notify)
-        {
-            var currentBlock = this.Height;
-            var order = new Order(orderID, ownerPublicKey, baseTokenID, quoteTokenID, orderKind, side, amount, price, currentBlock, expiration);
-
-            var removed_orders = new HashSet<Order>();
-
-            var amount_left = order.amount;
-
-            // _orderBook must be sorted by blocktime
-            foreach (var other in _orderBook)
-            {
-                if (other.side == order.side)
-                {
-                    continue;
-                }
-
-                if (!other.quoteTokenID.SequenceEqual(order.quoteTokenID))
-                {
-                    continue;
-                }
-
-                if (!other.baseTokenID.SequenceEqual(order.baseTokenID))
-                {
-                    continue;
-                }
-
-                switch (order.side)
-                {
-                    case OrderSide.Buy:
-                        {
-                            if (other.price <= order.price)
-                            {
-                                var total = order.amount;
-                                if (other.amount < total)
-                                {
-                                    total = other.amount;
-                                }
-
-                                other.Fill(total, notify);
-                            }
-                            break;
-                        }
-
-                    case OrderSide.Sell:
-                        {
-                            break;
-                        }
-                }
-            }
-
-            foreach (var other in _orderBook)
-            {                
-                if (currentBlock >= other.expiration)
-                {
-                    removed_orders.Add(other);
-                    continue;
-                }
-            }
-
-            foreach (var entry in removed_orders)
-            {
-                _orderBook.Remove(entry);
-            }
-
-            if (!removed_orders.Contains(order))
-            {
-                _orderBook.Add(order);
-            }
-
-            return order;
         }
     }
 }

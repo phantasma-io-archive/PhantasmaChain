@@ -1,43 +1,85 @@
 ﻿using PhantasmaChain.Cryptography;
+using PhantasmaChain.Utils;
+using PhantasmaChain.VM;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
 namespace PhantasmaChain.Core
 {
-    public enum TransactionKind
-    {
-        Create,
-        Transfer,
-        Burn,
-        Mint,
-        Order,
-        Cancel
-    }
-
-    public abstract class Transaction
+    public class Transaction
     {
         public readonly byte[] PublicKey;
         public readonly BigInteger Fee;
-        public readonly uint txOrder;
-        public readonly TransactionKind Kind;
+        public readonly BigInteger txOrder;
+        public readonly byte[] Script;
 
         public byte[] Signature { get; private set; }
         public byte[] Hash { get; private set; }
 
-        protected abstract void UnserializeData(BinaryReader reader);
-        protected abstract void SerializeData(BinaryWriter writer);
-
-        protected abstract bool ValidateData(Chain chain);
-
-        protected abstract void Apply(Chain chain, Action<Event> notify);
-
-        public abstract BigInteger GetCost(Chain chain);
-
-        public Transaction(TransactionKind kind, byte[] publicKey, BigInteger fee, uint txOrder)
+        protected Transaction Unserialize(BinaryReader reader)
         {
-            this.Kind = kind;
+            var publicKey = reader.ReadByteArray();
+            var script = reader.ReadByteArray();
+            var fee = reader.ReadBigInteger();
+            var txOrder = reader.ReadBigInteger();
+
+            return new Transaction(publicKey, script, fee, txOrder);
+        }
+
+        protected void Serialize(BinaryWriter writer, bool withSignature)
+        {
+            writer.WriteByteArray(this.PublicKey);
+            writer.WriteByteArray(this.Script);
+            writer.WriteBigInteger(this.Fee);
+            writer.WriteBigInteger(this.txOrder);
+
+            if (withSignature)
+            {
+                if (this.Signature == null)
+                {
+                    throw new Exception("Signature cannot be null");
+                }
+
+                writer.WriteByteArray(this.Signature);
+            }
+        }
+
+        // TODO should run the script and return true if sucess or false if exception
+        protected bool Validate(Chain chain, out BigInteger fee)
+        {
+            fee = 0;
+            return true;
+        }
+
+        internal bool Execute(Chain chain, Action<Event> notify)
+        {
+            var vm = new VirtualMachine(this.Script);
+
+            vm.Execute();
+
+            if (vm.State != ExecutionState.Halt)
+            {
+                return false;
+            }
+
+            var cost = vm.gas;
+
+            if (chain.NativeToken != null && cost > 0)
+            {
+                var account = chain.GetAccount(this.PublicKey);
+                account.Withdraw(chain.NativeToken, cost, notify);
+            }
+
+            // TODO take storage changes from vm execution and apply to global state
+            //this.Apply(chain, notify);
+
+            return true;
+        }
+
+        public Transaction(byte[] publicKey, byte[] script, BigInteger fee, BigInteger txOrder)
+        {
+            this.Script = script;
             this.PublicKey = publicKey;
             this.Fee = fee;
             this.txOrder = txOrder;
@@ -51,7 +93,7 @@ namespace PhantasmaChain.Core
             {
                 using (var writer = new BinaryWriter(stream))
                 {
-                    writer.Write((byte)Kind);
+                    Serialize(writer, withSignature);
                 }
 
                 return stream.ToArray();
@@ -83,9 +125,21 @@ namespace PhantasmaChain.Core
                 return false;
             }
 
+            var data = ToArray(false);
+            if (!CryptoUtils.VerifySignature(data, this.Signature, this.PublicKey))
+            {
+                return false;
+            }
+
+            BigInteger cost;
+            var validation = Validate(chain, out cost);
+            if (!validation)
+            {
+                return false;
+            }
+
             if (chain.NativeToken != null)
             {
-                var cost = this.GetCost(chain);
                 if (this.Fee < cost)
                 {
                     return false;
@@ -103,33 +157,12 @@ namespace PhantasmaChain.Core
                 }
             }
 
-            var data = ToArray(false);
-            if (!CryptoUtils.VerifySignature(data, this.Signature, this.PublicKey))
-            {
-                return false;
-            }
-
-            return ValidateData(chain);
-        }
-
-        public BigInteger Execute(Chain chain, Action<Event> notify)
-        {
-            var cost = this.GetCost(chain);
-
-            if (chain.NativeToken != null && cost > 0)
-            {
-                var account = chain.GetAccount(this.PublicKey);
-                account.Withdraw(chain.NativeToken, cost, notify);
-            }
-
-            this.Apply(chain, notify);
-
-            return cost;
+            return true;
         }
 
         private void UpdateHash()
         {
-            var data = this.ToArray(true);
+            var data = this.ToArray(false);
             this.Hash = CryptoUtils.Sha256(data);
         }
 

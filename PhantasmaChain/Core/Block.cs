@@ -1,4 +1,5 @@
 ﻿using PhantasmaChain.Cryptography;
+using PhantasmaChain.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;

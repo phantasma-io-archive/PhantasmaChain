@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PhantasmaChain.Utils;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -54,7 +55,7 @@ namespace PhantasmaChain.Core
                 _balances[token] = balance;
             }
 
-            Chain.Log($"Withdraw {amount} {token.Name} from {ChainUtils.PublicKeyToAddress(this.PublicKey)}");
+            Chain.Log($"Withdraw {amount} {token.Name} from {CryptoUtils.PublicKeyToAddress(this.PublicKey)}");
 
             this.txIndex++;
             notify(new Event(EventKind.Withdraw, this.PublicKey));
@@ -64,7 +65,7 @@ namespace PhantasmaChain.Core
 
         public BigInteger Deposit(Token token, BigInteger amount, Action<Event> notify)
         {
-            Chain.Log($"Deposit {amount} {token.Name} to {ChainUtils.PublicKeyToAddress(this.PublicKey)}");
+            Chain.Log($"Deposit {amount} {token.Name} to {CryptoUtils.PublicKeyToAddress(this.PublicKey)}");
 
             this.txIndex++;
             notify(new Event(EventKind.Deposit, this.PublicKey));

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using PhantasmaChain.Utils;
+using System.Collections;
 using System.Linq;
 
 namespace PhantasmaChain.Cryptography

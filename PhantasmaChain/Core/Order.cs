@@ -1,11 +1,10 @@
 ﻿using PhantasmaChain.Cryptography;
-using PhantasmaChain.Transactions;
 using System;
 using System.Numerics;
 
 namespace PhantasmaChain.Core
 {
-    public class Order
+    /*public class Order
     {
         public UInt256 orderID { get; private set; }
         public byte[] ownerPublicKey { get; private set; }
@@ -37,5 +36,5 @@ namespace PhantasmaChain.Core
             this.amount -= total;
             notify(new Event(EventKind.Fill, this.ownerPublicKey));
         }
-    }
+    }*/
 }

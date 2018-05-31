@@ -49,7 +49,7 @@
     <Compile Include="Core\Event.cs" />
     <Compile Include="Core\Order.cs" />
     <Compile Include="Core\Transaction.cs" />
-    <Compile Include="Core\Utils.cs" />
+    <Compile Include="Utils\ChainUtils.cs" />
     <Compile Include="Cryptography\Base58.cs" />
     <Compile Include="Cryptography\BloomFilter.cs" />
     <Compile Include="Cryptography\ECC\ECCurve.cs" />
@@ -57,7 +57,7 @@
     <Compile Include="Cryptography\ECC\ECFieldElement.cs" />
     <Compile Include="Cryptography\ECC\ECPoint.cs" />
     <Compile Include="Cryptography\Fixed8.cs" />
-    <Compile Include="Cryptography\CryptoUtils.cs" />
+    <Compile Include="Utils\CryptoUtils.cs" />
     <Compile Include="Core\KeyPair.cs" />
     <Compile Include="Cryptography\MerkleTree.cs" />
     <Compile Include="Cryptography\MerkleTreeNode.cs" />
@@ -68,15 +68,11 @@
     <Compile Include="Cryptography\UIntBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Core\Token.cs" />
-    <Compile Include="Transactions\BurnTransaction.cs" />
-    <Compile Include="Transactions\CancelTransaction.cs" />
-    <Compile Include="Transactions\CreateTransaction.cs" />
-    <Compile Include="Transactions\MintTransaction.cs" />
-    <Compile Include="Transactions\OrderTransaction.cs" />
-    <Compile Include="Transactions\TransferTransaction.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Transactions\TransactionUtils.cs" />
+    <Compile Include="Utils\ScriptBuilder.cs" />
+    <Compile Include="Utils\ScriptUtils.cs" />
+    <Compile Include="VM\Opcodes.cs" />
+    <Compile Include="VM\VirtualMachine.cs" />
+    <Compile Include="VM\MachineValue.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

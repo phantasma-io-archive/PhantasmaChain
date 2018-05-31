@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using PhantasmaChain.Utils;
+using System.Globalization;
 using System.Numerics;
 
 namespace PhantasmaChain.Cryptography.ECC

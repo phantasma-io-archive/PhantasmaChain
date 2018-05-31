@@ -1,4 +1,4 @@
-﻿using PhantasmaChain.Cryptography;
+﻿using PhantasmaChain.Utils;
 using PhantasmaChain.Cryptography.ECC;
 using System;
 using System.Linq;
@@ -40,7 +40,7 @@ namespace PhantasmaChain.Core
             Array.Copy(pubbytes, 0, addressBytes, ofs, pubbytes.Length);
             ofs += pubbytes.Length;
 
-            this.address = ChainUtils.PublicKeyToAddress(addressBytes);
+            this.address = addressBytes.PublicKeyToAddress();
         }
 
         public static KeyPair Random()
