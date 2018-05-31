@@ -157,7 +157,7 @@ namespace Phantasma.Core
             Log($"Creating token {name} with owner {CryptoUtils.PublicKeyToAddress(witnessPublicKey)}");
 
             var account = GetOrCreateAccount(witnessPublicKey);
-            account.Deposit(token, initialSupply, notify);
+            //account.Deposit(token, initialSupply, notify);
 
             if (this.NativeToken == null)
             {

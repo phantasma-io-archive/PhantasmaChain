@@ -1,16 +1,18 @@
-﻿using Phantasma.Utils;
-using System;
+﻿using Phantasma.Contracts;
+using Phantasma.Utils;
 using System.Collections.Generic;
 using System.Numerics;
 
 namespace Phantasma.Core
 {
-    public class Account
+    public class Account : IContract
     {
-        public readonly byte[] PublicKey;
-        public uint txIndex { get; internal set; }
+        public byte[] PublicKey { get; }
 
-        private Dictionary<Token, BigInteger> _balances = new Dictionary<Token, BigInteger>();
+        public BigInteger Order { get; internal set; }
+        public byte[] Script { get; private set; }
+
+        private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
         public readonly Chain Chain;
 
@@ -18,71 +20,17 @@ namespace Phantasma.Core
         {
             this.PublicKey = publicKey;
             this.Chain = chain;
-            this.txIndex = 0;
+            this.Order = 0;
         }
 
-        public BigInteger GetBalance(Token token)
+        public byte[] ReadStorage(byte[] key)
         {
-            if (_balances.ContainsKey(token))
-            {
-                return _balances[token];
-            }
-
-            return 0;
+            return _storage.ContainsKey(key) ? _storage[key] : null;
         }
 
-        public BigInteger Withdraw(Token token, BigInteger amount, Action<Event> notify)
+        public void WriteStorage(byte[] key, byte[] value)
         {
-            if (!_balances.ContainsKey(token))
-            {
-                throw new Exception("No balance for this token");
-            }
-
-            var balance = _balances[token];
-            if (balance < amount)
-            {
-                throw new Exception("Insuficient balance for this token");
-            }
-
-            if (balance == amount)
-            {
-                _balances.Remove(token);
-                balance = 0;
-            }
-            else
-            {
-                balance -= amount;
-                _balances[token] = balance;
-            }
-
-            Chain.Log($"Withdraw {amount} {token.Name} from {CryptoUtils.PublicKeyToAddress(this.PublicKey)}");
-
-            this.txIndex++;
-            notify(new Event(EventKind.Withdraw, this.PublicKey));
-
-            return balance;
+            _storage[key] = value;
         }
-
-        public BigInteger Deposit(Token token, BigInteger amount, Action<Event> notify)
-        {
-            Chain.Log($"Deposit {amount} {token.Name} to {CryptoUtils.PublicKeyToAddress(this.PublicKey)}");
-
-            this.txIndex++;
-            notify(new Event(EventKind.Deposit, this.PublicKey));
-
-            if (!_balances.ContainsKey(token))
-            {
-                _balances[token] = amount;
-                return amount;
-            }
-            else
-            {
-                var balance = _balances[token];
-                balance += amount;
-                _balances[token] = balance;
-                return balance;
-            }
-        }
-
     }
 }

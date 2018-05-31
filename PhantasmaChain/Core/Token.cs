@@ -30,7 +30,7 @@ namespace Phantasma.Core
             return ((this.Attributes & attr) == 0);
         }
 
-        public bool Burn(BigInteger amount)
+        public bool Burn(Address address, BigInteger amount)
         {
             if (this.CirculatingSupply < amount || this.MaxSupply < amount)
             {
@@ -44,10 +44,11 @@ namespace Phantasma.Core
 
             this.CirculatingSupply -= amount;
             this.MaxSupply -= amount;
+
             return true;
         }
 
-        public bool Mint(BigInteger amount)
+        public bool Mint(Address address, BigInteger amount)
         {
             if (!HasAttribute(TokenAttribute.Infinite))
             {

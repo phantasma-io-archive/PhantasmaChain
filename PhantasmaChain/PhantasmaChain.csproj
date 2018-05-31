@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Contracts\ABI.cs" />
     <Compile Include="Contracts\Attributes.cs" />
     <Compile Include="Contracts\ContractExtensions.cs" />
     <Compile Include="Contracts\Runtime.cs" />
@@ -77,7 +78,7 @@
     <Compile Include="Utils\ScriptUtils.cs" />
     <Compile Include="VM\Opcodes.cs" />
     <Compile Include="VM\VirtualMachine.cs" />
-    <Compile Include="VM\MachineValue.cs" />
+    <Compile Include="VM\VMObject.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
