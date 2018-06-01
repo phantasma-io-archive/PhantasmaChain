@@ -10,12 +10,13 @@ namespace Phantasma.Utils
         public static byte[] TokenIssueScript(string name, string symbol, BigInteger initialSupply, BigInteger maxSupply, TokenAttribute attributes)
         {
             var sb = new ScriptBuilder();
-            sb.Emit(0, name);
-            sb.Emit(1, symbol);
+            var script = new byte[20];
+            sb.Emit(0, script);
+            /*sb.Emit(1, symbol);
             sb.Emit(2, initialSupply);
             sb.Emit(3, maxSupply);
-            sb.Emit(4, (byte)attributes);
-            sb.EmitCall("Asset.Deploy");
+            sb.Emit(4, (byte)attributes);*/
+            sb.EmitCall("Chain.Deploy");
             sb.Emit(VM.Opcode.RET);
             return sb.ToScript();
         }

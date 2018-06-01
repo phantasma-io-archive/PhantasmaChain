@@ -66,6 +66,7 @@ namespace PhantasmaCLIWallet
 
             PrintChain(chain);
 
+            Console.WriteLine("Finished");
             Console.ReadLine();
         }
     }

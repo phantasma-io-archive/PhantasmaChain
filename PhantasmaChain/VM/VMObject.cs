@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -13,7 +14,8 @@ namespace Phantasma.VM
         Bytes,
         Number,
         String,
-        Bool
+        Bool,
+        Address
     }
 
     public class VMObject
@@ -92,6 +94,26 @@ namespace Phantasma.VM
             return Encoding.UTF8.GetString(Data);
         }
 
+        public byte[] AsByteArray()
+        {
+            if (_children != null || this.Type != VMType.Bytes)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            return Data;
+        }
+
+        public byte[] AsAddress()
+        {
+            if (_children != null || this.Type != VMType.Address || _data == null || _data.Length != KeyPair.PublicKeyLength)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            return Data;
+        }
+
         public bool AsBool()
         {
             if (_children != null || this.Type != VMType.Bool)
@@ -101,6 +123,12 @@ namespace Phantasma.VM
 
             var temp = Data;
             return temp.Length == 1 && temp[0] != 0;
+        }
+
+        public void SetValue(byte[] val, VMType type)
+        {
+            this.Type = type;
+            this.Data = val;
         }
 
         public void SetValue(BigInteger val)

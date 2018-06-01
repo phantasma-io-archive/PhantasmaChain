@@ -24,8 +24,8 @@ namespace Phantasma.VM
 
         private byte[] script;
 
-        private Stack<VMObject> valueStack = new Stack<VMObject>();
-        private Stack<uint> callStack = new Stack<uint>();
+        public readonly Stack<VMObject> valueStack = new Stack<VMObject>();
+        public readonly Stack<uint> callStack = new Stack<uint>();
 
         public BigInteger gas { get; private set; }
 
@@ -33,6 +33,11 @@ namespace Phantasma.VM
         {
             InstructionPointer = 0;
             State = ExecutionState.Running;
+
+            for (int i=0; i<MaxRegisterCount; i++)
+            {
+                registers[i] = new VMObject();
+            }
 
             this.gas = 0;
             this.script = script;
@@ -191,11 +196,14 @@ namespace Phantasma.VM
                     case Opcode.LOAD:
                         {
                             var dst = Read8();
+                            var type = (VMType)Read8();
                             var len = (int)ReadVar(0xFFF);
 
                             Expect(dst < MaxRegisterCount);
 
-                            registers[dst].Data = ReadBytes(len);
+                            var bytes = ReadBytes(len);
+                            registers[dst].SetValue(bytes, type);
+
                             break;
                         }
 

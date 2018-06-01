@@ -9,20 +9,14 @@ namespace Phantasma.Core
         public string Symbol { get; }
         public string Name { get; }
         public byte[] PublicKey { get; }
-        public byte[] OwnerPublicKey;
         public TokenAttribute Attributes { get; }
         public BigInteger MaxSupply { get; private set; }
         public BigInteger CirculatingSupply { get; private set; }
         public BigInteger Decimals { get; private set; }
 
-        public Token(string symbol, string name, BigInteger initialSupply, BigInteger totalSupply, TokenAttribute flags, byte[] ownerPublicKey)
+        public Token(byte[] publicKey)
         {
-            this.Symbol = symbol;
-            this.Name = name;
-            this.CirculatingSupply = initialSupply;
-            this.MaxSupply = totalSupply;
-            this.Attributes = flags;
-            this.OwnerPublicKey = ownerPublicKey;
+            this.PublicKey = publicKey;
         }
 
         public bool HasAttribute(TokenAttribute attr)

@@ -1,5 +1,6 @@
 ﻿using Phantasma.Contracts;
 using Phantasma.Cryptography;
+using Phantasma.Cryptography.ECC;
 using Phantasma.Utils;
 using Phantasma.VM;
 using System;
@@ -144,47 +145,34 @@ namespace Phantasma.Core
             return null;
         }
 
-        internal Token CreateToken(byte[] witnessPublicKey, string symbol, string name, BigInteger initialSupply, BigInteger totalSupply, TokenAttribute flags, Action<Event> notify)
-        {
-            if (_tokenIDMap.ContainsKey(symbol))
-            {
-                throw new ArgumentException($"{symbol} already exists");
-            }
-
-            var token = new Token(symbol, name, initialSupply, totalSupply, flags, witnessPublicKey);
-            _tokenIDMap[symbol] = token;
-
-            Log($"Creating token {name} with owner {CryptoUtils.PublicKeyToAddress(witnessPublicKey)}");
-
-            var account = GetOrCreateAccount(witnessPublicKey);
-            //account.Deposit(token, initialSupply, notify);
-
-            if (this.NativeToken == null)
-            {
-                this.NativeToken = token;
-            }
-
-            return token;
-        }
-
         internal void RegisterInterop(RuntimeVM vm)
         {
-            vm.RegisterMethod("Asset.Deploy", Asset_Deploy);
+            vm.RegisterMethod("Chain.Deploy", Chain_deploy);
         }
 
         #region interop API 
-        private void Asset_Deploy(VirtualMachine vm)
+        private void Chain_deploy(VirtualMachine vm)
         {
-            var name = vm.GetRegister(0).AsString();
-            var symbol = vm.GetRegister(1).AsString();
-
-            var initialSupply = vm.GetRegister(2).AsNumber();
-            var totalSupply = vm.GetRegister(3).AsNumber();
-            var flags = (TokenAttribute)((byte)vm.GetRegister(4).AsNumber()); 
+            var script = vm.GetRegister(0).AsByteArray();
 
             var runtime = (RuntimeVM)vm;
             var tx = runtime.Transaction;
-            var token = CreateToken(tx.PublicKey, symbol, name, initialSupply, totalSupply, flags, null);
+
+
+            var hash = script.Sha256();
+            var temp = new byte[] { 0xFF }.Concat(hash).ToArray();
+            var pubKey = KeyPair.EncodePublicKey(temp);
+
+            this.Log($"Deploying contract: {pubKey.PublicKeyToAddress()}");
+
+            if (NativeToken == null)
+            {
+                NativeToken = new Token(pubKey);
+            }
+
+            var obj = new VMObject();
+            obj.SetValue(pubKey, VMType.Address);
+            vm.valueStack.Push(obj);
         }
         #endregion
 

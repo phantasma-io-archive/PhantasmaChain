@@ -11,6 +11,8 @@ namespace Phantasma.Core
         public readonly byte[] PublicKey;
         public readonly string address;
 
+        public const int PublicKeyLength = 36;
+
         public KeyPair(byte[] privateKey)
         {
             if (privateKey.Length != 32)
@@ -28,19 +30,30 @@ namespace Phantasma.Core
 
             var pubbytes = pKey.EncodePoint(true).ToArray();
 
-            var checkSum = pubbytes.Adler16();
+            var addressBytes = EncodePublicKey(pubbytes);
+            this.address = addressBytes.PublicKeyToAddress();
+        }
+
+        internal static byte[] EncodePublicKey(byte[] pubKey)
+        {
+            if (pubKey == null || pubKey.Length != 33)
+            {
+                throw new ArgumentException("Invalid public key format");
+            }
+
+            var checkSum = pubKey.Adler16();
             var checkbytes = BitConverter.GetBytes(checkSum);
 
-            var addressBytes = new byte[1 + checkbytes.Length + pubbytes.Length];
+            var addressBytes = new byte[1 + checkbytes.Length + pubKey.Length];
             addressBytes[0] = 50;
             int ofs = 1;
             Array.Copy(checkbytes, 0, addressBytes, ofs, checkbytes.Length);
             ofs += checkbytes.Length;
 
-            Array.Copy(pubbytes, 0, addressBytes, ofs, pubbytes.Length);
-            ofs += pubbytes.Length;
+            Array.Copy(pubKey, 0, addressBytes, ofs, pubKey.Length);
+            ofs += pubKey.Length;
 
-            this.address = addressBytes.PublicKeyToAddress();
+            return addressBytes;
         }
 
         public static KeyPair Random()

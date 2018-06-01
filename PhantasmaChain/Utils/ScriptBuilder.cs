@@ -33,10 +33,11 @@ namespace Phantasma.Utils
             }
         }
 
-        public void Emit(int reg, byte[] bytes)
+        public void Emit(int reg, byte[] bytes, VMType type = VMType.Bytes)
         {
             Emit(Opcode.LOAD);
             data.Add((byte)reg);
+            data.Add((byte)type);
 
             data.Add((byte)bytes.Length);
 
@@ -49,19 +50,19 @@ namespace Phantasma.Utils
         public void Emit(int reg, string val)
         {
             var bytes = Encoding.UTF8.GetBytes(val);
-            Emit(reg, bytes);
+            Emit(reg, bytes, VMType.String);
         }
 
         public void Emit(int reg, BigInteger val)
         {
             var bytes = val.ToByteArray();
-            Emit(reg, bytes);
+            Emit(reg, bytes, VMType.Number);
         }
 
         public void Emit(int reg, bool val)
         {
             var bytes = new byte[1] { (byte)(val ? 1 : 0) };
-            Emit(reg, bytes);
+            Emit(reg, bytes, VMType.Bool);
         }
 
         public byte[] ToScript()
