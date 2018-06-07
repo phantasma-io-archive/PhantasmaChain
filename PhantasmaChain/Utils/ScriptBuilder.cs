@@ -1,4 +1,5 @@
 ﻿using Phantasma.VM;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -9,9 +10,30 @@ namespace Phantasma.Utils
     {
         private List<byte> data = new List<byte>();
 
-        public void Emit(Opcode opcode)
+        public void Patch(int offset, byte val)
         {
+            data[offset] = val;
+        }
+
+        public void Patch(int offset, byte[] bytes)
+        {
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                Patch(offset + i, bytes[i]);
+            }
+        }
+
+        public void Patch(int offset, ushort val)
+        {
+            var bytes = BitConverter.GetBytes(val);
+            Patch(offset, bytes);
+        }
+
+        public int Emit(Opcode opcode)
+        {
+            var ofs = data.Count;
             data.Add((byte)opcode);
+            return ofs;
         }
 
         public void EmitPush(int reg)
