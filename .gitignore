@@ -2,3 +2,5 @@
 PhantasmaChain/obj/
 PhantasmaCLIWallet/bin/
 PhantasmaCLIWallet/obj/Debug/
+packages/
+PhantasmaTests/obj/
