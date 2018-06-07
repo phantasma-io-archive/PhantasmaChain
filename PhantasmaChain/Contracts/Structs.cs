@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 
 namespace Phantasma.Contracts
@@ -23,6 +24,10 @@ namespace Phantasma.Contracts
         {
             this.PublicKey = publicKey;
         }
+
+        public static bool operator ==(Address A, Address B) { return A.PublicKey.SequenceEqual(B.PublicKey); }
+
+        public static bool operator !=(Address A, Address B) { return !A.PublicKey.SequenceEqual(B.PublicKey); }
     }
 
     public interface Surprise<T>
