@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaChain", "Phantasma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaCLIWallet", "PhantasmaCLIWallet\PhantasmaCLIWallet.csproj", "{A649843B-2334-404D-A139-8D99019B0EAE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaCompiler", "..\PhantasmaCompiler\PhantasmaCompiler\PhantasmaCompiler.csproj", "{ADD0180A-B574-4CE3-9D63-2741A7BB1C6C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A649843B-2334-404D-A139-8D99019B0EAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A649843B-2334-404D-A139-8D99019B0EAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A649843B-2334-404D-A139-8D99019B0EAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADD0180A-B574-4CE3-9D63-2741A7BB1C6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADD0180A-B574-4CE3-9D63-2741A7BB1C6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADD0180A-B574-4CE3-9D63-2741A7BB1C6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADD0180A-B574-4CE3-9D63-2741A7BB1C6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
