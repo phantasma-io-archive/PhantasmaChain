@@ -1,4 +1,5 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -295,8 +296,44 @@ namespace Phantasma.Utils
             return message.Sha256().Sha256();
         }
 
+        private static byte[] UncompressKey(byte[] pubkey)
+        {
+            if (pubkey == null)
+            {
+                return null;
+            }
+
+            if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
+            {
+                try
+                {
+                    return ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            else if (pubkey.Length == 65 && pubkey[0] == 0x04)
+            {
+                return pubkey.Skip(1).ToArray();
+            }
+            else if (pubkey.Length == 64)
+            {
+                return pubkey;
+            }
+
+            throw new ArgumentException();
+        }
+
         public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
+            pubkey = UncompressKey(pubkey);
+            if (pubkey == null)
+            {
+                throw new ArgumentException();
+            }
+
             const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
             prikey = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).Concat(prikey).ToArray();
             using (CngKey key = CngKey.Import(prikey, CngKeyBlobFormat.EccPrivateBlob))
@@ -308,25 +345,12 @@ namespace Phantasma.Utils
 
         public static bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
         {
-            if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
+            pubkey = UncompressKey(pubkey);
+            if (pubkey == null)
             {
-                try
-                {
-                    pubkey = Cryptography.ECC.ECPoint.DecodePoint(pubkey, Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
-                }
-                catch
-                {
-                    return false;
-                }
+                return false;
             }
-            else if (pubkey.Length == 65 && pubkey[0] == 0x04)
-            {
-                pubkey = pubkey.Skip(1).ToArray();
-            }
-            else if (pubkey.Length != 64)
-            {
-                throw new ArgumentException();
-            }
+
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
             using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))

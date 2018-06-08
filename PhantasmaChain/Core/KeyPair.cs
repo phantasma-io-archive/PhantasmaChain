@@ -26,11 +26,11 @@ namespace Phantasma.Core
             pKey = ECCurve.Secp256r1.G * privateKey;
 
             var bytes = pKey.EncodePoint(true).ToArray();
-            this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
+            //this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 
-            var pubbytes = pKey.EncodePoint(true).ToArray();
+            this.PublicKey = pKey.EncodePoint(true).ToArray();
 
-            var addressBytes = EncodePublicKey(pubbytes);
+            var addressBytes = EncodePublicKey(this.PublicKey);
             this.address = addressBytes.PublicKeyToAddress();
         }
 
