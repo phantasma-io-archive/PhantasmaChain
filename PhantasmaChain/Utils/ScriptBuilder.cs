@@ -29,10 +29,18 @@ namespace Phantasma.Utils
             Patch(offset, bytes);
         }
 
-        public int Emit(Opcode opcode)
+        public int Emit(Opcode opcode, IEnumerable<byte> extra = null)
         {
             var ofs = data.Count;
             data.Add((byte)opcode);
+
+            if (extra != null)
+            {
+                foreach (var entry in extra)
+                {
+                    data.Add(entry);
+                }
+            }
             return ofs;
         }
 
@@ -55,7 +63,7 @@ namespace Phantasma.Utils
             }
         }
 
-        public void Emit(int reg, byte[] bytes, VMType type = VMType.Bytes)
+        public void EmitLoad(int reg, byte[] bytes, VMType type = VMType.Bytes)
         {
             Emit(Opcode.LOAD);
             data.Add((byte)reg);
@@ -69,22 +77,32 @@ namespace Phantasma.Utils
             }
         }
 
-        public void Emit(int reg, string val)
+        public void EmitLoad(int reg, string val)
         {
             var bytes = Encoding.UTF8.GetBytes(val);
-            Emit(reg, bytes, VMType.String);
+            EmitLoad(reg, bytes, VMType.String);
         }
 
-        public void Emit(int reg, BigInteger val)
+        public void EmitLoad(int reg, BigInteger val)
         {
             var bytes = val.ToByteArray();
-            Emit(reg, bytes, VMType.Number);
+            EmitLoad(reg, bytes, VMType.Number);
         }
 
-        public void Emit(int reg, bool val)
+        public void EmitLoad(int reg, bool val)
         {
             var bytes = new byte[1] { (byte)(val ? 1 : 0) };
-            Emit(reg, bytes, VMType.Bool);
+            EmitLoad(reg, bytes, VMType.Bool);
+        }
+
+        public void EmitMove(int src_reg, int dst_reg)
+        {
+            Emit(Opcode.MOVE, new byte[] { (byte)src_reg, (byte)dst_reg });
+        }
+
+        public void EmitCopy(int src_reg, int dst_reg)
+        {
+            Emit(Opcode.COPY, new byte[] { (byte)src_reg, (byte)dst_reg });
         }
 
         public byte[] ToScript()
