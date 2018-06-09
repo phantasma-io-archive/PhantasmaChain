@@ -397,6 +397,15 @@ namespace Phantasma.VM
 
                     case Opcode.NOT:
                         {
+                            var src = Read8();
+                            var dst = Read8();
+
+                            Expect(src < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+
+                            var val = registers[src].AsBool();
+
+                            registers[dst].SetValue(!val);
                             break;
                         }
 
