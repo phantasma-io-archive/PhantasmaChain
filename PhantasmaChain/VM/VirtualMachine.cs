@@ -272,7 +272,10 @@ namespace Phantasma.VM
                     case Opcode.JMPIF:
                     case Opcode.JMPNOT:
                         {
-                            var ofs = (short)Read16(); 
+                            var newPos = (short)Read16();
+
+                            Expect(newPos >= 0);
+                            Expect(newPos < script.Length);
 
                             if (opcode != Opcode.JMP)
                             {
@@ -291,11 +294,6 @@ namespace Phantasma.VM
                                     break;
                                 }
                             }
-
-                            var newPos = (int)InstructionPointer + ofs;
-
-                            Expect(newPos >= 0);
-                            Expect(newPos < script.Length);
 
                             InstructionPointer = (uint)newPos;
                             break;
@@ -378,7 +376,7 @@ namespace Phantasma.VM
 
                             var result = new byte[len];
                             Array.Copy(registers[src].Data, ofs, result, 0, len);
-
+                                
                             registers[src].Data = result;
                             break;
                         }
