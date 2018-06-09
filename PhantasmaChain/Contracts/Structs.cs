@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -28,6 +29,22 @@ namespace Phantasma.Contracts
         public static bool operator ==(Address A, Address B) { return A.PublicKey.SequenceEqual(B.PublicKey); }
 
         public static bool operator !=(Address A, Address B) { return !A.PublicKey.SequenceEqual(B.PublicKey); }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Address))
+            {
+                return false;
+            }
+
+            var address = (Address)obj;
+            return EqualityComparer<byte[]>.Default.Equals(PublicKey, address.PublicKey);
+        }
+
+        public override int GetHashCode()
+        {
+            return PublicKey.GetHashCode();
+        }
     }
 
     public interface Surprise<T>
