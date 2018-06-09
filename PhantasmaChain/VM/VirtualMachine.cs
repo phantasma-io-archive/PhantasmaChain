@@ -533,133 +533,13 @@ namespace Phantasma.VM
                         }
 
                     case Opcode.ADD:
-                        {
-                            var src = Read8();
-                            var dst = Read8();
-
-                            Expect(src < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[src].AsNumber();
-                            var b = registers[dst].AsNumber();
-
-                            registers[dst].SetValue(a + b);
-
-                            break;
-                        }
-
                     case Opcode.SUB:
-                        {
-                            var dst = Read8();
-                            var src = Read8();
-
-                            Expect(src < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[src].AsNumber();
-                            var b = registers[dst].AsNumber();
-
-                            registers[dst].SetValue(b - a);
-
-                            break;
-                        }
-
-
                     case Opcode.MUL:
-                        {
-                            var src = Read8();
-                            var dst = Read8();
-
-                            Expect(src < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[src].AsNumber();
-                            var b = registers[dst].AsNumber();
-
-                            registers[dst].SetValue(a * b);
-
-                            break;
-                        }
-
                     case Opcode.DIV:
-                        {
-                            var src = Read8();
-                            var dst = Read8();
-
-                            Expect(src < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[src].AsNumber();
-                            var b = registers[dst].AsNumber();
-
-                            registers[dst].SetValue(a / b);
-
-                            break;
-                        }
-
                     case Opcode.MOD:
-                        {
-                            var src = Read8();
-                            var dst = Read8();
-
-                            Expect(src < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[src].AsNumber();
-                            var b = registers[dst].AsNumber();
-
-                            registers[dst].SetValue(a % b);
-
-                            break;
-                        }
-
                     case Opcode.SHR:
-                        {
-                            var dst = Read8();
-                            var bits = Read8();
-
-                            Expect(dst < MaxRegisterCount);
-
-                            var val = registers[dst].AsNumber();
-                            val >>= bits;
-
-                            registers[dst].SetValue(val);
-
-                            break;
-                        }
-
                     case Opcode.SHL:
-                        {
-                            var dst = Read8();
-                            var bits = Read8();
-
-                            Expect(dst < MaxRegisterCount);
-
-                            var val = registers[dst].AsNumber();
-                            val <<= bits;
-
-                            registers[dst].SetValue(val);
-
-                            break;
-                        }
-
                     case Opcode.MIN:
-                        {
-                            var srcA = Read8();
-                            var srcB = Read8();
-                            var dst = Read8();
-
-                            Expect(srcA < MaxRegisterCount);
-                            Expect(srcB < MaxRegisterCount);
-                            Expect(dst < MaxRegisterCount);
-
-                            var a = registers[srcA].AsNumber();
-                            var b = registers[srcA].AsNumber();
-
-                            registers[dst].SetValue(a < b ? a : b);
-                            break;
-                        }
-
                     case Opcode.MAX:
                         {
                             var srcA = Read8();
@@ -673,7 +553,27 @@ namespace Phantasma.VM
                             var a = registers[srcA].AsNumber();
                             var b = registers[srcA].AsNumber();
 
-                            registers[dst].SetValue(a > b ? a : b);
+                            BigInteger result;
+
+                            switch (opcode)
+                            {
+                                case Opcode.ADD: result = a + b; break;
+                                case Opcode.SUB: result = a - b; break;
+                                case Opcode.MUL: result = a * b; break;
+                                case Opcode.DIV: result = a / b; break;
+                                case Opcode.MOD: result = a % b; break;
+                                case Opcode.SHR: result = a >> (int)b; break;
+                                case Opcode.SHL: result = a << (int)b; break;
+                                case Opcode.MIN: result = a < b ? a : b; break;
+                                case Opcode.MAX: result = a > b ? a : b; break;
+                                default:
+                                    {
+                                        SetState(ExecutionState.Fault);
+                                        return;
+                                    }
+                            }
+
+                            registers[dst].SetValue(result);
                             break;
                         }
 
