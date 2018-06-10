@@ -142,7 +142,34 @@ namespace Phantasma.VM
         public VMObject SetValue(byte[] val, VMType type)
         {
             this.Type = type;
-            this.Data = val;
+
+            switch (type)
+            {
+                case VMType.Address:
+                case VMType.Bytes:
+                    {
+                        this.Data = val;
+                        break;
+                    }
+
+                case VMType.Number:
+                    {
+                        this.Data = new BigInteger(val);
+                        break;
+                    }
+
+                case VMType.String:
+                    {
+                        this.Data = Encoding.UTF8.GetString(val);
+                        break;
+                    }
+
+                default:
+                    {
+                        throw new Exception("Invalid cast");
+                    }
+            }
+
             return this;
         }
 
@@ -170,7 +197,7 @@ namespace Phantasma.VM
         public VMObject SetValue(bool val)
         {
             this.Type = VMType.Bool;
-            this.Data = new byte[1] { (byte)(val ? 1 : 0) };
+            this.Data = val;
             return this;
         }
 
