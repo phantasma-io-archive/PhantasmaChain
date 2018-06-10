@@ -19,8 +19,7 @@
 - [Installation](#installation)
 - [Building](#building)
 - [Contributing](#contributing)
-- [TODO](#todo)
-- [Credits and License](#credits-and-license)
+- [License](#license)
 
 ---
 
