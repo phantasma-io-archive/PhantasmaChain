@@ -481,8 +481,28 @@ namespace Phantasma.VM
                         }
 
                     case Opcode.EQUAL:
+                        {
+                            var srcA = Read8();
+                            var srcB = Read8();
+                            var dst = Read8();
+
+                            Expect(srcA < MaxRegisterCount);
+                            Expect(srcB < MaxRegisterCount);
+                            Expect(dst < MaxRegisterCount);
+
+                            var a = currentFrame.registers[srcA];
+                            var b = currentFrame.registers[srcB];
+
+                            var result = a.Equals(b);
+                            currentFrame.registers[dst].SetValue(result);
+
+                            break;
+                        }
+
                     case Opcode.LT:
                     case Opcode.GT:
+                    case Opcode.LTE:
+                    case Opcode.GTE:
                         {
                             var srcA = Read8();
                             var srcB = Read8();
@@ -498,7 +518,6 @@ namespace Phantasma.VM
                             bool result;
                             switch (opcode)
                             {
-                                case Opcode.EQUAL: result = (a == b); break;
                                 case Opcode.LT: result = (a < b); break;
                                 case Opcode.GT: result = (a > b); break;
                                 case Opcode.LTE: result = (a <= b); break;
