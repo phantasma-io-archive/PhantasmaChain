@@ -138,34 +138,39 @@ namespace Phantasma.VM
             return (T)Data;
         }
 
-        public void SetValue(byte[] val, VMType type)
+        public VMObject SetValue(byte[] val, VMType type)
         {
             this.Type = type;
             this.Data = val;
+            return this;
         }
 
-        public void SetValue(BigInteger val)
+        public VMObject SetValue(BigInteger val)
         {
             this.Type = VMType.Number;
             this.Data = val.ToByteArray();
+            return this;
         }
 
-        public void SetValue(IInteropObject val)
+        public VMObject SetValue(IInteropObject val)
         {
             this.Type = VMType.Object;
             this.Data = val;
+            return this;
         }
 
-        public void SetValue(string val)
+        public VMObject SetValue(string val)
         {
             this.Type = VMType.String;
             this.Data = Encoding.UTF8.GetBytes(val);
+            return this;
         }
 
-        public void SetValue(bool val)
+        public VMObject SetValue(bool val)
         {
             this.Type = VMType.Bool;
             this.Data = new byte[1] { (byte)(val ? 1 : 0) };
+            return this;
         }
 
         public void SetKey(string key, VMObject obj)
