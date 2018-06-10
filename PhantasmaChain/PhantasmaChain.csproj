@@ -37,9 +37,15 @@
     <Reference Include="BouncyCastle.Crypto, Version=1.8.2.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
       <HintPath>..\packages\BouncyCastle.1.8.2\lib\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\PhantasmaCompiler\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\..\PhantasmaCompiler\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -62,11 +68,32 @@
     <Compile Include="Core\Interop.cs" />
     <Compile Include="Core\Order.cs" />
     <Compile Include="Core\Transaction.cs" />
-    <Compile Include="Network\Kademlia\Node.cs" />
-    <Compile Include="Network\Kademlia\RoutingTable.cs" />
-    <Compile Include="Network\Kademlia\Utils.cs" />
-    <Compile Include="Network\Kademlia\Sha256HashGenerator.cs" />
-    <Compile Include="Network\Kademlia\Store.cs" />
+    <Compile Include="Kademlia\BaseRouter.cs" />
+    <Compile Include="Kademlia\BucketList.cs" />
+    <Compile Include="Kademlia\Common\CommonRequest.cs" />
+    <Compile Include="Kademlia\Common\Constants.cs" />
+    <Compile Include="Kademlia\Common\Contact.cs" />
+    <Compile Include="Kademlia\Common\Exceptions.cs" />
+    <Compile Include="Kademlia\Common\ExtensionMethods.cs" />
+    <Compile Include="Kademlia\Common\ID.cs" />
+    <Compile Include="Kademlia\Common\Interfaces.cs" />
+    <Compile Include="Kademlia\Common\KBucket.cs" />
+    <Compile Include="Kademlia\Common\RpcError.cs" />
+    <Compile Include="Kademlia\ContactQueueItem.cs" />
+    <Compile Include="Kademlia\DHT.cs" />
+    <Compile Include="Kademlia\FindResult.cs" />
+    <Compile Include="Kademlia\Interfaces.cs" />
+    <Compile Include="Kademlia\Node.cs" />
+    <Compile Include="Kademlia\ParallelRouter.cs" />
+    <Compile Include="Kademlia\Protocols\Protocol.cs" />
+    <Compile Include="Kademlia\Protocols\Requests.cs" />
+    <Compile Include="Kademlia\Protocols\Responses.cs" />
+    <Compile Include="Kademlia\Protocols\RestCall.cs" />
+    <Compile Include="Kademlia\Protocols\TcpSubnetProtocol.cs" />
+    <Compile Include="Kademlia\Protocols\TcpSubnetServer.cs" />
+    <Compile Include="Kademlia\Router.cs" />
+    <Compile Include="Kademlia\VirtualProtocol.cs" />
+    <Compile Include="Kademlia\VirtualStorage.cs" />
     <Compile Include="Utils\ChainUtils.cs" />
     <Compile Include="Cryptography\Base58.cs" />
     <Compile Include="Cryptography\BloomFilter.cs" />
@@ -89,6 +116,7 @@
     <Compile Include="Utils\Logger.cs" />
     <Compile Include="Utils\ScriptBuilder.cs" />
     <Compile Include="Utils\ScriptUtils.cs" />
+    <Compile Include="Utils\Validate.cs" />
     <Compile Include="VM\Types.cs" />
     <Compile Include="VM\Opcodes.cs" />
     <Compile Include="VM\VirtualMachine.cs" />
