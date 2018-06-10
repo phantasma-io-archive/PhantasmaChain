@@ -29,7 +29,7 @@ namespace Phantasma.Core
 
             var obj = new VMObject();
             obj.SetValue(pubKey, VMType.Address);
-            vm.valueStack.Push(obj);
+            vm.stack.Push(obj);
         }
     }
 }
