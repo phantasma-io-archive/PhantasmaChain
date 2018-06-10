@@ -14,6 +14,7 @@
 ## Contents
 
 - [Description](#description)
+- [Components](#components)
 - [Compatibility](#compatibility)
 - [Installation](#installation)
 - [Building](#building)
@@ -28,6 +29,17 @@
 Phantasma implements a decentralized content distribution system running on the blockchain, with strong emphasis on privacy and security.
 
 To learn more about Phantasma, please read the [White Paper](https://phantasma.io/phantasma_whitepaper.pdf).
+
+## Components
+
+Component 		| Description	| Status
+:---------------------- | :------------
+Chain Core 		| eg: accounts, transactions, blocks | Done
+VM 		| Virtual machine to run smart contracts | In development
+Smart Contracts | eg: language, features, compilers | In development
+Network 			| P2P communication | R&D
+Consensus | Distributed consensus for nodes | R&D
+API 			| RPC api for nodes | Planned
 
 ## Compatibility
 
