@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -312,6 +313,22 @@ namespace Phantasma.VM
                 /*var temp = other.Data;
                 _data = new byte[temp.Length];
                 Array.Copy(temp, _data, _data.Length);*/
+            }
+        }
+
+        public override string ToString()
+        {
+            switch (this.Type)
+            {
+                case VMType.None:return "Null";
+                case VMType.Struct: return "[Struct]";
+                case VMType.Bytes: return $"[Bytes] => {((byte[])Data).ByteToHex()}";
+                case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
+                case VMType.String: return $"[String] => {((string)Data)}";
+                case VMType.Bool: return $"[Bool] => {((bool)Data)}";
+                case VMType.Address: return $"[Address] => {((byte[])Data).PublicKeyToAddress()}";
+                case VMType.Object: return $"[Object] => {Data.GetType().Name}";
+                default: return "Unknown";
             }
         }
     }
