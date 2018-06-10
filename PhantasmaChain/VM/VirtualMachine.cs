@@ -22,7 +22,7 @@ namespace Phantasma.VM
         public uint InstructionPointer { get; private set; }
         public ExecutionState State { get; private set; }
 
-        public readonly Stack<VMObject> valueStack = new Stack<VMObject>();
+        public readonly Stack<VMObject> stack = new Stack<VMObject>();
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame currentFrame { get; private set; }
 
@@ -232,7 +232,7 @@ namespace Phantasma.VM
                             var src = Read8();
                             Expect(src < MaxRegisterCount);
 
-                            valueStack.Push(currentFrame.registers[src]);
+                            stack.Push(currentFrame.registers[src]);
                             break;
                         }
 
@@ -240,10 +240,10 @@ namespace Phantasma.VM
                         {
                             var dst = Read8();
 
-                            Expect(valueStack.Count > 0);
+                            Expect(stack.Count > 0);
                             Expect(dst < MaxRegisterCount);
 
-                            currentFrame.registers[dst] = valueStack.Pop();
+                            currentFrame.registers[dst] = stack.Pop();
                             break;
                         }
 
@@ -461,7 +461,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
 
                             var a = currentFrame.registers[srcA].AsBool();
-                            var b = currentFrame.registers[srcA].AsBool();
+                            var b = currentFrame.registers[srcB].AsBool();
 
                             bool result;
                             switch (opcode)
@@ -493,7 +493,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
 
                             var a = currentFrame.registers[srcA].AsNumber();
-                            var b = currentFrame.registers[srcA].AsNumber();
+                            var b = currentFrame.registers[srcB].AsNumber();
 
                             bool result;
                             switch (opcode)
@@ -603,7 +603,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
 
                             var a = currentFrame.registers[srcA].AsNumber();
-                            var b = currentFrame.registers[srcA].AsNumber();
+                            var b = currentFrame.registers[srcB].AsNumber();
 
                             BigInteger result;
 
