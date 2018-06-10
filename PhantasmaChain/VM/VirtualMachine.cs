@@ -20,12 +20,13 @@ namespace Phantasma.VM
         public uint InstructionPointer { get; private set; }
         public ExecutionState State { get; private set; }
 
-        private VMObject[] registers = new VMObject[MaxRegisterCount];
-
         private byte[] script;
 
         public readonly Stack<VMObject> valueStack = new Stack<VMObject>();
         public readonly Stack<uint> callStack = new Stack<uint>();
+
+        private Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
+        public ExecutionFrame currentFrame { get; private set; }
 
         public BigInteger gas { get; private set; }
 
@@ -34,26 +35,30 @@ namespace Phantasma.VM
             InstructionPointer = 0;
             State = ExecutionState.Running;
 
-            for (int i=0; i<MaxRegisterCount; i++)
-            {
-                registers[i] = new VMObject();
-            }
 
             this.gas = 0;
             this.script = script;
         }
 
-        public abstract bool ExecuteInterop(string method);
-
-        public VMObject GetRegister(int index)
+        private void PushFrame()
         {
-            if (index<0 || index >= MaxRegisterCount)
+            var frame = new ExecutionFrame();
+            frames.Push(frame);
+            this.currentFrame = frame;
+        }
+
+        private void PopFrame()
+        {
+            if (frames.Count < 2)
             {
-                throw new ArgumentException("Invalid index");
+                throw new Exception("Not enough frames available");
             }
 
-            return registers[index];
+            frames.Pop();
+            this.currentFrame = frames.Peek();
         }
+
+        public abstract bool ExecuteInterop(string method);
 
         public void Execute()
         {
@@ -177,7 +182,7 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            registers[dst] = registers[src];
+                            currentFrame.registers[dst] = currentFrame.registers[src];
                             break;
                         }
 
@@ -189,7 +194,7 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            registers[dst].Copy(registers[src]);
+                            currentFrame.registers[dst].Copy(currentFrame.registers[src]);
                             break;
                         }
 
@@ -202,7 +207,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
 
                             var bytes = ReadBytes(len);
-                            registers[dst].SetValue(bytes, type);
+                            currentFrame.registers[dst].SetValue(bytes, type);
 
                             break;
                         }
@@ -212,7 +217,7 @@ namespace Phantasma.VM
                             var src = Read8();
                             Expect(src < MaxRegisterCount);
 
-                            valueStack.Push(registers[src]);
+                            valueStack.Push(currentFrame.registers[src]);
                             break;
                         }
 
@@ -223,7 +228,7 @@ namespace Phantasma.VM
                             Expect(valueStack.Count > 0);
                             Expect(dst < MaxRegisterCount);
 
-                            registers[dst] = valueStack.Pop();
+                            currentFrame.registers[dst] = valueStack.Pop();
                             break;
                         }
 
@@ -235,9 +240,9 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var temp = registers[src];
-                            registers[src] = registers[dst];
-                            registers[dst] = temp;
+                            var temp = currentFrame.registers[src];
+                            currentFrame.registers[src] = currentFrame.registers[dst];
+                            currentFrame.registers[dst] = temp;
 
                             break;
                         }
@@ -246,6 +251,8 @@ namespace Phantasma.VM
                         {
                             var ofs = Read16();
                             Expect(ofs < script.Length);
+
+                            PushFrame();
 
                             callStack.Push(InstructionPointer);
                             InstructionPointer = ofs;
@@ -282,7 +289,7 @@ namespace Phantasma.VM
                                 var src = Read8();
                                 Expect(src < MaxRegisterCount);
 
-                                var status = registers[src].AsBool();
+                                var status = currentFrame.registers[src].AsBool();
 
                                 if (opcode == Opcode.JMPNOT)
                                 {
@@ -308,6 +315,8 @@ namespace Phantasma.VM
                                 Expect(ofs < script.Length);
 
                                 InstructionPointer = ofs;
+
+                                PopFrame();
                             }
                             else
                             {
@@ -324,14 +333,14 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var A = registers[src];
-                            var B = registers[dst];
+                            var A = currentFrame.registers[src];
+                            var B = currentFrame.registers[dst];
 
                             if (!A.IsEmpty)
                             {
                                 if (B.IsEmpty)
                                 {
-                                    registers[dst] = A;
+                                    currentFrame.registers[dst] = A;
                                 }
                                 else
                                 {
@@ -355,12 +364,12 @@ namespace Phantasma.VM
                             var len = (int)ReadVar(0xFFFF);
 
                             Expect(src < MaxRegisterCount);
-                            Expect(len <= registers[src].Length);
+                            Expect(len <= currentFrame.registers[src].Length);
 
                             var result = new byte[len];
-                            Array.Copy(registers[src].Data, result, len);
+                            Array.Copy(currentFrame.registers[src].Data, result, len);
 
-                            registers[src].Data = result;
+                            currentFrame.registers[src].Data = result;
                             break;
                         }
 
@@ -370,14 +379,14 @@ namespace Phantasma.VM
                             var len = (int)ReadVar(0xFFFF);
 
                             Expect(src < MaxRegisterCount);
-                            Expect(len <= registers[src].Length);
+                            Expect(len <= currentFrame.registers[src].Length);
 
-                            var ofs = registers[src].Length - len;
+                            var ofs = currentFrame.registers[src].Length - len;
 
                             var result = new byte[len];
-                            Array.Copy(registers[src].Data, ofs, result, 0, len);
-                                
-                            registers[src].Data = result;
+                            Array.Copy(currentFrame.registers[src].Data, ofs, result, 0, len);
+
+                            currentFrame.registers[src].Data = result;
                             break;
                         }
 
@@ -389,7 +398,7 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            registers[dst].SetValue(registers[src].Length);
+                            currentFrame.registers[dst].SetValue(currentFrame.registers[src].Length);
                             break;
                         }
 
@@ -401,9 +410,9 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var val = registers[src].AsBool();
+                            var val = currentFrame.registers[src].AsBool();
 
-                            registers[dst].SetValue(!val);
+                            currentFrame.registers[dst].SetValue(!val);
                             break;
                         }
 
@@ -419,8 +428,8 @@ namespace Phantasma.VM
                             Expect(srcB < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var a = registers[srcA].AsBool();
-                            var b = registers[srcA].AsBool();
+                            var a = currentFrame.registers[srcA].AsBool();
+                            var b = currentFrame.registers[srcA].AsBool();
 
                             bool result;
                             switch (opcode)
@@ -435,7 +444,7 @@ namespace Phantasma.VM
                                     }
                             }
 
-                            registers[dst].SetValue(result);
+                            currentFrame.registers[dst].SetValue(result);
                             break;
                         }
 
@@ -451,8 +460,8 @@ namespace Phantasma.VM
                             Expect(srcB < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var a = registers[srcA].AsNumber();
-                            var b = registers[srcA].AsNumber();
+                            var a = currentFrame.registers[srcA].AsNumber();
+                            var b = currentFrame.registers[srcA].AsNumber();
 
                             bool result;
                             switch (opcode)
@@ -469,7 +478,7 @@ namespace Phantasma.VM
                                     }
                             }
 
-                            registers[dst].SetValue(result);
+                            currentFrame.registers[dst].SetValue(result);
                             break;
                         }
 
@@ -478,8 +487,8 @@ namespace Phantasma.VM
                             var dst = Read8();
                             Expect(dst < MaxRegisterCount);
 
-                            var val = registers[dst].AsNumber();
-                            registers[dst].SetValue(val + 1);
+                            var val = currentFrame.registers[dst].AsNumber();
+                            currentFrame.registers[dst].SetValue(val + 1);
 
                             break;
                         }
@@ -489,8 +498,8 @@ namespace Phantasma.VM
                             var dst = Read8();
                             Expect(dst < MaxRegisterCount);
 
-                            var val = registers[dst].AsNumber();
-                            registers[dst].SetValue(val - 1);
+                            var val = currentFrame.registers[dst].AsNumber();
+                            currentFrame.registers[dst].SetValue(val - 1);
 
                             break;
                         }
@@ -503,15 +512,15 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var val = registers[src].AsNumber();
+                            var val = currentFrame.registers[src].AsNumber();
 
                             if (val == 0)
                             {
-                                registers[dst].SetValue(0);
+                                currentFrame.registers[dst].SetValue(0);
                             }
                             else
                             {
-                                registers[dst].SetValue(val < 0 ? -1 : 1);
+                                currentFrame.registers[dst].SetValue(val < 0 ? -1 : 1);
                             }
 
                             break;
@@ -519,22 +528,26 @@ namespace Phantasma.VM
 
                     case Opcode.NEGATE:
                         {
+                            var src = Read8();
                             var dst = Read8();
+                            Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var val = registers[dst].AsNumber();
-                            registers[dst].SetValue(-val);
+                            var val = currentFrame.registers[src].AsNumber();
+                            currentFrame.registers[dst].SetValue(-val);
 
                             break;
                         }
 
                     case Opcode.ABS:
                         {
+                            var src = Read8();
                             var dst = Read8();
+                            Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var val = registers[dst].AsNumber();
-                            registers[dst].SetValue(val<0?-val:val);
+                            var val = currentFrame.registers[src].AsNumber();
+                            currentFrame.registers[dst].SetValue(val<0?-val:val);
 
                             break;
                         }
@@ -557,8 +570,8 @@ namespace Phantasma.VM
                             Expect(srcB < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var a = registers[srcA].AsNumber();
-                            var b = registers[srcA].AsNumber();
+                            var a = currentFrame.registers[srcA].AsNumber();
+                            var b = currentFrame.registers[srcA].AsNumber();
 
                             BigInteger result;
 
@@ -580,7 +593,7 @@ namespace Phantasma.VM
                                     }
                             }
 
-                            registers[dst].SetValue(result);
+                            currentFrame.registers[dst].SetValue(result);
                             break;
                         }
 
@@ -594,7 +607,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
                             Expect(key < MaxRegisterCount);
 
-                            registers[dst].SetKey(registers[key].AsString(), registers[src]);
+                            currentFrame.registers[dst].SetKey(currentFrame.registers[key].AsString(), currentFrame.registers[src]);
 
                             break;
                         }
@@ -609,7 +622,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
                             Expect(key < MaxRegisterCount);
 
-                            registers[dst] = registers[src].GetKey(registers[key].AsString());
+                            currentFrame.registers[dst] = currentFrame.registers[src].GetKey(currentFrame.registers[key].AsString());
 
                             break;
                         }
