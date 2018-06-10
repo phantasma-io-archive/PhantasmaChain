@@ -27,7 +27,7 @@ namespace Phantasma.VM
        
         public object Data { get; private set; }
 
-        private int _localSize;
+        private int _localSize = 0;
 
         private Dictionary<string, VMObject> GetChildren() => (Dictionary<string, VMObject>)Data;
 
@@ -142,6 +142,7 @@ namespace Phantasma.VM
         public VMObject SetValue(byte[] val, VMType type)
         {
             this.Type = type;
+            this._localSize = val.Length;
 
             switch (type)
             {
@@ -177,6 +178,7 @@ namespace Phantasma.VM
         {
             this.Type = VMType.Number;
             this.Data = val;
+            this._localSize = val.ToByteArray().Length;
             return this;
         }
 
@@ -184,6 +186,7 @@ namespace Phantasma.VM
         {
             this.Type = VMType.Object;
             this.Data = val;
+            this._localSize = val.GetSize();
             return this;
         }
 
@@ -191,6 +194,7 @@ namespace Phantasma.VM
         {
             this.Type = VMType.String;
             this.Data = val;
+            this._localSize = val.Length;
             return this;
         }
 
@@ -198,6 +202,7 @@ namespace Phantasma.VM
         {
             this.Type = VMType.Bool;
             this.Data = val;
+            this._localSize = 1;
             return this;
         }
 
@@ -214,6 +219,7 @@ namespace Phantasma.VM
                 this.Type = VMType.Struct;
                 children = new Dictionary<string, VMObject>();
                 this.Data = children;
+                this._localSize = 0;
             }
 
             var result = new VMObject();
