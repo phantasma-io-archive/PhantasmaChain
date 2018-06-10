@@ -20,7 +20,7 @@ namespace Phantasma.Core
 
             var pubKey = script.ScriptToPublicKey();
 
-            this.Log($"Deploying contract: {pubKey.PublicKeyToAddress()}");
+            Log.Message($"Deploying contract: {pubKey.PublicKeyToAddress()}");
 
             if (NativeToken == null)
             {

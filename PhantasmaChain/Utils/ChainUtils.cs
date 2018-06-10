@@ -10,8 +10,6 @@ using System.Text;
 
 namespace Phantasma.Utils
 {
-    public delegate void Logger(string text);
-
     public class ByteArrayComparer : IEqualityComparer<byte[]>
     {
         public bool Equals(byte[] left, byte[] right)
