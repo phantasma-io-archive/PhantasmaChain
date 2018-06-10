@@ -34,6 +34,7 @@ To learn more about Phantasma, please read the [White Paper](https://phantasma.i
 Component	| Description	| Status
 :---------------------- | :------------ | :------------
 Chain Core 		| eg: accounts, transactions, blocks | Done
+Wallet | CLI wallet | In development
 VM 		| Virtual machine to run smart contracts | In development
 Smart Contracts | eg: language, features, compilers | In development
 Network 			| P2P communication | R&D
