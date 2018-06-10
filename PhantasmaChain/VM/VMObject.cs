@@ -10,59 +10,43 @@ namespace Phantasma.VM
     public enum VMType
     {
         None,
-        Object,
+        Struct,
         Bytes,
         Number,
         String,
         Bool,
-        Address
+        Address,
+        Object
     }
 
     public class VMObject
     {
         public VMType Type { get; private set; }
-        public int Length => Data.Length;
-        public bool IsEmpty => Data.Length == 0;
+        public bool IsEmpty => Data == null;
+       
+        public object Data { get; private set; }
 
-        private Dictionary<string, VMObject> _children;
+        private int _localSize;
 
-        private static readonly byte[] Empty = new byte[0] { };
-
-        private byte[] _data;
-        public byte[] Data
-        {
-            get
-            {
-                if (_children != null)
-                {
-                    return Empty;
-                }
-
-                return _data != null ? _data : Empty;
-            }
-
-            set
-            {
-                _data = value != null ? value : Empty;
-            }
-        }
+        private Dictionary<string, VMObject> GetChildren() => (Dictionary<string, VMObject>)Data;
 
         public int Size
         {
             get
             {
-                int total = 0;
-                if (_data != null)
-                {
-                    total += _data.Length;
-                }
+                var total = 0;
 
-                if (_children != null)
+                if (Type == VMType.Object)
                 {
-                    foreach (var entry in _children.Values)
+                    var children = this.GetChildren();
+                    foreach (var entry in children.Values)
                     {
                         total += entry.Size;
                     }
+                }
+                else
+                {
+                    total = _localSize;
                 }
 
                 return total;
@@ -76,53 +60,82 @@ namespace Phantasma.VM
 
         public BigInteger AsNumber()
         {
-            if (_children != null || this.Type != VMType.Number)
+            if (this.Type != VMType.Number)
             {
                 throw new Exception("Invalid cast");
             }
 
-            return new BigInteger(Data);
+            return (BigInteger)Data;
         }
 
         public string AsString()
         {
-            if (_children != null || this.Type != VMType.String)
+            if (this.Type != VMType.String)
             {
                 throw new Exception("Invalid cast");
             }
 
-            return Encoding.UTF8.GetString(Data);
+            return (string)Data;
         }
 
         public byte[] AsByteArray()
         {
-            if (_children != null || this.Type != VMType.Bytes)
+            switch (this.Type)
             {
-                throw new Exception("Invalid cast");
-            }
+                case VMType.Bytes:
+                case VMType.Address:
+                    {
+                        return (byte[])Data;
+                    }
 
-            return Data;
+                case VMType.String:
+                    {
+                        var str = AsString();
+                        return Encoding.UTF8.GetBytes(str);
+                    }
+
+                default:
+                    {
+                        throw new Exception("Invalid cast");
+                    }
+            }           
         }
 
         public byte[] AsAddress()
         {
-            if (_children != null || this.Type != VMType.Address || _data == null || _data.Length != KeyPair.PublicKeyLength)
+            if (this.Type != VMType.Address)
             {
                 throw new Exception("Invalid cast");
             }
 
-            return Data;
+            var temp = (byte[]) Data;
+
+            if (temp.Length != KeyPair.PublicKeyLength)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            return temp;
         }
 
         public bool AsBool()
         {
-            if (_children != null || this.Type != VMType.Bool)
+            if (this.Type != VMType.Bool)
             {
                 throw new Exception("Invalid cast");
             }
 
-            var temp = Data;
-            return temp.Length == 1 && temp[0] != 0;
+            return (bool)Data;
+        }
+
+        public T AsInterop<T>() where T: IInteropObject
+        {
+            if (this.Type != VMType.Object)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            return (T)Data;
         }
 
         public void SetValue(byte[] val, VMType type)
@@ -135,6 +148,12 @@ namespace Phantasma.VM
         {
             this.Type = VMType.Number;
             this.Data = val.ToByteArray();
+        }
+
+        public void SetValue(IInteropObject val)
+        {
+            this.Type = VMType.Object;
+            this.Data = val;
         }
 
         public void SetValue(string val)
@@ -151,28 +170,36 @@ namespace Phantasma.VM
 
         public void SetKey(string key, VMObject obj)
         {
-            this.Type = VMType.Object;
+            Dictionary<string, VMObject> children;
 
-            if (_children == null)
+            if (this.Type == VMType.Struct)
             {
-                _children = new Dictionary<string, VMObject>();
+                children = GetChildren();
+            }
+            else
+            {
+                this.Type = VMType.Struct;
+                children = new Dictionary<string, VMObject>();
+                this.Data = children;
             }
 
             var result = new VMObject();
+            children[key] = result;
             result.Copy(obj);
-            _children[key] = result;
         }
 
         public VMObject GetKey(string key)
         {
-            if (this.Type != VMType.Object || _children == null)
+            if (this.Type != VMType.Struct)
             {
                 throw new Exception("Invalid cast");
             }
 
-            if (_children.ContainsKey(key))
+            var children = GetChildren();
+
+            if (children.ContainsKey(key))
             {
-                return _children[key];
+                return children[key];
             }
 
             return new VMObject();
@@ -192,22 +219,35 @@ namespace Phantasma.VM
 
             var temp = (VMObject)obj;
 
-            if (temp.Type != this.Type)
+            return temp == this;
+        }
+
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode();
+        }
+
+        public static bool operator ==(VMObject objA, VMObject objB)
+        {
+            if (objA.Type != objB.Type)
             {
                 return false;
             }
 
-            if (temp._children != null)
+            if (objA.Type == VMType.Struct)
             {
-                foreach (var entry in _children)
+                var childrenA = objA.GetChildren();
+                var childrenB = objB.GetChildren();
+
+                foreach (var entry in childrenA)
                 {
-                    if (!temp._children.ContainsKey(entry.Key))
+                    if (!childrenB.ContainsKey(entry.Key))
                     {
                         return false;
                     }
 
-                    var A = this._children[entry.Key];
-                    var B = temp._children[entry.Key];
+                    var A = childrenA[entry.Key];
+                    var B = childrenB[entry.Key];
 
                     if (A != B)
                     {
@@ -215,9 +255,9 @@ namespace Phantasma.VM
                     }
                 }
 
-                foreach (var entry in temp._children)
+                foreach (var entry in childrenB)
                 {
-                    if (!this._children.ContainsKey(entry.Key))
+                    if (!childrenA.ContainsKey(entry.Key))
                     {
                         return false;
                     }
@@ -228,18 +268,8 @@ namespace Phantasma.VM
             }
             else
             {
-                return temp.Data.SequenceEqual(this.Data);
+                return objA.Data.Equals(objB.Data);
             }
-        }
-
-        public override int GetHashCode()
-        {
-            return Data.GetHashCode();
-        }
-
-        public static bool operator ==(VMObject a, VMObject b)
-        {
-            return a.Data.SequenceEqual(b.Data);
         }
 
         public static bool operator !=(VMObject a, VMObject b)
@@ -252,28 +282,31 @@ namespace Phantasma.VM
             if (other == null || other.Type == VMType.None)
             {
                 this.Type = VMType.None;
-                this._data = null;
-                this._children = null;
+                this.Data = null;
                 return;
             }
 
             this.Type = other.Type;
 
-            if (other.Type == VMType.Object)
+            if (other.Type == VMType.Struct)
             {
-                this._children = new Dictionary<string, VMObject>();
-                foreach (var key in other._children.Keys)
+                var children = new Dictionary<string, VMObject>();
+                var otherChildren = other.GetChildren();
+                foreach (var key in otherChildren.Keys)
                 {
                     var temp = new VMObject();
-                    temp.Copy(other._children[key]);
-                    _children[key] = temp;
+                    temp.Copy(otherChildren[key]);
+                    children[key] = temp;
                 }
+
+                this.Data = children;
             }
             else
             {
-                var temp = other.Data;
+                this.Data = other.Data;
+                /*var temp = other.Data;
                 _data = new byte[temp.Length];
-                Array.Copy(temp, _data, _data.Length);
+                Array.Copy(temp, _data, _data.Length);*/
             }
         }
     }

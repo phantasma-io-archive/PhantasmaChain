@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.Core;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -28,6 +29,10 @@ namespace Phantasma.VM
         private Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame currentFrame { get; private set; }
 
+        private List<ExecutionContext> _contextList = new List<ExecutionContext>();
+
+        public ExecutionContext currentContext { get; private set; }
+
         public BigInteger gas { get; private set; }
 
         public VirtualMachine(byte[] script)
@@ -35,6 +40,7 @@ namespace Phantasma.VM
             InstructionPointer = 0;
             State = ExecutionState.Running;
 
+            this.currentContext = new ExecutionContext(script);
 
             this.gas = 0;
             this.script = script;
@@ -59,6 +65,7 @@ namespace Phantasma.VM
         }
 
         public abstract bool ExecuteInterop(string method);
+        public abstract ExecutionContext LoadContext(byte[] key);
 
         public void Execute()
         {
@@ -340,13 +347,27 @@ namespace Phantasma.VM
                             {
                                 if (B.IsEmpty)
                                 {
-                                    currentFrame.registers[dst] = A;
+                                    currentFrame.registers[dst].Copy(A);
                                 }
                                 else
                                 {
-                                    var result = new byte[A.Data.Length + B.Data.Length];
-                                    Array.Copy(A.Data, result, A.Data.Length);
-                                    Array.Copy(B.Data, 0, result, A.Data.Length, B.Data.Length);
+                                    var srcA = A.AsByteArray();
+                                    var srcB = B.AsByteArray();
+
+                                    var result = new byte[srcA.Length + srcB.Length];
+                                    Array.Copy(srcA, result, srcA.Length);
+                                    Array.Copy(srcB, 0, result, srcA.Length, srcB.Length);
+                                }
+                            }
+                            else
+                            {
+                                if (B.IsEmpty)
+                                {
+                                    currentFrame.registers[dst] = new VMObject();
+                                }
+                                else
+                                {
+                                    currentFrame.registers[dst].Copy(B);
                                 }
                             }
 
@@ -361,32 +382,41 @@ namespace Phantasma.VM
                     case Opcode.LEFT:
                         {
                             var src = Read8();
+                            var dst = Read8();
                             var len = (int)ReadVar(0xFFFF);
 
                             Expect(src < MaxRegisterCount);
-                            Expect(len <= currentFrame.registers[src].Length);
+                            Expect(dst < MaxRegisterCount);
+
+                            var src_array = currentFrame.registers[src].AsByteArray();
+                            Expect(len <= src_array.Length);
 
                             var result = new byte[len];
-                            Array.Copy(currentFrame.registers[src].Data, result, len);
+                            
+                            Array.Copy(src_array, result, len);
 
-                            currentFrame.registers[src].Data = result;
+                            currentFrame.registers[dst].SetValue(result, VMType.Bytes);
                             break;
                         }
 
                     case Opcode.RIGHT:
                         {
                             var src = Read8();
+                            var dst = Read8();
                             var len = (int)ReadVar(0xFFFF);
 
                             Expect(src < MaxRegisterCount);
-                            Expect(len <= currentFrame.registers[src].Length);
+                            Expect(dst < MaxRegisterCount);
 
-                            var ofs = currentFrame.registers[src].Length - len;
+                            var src_array = currentFrame.registers[src].AsByteArray();
+                            Expect(len <= src_array.Length);
+
+                            var ofs = src_array.Length - len;
 
                             var result = new byte[len];
-                            Array.Copy(currentFrame.registers[src].Data, ofs, result, 0, len);
+                            Array.Copy(src_array, ofs, result, 0, len);
 
-                            currentFrame.registers[src].Data = result;
+                            currentFrame.registers[dst].SetValue(result, VMType.Bytes);
                             break;
                         }
 
@@ -398,7 +428,8 @@ namespace Phantasma.VM
                             Expect(src < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            currentFrame.registers[dst].SetValue(currentFrame.registers[src].Length);
+                            var src_array = currentFrame.registers[src].AsByteArray();
+                            currentFrame.registers[dst].SetValue(src_array.Length);
                             break;
                         }
 
@@ -623,6 +654,25 @@ namespace Phantasma.VM
                             Expect(key < MaxRegisterCount);
 
                             currentFrame.registers[dst] = currentFrame.registers[src].GetKey(currentFrame.registers[key].AsString());
+
+                            break;
+                        }
+
+                    case Opcode.CTX:
+                        {
+                            var dst = Read8();
+                            var key = ReadBytes(KeyPair.PublicKeyLength);
+
+                            Expect(dst < MaxRegisterCount);
+
+                            var context = LoadContext(key);
+
+                            if (context == null)
+                            {
+                                SetState(ExecutionState.Fault);
+                            }
+
+                            currentFrame.registers[dst].SetValue(context);
 
                             break;
                         }

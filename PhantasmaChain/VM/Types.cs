@@ -2,6 +2,21 @@
 
 namespace Phantasma.VM
 {
+    public interface IInteropObject
+    {
+
+    }
+
+    public class ExecutionContext: IInteropObject
+    {
+        public byte[] Script { get; private set; }
+
+        public ExecutionContext(byte[] script)
+        {
+            this.Script = script;
+        }
+    }
+
     public class ExecutionFrame
     {
         public VMObject[] registers { get; private set; }
