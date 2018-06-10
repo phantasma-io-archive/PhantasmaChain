@@ -1,7 +1,7 @@
 ﻿using Phantasma.Contracts;
 using System;
 
-namespace PhantasmaChain.Contracts
+namespace Phantasma.Contracts
 {
     public static class ContractExtensions
     {

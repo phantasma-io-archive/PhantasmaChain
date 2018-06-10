@@ -7,7 +7,7 @@
     <ProjectGuid>{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PhantasmaChain</RootNamespace>
+    <RootNamespace>Phantasma</RootNamespace>
     <AssemblyName>PhantasmaChain</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -79,6 +79,7 @@
     <Compile Include="Core\Token.cs" />
     <Compile Include="Utils\ScriptBuilder.cs" />
     <Compile Include="Utils\ScriptUtils.cs" />
+    <Compile Include="VM\ExecutionFrame.cs" />
     <Compile Include="VM\Opcodes.cs" />
     <Compile Include="VM\VirtualMachine.cs" />
     <Compile Include="VM\VMObject.cs" />

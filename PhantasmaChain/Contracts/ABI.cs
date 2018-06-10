@@ -4,7 +4,7 @@ using System.Linq;
 using Phantasma.Utils;
 using Phantasma.VM;
 
-namespace PhantasmaChain.Contracts
+namespace Phantasma.Contracts
 {
     public struct ContractMethod
     {
