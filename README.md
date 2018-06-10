@@ -32,13 +32,15 @@ To learn more about Phantasma, please read the [White Paper](https://phantasma.i
 
 ## Components
 
-Component 		| Description	| Status
-:---------------------- | :------------
+Component	| Description	| Status
+:---------------------- | :------------ | :------------
 Chain Core 		| eg: accounts, transactions, blocks | Done
 VM 		| Virtual machine to run smart contracts | In development
 Smart Contracts | eg: language, features, compilers | In development
 Network 			| P2P communication | R&D
 Consensus | Distributed consensus for nodes | R&D
+Relay | Off-chain relay | Planned
+Storage | Distributed storage | Planned
 API 			| RPC api for nodes | Planned
 
 ## Compatibility
