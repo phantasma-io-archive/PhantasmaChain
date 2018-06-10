@@ -148,7 +148,7 @@ namespace Phantasma.VM
         public VMObject SetValue(BigInteger val)
         {
             this.Type = VMType.Number;
-            this.Data = val.ToByteArray();
+            this.Data = val;
             return this;
         }
 
@@ -162,7 +162,7 @@ namespace Phantasma.VM
         public VMObject SetValue(string val)
         {
             this.Type = VMType.String;
-            this.Data = Encoding.UTF8.GetBytes(val);
+            this.Data = val;
             return this;
         }
 
