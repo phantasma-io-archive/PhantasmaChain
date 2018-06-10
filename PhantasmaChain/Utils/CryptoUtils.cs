@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core;
+using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using System;
 using System.Collections.Generic;
@@ -363,5 +364,12 @@ namespace Phantasma.Utils
             return Base58.Encode(publicKey);
         }
 
+        public static byte[] ScriptToPublicKey(this byte[] script)
+        {
+            var hash = script.Sha256();
+            var temp = new byte[] { 0xFF }.Concat(hash).ToArray();
+            var pubKey = KeyPair.EncodePublicKey(temp);
+            return pubKey;
+        }
     }
 }

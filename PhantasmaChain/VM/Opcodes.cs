@@ -56,6 +56,10 @@ namespace Phantasma.VM
         SHL,
         SHR,
 
+        // context
+        CTX,
+        SWITCH,
+
         // array
         PUT,
         GET, // lookups a key and copies a reference into register

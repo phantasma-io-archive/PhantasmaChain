@@ -56,6 +56,7 @@
     <Compile Include="Core\Chain.cs" />
     <Compile Include="Core\Consensus.cs" />
     <Compile Include="Core\Event.cs" />
+    <Compile Include="Core\Interop.cs" />
     <Compile Include="Core\Order.cs" />
     <Compile Include="Core\Transaction.cs" />
     <Compile Include="Utils\ChainUtils.cs" />
@@ -79,7 +80,7 @@
     <Compile Include="Core\Token.cs" />
     <Compile Include="Utils\ScriptBuilder.cs" />
     <Compile Include="Utils\ScriptUtils.cs" />
-    <Compile Include="VM\ExecutionFrame.cs" />
+    <Compile Include="VM\Types.cs" />
     <Compile Include="VM\Opcodes.cs" />
     <Compile Include="VM\VirtualMachine.cs" />
     <Compile Include="VM\VMObject.cs" />

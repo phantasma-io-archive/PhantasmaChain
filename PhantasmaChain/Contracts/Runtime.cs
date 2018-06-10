@@ -62,5 +62,10 @@ namespace Phantasma.Contracts
         {
             throw new System.NotImplementedException();
         }
+
+        public override ExecutionContext LoadContext(byte[] key)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

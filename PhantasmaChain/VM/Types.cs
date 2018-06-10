@@ -21,8 +21,14 @@ namespace Phantasma.VM
     {
         public VMObject[] registers { get; private set; }
 
-        public ExecutionFrame()
+        public readonly uint Offset; // current instruction pointer **before** the frame was entered
+        public readonly ExecutionContext Context;
+
+        public ExecutionFrame(uint offset, ExecutionContext context)
         {
+            this.Offset = offset;
+            this.Context = context;
+
             registers = new VMObject[VirtualMachine.MaxRegisterCount];
 
             for (int i = 0; i < VirtualMachine.MaxRegisterCount; i++)

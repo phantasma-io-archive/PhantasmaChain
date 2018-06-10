@@ -1,13 +1,8 @@
-﻿using Phantasma.Contracts;
-using Phantasma.Cryptography;
-using Phantasma.Cryptography.ECC;
-using Phantasma.Utils;
+﻿using Phantasma.Utils;
 using Phantasma.VM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
 
 namespace Phantasma.Core
 {
@@ -19,7 +14,7 @@ namespace Phantasma.Core
         }
     }
 
-    public class Chain
+    public partial class Chain
     {
         private Dictionary<byte[], Transaction> _transactions = new Dictionary<byte[], Transaction>(new ByteArrayComparer());
         private Dictionary<uint, Block> _blocks = new Dictionary<uint, Block>();
@@ -93,7 +88,7 @@ namespace Phantasma.Core
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
-            var script = ScriptUtils.TokenIssueScript("Phantasma","SOUL", 100000000, 100000000, TokenAttribute.Burnable | TokenAttribute.Tradable);
+            var script = ScriptUtils.TokenIssueScript("Phantasma","SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
             var tx = new Transaction(owner.PublicKey, script, 0, 0);
             tx.Sign(owner);
 
@@ -144,37 +139,5 @@ namespace Phantasma.Core
 
             return null;
         }
-
-        internal void RegisterInterop(RuntimeVM vm)
-        {
-            vm.RegisterMethod("Chain.Deploy", Chain_deploy);
-        }
-
-        #region interop API 
-        private void Chain_deploy(VirtualMachine vm)
-        {
-            var script = vm.GetRegister(0).AsByteArray();
-
-            var runtime = (RuntimeVM)vm;
-            var tx = runtime.Transaction;
-
-
-            var hash = script.Sha256();
-            var temp = new byte[] { 0xFF }.Concat(hash).ToArray();
-            var pubKey = KeyPair.EncodePublicKey(temp);
-
-            this.Log($"Deploying contract: {pubKey.PublicKeyToAddress()}");
-
-            if (NativeToken == null)
-            {
-                NativeToken = new Token(pubKey);
-            }
-
-            var obj = new VMObject();
-            obj.SetValue(pubKey, VMType.Address);
-            vm.valueStack.Push(obj);
-        }
-        #endregion
-
     }
 }

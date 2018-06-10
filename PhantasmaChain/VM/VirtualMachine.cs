@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -21,17 +22,16 @@ namespace Phantasma.VM
         public uint InstructionPointer { get; private set; }
         public ExecutionState State { get; private set; }
 
-        private byte[] script;
-
         public readonly Stack<VMObject> valueStack = new Stack<VMObject>();
-        public readonly Stack<uint> callStack = new Stack<uint>();
-
-        private Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
+        public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame currentFrame { get; private set; }
 
-        private List<ExecutionContext> _contextList = new List<ExecutionContext>();
+        private Dictionary<byte[], ExecutionContext> _contextList = new Dictionary<byte[], ExecutionContext>(new ByteArrayComparer());
+
+        public readonly byte[] entryScript;
 
         public ExecutionContext currentContext { get; private set; }
+        public byte[] entryPublicKey { get; private set; }
 
         public BigInteger gas { get; private set; }
 
@@ -41,14 +41,18 @@ namespace Phantasma.VM
             State = ExecutionState.Running;
 
             this.currentContext = new ExecutionContext(script);
+            this.entryPublicKey = script.ScriptToPublicKey();
+            _contextList[this.entryPublicKey] = this.currentContext;
+
+            PushFrame(currentContext);
 
             this.gas = 0;
-            this.script = script;
+            this.entryScript = script;
         }
 
-        private void PushFrame()
+        private void PushFrame(ExecutionContext context)
         {
-            var frame = new ExecutionFrame();
+            var frame = new ExecutionFrame(InstructionPointer, context);
             frames.Push(frame);
             this.currentFrame = frame;
         }
@@ -62,6 +66,10 @@ namespace Phantasma.VM
 
             frames.Pop();
             this.currentFrame = frames.Peek();
+            this.InstructionPointer = currentFrame.Offset;
+            this.currentContext = currentFrame.Context;
+
+            Expect(InstructionPointer < currentContext.Script.Length);
         }
 
         public abstract bool ExecuteInterop(string method);
@@ -82,12 +90,12 @@ namespace Phantasma.VM
 
         private byte Read8()
         {
-            if (InstructionPointer >= script.Length)
+            if (InstructionPointer >= currentContext.Script.Length)
             {
                 throw new Exception("Outside of range");
             }
 
-            var result = script[InstructionPointer];
+            var result = currentContext.Script[InstructionPointer];
             InstructionPointer++;
             return result;
         }
@@ -145,7 +153,7 @@ namespace Phantasma.VM
 
         private byte[] ReadBytes(int length)
         {
-            if (InstructionPointer + length >= script.Length)
+            if (InstructionPointer + length >= currentContext.Script.Length)
             {
                 throw new Exception("Outside of range");
             }
@@ -153,7 +161,7 @@ namespace Phantasma.VM
             var result = new byte[length];
             for (int i= 0; i<length; i++)
             {
-                result[i] = script[InstructionPointer];
+                result[i] = currentContext.Script[InstructionPointer];
                 InstructionPointer++;
             }
 
@@ -257,11 +265,10 @@ namespace Phantasma.VM
                     case Opcode.CALL:
                         {
                             var ofs = Read16();
-                            Expect(ofs < script.Length);
+                            Expect(ofs < currentContext.Script.Length);
 
-                            PushFrame();
+                            PushFrame(currentContext);
 
-                            callStack.Push(InstructionPointer);
                             InstructionPointer = ofs;
                             break;
                         }
@@ -289,7 +296,7 @@ namespace Phantasma.VM
                             var newPos = (short)Read16();
 
                             Expect(newPos >= 0);
-                            Expect(newPos < script.Length);
+                            Expect(newPos < currentContext.Script.Length);
 
                             if (opcode != Opcode.JMP)
                             {
@@ -315,14 +322,8 @@ namespace Phantasma.VM
 
                     case Opcode.RET:
                         {
-                            if (callStack.Count > 0)
-                            {
-                                var ofs = callStack.Pop();
-
-                                Expect(ofs < script.Length);
-
-                                InstructionPointer = ofs;
-
+                            if (frames.Count > 1)
+                            {                                
                                 PopFrame();
                             }
                             else
@@ -665,7 +666,16 @@ namespace Phantasma.VM
 
                             Expect(dst < MaxRegisterCount);
 
-                            var context = LoadContext(key);
+                            ExecutionContext context;
+
+                            if (_contextList.ContainsKey(key))
+                            {
+                                context = _contextList[key];
+                            }
+                            else
+                            {
+                                context = LoadContext(key);
+                            }
 
                             if (context == null)
                             {
@@ -677,14 +687,25 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    case Opcode.SWITCH:
+                        {
+                            var key = ReadBytes(KeyPair.PublicKeyLength);
+
+                            if (!_contextList.ContainsKey(key))
+                            {
+                                SetState(ExecutionState.Fault);
+                            }
+
+                            PushFrame(_contextList[key]);
+                            break;
+                        }
+
                     default:
                         {
                             SetState(ExecutionState.Fault);
                             return;
                         }
                 }
-
-
             }
             catch
             {
