@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Phantasma.Network.Kademlia;
+using System;
 
-namespace Phantasma.Network.Kademlia.Messages
+namespace Phantasma.Network
 {
 	/// <summary>
 	/// Represents a generic DHT RPC message
