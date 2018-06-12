@@ -65,10 +65,11 @@ namespace Phantasma.Core
 
             var cost = vm.gas;
 
-            /*if (chain.NativeToken != null && cost > 0)
+            // fee distribution TODO
+            if (chain.NativeTokenPubKey != null && cost > 0)
             {
-                chain.NativeToken.Burn(new Address(this.PublicKey), cost);
-            }*/
+                //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
+            }
 
             // TODO take storage changes from vm execution and apply to global state
             //this.Apply(chain, notify);

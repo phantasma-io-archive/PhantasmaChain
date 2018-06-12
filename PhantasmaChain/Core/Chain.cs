@@ -14,6 +14,8 @@ namespace Phantasma.Core
         private Dictionary<string,  Contract> _contractMap = new Dictionary<string, Contract>();
 
         public byte[] NativeTokenPubKey { get; private set; }
+        public byte[] DistributionPubKey { get; private set; }
+
         public IEnumerable<Block> Blocks => _blocks.Values;
 
         public uint Height => (uint)_blocks.Count;
@@ -66,13 +68,27 @@ namespace Phantasma.Core
             return true;
         }
 
-        private Block CreateGenesisBlock(KeyPair owner)
+        private Transaction GenerateNativeTokenIssueTx(KeyPair owner)
         {
-            var script = ScriptUtils.TokenIssueScript("Phantasma","SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
+            var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
             var tx = new Transaction(owner.PublicKey, script, 0, 0);
             tx.Sign(owner);
+            return tx;
+        }
 
-            var block = new Block(DateTime.UtcNow.ToTimestamp(), owner.PublicKey, new Transaction[] { tx });
+        private Transaction GenerateDistributionDeployTx(KeyPair owner)
+        {
+            var script = ScriptUtils.ContractDeployScript(DistributionContract.DefaultDistributionScript, DistributionContract.DefaultDistributionABI);
+            var tx = new Transaction(owner.PublicKey, script, 0, 0);
+            tx.Sign(owner);
+            return tx;
+        }
+
+        private Block CreateGenesisBlock(KeyPair owner)
+        {
+            var issueTx = GenerateNativeTokenIssueTx(owner);
+            var distTx = GenerateDistributionDeployTx(owner);
+            var block = new Block(DateTime.UtcNow.ToTimestamp(), owner.PublicKey, new Transaction[] { issueTx, distTx });
 
             return block;
         }
