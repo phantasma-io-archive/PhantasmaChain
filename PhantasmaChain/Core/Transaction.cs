@@ -17,7 +17,7 @@ namespace Phantasma.Core
         public byte[] Signature { get; private set; }
         public byte[] Hash { get; private set; }
 
-        protected Transaction Unserialize(BinaryReader reader)
+        private Transaction Unserialize(BinaryReader reader)
         {
             var publicKey = reader.ReadByteArray();
             var script = reader.ReadByteArray();
@@ -27,7 +27,7 @@ namespace Phantasma.Core
             return new Transaction(publicKey, script, fee, txOrder);
         }
 
-        protected void Serialize(BinaryWriter writer, bool withSignature)
+        private void Serialize(BinaryWriter writer, bool withSignature)
         {
             writer.WriteByteArray(this.PublicKey);
             writer.WriteByteArray(this.Script);
@@ -46,7 +46,7 @@ namespace Phantasma.Core
         }
 
         // TODO should run the script and return true if sucess or false if exception
-        protected bool Validate(Chain chain, out BigInteger fee)
+        private bool Validate(Chain chain, out BigInteger fee)
         {
             fee = 0;
             return true;
