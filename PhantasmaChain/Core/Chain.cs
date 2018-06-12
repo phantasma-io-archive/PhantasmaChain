@@ -6,19 +6,11 @@ using System.Linq;
 
 namespace Phantasma.Core
 {
-    public class ChainException : Exception
-    {
-        public ChainException(string msg) : base(msg)
-        {
-
-        }
-    }
-
     public partial class Chain
     {
         private Dictionary<byte[], Transaction> _transactions = new Dictionary<byte[], Transaction>(new ByteArrayComparer());
         private Dictionary<uint, Block> _blocks = new Dictionary<uint, Block>();
-        private Dictionary<byte[], Account> _accounts = new Dictionary<byte[], Account>(new ByteArrayComparer());
+        private Dictionary<byte[], Contract> _accounts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
 
         private Dictionary<string, Token> _tokenIDMap = new Dictionary<string, Token>();
 
@@ -88,7 +80,7 @@ namespace Phantasma.Core
             return block;
         }
 
-        public Account GetAccount(byte[] publicKey)
+        public Contract GetAccount(byte[] publicKey)
         {
             if (_accounts.ContainsKey(publicKey))
             {
@@ -98,13 +90,13 @@ namespace Phantasma.Core
             return null;
         }
 
-        public Account GetOrCreateAccount(byte[] publicKey)
+        public Contract GetOrCreateAccount(byte[] publicKey)
         {
             var account = GetAccount(publicKey);
 
             if (account == null)
             {
-                account = new Account(this, publicKey);
+                account = new Contract(this, publicKey);
                 _accounts[publicKey] = account;
             }
 
