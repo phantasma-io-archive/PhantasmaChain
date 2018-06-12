@@ -23,9 +23,9 @@ namespace Phantasma.Core
 
             Log.Message($"Deploying contract: {contract.PublicKey.PublicKeyToAddress()}");
 
-            if (NativeToken == null)
+            if (NativeTokenPubKey == null)
             {
-                NativeToken = new Token(contract.PublicKey);
+                NativeTokenPubKey = contract.PublicKey;
             }
 
             var obj = new VMObject();

@@ -11,12 +11,9 @@ namespace Phantasma.Core
         private Dictionary<byte[], Transaction> _transactions = new Dictionary<byte[], Transaction>(new ByteArrayComparer());
         private Dictionary<uint, Block> _blocks = new Dictionary<uint, Block>();
         private Dictionary<byte[], Contract> _accounts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
+        private Dictionary<string,  Contract> _contractMap = new Dictionary<string, Contract>();
 
-        private Dictionary<string, Token> _tokenIDMap = new Dictionary<string, Token>();
-
-        private Dictionary<string, Token> _tokenNameMap = new Dictionary<string, Token>();
-
-        public Token NativeToken { get; private set; }
+        public byte[] NativeTokenPubKey { get; private set; }
         public IEnumerable<Block> Blocks => _blocks.Values;
 
         public uint Height => (uint)_blocks.Count;
@@ -80,7 +77,7 @@ namespace Phantasma.Core
             return block;
         }
 
-        public Contract GetAccount(byte[] publicKey)
+        public Contract FindContract(byte[] publicKey)
         {
             if (_accounts.ContainsKey(publicKey))
             {
@@ -92,7 +89,7 @@ namespace Phantasma.Core
 
         public Contract GetOrCreateAccount(byte[] publicKey)
         {
-            var account = GetAccount(publicKey);
+            var account = FindContract(publicKey);
 
             if (account == null)
             {
@@ -101,26 +98,6 @@ namespace Phantasma.Core
             }
 
             return account;
-        }
-
-        public Token GetTokenByID(string symbol)
-        {
-            if (symbol != null && _tokenIDMap.ContainsKey(symbol))
-            {
-                return _tokenIDMap[symbol];
-            }
-
-            return null;
-        }
-
-        public Token GetTokenByName(string name)
-        {
-            if (!string.IsNullOrEmpty(name) && _tokenNameMap.ContainsKey(name))
-            {
-                return _tokenNameMap[name];
-            }
-
-            return null;
         }
     }
 }

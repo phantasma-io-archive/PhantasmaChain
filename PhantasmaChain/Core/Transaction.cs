@@ -65,10 +65,10 @@ namespace Phantasma.Core
 
             var cost = vm.gas;
 
-            if (chain.NativeToken != null && cost > 0)
+            /*if (chain.NativeToken != null && cost > 0)
             {
                 chain.NativeToken.Burn(new Address(this.PublicKey), cost);
-            }
+            }*/
 
             // TODO take storage changes from vm execution and apply to global state
             //this.Apply(chain, notify);
@@ -137,20 +137,16 @@ namespace Phantasma.Core
                 return false;
             }
 
-            if (chain.NativeToken != null)
+            if (chain.NativeTokenPubKey != null)
             {
                 if (this.Fee < cost)
                 {
                     return false;
                 }
 
-                var account = chain.GetAccount(this.PublicKey);
-                if (account == null)
-                {
-                    return false;
-                }
+                var balance = chain.GetTokenBalance(chain.NativeTokenPubKey, this.PublicKey);
 
-                if (chain.NativeToken.BalanceOf(new Address(account.PublicKey)) < this.Fee)
+                if (balance < this.Fee)
                 {
                     return false;
                 }

@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Phantasma.Core
 {
-    public abstract class Contract: IInteropObject, IContractABI
+    public abstract class Contract : IInteropObject, IContractABI
     {
         public BigInteger Order { get; internal set; }
 
@@ -37,6 +37,14 @@ namespace Phantasma.Core
         }
 
         private static readonly byte[] NameTag = Encoding.ASCII.GetBytes(".NAME");
+
+        public bool HasName {
+            get
+            {
+                var tag = PublicKey.Concat(NameTag).ToArray();
+                return _storage.ContainsKey(tag);
+            }
+        }
 
         public string Name
         {

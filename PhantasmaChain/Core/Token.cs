@@ -2,6 +2,7 @@
 using System;
 using System.Numerics;
 
+/*
 namespace Phantasma.Core
 {
     public class Token: IFungibleToken
@@ -13,6 +14,10 @@ namespace Phantasma.Core
         public BigInteger MaxSupply { get; private set; }
         public BigInteger CirculatingSupply { get; private set; }
         public BigInteger Decimals { get; private set; }
+
+        public byte[] Script => throw new NotImplementedException();
+
+        public byte[] ABI => throw new NotImplementedException();
 
         public Token(byte[] publicKey)
         {
@@ -72,3 +77,4 @@ namespace Phantasma.Core
         }
     }
 }
+*/

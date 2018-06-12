@@ -35,7 +35,7 @@ namespace Phantasma.Contracts
             handlers[name] = handler;
         }
 
-        public IFungibleToken NativeToken => Chain.NativeToken;
+        public IFungibleToken NativeToken => throw new NotImplementedException();
 
         public BigInteger CurrentHeight => Chain.Height;
 
