@@ -2,7 +2,7 @@
 
 namespace Phantasma.Core
 {
-    public class CustomContract : Contract
+    public sealed class CustomContract : Contract
     {
         private byte[] _publicKey;
         public override byte[] PublicKey => _publicKey;

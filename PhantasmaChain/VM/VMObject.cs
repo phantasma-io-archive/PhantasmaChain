@@ -20,7 +20,7 @@ namespace Phantasma.VM
         Object
     }
 
-    public class VMObject
+    public sealed class VMObject
     {
         public VMType Type { get; private set; }
         public bool IsEmpty => Data == null;

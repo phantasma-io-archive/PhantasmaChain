@@ -1,13 +1,11 @@
-﻿using Phantasma.Cryptography;
-using Phantasma.Utils;
-using System;
+﻿using Phantasma.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 
 namespace Phantasma.Core
 {
-    public class Block
+    public sealed class Block
     {
         public static readonly BigInteger InitialDifficulty = 127;
         public static readonly float IdealBlockTime = 5;

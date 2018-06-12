@@ -2,7 +2,7 @@
 
 namespace Phantasma.Core
 {
-    public class DistributionContract : Contract
+    public sealed class DistributionContract : Contract
     {
         public static readonly byte[] DefaultDistributionScript = new byte[] { (byte)Opcode.RET };
         public static readonly byte[] DefaultDistributionABI = new byte[] { };

@@ -53,7 +53,7 @@ namespace Phantasma.Contracts
         }
     }
 
-    public class ABI
+    public sealed class ABI
     {
         public readonly string Name;
 

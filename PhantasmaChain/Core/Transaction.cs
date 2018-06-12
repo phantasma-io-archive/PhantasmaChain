@@ -7,7 +7,7 @@ using System.Numerics;
 
 namespace Phantasma.Core
 {
-    public class Transaction: ITransaction
+    public sealed class Transaction: ITransaction
     {
         public byte[] PublicKey { get; }
         public BigInteger Fee { get; }

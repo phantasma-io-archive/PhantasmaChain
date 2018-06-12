@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Phantasma.Core
 {
-    public class KeyPair 
+    public sealed class KeyPair 
     {
         public readonly byte[] PrivateKey;
         public readonly byte[] PublicKey;

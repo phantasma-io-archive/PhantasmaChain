@@ -2,7 +2,7 @@
 
 namespace Phantasma.Core
 {
-    public class AccountContract : Contract
+    public sealed class AccountContract : Contract
     {
         public static readonly byte[] DefaultAccountScript = new byte[] { (byte)Opcode.RET };
         public static readonly byte[] DefaultAccountABI = new byte[] { };
