@@ -96,7 +96,7 @@ namespace Phantasma.Core
 
             if (account == null)
             {
-                account = new Contract(this, publicKey);
+                account = new AccountContract(this, publicKey);
                 _accounts[publicKey] = account;
             }
 

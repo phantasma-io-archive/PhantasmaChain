@@ -5,18 +5,6 @@ using System.Numerics;
 
 namespace Phantasma.Contracts
 {
-    public abstract class Contract : IContract
-    {
-        public void Expect(bool assertion)
-        {
-            throw new NotImplementedException();
-        }
-
-        public byte[] PublicKey { get; }
-
-        public IRuntime Runtime;
-    }
-
     public struct Address
     {
         public byte[] PublicKey { get; private set; }

@@ -5,12 +5,17 @@ namespace Phantasma.Contracts
 {
     public static class ContractExtensions
     {
+        public static void Expect(this IContractABI contract, bool assertion)
+        {
+            throw new NotImplementedException();
+        }
+
         public static Address GetSource(this ITransaction tx)
         {
             return new Address(tx.PublicKey);
         }
 
-        public static Address GetAddress(this IContract contract)
+        public static Address GetAddress(this IContractABI contract)
         {
             return new Address(contract.PublicKey);
         }

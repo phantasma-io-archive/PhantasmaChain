@@ -1,12 +1,14 @@
-﻿using Phantasma.Contracts;
-using System.Numerics;
+﻿using System.Numerics;
 using System;
 
 namespace Phantasma.Contracts
 {
-    public interface IContract
+    public interface IContractABI
     {
         byte[] PublicKey { get; }
+        byte[] Script { get; }
+        byte[] ABI { get; }
+        string Name { get; }
     }
 
     public interface ITransaction
@@ -41,10 +43,9 @@ namespace Phantasma.Contracts
         Timestamp Time { get; }
     }
 
-    public interface IToken: IContract
+    public interface IToken: IContractABI
     {
         string Symbol { get; }
-        string Name { get; }
 
         BigInteger BalanceOf(Address address);
     }
@@ -85,7 +86,7 @@ namespace Phantasma.Contracts
         Cancelled
     }
 
-    public interface ISale : IContract
+    public interface ISale : IContractABI
     {
         IFungibleToken GetToken();
         SaleState GetState();

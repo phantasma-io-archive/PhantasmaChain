@@ -14,21 +14,22 @@ namespace Phantasma.Core
         private void Chain_deploy(VirtualMachine vm)
         {
             var script = vm.currentFrame.GetRegister(0).AsByteArray();
+            var abi = vm.currentFrame.GetRegister(1).AsByteArray();
 
             var runtime = (RuntimeVM)vm;
             var tx = runtime.Transaction;
 
-            var pubKey = script.ScriptToPublicKey();
+            var contract = new CustomContract(this, script, abi);
 
-            Log.Message($"Deploying contract: {pubKey.PublicKeyToAddress()}");
+            Log.Message($"Deploying contract: {contract.PublicKey.PublicKeyToAddress()}");
 
             if (NativeToken == null)
             {
-                NativeToken = new Token(pubKey);
+                NativeToken = new Token(contract.PublicKey);
             }
 
             var obj = new VMObject();
-            obj.SetValue(pubKey, VMType.Address);
+            obj.SetValue(contract);
             vm.stack.Push(obj);
         }
     }
