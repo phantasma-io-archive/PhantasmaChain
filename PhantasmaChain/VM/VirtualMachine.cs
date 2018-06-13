@@ -72,7 +72,7 @@ namespace Phantasma.VM
             Expect(InstructionPointer < currentContext.Script.Length);
         }
 
-        public abstract bool ExecuteInterop(string method);
+        public abstract ExecutionState ExecuteInterop(string method);
         public abstract ExecutionContext LoadContext(byte[] key);
 
         public void Execute()
@@ -280,9 +280,9 @@ namespace Phantasma.VM
 
                             var method = Encoding.ASCII.GetString(bytes);
 
-                            if (!ExecuteInterop(method))
+                            var state = ExecuteInterop(method);
+                            if (state != ExecutionState.Running)
                             {
-                                SetState(ExecutionState.Fault);
                                 return;
                             }
 

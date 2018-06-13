@@ -9,7 +9,7 @@ namespace Phantasma.VM
 
         }
 
-        public override bool ExecuteInterop(string method)
+        public override ExecutionState ExecuteInterop(string method)
         {
             throw new NotImplementedException();
         }

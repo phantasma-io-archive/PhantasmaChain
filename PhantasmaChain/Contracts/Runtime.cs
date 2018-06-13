@@ -30,7 +30,7 @@ namespace Phantasma.Contracts
             chain.RegisterInterop(this);
         }
 
-        internal void RegisterMethod(string name, Action<VirtualMachine> handler)
+        internal void RegisterMethod(string name, Func<VirtualMachine, ExecutionState> handler)
         {
             handlers[name] = handler;
         }
@@ -39,17 +39,16 @@ namespace Phantasma.Contracts
 
         public BigInteger CurrentHeight => Chain.Height;
 
-        private Dictionary<string, Action<VirtualMachine>> handlers = new Dictionary<string, Action<VirtualMachine>>();
+        private Dictionary<string, Func<VirtualMachine, ExecutionState>> handlers = new Dictionary<string, Func<VirtualMachine, ExecutionState>>();
 
-        public override bool ExecuteInterop(string method)
+        public override ExecutionState ExecuteInterop(string method)
         {
             if (handlers.ContainsKey(method))
             {
-                handlers[method](this);
-                return true;
+                return handlers[method](this);
             }
 
-            return false;
+            return ExecutionState.Fault;
         }
 
         public Block GetBlock(BigInteger height)

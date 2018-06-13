@@ -9,8 +9,8 @@ namespace Phantasma.Core
     {
         private Dictionary<byte[], Transaction> _transactions = new Dictionary<byte[], Transaction>(new ByteArrayComparer());
         private Dictionary<uint, Block> _blocks = new Dictionary<uint, Block>();
-        private Dictionary<byte[], Contract> _accounts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
-        private Dictionary<string,  Contract> _contractMap = new Dictionary<string, Contract>();
+        private Dictionary<byte[], Contract> _contracts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
+        private TrieNode _contractLookup = new TrieNode();
 
         public byte[] NativeTokenPubKey { get; private set; }
         public byte[] DistributionPubKey { get; private set; }
@@ -92,11 +92,16 @@ namespace Phantasma.Core
             return block;
         }
 
+        public bool HasContract(byte[] publicKey)
+        {
+            return _contracts.ContainsKey(publicKey);
+        }
+
         public Contract FindContract(byte[] publicKey)
         {
-            if (_accounts.ContainsKey(publicKey))
+            if (_contracts.ContainsKey(publicKey))
             {
-                return _accounts[publicKey];
+                return _contracts[publicKey];
             }
 
             return null;
@@ -109,10 +114,18 @@ namespace Phantasma.Core
             if (account == null)
             {
                 account = new AccountContract(this, publicKey);
-                _accounts[publicKey] = account;
+                _contracts[publicKey] = account;
             }
 
             return account;
         }
+
+        // returns public key of the specified name if existing
+        public byte[] LookUpAccount(string name)
+        {
+            var pubKey = _contractLookup.Find(name);
+            return pubKey;
+        }
+
     }
 }
