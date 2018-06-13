@@ -15,7 +15,7 @@ namespace Phantasma.Node
         public const int MaxConnections = 64;
 
         public readonly ID ID;
-        private KademliaNode kNode;
+        private DHT dht;
 
         public Node(KeyPair keys, IEnumerable<Endpoint> seeds)
         {
@@ -36,7 +36,8 @@ namespace Phantasma.Node
                 server.Start(Port);
             }
 
-            kNode = new KademliaNode(server, this.ID);
+            var kademliaNode = new KademliaNode(server, this.ID);
+            this.dht = new DHT(seeds.First(), kademliaNode, false);
 
             listener.PeerConnectedEvent += peer =>
             {
