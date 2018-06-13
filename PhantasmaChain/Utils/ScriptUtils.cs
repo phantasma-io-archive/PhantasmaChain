@@ -30,7 +30,7 @@ namespace Phantasma.Utils
             return sb.ToScript();
         }
 
-        public static byte[] TransferScript(string symbol, byte[] fromKey, byte[] toKey, int amount)
+        public static byte[] TransferScript(byte[] tokenPublicKey, byte[] fromKey, byte[] toKey, int amount)
         {
             var sb = new ScriptBuilder();
             sb.Emit(VM.Opcode.RET);
