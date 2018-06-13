@@ -23,16 +23,15 @@ namespace Phantasma.Network.Kademlia
         /// <param name="dhtNode">The KademliaNode that is used to communicate using the protocol</param>
         /// <param name="alreadyBootstrapped">Checks if the node have or not to bootstrap</param>
         /// <param name="btpNode">The node to bootstrap with (can be leaved null)</param>
-		public DHT(Endpoint bootstrapNode, KademliaNode dhtNode = null, bool alreadyBootstrapped = false)
+		public DHT(Endpoint bootstrapNode, KademliaNode dhtNode, bool alreadyBootstrapped = false)
 		{
-            if (dhtNode != null)
+            if (dhtNode == null)
             {
-                this.dhtNode = dhtNode;
+                throw new ArgumentException("Kademlia node cant be null");
             }
-            else
-            {
-                dhtNode = new KademliaNode();
-            }
+
+            this.dhtNode = dhtNode;
+
             if (!alreadyBootstrapped)
             {
                 /*if (btpNode == "")

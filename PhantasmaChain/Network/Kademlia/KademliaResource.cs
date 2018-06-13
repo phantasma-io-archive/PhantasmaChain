@@ -12,8 +12,7 @@ namespace Phantasma.Network.Kademlia
         public KademliaResource(IEnumerable<byte> data)
         {
             this.Data = data.ToArray();
-            var hash = CryptoUtils.RIPEMD160(data);
-            this.Key = new ID(hash);
+            this.Key = ID.FromBytes(this.Data);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Phantasma.Network.Kademlia
     {
         #region identity
         private ID nodeID;
+        private NetManager manager;
         private Endpoint nodeEndpoint;
         #endregion
 
@@ -85,32 +86,6 @@ namespace Phantasma.Network.Kademlia
         #endregion
 		
 		#region Setup	
-		
-		/// <summary>
-		/// Make a node on a random available port, using an ID specific to this machine. It uses as address the default endpoint.
-		/// </summary>
-		public KademliaNode() : this(DEFAULT_ENDPOINT, ID.HostID())
-		{
-			// Nothing to do!
-		}
-		
-		/// <summary>
-		/// Make a node with a specified ID.
-		/// </summary>
-		/// <param name="id">The ID defined for the node</param>
-		public KademliaNode(ID id) : this(DEFAULT_ENDPOINT, id)
-		{
-			// Nothing to do!
-		}
-		
-		/// <summary>
-		/// Make a node on a specified address.
-		/// </summary>
-		/// <param name="addr">The address chosen for the node</param>
-		public KademliaNode(Endpoint addr) : this(addr, ID.HostID())
-		{
-			// Nothing to do!
-		}
 	
 		/// <summary>
 		/// Make a node on a specific address, with a specified ID and a specific transport Address.
@@ -119,12 +94,13 @@ namespace Phantasma.Network.Kademlia
 		/// <param name="addr">The address of the node</param>
         /// <param name="id">The ID of the node</param>
         /// <param name="transportAddr">The transport layer address of the node</param>
-		public KademliaNode(Endpoint addr, ID id)
+		public KademliaNode(NetManager manager, ID id)
 		{
             this.datastore = new LocalStorage();
+            this.manager = manager;
 
 			// Set up all our data
-            nodeEndpoint = addr;
+            nodeEndpoint = manager.LocalEndPoint;
 			nodeID = id;
 			contactCache = new BucketList(nodeID);
 			contactQueue = new List<Contact>();
@@ -554,9 +530,21 @@ namespace Phantasma.Network.Kademlia
         #endregion
 
         #region NETWORK
-        private KademliaNode CreateChannel(Message msg, Endpoint endpoint)
+        private bool SendMessage(Message msg, Endpoint endpoint)
         {
-            throw new NotImplementedException();
+            var peer = manager.FindPeer(endpoint);
+            if (peer == null)
+            {
+                return false;
+            }
+
+            var writer = new NetDataWriter();
+            byte[] bytes = null; // TODO
+            writer.Put(bytes);
+
+            peer.Send(writer, SendOptions.ReliableOrdered);  // Send with reliability
+
+            return true;
         }
 
         #endregion
@@ -584,7 +572,7 @@ namespace Phantasma.Network.Kademlia
 			}
 			
 			// Send it
-            CreateChannel(storeIt, storeAt.NodeEndPoint);
+            SendMessage(storeIt, storeAt.NodeEndPoint);
 		}
 		
 		/// <summary>
@@ -597,7 +585,7 @@ namespace Phantasma.Network.Kademlia
 		{
 			// Send message
 			FindNode question = new FindNode(nodeID, toFind, nodeEndpoint);
-            CreateChannel(question, ask.NodeEndPoint);
+            SendMessage(question, ask.NodeEndPoint);
             
             conversationIds[question.ConversationID] = false;
 		}
@@ -612,7 +600,7 @@ namespace Phantasma.Network.Kademlia
 		{
 			// Send message
 			FindValue question = new FindValue(nodeID, key, nodeEndpoint);
-            CreateChannel(question, ask.NodeEndPoint);
+            SendMessage(question, ask.NodeEndPoint);
 
             conversationIds[question.ConversationID] = false;
         }
@@ -626,7 +614,7 @@ namespace Phantasma.Network.Kademlia
         {
             // Send message
             Ping ping = new Ping(nodeID, nodeEndpoint);
-            CreateChannel(ping, toPing);
+            SendMessage(ping, toPing);
             conversationIds[ping.ConversationID] = false;
         }
 
@@ -639,7 +627,7 @@ namespace Phantasma.Network.Kademlia
 		{
 			// Send message
 			Ping ping = new Ping(nodeID, nodeEndpoint);
-            KademliaNode svc = CreateChannel(ping, toPing);
+            SendMessage(ping, toPing);
 
             DateTime called = DateTime.Now;
 			while(DateTime.Now < called.Add(MAX_SYNC_WAIT)) {
@@ -666,7 +654,7 @@ namespace Phantasma.Network.Kademlia
             HandleMessage(ping);
             Console.WriteLine("Handling ping from: " + ping.NodeEndpoint);
             Pong pong = new Pong(nodeID, ping, nodeEndpoint);
-            CreateChannel(pong, ping.NodeEndpoint);
+            SendMessage(pong, ping.NodeEndpoint);
         }
 
         /// <summary>
@@ -691,7 +679,7 @@ namespace Phantasma.Network.Kademlia
             HandleMessage(request);
             List<Contact> closeNodes = contactCache.CloseContacts(request.Target, request.SenderID);
             FindNodeResponse response = new FindNodeResponse(nodeID, request, closeNodes, nodeEndpoint);
-            CreateChannel(response, request.NodeEndpoint);
+            SendMessage(response, request.NodeEndpoint);
         }
 
         /// <summary>
@@ -720,13 +708,13 @@ namespace Phantasma.Network.Kademlia
             {
                 Log.Message("Sending data to requestor: " + request.NodeEndpoint.ToString());
                 FindValueDataResponse response = new FindValueDataResponse(nodeID, request, result, nodeEndpoint);
-                CreateChannel(response, request.NodeEndpoint);
+                SendMessage(response, request.NodeEndpoint);
             }
             else
             {
                 List<Contact> closeNodes = contactCache.CloseContacts(request.Key, request.SenderID);
                 FindValueContactResponse response = new FindValueContactResponse(nodeID, request, closeNodes, nodeEndpoint);
-                CreateChannel(response, request.NodeEndpoint);
+                SendMessage(response, request.NodeEndpoint);
             }
         }
 
@@ -744,7 +732,7 @@ namespace Phantasma.Network.Kademlia
             {
                 acceptedStoreRequests[request.ConversationID] = DateTime.Now; // Record that we accepted it
                 StoreResponse response = new StoreResponse(nodeID, request, true, nodeEndpoint);
-                CreateChannel(response, request.NodeEndpoint);
+                SendMessage(response, request.NodeEndpoint);
             }
             else if (request.PublicationTime > datastore.GetPublicationTime(request.Key, request.NodeEndpoint)
                     && request.PublicationTime < DateTime.Now.ToUniversalTime().Add(MAX_CLOCK_SKEW))
@@ -802,7 +790,7 @@ namespace Phantasma.Network.Kademlia
                     // Send along the data and remove it from the list
                     OutstandingStoreRequest toStore = sentStoreRequests[response.ConversationID];
                     StoreData r = new StoreData(nodeID, response, toStore.resource.Data, toStore.publication, nodeEndpoint);
-                    CreateChannel(r, response.NodeEndpoint);
+                    SendMessage(r, response.NodeEndpoint);
                     sentStoreRequests.Remove(response.ConversationID);
                 }
             }
