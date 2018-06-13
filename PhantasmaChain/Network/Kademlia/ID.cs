@@ -8,6 +8,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System.Linq;
 using Phantasma.Utils;
+using System.Collections.Generic;
 
 namespace Phantasma.Network.Kademlia
 {
@@ -26,10 +27,6 @@ namespace Phantasma.Network.Kademlia
 		// We want to be able to generate random IDs without timing issues.
 		private static Random rnd = new Random();
 		
-		// We need to have a mutex to control access to the hash-based host ID.
-		// Once one process on the machine under the current user gets it, no others can.
-		private static Mutex mutex;
-
 		/// <summary>
 		/// Make a new ID from a byte array.
 		/// </summary>
@@ -97,14 +94,31 @@ namespace Phantasma.Network.Kademlia
                      .ToArray()
                      );
         }
-		/// <summary>
-		/// XOR operator.
-		/// This is our distance metric in the DHT.
-		/// </summary>
-		/// <param name="a">The first ID to make xor</param>
+
+        public static ID FromBytes(IEnumerable<byte> bytes)
+        {
+            var hash = CryptoUtils.RIPEMD160(bytes);
+            return new ID(hash);
+        }
+
+        public static ID FromHash(byte[] hash)
+        {
+            if (hash == null || hash.Length != 20)
+            {
+                throw new ArgumentException("Invalid hash length");
+            }
+
+            return new ID(hash);
+        }
+
+        /// <summary>
+        /// XOR operator.
+        /// This is our distance metric in the DHT.
+        /// </summary>
+        /// <param name="a">The first ID to make xor</param>
         /// <param name="b">The second ID to make xor</param>
-		/// <returns></returns>
-		public static ID operator^(ID a, ID b)
+        /// <returns></returns>
+        public static ID operator^(ID a, ID b)
 		{
 			byte[] xoredData = new byte[ID_LENGTH];
 			// Do each byte in turn
@@ -289,50 +303,7 @@ namespace Phantasma.Network.Kademlia
 			rnd.NextBytes(data);
 			return new ID(data);
 		}
-		
-		/// <summary>
-		/// Get an ID that will be the same between different calls on the 
-		/// same machine by the same app run by the same user.
-		/// If that ID is taken, returns a random ID.
-		/// </summary>
-		/// <returns>The ID generated for host</returns>
-		public static ID HostID()
-		{
-			// If we already have a mutex handle, we're not the first.
-			if(mutex != null) {
-				Console.WriteLine("Using random ID");
-				return RandomID();
-			}
-			
-			// We might be the first
-			string assembly = Assembly.GetEntryAssembly().GetName().Name;
-			string libname = Assembly.GetExecutingAssembly().GetName().Name;
-			string mutexName = libname + "-" + assembly + "-ID";
-			try {
-				mutex = Mutex.OpenExisting(mutexName);
-				// If that worked, we're not the first
-				Console.WriteLine("Using random ID");
-				return RandomID();
-			} catch  {
-				// We're the first!
-				mutex = new Mutex(true, mutexName);
-				Console.WriteLine("Using host ID");
-				// TODO: Close on assembly unload?
-			}
-			
-			// Still the first! Calculate hashed ID.
-			string app = System.Reflection.Assembly.GetEntryAssembly().GetName().FullName;
-			string user = Environment.UserName;
-			string machine = Environment.MachineName + " " + Environment.OSVersion.VersionString;
-			
-			// Get macs
-			string macs = "";
-			foreach(NetworkInterface i in NetworkInterface.GetAllNetworkInterfaces()) {
-				macs += i.GetPhysicalAddress().ToString() + "\n";
-			}
-			return ID.Hash(app + user + machine + macs);
-		}
-		
+				
 		/// <summary>
 		/// Turn this ID into a string.
 		/// </summary>
