@@ -1,4 +1,6 @@
-﻿using Phantasma.Network;
+﻿using Phantasma.Core;
+using Phantasma.Network;
+using Phantasma.Network.Kademlia;
 using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
@@ -12,8 +14,13 @@ namespace Phantasma.Node
         public const int Port = 9600;
         public const int MaxConnections = 64;
 
-        public Node(IEnumerable<Endpoint> seeds)
+        public readonly ID ID;
+        private KademliaNode kNode;
+
+        public Node(KeyPair keys, IEnumerable<Endpoint> seeds)
         {
+            this.ID = ID.FromBytes(keys.PublicKey);
+
             var listener = new EventBasedNetListener();
             var server = new NetManager(listener, MaxConnections, "Phantasma");
 
@@ -28,6 +35,8 @@ namespace Phantasma.Node
             {
                 server.Start(Port);
             }
+
+            kNode = new KademliaNode(server, this.ID);
 
             listener.PeerConnectedEvent += peer =>
             {
