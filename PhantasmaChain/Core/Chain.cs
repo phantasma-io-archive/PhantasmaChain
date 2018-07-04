@@ -107,7 +107,7 @@ namespace Phantasma.Core
             return null;
         }
 
-        public Contract GetOrCreateAccount(byte[] publicKey)
+/*        public Contract GetOrCreateAccount(byte[] publicKey)
         {
             var account = FindContract(publicKey);
 
@@ -118,10 +118,10 @@ namespace Phantasma.Core
             }
 
             return account;
-        }
+        }*/
 
         // returns public key of the specified name if existing
-        public byte[] LookUpAccount(string name)
+        public byte[] LookUpContract(string name)
         {
             var pubKey = _contractLookup.Find(name);
             return pubKey;
