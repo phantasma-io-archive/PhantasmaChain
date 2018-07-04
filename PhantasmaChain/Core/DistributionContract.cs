@@ -4,14 +4,14 @@ namespace Phantasma.Core
 {
     public sealed class DistributionContract : Contract
     {
-        public static readonly byte[] DefaultDistributionScript = new byte[] { (byte)Opcode.RET };
-        public static readonly byte[] DefaultDistributionABI = new byte[] { };
+        public static readonly byte[] DefaultScript = new byte[] { (byte)Opcode.RET };
+        public static readonly byte[] DefaultABI = new byte[] { };
 
         private byte[] _publicKey;
         public override byte[] PublicKey => _publicKey;
 
-        public override byte[] Script => DefaultDistributionScript;
-        public override byte[] ABI => DefaultDistributionABI;
+        public override byte[] Script => DefaultScript;
+        public override byte[] ABI => DefaultABI;
 
         public DistributionContract(Chain chain, byte[] publicKey) : base(chain)
         {
