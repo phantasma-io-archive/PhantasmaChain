@@ -190,22 +190,22 @@ namespace Phantasma.Network.Kademlia
 		/// </summary>
         /// <returns>true if we are connected after all that, false otherwise.</returns>
 		public bool JoinNetwork() {
-			Log.Message("Joining network");
+			Logger.Message("Joining network");
 			IList<Contact> found = IterativeFindNode(nodeID);
 			if(found == null) {
-				Log.Message("Found <null list>");
+				Logger.Message("Found <null list>");
 			} else {
 				foreach(Contact c in found) {
-					Log.Message("Found contact: " + c.ToString());
+					Logger.Message("Found contact: " + c.ToString());
 				}
 			}			
 			// Should get very nearly all of them
 			// RefreshBuckets(); // Put this off until first maintainance.
 			if(contactCache.GetCount() > 0) {
-				Log.Message("Joined");
+				Logger.Message("Joined");
 				return true;
 			} else {
-				Log.Message("Failed to join! No other nodes known!");
+				Logger.Message("Failed to join! No other nodes known!");
 				return false;
 			}
 		}
@@ -271,10 +271,10 @@ namespace Phantasma.Network.Kademlia
 		/// </summary>
 		private void MindMaintainance()
 		{
-            Log.Message("Launched Maintenance thread!");
+            Logger.Message("Launched Maintenance thread!");
 			while(true) {
 				Thread.Sleep(MAINTAINANCE_INTERVAL);
-				Log.Message("Performing maintainance");
+				Logger.Message("Performing maintainance");
 				// Expire old
                 try
                 {
@@ -282,12 +282,12 @@ namespace Phantasma.Network.Kademlia
                 }
                 catch 
                 {
-                    Log.Debug("Expire not done");
+                    Logger.Debug("Expire not done");
                 }
 				
 				// Replicate all if needed
 				if(DateTime.Now > lastReplication.Add(REPLICATE_TIME)) {
-					Log.Debug("Replicating data");
+					Logger.Debug("Replicating data");
 
                     datastore.ForEachEntry(entry =>
                    {
@@ -297,7 +297,7 @@ namespace Phantasma.Network.Kademlia
                        }
                        catch (Exception ex)
                        {
-                           Log.Error("Could not replicate", ex);
+                           Logger.Error("Could not replicate", ex);
                        }
 
                    });
@@ -307,7 +307,7 @@ namespace Phantasma.Network.Kademlia
 				
 				// Refresh any needy buckets
 				RefreshBuckets();
-				Log.Message("Done Replication");
+				Logger.Message("Done Replication");
 			}
 		}
 		
@@ -316,12 +316,12 @@ namespace Phantasma.Network.Kademlia
 		/// </summary>
 		private void RefreshBuckets()
 		{
-			Log.Message("Refreshing buckets");
+			Logger.Message("Refreshing buckets");
 			IList<ID> toLookup = contactCache.IDsForRefresh(REFRESH_TIME);
 			foreach(ID key in toLookup) {
 				IterativeFindNode(key);
 			}
-			Log.Message("Refreshed buckets");
+			Logger.Message("Refreshed buckets");
 		}
 		
 		#endregion
@@ -337,7 +337,7 @@ namespace Phantasma.Network.Kademlia
         private void IterativeStore(KademliaResource resource, DateTime originalInsertion, Endpoint endpoint)
         {
             IList<Contact> closest = IterativeFindNode(resource.Key);
-            Log.Message("Storing at " + closest.Count + " nodes");
+            Logger.Message("Storing at " + closest.Count + " nodes");
             foreach (Contact c in closest)
             {
                 Console.WriteLine("Using passed endpoint (" + endpoint + ") for Sync Store");
@@ -362,7 +362,7 @@ namespace Phantasma.Network.Kademlia
             SortedList<ID, Contact> shortlist = new SortedList<ID, Contact>();
             foreach (Contact c in contactCache.CloseContacts(PARALELLISM, target, null))
             {
-                Log.Message("Adding contact " + c.NodeEndPoint + " to shortlist");
+                Logger.Message("Adding contact " + c.NodeEndPoint + " to shortlist");
                 shortlist.Add(c.NodeID, c);
             }
 
@@ -409,7 +409,7 @@ namespace Phantasma.Network.Kademlia
                     if (! conversationIds[id])
                     {
                         // Node down. Remove from shortlist and adjust loop indicies
-                        Log.Message("Node is down. Removing it from shortlist!");
+                        Logger.Message("Node is down. Removing it from shortlist!");
                         shortlist.RemoveAt(y);
                         shortlistIndex--;
                         y--;
@@ -507,7 +507,7 @@ namespace Phantasma.Network.Kademlia
                     if (!conversationIds[id])
                     {
                         // Node down. Remove from shortlist and adjust loop indicies
-                        Log.Message("Node is down. Removing it from shortlist!");
+                        Logger.Message("Node is down. Removing it from shortlist!");
                         shortlist.RemoveAt(y);
                         y--;
                         shortlistIndex--;
@@ -638,7 +638,7 @@ namespace Phantasma.Network.Kademlia
 				}
 				Thread.Sleep(CHECK_INTERVAL); // Otherwise wait for one
 			}
-			Log.Message("Ping timeout");
+			Logger.Message("Ping timeout");
 			return false; // Nothing in time
 		}
 		#endregion
@@ -702,11 +702,11 @@ namespace Phantasma.Network.Kademlia
         {
             FindValue request = (FindValue)o;
             HandleMessage(request);
-            Log.Message("Searching for: " + request.Key);
+            Logger.Message("Searching for: " + request.Key);
             KademliaResource result = datastore.Find(request.Key);
             if (result != null)
             {
-                Log.Message("Sending data to requestor: " + request.NodeEndpoint.ToString());
+                Logger.Message("Sending data to requestor: " + request.NodeEndpoint.ToString());
                 FindValueDataResponse response = new FindValueDataResponse(nodeID, request, result, nodeEndpoint);
                 SendMessage(response, request.NodeEndpoint);
             }
@@ -824,7 +824,7 @@ namespace Phantasma.Network.Kademlia
 		/// <param name="msg">The message received</param>
 		public void HandleMessage(Message msg)
 		{
-			Log.Message(nodeID.ToString() + " got " + msg.Name + " from " + msg.SenderID.ToString());
+			Logger.Message(nodeID.ToString() + " got " + msg.Name + " from " + msg.SenderID.ToString());
 			SawContact(new Contact(msg.SenderID, msg.NodeEndpoint));
 		}
 		
@@ -835,7 +835,7 @@ namespace Phantasma.Network.Kademlia
 		public void CacheResponse(Response response)
 		{
             HandleMessage(response);
-            Log.Message("Caching response");
+            Logger.Message("Caching response");
 			CachedResponse entry = new CachedResponse();
 			entry.arrived = DateTime.Now;
 			entry.response = response;
@@ -857,7 +857,7 @@ namespace Phantasma.Network.Kademlia
         /// <param name="vals">List to fill</param>
         private void findContactResponseCache(ref Dictionary<ID, bool> toSearch, ref List<Contact> vals)
         {
-            Log.Debug("Searching for contact in cache!");
+            Logger.Debug("Searching for contact in cache!");
             responseCacheLocker.WaitOne();
             List<ID> keys = new List<ID>(toSearch.Keys);
             for (int i = 0; i < toSearch.Count; i++)
@@ -889,7 +889,7 @@ namespace Phantasma.Network.Kademlia
         /// <param name="vals">List to fill</param>
         private void findDataResponseCache(ref Dictionary<ID, bool> toSearch, ref KademliaResource resource)
         {
-            Log.Debug("Searching for data in cache!");
+            Logger.Debug("Searching for data in cache!");
             responseCacheLocker.WaitOne();
             List<ID> keys = new List<ID>(toSearch.Keys);
             for (int i = 0; i < toSearch.Count; i++)
@@ -1001,7 +1001,7 @@ namespace Phantasma.Network.Kademlia
         /// </summary>
         private void MindCaches()
         {
-            Log.Message("Starting cache manager");
+            Logger.Message("Starting cache manager");
             while (true)
             {
                 // Do accepted requests
@@ -1075,7 +1075,7 @@ namespace Phantasma.Network.Kademlia
 		/// </summary>
 		private void MindBuckets()
 		{
-            Log.Message("Starting buckets periodic manager.");
+            Logger.Message("Starting buckets periodic manager.");
 			while(true) {
 				
 				// Handle all the queued contacts
@@ -1114,9 +1114,9 @@ namespace Phantasma.Network.Kademlia
 						if(!SyncPing(blocker.NodeEndPoint)) { // If the blocker doesn't respond, pick the applicant.
                             contactCache.Remove(blocker.NodeID);
 							contactCache.Put(applicant);
-							Log.Message("Choose applicant");
+							Logger.Message("Choose applicant");
 						} else {
-							Log.Message("Choose blocker");
+							Logger.Message("Choose blocker");
 						}
 					}
 					

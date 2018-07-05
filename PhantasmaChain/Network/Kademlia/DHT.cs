@@ -64,33 +64,33 @@ namespace Phantasma.Network.Kademlia
                 {
                     try
                     {
-                        Log.Debug("Bootstrapping with " + bootstrapNode);
+                        Logger.Debug("Bootstrapping with " + bootstrapNode);
                         if (dhtNode.Bootstrap(bootstrapNode))
                         {
-                            Log.Debug("OK!");
+                            Logger.Debug("OK!");
                         }
                         else
                         {
-                            Log.Debug("Failed.");
+                            Logger.Debug("Failed.");
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("Bad entry!", ex);
+                        Logger.Error("Bad entry!", ex);
                     }
                 }
             }
             else
             {
-                Log.Message("Self Bootstrapping");
+                Logger.Message("Self Bootstrapping");
                 dhtNode.Bootstrap();
             }
 			// Join the network officially
-			Log.Message("Trying to join network....");
+			Logger.Message("Trying to join network....");
 			if(dhtNode.JoinNetwork()) {
-                Log.Message("Online");
+                Logger.Message("Online");
 			} else {
-				Log.Warning("Unable to connect to Kademlia overlay!\n"
+				Logger.Warning("Unable to connect to Kademlia overlay!\n"
 				                   + "Check that nodes list has accessible nodes.");
 			}
 		}

@@ -32,7 +32,7 @@ namespace Phantasma.Utils
         void Write(LogEntryInfo info);
     }
 
-    public static class Log
+    public static class Logger
     {
         public static ILog Implementation { get; set; } = new ConsoleLog(LogEntryKind.Debug);
 

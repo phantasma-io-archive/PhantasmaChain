@@ -124,19 +124,19 @@ namespace Phantasma.Network
         [Conditional("DEBUG_MESSAGES")]
         internal static void DebugWrite(string str, params object[] args)
         {
-            Log.Message(string.Format(str, args));
+            Logger.Message(string.Format(str, args));
         }
 
         [Conditional("DEBUG_MESSAGES"), Conditional("DEBUG")]
         internal static void DebugWriteWarning(string str, params object[] args)
         {
-            Log.Warning(string.Format(str, args));
+            Logger.Warning(string.Format(str, args));
         }
 
         [Conditional("DEBUG_MESSAGES"), Conditional("DEBUG")]
         internal static void DebugWriteError(string str, params object[] args)
         {
-            Log.Error(string.Format(str, args));
+            Logger.Error(string.Format(str, args));
         }
     }
 }
