@@ -62,7 +62,7 @@ namespace Phantasma.Core
                 _transactions[tx.Hash] = tx;
             }
 
-            Log.Message($"Increased chain height to {block.Height}");
+            Logger.Message($"Increased chain height to {block.Height}");
 
             return true;
         }

@@ -1,6 +1,6 @@
 ﻿using Phantasma.Core;
 using Phantasma.Cryptography;
-using Phantasma.Network.Kademlia;
+using Phantasma.Consensus;
 using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
@@ -46,8 +46,6 @@ namespace PhantasmaCLIWallet
 
         static void Main(string[] args)
         {
-            var bytes = "540350540350540350".HexToBytes();
-
             //IProtocol protocol = new TcpSubnetProtocol("http://127.0.0.1", 2720, n);
             /*var protocol = new VirtualProtocol();
 

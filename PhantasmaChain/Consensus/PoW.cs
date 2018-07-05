@@ -1,9 +1,10 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Core;
+using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Phantasma.Core
+namespace Phantasma.Consensus
 {
     public class ProofOfWork
     {
