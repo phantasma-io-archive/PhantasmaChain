@@ -23,7 +23,7 @@ namespace Phantasma.Core
 
         private Transaction GenerateFeeGovernanceDeployTx(KeyPair owner)
         {
-            var script = ScriptUtils.ContractDeployScript(FeeGovernanceContract.DefaultScript, FeeGovernanceContract.DefaultABI);
+            var script = ScriptUtils.ContractDeployScript(GovernanceContract.DefaultScript, GovernanceContract.DefaultABI);
             var tx = new Transaction(owner.PublicKey, script, 0, 0);
             tx.Sign(owner);
             return tx;

@@ -1,0 +1,12 @@
+﻿using System;
+
+namespace Phantasma.Core
+{
+    public enum GovernanceSubject
+    {
+        FeeMultiplier,      // controls multiplier used for fee calculation
+        FeeAllocation,      // controls percentage of distribution of block fees
+        GovernanceContract, // TODO control system contract migration
+        DistributionContract, // TODO 
+    }
+}
