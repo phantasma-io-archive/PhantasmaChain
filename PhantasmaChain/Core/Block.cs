@@ -68,16 +68,7 @@ namespace Phantasma.Core
             {
                 using (var writer = new BinaryWriter(stream))
                 {
-                    writer.Write(Height);
-                    writer.Write(Timestamp);
-                    writer.WriteByteArray(PreviousHash);
-                    writer.WriteByteArray(MinerPublicKey);
-                    writer.Write((ushort)Events.Count);
-                    foreach (var evt in Events)
-                    {
-                        evt.Serialize(writer);
-                    }
-                    writer.Write(Nonce);
+                    Serialize(writer);
                 }
 
                 return stream.ToArray();
@@ -96,5 +87,37 @@ namespace Phantasma.Core
             var data = ToArray();
             this.Hash = CryptoUtils.Sha256(data);
         }
+
+        #region SERIALIZATION
+
+        internal void Serialize(BinaryWriter writer) {
+            writer.Write(Height);
+            writer.Write(Timestamp);
+            writer.WriteByteArray(PreviousHash);
+            writer.WriteByteArray(MinerPublicKey);
+            writer.Write((ushort)Events.Count);
+            foreach (var evt in Events)
+            {
+                evt.Serialize(writer);
+            }
+            writer.Write(Nonce);
+        }
+
+        internal static Block Unserialize(BinaryReader reader) {
+            var height = reader.ReadUInt32();
+            var timestamp = reader.ReadUInt32();
+            var prevHash = reader.ReadByteArray();
+            var minerPubKey = reader.ReadByteArray();
+
+            var evtCount = reader.ReadUInt16();
+            var evts = new Event[evtCount];
+            for (int i=0;i<evtCount; i++)
+            {
+                evts[i] = Event.Unserialize(reader); 
+            }
+            var nonce = reader.ReadUInt32();
+            return new Block(timestamp, minerPubKey, null);
+        }
+        #endregion
     }
 }
