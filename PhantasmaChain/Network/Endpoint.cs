@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using Phantasma.Utils;
 
 namespace Phantasma.Network
 {
@@ -61,6 +63,19 @@ namespace Phantasma.Network
                 throw new Exception("Invalid address: " + hostStr);
             }
             EndPoint = new IPEndPoint(ipAddress, port);
+        }
+
+        internal void Serialize(BinaryWriter writer)
+        {
+            writer.WriteShortString(this.Host);
+            writer.Write(Port);
+        }
+
+        internal Endpoint Unserialize(BinaryReader reader)
+        {
+            var host = reader.ReadShortString();
+            var port = reader.ReadInt32();
+            return new Endpoint(host, port);
         }
 
         private static IPAddress ResolveAddress(string hostStr, AddressFamily addressFamily)
