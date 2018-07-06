@@ -55,10 +55,7 @@
     <Compile Remove="Cryptography\ProtectedMemoryContext.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Argument.Validator" Version="1.0.2" />
     <PackageReference Include="BouncyCastle" Version="1.8.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Data.DataSetExtensions" />
