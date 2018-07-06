@@ -1,14 +1,17 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Phantasma.Network
 {
     internal class MempoolGetMessage : Message
     {
-        private BinaryReader reader;
-
-        public MempoolGetMessage(BinaryReader reader)
+        public MempoolGetMessage()
         {
-            this.reader = reader;
+        }
+
+        internal static MempoolGetMessage FromReader(BinaryReader reader)
+        {
+            return new MempoolGetMessage();
         }
     }
 }

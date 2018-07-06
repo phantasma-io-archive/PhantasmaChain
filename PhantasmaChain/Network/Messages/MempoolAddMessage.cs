@@ -1,14 +1,22 @@
-﻿using System.IO;
+﻿using Phantasma.Core;
+using System;
+using System.IO;
 
 namespace Phantasma.Network
 {
     internal class MempoolAddMessage : Message
     {
-        private BinaryReader reader;
+        public readonly Transaction transaction;
 
-        public MempoolAddMessage(BinaryReader reader)
+        public MempoolAddMessage(Transaction tx)
         {
-            this.reader = reader;
+            this.transaction = tx;
+        }
+
+        internal static MempoolAddMessage FromReader(BinaryReader reader)
+        {
+            var tx = Transaction.Unserialize(reader);
+            return new MempoolAddMessage(tx); 
         }
     }
 }

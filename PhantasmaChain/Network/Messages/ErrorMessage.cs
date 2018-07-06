@@ -15,7 +15,7 @@ namespace Phantasma.Network
             this.Text = text;
         }
 
-        internal static Message FromReader(BinaryReader reader)
+        internal static ErrorMessage FromReader(BinaryReader reader)
         {
             var code = reader.ReadUInt16();
             var text = reader.ReadShortString();

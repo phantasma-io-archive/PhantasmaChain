@@ -1,14 +1,17 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Phantasma.Network
 {
     internal class PeerJoinMessage : Message
     {
-        private BinaryReader reader;
-
-        public PeerJoinMessage(BinaryReader reader)
+        public PeerJoinMessage()
         {
-            this.reader = reader;
+        }
+
+        internal static PeerJoinMessage FromReader(BinaryReader reader)
+        {
+            return new PeerJoinMessage();
         }
     }
 }
