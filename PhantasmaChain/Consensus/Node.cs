@@ -194,12 +194,22 @@ namespace Phantasma.Consensus
                         break;
                     }
 
-                case Opcode.CHAIN_Height:
+                case Opcode.BLOCKS_List:
                     {
                         break;
                     }
 
-                case Opcode.CHAIN_Get:
+                case Opcode.BLOCKS_Request:
+                    {
+                        break;
+                    }
+
+                case Opcode.CHAIN_Request:
+                    {
+                        break;
+                    }
+
+                case Opcode.CHAIN_Values:
                     {
                         break;
                     }

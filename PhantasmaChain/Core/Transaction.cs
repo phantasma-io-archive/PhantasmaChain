@@ -17,7 +17,7 @@ namespace Phantasma.Core
         public byte[] Signature { get; private set; }
         public byte[] Hash { get; private set; }
 
-        private Transaction Unserialize(BinaryReader reader)
+        public static Transaction Unserialize(BinaryReader reader)
         {
             var publicKey = reader.ReadByteArray();
             var script = reader.ReadByteArray();

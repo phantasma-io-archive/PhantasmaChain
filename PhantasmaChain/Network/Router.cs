@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -74,9 +75,20 @@ namespace Phantasma.Network
 
         private Message GetMessage(Socket client)
         {
-            //byte[] data = new byte[100];
-            //int size = client.Receive(data);
-            throw new NotImplementedException();
+            try {
+                using (var stream = new NetworkStream(client))
+                {
+                    using (var reader = new BinaryReader(stream))
+                    {
+                        var msg = Message.Unserialize(reader);
+                        return msg;
+                    }
+                }
+            }
+            catch {
+                return null;
+            }
+
         }
     }
 }
