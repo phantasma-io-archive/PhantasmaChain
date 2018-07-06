@@ -1,120 +1,159 @@
-﻿using System.IO;
+﻿using Phantasma.Core;
+using Phantasma.Utils;
+using System.IO;
 
 namespace Phantasma.Network
 {
-	/// <summary>
-	/// Represents a generic network message
-	/// </summary>
-	public abstract class Message
-	{
+    /// <summary>
+    /// Represents a generic network message
+    /// </summary>
+    public abstract class Message
+    {
         public Opcode Opcode { get; private set; }
         public byte[] PublicKey { get; private set; }
         public byte[] Signature { get; private set; }
 
-        public bool IsSigned() {
+        public bool IsSigned()
+        {
             throw new System.NotImplementedException();
         }
 
-        public static Message Unserialize(BinaryReader reader) {
+        public static Message Unserialize(BinaryReader reader)
+        {
             var opcode = (Opcode)reader.ReadByte();
+            var pubKey = reader.ReadByteArray();
 
-            switch (opcode) {
+            if (pubKey != null && pubKey.Length != KeyPair.PublicKeyLength)
+            {
+                pubKey = null;
+            }
+
+            Message msg;
+
+            switch (opcode)
+            {
                 case Opcode.PEER_Join:
                     {
-                        return PeerJoinMessage.FromReader(reader);
+                        msg = PeerJoinMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.PEER_Leave:
                     {
-                        return PeerLeaveMessage.FromReader(reader);
+                        msg = PeerLeaveMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.PEER_List:
                     {
-                        return PeerListMessage.FromReader(reader);
+                        msg = PeerListMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Request:
                     {
-                        return RaftRequestMessage.FromReader(reader);
+                        msg = RaftRequestMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Vote:
                     {
-                        return RaftVoteMessage.FromReader(reader);
+                        msg = RaftVoteMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Lead:
                     {
-                        return RaftLeadMessage.FromReader(reader);
+                        msg = RaftLeadMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Replicate:
                     {
-                        return RaftReplicateMessage.FromReader(reader);
+                        msg = RaftReplicateMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Confirm:
                     {
-                        return RaftConfirmMessage.FromReader(reader);
+                        msg = RaftConfirmMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Commit:
                     {
-                        return RaftCommitMessage.FromReader(reader);
+                        msg = RaftCommitMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.RAFT_Beat:
                     {
-                        return RaftBeatMessage.FromReader(reader);
+                        msg = RaftBeatMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        return MempoolAddMessage.FromReader(reader);
+                        msg = MempoolAddMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.MEMPOOL_Get:
                     {
-                        return MempoolGetMessage.FromReader(reader);
+                        msg = MempoolGetMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.BLOCKS_Request:
                     {
-                        return ChainRequestMessage.FromReader(reader);
+                        msg = ChainRequestMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.BLOCKS_List:
                     {
-                        return ChainRequestMessage.FromReader(reader);
+                        msg = ChainRequestMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.CHAIN_Request:
                     {
-                        return BlockRequestMessage.FromReader(reader);
+                        msg = BlockRequestMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.CHAIN_Values:
                     {
-                        return new ChainValuesMessage.FromReader(reader);
+                        msg = ChainValuesMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.SHARD_Submit:
                     {
-                        return ShardSubmitMessage.FromReader(reader);
+                        msg = ShardSubmitMessage.FromReader(reader);
+                        break;
                     }
 
                 case Opcode.ERROR:
                     {
-                        return ErrorMessage.FromReader(reader);
+                        msg = ErrorMessage.FromReader(reader);
+                        break;
                     }
 
                 default: return null;
             }
+
+            if (pubKey != null)
+            {
+                msg.Signature = reader.ReadByteArray();
+            }
+
+            return msg;
         }
     }
 
-    public struct DeliveredMessage {
+    public struct DeliveredMessage
+    {
         public Message message;
         public Endpoint source;
     }
