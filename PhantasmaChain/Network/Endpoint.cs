@@ -65,13 +65,13 @@ namespace Phantasma.Network
             EndPoint = new IPEndPoint(ipAddress, port);
         }
 
-        internal void Serialize(BinaryWriter writer)
+        public void Serialize(BinaryWriter writer)
         {
             writer.WriteShortString(this.Host);
             writer.Write(Port);
         }
 
-        internal Endpoint Unserialize(BinaryReader reader)
+        public static Endpoint Unserialize(BinaryReader reader)
         {
             var host = reader.ReadShortString();
             var port = reader.ReadInt32();
