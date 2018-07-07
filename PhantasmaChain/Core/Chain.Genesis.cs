@@ -21,9 +21,17 @@ namespace Phantasma.Core
             return tx;
         }
 
-        private Transaction GenerateFeeGovernanceDeployTx(KeyPair owner)
+        private Transaction GenerateGovernanceDeployTx(KeyPair owner)
         {
             var script = ScriptUtils.ContractDeployScript(GovernanceContract.DefaultScript, GovernanceContract.DefaultABI);
+            var tx = new Transaction(owner.PublicKey, script, 0, 0);
+            tx.Sign(owner);
+            return tx;
+        }
+
+        private Transaction GenerateStakeDeployTx(KeyPair owner)
+        {
+            var script = ScriptUtils.ContractDeployScript(StakeContract.DefaultScript, StakeContract.DefaultABI);
             var tx = new Transaction(owner.PublicKey, script, 0, 0);
             tx.Sign(owner);
             return tx;
@@ -33,8 +41,9 @@ namespace Phantasma.Core
         {
             var issueTx = GenerateNativeTokenIssueTx(owner);
             var distTx = GenerateDistributionDeployTx(owner);
-            var feeGovTx = GenerateDistributionDeployTx(owner);
-            var block = new Block(DateTime.UtcNow.ToTimestamp(), owner.PublicKey, new Transaction[] { issueTx, distTx, feeGovTx });
+            var govTx = GenerateDistributionDeployTx(owner);
+            var stakeTx = GenerateStakeDeployTx(owner);
+            var block = new Block(DateTime.UtcNow.ToTimestamp(), owner.PublicKey, new Transaction[] { issueTx, distTx, govTx, stakeTx });
 
             return block;
         }

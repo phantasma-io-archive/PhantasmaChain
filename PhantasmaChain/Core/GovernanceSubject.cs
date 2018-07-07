@@ -9,5 +9,7 @@ namespace Phantasma.Core
         FeeAllocation,      // controls percentage of distribution of block fees
         GovernanceContract, // TODO control system contract migration
         DistributionContract, // TODO 
+        StakeContract,
+        StakeLimit, // minimum stakable amount
     }
 }
