@@ -11,5 +11,8 @@ namespace Phantasma.Core
         DistributionContract, // TODO 
         StakeContract,
         StakeLimit, // minimum stakable amount
+        BlockLimit,
+        TransactionLimit,
+        ShardLimit
     }
 }
