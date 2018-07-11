@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaNode", "PhantasmaN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaTests", "PhantasmaTests\PhantasmaTests.csproj", "{8749216C-0E74-4D9E-948A-BCC3E7295940}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaSpinner", "PhantasmaSpinner\PhantasmaSpinner.csproj", "{9C94AC8B-3B79-4214-90F2-173D6945AA7F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{8749216C-0E74-4D9E-948A-BCC3E7295940}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8749216C-0E74-4D9E-948A-BCC3E7295940}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8749216C-0E74-4D9E-948A-BCC3E7295940}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C94AC8B-3B79-4214-90F2-173D6945AA7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C94AC8B-3B79-4214-90F2-173D6945AA7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C94AC8B-3B79-4214-90F2-173D6945AA7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C94AC8B-3B79-4214-90F2-173D6945AA7F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
