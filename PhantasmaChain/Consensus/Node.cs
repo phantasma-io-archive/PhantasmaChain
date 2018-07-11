@@ -17,7 +17,7 @@ namespace Phantasma.Consensus
 
         private Router router;
 
-        private ConcurrentQueue<DeliveredMessage> queue;
+        private ConcurrentQueue<DeliveredMessage> queue = new ConcurrentQueue<DeliveredMessage>();
         private ConcurrentDictionary<UInt256, Transaction> _mempool = new ConcurrentDictionary<UInt256, Transaction>();
 
         public byte[] PublicKey => keys.PublicKey;
@@ -32,7 +32,7 @@ namespace Phantasma.Consensus
 
             this.State = RaftState.Invalid;
 
-            var router = new Router(seeds, Port, queue);
+            this.router = new Router(seeds, Port, queue);
 
             //var kademliaNode = new KademliaNode(server, this.ID);
             //this.dht = new DHT(seeds.First(), kademliaNode, false);
@@ -50,6 +50,16 @@ namespace Phantasma.Consensus
 
             Thread.Sleep(15);
             return true;
+        }
+
+        protected override void OnStart()
+        {
+            this.router.Start();
+        }
+
+        protected override void OnStop()
+        {
+            this.router.Stop();
         }
 
         private bool IsLeader(Message msg) {

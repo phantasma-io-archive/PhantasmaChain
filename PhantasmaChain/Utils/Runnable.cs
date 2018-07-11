@@ -1,34 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 
 namespace Phantasma.Utils
 {
     public abstract class Runnable
     {
-        private enum State {
-        Stopped,
-        Running,
-        Stopping
+        private enum State
+        {
+            Stopped,
+            Running,
+            Stopping
         }
 
-        private State _state;
-
-        private Thread _thread;
+        private State _state = State.Stopped;
 
         protected abstract bool Run();
 
-        public void Start() {
+        public void Start()
+        {
             if (_state != State.Stopped)
             {
                 return;
             }
 
+            _state = State.Running;
+
             new Thread(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
 
-                _state = State.Running;
                 OnStart();
 
                 do
@@ -46,14 +45,17 @@ namespace Phantasma.Utils
 
         public bool IsRunning => _state == State.Running;
 
-        public void Stop() {
-            if (_state != State.Running) {
+        public void Stop()
+        {
+            if (_state != State.Running)
+            {
                 return;
             }
 
             _state = State.Stopping;
 
-            while (_state == State.Stopping) {
+            while (_state == State.Stopping)
+            {
                 Thread.Sleep(100);
             }
         }
