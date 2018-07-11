@@ -19,6 +19,7 @@
         BLOCKS_List,
         CHAIN_Request,
         CHAIN_Values,
+        CHAIN_Notify,
         SHARD_Submit,
         DHT_GET,
         DHT_SET,

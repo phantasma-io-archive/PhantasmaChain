@@ -21,8 +21,12 @@ namespace Phantasma.Core
         
         public Block lastBlock { get; private set; }
 
-        public Chain(KeyPair owner)
-        {          
+        public readonly Logger Log;
+
+        public Chain(KeyPair owner, Logger log)
+        {
+            this.Log = Logger.Init(log);
+
             var block = CreateGenesisBlock(owner);
             if (!AddBlock(block))
             {
@@ -62,7 +66,7 @@ namespace Phantasma.Core
                 _transactions[tx.Hash] = tx;
             }
 
-            Logger.Message($"Increased chain height to {block.Height}");
+            Log.Message($"Increased chain height to {block.Height}");
 
             return true;
         }

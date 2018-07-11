@@ -46,13 +46,13 @@ namespace PhantasmaCLIWallet
             }
         }
 
-        static void TestChain() {
+        static void TestChain(Logger log) {
             Console.WriteLine("Initializng chain...");
 
             var owner = KeyPair.Random();
             Console.WriteLine("Genesis Address: " + owner.address);
 
-            var chain = new Chain(owner);
+            var chain = new Chain(owner, log);
 
             var miner = KeyPair.Random();
             var third = KeyPair.Random();
@@ -72,8 +72,9 @@ namespace PhantasmaCLIWallet
         static void Main(string[] args)
         {
             var node_keys = KeyPair.Random();
+            var log = new ConsoleLog();
             var seeds = new List<Endpoint>();
-            var node = new Node(node_keys, seeds);
+            var node = new Node(node_keys, seeds, log);
 
             Console.WriteLine("Phantasma Node starting...");
             node.Start();

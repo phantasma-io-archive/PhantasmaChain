@@ -24,15 +24,18 @@ namespace Phantasma.Consensus
 
         private KeyPair keys;
 
-        public Node(KeyPair keys, IEnumerable<Endpoint> seeds)
+        public readonly Logger Log;
+
+        public Node(KeyPair keys, IEnumerable<Endpoint> seeds, Logger log)
         {
             this.keys = keys;
+            this.Log = Logger.Init(log);
 
             //          this.ID = ID.FromBytes(keys.PublicKey);
 
             this.State = RaftState.Invalid;
 
-            this.router = new Router(seeds, Port, queue);
+            this.router = new Router(seeds, Port, queue, log);
 
             //var kademliaNode = new KademliaNode(server, this.ID);
             //this.dht = new DHT(seeds.First(), kademliaNode, false);

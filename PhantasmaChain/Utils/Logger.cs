@@ -10,122 +10,94 @@ namespace Phantasma.Utils
     /// </summary>
     public enum LogEntryKind
     {
-        Debug,
+        None,
         Message,
         Warning,
-        Error
+        Error,
+        Debug,
     }
 
-    /// <summary>
-    /// Keeps information related to a single log message.
-    /// </summary>
-    public struct LogEntryInfo
+    public abstract class Logger
     {
-        public LogEntryKind Kind;
-        public string Message;
-        public string File;
-    }
+        public LogEntryKind Level = LogEntryKind.Debug;
 
-    public interface ILog
-    {
-        LogEntryKind Level { get; set; }
-        void Write(LogEntryInfo info);
-    }
+        public abstract void Write(LogEntryKind kind, string msg);
 
-    public static class Logger
-    {
-        public static ILog Implementation { get; set; } = new ConsoleLog(LogEntryKind.Debug);
-
-        public static LogEntryKind Level
+        public void Message(string msg)
         {
-            get { return Implementation.Level; }
-            set { Implementation.Level = value; }
-        }
-
-        public static void Debug(string msg, params object[] args)
-        {
-            var diagInfo = new LogEntryInfo
+            if (this.Level < LogEntryKind.Message)
             {
-                Kind = LogEntryKind.Debug,
-                Message = args.Any() ? string.Format(msg, args) : msg
-            };
-
-            Implementation.Write(diagInfo);
-        }
-
-        public static void Message(string msg, params object[] args)
-        {
-            var diagInfo = new LogEntryInfo
-            {
-                Kind = LogEntryKind.Message,
-                Message = args.Any() ? string.Format(msg, args) : msg
-            };
-
-            Implementation.Write(diagInfo);
-        }
-
-        public static void Warning(string msg, params object[] args)
-        {
-            var diagInfo = new LogEntryInfo
-            {
-                Kind = LogEntryKind.Warning,
-                Message = args.Any() ? string.Format(msg, args) : msg
-            };
-
-            Implementation.Write(diagInfo);
-        }
-
-        public static void Error(string msg, params object[] args)
-        {
-            var diagInfo = new LogEntryInfo
-            {
-                Kind = LogEntryKind.Error,
-                Message = args.Any() ? string.Format(msg, args) : msg
-            };
-
-            Implementation.Write(diagInfo);
-        }
-
-        public static void Exception(Exception ex)
-        {
-            var diagInfo = new LogEntryInfo
-            {
-                Kind = LogEntryKind.Error,
-                Message = ex.ToString()
-            };
-
-            Implementation.Write(diagInfo);
-        }
-    }
-
-    public class ConsoleLog : ILog
-    {
-        public LogEntryKind Level { get; set; }
-
-        public ConsoleLog()
-        {
-            Level = LogEntryKind.Message;
-        }
-
-        public ConsoleLog(LogEntryKind level)
-        {
-            Level = level;
-        }
-
-        public void Write(LogEntryInfo info)
-        {
-            if (info.Kind < Level)
                 return;
+            }
 
-            Console.WriteLine(info.Message);
-            Debug.WriteLine(info.Message);
+            Write(LogEntryKind.Message, msg);
+        }
+
+        public void Debug(string msg)
+        {
+            if (this.Level < LogEntryKind.Debug)
+            {
+                return;
+            }
+
+            Write(LogEntryKind.Debug, msg);
+        }
+
+        internal static Logger Init(Logger log)
+        {
+            return log;
+        }
+
+        public void Warning(string msg)
+        {
+            if (this.Level < LogEntryKind.Warning)
+            {
+                return;
+            }
+
+            Write(LogEntryKind.Warning, msg);
+        }
+
+        public void Error(string msg)
+        {
+            if (this.Level < LogEntryKind.Error)
+            {
+                return;
+            }
+
+            Write(LogEntryKind.Error, msg);
+        }
+
+
+        public void Exception(Exception ex)
+        {
+            Error(ex.ToString());
         }
     }
 
-    public class FileLog : ILog
+    public class ConsoleLog : Logger
     {
-        public LogEntryKind Level { get; set; }
+        private static object _lock = new object();
 
+        public override void Write(LogEntryKind kind, string msg)
+        {
+            lock (_lock) {
+                var color = Console.ForegroundColor;
+                switch (kind) {
+                    case LogEntryKind.Error: Console.ForegroundColor = ConsoleColor.Red; break;
+                    case LogEntryKind.Warning: Console.ForegroundColor = ConsoleColor.Yellow; break;
+                    case LogEntryKind.Message: Console.ForegroundColor = ConsoleColor.Gray; break;
+                    case LogEntryKind.Debug: Console.ForegroundColor = ConsoleColor.Cyan; break;
+                    default: return;
+                }
+                Console.WriteLine(msg);
+                Console.ForegroundColor = color;
+            }
+        }
+    }
+
+    public class FileLog : Logger
+    {
         readonly string fileName;
 
         public FileLog(string file)
@@ -133,10 +105,9 @@ namespace Phantasma.Utils
             fileName = file;
         }
 
-        public void Write(LogEntryInfo info)
+        public override void Write(LogEntryKind kind, string msg)
         {
-            File.AppendAllLines(fileName, new string[] { info.Message });
-            Debug.WriteLine(info.Message);
+            File.AppendAllLines(fileName, new string[] { msg });
         }
     }
 }

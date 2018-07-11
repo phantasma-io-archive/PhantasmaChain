@@ -20,16 +20,19 @@ namespace Phantasma.Network
 
         private ConcurrentQueue<DeliveredMessage> _queue;
 
+        public readonly Logger Log;
 
-        public Router(IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue) {
+        public Router(IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue, Logger log) {
             this._queue = queue;
+
+            this.Log = Logger.Init(log);
 
             listener = new TcpListener(IPAddress.Any, port);
         }
 
         protected override void OnStart()
         {
-            Logger.Message("Starting TCP listener...");
+            Log.Message("Starting TCP listener...");
 
             listener.Start();
         }
@@ -42,7 +45,7 @@ namespace Phantasma.Network
         protected override bool Run()
         {
             Socket client = listener.AcceptSocket();
-            Logger.Message("New connection accepted.");
+            Log.Message("New connection accepted.");
 
             new Thread(() =>
             {
