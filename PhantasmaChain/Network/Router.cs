@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading;
 
 namespace Phantasma.Network
 {
-    public class Router
+    public class Router: Runnable
     {
         private List<Peer> _peers = new List<Peer>();
 
@@ -23,29 +24,32 @@ namespace Phantasma.Network
         public Router(IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue) {
             this._queue = queue;
 
-            Console.WriteLine("Starting TCP listener...");
-
             listener = new TcpListener(IPAddress.Any, port);
+        }
+
+        protected override void OnStart()
+        {
+            Logger.Message("Starting TCP listener...");
 
             listener.Start();
+        }
+
+        protected override void OnStop()
+        {
+            listener.Stop();
+        }
+
+        protected override bool Run()
+        {
+            Socket client = listener.AcceptSocket();
+            Logger.Message("New connection accepted.");
 
             new Thread(() =>
             {
-                Thread.CurrentThread.IsBackground = true;
-
-                while (true)
-                {
-                    Socket client = listener.AcceptSocket();
-                    Console.WriteLine("Connection accepted.");
-
-                    new Thread(() =>
-                    {
-                        HandleConnection(client);
-                    }).Start();
-                }
-
-                listener.Stop();
+                HandleConnection(client);
             }).Start();
+
+            return true;
         }
 
         private void HandleConnection(Socket client) {

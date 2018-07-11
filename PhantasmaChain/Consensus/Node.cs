@@ -10,12 +10,10 @@ using System.Threading;
 
 namespace Phantasma.Consensus
 {
-    public sealed partial class Node
+    public sealed partial class Node: Runnable
     {
         public const int Port = 9600;
         public const int MaxConnections = 64;
-
-        public bool Running { get; private set; }
 
         private Router router;
 
@@ -30,7 +28,7 @@ namespace Phantasma.Consensus
         {
             this.keys = keys;
 
-  //          this.ID = ID.FromBytes(keys.PublicKey);
+            //          this.ID = ID.FromBytes(keys.PublicKey);
 
             this.State = RaftState.Invalid;
 
@@ -38,27 +36,20 @@ namespace Phantasma.Consensus
 
             //var kademliaNode = new KademliaNode(server, this.ID);
             //this.dht = new DHT(seeds.First(), kademliaNode, false);
+        }
 
+        protected override bool Run()
+        {
+            UpdateRAFT();
 
-            new Thread(() =>
+            DeliveredMessage item;
+            while (queue.TryDequeue(out item))
             {
-                Thread.CurrentThread.IsBackground = true;
+                HandleMessage(item);
+            };
 
-                this.Running = true;
-                while (Running)
-                {
-                    UpdateRAFT();
-
-                    DeliveredMessage item;
-                    while (queue.TryDequeue(out item)) {
-                        HandleMessage(item);
-                    };
-
-                    Thread.Sleep(15);
-                }
-
-                //router.Stop();
-            }).Start();
+            Thread.Sleep(15);
+            return true;
         }
 
         private bool IsLeader(Message msg) {
@@ -224,13 +215,6 @@ namespace Phantasma.Consensus
                         break;
                     }
             }
-        }
-
-        private bool _active;
-
-        public void Stop()
-        {
-            this.Running = false;
         }
 
 
