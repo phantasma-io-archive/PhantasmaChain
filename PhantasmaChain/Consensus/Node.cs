@@ -12,9 +12,8 @@ namespace Phantasma.Consensus
 {
     public sealed partial class Node: Runnable
     {
-        public const int Port = 9600;
-        public const int MaxConnections = 64;
-
+        public readonly int Port;
+ 
         private Router router;
 
         private ConcurrentQueue<DeliveredMessage> queue = new ConcurrentQueue<DeliveredMessage>();
@@ -22,13 +21,15 @@ namespace Phantasma.Consensus
 
         public byte[] PublicKey => keys.PublicKey;
 
-        private KeyPair keys;
+        public readonly KeyPair keys;
 
         public readonly Logger Log;
 
-        public Node(KeyPair keys, IEnumerable<Endpoint> seeds, Logger log)
+        public Node(KeyPair keys, int port, IEnumerable<Endpoint> seeds, Logger log)
         {
             this.keys = keys;
+            this.Port = port;
+
             this.Log = Logger.Init(log);
 
             //          this.ID = ID.FromBytes(keys.PublicKey);

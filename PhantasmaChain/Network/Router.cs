@@ -22,17 +22,19 @@ namespace Phantasma.Network
 
         public readonly Logger Log;
 
-        public Router(IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue, Logger log) {
-            this._queue = queue;
+        public readonly int Port;
 
+        public Router(IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue, Logger log) {
+            this.Port = port;
             this.Log = Logger.Init(log);
+            this._queue = queue;
 
             listener = new TcpListener(IPAddress.Any, port);
         }
 
         protected override void OnStart()
         {
-            Log.Message("Starting TCP listener...");
+            Log.Message($"Starting TCP listener on {Port}...");
 
             listener.Start();
         }
