@@ -9,17 +9,17 @@ namespace Phantasma.Network
         public readonly ushort Code;
         public readonly string Text;
 
-        public ErrorMessage(ushort code, string text = null)
+        public ErrorMessage(byte[] pubKey, ushort code, string text = null) :base(Opcode.ERROR, pubKey)
         {
             this.Code = code;
             this.Text = text;
         }
 
-        internal static ErrorMessage FromReader(BinaryReader reader)
+        internal static ErrorMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var code = reader.ReadUInt16();
             var text = reader.ReadShortString();
-            return new ErrorMessage(code, text);
+            return new ErrorMessage(pubKey, code, text);
         }
     }
 }

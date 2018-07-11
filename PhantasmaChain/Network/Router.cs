@@ -73,7 +73,8 @@ namespace Phantasma.Network
                 else {
                     Log.Message("Connected to seed " + target);
                     client.EndConnect(result);
-                    _connections.Add(client.Client);
+
+                    InitConnection(client.Client);
                     return true;
                 }
             }
@@ -98,7 +99,14 @@ namespace Phantasma.Network
             Socket socket = listener.EndAcceptSocket(ar);
             Log.Message("New connection accepted from "+socket.RemoteEndPoint.ToString());
 
+            InitConnection(socket);
+        }
+
+        public void InitConnection(Socket socket) {
             _connections.Add(socket);
+
+            var msg = new PeerJoinMessage(null);
+//            msg.Serialize()
         }
 
         private void HandleConnection(Socket client) {

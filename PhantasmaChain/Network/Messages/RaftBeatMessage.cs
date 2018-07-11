@@ -7,15 +7,15 @@ namespace Phantasma.Network
     {
         private readonly uint Term;
 
-        public RaftBeatMessage(uint term)
+        public RaftBeatMessage(byte[] pubKey, uint term) :base(Opcode.RAFT_Beat, pubKey)
         {
             this.Term = term;
         }
 
-        internal static RaftBeatMessage FromReader(BinaryReader reader)
+        internal static RaftBeatMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var term = reader.ReadUInt32();
-            return new RaftBeatMessage(term);
+            return new RaftBeatMessage(pubKey, term);
         }
     }
 }

@@ -7,17 +7,17 @@ namespace Phantasma.Network
     {
         public readonly byte[] BlockHash;
 
-        public RaftConfirmMessage(byte[] hash)
+        public RaftConfirmMessage(byte[] pubKey, byte[] hash) : base(Opcode.RAFT_Confirm, pubKey)
         {
             Throw.IfNull(hash, nameof(hash));
             this.BlockHash = hash;
         }
 
-        internal static RaftConfirmMessage FromReader(BinaryReader reader)
+        internal static RaftConfirmMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var hash = reader.ReadByteArray();
 
-            return new RaftConfirmMessage(hash);
+            return new RaftConfirmMessage(pubKey, hash);
         }
     }
 }

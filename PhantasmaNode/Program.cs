@@ -74,7 +74,8 @@ namespace PhantasmaCLIWallet
             var node_keys = KeyPair.Random();
             var log = new ConsoleLog();
             var seeds = new List<Endpoint>();
-            var node = new Node(node_keys, seeds, log);
+            int port = 6060;
+            var node = new Node(node_keys, port, seeds, log);
 
             Console.WriteLine("Phantasma Node starting...");
             node.Start();

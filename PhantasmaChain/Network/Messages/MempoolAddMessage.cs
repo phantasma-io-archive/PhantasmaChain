@@ -8,15 +8,15 @@ namespace Phantasma.Network
     {
         public readonly Transaction transaction;
 
-        public MempoolAddMessage(Transaction tx)
+        public MempoolAddMessage(byte[] pubKey, Transaction tx) : base(Opcode.MEMPOOL_Add, pubKey)
         {
             this.transaction = tx;
         }
 
-        internal static MempoolAddMessage FromReader(BinaryReader reader)
+        internal static MempoolAddMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var tx = Transaction.Unserialize(reader);
-            return new MempoolAddMessage(tx); 
+            return new MempoolAddMessage(pubKey, tx);
         }
     }
 }

@@ -9,16 +9,16 @@ namespace Phantasma.Network
     {
         public readonly Block block;
 
-        public RaftReplicateMessage(Block block)
+        public RaftReplicateMessage(byte[] pubKey, Block block) : base(Opcode.RAFT_Replicate, pubKey)
         {
             Throw.IfNull(block, nameof(block));
             this.block = block;
         }
 
-        internal static RaftReplicateMessage FromReader(BinaryReader reader)
+        internal static RaftReplicateMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var block = Block.Unserialize(reader);
-            return new RaftReplicateMessage(block);
+            return new RaftReplicateMessage(pubKey, block);
         }
     }
 }

@@ -71,7 +71,7 @@ namespace Phantasma.Consensus
                 return false;
             }
 
-            return msg.IsSigned() && Leader.SequenceEqual(msg.PublicKey);
+            return msg.IsSigned && Leader.SequenceEqual(msg.PublicKey);
         }
 
         private void UpdateLeader(Message msg) {
@@ -90,7 +90,7 @@ namespace Phantasma.Consensus
                 case Opcode.PEER_Join:
                     {
                         // TODO add peer to list and send him list of peers
-                        if (msg.IsSigned())
+                        if (msg.IsSigned)
                         {
                         }
                         else {

@@ -13,9 +13,11 @@ namespace Phantasma.Network
         public byte[] PublicKey { get; private set; }
         public byte[] Signature { get; private set; }
 
-        public bool IsSigned()
-        {
-            throw new System.NotImplementedException();
+        public bool IsSigned => PublicKey != null && Signature != null;
+
+        public Message(Opcode opcode, byte[] publicKey) {
+            this.Opcode = opcode;
+            this.PublicKey = publicKey;
         }
 
         public static Message Unserialize(BinaryReader reader)
@@ -34,109 +36,109 @@ namespace Phantasma.Network
             {
                 case Opcode.PEER_Join:
                     {
-                        msg = PeerJoinMessage.FromReader(reader);
+                        msg = PeerJoinMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.PEER_Leave:
                     {
-                        msg = PeerLeaveMessage.FromReader(reader);
+                        msg = PeerLeaveMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.PEER_List:
                     {
-                        msg = PeerListMessage.FromReader(reader);
+                        msg = PeerListMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Request:
                     {
-                        msg = RaftRequestMessage.FromReader(reader);
+                        msg = RaftRequestMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Vote:
                     {
-                        msg = RaftVoteMessage.FromReader(reader);
+                        msg = RaftVoteMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Lead:
                     {
-                        msg = RaftLeadMessage.FromReader(reader);
+                        msg = RaftLeadMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Replicate:
                     {
-                        msg = RaftReplicateMessage.FromReader(reader);
+                        msg = RaftReplicateMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Confirm:
                     {
-                        msg = RaftConfirmMessage.FromReader(reader);
+                        msg = RaftConfirmMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Commit:
                     {
-                        msg = RaftCommitMessage.FromReader(reader);
+                        msg = RaftCommitMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Beat:
                     {
-                        msg = RaftBeatMessage.FromReader(reader);
+                        msg = RaftBeatMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        msg = MempoolAddMessage.FromReader(reader);
+                        msg = MempoolAddMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Get:
                     {
-                        msg = MempoolGetMessage.FromReader(reader);
+                        msg = MempoolGetMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.BLOCKS_Request:
                     {
-                        msg = ChainRequestMessage.FromReader(reader);
+                        msg = ChainRequestMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.BLOCKS_List:
                     {
-                        msg = ChainRequestMessage.FromReader(reader);
+                        msg = ChainRequestMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.CHAIN_Request:
                     {
-                        msg = BlockRequestMessage.FromReader(reader);
+                        msg = BlockRequestMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.CHAIN_Values:
                     {
-                        msg = ChainValuesMessage.FromReader(reader);
+                        msg = ChainValuesMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.SHARD_Submit:
                     {
-                        msg = ShardSubmitMessage.FromReader(reader);
+                        msg = ShardSubmitMessage.FromReader(pubKey, reader);
                         break;
                     }
 
                 case Opcode.ERROR:
                     {
-                        msg = ErrorMessage.FromReader(reader);
+                        msg = ErrorMessage.FromReader(pubKey, reader);
                         break;
                     }
 

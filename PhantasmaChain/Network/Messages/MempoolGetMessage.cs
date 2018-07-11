@@ -5,13 +5,13 @@ namespace Phantasma.Network
 {
     internal class MempoolGetMessage : Message
     {
-        public MempoolGetMessage()
+        public MempoolGetMessage(byte[] pubKey) :base(Opcode.MEMPOOL_Get, pubKey)
         {
         }
 
-        internal static MempoolGetMessage FromReader(BinaryReader reader)
+        internal static MempoolGetMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
-            return new MempoolGetMessage();
+            return new MempoolGetMessage(pubKey);
         }
     }
 }

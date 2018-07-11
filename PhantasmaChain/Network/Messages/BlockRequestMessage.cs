@@ -10,17 +10,17 @@ namespace Phantasma.Network
         private readonly BigInteger Min;
         private readonly BigInteger Max;
 
-        public BlockRequestMessage(BigInteger min, BigInteger max)
+        public BlockRequestMessage(byte[] pubKey, BigInteger min, BigInteger max) :base(Opcode.BLOCKS_Request, pubKey)
         {
             this.Min = min;
             this.Max = max;
         }
 
-        internal static BlockRequestMessage FromReader(BinaryReader reader)
+        internal static BlockRequestMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var min = reader.ReadBigInteger();
             var max = reader.ReadBigInteger();
-            return new BlockRequestMessage(min, max);
+            return new BlockRequestMessage(pubKey, min, max);
         }
 
     }

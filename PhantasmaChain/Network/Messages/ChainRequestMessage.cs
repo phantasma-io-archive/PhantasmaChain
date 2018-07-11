@@ -6,15 +6,15 @@ namespace Phantasma.Network
     {
         public readonly uint Flags;
 
-        public ChainRequestMessage(uint flags = 0)
+        public ChainRequestMessage(byte[] pubKey, uint flags) :base (Opcode.CHAIN_Request, pubKey)
         {
-            this.Flags = 0;
+            this.Flags = flags;
         }
 
-        internal static ChainRequestMessage FromReader(BinaryReader reader)
+        internal static ChainRequestMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var flags = reader.ReadUInt32();
-            return new ChainRequestMessage(flags);
+            return new ChainRequestMessage(pubKey, flags);
         }
     }
 }

@@ -13,13 +13,13 @@ namespace Phantasma.Network
 
         private Transaction[] _transactions;
 
-        public ShardSubmitMessage(uint shardID, IEnumerable<Transaction> transactions)
+        public ShardSubmitMessage(byte[] pubKey, uint shardID, IEnumerable<Transaction> transactions) : base(Opcode.SHARD_Submit, pubKey)
         {
             this.ShardID = shardID;
             this._transactions = transactions.ToArray();
         }
 
-        internal static Message FromReader(BinaryReader reader)
+        internal static Message FromReader(byte[] pubKey, BinaryReader reader)
         {
             var shardID = reader.ReadUInt32();
             var txCount = reader.ReadUInt16();
@@ -29,7 +29,7 @@ namespace Phantasma.Network
                 var tx = Transaction.Unserialize(reader);
             }
 
-            return new ShardSubmitMessage(shardID, txs);
+            return new ShardSubmitMessage(pubKey, shardID, txs);
         }
     }
 }

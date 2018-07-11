@@ -5,13 +5,13 @@ namespace Phantasma.Network
 {
     internal class PeerLeaveMessage : Message
     {
-        public PeerLeaveMessage()
+        public PeerLeaveMessage(byte[] pubKey) : base( Opcode.PEER_Leave, pubKey)
         {
         }
 
-        internal static PeerLeaveMessage FromReader(BinaryReader reader)
+        internal static PeerLeaveMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
-            return new PeerLeaveMessage();
+            return new PeerLeaveMessage(pubKey);
         }
     }
 }

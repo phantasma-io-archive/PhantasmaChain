@@ -5,13 +5,13 @@ namespace Phantasma.Network
 {
     internal class PeerJoinMessage : Message
     {
-        public PeerJoinMessage()
+        public PeerJoinMessage(byte[] pubKey) : base(Opcode.PEER_Join, pubKey)
         {
         }
 
-        internal static PeerJoinMessage FromReader(BinaryReader reader)
+        internal static PeerJoinMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
-            return new PeerJoinMessage();
+            return new PeerJoinMessage(pubKey);
         }
     }
 }

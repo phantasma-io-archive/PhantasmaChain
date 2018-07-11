@@ -8,16 +8,16 @@ namespace Phantasma.Network
     {
         public readonly byte[] BlockHash;
 
-        public RaftCommitMessage(byte[] hash)
+        public RaftCommitMessage(byte[] pubKey, byte[] hash) : base(Opcode.RAFT_Commit, pubKey)
         {
             this.BlockHash = hash;
         }
 
-        internal static RaftCommitMessage FromReader(BinaryReader reader)
+        internal static RaftCommitMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var hash = reader.ReadByteArray();
 
-            return new RaftCommitMessage(hash);
+            return new RaftCommitMessage(pubKey, hash);
         }
     }
 }

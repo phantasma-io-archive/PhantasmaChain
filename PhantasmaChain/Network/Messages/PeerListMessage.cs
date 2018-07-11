@@ -10,12 +10,12 @@ namespace Phantasma.Network
         private PeerInfo[] _peers;
         public IEnumerable<PeerInfo> Peers => _peers;
 
-        public PeerListMessage(IEnumerable<PeerInfo> peers)
+        public PeerListMessage(byte[] pubKey, IEnumerable<PeerInfo> peers) : base(Opcode.PEER_List, pubKey)
         {
             this._peers = peers.ToArray();
         }
 
-        internal static PeerListMessage FromReader(BinaryReader reader)
+        internal static PeerListMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var peerCount = reader.ReadUInt32();
             var peers = new PeerInfo[peerCount];
@@ -24,7 +24,7 @@ namespace Phantasma.Network
                 peers[i] = PeerInfo.Unserialize(reader);
             }
 
-            return new PeerListMessage(peers);
+            return new PeerListMessage(pubKey, peers);
         }
     }
 }

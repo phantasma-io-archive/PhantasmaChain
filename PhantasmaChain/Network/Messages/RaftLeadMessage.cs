@@ -10,19 +10,19 @@ namespace Phantasma.Network
         private PeerVote[] votes;
         public IEnumerable<PeerVote> Votes => votes;
 
-        public RaftLeadMessage(IEnumerable<PeerVote> votes)
+        public RaftLeadMessage(byte[] pubKey, IEnumerable<PeerVote> votes) : base(Opcode.RAFT_Lead, pubKey)
         {
             this.votes = votes.ToArray();
         }
 
-        internal static RaftLeadMessage FromReader(BinaryReader reader)
+        internal static RaftLeadMessage FromReader(byte[] pubKey, BinaryReader reader)
         {
             var sigCount = reader.ReadUInt32();
             var sigs = new PeerVote[sigCount];
             for (int i = 0; i < sigCount; i++) {
                 sigs[i] = PeerVote.Unserialize(reader);
             }
-            return new RaftLeadMessage(sigs);
+            return new RaftLeadMessage(pubKey, sigs);
         }
     }
 }
