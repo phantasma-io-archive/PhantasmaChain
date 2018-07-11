@@ -4,6 +4,8 @@ using Phantasma.Consensus;
 using Phantasma.Utils;
 using System;
 using System.Collections.Generic;
+using Phantasma.Network;
+using System.Threading;
 
 namespace PhantasmaCLIWallet
 {
@@ -44,18 +46,7 @@ namespace PhantasmaCLIWallet
             }
         }
 
-        static void Main(string[] args)
-        {
-            //IProtocol protocol = new TcpSubnetProtocol("http://127.0.0.1", 2720, n);
-            /*var protocol = new VirtualProtocol();
-
-            DHT dht = new DHT(ID.RandomID, protocol, () => new VirtualStorage(), new Router());
-            
-
-            //server.RegisterProtocol(n, dht.Node);
-            ((VirtualProtocol)protocol).Node = dht.Node;*/
-
-
+        static void TestChain() {
             Console.WriteLine("Initializng chain...");
 
             var owner = KeyPair.Random();
@@ -76,9 +67,25 @@ namespace PhantasmaCLIWallet
             chain.AddBlock(block);
 
             PrintChain(chain);
+        }
 
-            Console.WriteLine("Finished");
-            Console.ReadLine();
+        static void Main(string[] args)
+        {
+            var node_keys = KeyPair.Random();
+            var seeds = new List<Endpoint>();
+            var node = new Node(node_keys, seeds);
+
+            Console.WriteLine("Phantasma Node starting...");
+            node.Start();
+
+            Console.CancelKeyPress += delegate {
+                Console.WriteLine("Phantasma Node stopping...");
+                node.Stop();
+            };
+
+            while (node.IsRunning) {
+                Thread.Sleep(100);
+            }
         }
     }
 }

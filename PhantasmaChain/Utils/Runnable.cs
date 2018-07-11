@@ -44,6 +44,8 @@ namespace Phantasma.Utils
             }).Start();
         }
 
+        public bool IsRunning => _state == State.Running;
+
         public void Stop() {
             if (_state != State.Running) {
                 return;
