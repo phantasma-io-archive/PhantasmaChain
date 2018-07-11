@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaChain", "PhantasmaChain\PhantasmaChain.csproj", "{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhantasmaChain", "PhantasmaChain\PhantasmaChain.csproj", "{646D7ED3-97C2-4F68-9162-ACF6E4D9AD4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaCLIWallet", "PhantasmaCLIWallet\PhantasmaCLIWallet.csproj", "{A649843B-2334-404D-A139-8D99019B0EAE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaNode", "PhantasmaNode\PhantasmaNode.csproj", "{A649843B-2334-404D-A139-8D99019B0EAE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhantasmaTests", "PhantasmaTests\PhantasmaTests.csproj", "{8749216C-0E74-4D9E-948A-BCC3E7295940}"
 EndProject

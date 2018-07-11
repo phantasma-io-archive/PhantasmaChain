@@ -1,7 +1,7 @@
 .vs/
 PhantasmaChain/obj/
-PhantasmaCLIWallet/bin/
-PhantasmaCLIWallet/obj/Debug/
+PhantasmaNode/bin/
+PhantasmaNode/obj/Debug/
 packages/
 PhantasmaTests/obj/
 PhantasmaChain/bin/
