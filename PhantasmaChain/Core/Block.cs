@@ -15,6 +15,7 @@ namespace Phantasma.Core
         public readonly byte[] PreviousHash;
         public readonly uint Timestamp;
         public readonly byte[] MinerPublicKey;
+        public readonly byte[] TokenPublicKey;
         public uint Nonce { get; private set; }
         public byte[] Hash { get; private set; }
         public readonly BigInteger difficulty;
@@ -24,12 +25,13 @@ namespace Phantasma.Core
 
         public List<Event> Events = new List<Event>();
 
-        public Block(uint timestamp, byte[] minerPublicKey, IEnumerable<Transaction> transactions, Block previous = null)
+        public Block(uint timestamp, byte[] minerPublicKey, byte[] tokenPublicKey, IEnumerable<Transaction> transactions, Block previous = null)
         {
             this.Height = previous != null ? previous.Height + 1 : 0;
             this.PreviousHash = previous != null ? previous.Hash : null;
             this.Timestamp = timestamp;
             this.MinerPublicKey = minerPublicKey;
+            this.TokenPublicKey = tokenPublicKey;
 
             _transactions = new List<Transaction>();
             foreach (var tx in transactions)
@@ -108,6 +110,7 @@ namespace Phantasma.Core
             var timestamp = reader.ReadUInt32();
             var prevHash = reader.ReadByteArray();
             var minerPubKey = reader.ReadByteArray();
+            var tokenPublicKey = reader.ReadByteArray();
 
             var evtCount = reader.ReadUInt16();
             var evts = new Event[evtCount];
@@ -116,7 +119,7 @@ namespace Phantasma.Core
                 evts[i] = Event.Unserialize(reader); 
             }
             var nonce = reader.ReadUInt32();
-            return new Block(timestamp, minerPubKey, null);
+            return new Block(timestamp, minerPubKey, tokenPublicKey, null);
         }
         #endregion
     }

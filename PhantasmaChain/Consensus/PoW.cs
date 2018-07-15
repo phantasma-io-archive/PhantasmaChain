@@ -11,7 +11,7 @@ namespace Phantasma.Consensus
         public static Block MineBlock(Chain chain, byte[] minerPublicKey, IEnumerable<Transaction> txs)
         {
             var timestamp = DateTime.UtcNow.ToTimestamp();
-            var block = new Block(timestamp, minerPublicKey, txs, chain.lastBlock);
+            var block = new Block(timestamp, minerPublicKey, chain.NativeTokenPubKey, txs, chain.lastBlock);
 
             BigInteger target = 0;
             for (int i = 0; i <= block.difficulty; i++)
