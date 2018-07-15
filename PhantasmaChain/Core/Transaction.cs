@@ -11,7 +11,7 @@ namespace Phantasma.Core
     {
         public byte[] PublicKey { get; }
         public BigInteger Fee { get; }
-        public BigInteger Order { get; }
+        public BigInteger Index { get; }
         public byte[] Script { get; }
 
         public byte[] Signature { get; private set; }
@@ -32,7 +32,7 @@ namespace Phantasma.Core
             writer.WriteByteArray(this.PublicKey);
             writer.WriteByteArray(this.Script);
             writer.WriteBigInteger(this.Fee);
-            writer.WriteBigInteger(this.Order);
+            writer.WriteBigInteger(this.Index);
 
             if (withSignature)
             {
@@ -82,7 +82,7 @@ namespace Phantasma.Core
             this.Script = script;
             this.PublicKey = publicKey;
             this.Fee = fee;
-            this.Order = txOrder;
+            this.Index = txOrder;
 
             this.UpdateHash();
         }

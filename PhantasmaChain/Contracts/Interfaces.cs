@@ -14,7 +14,7 @@ namespace Phantasma.Contracts
     public interface ITransaction
     {
         BigInteger Fee { get; }
-        BigInteger Order { get; }
+        BigInteger Index { get; }
         byte[] Script { get; }
         byte[] Signature { get; }
         byte[] Hash { get; }
