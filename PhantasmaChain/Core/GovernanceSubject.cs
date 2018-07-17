@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Phantasma.Core
+﻿namespace Phantasma.Core
 {
     public enum GovernanceSubject
     {

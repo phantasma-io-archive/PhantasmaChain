@@ -1,7 +1,4 @@
-﻿using Phantasma.Core;
-using Phantasma.Cryptography;
-using Phantasma.Cryptography.ECC;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -10,6 +7,10 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using Phantasma.Core;
+using Phantasma.Cryptography;
+using ECCurve = Phantasma.Cryptography.ECC.ECCurve;
+using ECPoint = Phantasma.Cryptography.ECC.ECPoint;
 
 namespace Phantasma.Utils
 {

@@ -1,8 +1,8 @@
-﻿using Phantasma.Core;
-using Phantasma.VM;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Phantasma.Core;
+using Phantasma.VM;
 
 namespace Phantasma.Contracts
 {

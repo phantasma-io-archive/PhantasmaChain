@@ -1,5 +1,5 @@
-﻿using Phantasma.VM;
-using System.Numerics;
+﻿using System.Numerics;
+using Phantasma.VM;
 
 namespace Phantasma.Core
 {

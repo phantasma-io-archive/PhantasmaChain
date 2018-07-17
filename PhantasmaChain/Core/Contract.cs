@@ -1,10 +1,10 @@
-﻿using Phantasma.Contracts;
-using Phantasma.Utils;
-using Phantasma.VM;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Phantasma.Contracts;
+using Phantasma.Utils;
+using Phantasma.VM;
 
 namespace Phantasma.Core
 {

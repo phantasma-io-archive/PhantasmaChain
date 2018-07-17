@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Phantasma.Consensus
+﻿namespace Phantasma.Consensus
 {
     public enum RaftState
     {

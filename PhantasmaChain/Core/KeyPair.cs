@@ -1,7 +1,7 @@
-﻿using Phantasma.Utils;
-using Phantasma.Cryptography.ECC;
-using System;
+﻿using System;
 using System.Linq;
+using Phantasma.Cryptography.ECC;
+using Phantasma.Utils;
 
 namespace Phantasma.Core
 {

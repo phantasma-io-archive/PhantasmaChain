@@ -1,5 +1,4 @@
-﻿using Phantasma.Contracts;
-using System;
+﻿using System;
 using System.Numerics;
 
 /*

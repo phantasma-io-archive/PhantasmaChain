@@ -1,12 +1,12 @@
-﻿using Phantasma.Core;
-using Phantasma.Cryptography;
-using Phantasma.Network;
-using Phantasma.Utils;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Phantasma.Core;
+using Phantasma.Cryptography;
+using Phantasma.Network;
+using Phantasma.Utils;
 
 namespace Phantasma.Consensus
 {

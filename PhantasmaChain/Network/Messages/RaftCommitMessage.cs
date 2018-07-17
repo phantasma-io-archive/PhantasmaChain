@@ -1,8 +1,7 @@
-﻿using Phantasma.Utils;
-using System;
-using System.IO;
+﻿using System.IO;
+using Phantasma.Utils;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class RaftCommitMessage : Message
     {

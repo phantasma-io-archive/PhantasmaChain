@@ -1,11 +1,11 @@
-﻿using Phantasma.Core;
-using Phantasma.Cryptography;
-using Phantasma.Consensus;
-using Phantasma.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using Phantasma.Network;
 using System.Threading;
+using Phantasma.Consensus;
+using Phantasma.Core;
+using Phantasma.Cryptography;
+using Phantasma.Network;
+using Phantasma.Utils;
 
 namespace PhantasmaCLIWallet
 {
@@ -46,7 +46,8 @@ namespace PhantasmaCLIWallet
             }
         }
 
-        static void TestChain(Logger log) {
+        static void TestChain(Logger log)
+        {
             Console.WriteLine("Initializng chain...");
 
             var owner = KeyPair.Random();
@@ -85,7 +86,8 @@ namespace PhantasmaCLIWallet
                 node.Stop();
             };
 
-            while (node.IsRunning) {
+            while (node.IsRunning)
+            {
                 Thread.Sleep(100);
             }
         }

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class ChainValuesMessage : Message
     {

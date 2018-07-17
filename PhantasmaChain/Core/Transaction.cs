@@ -1,9 +1,9 @@
-﻿using Phantasma.Contracts;
-using Phantasma.Utils;
-using Phantasma.VM;
-using System;
+﻿using System;
 using System.IO;
 using System.Numerics;
+using Phantasma.Contracts;
+using Phantasma.Utils;
+using Phantasma.VM;
 
 namespace Phantasma.Core
 {

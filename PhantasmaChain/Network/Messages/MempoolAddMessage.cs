@@ -1,8 +1,7 @@
-﻿using Phantasma.Core;
-using System;
-using System.IO;
+﻿using System.IO;
+using Phantasma.Core;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class MempoolAddMessage : Message
     {

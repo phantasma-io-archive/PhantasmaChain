@@ -1,7 +1,6 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class MempoolGetMessage : Message
     {

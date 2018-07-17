@@ -1,6 +1,6 @@
-﻿using Phantasma.Utils;
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
+using Phantasma.Utils;
 
 namespace Phantasma.Cryptography
 {

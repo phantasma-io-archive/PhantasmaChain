@@ -1,13 +1,12 @@
-﻿using Phantasma.Core;
-using Phantasma.Utils;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
+using Phantasma.Network.Messages;
+using Phantasma.Utils;
 
 namespace Phantasma.Network
 {

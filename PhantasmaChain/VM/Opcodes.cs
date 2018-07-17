@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Phantasma.VM
+﻿namespace Phantasma.VM
 {
     public enum Opcode
     {

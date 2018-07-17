@@ -1,6 +1,6 @@
-﻿using Phantasma.Utils;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Numerics;
+using Phantasma.Utils;
 
 namespace Phantasma.Cryptography.ECC
 {

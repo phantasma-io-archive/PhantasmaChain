@@ -1,6 +1,6 @@
-﻿using Phantasma.Core;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
+using Phantasma.Core;
 
 namespace Phantasma.Utils
 {

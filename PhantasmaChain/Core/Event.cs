@@ -1,5 +1,5 @@
-﻿using Phantasma.Utils;
-using System.IO;
+﻿using System.IO;
+using Phantasma.Utils;
 
 namespace Phantasma.Core
 {

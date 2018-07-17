@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using Phantasma.Utils;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class RaftConfirmMessage : Message
     {

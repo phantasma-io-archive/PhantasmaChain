@@ -2,7 +2,7 @@
 using System.Numerics;
 using Phantasma.Utils;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class BlockRequestMessage : Message
     {

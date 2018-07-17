@@ -1,7 +1,5 @@
-﻿using Phantasma.Contracts;
-using Phantasma.Core;
-using System;
-using System.Numerics;
+﻿using System.Numerics;
+using Phantasma.Contracts;
 
 namespace Phantasma.Utils
 {

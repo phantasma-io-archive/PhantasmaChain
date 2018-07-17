@@ -1,9 +1,8 @@
-﻿using Phantasma.Core;
+﻿using System.IO;
+using Phantasma.Core;
 using Phantasma.Utils;
-using System;
-using System.IO;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class RaftVoteMessage : Message
     {

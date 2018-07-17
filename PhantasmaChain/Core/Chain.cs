@@ -1,7 +1,6 @@
-﻿using Phantasma.Utils;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Phantasma.Utils;
 
 namespace Phantasma.Core
 {

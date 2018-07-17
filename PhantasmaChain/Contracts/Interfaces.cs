@@ -1,5 +1,5 @@
-﻿using System.Numerics;
-using System;
+﻿using System;
+using System.Numerics;
 
 namespace Phantasma.Contracts
 {

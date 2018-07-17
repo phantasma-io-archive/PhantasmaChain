@@ -1,7 +1,6 @@
-﻿using Phantasma.Network;
-using Phantasma.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Phantasma.Utils;
 
 namespace Phantasma.Consensus
 {

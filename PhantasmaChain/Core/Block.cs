@@ -1,7 +1,7 @@
-﻿using Phantasma.Utils;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using Phantasma.Utils;
 
 namespace Phantasma.Core
 {

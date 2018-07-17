@@ -1,7 +1,8 @@
-﻿using Phantasma.Core;
-using System.Numerics;
+﻿using System.Numerics;
+using Phantasma.Core;
+using Phantasma.Utils;
 
-namespace Phantasma.Utils
+namespace Phantasma.VM
 {
     public static class TokenUtils
     {

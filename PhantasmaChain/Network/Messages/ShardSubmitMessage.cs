@@ -1,10 +1,9 @@
-﻿using Phantasma.Core;
-using Phantasma.Utils;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Phantasma.Core;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.Messages
 {
     internal class ShardSubmitMessage : Message
     {

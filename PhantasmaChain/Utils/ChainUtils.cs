@@ -1,5 +1,4 @@
-﻿using Phantasma.Cryptography;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -136,7 +135,7 @@ namespace Phantasma.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static int ToInt32(this byte[] value, int startIndex)
+        internal static unsafe int ToInt32(this byte[] value, int startIndex)
         {
             fixed (byte* pbyte = &value[startIndex])
             {
@@ -145,7 +144,7 @@ namespace Phantasma.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static long ToInt64(this byte[] value, int startIndex)
+        internal static unsafe long ToInt64(this byte[] value, int startIndex)
         {
             fixed (byte* pbyte = &value[startIndex])
             {
@@ -154,7 +153,7 @@ namespace Phantasma.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static ushort ToUInt16(this byte[] value, int startIndex)
+        internal static unsafe ushort ToUInt16(this byte[] value, int startIndex)
         {
             fixed (byte* pbyte = &value[startIndex])
             {
@@ -163,7 +162,7 @@ namespace Phantasma.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static uint ToUInt32(this byte[] value, int startIndex)
+        internal static unsafe uint ToUInt32(this byte[] value, int startIndex)
         {
             fixed (byte* pbyte = &value[startIndex])
             {
@@ -172,7 +171,7 @@ namespace Phantasma.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        unsafe internal static ulong ToUInt64(this byte[] value, int startIndex)
+        internal static unsafe ulong ToUInt64(this byte[] value, int startIndex)
         {
             fixed (byte* pbyte = &value[startIndex])
             {
