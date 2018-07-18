@@ -189,6 +189,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.MOVE:
                         {
                             var src = Read8();
@@ -201,6 +202,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.COPY:
                         {
                             var src = Read8();
@@ -213,6 +215,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte dst_reg, byte type, var length, var data_bytes
                     case Opcode.LOAD:
                         {
                             var dst = Read8();
@@ -227,6 +230,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg
                     case Opcode.PUSH:
                         {
                             var src = Read8();
@@ -236,6 +240,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte dest_reg
                     case Opcode.POP:
                         {
                             var dst = Read8();
@@ -247,6 +252,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.SWAP:
                         {
                             var src = Read8();
@@ -262,6 +268,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: ushort offset
                     case Opcode.CALL:
                         {
                             var ofs = Read16();
@@ -273,6 +280,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte length, var method_name
                     case Opcode.EXTCALL:
                         {
                             var len = Read8();
@@ -289,6 +297,8 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: ushort offset, byte src_reg
+                    // NOTE: JMP only has offset arg, not the rest
                     case Opcode.JMP:
                     case Opcode.JMPIF:
                     case Opcode.JMPNOT:
@@ -320,6 +330,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: none
                     case Opcode.RET:
                         {
                             if (frames.Count > 1)
@@ -333,16 +344,19 @@ namespace Phantasma.VM
                             return;
                         }
 
+                    // args: byte src_a_reg, byte src_b_reg, byte dest_reg
                     case Opcode.CAT:
                         {
-                            var src = Read8();
+                            var srcA = Read8();
+                            var srcB = Read8();
                             var dst = Read8();
 
-                            Expect(src < MaxRegisterCount);
+                            Expect(srcA < MaxRegisterCount);
+                            Expect(srcB < MaxRegisterCount);
                             Expect(dst < MaxRegisterCount);
 
-                            var A = currentFrame.registers[src];
-                            var B = currentFrame.registers[dst];
+                            var A = currentFrame.registers[srcA];
+                            var B = currentFrame.registers[srcB];
 
                             if (!A.IsEmpty)
                             {
@@ -352,12 +366,14 @@ namespace Phantasma.VM
                                 }
                                 else
                                 {
-                                    var srcA = A.AsByteArray();
-                                    var srcB = B.AsByteArray();
+                                    var bytesA = A.AsByteArray();
+                                    var bytesB = B.AsByteArray();
 
-                                    var result = new byte[srcA.Length + srcB.Length];
-                                    Array.Copy(srcA, result, srcA.Length);
-                                    Array.Copy(srcB, 0, result, srcA.Length, srcB.Length);
+                                    var result = new byte[bytesA.Length + bytesB.Length];
+                                    Array.Copy(bytesA, result, bytesA.Length);
+                                    Array.Copy(bytesB, 0, result, bytesA.Length, bytesB.Length);
+
+                                    currentFrame.registers[dst].SetValue(result, VMType.Bytes);
                                 }
                             }
                             else
@@ -380,6 +396,7 @@ namespace Phantasma.VM
                             throw new NotImplementedException();
                         }
 
+                    // args: byte src_reg, byte dest_reg, var length
                     case Opcode.LEFT:
                         {
                             var src = Read8();
@@ -400,6 +417,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg, byte length
                     case Opcode.RIGHT:
                         {
                             var src = Read8();
@@ -421,6 +439,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.SIZE:
                         {
                             var src = Read8();
@@ -434,6 +453,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.NOT:
                         {
                             var src = Read8();
@@ -448,6 +468,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_a_reg, byte src_b_reg, byte dest_reg
                     case Opcode.AND:
                     case Opcode.OR:
                     case Opcode.XOR:
@@ -480,6 +501,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_a_reg, byte src_b_reg, byte dest_reg
                     case Opcode.EQUAL:
                         {
                             var srcA = Read8();
@@ -499,6 +521,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_a_reg, byte src_b_reg, byte dest_reg
                     case Opcode.LT:
                     case Opcode.GT:
                     case Opcode.LTE:
@@ -533,6 +556,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte reg
                     case Opcode.INC:
                         {
                             var dst = Read8();
@@ -544,6 +568,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte reg
                     case Opcode.DEC:
                         {
                             var dst = Read8();
@@ -555,6 +580,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.SIGN:
                         {
                             var src = Read8();
@@ -577,6 +603,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.NEGATE:
                         {
                             var src = Read8();
@@ -590,6 +617,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg
                     case Opcode.ABS:
                         {
                             var src = Read8();
@@ -603,6 +631,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_a_reg, byte src_b_reg, byte dest_reg
                     case Opcode.ADD:
                     case Opcode.SUB:
                     case Opcode.MUL:
@@ -648,6 +677,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg, byte key
                     case Opcode.PUT:
                         {
                             var src = Read8();
@@ -663,6 +693,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, byte dest_reg, byte key
                     case Opcode.GET:
                         {
                             var src = Read8();
@@ -678,6 +709,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte dest_reg, var key
                     case Opcode.CTX:
                         {
                             var dst = Read8();
@@ -706,6 +738,7 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: var key
                     case Opcode.SWITCH:
                         {
                             var key = ReadBytes(KeyPair.PublicKeyLength);
