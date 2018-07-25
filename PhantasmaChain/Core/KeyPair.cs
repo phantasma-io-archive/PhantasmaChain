@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Phantasma.Cryptography.ECC;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 
 namespace Phantasma.Core
@@ -19,16 +19,9 @@ namespace Phantasma.Core
                 throw new ArgumentException();
 
             this.PrivateKey = new byte[32];
-            Buffer.BlockCopy(privateKey, privateKey.Length - 32, PrivateKey, 0, 32);
+            Buffer.BlockCopy(privateKey, 0, PrivateKey, 0, 32);            
 
-            ECPoint pKey;
-
-            pKey = ECCurve.Secp256r1.G * privateKey;
-
-            var bytes = pKey.EncodePoint(true).ToArray();
-            //this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
-
-            this.PublicKey = pKey.EncodePoint(true).ToArray();
+            this.PublicKey = Ed25519.PublicKeyFromSeed(privateKey);
 
             var addressBytes = EncodePublicKey(this.PublicKey);
             this.address = addressBytes.PublicKeyToAddress();

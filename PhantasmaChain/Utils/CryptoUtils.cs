@@ -9,15 +9,12 @@ using System.Text;
 using System.Threading;
 using Phantasma.Core;
 using Phantasma.Cryptography;
-using ECCurve = Phantasma.Cryptography.ECC.ECCurve;
-using ECPoint = Phantasma.Cryptography.ECC.ECPoint;
 
 namespace Phantasma.Utils
 {
     public static class CryptoUtils
     {
         private static ThreadLocal<SHA256> _sha256 = new ThreadLocal<SHA256>(() => SHA256.Create());
-        private static ThreadLocal<RIPEMD160Managed> _ripemd160 = new ThreadLocal<RIPEMD160Managed>(() => new RIPEMD160Managed());
 
         public static T[] SubArray<T>(this T[] data, int index, int length)
         {
@@ -99,19 +96,6 @@ namespace Phantasma.Utils
             Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
             Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
             return Base58.Encode(buffer);
-        }
-
-        public static byte[] RIPEMD160(this IEnumerable<byte> value)
-        {
-            return _ripemd160.Value.ComputeHash(value.ToArray());
-        }
-
-        public static uint Murmur32(this IEnumerable<byte> value, uint seed)
-        {
-            using (Murmur3 murmur = new Murmur3(seed))
-            {
-                return murmur.ComputeHash(value.ToArray()).ToUInt32(0);
-            }
         }
 
         public static byte[] Sha256(this IEnumerable<byte> value)
@@ -286,78 +270,27 @@ namespace Phantasma.Utils
             return source.Select(selector).Sum();
         }
 
-        public static byte[] Hash160(byte[] message)
-        {
-            return message.Sha256().RIPEMD160();
-        }
-
         public static byte[] Hash256(byte[] message)
         {
             return message.Sha256().Sha256();
         }
 
-        private static byte[] UncompressKey(byte[] pubkey)
+        public static uint Murmur32(this IEnumerable<byte> value, uint seed)
         {
-            if (pubkey == null)
+            using (Murmur3 murmur = new Murmur3(seed))
             {
-                return null;
+                return murmur.ComputeHash(value.ToArray()).ToUInt32(0);
             }
-
-            if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
-            {
-                try
-                {
-                    return ECPoint.DecodePoint(pubkey, ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-            else if (pubkey.Length == 65 && pubkey[0] == 0x04)
-            {
-                return pubkey.Skip(1).ToArray();
-            }
-            else if (pubkey.Length == 64)
-            {
-                return pubkey;
-            }
-
-            throw new ArgumentException();
         }
 
         public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
         {
-            pubkey = UncompressKey(pubkey);
-            if (pubkey == null)
-            {
-                throw new ArgumentException();
-            }
-
-            const int ECDSA_PRIVATE_P256_MAGIC = 0x32534345;
-            prikey = BitConverter.GetBytes(ECDSA_PRIVATE_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).Concat(prikey).ToArray();
-            using (CngKey key = CngKey.Import(prikey, CngKeyBlobFormat.EccPrivateBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-            {
-                return ecdsa.SignData(message, HashAlgorithmName.SHA256);
-            }
+            return Ed25519.Sign(message, prikey);
         }
 
         public static bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
         {
-            pubkey = UncompressKey(pubkey);
-            if (pubkey == null)
-            {
-                return false;
-            }
-
-            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
-            pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
-            using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))
-            using (ECDsaCng ecdsa = new ECDsaCng(key))
-            {
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
-            }
+            return Ed25519.Verify(message, signature, pubkey);
         }
 
         public static string PublicKeyToAddress(this byte[] publicKey)
