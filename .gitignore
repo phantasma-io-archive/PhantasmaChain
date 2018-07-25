@@ -8,6 +8,5 @@ PhantasmaTests/obj/
 PhantasmaTests/bin/
 PhantasmaSpinner/obj/
 PhantasmaSpinner/bin/
-PhantasmaNode/bin/
-PhantasmaNode/obj
-PhantasmaNode/obj/
+PhantasmaCLIWallet/bin/
+PhantasmaCLIWallet/obj
