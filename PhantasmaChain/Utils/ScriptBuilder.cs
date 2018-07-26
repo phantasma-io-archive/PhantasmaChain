@@ -9,6 +9,8 @@ namespace Phantasma.Utils
     public class ScriptBuilder
     {
         private List<byte> data = new List<byte>();
+        private Dictionary<int, string> _jumpLocations = new Dictionary<int, string>();
+        private Dictionary<string, int> _labelLocations = new Dictionary<string, int>();
 
         public void Patch(int offset, byte val)
         {
@@ -105,9 +107,49 @@ namespace Phantasma.Utils
             Emit(Opcode.COPY, new byte[] { (byte)src_reg, (byte)dst_reg });
         }
 
+        public void EmitLabel(string label)
+        {
+            _labelLocations[label] = data.Count;
+        }
+
+        public void EmitJump(string label)
+        {
+            var ofs = Emit(Opcode.JMP, new byte[] { 0, 0 });
+            ofs++;
+            _jumpLocations[ofs] = label;
+        }
+
+        public void EmitConditionalJump(Opcode opcode, int src_reg, string label)
+        {
+            if (opcode != Opcode.JMPIF && opcode != Opcode.JMPNOT)
+            {
+                throw new ArgumentException("Opcode is not a conditional jump");
+            }
+
+            var ofs = Emit(opcode, new byte[] { 0, 0, 0 });
+            ofs += 2;
+            _jumpLocations[ofs] = label;
+        }
+
         public byte[] ToScript()
         {
-            return data.ToArray();
+            var script = data.ToArray();
+
+            // resolve jump offsets
+            foreach (var entry in _jumpLocations)
+            {
+                var label = entry.Value;
+                var labelOffset = (ushort) _labelLocations[label];
+                var bytes = BitConverter.GetBytes(labelOffset);
+                var targetOffset = entry.Key;
+
+                for (int i=0; i<2; i++)
+                {
+                    script[targetOffset + i] = bytes[i];
+                }
+            }
+
+            return script;
         }
     }
 }
