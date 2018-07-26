@@ -303,30 +303,35 @@ namespace Phantasma.VM
                     case Opcode.JMPIF:
                     case Opcode.JMPNOT:
                         {
+                            bool shouldJump;
+
+                            if (opcode == Opcode.JMP)
+                            {
+                                shouldJump = true;
+                            }
+                            else
+                            {
+                                var src = Read8();
+                                Expect(src < MaxRegisterCount);
+
+                                shouldJump = currentFrame.registers[src].AsBool();
+
+                                if (opcode == Opcode.JMPNOT)
+                                {
+                                    shouldJump = !shouldJump;
+                                }
+                            }
+
                             var newPos = (short)Read16();
 
                             Expect(newPos >= 0);
                             Expect(newPos < currentContext.Script.Length);
 
-                            if (opcode != Opcode.JMP)
+                            if (shouldJump)
                             {
-                                var src = Read8();
-                                Expect(src < MaxRegisterCount);
-
-                                var status = currentFrame.registers[src].AsBool();
-
-                                if (opcode == Opcode.JMPNOT)
-                                {
-                                    status = !status;
-                                }
-
-                                if (!status)
-                                {
-                                    break;
-                                }
+                                InstructionPointer = (uint)newPos;
                             }
 
-                            InstructionPointer = (uint)newPos;
                             break;
                         }
 
