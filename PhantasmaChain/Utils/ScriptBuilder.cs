@@ -126,7 +126,7 @@ namespace Phantasma.Utils
                 throw new ArgumentException("Opcode is not a conditional jump");
             }
 
-            var ofs = Emit(opcode, new byte[] { 0, 0, 0 });
+            var ofs = Emit(opcode, new byte[] { (byte)src_reg, 0, 0 });
             ofs += 2;
             _jumpLocations[ofs] = label;
         }
