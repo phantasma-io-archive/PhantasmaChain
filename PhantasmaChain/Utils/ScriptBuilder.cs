@@ -52,7 +52,7 @@ namespace Phantasma.Utils
             data.Add((byte)reg);
         }
 
-        public void EmitCall(string method)
+        public void EmitExtCall(string method)
         {
             var bytes = Encoding.ASCII.GetBytes(method);
 
@@ -112,9 +112,9 @@ namespace Phantasma.Utils
             _labelLocations[label] = data.Count;
         }
 
-        public void EmitJump(string label)
+        public void EmitJump(Opcode opCode, string label)
         {
-            var ofs = Emit(Opcode.JMP, new byte[] { 0, 0 });
+            var ofs = Emit(opCode, new byte[] { 0, 0 });
             ofs++;
             _jumpLocations[ofs] = label;
         }
@@ -139,11 +139,11 @@ namespace Phantasma.Utils
             foreach (var entry in _jumpLocations)
             {
                 var label = entry.Value;
-                var labelOffset = (ushort) _labelLocations[label];
+                var labelOffset = (ushort)_labelLocations[label];
                 var bytes = BitConverter.GetBytes(labelOffset);
                 var targetOffset = entry.Key;
 
-                for (int i=0; i<2; i++)
+                for (int i = 0; i < 2; i++)
                 {
                     script[targetOffset + i] = bytes[i];
                 }

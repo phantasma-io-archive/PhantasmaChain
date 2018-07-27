@@ -65,8 +65,10 @@ namespace Phantasma.VM
             }
 
             frames.Pop();
+            var tempOffset = currentFrame.Offset;
+
             this.currentFrame = frames.Peek();
-            this.InstructionPointer = currentFrame.Offset;
+            this.InstructionPointer = tempOffset; //TODO validate this change (this.InstructionPointer = currentFrame.Offset)
             this.currentContext = currentFrame.Context;
 
             Expect(InstructionPointer < currentContext.Script.Length);
@@ -159,7 +161,7 @@ namespace Phantasma.VM
             }
 
             var result = new byte[length];
-            for (int i= 0; i<length; i++)
+            for (int i = 0; i < length; i++)
             {
                 result[i] = currentContext.Script[InstructionPointer];
                 InstructionPointer++;
@@ -339,7 +341,7 @@ namespace Phantasma.VM
                     case Opcode.RET:
                         {
                             if (frames.Count > 1)
-                            {                                
+                            {
                                 PopFrame();
                             }
                             else
@@ -415,7 +417,7 @@ namespace Phantasma.VM
                             Expect(len <= src_array.Length);
 
                             var result = new byte[len];
-                            
+
                             Array.Copy(src_array, result, len);
 
                             currentFrame.registers[dst].SetValue(result, VMType.Bytes);
@@ -631,7 +633,7 @@ namespace Phantasma.VM
                             Expect(dst < MaxRegisterCount);
 
                             var val = currentFrame.registers[src].AsNumber();
-                            currentFrame.registers[dst].SetValue(val<0?-val:val);
+                            currentFrame.registers[dst].SetValue(val < 0 ? -val : val);
 
                             break;
                         }
@@ -764,7 +766,7 @@ namespace Phantasma.VM
                         }
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 SetState(ExecutionState.Fault);
             }

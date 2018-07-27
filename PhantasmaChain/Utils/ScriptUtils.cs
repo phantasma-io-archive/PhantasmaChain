@@ -22,7 +22,7 @@ namespace Phantasma.Utils
             sb.EmitLoad(0, script);
             sb.EmitLoad(1, abi);
 
-            sb.EmitCall("Chain.Deploy");
+            sb.EmitExtCall("Chain.Deploy");
             sb.Emit(VM.Opcode.RET);
 
             return sb.ToScript();
