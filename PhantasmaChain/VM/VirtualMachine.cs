@@ -282,13 +282,13 @@ namespace Phantasma.VM
                             break;
                         }
 
-                    // args: byte length, var method_name
+                    // args: byte srcReg
                     case Opcode.EXTCALL:
                         {
-                            var len = Read8();
-                            var bytes = ReadBytes(len);
+                            var src = Read8();
+                            Expect(src < MaxRegisterCount);
 
-                            var method = Encoding.ASCII.GetString(bytes);
+                            var method = currentFrame.registers[src].AsString();
 
                             var state = ExecuteInterop(method);
                             if (state != ExecutionState.Running)

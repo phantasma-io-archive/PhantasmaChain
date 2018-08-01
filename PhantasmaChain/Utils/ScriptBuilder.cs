@@ -54,15 +54,9 @@ namespace Phantasma.Utils
 
         public void EmitExtCall(string method)
         {
-            var bytes = Encoding.ASCII.GetBytes(method);
-
-            Emit(Opcode.EXTCALL);
-            data.Add((byte)bytes.Length);
-
-            foreach (var entry in bytes)
-            {
-                data.Add(entry);
-            }
+            byte reg = 0;
+            EmitLoad(reg, method);
+            Emit(Opcode.EXTCALL, new byte[]{reg});
         }
 
         public void EmitLoad(int reg, byte[] bytes, VMType type = VMType.Bytes)
