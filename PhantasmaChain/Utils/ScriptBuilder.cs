@@ -159,5 +159,10 @@ namespace Phantasma.Utils
         {
             writer.WriteVarInt(value);
         }
+
+        public void EmitRaw(byte[] bytes)
+        {
+            writer.Write(bytes);
+        }
     }
 }
