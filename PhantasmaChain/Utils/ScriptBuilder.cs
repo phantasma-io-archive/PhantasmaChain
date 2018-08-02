@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using System.Text;
 using Phantasma.VM;
@@ -8,126 +9,134 @@ namespace Phantasma.Utils
 {
     public class ScriptBuilder
     {
-        private List<byte> data = new List<byte>();
+        private MemoryStream stream;
+        private BinaryWriter writer;
+
         private Dictionary<int, string> _jumpLocations = new Dictionary<int, string>();
         private Dictionary<string, int> _labelLocations = new Dictionary<string, int>();
 
-        public void Patch(int offset, byte val)
+        public ScriptBuilder()
         {
-            data[offset] = val;
+            this.stream = new MemoryStream();
+            this.writer = new BinaryWriter(stream);
         }
 
-        public void Patch(int offset, byte[] bytes)
+        public void Emit(Opcode opcode, byte[] bytes = null)
         {
-            for (int i = 0; i < bytes.Length; i++)
+            //var ofs = (int)stream.Position;
+            writer.Write((byte)opcode);
+
+            if (bytes != null)
             {
-                Patch(offset + i, bytes[i]);
+                writer.Write(bytes);
             }
         }
 
-        public void Patch(int offset, ushort val)
-        {
-            var bytes = BitConverter.GetBytes(val);
-            Patch(offset, bytes);
-        }
-
-        public int Emit(Opcode opcode, IEnumerable<byte> extra = null)
-        {
-            var ofs = data.Count;
-            data.Add((byte)opcode);
-
-            if (extra != null)
-            {
-                foreach (var entry in extra)
-                {
-                    data.Add(entry);
-                }
-            }
-            return ofs;
-        }
-
-        public void EmitPush(int reg)
+        public void EmitPush(byte reg)
         {
             Emit(Opcode.PUSH);
-            data.Add((byte)reg);
+            writer.Write((byte)reg);
         }
 
-        public void EmitExtCall(string method)
+        public void EmitExtCall(string method, byte reg = 0)
         {
-            byte reg = 0;
             EmitLoad(reg, method);
-            Emit(Opcode.EXTCALL, new byte[]{reg});
+            Emit(Opcode.EXTCALL);
+            writer.Write((byte)reg);
         }
 
-        public void EmitLoad(int reg, byte[] bytes, VMType type = VMType.Bytes)
+        public void EmitLoad(byte reg, byte[] bytes, VMType type = VMType.Bytes)
         {
             Emit(Opcode.LOAD);
-            data.Add((byte)reg);
-            data.Add((byte)type);
+            writer.Write((byte)reg);
+            writer.Write((byte)type);
 
-            data.Add((byte)bytes.Length);
-
-            foreach (var entry in bytes)
-            {
-                data.Add(entry);
-            }
+            writer.WriteVarInt(bytes.Length);
+            writer.Write(bytes);
         }
 
-        public void EmitLoad(int reg, string val)
+        public void EmitLoad(byte reg, string val)
         {
             var bytes = Encoding.UTF8.GetBytes(val);
             EmitLoad(reg, bytes, VMType.String);
         }
 
-        public void EmitLoad(int reg, BigInteger val)
+        public void EmitLoad(byte reg, BigInteger val)
         {
             var bytes = val.ToByteArray();
             EmitLoad(reg, bytes, VMType.Number);
         }
 
-        public void EmitLoad(int reg, bool val)
+        public void EmitLoad(byte reg, bool val)
         {
             var bytes = new byte[1] { (byte)(val ? 1 : 0) };
             EmitLoad(reg, bytes, VMType.Bool);
         }
 
-        public void EmitMove(int src_reg, int dst_reg)
+        public void EmitMove(byte src_reg, byte dst_reg)
         {
-            Emit(Opcode.MOVE, new byte[] { (byte)src_reg, (byte)dst_reg });
+            Emit(Opcode.MOVE);
+            writer.Write((byte)src_reg);
+            writer.Write((byte)dst_reg);
         }
 
-        public void EmitCopy(int src_reg, int dst_reg)
+        public void EmitCopy(byte src_reg, byte dst_reg)
         {
-            Emit(Opcode.COPY, new byte[] { (byte)src_reg, (byte)dst_reg });
+            Emit(Opcode.COPY);
+            writer.Write((byte)src_reg);
+            writer.Write((byte)dst_reg);
         }
 
         public void EmitLabel(string label)
         {
-            _labelLocations[label] = data.Count;
+            _labelLocations[label] = (int)stream.Position;
         }
 
-        public void EmitJump(Opcode opCode, string label)
+        public void EmitJump(string label)
         {
-            var ofs = Emit(opCode, new byte[] { 0, 0 });
+            var ofs = (int)stream.Position;
             ofs++;
+
+            Emit(Opcode.JMP);
+            writer.Write((ushort)0);
             _jumpLocations[ofs] = label;
         }
 
-        public void EmitConditionalJump(Opcode opcode, int src_reg, string label)
+        public void EmitCall(string label, byte regCount)
+        {
+            if (regCount<1 || regCount > VirtualMachine.MaxRegisterCount)
+            {
+                throw new ArgumentException("Invalid number of registers");
+            }
+
+            var ofs = (int)stream.Position;
+            ofs += 2;
+            Emit(Opcode.CALL);
+            writer.Write((byte)regCount);
+            writer.Write((ushort)0);
+
+            _jumpLocations[ofs] = label;
+        }
+
+        public void EmitConditionalJump(Opcode opcode, byte src_reg, string label)
         {
             if (opcode != Opcode.JMPIF && opcode != Opcode.JMPNOT)
             {
                 throw new ArgumentException("Opcode is not a conditional jump");
             }
 
-            var ofs = Emit(opcode, new byte[] { (byte)src_reg, 0, 0 });
+            var ofs = (int)stream.Position;
             ofs += 2;
+
+            Emit(opcode);
+            writer.Write((byte)src_reg);
+            writer.Write((ushort)0);
             _jumpLocations[ofs] = label;
         }
 
         public byte[] ToScript()
         {
-            var script = data.ToArray();
+            var script = stream.ToArray();
 
             // resolve jump offsets
             foreach (var entry in _jumpLocations)
@@ -144,6 +153,11 @@ namespace Phantasma.Utils
             }
 
             return script;
+        }
+
+        public void EmitVarBytes(long value)
+        {
+            writer.WriteVarInt(value);
         }
     }
 }

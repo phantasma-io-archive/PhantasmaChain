@@ -29,71 +29,30 @@ namespace Phantasma.Utils
 
     public static class ChainUtils
     {
-        public static void WriteBigInteger(this BinaryWriter writer, BigInteger n)
-        {
-            var bytes = n.ToByteArray();
-            writer.Write((byte)bytes.Length);
-            writer.Write(bytes);
-        }
-
-        public static void WriteByteArray(this BinaryWriter writer, byte[] bytes)
-        {
-            if (bytes == null)
-            {
-                writer.Write((byte)0);
-                return;
-            }
-            writer.Write((byte)bytes.Length);
-            writer.Write(bytes);
-        }
-
-        public static void WriteShortString(this BinaryWriter writer, string text)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                writer.Write((byte)0);
-                return;
-            }
-
-            var bytes = Encoding.UTF8.GetBytes(text);
-            writer.Write((byte)bytes.Length);
-            writer.Write(bytes);
-        }
-
-        public static BigInteger ReadBigInteger(this BinaryReader reader)
-        {
-            var length = reader.ReadByte();
-            var bytes = reader.ReadBytes(length);
-            return new BigInteger(bytes);
-        }
-
-        public static byte[] ReadByteArray(this BinaryReader reader)
-        {
-            var length = reader.ReadByte();
-            if (length == 0)
-                return null;
-            var bytes = reader.ReadBytes(length);
-            return bytes;
-        }
-
-        public static string ReadShortString(this BinaryReader reader)
-        {
-            var length = reader.ReadByte();
-            if (length == 0)
-                return null;
-            var bytes = reader.ReadBytes(length);
-            return Encoding.UTF8.GetString(bytes);
-        }
-
         public static byte[] HexToBytes(this string value)
         {
             if (value == null || value.Length == 0)
+            {
                 return new byte[0];
+            }
+
+            if (value.StartsWith("0x"))
+            {
+                return value.Substring(2).HexToBytes();
+            }
+
             if (value.Length % 2 == 1)
+            {
                 throw new FormatException();
+            }
+
             byte[] result = new byte[value.Length / 2];
+
             for (int i = 0; i < result.Length; i++)
+            {
                 result[i] = byte.Parse(value.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
+            }
+
             return result;
         }
 
