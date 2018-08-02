@@ -342,6 +342,19 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: var length, var bytes
+                    case Opcode.THROW:
+                        {
+                            var len = (int)ReadVar(1024);
+                            if (len > 0)
+                            {
+                                var bytes = ReadBytes(len);
+                            }
+
+                            SetState(ExecutionState.Fault);
+                            return;
+                        }
+
                     // args: none
                     case Opcode.RET:
                         {

@@ -19,6 +19,7 @@
         JMPIF,
         JMPNOT,
         RET,
+        THROW,
 
         // data
         CAT,
