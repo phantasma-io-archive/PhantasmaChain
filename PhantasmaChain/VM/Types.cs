@@ -24,32 +24,32 @@ namespace Phantasma.VM
 
     public class ExecutionFrame
     {
-        public VMObject[] registers { get; private set; }
+        public readonly VMObject[] Registers;
 
         public readonly uint Offset; // current instruction pointer **before** the frame was entered
         public readonly ExecutionContext Context;
 
-        public ExecutionFrame(uint offset, ExecutionContext context)
+        public ExecutionFrame(uint offset, ExecutionContext context, int registerCount)
         {
             this.Offset = offset;
             this.Context = context;
 
-            registers = new VMObject[VirtualMachine.MaxRegisterCount];
+            Registers = new VMObject[registerCount];
 
-            for (int i = 0; i < VirtualMachine.MaxRegisterCount; i++)
+            for (int i = 0; i < registerCount; i++)
             {
-                registers[i] = new VMObject();
+                Registers[i] = new VMObject();
             }
         }
 
         public VMObject GetRegister(int index)
         {
-            if (index < 0 || index >= VirtualMachine.MaxRegisterCount)
+            if (index < 0 || index >= Registers.Length)
             {
                 throw new ArgumentException("Invalid index");
             }
 
-            return registers[index];
+            return Registers[index];
         }
     }
 }
