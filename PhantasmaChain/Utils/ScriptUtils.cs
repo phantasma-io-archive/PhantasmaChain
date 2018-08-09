@@ -5,7 +5,7 @@ namespace Phantasma.Utils
 {
     public static class ScriptUtils
     {
-        public static byte[] TokenIssueScript(string name, string symbol, BigInteger initialSupply, BigInteger maxSupply, TokenAttribute attributes)
+        public static byte[] TokenIssueScript(string name, string symbol, BigInteger initialSupply, BigInteger maxSupply)
         {
             // TODO
             /*sb.Emit(1, symbol);

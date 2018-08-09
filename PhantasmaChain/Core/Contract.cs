@@ -8,7 +8,7 @@ using Phantasma.VM;
 
 namespace Phantasma.Core
 {
-    public abstract class Contract : IInteropObject, IContractABI
+    public abstract class Contract : IInteropObject, IContract
     {
         public BigInteger Order { get; internal set; }
 

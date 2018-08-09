@@ -7,7 +7,7 @@ namespace Phantasma.Core
     {
         private Transaction GenerateNativeTokenIssueTx(KeyPair owner)
         {
-            var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
+            var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000/*, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable*/);
             var tx = new Transaction(owner.PublicKey, script, 0, 0);
             tx.Sign(owner);
             return tx;

@@ -4,7 +4,7 @@ namespace Phantasma.Contracts
 {
     public static class ContractExtensions
     {
-        public static void Expect(this IContractABI contract, bool assertion)
+        public static void Expect(this IContract contract, bool assertion)
         {
             throw new NotImplementedException();
         }
@@ -14,7 +14,7 @@ namespace Phantasma.Contracts
             return new Address(tx.PublicKey);
         }
 
-        public static Address GetAddress(this IContractABI contract)
+        public static Address GetAddress(this IContract contract)
         {
             return new Address(contract.PublicKey);
         }

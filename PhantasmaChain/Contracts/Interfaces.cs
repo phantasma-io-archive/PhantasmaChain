@@ -1,14 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Phantasma.Contracts
 {
-    public interface IContractABI
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class ContractEventAttribute: Attribute
     {
-        byte[] PublicKey { get; }
-        byte[] Script { get; }
-        byte[] ABI { get; }
-        string Name { get; }
+
+    }
+
+    public interface IBlock
+    {
+        BigInteger Height { get; }
+        byte[] Hash { get; }
+        byte[] PreviousHash { get; }
+        Timestamp Time { get; }
+        IEnumerable<ITransaction> Transactions { get; }
     }
 
     public interface ITransaction
@@ -21,6 +29,29 @@ namespace Phantasma.Contracts
         byte[] PublicKey { get; }
     }
 
+    #region CONTRACTS
+    public interface IContract
+    {
+        byte[] PublicKey { get; }
+        byte[] Script { get; }
+        byte[] ABI { get; }
+        string Name { get; }
+    }
+
+    public interface IMigratable : IContract
+    {
+        [ContractEvent]
+        bool Migrate(byte[] script);
+    }
+
+    public interface IDestructible : IContract
+    {
+        [ContractEvent]
+        bool Destroy();
+    }
+    #endregion
+
+    #region TOKENS
     public interface FungibleTransferTransaction : ITransaction
     {
         IFungibleToken Token { get; }
@@ -32,52 +63,83 @@ namespace Phantasma.Contracts
     {
         INonFungibleToken Token { get; }
         Address Destination { get; }
-        byte[] ID { get; }
+        BigInteger ID { get; }
     }
 
-    public interface IBlock
-    {
-        BigInteger Height { get; }
-        byte[] Hash { get; }
-        byte[] PreviousHash { get; }
-        Timestamp Time { get; }
-    }
-
-    public interface IToken: IContractABI
+    public interface IToken: IContract
     {
         string Symbol { get; }
-
-        BigInteger BalanceOf(Address address);
     }
 
-    [Flags]
-    public enum TokenAttribute
+    public interface ISwappable : IToken
     {
-        None = 0x0,
-        Burnable = 0x1,
-        Mintable = 0x2,
-        Tradable = 0x4,
-        Infinite = 0x8,
+        IEnumerable<IFund> Funds { get; }
+
+        [ContractEvent]
+        bool AddFund(IFund fund);
+
+        [ContractEvent]
+        bool RemoveFund(IFund fund);
+    }
+
+    public interface IFiniteToken : IToken
+    {
+        BigInteger MaxSupply { get; }
     }
 
     public interface IFungibleToken : IToken
     {
         BigInteger CirculatingSupply { get; }
-        BigInteger MaxSupply { get; }
-        BigInteger Decimals { get; }
-        TokenAttribute Attributes { get; }
 
-        bool Send(Address destination, BigInteger amount);
+        BigInteger BalanceOf(Address address);
+
+        [ContractEvent]
+        bool Send(Address from, Address to, BigInteger amount);
+    }
+
+    public interface ILockable : IFungibleToken
+    {
+        [ContractEvent]
+        bool Lock(Address address, DateTime until);
+    }
+
+    public interface IMintable : IFungibleToken
+    {
+        [ContractEvent]
+        bool Mint(Address address, BigInteger amount);
+    }
+
+    public interface IBurnable : IFungibleToken
+    {
+        [ContractEvent]
+        bool Burn(Address address, BigInteger amount);
+    }
+
+    public interface IDivisibleToken : IFungibleToken
+    {
+        BigInteger Decimals { get; }
     }
 
     public interface INonFungibleToken : IToken
     {
-        byte[] ID { get; }
-        byte[] Data { get; }
+        [ContractEvent]
+        bool Send(Address from, Address to, BigInteger ID);
 
-        bool Send(Address destination, byte[] ID);
+        //BigInteger Mint(Address address, byte[] data);
+
+        bool IsOwner(Address address, BigInteger ID);
+        IEnumerable<BigInteger> AssetsOf(Address address);
+        byte[] DataOf(BigInteger ID);
     }
 
+    public interface IPerishable : INonFungibleToken
+    {
+        [ContractEvent]
+        bool Perish(BigInteger ID);
+    }
+    #endregion
+
+    #region SALES
     public enum SaleState
     {
         Pending,
@@ -86,18 +148,70 @@ namespace Phantasma.Contracts
         Cancelled
     }
 
-    public interface ISale : IContractABI
+    public interface ISale : IContract
     {
-        IFungibleToken GetToken();
-        SaleState GetState();
+        IToken Token { get; }
+        SaleState State { get; }
 
-        BigInteger GetSoftCap();
-        BigInteger GetHardCap();
+        BigInteger GetRate(Timestamp time);
 
-        BigInteger GetRate();
-
-        [Payable]
+        [ContractEvent]
         bool Contribute();
     }
 
+    public interface ISoftCapped : ISale
+    {
+        BigInteger SoftCap { get; }
+    }
+
+    public interface IHardCapped : ISale
+    {
+        BigInteger HardCap { get; }
+    }
+    #endregion
+
+    #region GOVERNANCE
+    public interface IVotable: IContract
+    {
+        [ContractEvent]
+        bool BeginPool(BigInteger subject, IEnumerable<byte[]> options, Timestamp duration);
+
+        [ContractEvent]
+        bool Vote(BigInteger subject, byte[] secret);
+    }
+    #endregion
+
+    #region BANK
+    public interface IFund: IContract
+    {
+        // all tokens must either not be divisible or have same decimals 
+        IEnumerable<IFungibleToken> Tokens { get; }
+
+        // total amount of all tokens
+        BigInteger TotalAmount { get; }
+
+        // get the amount of a certain token in the fund
+        BigInteger AmountOf(IFungibleToken token);
+
+        // get the amount of shares than an specific address owns in this fund
+        BigInteger SharesOf(Address address);
+
+        // deposits tokens into the fund and gets back a certain amount of shares 
+        [ContractEvent]
+        bool GetShares(BigInteger amount);
+
+        // redeems shares of this fund into a specific token
+        [ContractEvent]
+        bool ReedemShares(BigInteger amount, IFungibleToken token);
+
+        // deposit a token and get other token back
+        [ContractEvent]
+        bool Swap(IFungibleToken target);
+    }
+
+    public interface IBank: IContract
+    {
+        IEnumerable<IFund> Funds { get; }
+    }
+    #endregion
 }

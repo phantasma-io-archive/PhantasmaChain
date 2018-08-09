@@ -14,7 +14,7 @@ namespace Phantasma.Contracts
 
         Block GetBlock(BigInteger height);
 
-        T GetContract<T>(Address address) where T : IContractABI;
+        T GetContract<T>(Address address) where T : IContract;
     }
 
     public class RuntimeVM : VirtualMachine, IRuntime
@@ -56,7 +56,7 @@ namespace Phantasma.Contracts
             throw new System.NotImplementedException();
         }
 
-        public T GetContract<T>(Address address) where T : IContractABI
+        public T GetContract<T>(Address address) where T : IContract
         {
             throw new System.NotImplementedException();
         }
