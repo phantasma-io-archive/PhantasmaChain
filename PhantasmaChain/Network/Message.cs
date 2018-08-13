@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Phantasma.Core;
+using Phantasma.Cryptography;
 using Phantasma.Network.Messages;
 using Phantasma.Utils;
 

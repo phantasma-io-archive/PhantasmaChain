@@ -3,7 +3,7 @@ using System.Linq;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 
-namespace Phantasma.Core
+namespace Phantasma.Cryptography
 {
     public sealed class KeyPair 
     {
@@ -49,12 +49,35 @@ namespace Phantasma.Core
             return addressBytes;
         }
 
-        public static KeyPair Random()
+        public static KeyPair Generate()
         {
             var bytes = new byte[32];
             var rnd = new Random();
             rnd.NextBytes(bytes);
             return new KeyPair(bytes);
+        }
+
+        public static KeyPair FromWIF(string wif)
+        {
+            if (wif == null) throw new ArgumentNullException();
+            byte[] data = wif.Base58CheckDecode();
+            if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
+                throw new FormatException();
+            byte[] privateKey = new byte[32];
+            Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
+            Array.Clear(data, 0, data.Length);
+            return new KeyPair(privateKey);
+        }
+
+        public string ToWIF()
+        {
+            byte[] data = new byte[34];
+            data[0] = 0x80;
+            Buffer.BlockCopy(PrivateKey, 0, data, 1, 32);
+            data[33] = 0x01;
+            string wif = data.Base58CheckEncode();
+            Array.Clear(data, 0, data.Length);
+            return wif;
         }
 
         private static byte[] XOR(byte[] x, byte[] y)

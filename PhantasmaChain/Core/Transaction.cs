@@ -2,6 +2,7 @@
 using System.IO;
 using System.Numerics;
 using Phantasma.Contracts;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 
