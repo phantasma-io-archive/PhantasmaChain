@@ -44,7 +44,7 @@ namespace Phantasma.Cryptography
 
         public override int GetHashCode()
         {
-            return data_bytes.ToInt32(0);
+            return (int) data_bytes.ToUInt32(0);
         }
 
         public byte[] ToArray()

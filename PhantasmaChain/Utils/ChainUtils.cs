@@ -126,49 +126,19 @@ namespace Phantasma.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe int ToInt32(this byte[] value, int startIndex)
+        internal static uint ToUInt32(this byte[] value, int startIndex)
         {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((int*)pbyte);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe long ToInt64(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((long*)pbyte);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe ushort ToUInt16(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((ushort*)pbyte);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe uint ToUInt32(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
+            var a = value[startIndex]; startIndex++;
+            var b = value[startIndex]; startIndex++;
+            var c = value[startIndex]; startIndex++;
+            var d = value[startIndex]; startIndex++;
+            return (uint)(a + (b << 8) + (c << 16) + (d << 24));
+            /*fixed (byte* pbyte = &value[startIndex])
             {
                 return *((uint*)pbyte);
-            }
+            }*/
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe ulong ToUInt64(this byte[] value, int startIndex)
-        {
-            fixed (byte* pbyte = &value[startIndex])
-            {
-                return *((ulong*)pbyte);
-            }
-        }
 
         internal static long WeightedAverage<T>(this IEnumerable<T> source, Func<T, long> valueSelector, Func<T, long> weightSelector)
         {
