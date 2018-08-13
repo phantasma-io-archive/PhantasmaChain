@@ -115,7 +115,7 @@ namespace Phantasma.VM
             var b = Read8();
             var c = Read8();
             var d = Read8();
-            return (ushort)(a + (b << 8) + (c << 16) + (d << 24));
+            return (uint)(a + (b << 8) + (c << 16) + (d << 24));
         }
 
         private ulong Read64()
@@ -128,7 +128,7 @@ namespace Phantasma.VM
             var f = Read8();
             var g = Read8();
             var h = Read8();
-            return (ushort)(a + (b << 8) + (c << 16) + (d << 24) + (e << 32) + (f << 40) + (g << 48) + (g << 56));
+            return (ulong)(a + (b << 8) + (c << 16) + (d << 24) + (e << 32) + (f << 40) + (g << 48) + (g << 56));
         }
 
         private ulong ReadVar(ulong max)
