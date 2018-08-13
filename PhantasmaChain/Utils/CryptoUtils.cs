@@ -295,15 +295,25 @@ namespace Phantasma.Utils
 
         public static string PublicKeyToAddress(this byte[] publicKey)
         {
-            return Base58.Encode(publicKey);
+            var bytes = new byte[] { 74 }.Concat(publicKey).ToArray();
+            return Base58.Encode(bytes);
+        }
+
+        public static byte[] AddressToPublicKey(this string address)
+        {
+            var bytes = Base58.Decode(address);
+            if (bytes[0] != 74)
+            {
+                throw new ArgumentException("Invalid address");
+            }
+
+            return bytes.Skip(1).ToArray();
         }
 
         public static byte[] ScriptToPublicKey(this byte[] script)
         {
             var hash = script.Sha256();
-            var temp = new byte[] { 0xFF }.Concat(hash).ToArray();
-            var pubKey = KeyPair.EncodePublicKey(temp);
-            return pubKey;
+            return hash;
         }
     }
 }

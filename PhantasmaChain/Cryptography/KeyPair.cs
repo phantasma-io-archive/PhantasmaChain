@@ -9,7 +9,7 @@ namespace Phantasma.Cryptography
     {
         public readonly byte[] PrivateKey;
         public readonly byte[] PublicKey;
-        public readonly string address;
+        public readonly string Address;
 
         public const int PublicKeyLength = 36;
 
@@ -23,36 +23,14 @@ namespace Phantasma.Cryptography
 
             this.PublicKey = Ed25519.PublicKeyFromSeed(privateKey);
 
-            var addressBytes = EncodePublicKey(this.PublicKey);
-            this.address = addressBytes.PublicKeyToAddress();
+            this.Address = this.PublicKey.PublicKeyToAddress();
         }
 
-        internal static byte[] EncodePublicKey(byte[] pubKey)
-        {
-            if (pubKey == null || pubKey.Length != 33)
-            {
-                throw new ArgumentException("Invalid public key format");
-            }
-
-            var checkSum = pubKey.Adler16();
-            var checkbytes = BitConverter.GetBytes(checkSum);
-
-            var addressBytes = new byte[1 + checkbytes.Length + pubKey.Length];
-            addressBytes[0] = 50;
-            int ofs = 1;
-            Array.Copy(checkbytes, 0, addressBytes, ofs, checkbytes.Length);
-            ofs += checkbytes.Length;
-
-            Array.Copy(pubKey, 0, addressBytes, ofs, pubKey.Length);
-            ofs += pubKey.Length;
-
-            return addressBytes;
-        }
+        private static Random rnd = new Random();
 
         public static KeyPair Generate()
         {
             var bytes = new byte[32];
-            var rnd = new Random();
             rnd.NextBytes(bytes);
             return new KeyPair(bytes);
         }
