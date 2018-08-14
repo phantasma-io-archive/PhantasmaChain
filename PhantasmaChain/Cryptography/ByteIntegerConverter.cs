@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phantasma.Cryptography.Internal
+namespace Phantasma.Cryptography
 {
     // Array16<UInt32> Salsa20 state
     // Array16<UInt64> SHA-512 block

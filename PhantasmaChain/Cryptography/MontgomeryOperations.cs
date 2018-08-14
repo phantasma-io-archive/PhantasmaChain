@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phantasma.Cryptography.Internal.Ed25519Ref10
+namespace Phantasma.Cryptography
 {
 	public static class MontgomeryOperations
 	{

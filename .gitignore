@@ -1,9 +1,10 @@
 .vs/
+Published/
 PhantasmaChain/obj/
+PhantasmaChain/bin/
 PhantasmaNode/bin/
 PhantasmaNode/obj/Debug/
 packages/
-PhantasmaChain/bin/
 PhantasmaTests/obj/
 PhantasmaTests/bin/
 PhantasmaSpinner/obj/

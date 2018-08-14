@@ -11,7 +11,7 @@ namespace Phantasma.Cryptography
 
         public static byte[] Decode(string input)
         {
-            BigInteger bi = BigInteger.Zero;
+            var bi = BigInteger.Zero;
             for (int i = input.Length - 1; i >= 0; i--)
             {
                 int index = Alphabet.IndexOf(input[i]);
@@ -34,11 +34,18 @@ namespace Phantasma.Cryptography
 
         public static string Encode(byte[] input)
         {
-            BigInteger value = new BigInteger(new byte[1].Concat(input).Reverse().ToArray());
+            var temp = new byte[input.Length + 1];
+            for (int i=0; i<input.Length; i++)
+            {
+                temp[i] = input[(input.Length - 1) - i];
+            }
+            temp[input.Length] = 0;
+
+            var value = new BigInteger(temp);
             StringBuilder sb = new StringBuilder();
             while (value >= 58)
             {
-                BigInteger mod = value % 58;
+                var mod = value % 58;
                 sb.Insert(0, Alphabet[(int)mod]);
                 value /= 58;
             }

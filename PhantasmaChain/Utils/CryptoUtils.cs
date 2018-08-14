@@ -7,7 +7,6 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using Phantasma.Core;
 using Phantasma.Cryptography;
 
 namespace Phantasma.Utils
@@ -83,8 +82,10 @@ namespace Phantasma.Utils
         {
             byte[] buffer = Base58.Decode(input);
             if (buffer.Length < 4) throw new FormatException();
-            byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
-            if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
+            byte[] expected_checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
+            expected_checksum = expected_checksum.Take(4).ToArray();
+            var src_checksum = buffer.Skip(buffer.Length - 4).ToArray();
+            if (!src_checksum.SequenceEqual(expected_checksum))
                 throw new FormatException();
             return buffer.Take(buffer.Length - 4).ToArray();
         }
@@ -177,6 +178,7 @@ namespace Phantasma.Utils
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
+        /*
         internal static int GetBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();
@@ -221,6 +223,7 @@ namespace Phantasma.Utils
             if (v < 0) v = (v + n) % n;
             return v;
         }
+        */
 
         internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
         {
@@ -252,7 +255,7 @@ namespace Phantasma.Utils
             return new BigInteger(b);
         }
 
-        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
+        /*public static Fixed8 Sum(this IEnumerable<Fixed8> source)
         {
             long sum = 0;
             checked
@@ -269,11 +272,8 @@ namespace Phantasma.Utils
         {
             return source.Select(selector).Sum();
         }
-
-        public static byte[] Hash256(byte[] message)
-        {
-            return message.Sha256().Sha256();
-        }
+        
+        */
 
         public static uint Murmur32(this IEnumerable<byte> value, uint seed)
         {
@@ -281,6 +281,11 @@ namespace Phantasma.Utils
             {
                 return murmur.ComputeHash(value.ToArray()).ToUInt32(0);
             }
+        }
+
+        public static byte[] Hash256(byte[] message)
+        {
+            return message.Sha256().Sha256();
         }
 
         public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)

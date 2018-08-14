@@ -1,6 +1,4 @@
 ﻿using System;
-using Phantasma.Cryptography.Internal.Ed25519Ref10;
-using Phantasma.Cryptography.Internal;
 
 namespace Phantasma.Cryptography
 {

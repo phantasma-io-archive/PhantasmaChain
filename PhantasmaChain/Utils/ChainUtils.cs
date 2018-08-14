@@ -29,6 +29,8 @@ namespace Phantasma.Utils
 
     public static class ChainUtils
     {
+        private const string hexAlphabet = "0123456789ABCDEF";
+
         public static byte[] HexToBytes(this string value)
         {
             if (value == null || value.Length == 0)
@@ -50,7 +52,8 @@ namespace Phantasma.Utils
 
             for (int i = 0; i < result.Length; i++)
             {
-                result[i] = byte.Parse(value.Substring(i * 2, 2), NumberStyles.AllowHexSpecifier);
+                var str = value.Substring(i * 2, 2);
+                result[i] = (byte)(hexAlphabet.IndexOf(str[0]) * 16 + hexAlphabet.IndexOf(str[1]));
             }
 
             return result;
@@ -94,10 +97,10 @@ namespace Phantasma.Utils
             return new string(c);
         }
 
-        internal static bool TestBit(this BigInteger i, int index)
+        /*internal static bool TestBit(this BigInteger i, int index)
         {
             return (i & (BigInteger.One << index)) > BigInteger.Zero;
-        }
+        }*/
 
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 

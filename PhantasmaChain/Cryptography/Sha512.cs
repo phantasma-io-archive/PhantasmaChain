@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Phantasma.Cryptography.Internal;
 
 namespace Phantasma.Cryptography
 {

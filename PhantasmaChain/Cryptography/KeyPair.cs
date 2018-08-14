@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Phantasma.Cryptography;
 using Phantasma.Utils;
 
 namespace Phantasma.Cryptography

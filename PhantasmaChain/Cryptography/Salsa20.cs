@@ -1,5 +1,4 @@
-﻿using Phantasma.Cryptography.Internal;
-using System;
+﻿using System;
 
 namespace Phantasma.Cryptography
 {
