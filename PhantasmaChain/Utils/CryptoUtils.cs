@@ -4,7 +4,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Phantasma.Cryptography;
@@ -13,8 +12,6 @@ namespace Phantasma.Utils
 {
     public static class CryptoUtils
     {
-        private static ThreadLocal<SHA256> _sha256 = new ThreadLocal<SHA256>(() => SHA256.Create());
-
         public static T[] SubArray<T>(this T[] data, int index, int length)
         {
             T[] result = new T[length];
@@ -22,9 +19,9 @@ namespace Phantasma.Utils
             return result;
         }
 
-        public static byte[] AES256Decrypt(this byte[] block, byte[] key)
+        /*public static byte[] AES256Decrypt(this byte[] block, byte[] key)
         {
-            using (Aes aes = Aes.Create())
+            using (var aes = Aes.Create())
             {
                 aes.Key = key;
                 aes.Mode = CipherMode.ECB;
@@ -77,12 +74,40 @@ namespace Phantasma.Utils
                 }
             }
         }
+        
+        internal static byte[] ToAesKey(this string password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
+                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
+                Array.Clear(passwordBytes, 0, passwordBytes.Length);
+                Array.Clear(passwordHash, 0, passwordHash.Length);
+                return passwordHash2;
+            }
+        }
+
+        internal static byte[] ToAesKey(this SecureString password)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] passwordBytes = password.ToArray();
+                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
+                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
+                Array.Clear(passwordBytes, 0, passwordBytes.Length);
+                Array.Clear(passwordHash, 0, passwordHash.Length);
+                return passwordHash2;
+            }
+        }
+
+             */
 
         public static byte[] Base58CheckDecode(this string input)
         {
             byte[] buffer = Base58.Decode(input);
             if (buffer.Length < 4) throw new FormatException();
-            byte[] expected_checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
+            byte[] expected_checksum = buffer.Sha256(0, (uint)(buffer.Length - 4)).Sha256();
             expected_checksum = expected_checksum.Take(4).ToArray();
             var src_checksum = buffer.Skip(buffer.Length - 4).ToArray();
             if (!src_checksum.SequenceEqual(expected_checksum))
@@ -101,38 +126,12 @@ namespace Phantasma.Utils
 
         public static byte[] Sha256(this IEnumerable<byte> value)
         {
-            return _sha256.Value.ComputeHash(value.ToArray());
+            return new SHA256().ComputeHash(value.ToArray());
         }
 
-        public static byte[] Sha256(this byte[] value, int offset, int count)
+        public static byte[] Sha256(this byte[] value, uint offset, uint count)
         {
-            return _sha256.Value.ComputeHash(value, offset, count);
-        }
-
-        internal static byte[] ToAesKey(this string password)
-        {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
-                Array.Clear(passwordBytes, 0, passwordBytes.Length);
-                Array.Clear(passwordHash, 0, passwordHash.Length);
-                return passwordHash2;
-            }
-        }
-
-        internal static byte[] ToAesKey(this SecureString password)
-        {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                byte[] passwordBytes = password.ToArray();
-                byte[] passwordHash = sha256.ComputeHash(passwordBytes);
-                byte[] passwordHash2 = sha256.ComputeHash(passwordHash);
-                Array.Clear(passwordBytes, 0, passwordBytes.Length);
-                Array.Clear(passwordHash, 0, passwordHash.Length);
-                return passwordHash2;
-            }
+            return new SHA256().ComputeHash(value, offset, count);
         }
 
         internal static byte[] ToArray(this SecureString s)
@@ -240,7 +239,7 @@ namespace Phantasma.Utils
             return new BigInteger(b);
         }
 
-        internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)
+        /*internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
@@ -255,7 +254,7 @@ namespace Phantasma.Utils
             return new BigInteger(b);
         }
 
-        /*public static Fixed8 Sum(this IEnumerable<Fixed8> source)
+        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
         {
             long sum = 0;
             checked
@@ -274,14 +273,6 @@ namespace Phantasma.Utils
         }
         
         */
-
-        public static uint Murmur32(this IEnumerable<byte> value, uint seed)
-        {
-            using (Murmur3 murmur = new Murmur3(seed))
-            {
-                return murmur.ComputeHash(value.ToArray()).ToUInt32(0);
-            }
-        }
 
         public static byte[] Hash256(byte[] message)
         {

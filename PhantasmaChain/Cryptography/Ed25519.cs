@@ -135,7 +135,7 @@ namespace Phantasma.Cryptography
             FieldOperations.fe_frombytes(out edwardsY, publicKey.Array, publicKey.Offset);
             FieldOperations.fe_1(out edwardsZ);
             EdwardsToMontgomeryX(out montgomeryX, ref edwardsY, ref edwardsZ);
-            byte[] h = Sha512.Hash(privateKey.Array, privateKey.Offset, 32);//ToDo: Remove alloc
+            byte[] h = SHA512.Hash(privateKey.Array, privateKey.Offset, 32);//ToDo: Remove alloc
             ScalarOperations.sc_clamp(h, 0);
             MontgomeryOperations.scalarmult(out sharedMontgomeryX, h, 0, ref montgomeryX);
             CryptoBytes.Wipe(h);

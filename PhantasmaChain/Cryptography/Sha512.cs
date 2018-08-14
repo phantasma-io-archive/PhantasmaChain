@@ -2,7 +2,7 @@
 
 namespace Phantasma.Cryptography
 {
-    public class Sha512
+    public class SHA512
     {
         private Array8<UInt64> _state;
         private readonly byte[] _buffer;
@@ -10,7 +10,7 @@ namespace Phantasma.Cryptography
         public const int BlockSize = 128;
         private static readonly byte[] _padding = new byte[] { 0x80 };
 
-        public Sha512()
+        public SHA512()
         {
             _buffer = new byte[BlockSize];//todo: remove allocation
             Init();
@@ -122,7 +122,7 @@ namespace Phantasma.Cryptography
 
         public static byte[] Hash(byte[] data, int offset, int count)
         {
-            var hasher = new Sha512();
+            var hasher = new SHA512();
             hasher.Update(data, offset, count);
             return hasher.Finish();
         }

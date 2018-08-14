@@ -10,7 +10,7 @@ namespace Phantasma.Cryptography
             int i;
 
             Array.Copy(seed, seedoffset, sk, skoffset, 32);
-            byte[] h = Sha512.Hash(sk, skoffset, 32);//ToDo: Remove alloc
+            byte[] h = SHA512.Hash(sk, skoffset, 32);//ToDo: Remove alloc
             ScalarOperations.sc_clamp(h, 0);
 
             GroupOperations.ge_scalarmult_base(out A, h, 0);
@@ -34,7 +34,7 @@ namespace Phantasma.Cryptography
             if (GroupOperations.ge_frombytes_negate_vartime(out A, pk, pkoffset) != 0)
                 return false;
 
-            var hasher = new Sha512();
+            var hasher = new SHA512();
             hasher.Update(sig, sigoffset, 32);
             hasher.Update(pk, pkoffset, 32);
             hasher.Update(m, moffset, mlen);
@@ -61,7 +61,7 @@ namespace Phantasma.Cryptography
             byte[] r;
             byte[] hram;
             GroupElementP3 R;
-            var hasher = new Sha512();
+            var hasher = new SHA512();
             {
                 hasher.Update(sk, skoffset, 32);
                 az = hasher.Finish();
