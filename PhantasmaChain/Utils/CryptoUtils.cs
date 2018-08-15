@@ -289,9 +289,16 @@ namespace Phantasma.Utils
             return Ed25519.Verify(message, signature, pubkey);
         }
 
-        public static string PublicKeyToAddress(this byte[] publicKey)
+        public static string PublicKeyToAddress(this byte[] publicKey, AddressType type)
         {
-            var bytes = new byte[] { 74 }.Concat(publicKey).ToArray();
+            byte opcode;
+            switch (type)
+            {
+                case AddressType.Personal: opcode = 74; break;
+                default: throw new ArgumentException("Invalid address type");
+            }
+
+            var bytes = new byte[] { opcode }.Concat(publicKey).ToArray();
             return Base58.Encode(bytes);
         }
 

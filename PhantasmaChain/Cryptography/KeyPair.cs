@@ -4,6 +4,13 @@ using Phantasma.Utils;
 
 namespace Phantasma.Cryptography
 {
+    public enum AddressType
+    {
+        Personal,
+        Stealth,
+        Contract
+    }
+
     public sealed class KeyPair 
     {
         public readonly byte[] PrivateKey;
@@ -22,7 +29,7 @@ namespace Phantasma.Cryptography
 
             this.PublicKey = Ed25519.PublicKeyFromSeed(privateKey);
 
-            this.Address = this.PublicKey.PublicKeyToAddress();
+            this.Address = this.PublicKey.PublicKeyToAddress(AddressType.Personal);
         }
 
         private static Random rnd = new Random();
