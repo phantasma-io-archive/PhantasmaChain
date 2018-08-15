@@ -36,7 +36,7 @@ namespace PhantasmaCLIWallet
                 {
                     Console.WriteLine("\t\tEvent #" + index);
                     Console.WriteLine("\t\tKind: " + evt.Kind);
-                    Console.WriteLine("\t\tTarget: " + evt.PublicKey.PublicKeyToAddress());
+                    Console.WriteLine("\t\tTarget: " + evt.PublicKey.PublicKeyToAddress(AddressType.Personal));
                     Console.WriteLine();
 
                     index++;
@@ -50,13 +50,13 @@ namespace PhantasmaCLIWallet
         {
             Console.WriteLine("Initializng chain...");
 
-            var owner = KeyPair.Random();
-            Console.WriteLine("Genesis Address: " + owner.address);
+            var owner = KeyPair.Generate();
+            Console.WriteLine("Genesis Address: " + owner.Address);
 
             var chain = new Chain(owner, log);
 
-            var miner = KeyPair.Random();
-            var third = KeyPair.Random();
+            var miner = KeyPair.Generate();
+            var third = KeyPair.Generate();
 
             var tx = new Transaction(owner.PublicKey, ScriptUtils.TransferScript(chain.NativeTokenPubKey, owner.PublicKey, third.PublicKey, 5), 0, 0);
             tx.Sign(owner);
@@ -72,7 +72,7 @@ namespace PhantasmaCLIWallet
 
         static void Main(string[] args)
         {
-            var node_keys = KeyPair.Random();
+            var node_keys = KeyPair.Generate();
             var log = new ConsoleLog();
             var seeds = new List<Endpoint>();
             int port = 6060;
