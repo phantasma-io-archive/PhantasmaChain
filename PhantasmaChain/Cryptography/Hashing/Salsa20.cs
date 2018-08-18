@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.Utils;
+using System;
 
 namespace Phantasma.Cryptography.Hashing
 {
@@ -43,10 +44,7 @@ namespace Phantasma.Cryptography.Hashing
 
         public static void HSalsa(out Array16<UInt32> output, ref Array16<UInt32> input, int rounds)
         {
-            if (rounds % 2 != 0)
-            {
-                throw new ArgumentException("Number of salsa rounds must be even");
-            }
+            Throw.If(rounds % 2 != 0, "Number of salsa rounds must be even");
 
             int doubleRounds = rounds / 2;
 

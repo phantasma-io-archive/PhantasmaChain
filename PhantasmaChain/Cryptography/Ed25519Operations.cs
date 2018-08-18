@@ -27,7 +27,7 @@ namespace Phantasma.Cryptography
             CryptoUtils.Wipe(h);
         }
 
-        public static bool crypto_sign_verify(
+        public static bool VerifySignature(
             byte[] sig, int sigoffset,
             byte[] m, int moffset, int mlen,
             byte[] pk, int pkoffset)
@@ -59,7 +59,7 @@ namespace Phantasma.Cryptography
             return result;
         }
 
-        public static void crypto_sign2(
+        public static void GenerateSignature(
             byte[] sig, int sigoffset,
             byte[] m, int moffset, int mlen,
             byte[] sk, int skoffset)

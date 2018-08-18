@@ -15,24 +15,35 @@ namespace Phantasma.Cryptography
 
         internal MerkleTree(UInt256[] hashes)
         {
-            if (hashes.Length == 0) throw new ArgumentException();
+            Throw.If(hashes == null || hashes.Length == 0, "hashes cant be empty list");
+
             this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
+
             int depth = 1;
             for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
+            {
                 depth++;
+            }
+
             this.Depth = depth;
         }
 
         private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
         {
-            if (leaves.Length == 0) throw new ArgumentException();
-            if (leaves.Length == 1) return leaves[0];
+            Throw.If(leaves.Length == 0, "leaves cant be empty list");
+
+            if (leaves.Length == 1)
+            {
+                return leaves[0];
+            }
+
             MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
             for (int i = 0; i < parents.Length; i++)
             {
                 parents[i] = new MerkleTreeNode();
                 parents[i].LeftChild = leaves[i * 2];
                 leaves[i * 2].Parent = parents[i];
+
                 if (i * 2 + 1 == leaves.Length)
                 {
                     parents[i].RightChild = parents[i].LeftChild;
@@ -42,16 +53,13 @@ namespace Phantasma.Cryptography
                     parents[i].RightChild = leaves[i * 2 + 1];
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
+
                 parents[i].Hash = new UInt256(CryptoUtils.Hash256(parents[i].LeftChild.Hash.ToArray().Concat(parents[i].RightChild.Hash.ToArray()).ToArray()));
             }
-            return Build(parents); //TailCall
+
+            return Build(parents); 
         }
 
-        /// <summary>
-        /// 计算根节点的值
-        /// </summary>
-        /// <param name="hashes">子节点列表</param>
-        /// <returns>返回计算的结果</returns>
         public static UInt256 ComputeRoot(UInt256[] hashes)
         {
             if (hashes.Length == 0) throw new ArgumentException();
@@ -77,7 +85,7 @@ namespace Phantasma.Cryptography
         // depth-first order
         public UInt256[] ToHashArray()
         {
-            List<UInt256> hashes = new List<UInt256>();
+            var hashes = new List<UInt256>();
             DepthFirstSearch(root, hashes);
             return hashes.ToArray();
         }
@@ -92,7 +100,9 @@ namespace Phantasma.Cryptography
         private static void Trim(MerkleTreeNode node, int index, int depth, BitArray flags)
         {
             if (depth == 1) return;
+
             if (node.LeftChild == null) return; // if left is null, then right must be null
+
             if (depth == 2)
             {
                 if (!flags.Get(index * 2) && !flags.Get(index * 2 + 1))

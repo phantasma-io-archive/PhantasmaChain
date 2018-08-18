@@ -17,15 +17,15 @@ namespace Phantasma.Cryptography
         public readonly byte[] PublicKey;
         public readonly string Address;
 
-        public const int PublicKeyLength = 36;
+        public const int PrivateKeyLength = 32;
+        public const int PublicKeyLength = 32;
 
         public KeyPair(byte[] privateKey)
         {
-            if (privateKey.Length != 32)
-                throw new ArgumentException();
+            Throw.If(privateKey.Length != PrivateKeyLength, $"privateKey should have length {PrivateKeyLength}");
 
-            this.PrivateKey = new byte[32];
-            Buffer.BlockCopy(privateKey, 0, PrivateKey, 0, 32);            
+            this.PrivateKey = new byte[PrivateKeyLength];
+            Buffer.BlockCopy(privateKey, 0, PrivateKey, 0, PrivateKeyLength);            
 
             this.PublicKey = Ed25519.PublicKeyFromSeed(privateKey);
 
@@ -43,10 +43,11 @@ namespace Phantasma.Cryptography
 
         public static KeyPair FromWIF(string wif)
         {
-            if (wif == null) throw new ArgumentNullException();
+            Throw.If(wif == null, "WIF required");
+
             byte[] data = wif.Base58CheckDecode();
-            if (data.Length != 34 || data[0] != 0x80 || data[33] != 0x01)
-                throw new FormatException();
+            Throw.If(data.Length != 34 || data[0] != 0x80 || data[33] != 0x01, "Invalid WIF format");
+
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);

@@ -15,41 +15,31 @@ namespace Phantasma.Cryptography
 
         public static bool Verify(ArraySegment<byte> signature, ArraySegment<byte> message, ArraySegment<byte> publicKey)
         {
-            if (signature.Count != SignatureSizeInBytes)
-                throw new ArgumentException(string.Format("Signature size must be {0}", SignatureSizeInBytes), "signature.Count");
-            if (publicKey.Count != PublicKeySizeInBytes)
-                throw new ArgumentException(string.Format("Public key size must be {0}", PublicKeySizeInBytes), "publicKey.Count");
-            return Ed25519Operations.crypto_sign_verify(signature.Array, signature.Offset, message.Array, message.Offset, message.Count, publicKey.Array, publicKey.Offset);
+            Throw.If(signature.Count != SignatureSizeInBytes, $"Signature size must be {SignatureSizeInBytes}");
+            Throw.If(publicKey.Count != PublicKeySizeInBytes, $"Public key size must be {PublicKeySizeInBytes}");
+            return Ed25519Operations.VerifySignature(signature.Array, signature.Offset, message.Array, message.Offset, message.Count, publicKey.Array, publicKey.Offset);
         }
 
         public static bool Verify(byte[] signature, byte[] message, byte[] publicKey)
         {
-            if (signature == null)
-                throw new ArgumentNullException("signature");
-            if (message == null)
-                throw new ArgumentNullException("message");
-            if (publicKey == null)
-                throw new ArgumentNullException("publicKey");
-            if (signature.Length != SignatureSizeInBytes)
-                throw new ArgumentException(string.Format("Signature size must be {0}", SignatureSizeInBytes), "signature.Length");
-            if (publicKey.Length != PublicKeySizeInBytes)
-                throw new ArgumentException(string.Format("Public key size must be {0}", PublicKeySizeInBytes), "publicKey.Length");
-            return Ed25519Operations.crypto_sign_verify(signature, 0, message, 0, message.Length, publicKey, 0);
+            Throw.If(signature == null, "signature");
+            Throw.If(message == null, "message");
+            Throw.If(publicKey == null, "publicKey");
+            Throw.If(signature.Length != SignatureSizeInBytes, $"Signature size must be {SignatureSizeInBytes}");
+            Throw.If(publicKey.Length != PublicKeySizeInBytes, $"Public key size must be {PublicKeySizeInBytes}");
+
+            return Ed25519Operations.VerifySignature(signature, 0, message, 0, message.Length, publicKey, 0);
         }
 
         public static void Sign(ArraySegment<byte> signature, ArraySegment<byte> message, ArraySegment<byte> expandedPrivateKey)
         {
-            if (signature.Array == null)
-                throw new ArgumentNullException("signature.Array");
-            if (signature.Count != SignatureSizeInBytes)
-                throw new ArgumentException("signature.Count");
-            if (expandedPrivateKey.Array == null)
-                throw new ArgumentNullException("expandedPrivateKey.Array");
-            if (expandedPrivateKey.Count != ExpandedPrivateKeySizeInBytes)
-                throw new ArgumentException("expandedPrivateKey.Count");
-            if (message.Array == null)
-                throw new ArgumentNullException("message.Array");
-            Ed25519Operations.crypto_sign2(signature.Array, signature.Offset, message.Array, message.Offset, message.Count, expandedPrivateKey.Array, expandedPrivateKey.Offset);
+            Throw.If(signature.Array == null, "signature.Array");
+            Throw.If(signature.Count != SignatureSizeInBytes, "signature.Count");
+            Throw.If(expandedPrivateKey.Array == null, "expandedPrivateKey.Array");
+            Throw.If(expandedPrivateKey.Count != ExpandedPrivateKeySizeInBytes, "expandedPrivateKey.Count");
+            Throw.If(message.Array == null, "message.Array");
+
+            Ed25519Operations.GenerateSignature(signature.Array, signature.Offset, message.Array, message.Offset, message.Count, expandedPrivateKey.Array, expandedPrivateKey.Offset);
         }
 
         public static byte[] Sign(byte[] message, byte[] expandedPrivateKey)
@@ -79,10 +69,9 @@ namespace Phantasma.Cryptography
 
         public static void KeyPairFromSeed(out byte[] publicKey, out byte[] expandedPrivateKey, byte[] privateKeySeed)
         {
-            if (privateKeySeed == null)
-                throw new ArgumentNullException("privateKeySeed");
-            if (privateKeySeed.Length != PrivateKeySeedSizeInBytes)
-                throw new ArgumentException("privateKeySeed");
+            Throw.If(privateKeySeed == null, "privateKeySeed");
+            Throw.If(privateKeySeed.Length != PrivateKeySeedSizeInBytes, $"privateKeySeed length should be {PrivateKeySeedSizeInBytes}");
+
             var pk = new byte[PublicKeySizeInBytes];
             var sk = new byte[ExpandedPrivateKeySizeInBytes];
             Ed25519Operations.crypto_sign_keypair(pk, 0, sk, 0, privateKeySeed, 0);
@@ -110,7 +99,6 @@ namespace Phantasma.Cryptography
                 privateKeySeed.Array, privateKeySeed.Offset);
         }
 
-        [Obsolete("Needs more testing")]
         public static byte[] KeyExchange(byte[] publicKey, byte[] privateKey)
         {
             var sharedKey = new byte[SharedKeySizeInBytes];
@@ -118,21 +106,15 @@ namespace Phantasma.Cryptography
             return sharedKey;
         }
 
-        [Obsolete("Needs more testing")]
+        //Needs more testing
         public static void KeyExchange(ArraySegment<byte> sharedKey, ArraySegment<byte> publicKey, ArraySegment<byte> privateKey)
         {
-            if (sharedKey.Array == null)
-                throw new ArgumentNullException("sharedKey.Array");
-            if (publicKey.Array == null)
-                throw new ArgumentNullException("publicKey.Array");
-            if (privateKey.Array == null)
-                throw new ArgumentNullException("privateKey");
-            if (sharedKey.Count != 32)
-                throw new ArgumentException("sharedKey.Count != 32");
-            if (publicKey.Count != 32)
-                throw new ArgumentException("publicKey.Count != 32");
-            if (privateKey.Count != 64)
-                throw new ArgumentException("privateKey.Count != 64");
+            Throw.If(sharedKey.Array == null, "sharedKey.Array");
+            Throw.If(publicKey.Array == null, "publicKey.Array");
+            Throw.If(privateKey.Array == null, "privateKey");
+            Throw.If(sharedKey.Count != 32, "sharedKey.Count != 32");
+            Throw.If(publicKey.Count != 32, "publicKey.Count != 32");
+            Throw.If(privateKey.Count != 64, "privateKey.Count != 64");
 
             FieldElement montgomeryX, edwardsY, edwardsZ, sharedMontgomeryX;
             FieldOperations.fe_frombytes(out edwardsY, publicKey.Array, publicKey.Offset);
