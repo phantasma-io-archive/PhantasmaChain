@@ -295,6 +295,8 @@ namespace Phantasma.Utils
             switch (type)
             {
                 case AddressType.Personal: opcode = 74; break;
+                case AddressType.Stealth: opcode = 54; break;
+                case AddressType.Contract: opcode = 37; break;
                 default: throw new ArgumentException("Invalid address type");
             }
 
@@ -305,7 +307,8 @@ namespace Phantasma.Utils
         public static byte[] AddressToPublicKey(this string address)
         {
             var bytes = Base58.Decode(address);
-            if (bytes[0] != 74)
+            var opcode = bytes[0];
+            if (opcode != 74 && opcode != 54 && opcode != 37)
             {
                 throw new ArgumentException("Invalid address");
             }

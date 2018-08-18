@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Phantasma.Contracts;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 
@@ -56,7 +57,7 @@ namespace Phantasma.Core
                     return Encoding.UTF8.GetString(_storage[tag]);
                 }
 
-                return PublicKey.PublicKeyToAddress();
+                return PublicKey.PublicKeyToAddress((AddressType)99);
             }
         }
 

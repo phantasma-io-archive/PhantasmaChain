@@ -22,7 +22,7 @@ namespace Phantasma.Core
 
             var contract = new CustomContract(this, script, abi);
 
-            Log.Message($"Deploying contract: {contract.PublicKey.PublicKeyToAddress()}");
+            Log.Message($"Deploying contract: {contract.PublicKey.PublicKeyToAddress(Cryptography.AddressType.Contract)}");
 
             if (NativeTokenPubKey == null)
             {

@@ -358,7 +358,7 @@ namespace Phantasma.VM
                 case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
-                case VMType.Address: return $"[Address] => {((byte[])Data).PublicKeyToAddress()}";
+                case VMType.Address: return $"[Address] => {((byte[])Data).PublicKeyToAddress((AddressType)99)}";
                 case VMType.Object: return $"[Object] => {Data.GetType().Name}";
                 default: return "Unknown";
             }
