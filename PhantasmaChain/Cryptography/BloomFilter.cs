@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Linq;
-using Phantasma.Utils;
+using Phantasma.Cryptography.Hashing;
 
 namespace Phantasma.Cryptography
 {
@@ -26,27 +26,30 @@ namespace Phantasma.Cryptography
         public void Add(byte[] element)
         {
             foreach (uint i in seeds.AsParallel().Select(s => Murmur32.Hash(element)))
+            {
                 bits.Set((int)(i % (uint)bits.Length), true);
+            }
         }
 
         public bool Check(byte[] element)
         {
             foreach (uint i in seeds.AsParallel().Select(s => Murmur32.Hash(element, s)))
+            {
                 if (!bits.Get((int)(i % (uint)bits.Length)))
                     return false;
+            }
+
             return true;
         }
         
         public void GetBits(byte[] newBits)
         {
-#if NET461
-            bits.CopyTo(newBits, 0);
-#else
             // the method 'BitArray.CopyTo' is not available in .Net Core
             for (int i = 0; i < bits.Length; i++)
+            {
                 if (bits.Get(i))
                     newBits[i / 8] |= (byte)(1 << (i % 8));
-#endif
+            }
         }
     }
 }

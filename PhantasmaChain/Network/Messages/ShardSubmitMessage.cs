@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Phantasma.Core;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Network.Messages
 {

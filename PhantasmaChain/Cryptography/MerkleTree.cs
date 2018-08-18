@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Phantasma.Mathematics;
 using Phantasma.Utils;
 
 namespace Phantasma.Cryptography

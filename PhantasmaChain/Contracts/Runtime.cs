@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Phantasma.Core;
+using Phantasma.Blockchain;
 using Phantasma.VM;
 
 namespace Phantasma.Contracts

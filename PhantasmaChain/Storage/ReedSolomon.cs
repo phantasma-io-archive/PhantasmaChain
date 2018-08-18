@@ -1,5 +1,5 @@
 using Phantasma.Utils;
-using System;
+using Phantasma.Mathematics;
 
 /**
  * Reed-Solomon Coding over 8-bit values.

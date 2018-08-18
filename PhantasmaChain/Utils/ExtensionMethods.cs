@@ -180,78 +180,6 @@ namespace Phantasma.Utils
             });
         }
 
-        public static int Mod(this int a, int b)
-        {
-            return (a % b + b) % b;
-        }
-
-        public static T Second<T>(this List<T> items)
-        {
-            return items[1];
-        }
-
-        /// <summary>
-        /// Little endian conversion of bytes to bits.
-        /// </summary>
-		public static IEnumerable<bool> Bits(this byte[] bytes)
-        {
-            IEnumerable<bool> GetBits(byte b)
-            {
-                byte shifter = 0x01;
-
-                for (int i = 0; i < 8; i++)
-                {
-                    yield return (b & shifter) != 0;
-                    shifter <<= 1;
-                }
-            }
-
-            return bytes.SelectMany(GetBits);
-        }
-
-        /// <summary>
-        /// Value cannot exceed max.
-        /// </summary>
-        public static int Min(this int a, int max)
-        {
-            return (a > max) ? max : a;
-        }
-
-        /// <summary>
-        /// Value cannot be less than min.
-        /// </summary>
-        public static int Max(this int a, int min)
-        {
-            return (a < min) ? min : a;
-        }
-
-        public static T Next<T>(this IEnumerable<T> source)
-        {
-            using (var enumerator = source.GetEnumerator())
-            {
-                enumerator.MoveNext();
-
-                return enumerator.Current;
-            }
-        }
-
-        public static bool IsNext<T>(this IEnumerable<T> source, Func<T, bool> predicate)
-        {
-            using (var enumerator = source.GetEnumerator())
-            {
-                enumerator.MoveNext();
-                return predicate(enumerator.Current);
-            }
-        }
-
-        /// <summary>
-        /// Append a 0 to the byte array so that when converting to a BigInteger, the value remains positive.
-        /// </summary>
-        public static byte[] Append0(this byte[] b)
-        {
-            return b.Concat(new byte[] { 0 }).ToArray();
-        }
-
         public static bool ApproximatelyEquals(this double d, double val, double range)
         {
             return d >= val - range && d <= val + range;
@@ -273,14 +201,9 @@ namespace Phantasma.Utils
                 sum += delta * (val - mean);
             }
             if (1 < n)
-                stdDev = Math.Sqrt(sum / (n - 1));
+                stdDev = System.Math.Sqrt(sum / (n - 1));
 
             return stdDev;
-        }
-
-        public static byte[] to_Utf8(this string str)
-        {
-            return Encoding.UTF8.GetBytes(str);
         }
     }
 }

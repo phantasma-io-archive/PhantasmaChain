@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
-using Phantasma.Consensus;
-using Phantasma.Core;
+using Phantasma.Blockchain.Consensus;
+using Phantasma.Blockchain;
 using Phantasma.Cryptography;
 using Phantasma.Network;
 using Phantasma.Utils;
+using Phantasma.Mathematics;
 
 namespace PhantasmaCLIWallet
 {
@@ -72,6 +74,22 @@ namespace PhantasmaCLIWallet
 
         static void Main(string[] args)
         {
+            /*var publicKey = new byte[32];
+            var rnd = new Random();
+            rnd.NextBytes(publicKey);
+            byte opcode = 1;
+            do
+            {
+                var bytes = new byte[] { opcode }.Concat(publicKey).ToArray();
+                var str = Base58.Encode(bytes);
+                if (str.StartsWith("C"))
+                {
+                    return;
+                }
+                opcode++;
+            } while (opcode < 255);
+            */
+
             var node_keys = KeyPair.Generate();
             var log = new ConsoleLog();
             var seeds = new List<Endpoint>();

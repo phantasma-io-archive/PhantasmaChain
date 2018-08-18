@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 using Phantasma.Utils;
 
 namespace Phantasma.VM
@@ -354,7 +355,7 @@ namespace Phantasma.VM
             {
                 case VMType.None:return "Null";
                 case VMType.Struct: return "[Struct]";
-                case VMType.Bytes: return $"[Bytes] => {((byte[])Data).ByteToHex()}";
+                case VMType.Bytes: return $"[Bytes] => {Base16.Encode(((byte[])Data))}";
                 case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";

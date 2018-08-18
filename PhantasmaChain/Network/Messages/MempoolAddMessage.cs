@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Phantasma.Core;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Network.Messages
 {

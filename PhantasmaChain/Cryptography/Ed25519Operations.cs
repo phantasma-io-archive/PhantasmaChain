@@ -1,4 +1,7 @@
 ﻿using System;
+using Phantasma.Cryptography.Hashing;
+using Phantasma.Mathematics;
+using Phantasma.Utils;
 
 namespace Phantasma.Cryptography
 {
@@ -16,8 +19,12 @@ namespace Phantasma.Cryptography
             GroupOperations.ge_scalarmult_base(out A, h, 0);
             GroupOperations.ge_p3_tobytes(pk, pkoffset, ref A);
 
-            for (i = 0; i < 32; ++i) sk[skoffset + 32 + i] = pk[pkoffset + i];
-            CryptoBytes.Wipe(h);
+            for (i = 0; i < 32; ++i)
+            {
+                sk[skoffset + 32 + i] = pk[pkoffset + i];
+            }
+
+            CryptoUtils.Wipe(h);
         }
 
         public static bool crypto_sign_verify(
@@ -46,9 +53,9 @@ namespace Phantasma.Cryptography
             Array.Copy(sig, sigoffset + 32, sm32, 0, 32);
             GroupOperations.ge_double_scalarmult_vartime(out R, h, ref A, sm32);
             GroupOperations.ge_tobytes(checkr, 0, ref R);
-            var result = CryptoBytes.ConstantTimeEquals(checkr, 0, sig, sigoffset, 32);
-            CryptoBytes.Wipe(h);
-            CryptoBytes.Wipe(checkr);
+            var result = CryptoUtils.ConstantTimeEquals(checkr, 0, sig, sigoffset, 32);
+            CryptoUtils.Wipe(h);
+            CryptoUtils.Wipe(checkr);
             return result;
         }
 
@@ -87,7 +94,7 @@ namespace Phantasma.Cryptography
                 Array.Copy(sig, sigoffset + 32, s, 0, 32);
                 ScalarOperations.sc_muladd(s, hram, az, r);
                 Array.Copy(s, 0, sig, sigoffset + 32, 32);
-                CryptoBytes.Wipe(s);
+                CryptoUtils.Wipe(s);
             }
         }
     }

@@ -1,7 +1,7 @@
-using Phantasma.Utils;
 using System;
-using System.Linq;
 using System.Text;
+using Phantasma.Utils;
+using Phantasma.Mathematics;
 
 /**
  * A matrix over the 8-bit Galois field.

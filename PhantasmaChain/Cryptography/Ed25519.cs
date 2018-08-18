@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Phantasma.Cryptography.Hashing;
+using Phantasma.Mathematics;
+using Phantasma.Utils;
+using System;
 
 namespace Phantasma.Cryptography
 {
@@ -61,7 +64,7 @@ namespace Phantasma.Cryptography
             byte[] privateKey;
             byte[] publicKey;
             KeyPairFromSeed(out publicKey, out privateKey, privateKeySeed);
-            CryptoBytes.Wipe(privateKey);
+            CryptoUtils.Wipe(privateKey);
             return publicKey;
         }
 
@@ -70,7 +73,7 @@ namespace Phantasma.Cryptography
             byte[] privateKey;
             byte[] publicKey;
             KeyPairFromSeed(out publicKey, out privateKey, privateKeySeed);
-            CryptoBytes.Wipe(publicKey);
+            CryptoUtils.Wipe(publicKey);
             return privateKey;
         }
 
@@ -138,7 +141,7 @@ namespace Phantasma.Cryptography
             byte[] h = SHA512.Hash(privateKey.Array, privateKey.Offset, 32);//ToDo: Remove alloc
             ScalarOperations.sc_clamp(h, 0);
             MontgomeryOperations.scalarmult(out sharedMontgomeryX, h, 0, ref montgomeryX);
-            CryptoBytes.Wipe(h);
+            CryptoUtils.Wipe(h);
             FieldOperations.fe_tobytes(sharedKey.Array, sharedKey.Offset, ref sharedMontgomeryX);
             KeyExchangeOutputHashNaCl(sharedKey.Array, sharedKey.Offset);
         }
