@@ -40,7 +40,7 @@ Smart Contracts | eg: language features, compilers | In development | 30%
 Network 			| P2P communication | In development | 40%
 Consensus | Distributed consensus for nodes | In development | 20%
 Relay | Off-chain relay | In development | 10%
-Storage | Distributed storage | R&D | -
+Storage | Distributed storage | In development| 30%
 API 			| RPC api for nodes | Planned | -
 
 ## Compatibility
