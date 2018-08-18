@@ -118,6 +118,24 @@ namespace Phantasma.Utils
         }
 
         /// <summary>
+        /// Throws <exception cref="InvalidConstraintException"/> if constraint is true.
+        /// </summary>
+        /// <param name="lambda">The lambda expression.</param>
+        public static void If(Func<bool> lambda, string constraintName)
+        {
+            var ret = lambda.Invoke();
+            If(ret, constraintName);
+        }
+
+        public static void If(bool constraint, string constraintName)
+        {
+            if (constraint)
+            {
+                throw new ArgumentException("Cannot be true", constraintName);
+            }
+        }
+
+        /// <summary>
         /// Throws <exception cref="InvalidConstraintException"/> if constraint is false.
         /// </summary>
         /// <param name="lambda">The lambda expression.</param>
