@@ -142,7 +142,7 @@ namespace Phantasma.Mathematics
                 dataLength++;
             }
 
-            Throw.If(dataLength > 70, "Byte overflow in constructor.");
+            Throw.If(dataLength > 70, "Byte overflow in constructor");
             _data = new uint[70];
             int num3 = 0;
             for (int num4 = num - 1; num4 >= 3; num4 -= 4)
@@ -1181,24 +1181,18 @@ namespace Phantasma.Mathematics
 
         public byte[] ToByteArray()
         {
-            bool flag = true;
-            int num = BitCount();
-            if (flag)
+            int bitCount = BitCount();
+            int byteCount = bitCount >> 3;
+
+            if ((bitCount & 7) != 0)
             {
-                num++;
+                byteCount++;
             }
-            int num2 = num >> 3;
-            if ((num & 7) != 0)
-            {
-                num2++;
-            }
-            byte[] array = new byte[num2];
+
+            var array = new byte[byteCount];
             int num3 = 0;
             uint num4 = _data[dataLength - 1];
-            if (flag)
-            {
-                array[num3++] = 0;
-            }
+
             int num6 = num3;
             uint num7;
             if ((num7 = ((num4 >> 24) & 0xFF)) != 0)

@@ -23,7 +23,6 @@ namespace Phantasma.Mathematics
 
             byte[] bytes = bi.ToByteArray();
             Array.Reverse(bytes);
-            bool stripSignByte = bytes.Length > 1 && bytes[0] == 0 && bytes[1] >= 0x80;
 
             int leadingZeros = 0;
             for (int i = 0; i < input.Length && input[i] == Alphabet[0]; i++)
@@ -31,8 +30,8 @@ namespace Phantasma.Mathematics
                 leadingZeros++;
             }
 
-            byte[] tmp = new byte[bytes.Length - (stripSignByte ? 1 : 0) + leadingZeros];
-            Array.Copy(bytes, stripSignByte ? 1 : 0, tmp, leadingZeros, tmp.Length - leadingZeros);
+            byte[] tmp = new byte[bytes.Length + leadingZeros];
+            Array.Copy(bytes, 0, tmp, leadingZeros, tmp.Length - leadingZeros);
             return tmp;
         }
 
