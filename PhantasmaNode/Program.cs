@@ -19,14 +19,14 @@ namespace PhantasmaCLIWallet
             foreach (var block in chain.Blocks)
             {
                 Console.WriteLine("Block #" + block.Height);
-                Console.WriteLine("\tHash: " + Base58.Encode(block.Hash));
+                Console.WriteLine("\tHash: " + block.Hash);
 
                 Console.WriteLine("\tTransactions: ");
                 int index = 0;
                 foreach (var tx in block.Transactions)
                 {
                     Console.WriteLine("\t\tTransaction #" + index);
-                    Console.WriteLine("\t\tHash: " + Base58.Encode(tx.Hash));
+                    Console.WriteLine("\t\tHash: " + tx.Hash);
                     Console.WriteLine();
 
                     index++;

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM.Contracts;
 using Phantasma.VM.Types;
@@ -19,8 +20,8 @@ namespace Phantasma.Blockchain
         public BigInteger Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
         public uint Nonce { get; private set; }
-        public byte[] Hash { get; private set; }
-        public byte[] PreviousHash { get; private set; }
+        public Hash Hash { get; private set; }
+        public Hash PreviousHash { get; private set; }
 
         public readonly BigInteger difficulty;
 
@@ -91,7 +92,8 @@ namespace Phantasma.Blockchain
         {
             this.Nonce = nonce;
             var data = ToArray();
-            this.Hash = CryptoUtils.Sha256(data);
+            var hashBytes = CryptoUtils.Sha256(data);
+            this.Hash = new Hash(hashBytes);
         }
 
         #region SERIALIZATION
@@ -99,7 +101,7 @@ namespace Phantasma.Blockchain
         internal void Serialize(BinaryWriter writer) {
             writer.WriteBigInteger(Height);
             writer.Write(Timestamp.Value);
-            writer.WriteByteArray(PreviousHash);
+            PreviousHash.Serialize(writer);
             writer.WriteAddress(MinerAddress);
             writer.WriteAddress(TokenAddress);
             writer.Write((ushort)Events.Count);
@@ -113,7 +115,7 @@ namespace Phantasma.Blockchain
         internal static Block Unserialize(BinaryReader reader) {
             var height = reader.ReadBigInteger();
             var timestamp = new Timestamp(reader.ReadUInt32());
-            var prevHash = reader.ReadByteArray();
+            var prevHash = Hash.Unserialize(reader);
             var minerAddress =  reader.ReadAddress();
             var tokenAddress = reader.ReadAddress();
 

@@ -13,7 +13,7 @@ namespace Phantasma.Cryptography
 
         public int Depth { get; private set; }
 
-        internal MerkleTree(UInt256[] hashes)
+        internal MerkleTree(Hash[] hashes)
         {
             Throw.If(hashes == null || hashes.Length == 0, "hashes cant be empty list");
 
@@ -54,13 +54,13 @@ namespace Phantasma.Cryptography
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
 
-                parents[i].Hash = new UInt256(CryptoUtils.Hash256(parents[i].LeftChild.Hash.ToArray().Concat(parents[i].RightChild.Hash.ToArray()).ToArray()));
+                parents[i].Hash = new Hash(CryptoUtils.Hash256(parents[i].LeftChild.Hash.ToByteArray().Concat(parents[i].RightChild.Hash.ToByteArray()).ToArray()));
             }
 
             return Build(parents); 
         }
 
-        public static UInt256 ComputeRoot(UInt256[] hashes)
+        public static Hash ComputeRoot(Hash[] hashes)
         {
             if (hashes.Length == 0) throw new ArgumentException();
             if (hashes.Length == 1) return hashes[0];
@@ -68,7 +68,7 @@ namespace Phantasma.Cryptography
             return tree.root.Hash;
         }
 
-        private static void DepthFirstSearch(MerkleTreeNode node, IList<UInt256> hashes)
+        private static void DepthFirstSearch(MerkleTreeNode node, IList<Hash> hashes)
         {
             if (node.LeftChild == null)
             {
@@ -83,9 +83,9 @@ namespace Phantasma.Cryptography
         }
 
         // depth-first order
-        public UInt256[] ToHashArray()
+        public Hash[] ToHashArray()
         {
-            var hashes = new List<UInt256>();
+            var hashes = new List<Hash>();
             DepthFirstSearch(root, hashes);
             return hashes.ToArray();
         }

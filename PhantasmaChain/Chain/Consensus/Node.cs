@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Consensus
         private Router router;
 
         private ConcurrentQueue<DeliveredMessage> queue = new ConcurrentQueue<DeliveredMessage>();
-        private ConcurrentDictionary<UInt256, Transaction> _mempool = new ConcurrentDictionary<UInt256, Transaction>();
+        private ConcurrentDictionary<Hash, Transaction> _mempool = new ConcurrentDictionary<Hash, Transaction>();
 
         public Address Address => keys.Address;
 

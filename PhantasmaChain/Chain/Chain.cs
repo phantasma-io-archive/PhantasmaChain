@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 using Phantasma.Utils;
 using Phantasma.VM.Types;
 
@@ -9,7 +10,7 @@ namespace Phantasma.Blockchain
 {
     public partial class Chain
     {
-        private Dictionary<byte[], Transaction> _transactions = new Dictionary<byte[], Transaction>(new ByteArrayComparer());
+        private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<BigInteger, Block> _blocks = new Dictionary<BigInteger, Block>();
         private Dictionary<byte[], Contract> _contracts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
         private TrieNode _contractLookup = new TrieNode();
@@ -45,7 +46,7 @@ namespace Phantasma.Blockchain
                     return false;
                 }
 
-                if (!block.PreviousHash.SequenceEqual(lastBlock.Hash))
+                if (block.PreviousHash != lastBlock.Hash)
                 {
                     return false;
                 }

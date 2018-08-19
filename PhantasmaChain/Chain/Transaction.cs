@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 using Phantasma.VM.Types;
+using Phantasma.Mathematics;
 
 namespace Phantasma.Blockchain
 {
@@ -16,8 +17,8 @@ namespace Phantasma.Blockchain
         public BigInteger Index { get; }
         public byte[] Script { get; }
 
-        public byte[] Signature { get; private set; }
-        public byte[] Hash { get; private set; }
+        public Signature Signature { get; private set; }
+        public Hash Hash { get; private set; }
 
         public static Transaction Unserialize(BinaryReader reader)
         {
@@ -40,7 +41,7 @@ namespace Phantasma.Blockchain
             {
                 Throw.If(this.Signature == null, "Signature cannot be null");
 
-                writer.WriteByteArray(this.Signature);
+                this.Signature.Serialize(writer);
             }
         }
 
@@ -125,7 +126,7 @@ namespace Phantasma.Blockchain
             }
 
             var data = ToArray(false);
-            if (!KeyPair.VerifySignature(data, this.Signature, this.SourceAddress))
+            if (!this.Signature.Verify(data, this.SourceAddress))
             {
                 return false;
             }
@@ -158,7 +159,8 @@ namespace Phantasma.Blockchain
         private void UpdateHash()
         {
             var data = this.ToArray(false);
-            this.Hash = CryptoUtils.Sha256(data);
+            var hash = CryptoUtils.Sha256(data);
+            this.Hash = new Hash(hash);
         }
 
     }

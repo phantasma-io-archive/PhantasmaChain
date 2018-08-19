@@ -4,7 +4,7 @@ namespace Phantasma.Cryptography
 {
     internal class MerkleTreeNode
     {
-        public UInt256 Hash;
+        public Hash Hash;
         public MerkleTreeNode Parent;
         public MerkleTreeNode LeftChild;
         public MerkleTreeNode RightChild;

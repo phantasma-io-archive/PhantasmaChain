@@ -1,4 +1,5 @@
-﻿using Phantasma.VM.Types;
+﻿using Phantasma.Cryptography;
+using Phantasma.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -14,8 +15,8 @@ namespace Phantasma.VM.Contracts
     public interface IBlock
     {
         BigInteger Height { get; }
-        byte[] Hash { get; }
-        byte[] PreviousHash { get; }
+        Hash Hash { get; }
+        Hash PreviousHash { get; }
         Timestamp Timestamp { get; }
         IEnumerable<ITransaction> Transactions { get; }
     }
@@ -25,8 +26,8 @@ namespace Phantasma.VM.Contracts
         BigInteger Fee { get; }
         BigInteger Index { get; }
         byte[] Script { get; }
-        byte[] Signature { get; }
-        byte[] Hash { get; }
+        Signature Signature { get; }
+        Hash Hash { get; }
         Address SourceAddress { get; }
     }
 
