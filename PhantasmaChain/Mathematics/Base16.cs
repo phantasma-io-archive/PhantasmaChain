@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.Utils;
+using System;
 
 namespace Phantasma.Mathematics
 {
@@ -6,29 +7,28 @@ namespace Phantasma.Mathematics
     {
         private const string hexAlphabet = "0123456789ABCDEF";
 
-        public static byte[] Decode(this string value)
+        public static byte[] Decode(this string input)
         {
-            if (value == null || value.Length == 0)
+            Throw.If(input == null || input.Length == 0, "string cant be empty");
+
+            if (input.StartsWith("0x"))
             {
-                return new byte[0];
+                return input.Substring(2).Decode();
             }
 
-            if (value.StartsWith("0x"))
-            {
-                return value.Substring(2).Decode();
-            }
+            Throw.If(input.Length % 2 == 1, "string length must be even");
 
-            if (value.Length % 2 == 1)
-            {
-                throw new FormatException();
-            }
-
-            byte[] result = new byte[value.Length / 2];
+            byte[] result = new byte[input.Length / 2];
 
             for (int i = 0; i < result.Length; i++)
             {
-                var str = value.Substring(i * 2, 2);
-                result[i] = (byte)(hexAlphabet.IndexOf(str[0]) * 16 + hexAlphabet.IndexOf(str[1]));
+                var str = input.Substring(i * 2, 2);
+                int A = hexAlphabet.IndexOf(str[0]);
+                int B = hexAlphabet.IndexOf(str[1]);
+
+                Throw.If(A < 0 || B < 0, "invalid character");
+
+                result[i] = (byte)(A * 16 + B);
             }
 
             return result;
@@ -56,21 +56,18 @@ namespace Phantasma.Mathematics
         // * I didn't use a second loop variable to index into `c`, since measurement shows that calculating it from `i` is cheaper. 
         // * Using exactly `i < bytes.Length` as upper bound of the loop allows the JITter to eliminate bounds checks on `bytes[i]`, so I chose that variant.
         // * Making `b` an int avoids unnecessary conversions from and to byte.
-        public static string Encode(this byte[] data)
+        public static string Encode(this byte[] input)
         {
-            if (data == null)
-            {
-                return null;
-            }
+            Throw.IfNull(input, "input");
 
-            char[] c = new char[data.Length * 2];
+            char[] c = new char[input.Length * 2];
             int b;
 
-            for (int i = 0; i < data.Length; i++)
+            for (int i = 0; i < input.Length; i++)
             {
-                b = data[i] >> 4;
+                b = input[i] >> 4;
                 c[i * 2] = (char)(55 + b + (((b - 10) >> 31) & -7));
-                b = data[i] & 0xF;
+                b = input[i] & 0xF;
                 c[i * 2 + 1] = (char)(55 + b + (((b - 10) >> 31) & -7));
             }
 

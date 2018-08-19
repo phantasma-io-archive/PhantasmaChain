@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.Utils;
+using System;
 using System.Numerics;
 using System.Text;
 
@@ -10,22 +11,27 @@ namespace Phantasma.Mathematics
 
         public static byte[] Decode(string input)
         {
+            Throw.If(input == null || input.Length == 0, "string cant be empty");
+
             var bi = BigInteger.Zero;
             for (int i = input.Length - 1; i >= 0; i--)
             {
                 int index = Alphabet.IndexOf(input[i]);
-                if (index == -1)
-                    throw new FormatException();
+                Throw.If(index < 0, "invalid character");
+
                 bi += index * BigInteger.Pow(58, input.Length - 1 - i);
             }
+
             byte[] bytes = bi.ToByteArray();
             Array.Reverse(bytes);
             bool stripSignByte = bytes.Length > 1 && bytes[0] == 0 && bytes[1] >= 0x80;
+
             int leadingZeros = 0;
             for (int i = 0; i < input.Length && input[i] == Alphabet[0]; i++)
             {
                 leadingZeros++;
             }
+
             byte[] tmp = new byte[bytes.Length - (stripSignByte ? 1 : 0) + leadingZeros];
             Array.Copy(bytes, stripSignByte ? 1 : 0, tmp, leadingZeros, tmp.Length - leadingZeros);
             return tmp;
@@ -41,7 +47,7 @@ namespace Phantasma.Mathematics
             temp[input.Length] = 0;
 
             var value = new BigInteger(temp);
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             while (value >= 58)
             {
                 var mod = value % 58;
@@ -49,6 +55,7 @@ namespace Phantasma.Mathematics
                 value /= 58;
             }
             sb.Insert(0, Alphabet[(int)value]);
+
             foreach (byte b in input)
             {
                 if (b == 0)
@@ -58,5 +65,6 @@ namespace Phantasma.Mathematics
             }
             return sb.ToString();
         }
+
     }
 }
