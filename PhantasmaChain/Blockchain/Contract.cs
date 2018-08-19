@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
 using Phantasma.VM;
@@ -35,30 +33,6 @@ namespace Phantasma.Blockchain
         public void WriteStorage(byte[] key, byte[] value)
         {
             _storage[key] = value;
-        }
-
-        private static readonly byte[] NameTag = Encoding.ASCII.GetBytes(".NAME");
-
-        public bool HasName {
-            get
-            {
-                var tag = Address.PublicKey.Concat(NameTag).ToArray();
-                return _storage.ContainsKey(tag);
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                var tag = Address.PublicKey.Concat(NameTag).ToArray();
-                if (_storage.ContainsKey(tag))
-                {
-                    return Encoding.UTF8.GetString(_storage[tag]);
-                }
-
-                return Address.Text;
-            }
         }
 
         public int GetSize()

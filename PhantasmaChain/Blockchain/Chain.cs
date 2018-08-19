@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
@@ -12,9 +15,6 @@ namespace Phantasma.Blockchain
         private Dictionary<BigInteger, Block> _blocks = new Dictionary<BigInteger, Block>();
         private Dictionary<byte[], Contract> _contracts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
         private TrieNode _contractLookup = new TrieNode();
-
-        public Address NativeTokenAddress { get; private set; }
-        public byte[] DistributionPubKey { get; private set; }
 
         public IEnumerable<Block> Blocks => _blocks.Values;
 
@@ -105,6 +105,36 @@ namespace Phantasma.Blockchain
         {
             var pubKey = _contractLookup.Find(name);
             return pubKey;
+        }
+
+        private Dictionary<NativeContractKind, NativeContract> _nativeContracts = null;
+
+        public NativeContract GetNativeContract(NativeContractKind kind)
+        {
+            if (_nativeContracts != null)
+            {
+                _nativeContracts = new Dictionary<NativeContractKind, NativeContract>();
+
+                var assembly = Assembly.GetExecutingAssembly();
+                var types = assembly.GetTypes();
+
+                foreach (Type type in types)
+                {
+                    if (type.IsClass && !type.IsAbstract && type.IsSubclassOf(typeof(NativeContract)))
+                    {
+                        var contract = (NativeContract) Activator.CreateInstance(type, new object[] { this });
+                        _nativeContracts[contract.Kind] = contract;
+                    }
+                }
+            }
+
+            if (_nativeContracts.ContainsKey(kind))
+            {
+                return _nativeContracts[kind];
+
+            }
+
+            return null;
         }
 
     }

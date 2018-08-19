@@ -1327,5 +1327,25 @@ namespace Phantasma.Mathematics
             }
             return bigInteger;
         }
+
+        public static BigInteger Parse(string input)
+        {
+            return new BigInteger(input, 10);
+        }
+
+        public static bool TryParse(string input, out BigInteger output)
+        {
+            try
+            {
+                output = new BigInteger(input, 10);
+                return true;
+            }
+            catch
+            {
+                output = null;
+                return false;
+            }
+        }
+
     }
 }

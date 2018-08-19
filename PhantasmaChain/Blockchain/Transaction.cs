@@ -65,7 +65,7 @@ namespace Phantasma.Blockchain
             var cost = vm.gas;
 
             // fee distribution TODO
-            if (chain.NativeTokenAddress != null && cost > 0)
+//            if (chain.NativeTokenAddress != null && cost > 0)
             {
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
@@ -136,8 +136,8 @@ namespace Phantasma.Blockchain
             {
                 return false;
             }
-
-            if (chain.NativeTokenAddress != null)
+           
+            /*if (chain.NativeTokenAddress != null)
             {
                 if (this.Fee < cost)
                 {
@@ -150,7 +150,7 @@ namespace Phantasma.Blockchain
                 {
                     return false;
                 }
-            }
+            }*/
 
             return true;
         }

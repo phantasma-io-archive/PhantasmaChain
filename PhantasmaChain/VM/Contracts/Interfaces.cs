@@ -37,7 +37,6 @@ namespace Phantasma.VM.Contracts
         Address Address { get; }
         byte[] Script { get; }
         byte[] ABI { get; }
-        string Name { get; }
     }
 
     public interface IMigratable : IContract

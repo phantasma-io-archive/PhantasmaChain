@@ -1,8 +1,6 @@
-﻿using System;
-using Phantasma.Blockchain.Contracts;
+﻿using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
-using Phantasma.VM.Contracts;
 using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
@@ -11,12 +9,19 @@ namespace Phantasma.Blockchain
     {
         private Transaction GenerateNativeTokenIssueTx(KeyPair owner)
         {
-            var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000/*, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable*/);
+            //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
+
+            var nativeToken = this.GetNativeContract(NativeContractKind.Token);
+            var address = nativeToken.Address;
+            var script = ScriptUtils.TransferScript(address, address, owner.Address, 100);
             var tx = new Transaction(owner.Address, script, 0, 0);
             tx.Sign(owner);
+
             return tx;
         }
 
+
+/*        
         private Transaction GenerateDistributionDeployTx(KeyPair owner)
         {
             var script = ScriptUtils.ContractDeployScript(DistributionContract.DefaultScript, DistributionContract.DefaultABI);
@@ -40,14 +45,16 @@ namespace Phantasma.Blockchain
             tx.Sign(owner);
             return tx;
         }
+*/
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
             var issueTx = GenerateNativeTokenIssueTx(owner);
-            var distTx = GenerateDistributionDeployTx(owner);
+            /*var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
-            var stakeTx = GenerateStakeDeployTx(owner);
-            var block = new Block(Timestamp.Now, owner.Address, Address.Null /*fix me*/, new Transaction[] { issueTx, distTx, govTx, stakeTx });
+            var stakeTx = GenerateStakeDeployTx(owner);*/
+
+            var block = new Block(Timestamp.Now, owner.Address, Address.Null /*fix me*/, new Transaction[] { issueTx/*, distTx, govTx, stakeTx*/ });
 
             return block;
         }

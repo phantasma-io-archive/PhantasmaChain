@@ -1,6 +1,8 @@
-﻿using Phantasma.Blockchain.Contracts;
+﻿using System;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Utils;
 using Phantasma.VM;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
@@ -24,11 +26,6 @@ namespace Phantasma.Blockchain
 
             Log.Message($"Deploying contract: {contract.Address.Text}");
 
-            if (NativeTokenAddress == null)
-            {
-                NativeTokenAddress = contract.Address;
-            }
-
             var obj = new VMObject();
             obj.SetValue(contract);
             vm.stack.Push(obj);
@@ -49,6 +46,8 @@ namespace Phantasma.Blockchain
 
             var name = vm.currentFrame.GetRegister(0).AsString();
 
+            throw new NotImplementedException();
+            /*
             // if same name, cancel
             if (account.Name == name)
             {
@@ -65,6 +64,7 @@ namespace Phantasma.Blockchain
             //account.Rename(name);
 
             return ExecutionState.Running;
+            */
         }
     }
 }
