@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using Phantasma.VM.Types;
+using System.Numerics;
 
 namespace Phantasma.Utils
 {
@@ -27,7 +28,7 @@ namespace Phantasma.Utils
             return sb.ToScript();
         }
 
-        public static byte[] TransferScript(byte[] tokenPublicKey, byte[] fromKey, byte[] toKey, int amount)
+        public static byte[] TransferScript(Address tokenPublicKey, Address from, Address to, int amount)
         {
             var sb = new ScriptBuilder();
             sb.Emit(VM.Opcode.RET);

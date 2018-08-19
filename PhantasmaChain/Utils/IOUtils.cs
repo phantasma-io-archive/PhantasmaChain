@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Phantasma.Cryptography;
+using Phantasma.VM.Types;
+using System;
 using System.IO;
 using System.Numerics;
 using System.Text;
@@ -30,6 +32,11 @@ namespace Phantasma.Utils
                 writer.Write((byte)0xFF);
                 writer.Write(value);
             }
+        }
+
+        public static void WriteAddress(this BinaryWriter writer, Address address)
+        {
+            writer.Write(address.PublicKey);
         }
 
         public static void WriteBigInteger(this BinaryWriter writer, BigInteger n)
@@ -77,6 +84,12 @@ namespace Phantasma.Utils
                 value = fb;
             if (value > max) throw new FormatException();
             return value;
+        }
+
+        public static Address ReadAddress(this BinaryReader reader)
+        {
+            var bytes = reader.ReadBytes(KeyPair.PublicKeyLength);
+            return new Address(bytes);
         }
 
         public static BigInteger ReadBigInteger(this BinaryReader reader)

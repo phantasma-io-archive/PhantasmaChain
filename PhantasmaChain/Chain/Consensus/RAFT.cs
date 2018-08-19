@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain.Consensus
 
                             // clear votes then vote for self
                             ReceivedVotes.Clear();
-                            ReceivedVotes.Add(this.PublicKey); 
+                            ReceivedVotes.Add(this.Address.PublicKey); 
 
                             // TODO send to all peers vote request
                         }

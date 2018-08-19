@@ -10,6 +10,7 @@ using System.Threading;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Mathematics;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Utils
 {
@@ -392,17 +393,9 @@ namespace Phantasma.Utils
             return Ed25519.Verify(message, signature, pubkey);
         }
 
-        public static string PublicKeyToAddress(this byte[] publicKey, AddressType type)
+        public static string PublicKeyToAddress(this byte[] publicKey)
         {
-            byte opcode;
-            switch (type)
-            {
-                case AddressType.Personal: opcode = 74; break;
-                case AddressType.Stealth: opcode = 54; break;
-                case AddressType.Contract: opcode = 37; break;
-                default: throw new ArgumentException("Invalid address type");
-            }
-
+            byte opcode = 74;
             var bytes = new byte[] { opcode }.Concat(publicKey).ToArray();
             return Base58.Encode(bytes);
         }
@@ -419,10 +412,10 @@ namespace Phantasma.Utils
             return bytes.Skip(1).ToArray();
         }
 
-        public static byte[] ScriptToPublicKey(this byte[] script)
+        public static Address ScriptToPublicKey(this byte[] script)
         {
             var hash = script.Sha256();
-            return hash;
+            return new Address(hash);
         }
     }
 }

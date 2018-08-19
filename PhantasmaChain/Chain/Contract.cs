@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
@@ -13,7 +14,7 @@ namespace Phantasma.Blockchain
     {
         public BigInteger Order { get; internal set; }
 
-        public abstract byte[] PublicKey { get; }
+        public abstract Address Address { get; }
         public abstract byte[] Script { get; }
         public abstract byte[] ABI { get; }
 
@@ -42,7 +43,7 @@ namespace Phantasma.Blockchain
         public bool HasName {
             get
             {
-                var tag = PublicKey.Concat(NameTag).ToArray();
+                var tag = Address.PublicKey.Concat(NameTag).ToArray();
                 return _storage.ContainsKey(tag);
             }
         }
@@ -51,19 +52,19 @@ namespace Phantasma.Blockchain
         {
             get
             {
-                var tag = PublicKey.Concat(NameTag).ToArray();
+                var tag = Address.PublicKey.Concat(NameTag).ToArray();
                 if (_storage.ContainsKey(tag))
                 {
                     return Encoding.UTF8.GetString(_storage[tag]);
                 }
 
-                return PublicKey.PublicKeyToAddress((AddressType)99);
+                return Address.Text;
             }
         }
 
         public int GetSize()
         {
-            return this.PublicKey.Length + this.Script.Length;
+            return this.Address.PublicKey.Length + this.Script.Length;
         }
     }
 }

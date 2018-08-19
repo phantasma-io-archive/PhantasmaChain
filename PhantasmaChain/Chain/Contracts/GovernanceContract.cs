@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Phantasma.VM;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -8,8 +9,8 @@ namespace Phantasma.Blockchain.Contracts
         public static readonly byte[] DefaultScript = new byte[] { (byte)Opcode.RET };
         public static readonly byte[] DefaultABI = new byte[] { };
 
-        private byte[] _publicKey;
-        public override byte[] PublicKey => _publicKey;
+        private Address _address;
+        public override Address Address => _address;
 
         public override byte[] Script => DefaultScript;
         public override byte[] ABI => DefaultABI;
@@ -18,7 +19,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public GovernanceContract(Chain chain, byte[] publicKey) : base(chain)
         {
-            this._publicKey = publicKey;
+            this._address = new Address(publicKey);
         }
 
         public bool InitVotingRound(GovernanceSubject subject, byte[] value)

@@ -1,4 +1,5 @@
 ﻿using Phantasma.VM;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -7,15 +8,15 @@ namespace Phantasma.Blockchain.Contracts
         public static readonly byte[] DefaultAccountScript = new byte[] { (byte)Opcode.RET };
         public static readonly byte[] DefaultAccountABI = new byte[] { };
 
-        private byte[] _publicKey;
-        public override byte[] PublicKey => _publicKey;
+        private Address _address;
+        public override Address Address => _address;
 
         public override byte[] Script => DefaultAccountScript;
         public override byte[] ABI => DefaultAccountABI;
 
         public AccountContract(Chain chain, byte[] publicKey) : base(chain)
         {
-            this._publicKey = publicKey;
+            this._address = new Address(publicKey);
         }
     }
 }

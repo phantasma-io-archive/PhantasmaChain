@@ -1,11 +1,12 @@
 ﻿using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
     public sealed class CustomContract : Contract
     {
-        private byte[] _publicKey;
-        public override byte[] PublicKey => _publicKey;
+        private Address _address;
+        public override Address Address => _address;
 
         private byte[] _script;
         public override byte[] Script => _script;
@@ -17,7 +18,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             this._script = script;
             this._ABI = ABI;
-            this._publicKey = script.ScriptToPublicKey();
+            this._address = script.ScriptToPublicKey();
         }
     }
 }

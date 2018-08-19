@@ -22,11 +22,11 @@ namespace Phantasma.Blockchain
 
             var contract = new CustomContract(this, script, abi);
 
-            Log.Message($"Deploying contract: {contract.PublicKey.PublicKeyToAddress(Cryptography.AddressType.Contract)}");
+            Log.Message($"Deploying contract: {contract.Address.Text}");
 
-            if (NativeTokenPubKey == null)
+            if (NativeTokenAddress == null)
             {
-                NativeTokenPubKey = contract.PublicKey;
+                NativeTokenAddress = contract.Address;
             }
 
             var obj = new VMObject();

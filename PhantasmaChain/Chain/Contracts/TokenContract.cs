@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.VM.Types;
+using System;
 using System.Numerics;
 
 namespace Phantasma.Blockchain.Contracts
@@ -9,7 +10,7 @@ namespace Phantasma.Blockchain.Contracts
         {
         }
 
-        public override byte[] PublicKey => throw new NotImplementedException();
+        public override Address Address => throw new NotImplementedException();
 
         public override byte[] Script => throw new NotImplementedException();
 

@@ -5,12 +5,13 @@ using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
     public sealed class Transaction: ITransaction
     {
-        public byte[] PublicKey { get; }
+        public Address SourceAddress { get; }
         public BigInteger Fee { get; }
         public BigInteger Index { get; }
         public byte[] Script { get; }
@@ -20,17 +21,17 @@ namespace Phantasma.Blockchain
 
         public static Transaction Unserialize(BinaryReader reader)
         {
-            var publicKey = reader.ReadByteArray();
+            var address = reader.ReadAddress();
             var script = reader.ReadByteArray();
             var fee = reader.ReadBigInteger();
             var txOrder = reader.ReadBigInteger();
 
-            return new Transaction(publicKey, script, fee, txOrder);
+            return new Transaction(address, script, fee, txOrder);
         }
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
-            writer.WriteByteArray(this.PublicKey);
+            writer.WriteAddress(this.SourceAddress);
             writer.WriteByteArray(this.Script);
             writer.WriteBigInteger(this.Fee);
             writer.WriteBigInteger(this.Index);
@@ -64,7 +65,7 @@ namespace Phantasma.Blockchain
             var cost = vm.gas;
 
             // fee distribution TODO
-            if (chain.NativeTokenPubKey != null && cost > 0)
+            if (chain.NativeTokenAddress != null && cost > 0)
             {
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
@@ -75,10 +76,10 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Transaction(byte[] publicKey, byte[] script, BigInteger fee, BigInteger txOrder)
+        public Transaction(Address sourceAddress, byte[] script, BigInteger fee, BigInteger txOrder)
         {
             this.Script = script;
-            this.PublicKey = publicKey;
+            this.SourceAddress = sourceAddress;
             this.Fee = fee;
             this.Index = txOrder;
 
@@ -111,7 +112,7 @@ namespace Phantasma.Blockchain
             }
 
             var msg = this.ToArray(false);
-            this.Signature = CryptoUtils.Sign(msg, owner.PrivateKey, owner.PublicKey);
+            this.Signature = CryptoUtils.Sign(msg, owner.PrivateKey, owner.Address.PublicKey);
 
             return true;
         }
@@ -124,7 +125,7 @@ namespace Phantasma.Blockchain
             }
 
             var data = ToArray(false);
-            if (!CryptoUtils.VerifySignature(data, this.Signature, this.PublicKey))
+            if (!CryptoUtils.VerifySignature(data, this.Signature, this.SourceAddress.PublicKey))
             {
                 return false;
             }
@@ -136,14 +137,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (chain.NativeTokenPubKey != null)
+            if (chain.NativeTokenAddress != null)
             {
                 if (this.Fee < cost)
                 {
                     return false;
                 }
 
-                var balance = chain.GetTokenBalance(chain.NativeTokenPubKey, this.PublicKey);
+                var balance = chain.GetTokenBalance(chain.NativeTokenAddress, this.SourceAddress);
 
                 if (balance < this.Fee)
                 {

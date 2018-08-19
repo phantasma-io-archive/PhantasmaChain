@@ -13,8 +13,8 @@ namespace Phantasma.Blockchain
         public static readonly float IdealBlockTime = 5;
         public static readonly float BlockTimeFlutuation = 0.2f;
 
-        public readonly byte[] MinerPublicKey;
-        public readonly byte[] TokenPublicKey;
+        public readonly Address MinerAddress;
+        public readonly Address TokenAddress;
 
         public BigInteger Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
@@ -29,13 +29,13 @@ namespace Phantasma.Blockchain
 
         public List<Event> Events = new List<Event>();
 
-        public Block(Timestamp timestamp, byte[] minerPublicKey, byte[] tokenPublicKey, IEnumerable<Transaction> transactions, Block previous = null)
+        public Block(Timestamp timestamp, Address minerAddress, Address tokenAddress, IEnumerable<Transaction> transactions, Block previous = null)
         {
             this.Height = previous != null ? previous.Height + 1 : 0;
             this.PreviousHash = previous != null ? previous.Hash : null;
             this.Timestamp = timestamp;
-            this.MinerPublicKey = minerPublicKey;
-            this.TokenPublicKey = tokenPublicKey;
+            this.MinerAddress = minerAddress;
+            this.TokenAddress = tokenAddress;
 
             _transactions = new List<Transaction>();
             foreach (var tx in transactions)
@@ -100,7 +100,8 @@ namespace Phantasma.Blockchain
             writer.WriteBigInteger(Height);
             writer.Write(Timestamp.Value);
             writer.WriteByteArray(PreviousHash);
-            writer.WriteByteArray(MinerPublicKey);
+            writer.WriteAddress(MinerAddress);
+            writer.WriteAddress(TokenAddress);
             writer.Write((ushort)Events.Count);
             foreach (var evt in Events)
             {
@@ -113,8 +114,8 @@ namespace Phantasma.Blockchain
             var height = reader.ReadBigInteger();
             var timestamp = new Timestamp(reader.ReadUInt32());
             var prevHash = reader.ReadByteArray();
-            var minerPubKey = reader.ReadByteArray();
-            var tokenPublicKey = reader.ReadByteArray();
+            var minerAddress =  reader.ReadAddress();
+            var tokenAddress = reader.ReadAddress();
 
             var evtCount = reader.ReadUInt16();
             var evts = new Event[evtCount];
@@ -123,7 +124,7 @@ namespace Phantasma.Blockchain
                 evts[i] = Event.Unserialize(reader); 
             }
             var nonce = reader.ReadUInt32();
-            return new Block(timestamp, minerPubKey, tokenPublicKey, null);
+            return new Block(timestamp, minerAddress, tokenAddress, null);
         }
         #endregion
     }

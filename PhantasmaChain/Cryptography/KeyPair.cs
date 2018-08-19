@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Linq;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Cryptography
 {
-    public enum AddressType
-    {
-        Personal,
-        Stealth,
-        Contract
-    }
-
     public sealed class KeyPair 
     {
         public readonly byte[] PrivateKey;
-        public readonly byte[] PublicKey;
-        public readonly string Address;
+        public readonly Address Address;
 
         public const int PrivateKeyLength = 32;
         public const int PublicKeyLength = 32;
@@ -27,9 +20,9 @@ namespace Phantasma.Cryptography
             this.PrivateKey = new byte[PrivateKeyLength];
             Buffer.BlockCopy(privateKey, 0, PrivateKey, 0, PrivateKeyLength);            
 
-            this.PublicKey = Ed25519.PublicKeyFromSeed(privateKey);
+            var publicKey = Ed25519.PublicKeyFromSeed(privateKey);
 
-            this.Address = this.PublicKey.PublicKeyToAddress(AddressType.Personal);
+            this.Address = new Address(publicKey);
         }
 
         private static Random rnd = new Random();

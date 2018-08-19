@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
@@ -13,7 +14,7 @@ namespace Phantasma.Blockchain
         private Dictionary<byte[], Contract> _contracts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
         private TrieNode _contractLookup = new TrieNode();
 
-        public byte[] NativeTokenPubKey { get; private set; }
+        public Address NativeTokenAddress { get; private set; }
         public byte[] DistributionPubKey { get; private set; }
 
         public IEnumerable<Block> Blocks => _blocks.Values;

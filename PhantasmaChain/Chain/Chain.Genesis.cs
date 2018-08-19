@@ -12,7 +12,7 @@ namespace Phantasma.Blockchain
         private Transaction GenerateNativeTokenIssueTx(KeyPair owner)
         {
             var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000/*, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable*/);
-            var tx = new Transaction(owner.PublicKey, script, 0, 0);
+            var tx = new Transaction(owner.Address, script, 0, 0);
             tx.Sign(owner);
             return tx;
         }
@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain
         private Transaction GenerateDistributionDeployTx(KeyPair owner)
         {
             var script = ScriptUtils.ContractDeployScript(DistributionContract.DefaultScript, DistributionContract.DefaultABI);
-            var tx = new Transaction(owner.PublicKey, script, 0, 0);
+            var tx = new Transaction(owner.Address, script, 0, 0);
             tx.Sign(owner);
             return tx;
         }
@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain
         private Transaction GenerateGovernanceDeployTx(KeyPair owner)
         {
             var script = ScriptUtils.ContractDeployScript(GovernanceContract.DefaultScript, GovernanceContract.DefaultABI);
-            var tx = new Transaction(owner.PublicKey, script, 0, 0);
+            var tx = new Transaction(owner.Address, script, 0, 0);
             tx.Sign(owner);
             return tx;
         }
@@ -36,7 +36,7 @@ namespace Phantasma.Blockchain
         private Transaction GenerateStakeDeployTx(KeyPair owner)
         {
             var script = ScriptUtils.ContractDeployScript(StakeContract.DefaultScript, StakeContract.DefaultABI);
-            var tx = new Transaction(owner.PublicKey, script, 0, 0);
+            var tx = new Transaction(owner.Address, script, 0, 0);
             tx.Sign(owner);
             return tx;
         }
@@ -47,7 +47,7 @@ namespace Phantasma.Blockchain
             var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
             var stakeTx = GenerateStakeDeployTx(owner);
-            var block = new Block(Timestamp.Now, owner.PublicKey, null /*fix me*/, new Transaction[] { issueTx, distTx, govTx, stakeTx });
+            var block = new Block(Timestamp.Now, owner.Address, Address.Null /*fix me*/, new Transaction[] { issueTx, distTx, govTx, stakeTx });
 
             return block;
         }

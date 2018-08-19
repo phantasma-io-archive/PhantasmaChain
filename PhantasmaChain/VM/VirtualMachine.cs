@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.VM
 {
@@ -31,7 +32,7 @@ namespace Phantasma.VM
         public readonly byte[] entryScript;
 
         public ExecutionContext currentContext { get; private set; }
-        public byte[] entryPublicKey { get; private set; }
+        public Address entryAddress { get; private set; }
 
         public BigInteger gas { get; private set; }
 
@@ -41,8 +42,8 @@ namespace Phantasma.VM
             State = ExecutionState.Running;
 
             this.currentContext = new ExecutionContext(script);
-            this.entryPublicKey = script.ScriptToPublicKey();
-            _contextList[this.entryPublicKey] = this.currentContext;
+            this.entryAddress = script.ScriptToPublicKey();
+            _contextList[this.entryAddress.PublicKey] = this.currentContext;
 
             PushFrame(currentContext, DefaultRegisterCount);
 

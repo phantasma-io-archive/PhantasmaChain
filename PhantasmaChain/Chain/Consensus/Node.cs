@@ -7,6 +7,7 @@ using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Network;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Consensus
 {
@@ -19,7 +20,7 @@ namespace Phantasma.Blockchain.Consensus
         private ConcurrentQueue<DeliveredMessage> queue = new ConcurrentQueue<DeliveredMessage>();
         private ConcurrentDictionary<UInt256, Transaction> _mempool = new ConcurrentDictionary<UInt256, Transaction>();
 
-        public byte[] PublicKey => keys.PublicKey;
+        public Address Address => keys.Address;
 
         public readonly KeyPair keys;
 

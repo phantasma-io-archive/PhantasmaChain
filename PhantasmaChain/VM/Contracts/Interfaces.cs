@@ -27,13 +27,13 @@ namespace Phantasma.VM.Contracts
         byte[] Script { get; }
         byte[] Signature { get; }
         byte[] Hash { get; }
-        byte[] PublicKey { get; }
+        Address SourceAddress { get; }
     }
 
     #region CONTRACTS
     public interface IContract
     {
-        byte[] PublicKey { get; }
+        Address Address { get; }
         byte[] Script { get; }
         byte[] ABI { get; }
         string Name { get; }

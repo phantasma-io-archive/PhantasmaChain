@@ -38,7 +38,7 @@ namespace PhantasmaCLIWallet
                 {
                     Console.WriteLine("\t\tEvent #" + index);
                     Console.WriteLine("\t\tKind: " + evt.Kind);
-                    Console.WriteLine("\t\tTarget: " + evt.PublicKey.PublicKeyToAddress(AddressType.Personal));
+                    Console.WriteLine("\t\tTarget: " + evt.PublicKey.PublicKeyToAddress());
                     Console.WriteLine();
 
                     index++;
@@ -60,13 +60,13 @@ namespace PhantasmaCLIWallet
             var miner = KeyPair.Generate();
             var third = KeyPair.Generate();
 
-            var tx = new Transaction(owner.PublicKey, ScriptUtils.TransferScript(chain.NativeTokenPubKey, owner.PublicKey, third.PublicKey, 5), 0, 0);
+            var tx = new Transaction(owner.Address, ScriptUtils.TransferScript(chain.NativeTokenAddress, owner.Address, third.Address, 5), 0, 0);
             tx.Sign(owner);
 
             var nextHeight = chain.lastBlock.Height + 1;
             Console.WriteLine("Mining block #" + nextHeight);
 
-            var block = ProofOfWork.MineBlock(chain, miner.PublicKey, new List<Transaction>() { tx });
+            var block = ProofOfWork.MineBlock(chain, miner.Address, new List<Transaction>() { tx });
             chain.AddBlock(block);
 
             PrintChain(chain);
