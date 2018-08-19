@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Phantasma.Cryptography;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
 using Phantasma.VM.Types;
 
 namespace Phantasma.VM
@@ -373,6 +371,36 @@ namespace Phantasma.VM
                 case VMType.Object: return $"[Object] => {Data.GetType().Name}";
                 default: return "Unknown";
             }
+        }
+
+        public static bool IsVMType(Type type)
+        {
+            if (type == typeof(bool))
+            {
+                return true;
+            }
+
+            if (type == typeof(string))
+            {
+                return true;
+            }
+
+            if (type == typeof(byte[]))
+            {
+                return true;
+            }
+
+            if (type == typeof(BigInteger))
+            {
+                return true;
+            }
+
+            if (type is IInteropObject)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 
