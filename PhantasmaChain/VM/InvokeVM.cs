@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.VM.Types;
+using System;
 
 namespace Phantasma.VM
 {
@@ -14,7 +15,7 @@ namespace Phantasma.VM
             throw new NotImplementedException();
         }
 
-        public override ExecutionContext LoadContext(byte[] key)
+        public override ExecutionContext LoadContext(Address address)
         {
             throw new NotImplementedException();
         }

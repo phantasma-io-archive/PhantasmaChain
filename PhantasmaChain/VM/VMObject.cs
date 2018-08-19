@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Phantasma.Mathematics;
+using Phantasma.Utils;
 using Phantasma.VM.Types;
 
 namespace Phantasma.VM
@@ -141,10 +142,8 @@ namespace Phantasma.VM
 
         public T AsInterop<T>() where T: IInteropObject
         {
-            if (this.Type != VMType.Object)
-            {
-                throw new Exception("Invalid cast");
-            }
+            Throw.If(this.Type != VMType.Object, "Invalid cast");
+            Throw.IfNot(this.Data is T, "invalid interop type");
 
             return (T)Data;
         }

@@ -8,9 +8,11 @@ namespace Phantasma.VM
 
         public readonly uint Offset; // current instruction pointer **before** the frame was entered
         public readonly ExecutionContext Context;
+        public readonly VirtualMachine VM;
 
-        public ExecutionFrame(uint offset, ExecutionContext context, int registerCount)
+        public ExecutionFrame(VirtualMachine VM, uint offset, ExecutionContext context, int registerCount)
         {
+            this.VM = VM;
             this.Offset = offset;
             this.Context = context;
 

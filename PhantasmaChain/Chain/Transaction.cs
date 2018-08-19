@@ -55,9 +55,9 @@ namespace Phantasma.Blockchain
         {
             var vm = new RuntimeVM(chain, this);
 
-            vm.Execute();
+            var state = vm.Execute();
 
-            if (vm.State != ExecutionState.Halt)
+            if (state != ExecutionState.Halt)
             {
                 return false;
             }

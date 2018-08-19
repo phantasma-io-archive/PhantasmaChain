@@ -51,7 +51,7 @@ namespace Phantasma.Blockchain
             throw new System.NotImplementedException();
         }
 
-        public override ExecutionContext LoadContext(byte[] key)
+        public override ExecutionContext LoadContext(Address address)
         {
             throw new NotImplementedException();
         }

@@ -1,17 +1,19 @@
-﻿namespace Phantasma.VM
+﻿using System.Collections.Generic;
+
+namespace Phantasma.VM
 {
-    public class ExecutionContext : IInteropObject
+    public enum ExecutionState
     {
-        public byte[] Script { get; private set; }
+        Running,
+        Break,
+        Fault,
+        Halt
+    }
 
-        public ExecutionContext(byte[] script)
-        {
-            this.Script = script;
-        }
+    public abstract class ExecutionContext : IInteropObject
+    {
+        public abstract int GetSize();
 
-        public int GetSize()
-        {
-            return this.Script.Length;
-        }
+        public abstract ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack);
     }
 }
