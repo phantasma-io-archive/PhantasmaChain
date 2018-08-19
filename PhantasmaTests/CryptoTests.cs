@@ -5,7 +5,7 @@ using Phantasma.Utils;
 using Phantasma.VM.Types;
 using System;
 using System.Linq;
-using System.Numerics;
+using Phantasma.Mathematics;
 
 namespace PhantasmaTests
 {

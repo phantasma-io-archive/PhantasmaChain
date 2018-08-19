@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Text;
-using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 using Phantasma.Utils;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;

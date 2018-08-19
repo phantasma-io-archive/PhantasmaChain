@@ -1,5 +1,5 @@
-﻿using Phantasma.VM.Types;
-using System.Numerics;
+﻿using Phantasma.Mathematics;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Utils
 {

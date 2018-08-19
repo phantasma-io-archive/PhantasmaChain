@@ -1,5 +1,5 @@
-﻿using System.Numerics;
-using Phantasma.Blockchain;
+﻿using Phantasma.Blockchain;
+using Phantasma.Mathematics;
 using Phantasma.VM.Types;
 
 namespace Phantasma.Utils

@@ -1,7 +1,6 @@
-﻿using System;
-
-namespace Phantasma.VM
+﻿namespace Phantasma.VM
 {
+    [VMType]
     public interface IInteropObject
     {
         int GetSize();

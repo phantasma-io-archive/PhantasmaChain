@@ -1,8 +1,8 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 using Phantasma.VM.Types;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace Phantasma.VM.Contracts
 {

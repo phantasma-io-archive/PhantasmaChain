@@ -1,8 +1,8 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 using Phantasma.VM.Types;
 using System;
 using System.IO;
-using System.Numerics;
 using System.Text;
 
 namespace Phantasma.Utils

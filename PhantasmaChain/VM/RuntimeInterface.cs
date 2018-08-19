@@ -1,6 +1,6 @@
-﻿using Phantasma.VM.Contracts;
+﻿using Phantasma.Mathematics;
+using Phantasma.VM.Contracts;
 using Phantasma.VM.Types;
-using System.Numerics;
 
 namespace Phantasma.VM
 {

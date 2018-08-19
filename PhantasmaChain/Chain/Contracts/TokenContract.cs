@@ -1,6 +1,5 @@
 ﻿using Phantasma.VM.Types;
 using System;
-using System.Numerics;
 
 namespace Phantasma.Blockchain.Contracts
 {

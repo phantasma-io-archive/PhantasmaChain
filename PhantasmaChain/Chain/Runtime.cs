@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.VM.Types;
+using Phantasma.Mathematics;
 
 namespace Phantasma.Blockchain
 {

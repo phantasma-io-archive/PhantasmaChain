@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
+using Phantasma.Mathematics;
 using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Consensus

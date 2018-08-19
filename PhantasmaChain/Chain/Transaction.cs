@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Numerics;
 using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;

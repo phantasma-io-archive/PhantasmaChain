@@ -1,6 +1,5 @@
 ﻿using Phantasma.Utils;
 using System;
-using System.Numerics;
 using System.Text;
 
 namespace Phantasma.Mathematics

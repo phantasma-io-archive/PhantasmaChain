@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+﻿using Phantasma.Mathematics;
 using Phantasma.VM;
 using Phantasma.VM.Types;
 
