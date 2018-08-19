@@ -25,14 +25,24 @@ namespace PhantasmaTests
             Assert.IsTrue(hash.ToByteArray().SequenceEqual(bytes));
 
             bytes = new byte[10];
-            rnd.NextBytes(bytes);
+            BigInteger number;
 
-            var number = new BigInteger(bytes);
+            do
+            {
+                rnd.NextBytes(bytes);
+                number = new BigInteger(bytes);
+            } while (number <= 0);
+             
             hash = number;
             Assert.IsTrue(hash.ToByteArray().Length == 32);
 
             BigInteger other = hash;
             Assert.IsTrue(number == other);
+
+            Assert.IsTrue(Hash.TryParse("FFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBB", out hash));
+            Assert.IsTrue(Hash.TryParse("0xFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBB", out hash));
+            Assert.IsFalse(Hash.TryParse("FFFFAAAXFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBB", out hash));
+            Assert.IsFalse(Hash.TryParse("0xFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBB", out hash));
         }
 
         [Test]
