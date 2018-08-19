@@ -738,7 +738,7 @@ namespace Phantasma.VM
                     case Opcode.CTX:
                         {
                             var dst = Read8();
-                            var key = ReadBytes(KeyPair.PublicKeyLength);
+                            var key = ReadBytes(Address.PublicKeyLength);
 
                             Expect(dst < currentFrame.Registers.Length);
 
@@ -766,7 +766,7 @@ namespace Phantasma.VM
                     // args: var key
                     case Opcode.SWITCH:
                         {
-                            var key = ReadBytes(KeyPair.PublicKeyLength);
+                            var key = ReadBytes(Address.PublicKeyLength);
 
                             if (!_contextList.ContainsKey(key))
                             {

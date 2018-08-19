@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network.Messages
 {
@@ -8,17 +9,17 @@ namespace Phantasma.Network.Messages
         public readonly ushort Code;
         public readonly string Text;
 
-        public ErrorMessage(byte[] pubKey, ushort code, string text = null) :base(Opcode.ERROR, pubKey)
+        public ErrorMessage(Address address, ushort code, string text = null) :base(Opcode.ERROR, address)
         {
             this.Code = code;
             this.Text = text;
         }
 
-        internal static ErrorMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static ErrorMessage FromReader(Address address, BinaryReader reader)
         {
             var code = reader.ReadUInt16();
             var text = reader.ReadShortString();
-            return new ErrorMessage(pubKey, code, text);
+            return new ErrorMessage(address, code, text);
         }
     }
 }

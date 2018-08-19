@@ -1,27 +1,28 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network.Messages
 {
     internal class RaftVoteMessage : Message
     {
-        public readonly byte[] VoteKey;
+        public readonly Address Vote;
         public readonly uint Nonce;
 
-        public RaftVoteMessage(byte[] pubKey, byte[] votePublicKey, uint nonce) : base(Opcode.RAFT_Vote, pubKey)
+        public RaftVoteMessage(Address address, Address vote, uint nonce) : base(Opcode.RAFT_Vote, address)
         {
-            Throw.IfNull(votePublicKey, nameof(votePublicKey));
+            Throw.If(vote == Address.Null, nameof(vote));
 
-            this.VoteKey = votePublicKey;
+            this.Vote = vote;
             this.Nonce = nonce;
         }
 
-        internal static RaftVoteMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static RaftVoteMessage FromReader(Address address, BinaryReader reader)
         {
-            var votePubKey = reader.ReadBytes(KeyPair.PublicKeyLength);
+            var vote = reader.ReadAddress();
             var nonce = reader.ReadUInt32();
-            return new RaftVoteMessage(pubKey, votePubKey, nonce);
+            return new RaftVoteMessage(address, vote, nonce);
         }
     }
 }

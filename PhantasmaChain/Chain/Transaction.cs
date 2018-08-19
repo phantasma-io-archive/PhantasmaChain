@@ -112,7 +112,7 @@ namespace Phantasma.Blockchain
             }
 
             var msg = this.ToArray(false);
-            this.Signature = CryptoUtils.Sign(msg, owner.PrivateKey, owner.Address.PublicKey);
+            this.Signature = owner.Sign(msg);
 
             return true;
         }
@@ -125,7 +125,7 @@ namespace Phantasma.Blockchain
             }
 
             var data = ToArray(false);
-            if (!CryptoUtils.VerifySignature(data, this.Signature, this.SourceAddress.PublicKey))
+            if (!KeyPair.VerifySignature(data, this.Signature, this.SourceAddress))
             {
                 return false;
             }

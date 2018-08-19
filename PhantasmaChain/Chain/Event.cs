@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
@@ -15,29 +16,29 @@ namespace Phantasma.Blockchain
     public class Event
     {
         public readonly EventKind Kind;
-        public readonly byte[] PublicKey;
+        public readonly Address Address;
         public readonly byte[] Data;
 
-        public Event(EventKind kind, byte[] publicKey, byte[] data)
+        public Event(EventKind kind, Address address, byte[] data)
         {
             this.Kind = kind;
-            this.PublicKey = publicKey;
+            this.Address = address;
             this.Data = data;
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)this.Kind);
-            writer.WriteByteArray(this.PublicKey);
+            writer.WriteAddress(this.Address);
             writer.WriteByteArray(this.Data);
         }
 
         internal static Event Unserialize(BinaryReader reader)
         {
             var kind = (EventKind)reader.ReadByte();
-            var pubKey = reader.ReadByteArray();
+            var address = reader.ReadAddress();
             var data = reader.ReadByteArray();
-            return new Event(kind, pubKey, data);
+            return new Event(kind, address, data);
         }
     }
 }

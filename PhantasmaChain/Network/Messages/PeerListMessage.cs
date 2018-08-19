@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Phantasma.VM.Types;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -9,12 +10,12 @@ namespace Phantasma.Network.Messages
         private PeerInfo[] _peers;
         public IEnumerable<PeerInfo> Peers => _peers;
 
-        public PeerListMessage(byte[] pubKey, IEnumerable<PeerInfo> peers) : base(Opcode.PEER_List, pubKey)
+        public PeerListMessage(Address address, IEnumerable<PeerInfo> peers) : base(Opcode.PEER_List, address)
         {
             this._peers = peers.ToArray();
         }
 
-        internal static PeerListMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static PeerListMessage FromReader(Address address, BinaryReader reader)
         {
             var peerCount = reader.ReadUInt32();
             var peers = new PeerInfo[peerCount];
@@ -23,7 +24,7 @@ namespace Phantasma.Network.Messages
                 peers[i] = PeerInfo.Unserialize(reader);
             }
 
-            return new PeerListMessage(pubKey, peers);
+            return new PeerListMessage(address, peers);
         }
     }
 }

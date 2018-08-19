@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Consensus
 {
@@ -9,10 +10,10 @@ namespace Phantasma.Blockchain.Consensus
         public const int FollowerTimeOut = 1000;
 
         private RaftState State;
-        private byte[] Leader = null;
-        private byte[] Vote = null;
+        private Address Leader = Address.Null;
+        private Address Vote = Address.Null;
 
-        private HashSet<byte[]> ReceivedVotes = new HashSet<byte[]>(new ByteArrayComparer());
+        private HashSet<Address> ReceivedVotes = new HashSet<Address>();
 
         //private int CurrentTerm = 0;
         private DateTime _lastLeaderBeat;
@@ -50,7 +51,7 @@ namespace Phantasma.Blockchain.Consensus
 
                             // clear votes then vote for self
                             ReceivedVotes.Clear();
-                            ReceivedVotes.Add(this.Address.PublicKey); 
+                            ReceivedVotes.Add(this.Address); 
 
                             // TODO send to all peers vote request
                         }

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Blockchain;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network.Messages
 {
@@ -7,15 +8,15 @@ namespace Phantasma.Network.Messages
     {
         public readonly Transaction transaction;
 
-        public MempoolAddMessage(byte[] pubKey, Transaction tx) : base(Opcode.MEMPOOL_Add, pubKey)
+        public MempoolAddMessage(Address pubKey, Transaction tx) : base(Opcode.MEMPOOL_Add, pubKey)
         {
             this.transaction = tx;
         }
 
-        internal static MempoolAddMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static MempoolAddMessage FromReader(Address address, BinaryReader reader)
         {
             var tx = Transaction.Unserialize(reader);
-            return new MempoolAddMessage(pubKey, tx);
+            return new MempoolAddMessage(address, tx);
         }
     }
 }

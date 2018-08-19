@@ -5,6 +5,7 @@ using System.Text;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.VM
 {
@@ -16,7 +17,6 @@ namespace Phantasma.VM
         Number,
         String,
         Bool,
-        Address,
         Object
     }
 
@@ -84,7 +84,6 @@ namespace Phantasma.VM
             switch (this.Type)
             {
                 case VMType.Bytes:
-                case VMType.Address:
                     {
                         return (byte[])Data;
                     }
@@ -102,21 +101,35 @@ namespace Phantasma.VM
             }           
         }
 
-        public byte[] AsAddress()
+        public Address AsAddress()
         {
-            if (this.Type != VMType.Address)
+            switch (this.Type)
             {
-                throw new Exception("Invalid cast");
+                case VMType.Bytes:
+                    {
+                        var temp = (byte[])Data;
+
+                        if (temp.Length != Address.PublicKeyLength)
+                        {
+                            throw new Exception("Invalid address size");
+                        }
+
+                        return new Address(temp);
+                    }
+
+                case VMType.Object:
+                    {
+                        if (Data is Address)
+                        {
+                            return (Address)Data;
+                        }
+
+                        throw new Exception("Invalid cast");
+                    }
+
+                default:
+                    throw new Exception("Invalid cast");
             }
-
-            var temp = (byte[]) Data;
-
-            if (temp.Length != KeyPair.PublicKeyLength)
-            {
-                throw new Exception("Invalid cast");
-            }
-
-            return temp;
         }
 
         public bool AsBool()
@@ -146,7 +159,6 @@ namespace Phantasma.VM
 
             switch (type)
             {
-                case VMType.Address:
                 case VMType.Bytes:
                     {
                         this.Data = val;
@@ -359,7 +371,6 @@ namespace Phantasma.VM
                 case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
-                case VMType.Address: return $"[Address] => {((byte[])Data).PublicKeyToAddress()}";
                 case VMType.Object: return $"[Object] => {Data.GetType().Name}";
                 default: return "Unknown";
             }

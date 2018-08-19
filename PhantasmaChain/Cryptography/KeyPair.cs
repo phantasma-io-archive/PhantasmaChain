@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Phantasma.Mathematics;
 using Phantasma.Utils;
 using Phantasma.VM.Types;
 
@@ -11,7 +12,6 @@ namespace Phantasma.Cryptography
         public readonly Address Address;
 
         public const int PrivateKeyLength = 32;
-        public const int PublicKeyLength = 32;
 
         public KeyPair(byte[] privateKey)
         {
@@ -64,11 +64,14 @@ namespace Phantasma.Cryptography
             return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
         }
 
-        public static byte[] GetScriptHashFromAddress(string address)
+        public byte[] Sign(byte[] message)
         {
-            var temp = address.Base58CheckDecode();
-            temp = temp.SubArray(1, 20);
-            return temp;
+            return Ed25519.Sign(message, this.PrivateKey);
+        }
+
+        public static bool VerifySignature(byte[] message, byte[] signature, Address address)
+        {
+            return Ed25519.Verify(message, signature, address.PublicKey);
         }
     }
 }

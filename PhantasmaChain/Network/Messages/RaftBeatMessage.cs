@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using Phantasma.VM.Types;
+using System.IO;
 
 namespace Phantasma.Network.Messages
 {
@@ -6,15 +7,15 @@ namespace Phantasma.Network.Messages
     {
         private readonly uint Term;
 
-        public RaftBeatMessage(byte[] pubKey, uint term) :base(Opcode.RAFT_Beat, pubKey)
+        public RaftBeatMessage(Address address, uint term) :base(Opcode.RAFT_Beat, address)
         {
             this.Term = term;
         }
 
-        internal static RaftBeatMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static RaftBeatMessage FromReader(Address address, BinaryReader reader)
         {
             var term = reader.ReadUInt32();
-            return new RaftBeatMessage(pubKey, term);
+            return new RaftBeatMessage(address, term);
         }
     }
 }

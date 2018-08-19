@@ -88,7 +88,7 @@ namespace Phantasma.Utils
 
         public static Address ReadAddress(this BinaryReader reader)
         {
-            var bytes = reader.ReadBytes(KeyPair.PublicKeyLength);
+            var bytes = reader.ReadBytes(Address.PublicKeyLength);
             return new Address(bytes);
         }
 

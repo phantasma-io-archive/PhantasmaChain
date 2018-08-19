@@ -72,11 +72,11 @@ namespace Phantasma.Blockchain.Consensus
                 return false;
             }
 
-            return msg.IsSigned && Leader.SequenceEqual(msg.PublicKey);
+            return msg.IsSigned && Leader == msg.Address;
         }
 
         private void UpdateLeader(Message msg) {
-            if (Leader != null && Leader.SequenceEqual(msg.PublicKey))
+            if (Leader != Address.Null && Leader == msg.Address)
             {
                 _lastLeaderBeat = DateTime.UtcNow;
             }
@@ -103,7 +103,7 @@ namespace Phantasma.Blockchain.Consensus
                 case Opcode.PEER_Leave:
                     {
                         if (IsLeader(msg)) {
-                            Leader = null;
+                            Leader = Address.Null;
                         }
                         break;
                     }
@@ -118,7 +118,7 @@ namespace Phantasma.Blockchain.Consensus
                 case Opcode.RAFT_Request:
                     {
                         if (this.Vote == null) {
-                            this.Vote = msg.PublicKey;
+                            this.Vote = msg.Address;
                             // TODO send vote msg
                         }
                         
@@ -127,8 +127,8 @@ namespace Phantasma.Blockchain.Consensus
 
                 case Opcode.RAFT_Vote:
                     {
-                        if (!ReceivedVotes.Contains(msg.PublicKey)) {
-                            ReceivedVotes.Add(msg.PublicKey);
+                        if (!ReceivedVotes.Contains(msg.Address)) {
+                            ReceivedVotes.Add(msg.Address);
 
                             // TODO check if received majority votes, become leader
                         }
@@ -140,7 +140,7 @@ namespace Phantasma.Blockchain.Consensus
                         // TODO verify sigs of majority
                         if (!IsLeader(msg))
                         {
-                            Leader = msg.PublicKey;
+                            Leader = msg.Address;
                             UpdateLeader(msg);
 
                             SetState(RaftState.Follower);
@@ -181,8 +181,8 @@ namespace Phantasma.Blockchain.Consensus
 
                 case Opcode.RAFT_Beat:
                     {
-                        if (Leader == null) {
-                            Leader = msg.PublicKey;
+                        if (Leader == Address.Null) {
+                            Leader = msg.Address;
                         }
 
                         UpdateLeader(msg);

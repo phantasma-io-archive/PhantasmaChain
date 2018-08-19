@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Phantasma.Cryptography;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Utils
 {
@@ -11,7 +11,7 @@ namespace Phantasma.Utils
         private int min;
         private int max;
 
-        private const int MaxLength = KeyPair.PublicKeyLength;
+        private const int MaxLength = Address.PublicKeyLength;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int LookUp(char c)

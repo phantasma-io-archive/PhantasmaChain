@@ -1,14 +1,15 @@
-﻿using System.IO;
+﻿using Phantasma.VM.Types;
+using System.IO;
 
 namespace Phantasma.Network.Messages
 {
     internal class ChainValuesMessage : Message
     {
-        public ChainValuesMessage(byte[] pubKey) : base(Opcode.CHAIN_Values, pubKey)
+        public ChainValuesMessage(Address address) : base(Opcode.CHAIN_Values, address)
         {
         }
 
-        internal static ChainValuesMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static ChainValuesMessage FromReader(Address pubKey, BinaryReader reader)
         {
             throw new System.NotImplementedException();
 //            return new ChainValuesMessage(code, text);

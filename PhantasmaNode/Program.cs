@@ -38,7 +38,7 @@ namespace PhantasmaCLIWallet
                 {
                     Console.WriteLine("\t\tEvent #" + index);
                     Console.WriteLine("\t\tKind: " + evt.Kind);
-                    Console.WriteLine("\t\tTarget: " + evt.PublicKey.PublicKeyToAddress());
+                    Console.WriteLine("\t\tTarget: " + evt.Address.Text);
                     Console.WriteLine();
 
                     index++;

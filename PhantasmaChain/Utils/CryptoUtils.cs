@@ -383,35 +383,6 @@ namespace Phantasma.Utils
             return message.Sha256().Sha256();
         }
 
-        public static byte[] Sign(byte[] message, byte[] prikey, byte[] pubkey)
-        {
-            return Ed25519.Sign(message, prikey);
-        }
-
-        public static bool VerifySignature(byte[] message, byte[] signature, byte[] pubkey)
-        {
-            return Ed25519.Verify(message, signature, pubkey);
-        }
-
-        public static string PublicKeyToAddress(this byte[] publicKey)
-        {
-            byte opcode = 74;
-            var bytes = new byte[] { opcode }.Concat(publicKey).ToArray();
-            return Base58.Encode(bytes);
-        }
-
-        public static byte[] AddressToPublicKey(this string address)
-        {
-            var bytes = Base58.Decode(address);
-            var opcode = bytes[0];
-            if (opcode != 74 && opcode != 54 && opcode != 37)
-            {
-                throw new ArgumentException("Invalid address");
-            }
-
-            return bytes.Skip(1).ToArray();
-        }
-
         public static Address ScriptToPublicKey(this byte[] script)
         {
             var hash = script.Sha256();

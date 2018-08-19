@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using Phantasma.Blockchain;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network.Messages
 {
@@ -8,16 +9,16 @@ namespace Phantasma.Network.Messages
     {
         public readonly Block block;
 
-        public RaftReplicateMessage(byte[] pubKey, Block block) : base(Opcode.RAFT_Replicate, pubKey)
+        public RaftReplicateMessage(Address address, Block block) : base(Opcode.RAFT_Replicate, address)
         {
             Throw.IfNull(block, nameof(block));
             this.block = block;
         }
 
-        internal static RaftReplicateMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static RaftReplicateMessage FromReader(Address address, BinaryReader reader)
         {
             var block = Block.Unserialize(reader);
-            return new RaftReplicateMessage(pubKey, block);
+            return new RaftReplicateMessage(address, block);
         }
     }
 }

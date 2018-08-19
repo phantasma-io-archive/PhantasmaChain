@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using Phantasma.VM.Types;
+using System.IO;
 
 namespace Phantasma.Network.Messages
 {
@@ -6,15 +7,15 @@ namespace Phantasma.Network.Messages
     {
         public readonly uint Flags;
 
-        public ChainRequestMessage(byte[] pubKey, uint flags) :base (Opcode.CHAIN_Request, pubKey)
+        public ChainRequestMessage(Address address, uint flags) :base (Opcode.CHAIN_Request, address)
         {
             this.Flags = flags;
         }
 
-        internal static ChainRequestMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static ChainRequestMessage FromReader(Address address, BinaryReader reader)
         {
             var flags = reader.ReadUInt32();
-            return new ChainRequestMessage(pubKey, flags);
+            return new ChainRequestMessage(address, flags);
         }
     }
 }

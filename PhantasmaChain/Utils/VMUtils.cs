@@ -37,14 +37,14 @@ namespace Phantasma.Utils
                 return new VMObject().SetValue((byte[])obj, VMType.Bytes);
             }
 
-            if (obj is Address)
-            {
-                return new VMObject().SetValue(((Address)obj).PublicKey, VMType.Address);
-            }
-
             if (obj is int)
             {
                 return new VMObject().SetValue((int)obj);
+            }
+
+            if (obj is IInteropObject)
+            {
+                return new VMObject().SetValue((IInteropObject)obj);
             }
 
             return null;

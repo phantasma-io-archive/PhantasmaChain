@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using Phantasma.Network.Messages;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network
 {
@@ -104,7 +105,7 @@ namespace Phantasma.Network
         public void InitConnection(Socket socket) {
             _connections.Add(socket);
 
-            var msg = new PeerJoinMessage(null);
+            var msg = new PeerJoinMessage(Address.Null);
 //            msg.Serialize()
         }
 

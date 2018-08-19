@@ -2,6 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Network.Messages;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network
 {
@@ -11,25 +12,20 @@ namespace Phantasma.Network
     public abstract class Message
     {
         public Opcode Opcode { get; private set; }
-        public byte[] PublicKey { get; private set; }
+        public Address Address { get; private set; }
         public byte[] Signature { get; private set; }
 
-        public bool IsSigned => PublicKey != null && Signature != null;
+        public bool IsSigned => Address != Address.Null && Signature != null;
 
-        public Message(Opcode opcode, byte[] publicKey) {
+        public Message(Opcode opcode, Address address) {
             this.Opcode = opcode;
-            this.PublicKey = publicKey;
+            this.Address = address;
         }
 
         public static Message Unserialize(BinaryReader reader)
         {
             var opcode = (Opcode)reader.ReadByte();
-            var pubKey = reader.ReadByteArray();
-
-            if (pubKey != null && pubKey.Length != KeyPair.PublicKeyLength)
-            {
-                pubKey = null;
-            }
+            var address = reader.ReadAddress();
 
             Message msg;
 
@@ -37,116 +33,116 @@ namespace Phantasma.Network
             {
                 case Opcode.PEER_Join:
                     {
-                        msg = PeerJoinMessage.FromReader(pubKey, reader);
+                        msg = PeerJoinMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.PEER_Leave:
                     {
-                        msg = PeerLeaveMessage.FromReader(pubKey, reader);
+                        msg = PeerLeaveMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.PEER_List:
                     {
-                        msg = PeerListMessage.FromReader(pubKey, reader);
+                        msg = PeerListMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Request:
                     {
-                        msg = RaftRequestMessage.FromReader(pubKey, reader);
+                        msg = RaftRequestMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Vote:
                     {
-                        msg = RaftVoteMessage.FromReader(pubKey, reader);
+                        msg = RaftVoteMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Lead:
                     {
-                        msg = RaftLeadMessage.FromReader(pubKey, reader);
+                        msg = RaftLeadMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Replicate:
                     {
-                        msg = RaftReplicateMessage.FromReader(pubKey, reader);
+                        msg = RaftReplicateMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Confirm:
                     {
-                        msg = RaftConfirmMessage.FromReader(pubKey, reader);
+                        msg = RaftConfirmMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Commit:
                     {
-                        msg = RaftCommitMessage.FromReader(pubKey, reader);
+                        msg = RaftCommitMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.RAFT_Beat:
                     {
-                        msg = RaftBeatMessage.FromReader(pubKey, reader);
+                        msg = RaftBeatMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        msg = MempoolAddMessage.FromReader(pubKey, reader);
+                        msg = MempoolAddMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Get:
                     {
-                        msg = MempoolGetMessage.FromReader(pubKey, reader);
+                        msg = MempoolGetMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.BLOCKS_Request:
                     {
-                        msg = ChainRequestMessage.FromReader(pubKey, reader);
+                        msg = ChainRequestMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.BLOCKS_List:
                     {
-                        msg = ChainRequestMessage.FromReader(pubKey, reader);
+                        msg = ChainRequestMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.CHAIN_Request:
                     {
-                        msg = BlockRequestMessage.FromReader(pubKey, reader);
+                        msg = BlockRequestMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.CHAIN_Values:
                     {
-                        msg = ChainValuesMessage.FromReader(pubKey, reader);
+                        msg = ChainValuesMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.SHARD_Submit:
                     {
-                        msg = ShardSubmitMessage.FromReader(pubKey, reader);
+                        msg = ShardSubmitMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.ERROR:
                     {
-                        msg = ErrorMessage.FromReader(pubKey, reader);
+                        msg = ErrorMessage.FromReader(address, reader);
                         break;
                     }
 
                 default: return null;
             }
 
-            if (pubKey != null)
+            if (address != null)
             {
                 msg.Signature = reader.ReadByteArray();
             }

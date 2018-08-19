@@ -1,38 +1,38 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network
 {
     public struct PeerInfo
     {
         public readonly uint PeerID;
-        public readonly byte[] PublicKey;
+        public readonly Address Address;
         public readonly Endpoint EndPoint;
 
-        public PeerInfo(uint peerID, byte[] publicKey, Endpoint endpoint)
+        public PeerInfo(uint peerID, Address address, Endpoint endpoint)
         {
-            Throw.IfNull(publicKey, nameof(publicKey));
-            Throw.IfNot(publicKey.Length == KeyPair.PublicKeyLength, nameof(publicKey));
+            Throw.If(address == Address.Null, nameof(address));
 
             PeerID = peerID;
-            PublicKey = publicKey;
+            Address = address;
             EndPoint = endpoint;
         }
 
         internal void Serialize(BinaryWriter writer)
         {
             writer.Write(PeerID);
-            writer.Write(PublicKey);
+            writer.WriteAddress(Address);
             this.EndPoint.Serialize(writer);
         }
 
         internal static PeerInfo Unserialize(BinaryReader reader)
         {
             var peerID = reader.ReadUInt32();
-            var publicKey = reader.ReadBytes(KeyPair.PublicKeyLength);
+            var address = reader.ReadAddress();
             var endpoint = Endpoint.Unserialize(reader);
-            return new PeerInfo(peerID, publicKey, endpoint);
+            return new PeerInfo(peerID, address, endpoint);
         }
     }
 }

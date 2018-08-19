@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Network.Messages
 {
@@ -7,17 +8,17 @@ namespace Phantasma.Network.Messages
     {
         public readonly byte[] BlockHash;
 
-        public RaftConfirmMessage(byte[] pubKey, byte[] hash) : base(Opcode.RAFT_Confirm, pubKey)
+        public RaftConfirmMessage(Address address, byte[] hash) : base(Opcode.RAFT_Confirm, address)
         {
             Throw.IfNull(hash, nameof(hash));
             this.BlockHash = hash;
         }
 
-        internal static RaftConfirmMessage FromReader(byte[] pubKey, BinaryReader reader)
+        internal static RaftConfirmMessage FromReader(Address address, BinaryReader reader)
         {
             var hash = reader.ReadByteArray();
 
-            return new RaftConfirmMessage(pubKey, hash);
+            return new RaftConfirmMessage(address, hash);
         }
     }
 }
