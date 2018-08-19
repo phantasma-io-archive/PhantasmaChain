@@ -21,6 +21,8 @@ namespace PhantasmaTests
             var msgBytes = Encoding.ASCII.GetBytes(msg);
             var signature = keys.Sign(msgBytes);
 
+            var verified = signature.Verify(msgBytes, keys.Address);
+            Assert.IsTrue(verified);
         }
     }
 }

@@ -64,14 +64,10 @@ namespace Phantasma.Cryptography
             return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
         }
 
-        public byte[] Sign(byte[] message)
+        public Signature Sign(byte[] message)
         {
-            return Ed25519.Sign(message, this.PrivateKey);
-        }
-
-        public static bool VerifySignature(byte[] message, byte[] signature, Address address)
-        {
-            return Ed25519.Verify(message, signature, address.PublicKey);
+            var sign = Ed25519.Sign(message, Ed25519.ExpandedPrivateKeyFromSeed(this.PrivateKey));
+            return new Ed25519Signature(sign);
         }
     }
 }
