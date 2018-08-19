@@ -101,7 +101,7 @@ namespace Phantasma.Blockchain
         internal void Serialize(BinaryWriter writer) {
             writer.WriteBigInteger(Height);
             writer.Write(Timestamp.Value);
-            PreviousHash.Serialize(writer);
+            writer.WriteHash(PreviousHash);
             writer.WriteAddress(MinerAddress);
             writer.WriteAddress(TokenAddress);
             writer.Write((ushort)Events.Count);
@@ -115,7 +115,7 @@ namespace Phantasma.Blockchain
         internal static Block Unserialize(BinaryReader reader) {
             var height = reader.ReadBigInteger();
             var timestamp = new Timestamp(reader.ReadUInt32());
-            var prevHash = Hash.Unserialize(reader);
+            var prevHash = reader.ReadHash();
             var minerAddress =  reader.ReadAddress();
             var tokenAddress = reader.ReadAddress();
 

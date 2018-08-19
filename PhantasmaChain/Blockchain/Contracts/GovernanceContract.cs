@@ -4,22 +4,14 @@ using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public class GovernanceContract : Contract
+    public class GovernanceContract : NativeContract
     {
-        public static readonly byte[] DefaultScript = new byte[] { (byte)Opcode.RET };
-        public static readonly byte[] DefaultABI = new byte[] { };
-
-        private Address _address;
-        public override Address Address => _address;
-
-        public override byte[] Script => DefaultScript;
-        public override byte[] ABI => DefaultABI;
+        public override NativeContractKind Kind => NativeContractKind.Governance;
 
         public BigInteger FeeMultiplier = 1;
 
-        public GovernanceContract(Chain chain, byte[] publicKey) : base(chain)
+        public GovernanceContract(Chain chain) : base(chain)
         {
-            this._address = new Address(publicKey);
         }
 
         public bool InitVotingRound(GovernanceSubject subject, byte[] value)

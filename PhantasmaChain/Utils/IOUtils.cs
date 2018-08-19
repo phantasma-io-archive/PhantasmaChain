@@ -39,6 +39,16 @@ namespace Phantasma.Utils
             writer.Write(address.PublicKey);
         }
 
+        public static void WriteHash(this BinaryWriter writer, Hash hash)
+        {
+            if (hash == null)
+            {
+                hash = Hash.Null;
+            }
+            var bytes = hash.ToByteArray();
+            writer.Write(bytes);
+        }
+
         public static void WriteBigInteger(this BinaryWriter writer, BigInteger n)
         {
             var bytes = n.ToByteArray();
@@ -90,6 +100,13 @@ namespace Phantasma.Utils
         {
             var bytes = reader.ReadBytes(Address.PublicKeyLength);
             return new Address(bytes);
+        }
+
+        public static Hash ReadHash(this BinaryReader reader)
+        {
+            var data = reader.ReadBytes(Hash.SIZE);
+            var result = new Hash(data);
+            return result == Hash.Null ? null : result;
         }
 
         public static BigInteger ReadBigInteger(this BinaryReader reader)

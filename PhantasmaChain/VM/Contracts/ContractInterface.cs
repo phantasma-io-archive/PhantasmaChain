@@ -4,16 +4,13 @@ using Phantasma.Utils;
 
 namespace Phantasma.VM.Contracts
 {
-    public sealed class ABI
+    public sealed class ContractInterface
     {
-        public readonly string Name;
-
         private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>();
         public IEnumerable<ContractMethod> Methods => _methods.Values;
 
-        public ABI(string name, IEnumerable<ContractMethod> methods)
+        public ContractInterface(IEnumerable<ContractMethod> methods)
         {
-            this.Name = name;
             foreach (var entry in methods)
             {
                 _methods[entry.name] = entry;
@@ -31,14 +28,14 @@ namespace Phantasma.VM.Contracts
             }
 
             var thisMethod = _methods[method.name];
-            if (thisMethod.arguments.Length != method.arguments.Length)
+            if (thisMethod.parameters.Length != method.parameters.Length)
             {
                 return false;
             }
 
-            for (int i=0; i<method.arguments.Length; i++)
+            for (int i=0; i<method.parameters.Length; i++)
             {
-                if (thisMethod.arguments[i] != method.arguments[i])
+                if (thisMethod.parameters[i] != method.parameters[i])
                 {
                     return false;
                 }
@@ -50,7 +47,7 @@ namespace Phantasma.VM.Contracts
         /// <summary>
         /// Checks if this ABI implements of other ABI (eg: other is a subset of this)
         /// </summary>
-        public bool Implements(ABI other)
+        public bool Implements(ContractInterface other)
         {
             foreach (var method in other.Methods)
             {
@@ -63,9 +60,8 @@ namespace Phantasma.VM.Contracts
             return true;
         }
 
-        public static ABI Unserialize(BinaryReader reader)
+        public static ContractInterface Unserialize(BinaryReader reader)
         {
-            var name = reader.ReadShortString();
             var len = reader.ReadByte();
             var methods = new ContractMethod[len];
             for (int i = 0; i < len; i++)
@@ -73,12 +69,11 @@ namespace Phantasma.VM.Contracts
                 methods[i] = ContractMethod.Unserialize(reader);
             }
 
-            return new ABI(name, methods);
+            return new ContractInterface(methods);
         }
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteShortString(Name);
             writer.Write((byte)_methods.Count);
             foreach (var method in _methods.Values)
             {

@@ -372,34 +372,40 @@ namespace Phantasma.VM
             }
         }
 
-        public static bool IsVMType(Type type)
+        public static VMType GetVMType(Type type)
         {
             if (type == typeof(bool))
             {
-                return true;
+                return VMType.Bool;
             }
 
             if (type == typeof(string))
             {
-                return true;
+                return VMType.String;
             }
 
             if (type == typeof(byte[]))
             {
-                return true;
+                return VMType.Bytes;
             }
 
             if (type == typeof(BigInteger))
             {
-                return true;
+                return VMType.Number;
             }
 
             if (type is IInteropObject)
             {
-                return true;
+                return VMType.Object;
             }
 
-            return false;
+            return VMType.None;
+        }
+
+        public static bool IsVMType(Type type)
+        {
+            var result = GetVMType(type);
+            return result != VMType.None;
         }
     }
 

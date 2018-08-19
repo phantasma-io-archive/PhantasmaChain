@@ -72,6 +72,12 @@ namespace Phantasma.VM.Types
             return new Address(bytes.Skip(1).ToArray());
         }
 
+        public static Address FromScript(byte[] script)
+        {
+            var hash = script.Sha256();
+            return new Address(hash);
+        }
+
         public int GetSize()
         {
             return PublicKeyLength;

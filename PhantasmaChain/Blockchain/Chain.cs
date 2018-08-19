@@ -58,16 +58,24 @@ namespace Phantasma.Blockchain
                 }
             }
 
+            foreach (Transaction tx in block.Transactions)
+            {
+                if (!tx.Execute(this, block.Notify))
+                {
+                    return false;
+                }
+            }
+
+            // from here on, the block is accepted
+            Log.Message($"Increased chain height to {block.Height}");
+
             _blocks[block.Height] = block;
             lastBlock = block;
 
             foreach (Transaction tx in block.Transactions)
             {
-                tx.Execute(this, block.Notify);
                 _transactions[tx.Hash] = tx;
             }
-
-            Log.Message($"Increased chain height to {block.Height}");
 
             return true;
         }
@@ -111,7 +119,7 @@ namespace Phantasma.Blockchain
 
         public NativeContract GetNativeContract(NativeContractKind kind)
         {
-            if (_nativeContracts != null)
+            if (_nativeContracts == null)
             {
                 _nativeContracts = new Dictionary<NativeContractKind, NativeContract>();
 

@@ -9,32 +9,32 @@ namespace Phantasma.VM.Contracts
     public struct ContractMethod
     {
         public readonly string name;
-        public readonly VMType[] arguments;
+        public readonly VMType[] parameters;
 
-        public ContractMethod(string name, IEnumerable<VMType> args)
+        public ContractMethod(string name, IEnumerable<VMType> parameters)
         {
             this.name = name;
-            this.arguments = args.ToArray();
+            this.parameters = parameters.ToArray();
         }
 
         public static ContractMethod Unserialize(BinaryReader reader)
         {
             var name = reader.ReadShortString();
             var len = reader.ReadByte();
-            var args = new VMType[len];
+            var parameters = new VMType[len];
             for (int i = 0; i < len; i++)
             {
-                args[i] = (VMType)reader.ReadByte();
+                parameters[i] = (VMType)reader.ReadByte();
             }
 
-            return new ContractMethod(name, args);
+            return new ContractMethod(name, parameters);
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteShortString(name);
-            writer.Write((byte)arguments.Length);
-            foreach (var entry in arguments)
+            writer.Write((byte)parameters.Length);
+            foreach (var entry in parameters)
             {
                 writer.Write((byte)entry);
             }

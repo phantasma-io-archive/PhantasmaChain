@@ -10,6 +10,8 @@ namespace Phantasma.Cryptography
     {
         public const int SIZE = 32;
 
+        public static readonly Hash Null = new Hash(new byte[SIZE]);
+
         private byte[] _data;
 
         public int Size => _data.Length;
@@ -167,17 +169,6 @@ namespace Phantasma.Cryptography
         public static implicit operator BigInteger(Hash val)
         {
             return new BigInteger(val.ToByteArray());
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(_data);
-        }
-
-        public static Hash Unserialize(BinaryReader reader)
-        {
-            var data = reader.ReadBytes(SIZE);
-            return new Hash(data);
         }
     }
 }

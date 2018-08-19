@@ -28,9 +28,9 @@ namespace Phantasma.VM
 
         public VirtualMachine(byte[] script)
         {
+            this.entryAddress = Address.FromScript(script);
             this.entryContext = new ScriptContext(script);
-            this.entryAddress = script.ScriptToPublicKey();
-            _contextList[this.entryAddress] = this.currentContext;
+            _contextList[this.entryAddress] = this.entryContext;
 
             this.gas = 0;
             this.entryScript = script;

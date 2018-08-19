@@ -13,7 +13,7 @@ namespace Phantasma.Blockchain
 
         public abstract Address Address { get; }
         public abstract byte[] Script { get; }
-        public abstract byte[] ABI { get; }
+        public abstract ContractInterface ABI { get; }
 
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 

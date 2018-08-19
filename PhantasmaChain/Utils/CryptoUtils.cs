@@ -381,11 +381,5 @@ namespace Phantasma.Utils
         {
             return message.Sha256().Sha256();
         }
-
-        public static Address ScriptToPublicKey(this byte[] script)
-        {
-            var hash = script.Sha256();
-            return new Address(hash);
-        }
     }
 }

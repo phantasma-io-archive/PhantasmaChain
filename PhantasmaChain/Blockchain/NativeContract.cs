@@ -6,6 +6,7 @@
         Distribution,
         Reputation,
         Governance,
+        Stake,
         Storage,
         Privacy,
         Bank,

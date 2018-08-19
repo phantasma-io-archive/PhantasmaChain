@@ -4,20 +4,12 @@ using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public sealed class StakeContract : Contract
+    public sealed class StakeContract : NativeContract
     {
-        public static readonly byte[] DefaultScript = new byte[] { (byte)Opcode.RET };
-        public static readonly byte[] DefaultABI = new byte[] { };
+        public override NativeContractKind Kind => NativeContractKind.Stake;
 
-        private Address _address;
-        public override Address Address => _address;
-
-        public override byte[] Script => DefaultScript;
-        public override byte[] ABI => DefaultABI;
-
-        public StakeContract(Chain chain, byte[] publicKey) : base(chain)
+        public StakeContract(Chain chain) : base(chain)
         {
-            this._address = new Address(publicKey);
         }
 
         public void Stake(BigInteger amount)
