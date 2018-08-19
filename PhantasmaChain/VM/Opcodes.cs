@@ -56,6 +56,7 @@
         SHR,
 
         // context
+        THIS,
         CTX,
         SWITCH,
 

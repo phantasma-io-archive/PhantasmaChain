@@ -675,6 +675,17 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte dest_reg
+                    case Opcode.THIS:
+                        {
+                            var dst = Read8();
+                            Expect(dst < currentFrame.Registers.Length);
+
+                            currentFrame.Registers[dst].SetValue(this);
+
+                            break;
+                        }
+
                     // args: byte dest_reg, var key
                     case Opcode.CTX:
                         {
@@ -695,7 +706,7 @@ namespace Phantasma.VM
                             break;
                         }
 
-                    // args: var key
+                    // args: byte src_reg
                     case Opcode.SWITCH:
                         {
                             var src = Read8();
