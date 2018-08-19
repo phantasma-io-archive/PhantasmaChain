@@ -1,6 +1,7 @@
 ﻿namespace Phantasma.VM.Types
 {
-    public interface Surprise<T>
+
+    public interface ISurprise<T> : IInteropObject
     {
         T Value { get; }
         Timestamp Timestamp { get; }

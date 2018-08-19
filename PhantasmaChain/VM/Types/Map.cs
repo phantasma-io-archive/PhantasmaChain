@@ -3,7 +3,7 @@ using System;
 
 namespace Phantasma.VM.Types
 {
-    public interface Map<Key, Value>
+    public interface IMap<Key, Value>: IInteropObject
     {
         void Put(Key key, Value val);
         Value Get(Key key);

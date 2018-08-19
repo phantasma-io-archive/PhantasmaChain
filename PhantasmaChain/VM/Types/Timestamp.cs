@@ -2,7 +2,7 @@
 
 namespace Phantasma.VM.Types
 {
-    public struct Timestamp
+    public struct Timestamp : IInteropObject
     {
         public readonly uint Value;
 
@@ -27,6 +27,11 @@ namespace Phantasma.VM.Types
         public override int GetHashCode()
         {
             return this.Value.GetHashCode();
+        }
+
+        public int GetSize()
+        {
+            return sizeof(uint);
         }
 
         public static bool operator ==(Timestamp A, Timestamp B) { return A.Value == B.Value; }
