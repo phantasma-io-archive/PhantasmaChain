@@ -5,7 +5,7 @@ namespace Phantasma.Blockchain.Contracts
 {
     public sealed class DistributionContract : NativeContract
     {
-        public override NativeContractKind Kind => NativeContractKind.Distribution; 
+        internal override NativeContractKind Kind => NativeContractKind.Distribution; 
 
         public DistributionContract() : base()
         {

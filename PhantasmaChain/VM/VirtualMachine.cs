@@ -30,10 +30,15 @@ namespace Phantasma.VM
         {
             this.entryAddress = Address.FromScript(script);
             this.entryContext = new ScriptContext(script);
-            _contextList[this.entryAddress] = this.entryContext;
+            RegisterContext(this.entryAddress, this.entryContext);
 
             this.gas = 0;
             this.entryScript = script;
+        }
+
+        internal void RegisterContext(Address address, ExecutionContext context)
+        {
+            _contextList[address] = context;
         }
 
         public abstract ExecutionState ExecuteInterop(string method);
@@ -41,7 +46,7 @@ namespace Phantasma.VM
 
         public ExecutionState Execute()
         {
-            return SwitchContext(entryAddress);
+            return SwitchContext(entryContext);
         }
 
         #region FRAMES
@@ -78,14 +83,8 @@ namespace Phantasma.VM
             return result;
         }
 
-        internal ExecutionState SwitchContext(Address address)
+        internal ExecutionState SwitchContext(ExecutionContext context)
         {
-            if (!_contextList.ContainsKey(address))
-            {
-                return ExecutionState.Fault;
-            }
-
-            var context = _contextList[address];
             this.currentContext = context;
             PushFrame(context, 0, DefaultRegisterCount);
             return context.Execute(this.currentFrame, this.stack);

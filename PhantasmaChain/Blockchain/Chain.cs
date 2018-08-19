@@ -24,9 +24,23 @@ namespace Phantasma.Blockchain
 
         public readonly Logger Log;
 
+        private List<NativeExecutionContext> _nativeContexts = new List<NativeExecutionContext>();
+        public IEnumerable<NativeExecutionContext> NativeContexts => _nativeContexts;
+
         public Chain(KeyPair owner, Logger log = null)
         {
             this.Log = Logger.Init(log);
+
+            var list = Enum.GetValues(typeof(NativeContractKind));
+            foreach (NativeContractKind kind in list)
+            {
+                var contract = Chain.GetNativeContract(kind);
+                if (contract != null)
+                {
+                    var context = new NativeExecutionContext(contract);
+                    _nativeContexts.Add(context);
+                }
+            }
 
             var block = CreateGenesisBlock(owner);
             if (!AddBlock(block))

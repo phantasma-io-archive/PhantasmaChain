@@ -407,6 +407,27 @@ namespace Phantasma.VM
             var result = GetVMType(type);
             return result != VMType.None;
         }
+
+        public static VMObject FromObject(object obj)
+        {
+            var type = GetVMType(obj.GetType());
+            Throw.If(type == VMType.None, "not a valid object");
+
+            var result = new VMObject();
+
+            switch (type)
+            {
+                case VMType.Bool: result.SetValue((bool)obj); break;
+                case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
+                case VMType.String: result.SetValue((string)obj);break;
+                case VMType.Number: result.SetValue((BigInteger)obj); break;
+                case VMType.Object: result.SetValue((IInteropObject)obj); break;
+                default: return null;
+            }
+
+            return result;
+        }
+
     }
 
 }

@@ -712,9 +712,9 @@ namespace Phantasma.VM
                             var src = Read8();
                             Expect(src < currentFrame.Registers.Length);
 
-                            var address = currentFrame.Registers[src].AsInterop<Address>();
+                            var context = currentFrame.Registers[src].AsInterop<ExecutionContext>();
 
-                            State = currentFrame.VM.SwitchContext(address);
+                            State = currentFrame.VM.SwitchContext(context);
                             break;
                         }
 

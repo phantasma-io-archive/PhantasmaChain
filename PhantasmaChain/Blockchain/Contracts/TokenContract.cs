@@ -6,7 +6,7 @@ namespace Phantasma.Blockchain.Contracts
 {
     public class Token : NativeContract
     {
-        public override NativeContractKind Kind => NativeContractKind.Token;
+        internal override NativeContractKind Kind => NativeContractKind.Token;
 
         public string Symbol => "SOUL";
         public string Name => "Phantasma";

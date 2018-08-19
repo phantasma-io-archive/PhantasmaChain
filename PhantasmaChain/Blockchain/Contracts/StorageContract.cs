@@ -6,7 +6,7 @@ namespace Phantasma.Blockchain.Contracts
 {
     public sealed class StorageContract : NativeContract
     {
-        public override NativeContractKind Kind => NativeContractKind.Storage;
+        internal override NativeContractKind Kind => NativeContractKind.Storage;
 
         public StorageContract() : base()
         {

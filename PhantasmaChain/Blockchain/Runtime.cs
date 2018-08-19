@@ -53,7 +53,15 @@ namespace Phantasma.Blockchain
 
         public override ExecutionContext LoadContext(Address address)
         {
-            throw new NotImplementedException();
+            foreach (var entry in Chain.NativeContexts)
+            {
+                if (entry.Contract.Address == address)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
         }
     }
 }
