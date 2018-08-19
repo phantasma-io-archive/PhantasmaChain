@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Numerics;
-using Phantasma.Contracts;
+using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
@@ -37,10 +37,7 @@ namespace Phantasma.Blockchain
 
             if (withSignature)
             {
-                if (this.Signature == null)
-                {
-                    throw new Exception("Signature cannot be null");
-                }
+                Throw.If(this.Signature == null, "Signature cannot be null");
 
                 writer.WriteByteArray(this.Signature);
             }

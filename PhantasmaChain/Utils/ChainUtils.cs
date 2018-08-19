@@ -29,24 +29,6 @@ namespace Phantasma.Utils
 
     public static class ChainUtils
     {
-        private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        public static DateTime ToDateTime(this uint timestamp)
-        {
-            return unixEpoch.AddSeconds(timestamp).ToLocalTime();
-        }
-
-        public static DateTime ToDateTime(this ulong timestamp)
-        {
-            return unixEpoch.AddSeconds(timestamp).ToLocalTime();
-        }
-
-
-        public static uint ToTimestamp(this DateTime time)
-        {
-            return (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static uint ToUInt32(this byte[] value, int startIndex)
         {

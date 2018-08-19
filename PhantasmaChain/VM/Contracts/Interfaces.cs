@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Phantasma.Contracts
+namespace Phantasma.VM.Contracts
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
     public class ContractEventAttribute: Attribute
@@ -15,7 +15,7 @@ namespace Phantasma.Contracts
         BigInteger Height { get; }
         byte[] Hash { get; }
         byte[] PreviousHash { get; }
-        Timestamp Time { get; }
+        Timestamp Timestamp { get; }
         IEnumerable<ITransaction> Transactions { get; }
     }
 

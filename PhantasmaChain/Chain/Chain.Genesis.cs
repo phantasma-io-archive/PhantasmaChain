@@ -2,6 +2,7 @@
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
+using Phantasma.VM.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -45,7 +46,7 @@ namespace Phantasma.Blockchain
             var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
             var stakeTx = GenerateStakeDeployTx(owner);
-            var block = new Block(DateTime.UtcNow.ToTimestamp(), owner.PublicKey, null /*fix me*/, new Transaction[] { issueTx, distTx, govTx, stakeTx });
+            var block = new Block(Timestamp.Now, owner.PublicKey, null /*fix me*/, new Transaction[] { issueTx, distTx, govTx, stakeTx });
 
             return block;
         }

@@ -2,30 +2,33 @@
 using System.IO;
 using System.Numerics;
 using Phantasma.Utils;
+using Phantasma.VM.Contracts;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Block
+    public sealed class Block: IBlock
     {
         public static readonly BigInteger InitialDifficulty = 127;
         public static readonly float IdealBlockTime = 5;
         public static readonly float BlockTimeFlutuation = 0.2f;
 
-        public readonly uint Height;
-        public readonly byte[] PreviousHash;
-        public readonly uint Timestamp;
         public readonly byte[] MinerPublicKey;
         public readonly byte[] TokenPublicKey;
+
+        public BigInteger Height { get; private set; }
+        public Timestamp Timestamp { get; private set; }
         public uint Nonce { get; private set; }
         public byte[] Hash { get; private set; }
+        public byte[] PreviousHash { get; private set; }
+
         public readonly BigInteger difficulty;
 
         private List<Transaction> _transactions;
-        public IEnumerable<Transaction> Transactions => _transactions;
+        public IEnumerable<ITransaction> Transactions => _transactions;
 
         public List<Event> Events = new List<Event>();
 
-        public Block(uint timestamp, byte[] minerPublicKey, byte[] tokenPublicKey, IEnumerable<Transaction> transactions, Block previous = null)
+        public Block(Timestamp timestamp, byte[] minerPublicKey, byte[] tokenPublicKey, IEnumerable<Transaction> transactions, Block previous = null)
         {
             this.Height = previous != null ? previous.Height + 1 : 0;
             this.PreviousHash = previous != null ? previous.Hash : null;
@@ -93,8 +96,8 @@ namespace Phantasma.Blockchain
         #region SERIALIZATION
 
         internal void Serialize(BinaryWriter writer) {
-            writer.Write(Height);
-            writer.Write(Timestamp);
+            writer.WriteBigInteger(Height);
+            writer.Write(Timestamp.Value);
             writer.WriteByteArray(PreviousHash);
             writer.WriteByteArray(MinerPublicKey);
             writer.Write((ushort)Events.Count);
@@ -106,8 +109,8 @@ namespace Phantasma.Blockchain
         }
 
         internal static Block Unserialize(BinaryReader reader) {
-            var height = reader.ReadUInt32();
-            var timestamp = reader.ReadUInt32();
+            var height = reader.ReadBigInteger();
+            var timestamp = new Timestamp(reader.ReadUInt32());
             var prevHash = reader.ReadByteArray();
             var minerPubKey = reader.ReadByteArray();
             var tokenPublicKey = reader.ReadByteArray();

@@ -1,22 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Phantasma.Blockchain;
+using Phantasma.VM.Contracts;
 using Phantasma.VM;
 
-namespace Phantasma.Contracts
+namespace Phantasma.Blockchain
 {
-    public interface IRuntime
-    {
-        ITransaction Transaction { get; }
-        IFungibleToken NativeToken { get; }
-        BigInteger CurrentHeight { get; }
-
-        Block GetBlock(BigInteger height);
-
-        T GetContract<T>(Address address) where T : IContract;
-    }
-
     public class RuntimeVM : VirtualMachine, IRuntime
     {
         public ITransaction Transaction { get; private set; }
@@ -51,7 +40,7 @@ namespace Phantasma.Contracts
             return ExecutionState.Fault;
         }
 
-        public Block GetBlock(BigInteger height)
+        public IBlock GetBlock(BigInteger height)
         {
             throw new System.NotImplementedException();
         }
