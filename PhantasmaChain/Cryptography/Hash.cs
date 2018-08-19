@@ -154,9 +154,15 @@ namespace Phantasma.Cryptography
             return left.CompareTo(right) <= 0;
         }
 
+        // If necessary pads the number to 32 bytes with zeros 
         public static implicit operator Hash(BigInteger val)
         {
-            return new Hash(val.ToByteArray());
+            var src = val.ToByteArray();
+            Throw.If(src.Length > SIZE, "number is too large");
+
+            var bytes = new byte[SIZE];
+            Array.Copy(src, bytes, src.Length);
+            return new Hash(bytes);
         }
 
         public static implicit operator BigInteger(Hash val)
