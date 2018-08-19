@@ -10,7 +10,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger FeeMultiplier = 1;
 
-        public GovernanceContract(Chain chain) : base(chain)
+        public GovernanceContract() : base()
         {
         }
 

@@ -69,7 +69,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public abstract NativeContractKind Kind { get; }
 
-        public NativeContract(Chain chain) : base(chain)
+        public NativeContract() : base()
         {
         }
     }

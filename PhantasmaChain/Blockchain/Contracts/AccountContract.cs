@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain.Contracts
         public override byte[] Script => DefaultAccountScript;
         public override ContractInterface ABI => null;
 
-        public AccountContract(Chain chain, byte[] publicKey) : base(chain)
+        public AccountContract(byte[] publicKey) : base()
         {
             this._address = new Address(publicKey);
         }

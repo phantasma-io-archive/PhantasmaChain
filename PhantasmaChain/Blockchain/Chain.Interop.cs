@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain
             var runtime = (RuntimeVM)vm;
             var tx = runtime.Transaction;
 
-            var contract = new CustomContract(this, script, abi);
+            var contract = new CustomContract(script, abi);
 
             Log.Message($"Deploying contract: {contract.Address.Text}");
 

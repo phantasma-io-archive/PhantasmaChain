@@ -17,11 +17,8 @@ namespace Phantasma.Blockchain
 
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
-        public readonly Chain Chain;
-
-        public Contract(Chain chain)
+        public Contract()
         {
-            this.Chain = chain;
             this.Order = 0;
         }
 

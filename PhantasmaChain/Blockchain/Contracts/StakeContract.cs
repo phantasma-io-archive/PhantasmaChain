@@ -8,7 +8,7 @@ namespace Phantasma.Blockchain.Contracts
     {
         public override NativeContractKind Kind => NativeContractKind.Stake;
 
-        public StakeContract(Chain chain) : base(chain)
+        public StakeContract() : base()
         {
         }
 

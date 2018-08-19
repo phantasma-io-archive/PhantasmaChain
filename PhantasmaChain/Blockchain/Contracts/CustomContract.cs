@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain.Contracts
         private byte[] _ABI;
         public override ContractInterface ABI => null;
 
-        public CustomContract(Chain chain, byte[] script, byte[] ABI) : base(chain)
+        public CustomContract(byte[] script, byte[] ABI) : base()
         {
             this._script = script;
             this._ABI = ABI;

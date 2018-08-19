@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain
 
         public readonly Logger Log;
 
-        public Chain(KeyPair owner, Logger log)
+        public Chain(KeyPair owner, Logger log = null)
         {
             this.Log = Logger.Init(log);
 
@@ -115,9 +115,9 @@ namespace Phantasma.Blockchain
             return pubKey;
         }
 
-        private Dictionary<NativeContractKind, NativeContract> _nativeContracts = null;
+        private static Dictionary<NativeContractKind, NativeContract> _nativeContracts = null;
 
-        public NativeContract GetNativeContract(NativeContractKind kind)
+        public static NativeContract GetNativeContract(NativeContractKind kind)
         {
             if (_nativeContracts == null)
             {
@@ -130,7 +130,7 @@ namespace Phantasma.Blockchain
                 {
                     if (type.IsClass && !type.IsAbstract && type.IsSubclassOf(typeof(NativeContract)))
                     {
-                        var contract = (NativeContract) Activator.CreateInstance(type, new object[] { this });
+                        var contract = (NativeContract) Activator.CreateInstance(type);
                         _nativeContracts[contract.Kind] = contract;
                     }
                 }

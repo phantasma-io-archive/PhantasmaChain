@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger CirculatingSupply => 50000000;
         public BigInteger Decimals => 8;
 
-        public Token(Chain chain) : base(chain)
+        public Token() : base()
         {
         }
 

@@ -10,7 +10,7 @@ namespace Phantasma.Blockchain.Consensus
         public static Block MineBlock(Chain chain, Address minerAddress, IEnumerable<Transaction> txs)
         {
             var timestamp = Timestamp.Now;
-            var nativeToken = chain.GetNativeContract(NativeContractKind.Token);
+            var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
 
             var block = new Block(timestamp, minerAddress, nativeToken.Address, txs, chain.lastBlock);
 
