@@ -1,5 +1,5 @@
 ﻿using Phantasma.VM.Contracts;
-using System;
+using Phantasma.VM.Types;
 using System.Numerics;
 
 namespace Phantasma.VM

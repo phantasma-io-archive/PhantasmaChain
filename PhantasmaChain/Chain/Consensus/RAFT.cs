@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain.Consensus
 
         private HashSet<byte[]> ReceivedVotes = new HashSet<byte[]>(new ByteArrayComparer());
 
-        private int CurrentTerm = 0;
+        //private int CurrentTerm = 0;
         private DateTime _lastLeaderBeat;
 
         private void SetState(RaftState newState)

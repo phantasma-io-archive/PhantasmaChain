@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using Phantasma.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
+using Phantasma.VM.Contracts;
 
 namespace Phantasma.Blockchain
 {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.VM.Types;
+using System;
 
 namespace Phantasma.VM.Contracts
 {

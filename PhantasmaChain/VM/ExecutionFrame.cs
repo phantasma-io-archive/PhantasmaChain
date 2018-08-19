@@ -2,26 +2,6 @@
 
 namespace Phantasma.VM
 {
-    public interface IInteropObject
-    {
-        int GetSize();
-    }
-
-    public class ExecutionContext: IInteropObject
-    {
-        public byte[] Script { get; private set; }
-
-        public ExecutionContext(byte[] script)
-        {
-            this.Script = script;
-        }
-
-        public int GetSize()
-        {
-            return this.Script.Length;
-        }
-    }
-
     public class ExecutionFrame
     {
         public readonly VMObject[] Registers;

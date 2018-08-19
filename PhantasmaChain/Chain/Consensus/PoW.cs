@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Phantasma.Blockchain;
-using Phantasma.Utils;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Consensus
 {
@@ -10,7 +9,7 @@ namespace Phantasma.Blockchain.Consensus
     {
         public static Block MineBlock(Chain chain, byte[] minerPublicKey, IEnumerable<Transaction> txs)
         {
-            var timestamp = DateTime.UtcNow.ToTimestamp();
+            var timestamp = Timestamp.Now;
             var block = new Block(timestamp, minerPublicKey, chain.NativeTokenPubKey, txs, chain.lastBlock);
 
             BigInteger target = 0;

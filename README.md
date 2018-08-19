@@ -48,7 +48,7 @@ API 			| RPC api for nodes | Planned | -
 Platform 		| Status
 :---------------------- | :------------
 .NET Framework 		| Working
-.NET Core 		| Untested
+.NET Core 		| Working
 UWP 			| Untested
 Mono 			| Untested
 Xamarin / Mobile 	| Untested

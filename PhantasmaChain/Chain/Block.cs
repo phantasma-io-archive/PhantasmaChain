@@ -3,6 +3,7 @@ using System.IO;
 using System.Numerics;
 using Phantasma.Utils;
 using Phantasma.VM.Contracts;
+using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {

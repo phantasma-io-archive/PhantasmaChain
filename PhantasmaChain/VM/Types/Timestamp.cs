@@ -1,59 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 
-namespace Phantasma.VM.Contracts
+namespace Phantasma.VM.Types
 {
-    public struct Address
-    {
-        public byte[] PublicKey { get; private set; }
-
-        public Address(byte[] publicKey)
-        {
-            this.PublicKey = publicKey;
-        }
-
-        public static bool operator ==(Address A, Address B) { return A.PublicKey.SequenceEqual(B.PublicKey); }
-
-        public static bool operator !=(Address A, Address B) { return !A.PublicKey.SequenceEqual(B.PublicKey); }
-
-        public override bool Equals(object obj)
-        {
-            if (!(obj is Address))
-            {
-                return false;
-            }
-
-            var address = (Address)obj;
-            return EqualityComparer<byte[]>.Default.Equals(PublicKey, address.PublicKey);
-        }
-
-        public override int GetHashCode()
-        {
-            return PublicKey.GetHashCode();
-        }
-    }
-
-    public interface Surprise<T>
-    {
-        T Value { get; }
-        Timestamp Timestamp { get; }
-        bool Hidden { get; }
-    }
-
-    public interface Map<Key, Value>
-    {
-        void Put(Key key, Value val);
-        Value Get(Key key);
-        bool Remove(Key key);
-        bool Contains(Key key);
-        void Clear();
-        void Iterate(Action<Key, Value> visitor);
-
-        BigInteger Count { get; }
-    }
-
     public struct Timestamp
     {
         public readonly uint Value;
@@ -113,6 +61,4 @@ namespace Phantasma.VM.Contracts
             return unixEpoch.AddSeconds(timestamp.Value);
         }
     }
-
 }
-

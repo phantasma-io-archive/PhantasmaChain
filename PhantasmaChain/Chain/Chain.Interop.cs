@@ -1,5 +1,4 @@
 ﻿using Phantasma.Blockchain.Contracts;
-using Phantasma.Contracts;
 using Phantasma.Utils;
 using Phantasma.VM;
 
