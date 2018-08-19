@@ -17,6 +17,12 @@ namespace Phantasma.VM.Contracts
             }
         }
 
+        public ContractMethod FindMethod(string name)
+        {
+            Throw.If(!_methods.ContainsKey(name), "method not found");
+            return _methods[name];
+        }
+
         /// <summary>
         /// Checks if this ABI implements a specific method
         /// </summary>
