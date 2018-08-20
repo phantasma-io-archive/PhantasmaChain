@@ -10,8 +10,16 @@ namespace Phantasma.Blockchain
     {
         internal void RegisterInterop(RuntimeVM vm)
         {
+            vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Chain.Deploy", Chain_deploy);
             vm.RegisterMethod("Account.Rename", Account_Rename);
+        }
+
+        private ExecutionState Runtime_Log(VirtualMachine vm)
+        {
+            var text = vm.stack.Pop().AsString();
+            this.Log.Write(Utils.Log.LogEntryKind.Message, text);
+            return ExecutionState.Running;
         }
 
         private ExecutionState Chain_deploy(VirtualMachine vm)
