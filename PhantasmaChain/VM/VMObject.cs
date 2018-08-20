@@ -69,12 +69,26 @@ namespace Phantasma.VM
 
         public string AsString()
         {
-            if (this.Type != VMType.String)
+            switch (this.Type)
             {
-                throw new Exception("Invalid cast");
-            }
+                case VMType.String:
+                        return (string)Data;
 
-            return (string)Data;
+                case VMType.Number:
+                    return ((BigInteger)Data).ToString();
+
+                case VMType.Bytes:
+                    return Base16.Encode((byte[])Data);
+
+                case VMType.Object:
+                    return "Interop:" + ((IInteropObject)Data).GetType().Name;
+
+                case VMType.Bool:
+                    return ((bool)Data) ? "true" : "false";
+
+                default:
+                    throw new Exception("Invalid cast");
+            }
         }
 
         public byte[] AsByteArray()
