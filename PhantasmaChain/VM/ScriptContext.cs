@@ -715,6 +715,12 @@ namespace Phantasma.VM
                             var context = currentFrame.Registers[src].AsInterop<ExecutionContext>();
 
                             State = currentFrame.VM.SwitchContext(context);
+
+                            if (State == ExecutionState.Running)
+                            {
+                                currentFrame.VM.PopFrame();
+                            }
+
                             break;
                         }
 
