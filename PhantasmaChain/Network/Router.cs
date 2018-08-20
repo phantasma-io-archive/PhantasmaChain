@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using Phantasma.Network.Messages;
 using Phantasma.Utils;
+using Phantasma.Utils.Log;
 using Phantasma.VM.Types;
 
 namespace Phantasma.Network
