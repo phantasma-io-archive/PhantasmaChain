@@ -10,7 +10,8 @@ namespace Phantasma.VM
         Halt
     }
 
-    public abstract class ExecutionContext : IInteropObject
+    [VMType]
+    public abstract class ExecutionContext
     {
         public abstract int GetSize();
 

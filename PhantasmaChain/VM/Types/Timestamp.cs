@@ -2,7 +2,8 @@
 
 namespace Phantasma.VM.Types
 {
-    public struct Timestamp : IInteropObject
+    [VMType]
+    public struct Timestamp
     {
         public readonly uint Value;
 

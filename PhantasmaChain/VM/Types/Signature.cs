@@ -3,7 +3,8 @@ using System.IO;
 
 namespace Phantasma.VM.Types
 {
-    public abstract class Signature: IInteropObject
+    [VMType]
+    public abstract class Signature
     {
         public byte[] bytes { get; private set; }
 

@@ -6,7 +6,8 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.VM.Types
 {
-    public struct Address: IInteropObject
+    [VMType]
+    public struct Address
     {
         public static readonly Address Null = new Address(new byte[32]);
 

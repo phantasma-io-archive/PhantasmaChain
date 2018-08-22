@@ -18,6 +18,11 @@ namespace Phantasma.VM
         Object
     }
 
+    public sealed class VMTypeAttribute : Attribute
+    {
+
+    }
+
     public sealed class VMObject
     {
         public VMType Type { get; private set; }
@@ -81,7 +86,7 @@ namespace Phantasma.VM
                     return Base16.Encode((byte[])Data);
 
                 case VMType.Object:
-                    return "Interop:" + ((IInteropObject)Data).GetType().Name;
+                    return "Interop:" + Data.GetType().Name;
 
                 case VMType.Bool:
                     return ((bool)Data) ? "true" : "false";
@@ -154,7 +159,7 @@ namespace Phantasma.VM
             return (bool)Data;
         }
 
-        public T AsInterop<T>() where T: IInteropObject
+        public T AsInterop<T>() 
         {
             Throw.If(this.Type != VMType.Object, "Invalid cast");
             Throw.IfNot(this.Data is T, "invalid interop type");
@@ -204,11 +209,13 @@ namespace Phantasma.VM
             return this;
         }
 
-        public VMObject SetValue(IInteropObject val)
+        public VMObject SetValue(object val)
         {
+            var type = val.GetType();
+            Throw.If(!type.IsClass, "invalid cast");
             this.Type = VMType.Object;
             this.Data = val;
-            this._localSize = val.GetSize();
+            this._localSize = 4;
             return this;
         }
 
@@ -408,7 +415,7 @@ namespace Phantasma.VM
                 return VMType.Number;
             }
 
-            if (type is IInteropObject)
+            if (type.IsClass) // TODO support structs?
             {
                 return VMType.Object;
             }
@@ -435,7 +442,7 @@ namespace Phantasma.VM
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
                 case VMType.String: result.SetValue((string)obj);break;
                 case VMType.Number: result.SetValue((BigInteger)obj); break;
-                case VMType.Object: result.SetValue((IInteropObject)obj); break;
+                case VMType.Object: result.SetValue(obj); break;
                 default: return null;
             }
 

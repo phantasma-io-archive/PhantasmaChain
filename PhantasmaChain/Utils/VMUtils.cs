@@ -22,6 +22,11 @@ namespace Phantasma.Utils
 
         public static VMObject ToVMObject(object obj)
         {
+            if (obj == null)
+            {
+                return new VMObject();
+            }
+
             if (obj is BigInteger)
             {
                 return new VMObject().SetValue((BigInteger)obj);
@@ -42,12 +47,7 @@ namespace Phantasma.Utils
                 return new VMObject().SetValue((int)obj);
             }
 
-            if (obj is IInteropObject)
-            {
-                return new VMObject().SetValue((IInteropObject)obj);
-            }
-
-            return null;
+            return new VMObject().SetValue(obj);
         }
 
         public static object FromVMObject(VMObject obj)

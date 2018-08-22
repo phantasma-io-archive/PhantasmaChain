@@ -7,7 +7,8 @@ using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
-    public abstract class Contract : IInteropObject, IContract
+    [VMType]
+    public abstract class Contract : IContract
     {
         public BigInteger Order { get; internal set; }
 
