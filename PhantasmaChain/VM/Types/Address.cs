@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Phantasma.Utils;
 using Phantasma.Mathematics;
+using Phantasma.Cryptography;
 
 namespace Phantasma.VM.Types
 {
@@ -62,12 +63,20 @@ namespace Phantasma.VM.Types
             return PublicKey.GetHashCode();
         }
 
+        public static Address FromWIF(string WIF)
+        {
+            var keyPair = KeyPair.FromWIF(WIF);
+            return keyPair.Address;
+        }
+
         public static Address FromText(string text)
         {
+            Throw.If(text.Length != 34, "Invalid address length");
+
             var bytes = Base58.Decode(text);
             var opcode = bytes[0];
 
-            Throw.If(opcode != 74, "Invalid address");
+            Throw.If(opcode != 74, "Invalid address opcode");
 
             return new Address(bytes.Skip(1).ToArray());
         }
