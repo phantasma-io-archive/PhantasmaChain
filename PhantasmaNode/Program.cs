@@ -8,6 +8,7 @@ using Phantasma.Cryptography;
 using Phantasma.Network;
 using Phantasma.Utils;
 using Phantasma.Mathematics;
+using Phantasma.Utils.Log;
 
 namespace PhantasmaCLIWallet
 {
@@ -92,7 +93,7 @@ namespace PhantasmaCLIWallet
             */
 
             var node_keys = KeyPair.Generate();
-            var log = new ConsoleLog();
+            var log = new ConsoleLogger();
             var seeds = new List<Endpoint>();
             int port = 6060;
             var node = new Node(node_keys, port, seeds, log);
