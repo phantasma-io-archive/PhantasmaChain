@@ -190,7 +190,8 @@ namespace Phantasma.Utils
             if (type.IsArray)
             {
                 var length = (int)reader.ReadVarInt();
-                var array = Array.CreateInstance(type, length);
+                var arrayType = type.GetElementType();
+                var array = Array.CreateInstance(arrayType, length);
                 for (int i = 0; i < length; i++)
                 {
                     var item = Unserialize(reader, type);
