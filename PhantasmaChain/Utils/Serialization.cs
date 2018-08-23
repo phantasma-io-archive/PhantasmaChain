@@ -77,6 +77,11 @@ namespace Phantasma.Utils
                 writer.Write(((Timestamp)obj).Value);
             }
             else
+            if (type == typeof(Address))
+            {
+                writer.WriteAddress((Address)obj);
+            }
+            else
             if (type.IsArray)
             {
                 var array = (Array)obj;
@@ -182,6 +187,11 @@ namespace Phantasma.Utils
                 return reader.ReadHash();
             }
 
+            if (type == typeof(Address))
+            {
+                return reader.ReadAddress();
+            }
+
             if (type == typeof(Timestamp))
             {
                 return new Timestamp(reader.ReadUInt32());
@@ -194,7 +204,7 @@ namespace Phantasma.Utils
                 var array = Array.CreateInstance(arrayType, length);
                 for (int i = 0; i < length; i++)
                 {
-                    var item = Unserialize(reader, type);
+                    var item = Unserialize(reader, arrayType);
                     array.SetValue(item, i);
                 }
 
@@ -227,8 +237,11 @@ namespace Phantasma.Utils
                 {
                     var propType = prop.PropertyType;
 
-                    object val = Unserialize(reader, propType);
-                    prop.SetValue(obj, val);
+                    if (prop.CanWrite)
+                    {
+                        object val = Unserialize(reader, propType);
+                        prop.SetValue(obj, val);
+                    }
                 }
 
                 return obj;
