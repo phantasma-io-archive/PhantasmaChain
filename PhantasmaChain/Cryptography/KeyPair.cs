@@ -25,13 +25,27 @@ namespace Phantasma.Cryptography
             this.Address = new Address(publicKey);
         }
 
-        private static Random rnd = new Random();
+        private static Random rnd = new Random(); // TODO use crypto RNG
 
         public static KeyPair Generate()
         {
-            var bytes = new byte[32];
+            var securityParameter = 64;
+            var bytes = new byte[PrivateKeyLength + (securityParameter / 8) + 1];
             rnd.NextBytes(bytes);
-            return new KeyPair(bytes);
+            bytes[bytes.Length - 1] = 0;
+
+            var maxBytes = new byte[PrivateKeyLength];
+            for (int i=0; i<maxBytes.Length; i++)
+            {
+                maxBytes[i] = 255;
+            }
+
+            var n = new BigInteger(bytes);
+            var max = new BigInteger(maxBytes);
+            
+            var q = n % max;
+
+            return new KeyPair(q.ToByteArray());
         }
 
         public static KeyPair FromWIF(string wif)
