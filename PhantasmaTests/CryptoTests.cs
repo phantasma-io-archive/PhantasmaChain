@@ -1,18 +1,18 @@
-﻿using NUnit.Framework;
-using System.Text;
+﻿using System.Text;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM.Types;
 using System;
 using System.Linq;
 using Phantasma.Mathematics;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace PhantasmaTests
 {
-    [TestFixture]
+    [TestClass]
     public class CryptoTests
     {
-        [Test]
+        [TestMethod]
         public void HashTests()
         {
             var bytes = new byte[32];
@@ -45,7 +45,7 @@ namespace PhantasmaTests
             Assert.IsFalse(Hash.TryParse("0xFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBB", out hash));
         }
 
-        [Test]
+        [TestMethod]
         public void KeyPairSign()
         {
             var keys = KeyPair.Generate();
