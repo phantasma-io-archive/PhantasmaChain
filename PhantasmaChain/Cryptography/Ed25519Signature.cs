@@ -1,7 +1,5 @@
 ﻿using Phantasma.VM.Types;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Phantasma.Cryptography
 {
@@ -14,9 +12,17 @@ namespace Phantasma.Cryptography
 
         }
 
-        public override bool Verify(byte[] message, Address address)
+        public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
-            return Ed25519.Verify(this.Bytes, message, address.PublicKey);
+            foreach (var address in addresses)
+            {
+                if (Ed25519.Verify(this.Bytes, message, address.PublicKey))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

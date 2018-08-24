@@ -1,5 +1,6 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Utils;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Phantasma.VM.Types
@@ -20,7 +21,15 @@ namespace Phantasma.VM.Types
             return Bytes.Length;
         }
 
-        public abstract bool Verify(byte[] message, Address address);
+        /// <summary>
+        /// Checks if this transaction was signed by at least one of the addresses
+        /// </summary>
+        public abstract bool Verify(byte[] message, IEnumerable<Address> addresses);
+
+        public bool Verify(byte[] message, Address address)
+        {
+            return Verify(message, new Address[] { address });
+        }
 
         public void Serialize(BinaryWriter writer)
         {
