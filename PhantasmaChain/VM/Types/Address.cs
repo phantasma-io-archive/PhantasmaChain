@@ -92,5 +92,18 @@ namespace Phantasma.VM.Types
         {
             return PublicKeyLength;
         }
+
+        public static bool IsValidAddress(string text)
+        {
+            try
+            {
+                var addr = Address.FromText(text);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
