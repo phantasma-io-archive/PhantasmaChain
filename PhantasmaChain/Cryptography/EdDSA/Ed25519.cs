@@ -3,7 +3,7 @@ using Phantasma.Mathematics;
 using Phantasma.Utils;
 using System;
 
-namespace Phantasma.Cryptography
+namespace Phantasma.Cryptography.EdDSA
 {
     public static class Ed25519
     {

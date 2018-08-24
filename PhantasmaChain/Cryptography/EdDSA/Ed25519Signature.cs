@@ -1,7 +1,7 @@
 ﻿using Phantasma.VM.Types;
 using System.Collections.Generic;
 
-namespace Phantasma.Cryptography
+namespace Phantasma.Cryptography.EdDSA
 {
     public class Ed25519Signature : Signature
     {

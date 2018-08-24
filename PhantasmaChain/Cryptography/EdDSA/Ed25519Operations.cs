@@ -3,7 +3,7 @@ using Phantasma.Cryptography.Hashing;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
 
-namespace Phantasma.Cryptography
+namespace Phantasma.Cryptography.EdDSA
 {
     internal class Ed25519Operations
     {
