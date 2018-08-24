@@ -11,6 +11,16 @@
   Decentralized network for smart storage
 </p>
 
+<p align="center">      
+  <a href="https://travis-ci.org/phantasma-io/PhantasmaChain">
+    <img src="https://travis-ci.org/phantasma-io/PhantasmaChain.svg?branch=master">
+  </a>
+  <a href="https://github.com/phantasma-io/PhantasmaChain/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+  </a>
+
+</p>
+
 ## Contents
 
 - [Description](#description)
