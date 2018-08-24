@@ -52,9 +52,29 @@ namespace Phantasma.Utils
                 writer.Write((int)obj);
             }
             else
-            if (type == typeof(short))
+            if (type == typeof(ushort))
             {
-                writer.Write((short)obj);
+                writer.Write((ushort)obj);
+            }
+            else
+            if (type == typeof(sbyte))
+            {
+                writer.Write((sbyte)obj);
+            }
+            else
+            if (type == typeof(ulong))
+            {
+                writer.Write((ulong)obj);
+            }
+            else
+            if (type == typeof(uint))
+            {
+                writer.Write((uint)obj);
+            }
+            else
+            if (type == typeof(ushort))
+            {
+                writer.Write((ushort)obj);
             }
             else
             if (type == typeof(string))
@@ -170,6 +190,26 @@ namespace Phantasma.Utils
             if (type == typeof(short))
             {
                 return reader.ReadInt16();
+            }
+
+            if (type == typeof(sbyte))
+            {
+                return reader.ReadSByte();
+            }
+
+            if (type == typeof(ulong))
+            {
+                return reader.ReadUInt64();
+            }
+
+            if (type == typeof(uint))
+            {
+                return reader.ReadUInt32();
+            }
+
+            if (type == typeof(ushort))
+            {
+                return reader.ReadUInt16();
             }
 
             if (type == typeof(string))
