@@ -1,4 +1,5 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Cryptography;
+using Phantasma.Utils;
 using System.IO;
 
 namespace Phantasma.VM.Types
@@ -6,28 +7,29 @@ namespace Phantasma.VM.Types
     [VMType]
     public abstract class Signature
     {
-        public byte[] bytes { get; private set; }
+        public byte[] Bytes { get; private set; }
+        public abstract SignatureKind Kind { get; }
 
         public Signature(byte[] bytes)
         {
-            this.bytes = bytes;
+            this.Bytes = bytes;
         }
 
         public int GetSize()
         {
-            return bytes.Length;
+            return Bytes.Length;
         }
 
         public abstract bool Verify(byte[] message, Address address);
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteByteArray(this.bytes);
+            writer.WriteByteArray(this.Bytes);
         }
 
         public void Unserialize(BinaryReader reader)
         {
-            this.bytes = reader.ReadByteArray();
+            this.Bytes = reader.ReadByteArray();
         }
     }
 }

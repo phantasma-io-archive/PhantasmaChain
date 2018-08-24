@@ -62,7 +62,7 @@ namespace PhantasmaCLIWallet
             var third = KeyPair.Generate();
 
             var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
-            var tx = new Transaction(owner.Address, ScriptUtils.TransferScript(nativeToken.Address, owner.Address, third.Address, 5), 0, 0);
+            var tx = new Transaction(ScriptUtils.TransferScript(nativeToken.Address, owner.Address, third.Address, 5), 0, 0);
             tx.Sign(owner);
 
             var nextHeight = chain.lastBlock.Height + 1;

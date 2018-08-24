@@ -80,6 +80,17 @@ namespace Phantasma.Utils
             writer.Write(bytes);
         }
 
+        public static void WriteSignature(this BinaryWriter writer, Signature signature)
+        {
+            SignatureKind kind = signature != null ? signature.Kind : SignatureKind.None;
+            writer.Write((byte)kind);
+            if (signature.Kind != SignatureKind.None)
+            {
+                Throw.IfNull(signature.Bytes, "signature bytes");
+                writer.WriteByteArray(signature.Bytes);
+            }
+        }
+
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
         {
             byte fb = reader.ReadByte();
@@ -133,5 +144,24 @@ namespace Phantasma.Utils
             var bytes = reader.ReadBytes(length);
             return Encoding.UTF8.GetString(bytes);
         }
+
+        public static Signature ReadSignature(this BinaryReader reader)
+        {
+            var kind = (SignatureKind)reader.ReadByte();
+
+            if (kind == SignatureKind.None)
+            {
+                return null;
+            }
+
+            var bytes = reader.ReadByteArray();
+
+            switch (kind)
+            {
+                case SignatureKind.Ed25519: return new Ed25519Signature(bytes);
+                default: throw new NotImplementedException();
+            }
+        }
+
     }
 }

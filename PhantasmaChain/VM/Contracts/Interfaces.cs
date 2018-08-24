@@ -26,9 +26,8 @@ namespace Phantasma.VM.Contracts
         BigInteger Fee { get; }
         BigInteger Index { get; }
         byte[] Script { get; }
-        Signature Signature { get; }
+        Signature[] Signatures { get; }
         Hash Hash { get; }
-        Address SourceAddress { get; }
     }
 
     #region CONTRACTS

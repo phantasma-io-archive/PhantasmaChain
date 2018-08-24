@@ -6,41 +6,49 @@ using Phantasma.Utils;
 using Phantasma.VM;
 using Phantasma.VM.Types;
 using Phantasma.Mathematics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
     public sealed class Transaction: ITransaction
     {
-        public Address SourceAddress { get; }
         public BigInteger Fee { get; }
         public BigInteger Index { get; }
         public byte[] Script { get; }
 
-        public Signature Signature { get; private set; }
+        public Signature[] Signatures { get; private set; }
         public Hash Hash { get; private set; }
 
         public static Transaction Unserialize(BinaryReader reader)
         {
-            var address = reader.ReadAddress();
             var script = reader.ReadByteArray();
             var fee = reader.ReadBigInteger();
             var txOrder = reader.ReadBigInteger();
+            var signatureCount = (int)reader.ReadVarInt();
 
-            return new Transaction(address, script, fee, txOrder);
+            var signatures = new Signature[signatureCount];
+            for (int i=0; i<signatureCount; i++)
+            {
+                signatures[i] = reader.ReadSignature();
+            }
+
+            return new Transaction(script, fee, txOrder, signatures);
         }
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
-            writer.WriteAddress(this.SourceAddress);
             writer.WriteByteArray(this.Script);
             writer.WriteBigInteger(this.Fee);
             writer.WriteBigInteger(this.Index);
 
             if (withSignature)
             {
-                Throw.If(this.Signature == null, "Signature cannot be null");
-
-                this.Signature.Serialize(writer);
+                writer.WriteVarInt(Signatures.Length);
+                foreach (var signature in this.Signatures)
+                {
+                    writer.WriteSignature(signature);
+                }
             }
         }
 
@@ -76,12 +84,13 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Transaction(Address sourceAddress, byte[] script, BigInteger fee, BigInteger txOrder)
+        public Transaction(byte[] script, BigInteger fee, BigInteger txOrder, IEnumerable<Signature> signatures = null)
         {
             this.Script = script;
-            this.SourceAddress = sourceAddress;
             this.Fee = fee;
             this.Index = txOrder;
+
+            this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
 
             this.UpdateHash();
         }
@@ -99,9 +108,11 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public bool IsSigned => Signatures != null && Signatures.Length > 0;
+
         public bool Sign(KeyPair owner)
         {
-            if (this.Signature != null)
+            if (IsSigned)
             {
                 return false;
             }
@@ -112,23 +123,24 @@ namespace Phantasma.Blockchain
             }
 
             var msg = this.ToArray(false);
-            this.Signature = owner.Sign(msg);
+            this.Signatures = new Signature[] { owner.Sign(msg) };
 
             return true;
         }
 
         public bool IsValid(Chain chain)
         {
-            if (this.Signature == null)
-            {
-                return false;
-            }
+            // TODO unsigned tx should be supported too
+            /* if (!IsSigned) 
+             {
+                 return false;
+             }
 
-            var data = ToArray(false);
-            if (!this.Signature.Verify(data, this.SourceAddress))
-            {
-                return false;
-            }
+             var data = ToArray(false);
+             if (!this.Signature.Verify(data, this.SourceAddress))
+             {
+                 return false;
+             }*/
 
             BigInteger cost;
             var validation = Validate(chain, out cost);

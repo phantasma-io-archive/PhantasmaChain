@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain
             var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
             var address = nativeToken.Address;
             var script = ScriptUtils.TransferScript(address, address, owner.Address, 100);
-            var tx = new Transaction(owner.Address, script, 0, 0);
+            var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
 
             return tx;
