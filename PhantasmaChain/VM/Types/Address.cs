@@ -72,7 +72,7 @@ namespace Phantasma.VM.Types
 
         public static Address FromText(string text)
         {
-            Throw.If(text.Length != 34, "Invalid address length");
+            Throw.If(text.Length != 45, "Invalid address length");
 
             var bytes = Base58.Decode(text);
             var opcode = bytes[0];
