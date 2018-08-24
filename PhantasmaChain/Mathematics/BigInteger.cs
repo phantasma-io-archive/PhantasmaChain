@@ -630,7 +630,14 @@ namespace Phantasma.Mathematics
 
         public override int GetHashCode()
         {
-            return _data.GetHashCode();
+            if (_data == null) return 0;
+            unchecked
+            {
+                int hash = 17;
+                for (int i = 0; i < _data.Length; i++)
+                    hash = 31 * hash + _data[i].GetHashCode();
+                return hash;
+            }
         }
 
         public static bool operator >(BigInteger bi1, BigInteger bi2)
