@@ -25,8 +25,9 @@ namespace Phantasma.Blockchain
             }
 
             var args = new object[method.parameters.Length];
-            for (int i=args.Length - 1; i>=0; i--) {
-                args[i] = stack.Pop();
+            for (int i=0; i<args.Length; i++) {
+                var arg = stack.Pop();
+                args[i] = arg.Data;
             }
 
             var result = this.Contract.CallMethod(methodName, args);

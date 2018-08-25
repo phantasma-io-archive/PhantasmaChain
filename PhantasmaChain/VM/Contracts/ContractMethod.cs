@@ -19,6 +19,11 @@ namespace Phantasma.VM.Contracts
             this.parameters = parameters.ToArray();
         }
 
+        public override string ToString()
+        {
+            return $"{name} => {returnType}";
+        }
+
         public static ContractMethod Unserialize(BinaryReader reader)
         {
             var name = reader.ReadShortString();

@@ -208,7 +208,7 @@ namespace Phantasma.VM
         public VMObject SetValue(object val)
         {
             var type = val.GetType();
-            Throw.If(!type.IsClass, "invalid cast");
+            Throw.If(!type.IsStructOrClass(), "invalid cast");
             this.Type = VMType.Object;
             this.Data = val;
             this._localSize = 4;
@@ -274,44 +274,44 @@ namespace Phantasma.VM
             SetKey(key.ToString(), obj);
         }
 
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode(); // TODO Fix me with proper hashing if byte array
+        }
+
         public override bool Equals(object obj)
         {
+            if (obj == null)
+            {
+                return false;
+            }
+
             if (!(obj is VMObject))
             {
                 return false;
             }
 
-            var temp = (VMObject)obj;
+            var other = (VMObject)obj;
 
-            return temp == this;
-        }
-
-        public override int GetHashCode()
-        {
-            return Data.GetHashCode();
-        }
-
-        public static bool operator ==(VMObject objA, VMObject objB)
-        {
-            if (objA.Type != objB.Type)
+            if (this.Type != other.Type)
             {
                 return false;
             }
 
-            if (objA.Type == VMType.Struct)
+            if (this.Type == VMType.Struct)
             {
-                var childrenA = objA.GetChildren();
-                var childrenB = objB.GetChildren();
+                var children = this.GetChildren();
+                var otherChildren = other.GetChildren();
 
-                foreach (var entry in childrenA)
+                foreach (var entry in children)
                 {
-                    if (!childrenB.ContainsKey(entry.Key))
+                    if (!otherChildren.ContainsKey(entry.Key))
                     {
                         return false;
                     }
 
-                    var A = childrenA[entry.Key];
-                    var B = childrenB[entry.Key];
+                    var A = children[entry.Key];
+                    var B = otherChildren[entry.Key];
 
                     if (A != B)
                     {
@@ -319,9 +319,9 @@ namespace Phantasma.VM
                     }
                 }
 
-                foreach (var entry in childrenB)
+                foreach (var entry in otherChildren)
                 {
-                    if (!childrenA.ContainsKey(entry.Key))
+                    if (!children.ContainsKey(entry.Key))
                     {
                         return false;
                     }
@@ -332,13 +332,8 @@ namespace Phantasma.VM
             }
             else
             {
-                return objA.Data.Equals(objB.Data);
+                return this.Data.Equals(other.Data);
             }
-        }
-
-        public static bool operator !=(VMObject a, VMObject b)
-        {
-            return !(a == b);
         }
 
         internal void Copy(VMObject other)
@@ -411,7 +406,12 @@ namespace Phantasma.VM
                 return VMType.Number;
             }
 
-            if (type.IsClass) // TODO support structs?
+            if (type.IsEnum)
+            {
+                return VMType.Number; // TODO make new optimized type for enums
+            }
+
+            if (type.IsClass || type.IsValueType) 
             {
                 return VMType.Object;
             }

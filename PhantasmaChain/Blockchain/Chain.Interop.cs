@@ -1,5 +1,6 @@
 ﻿using System;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
 using Phantasma.VM.Types;
@@ -13,6 +14,23 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Chain.Deploy", Chain_deploy);
             vm.RegisterMethod("Account.Rename", Account_Rename);
+            vm.RegisterMethod("Address()", Constructor_Address);
+        }
+
+        private ExecutionState Constructor_Address(VirtualMachine vm)
+        {
+            var key = vm.stack.Pop().AsByteArray();
+            if (key == null || key.Length != Address.PublicKeyLength)
+            {
+                return ExecutionState.Fault;
+            }
+
+            var address = new Address(key);
+            var temp = new VMObject();
+            temp.SetValue(address);
+            vm.stack.Push(temp);
+
+            return ExecutionState.Running;
         }
 
         private ExecutionState Runtime_Log(VirtualMachine vm)

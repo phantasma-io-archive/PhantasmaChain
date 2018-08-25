@@ -108,11 +108,11 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public bool IsSigned => Signatures != null && Signatures.Length > 0;
+        public bool HasSignatures => Signatures != null && Signatures.Length > 0;
 
         public bool Sign(KeyPair owner)
         {
-            if (IsSigned)
+            if (HasSignatures)
             {
                 return false;
             }
@@ -126,6 +126,31 @@ namespace Phantasma.Blockchain
             this.Signatures = new Signature[] { owner.Sign(msg) };
 
             return true;
+        }
+
+        public bool IsSignedBy(Address address)
+        {
+            return IsSignedBy(new Address[] { address });
+        }
+
+        public bool IsSignedBy(IEnumerable<Address> addresses)
+        {
+            if (!HasSignatures)
+            {
+                return false;
+            }
+
+            var msg = this.ToArray(false);
+
+            foreach (var signature in this.Signatures)
+            {
+                if (signature.Verify(msg, addresses))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool IsValid(Chain chain)

@@ -178,7 +178,9 @@ namespace Phantasma.VM
                             var src = Read8();
                             Expect(src < currentFrame.Registers.Length);
 
-                            stack.Push(currentFrame.Registers[src]);
+                            var temp = new VMObject();
+                            temp.Copy(currentFrame.Registers[src]);
+                            stack.Push(temp);
                             break;
                         }
 
@@ -733,6 +735,7 @@ namespace Phantasma.VM
             }
             catch (Exception ex)
             {
+                System.Console.WriteLine(ex.ToString());
                 SetState(ExecutionState.Fault);
             }
         }

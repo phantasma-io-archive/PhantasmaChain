@@ -6,7 +6,6 @@ namespace Phantasma.VM
 {
     public interface IRuntime
     {
-        ITransaction Transaction { get; }
         IFungibleToken NativeToken { get; }
         BigInteger CurrentHeight { get; }
 

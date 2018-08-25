@@ -12,8 +12,7 @@ namespace Phantasma.Blockchain
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
 
             var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
-            var address = nativeToken.Address;
-            var script = ScriptUtils.TransferScript(address, address, owner.Address, 100);
+            var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, 10000);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
 

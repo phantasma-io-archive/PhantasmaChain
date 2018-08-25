@@ -1,10 +1,10 @@
 ﻿using Phantasma.Mathematics;
 using Phantasma.Cryptography;
-using System;
+using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public class Token : NativeContract
+    public class TokenContract : NativeContract
     {
         internal override NativeContractKind Kind => NativeContractKind.Token;
 
@@ -12,64 +12,91 @@ namespace Phantasma.Blockchain.Contracts
         public string Name => "Phantasma";
 
         public BigInteger MaxSupply => 93000000;
-        public BigInteger CirculatingSupply => 50000000;
+        public BigInteger CirculatingSupply => _supply;
         public BigInteger Decimals => 8;
 
-        public Token() : base()
+        public TokenContract(): base()
         {
         }
 
-/*        public bool HasAttribute(TokenAttribute attr)
+        private BigInteger _supply = 0;
+        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
+
+        private Address ownerAddress = Address.Null;
+
+        public void Burn(Address target, BigInteger amount)
         {
-            return ((this.Attributes & attr) == 0);
+            Expect(amount > 0);
+            Expect(_balances.ContainsKey(target));
+            Expect(Transaction.IsSignedBy(target));
+
+            var balance = _balances[target];
+            Expect(balance >= amount);
+
+            balance -= amount;
+            _balances[target] = amount;
+            this._supply -= amount;
         }
 
-        public bool Burn(Address address, BigInteger amount)
+        public void Mint(Address target, BigInteger amount)
         {
-            if (this.CirculatingSupply < amount || this.MaxSupply < amount)
+            Expect(amount > 0);
+            
+            if (ownerAddress != Address.Null)
             {
-                return false;
+                Expect(target == ownerAddress);
+            }
+            else
+            {
+                ownerAddress = target;
             }
 
-            if (!HasAttribute(TokenAttribute.Burnable))
-            {
-                return false;
-            }
+            Expect(Transaction.IsSignedBy(target));
 
-            this.CirculatingSupply -= amount;
-            this.MaxSupply -= amount;
+            this._supply += amount;
+            Expect(_supply <= MaxSupply);
 
-            return true;
+            var balance = _balances.ContainsKey(target)? _balances[target] : 0;
+
+            balance += amount;
+            _balances[target] = amount;
         }
 
-        public bool Mint(Address address, BigInteger amount)
+        public void Transfer(Address source, Address destination, BigInteger amount)
         {
-            if (!HasAttribute(TokenAttribute.Infinite))
+            Expect(amount > 0);
+            Expect(source != destination);
+            Expect(Transaction.IsSignedBy(source));
+
+            Expect(_balances.ContainsKey(source));
+
+            BigInteger from_balance =  _balances[source];
+            Expect(from_balance >= amount);
+
+            from_balance -= amount;
+            if (from_balance == 0)
+                _balances.Remove(source);
+            else
+                _balances[source] = from_balance;
+
+            BigInteger to_balance;
+            if (_balances.ContainsKey(destination))
             {
-                if (this.CirculatingSupply + amount < this.MaxSupply)
-                {
-                    return false;
-                }
+                to_balance = _balances[destination];
+            }
+            else
+            {
+                to_balance = 0;
             }
 
-            if (!HasAttribute(TokenAttribute.Mintable))
-            {
-                return false;
-            }
+            to_balance += amount;
 
-            this.CirculatingSupply += amount;
-            return true;
-        }
-        */
-
-        public bool Send(Address destination, BigInteger amount)
-        {
-            throw new NotImplementedException();
+            _balances[destination] = to_balance;
         }
 
         public BigInteger BalanceOf(Address address)
         {
-            return 0;
+            return _balances.ContainsKey(address) ? _balances[address]: 0;
         }
     }
 }

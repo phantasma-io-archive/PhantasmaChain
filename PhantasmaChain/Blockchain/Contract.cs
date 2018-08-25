@@ -16,9 +16,21 @@ namespace Phantasma.Blockchain
 
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
+        protected Transaction Transaction;
+
         public Contract()
         {
             this.Order = 0;
+        }
+
+        public void SetTransaction(Transaction tx)
+        {
+            this.Transaction = tx;
+        }
+
+        protected void Expect(bool condition)
+        {
+            Throw.If(!condition, "contract assertion failed");
         }
 
         public byte[] ReadStorage(byte[] key)

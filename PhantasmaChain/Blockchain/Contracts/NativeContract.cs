@@ -25,15 +25,16 @@ namespace Phantasma.Blockchain.Contracts
 
         public NativeContract() : base()
         {
-            var bytes = Encoding.ASCII.GetBytes(this.GetType().Name);
+            var type = this.GetType();
+
+            var bytes = Encoding.ASCII.GetBytes(type.Name);
             var hash = CryptoUtils.Sha256(bytes);
             _address = new Address(hash);
 
-            var type = this.GetType();
             var srcMethods = type.GetMethods(BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance);
             var methods = new List<ContractMethod>();
 
-            var ignore = new HashSet<string>(new string[] { "ToString", "GetType", "GetHashCode" });
+            var ignore = new HashSet<string>(new string[] { "ToString", "GetType", "Equals", "GetHashCode", "CallMethod", "SetTransaction" });
 
             foreach (var srcMethod in srcMethods)
             {

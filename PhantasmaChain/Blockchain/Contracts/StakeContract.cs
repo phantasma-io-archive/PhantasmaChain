@@ -1,6 +1,4 @@
 ﻿using Phantasma.Mathematics;
-using Phantasma.VM;
-using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {

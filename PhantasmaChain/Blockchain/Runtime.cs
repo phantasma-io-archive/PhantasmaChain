@@ -9,7 +9,7 @@ namespace Phantasma.Blockchain
 {
     public class RuntimeVM : VirtualMachine, IRuntime
     {
-        public ITransaction Transaction { get; private set; }
+        public Transaction Transaction { get; }
         public Chain Chain { get; private set; }
 
         public RuntimeVM(Chain chain, Transaction tx) : base(tx.Script)
@@ -57,6 +57,7 @@ namespace Phantasma.Blockchain
             {
                 if (entry.Contract.Address == address)
                 {
+                    entry.Contract.SetTransaction(this.Transaction);
                     return entry;
                 }
             }
