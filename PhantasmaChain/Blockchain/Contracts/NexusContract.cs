@@ -48,10 +48,17 @@ namespace Phantasma.Blockchain.Contracts
             var fee = amount / 10;
             Expect(fee > 0);
 
+            var otherChain = this.Chain.FindChain(to);
+            var otherConsensus = (ConsensusContract)otherChain.FindContract(NativeContractKind.Consensus);
+            Expect(otherConsensus.IsValidReceiver(from));
+
             var token = (TokenContract) this.Chain.FindContract(NativeContractKind.Token);
             token.SetData(this.Chain, this.Transaction);
 
-            token.Burn(from, amount);
+            Sign(Transaction, this.SignatureKey);
+
+            token.Transfer(from, this.Address, amount);
+            token.Burn(this.Address, amount);
 
             knownTransactions.Add(Transaction.Hash);
         }
@@ -74,10 +81,15 @@ namespace Phantasma.Blockchain.Contracts
             Expect(otherNexus.IsKnown(hash));
 
             var tx = otherChain.FindTransaction(hash);
+            BigInteger amount = null; // TODO obtain real amount from "tx"
 
             var token = (TokenContract)this.Chain.FindContract(NativeContractKind.Token);
-            token.Mint(to, 0); // TODO FIX ME
-            throw new NotImplementedException();
+            token.SetData(this.Chain, this.Transaction);
+
+            Sign(Transaction, this.SignatureKey);
+
+            token.Mint(this.Address, amount);           
+            token.Transfer(this.Address, to, amount);
 
             knownTransactions.Add(Transaction.Hash);
         }
