@@ -1,6 +1,7 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Core.Types;
 using Phantasma.VM.Utils;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -11,7 +12,7 @@ namespace Phantasma.Blockchain
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
 
             var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
-            var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, 10000);
+            var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
 

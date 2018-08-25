@@ -2,12 +2,9 @@
 using System.Reflection;
 using System.Collections.Generic;
 
-using Phantasma.Core;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
-using System;
-using System.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {

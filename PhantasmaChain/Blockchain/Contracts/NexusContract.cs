@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Send(Address token, Address from, Address to, BigInteger amount)
         {
-            Expect(Transaction.IsSignedBy(from));
+            Expect(IsWitness(from));
 
             if (IsRootChain(this.Chain.Address))
             {
@@ -60,8 +60,6 @@ namespace Phantasma.Blockchain.Contracts
             Expect(tokenContract.ABI.Implements(tokenABI));
 
             tokenContract.SetData(this.Chain, this.Transaction);
-
-            Sign(Transaction, this.SignatureKey);
 
             tokenABI["Transfer"].Invoke(tokenContract, from, this.Address, amount);
             tokenABI["Burn"].Invoke(tokenContract, this.Address, amount);
@@ -96,8 +94,6 @@ namespace Phantasma.Blockchain.Contracts
             Expect(tokenContract.ABI.Implements(tokenABI));
 
             tokenContract.SetData(this.Chain, this.Transaction);
-
-            Sign(Transaction, this.SignatureKey);
 
             tokenABI["Mint"].Invoke(tokenContract, this.Address, amount);
             tokenABI["Transfer"].Invoke(tokenContract, this.Address, to, amount);

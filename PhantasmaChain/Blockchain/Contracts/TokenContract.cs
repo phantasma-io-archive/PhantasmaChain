@@ -8,12 +8,10 @@ namespace Phantasma.Blockchain.Contracts
     {
         internal override NativeContractKind Kind => NativeContractKind.Token;
 
-        public string Symbol => "SOUL";
-        public string Name => "Phantasma";
+        public static string Symbol => "SOUL";
+        public static string Name => "Phantasma";
 
-        public BigInteger MaxSupply => 93000000;
-        public BigInteger CirculatingSupply => _supply;
-        public BigInteger Decimals => 8;
+        public static readonly BigInteger MaxSupply = 93000000;
 
         public TokenContract(): base()
         {
@@ -22,29 +20,27 @@ namespace Phantasma.Blockchain.Contracts
         private BigInteger _supply = 0;
         private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
 
-        public void Burn(Address target, BigInteger amount)
-        {
-            Expect(amount > 0);
-            Expect(_balances.ContainsKey(target));
-            Expect(Transaction.IsSignedBy(target));
-
-            var balance = _balances[target];
-            Expect(balance >= amount);
-
-            balance -= amount;
-            _balances[target] = amount;
-            this._supply -= amount;
-        }
+        public string GetName() => Name;
+        public string GetSymbol() => Symbol;
+        public BigInteger GetSupply() => MaxSupply;
+        public BigInteger GetDecimals() => 8;
 
         public void Mint(Address target, BigInteger amount)
         {
             Expect(amount > 0);
+            Expect(IsWitness(target));
 
             var nexusContract = (NexusContract) this.Chain.FindContract(NativeContractKind.Nexus);
             var mintAddress = nexusContract.Address;
-
-            Expect(target == mintAddress);
-            Expect(Transaction.IsSignedBy(target));
+        
+            if (_supply == 0)
+            {
+                Expect(amount == MaxSupply);
+            }
+            else
+            {
+                Expect(target == mintAddress);
+            }
 
             this._supply += amount;
             Expect(_supply <= MaxSupply);
@@ -55,11 +51,25 @@ namespace Phantasma.Blockchain.Contracts
             _balances[target] = amount;
         }
 
+        public void Burn(Address target, BigInteger amount)
+        {
+            Expect(amount > 0);
+            Expect(_balances.ContainsKey(target));
+            Expect(IsWitness(target));
+
+            var balance = _balances[target];
+            Expect(balance >= amount);
+
+            balance -= amount;
+            _balances[target] = amount;
+            this._supply -= amount;
+        }
+
         public void Transfer(Address source, Address destination, BigInteger amount)
         {
             Expect(amount > 0);
             Expect(source != destination);
-            Expect(Transaction.IsSignedBy(source));
+            Expect(IsWitness(source));
 
             Expect(_balances.ContainsKey(source));
 

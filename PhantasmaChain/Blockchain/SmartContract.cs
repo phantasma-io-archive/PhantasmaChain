@@ -12,9 +12,6 @@ namespace Phantasma.Blockchain
     {
         public BigInteger Order { get; internal set; }
 
-        internal Hash SignatureHash { get; private set; }
-        protected byte[] SignatureKey;
-
         public abstract Address Address { get; }
         public abstract byte[] Script { get; }
         public abstract ContractInterface ABI { get; }
@@ -27,12 +24,6 @@ namespace Phantasma.Blockchain
         public SmartContract()
         {
             this.Order = 0;
-
-            var n = new BigInteger(this.Address.PublicKey);
-            n += Environment.TickCount;
-
-            this.SignatureKey = n.ToByteArray();
-            this.SignatureHash = new Hash(this.SignatureKey);
         }
 
         public void SetData(Chain chain, Transaction tx)
@@ -61,18 +52,14 @@ namespace Phantasma.Blockchain
             return this.Address.PublicKey.Length + this.Script.Length;
         }
 
-        protected byte[] GetSignatureKey()
+        public bool IsWitness(Address address)
         {
-            return SignatureKey;
-        }
+            if (address == this.Address)
+            {
+                return true;
+            }
 
-        public void Sign(Transaction tx, byte[] signatureKey)
-        {
-            Throw.If(tx == null, "null transaction");
-            Throw.If(tx != this.Transaction, "invalid transaction");
-
-            var signature = new ContractSignature(this, signatureKey);
-            tx.Sign(signature);
+            return Transaction.IsSignedBy(address);
         }
     }
 }

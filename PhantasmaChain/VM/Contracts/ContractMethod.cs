@@ -61,6 +61,11 @@ namespace Phantasma.VM.Contracts
             }
         }
 
+        public T Invoke<T>(SmartContract contract, params object[] args)
+        {
+            return (T)Invoke(contract, args);
+        }
+
         public object Invoke(SmartContract contract, params object[] args)
         {
             Throw.IfNull(contract, "null contract");

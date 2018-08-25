@@ -37,6 +37,8 @@ namespace Phantasma.Core.Utils
 
         public static void WriteAddress(this BinaryWriter writer, Address address)
         {
+            Throw.IfNull(address.PublicKey, "null address");
+            Throw.If(address.PublicKey.Length != Address.PublicKeyLength, "invalid address");
             writer.Write(address.PublicKey);
         }
 
