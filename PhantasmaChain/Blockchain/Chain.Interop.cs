@@ -12,10 +12,12 @@ namespace Phantasma.Blockchain
         internal void RegisterInterop(RuntimeVM vm)
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
-            vm.RegisterMethod("Chain.Deploy", Chain_deploy);
-            vm.RegisterMethod("Account.Rename", Account_Rename);
+
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
+
+            vm.RegisterMethod("Contract.Deploy", Contract_deploy);
+            vm.RegisterMethod("Contract.Deploy", Chain_deploy);
         }
 
         private ExecutionState Constructor_Address(VirtualMachine vm)
@@ -57,7 +59,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private ExecutionState Chain_deploy(VirtualMachine vm)
+        private ExecutionState Contract_deploy(VirtualMachine vm)
         {
             var script = vm.currentFrame.GetRegister(0).AsByteArray();
             var abi = vm.currentFrame.GetRegister(1).AsByteArray();
@@ -76,38 +78,21 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private ExecutionState Account_Rename(VirtualMachine vm)
+        private ExecutionState Chain_deploy(VirtualMachine vm)
         {
-            // TODO Verify permissions
-            byte[] pubKey = new byte[0];
-            if (!HasContract(pubKey))
+            var script = vm.currentFrame.GetRegister(0).AsByteArray();
+
+            var runtime = (RuntimeVM)vm;
+            if (!runtime.Chain.IsRoot)
             {
                 return ExecutionState.Fault;
             }
 
-            var account = this._contracts[pubKey];
+            //Log.Message($"Deploying chain: {contract.Address.Text}");
 
-            var name = vm.currentFrame.GetRegister(0).AsString();
-
-            throw new NotImplementedException();
-            /*
-            // if same name, cancel
-            if (account.Name == name)
-            {
-                return ExecutionState.Fault;
-            }
-
-            // check if someone else is using this name already
-            if (this._contractLookup.Contains(name))
-            {
-                return ExecutionState.Fault;
-            }
-
-            //TODO
-            //account.Rename(name);
-
-            return ExecutionState.Running;
-            */
+            //TODO finish me
+            return ExecutionState.Fault;
         }
+
     }
 }
