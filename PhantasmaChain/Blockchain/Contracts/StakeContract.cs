@@ -1,4 +1,5 @@
-﻿using Phantasma.Mathematics;
+﻿using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -18,7 +19,7 @@ namespace Phantasma.Blockchain.Contracts
         {
         }
 
-        public BigInteger GetStake(byte[] publicAddress)
+        public BigInteger GetStake(Address address)
         {
             throw new System.NotImplementedException();
         }

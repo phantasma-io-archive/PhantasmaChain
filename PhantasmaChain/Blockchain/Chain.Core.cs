@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<BigInteger, Block> _blocks = new Dictionary<BigInteger, Block>();
-        private Dictionary<byte[], SmartContract> _contracts = new Dictionary<byte[], SmartContract>(new ByteArrayComparer());
+        private Dictionary<Address, SmartContract> _contracts = new Dictionary<Address, SmartContract>();
         private TrieNode _contractLookup = new TrieNode();
 
         public IEnumerable<Block> Blocks => _blocks.Values;
@@ -112,9 +112,9 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public bool HasContract(byte[] publicKey)
+        public bool HasContract(Address address)
         {
-            return _contracts.ContainsKey(publicKey);
+            return _contracts.ContainsKey(address);
         }
 
         public SmartContract FindContract(NativeContractKind kind)
@@ -122,11 +122,11 @@ namespace Phantasma.Blockchain
             return GetNativeContract(kind);
         }
 
-        public SmartContract FindContract(byte[] publicKey)
+        public SmartContract FindContract(Address address)
         {
-            if (_contracts.ContainsKey(publicKey))
+            if (_contracts.ContainsKey(address))
             {
-                return _contracts[publicKey];
+                return _contracts[address];
             }
 
             return null;
@@ -197,6 +197,18 @@ namespace Phantasma.Blockchain
         public Transaction FindTransaction(Hash hash)
         {
             return _transactions.ContainsKey(hash) ? _transactions[hash] : null;
-        } 
+        }
+
+        public BigInteger GetTokenBalance(Address token, Address account)
+        {
+            var contract = this.FindContract(token);
+            Throw.IfNull(contract, "contract not found");
+
+            var tokenABI = Chain.FindABI(NativeABI.Token);
+            Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
+
+            var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
+            return balance;
+        }
     }
 }

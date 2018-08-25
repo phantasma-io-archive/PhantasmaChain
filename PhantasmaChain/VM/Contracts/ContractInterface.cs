@@ -9,6 +9,14 @@ namespace Phantasma.VM.Contracts
         private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>();
         public IEnumerable<ContractMethod> Methods => _methods.Values;
 
+        public ContractMethod this[string name]
+        {
+            get
+            {
+                return FindMethod(name);
+            }
+        }
+
         public ContractInterface(IEnumerable<ContractMethod> methods)
         {
             foreach (var entry in methods)

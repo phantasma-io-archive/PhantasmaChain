@@ -1,6 +1,5 @@
-﻿using Phantasma.Utils;
-using Phantasma.VM;
-using System.Collections.Generic;
+﻿using Phantasma.Blockchain;
+using Phantasma.Utils;
 using System.IO;
 using System.Linq;
 
@@ -12,7 +11,7 @@ namespace Phantasma.VM.Contracts
         public readonly VMType returnType;
         public readonly VMType[] parameters;
 
-        public ContractMethod(string name, VMType returnType, IEnumerable<VMType> parameters)
+        public ContractMethod(string name, VMType returnType, params VMType[] parameters)
         {
             this.name = name;
             this.returnType = returnType;
@@ -59,6 +58,19 @@ namespace Phantasma.VM.Contracts
                     return stream.ToArray();
                 }
             }
+        }
+
+        public object Invoke(SmartContract contract, params object[] args)
+        {
+            Throw.IfNull(contract, "null contract");
+            Throw.IfNull(args, "null args");
+            Throw.If(args.Length != this.parameters.Length, "invalid arg count");
+
+            var type = contract.GetType();
+            var method = type.GetMethod(this.name);
+            Throw.IfNull(method, "ABI mismatch");
+
+            return method.Invoke(contract, args);
         }
     }
 }

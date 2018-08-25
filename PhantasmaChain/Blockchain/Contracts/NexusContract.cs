@@ -30,7 +30,7 @@ namespace Phantasma.Blockchain.Contracts
             return false;
         }
 
-        public void Send(Address from, Address to, BigInteger amount)
+        public void Send(Address token, Address from, Address to, BigInteger amount)
         {
             Expect(Transaction.IsSignedBy(from));
 
@@ -52,18 +52,24 @@ namespace Phantasma.Blockchain.Contracts
             var otherConsensus = (ConsensusContract)otherChain.FindContract(NativeContractKind.Consensus);
             Expect(otherConsensus.IsValidReceiver(from));
 
-            var token = (TokenContract) this.Chain.FindContract(NativeContractKind.Token);
-            token.SetData(this.Chain, this.Transaction);
+            //var tokenContract = (TokenContract) this.Chain.FindContract(NativeContractKind.Token);
+            var tokenContract = this.Chain.FindContract(token);
+            Expect(tokenContract != null);
+
+            var tokenABI = Chain.FindABI(NativeABI.Token);
+            Expect(tokenContract.ABI.Implements(tokenABI));
+
+            tokenContract.SetData(this.Chain, this.Transaction);
 
             Sign(Transaction, this.SignatureKey);
 
-            token.Transfer(from, this.Address, amount);
-            token.Burn(this.Address, amount);
+            tokenABI["Transfer"].Invoke(tokenContract, from, this.Address, amount);
+            tokenABI["Burn"].Invoke(tokenContract, this.Address, amount);
 
             knownTransactions.Add(Transaction.Hash);
         }
 
-        public void Receive(Address from, Address to, Hash hash)
+        public void Receive(Address token, Address from, Address to, Hash hash)
         {
             if (IsRootChain(this.Chain.Address))
             {
@@ -83,13 +89,18 @@ namespace Phantasma.Blockchain.Contracts
             var tx = otherChain.FindTransaction(hash);
             BigInteger amount = null; // TODO obtain real amount from "tx"
 
-            var token = (TokenContract)this.Chain.FindContract(NativeContractKind.Token);
-            token.SetData(this.Chain, this.Transaction);
+            var tokenContract = this.Chain.FindContract(token);
+            Expect(tokenContract != null);
+
+            var tokenABI = Chain.FindABI(NativeABI.Token);
+            Expect(tokenContract.ABI.Implements(tokenABI));
+
+            tokenContract.SetData(this.Chain, this.Transaction);
 
             Sign(Transaction, this.SignatureKey);
 
-            token.Mint(this.Address, amount);           
-            token.Transfer(this.Address, to, amount);
+            tokenABI["Mint"].Invoke(tokenContract, this.Address, amount);
+            tokenABI["Transfer"].Invoke(tokenContract, this.Address, to, amount);
 
             knownTransactions.Add(Transaction.Hash);
         }

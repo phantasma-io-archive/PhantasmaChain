@@ -1,8 +1,10 @@
 ﻿using System;
+using System.IO;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
+using Phantasma.VM.Contracts;
 using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
@@ -15,41 +17,63 @@ namespace Phantasma.Blockchain
 
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
+            vm.RegisterMethod("ABI()", Constructor_ABI);
 
             vm.RegisterMethod("Contract.Deploy", Contract_deploy);
             vm.RegisterMethod("Contract.Deploy", Chain_deploy);
         }
 
-        private ExecutionState Constructor_Address(VirtualMachine vm)
+        private ExecutionState Constructor_Object<T>(VirtualMachine vm, Func<byte[], T> loader) 
         {
             var bytes = vm.stack.Pop().AsByteArray();
-            if (bytes == null || bytes.Length != Address.PublicKeyLength)
+
+            try
+            {
+                T obj = loader(bytes);
+                var temp = new VMObject();
+                temp.SetValue(obj);
+                vm.stack.Push(temp);
+            }
+            catch 
             {
                 return ExecutionState.Fault;
             }
-
-            var address = new Address(bytes);
-            var temp = new VMObject();
-            temp.SetValue(address);
-            vm.stack.Push(temp);
 
             return ExecutionState.Running;
         }
 
+        private ExecutionState Constructor_Address(VirtualMachine vm)
+        {
+            return Constructor_Object<Address>(vm, bytes =>
+            {
+                Throw.If(bytes == null || bytes.Length != Address.PublicKeyLength, "invalid key");
+                return new Address(bytes);
+            });
+        }
+
         private ExecutionState Constructor_Hash(VirtualMachine vm)
         {
-            var bytes = vm.stack.Pop().AsByteArray();
-            if (bytes == null || bytes.Length != Hash.Length)
+            return Constructor_Object<Hash>(vm, bytes =>
             {
-                return ExecutionState.Fault;
-            }
+                Throw.If(bytes == null || bytes.Length != Hash.Length, "invalid hash");
+                return new Hash(bytes);
+            });
+        }
 
-            var hash = new Hash(bytes);
-            var temp = new VMObject();
-            temp.SetValue(hash);
-            vm.stack.Push(temp);
+        private ExecutionState Constructor_ABI(VirtualMachine vm)
+        {
+            return Constructor_Object<ContractInterface>(vm, bytes =>
+            {
+                Throw.If(bytes == null, "invalid abi");
 
-            return ExecutionState.Running;
+                using (var stream = new MemoryStream(bytes))
+                {
+                    using (var reader = new BinaryReader(stream))
+                    {
+                        return ContractInterface.Unserialize(reader);
+                    }
+                }
+            });
         }
 
         private ExecutionState Runtime_Log(VirtualMachine vm)

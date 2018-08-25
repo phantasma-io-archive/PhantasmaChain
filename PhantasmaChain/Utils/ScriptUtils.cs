@@ -6,7 +6,7 @@ namespace Phantasma.Utils
 {
     public static class ScriptUtils
     {
-        public static byte[] CallContractScript(Address contract, string method, object[] args)
+        public static byte[] CallContractScript(Address contract, string method, params object[] args)
         {
             var sb = new ScriptBuilder();
             byte dest_reg = 1;
@@ -63,12 +63,12 @@ namespace Phantasma.Utils
 
         public static byte[] TokenMintScript(Address token, Address target, BigInteger amount)
         {
-            return CallContractScript(token, "Mint", new object[] { target, amount });
+            return CallContractScript(token, "Mint", target, amount);
         }
 
         public static byte[] TokenTransferScript(Address token, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(token, "Transfer", new object[] { from, to, amount });
+            return CallContractScript(token, "Transfer", from, to, amount);
         }
 
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)

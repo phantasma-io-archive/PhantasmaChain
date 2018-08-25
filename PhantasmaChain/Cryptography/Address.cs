@@ -7,7 +7,7 @@ namespace Phantasma.Cryptography
 {
     public struct Address
     {
-        public static readonly Address Null = new Address(new byte[32]);
+        public static readonly Address Null = default(Address);
 
         public byte[] PublicKey { get; private set; }
 
