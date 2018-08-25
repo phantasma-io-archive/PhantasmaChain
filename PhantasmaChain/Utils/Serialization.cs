@@ -120,7 +120,7 @@ namespace Phantasma.Utils
                 writer.WriteVarInt(val);
             }
             else
-            if (IsComplexType(type)) // check if struct or class
+            if (IsStructOrClass(type)) // check if struct or class
             {
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
 
@@ -258,7 +258,7 @@ namespace Phantasma.Utils
                 return Enum.Parse(type, name);
             }
 
-            if (IsComplexType(type)) // check if struct or class
+            if (IsStructOrClass(type)) // check if struct or class
             {
                 var obj = Activator.CreateInstance(type);
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -290,7 +290,7 @@ namespace Phantasma.Utils
             throw new Exception("Unknown type");
         }
 
-        private static bool IsComplexType(Type type)
+        public static bool IsStructOrClass(this Type type)
         {
             return (type.IsValueType && !type.IsEnum) || type.IsClass;
         }
@@ -300,7 +300,7 @@ namespace Phantasma.Utils
         {
             var type = target.GetType();
 
-            Throw.IfNot(IsComplexType(type), "invalid type"); 
+            Throw.IfNot(IsStructOrClass(type), "invalid type"); 
 
             var fields = type.GetFields();
 
@@ -309,7 +309,7 @@ namespace Phantasma.Utils
                 var fieldType = field.FieldType;
 
                 object val;
-                if (IsComplexType(fieldType))
+                if (IsStructOrClass(fieldType))
                 {
                     val = Activator.CreateInstance(fieldType);
                     val.Copy(field.GetValue(source));
