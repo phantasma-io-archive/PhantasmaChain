@@ -1,6 +1,6 @@
 ﻿using Phantasma.Blockchain;
 using Phantasma.Mathematics;
-using Phantasma.VM.Types;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Utils
 {

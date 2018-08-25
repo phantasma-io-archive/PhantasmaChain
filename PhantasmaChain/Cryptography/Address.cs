@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using Phantasma.Utils;
 using Phantasma.Mathematics;
-using Phantasma.Cryptography;
 
-namespace Phantasma.VM.Types
+namespace Phantasma.Cryptography
 {
-    [VMType]
     public struct Address
     {
         public static readonly Address Null = new Address(new byte[32]);

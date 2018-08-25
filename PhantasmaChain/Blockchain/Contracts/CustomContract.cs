@@ -1,6 +1,5 @@
-﻿using Phantasma.Utils;
-using Phantasma.VM.Contracts;
-using Phantasma.VM.Types;
+﻿using Phantasma.VM.Contracts;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain.Contracts
 {

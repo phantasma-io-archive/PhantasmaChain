@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using Phantasma.Blockchain;
 using Phantasma.Utils;
-using Phantasma.VM.Types;
-
+using Phantasma.Cryptography;
+    
 namespace Phantasma.Network.Messages
 {
     internal class RaftReplicateMessage : Message

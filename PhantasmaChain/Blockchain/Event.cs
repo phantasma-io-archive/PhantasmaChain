@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM.Types;
 

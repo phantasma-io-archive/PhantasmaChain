@@ -280,27 +280,14 @@ namespace Phantasma.Utils
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
-        /*
+/*
         internal static int GetBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();
             return (b.Length - 1) * 8 + BitLen(i.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
         }
 
-        internal static int GetLowestSetBit(this BigInteger i)
-        {
-            if (i.Sign == 0)
-                return -1;
-            byte[] b = i.ToByteArray();
-            int w = 0;
-            while (b[w] == 0)
-                w++;
-            for (int x = 0; x < 8; x++)
-                if ((b[w] & 1 << x) > 0)
-                    return x + w * 8;
-            throw new Exception();
-        }
-
+        
         internal static BigInteger Mod(this BigInteger x, BigInteger y)
         {
             x %= y;

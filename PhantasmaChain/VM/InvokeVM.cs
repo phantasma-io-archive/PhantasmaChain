@@ -1,4 +1,4 @@
-﻿using Phantasma.VM.Types;
+﻿using Phantasma.Cryptography;
 using System;
 
 namespace Phantasma.VM

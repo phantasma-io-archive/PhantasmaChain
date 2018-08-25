@@ -1,4 +1,6 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Cryptography.EdDSA;
+using Phantasma.Cryptography.Ring;
 using Phantasma.Mathematics;
 using Phantasma.VM.Types;
 using System;
@@ -84,10 +86,10 @@ namespace Phantasma.Utils
         {
             SignatureKind kind = signature != null ? signature.Kind : SignatureKind.None;
             writer.Write((byte)kind);
+
             if (signature.Kind != SignatureKind.None)
             {
-                Throw.IfNull(signature.Bytes, "signature bytes");
-                writer.WriteByteArray(signature.Bytes);
+                signature.Serialize(writer);
             }
         }
 
@@ -154,11 +156,10 @@ namespace Phantasma.Utils
                 return null;
             }
 
-            var bytes = reader.ReadByteArray();
-
             switch (kind)
             {
-                case SignatureKind.Ed25519: return new Ed25519Signature(bytes);
+                case SignatureKind.Ed25519: return Ed25519Signature.Unserialize(reader);
+                case SignatureKind.Ring: return RingSignature.Unserialize(reader);
                 default: throw new NotImplementedException();
             }
         }

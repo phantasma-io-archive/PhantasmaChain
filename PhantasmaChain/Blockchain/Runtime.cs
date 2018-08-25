@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
-using Phantasma.VM.Types;
+using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 
 namespace Phantasma.Blockchain

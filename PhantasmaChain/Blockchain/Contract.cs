@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
+using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
-using Phantasma.VM;
 using Phantasma.VM.Contracts;
-using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
-    [VMType]
     public abstract class Contract : IContract
     {
         public BigInteger Order { get; internal set; }

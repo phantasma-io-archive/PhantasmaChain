@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
 using Phantasma.VM.Types;
@@ -16,11 +17,6 @@ namespace Phantasma.VM
         String,
         Bool,
         Object
-    }
-
-    public sealed class VMTypeAttribute : Attribute
-    {
-
     }
 
     public sealed class VMObject

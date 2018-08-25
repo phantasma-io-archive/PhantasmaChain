@@ -1,10 +1,11 @@
 ﻿using System.Text;
 using System.Reflection;
-using Phantasma.Utils;
-using Phantasma.VM.Types;
-using Phantasma.VM.Contracts;
 using System.Collections.Generic;
+
+using Phantasma.Utils;
+using Phantasma.VM.Contracts;
 using Phantasma.VM;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain.Contracts
 {

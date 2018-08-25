@@ -10,7 +10,6 @@ namespace Phantasma.VM
         Halt
     }
 
-    [VMType]
     public abstract class ExecutionContext
     {
         public abstract int GetSize();

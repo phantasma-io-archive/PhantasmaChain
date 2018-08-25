@@ -2,7 +2,6 @@
 
 namespace Phantasma.VM.Types
 {
-    [VMType]
     public struct Timestamp
     {
         public readonly uint Value;

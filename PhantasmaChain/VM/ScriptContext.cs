@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Phantasma.Utils;
 using Phantasma.Mathematics;
-using Phantasma.VM.Types;
+using Phantasma.Cryptography;
 
 namespace Phantasma.VM
 {
