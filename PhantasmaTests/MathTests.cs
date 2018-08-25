@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Phantasma.VM.Types;
+using Phantasma.Cryptography;
 
 namespace PhantasmaTests
 {
@@ -33,8 +33,6 @@ namespace PhantasmaTests
             rnd.NextBytes(bytes);
 
             var base58 = Base58.Encode(bytes);
-
-            Assert.IsTrue(base58.Length == 44);
 
             var output = Base58.Decode(base58);
             Assert.IsTrue(output.Length == bytes.Length);
