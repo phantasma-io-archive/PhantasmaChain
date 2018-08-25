@@ -1,5 +1,6 @@
 ﻿using Phantasma.Blockchain;
-using Phantasma.Utils;
+using Phantasma.Core;
+using Phantasma.Core.Utils;
 using System.IO;
 using System.Linq;
 

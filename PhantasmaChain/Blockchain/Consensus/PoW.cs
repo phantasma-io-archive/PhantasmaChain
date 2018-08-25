@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
-using Phantasma.VM.Types;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain.Consensus
 {

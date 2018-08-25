@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phantasma.Utils.Log
+namespace Phantasma.Core.Log
 {
     public class ConsoleLogger : Logger
     {

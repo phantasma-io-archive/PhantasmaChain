@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Phantasma.Utils.Log
+namespace Phantasma.Core.Log
 {
     public class FileLog : Logger
     {

@@ -2,8 +2,7 @@
 using System.Linq;
 using Phantasma.Cryptography.EdDSA;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
-using Phantasma.VM.Types;
+using Phantasma.Core;
 
 namespace Phantasma.Cryptography
 {

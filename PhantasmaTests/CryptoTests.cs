@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 
 using Phantasma.Cryptography;
-using Phantasma.Utils;
+using Phantasma.Core.Utils;
 using Phantasma.Mathematics;
 using Phantasma.Cryptography.Ring;
 

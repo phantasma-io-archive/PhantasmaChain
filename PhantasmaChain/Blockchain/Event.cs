@@ -1,42 +1,40 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
-using Phantasma.Utils;
-using Phantasma.VM.Types;
+using Phantasma.Core.Utils;
+using System;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
-    public enum EventKind
-    {
-        Token,
-        Withdraw,
-        Deposit,
-        Sale,
-        Fill
-    }
-
     public class Event
     {
-        public readonly EventKind Kind;
+        public readonly Enum Kind;
         public readonly Address Address;
         public readonly byte[] Data;
 
-        public Event(EventKind kind, Address address, byte[] data)
+        public Event(Enum kind, Address address, byte[] data = null)
         {
             this.Kind = kind;
             this.Address = address;
             this.Data = data;
         }
 
+        public T GetValue<T>()
+        {
+            return (T)(object)Kind;
+        }
+
         public void Serialize(BinaryWriter writer)
         {
-            writer.Write((byte)this.Kind);
+            var n = (byte)(object)this.Kind;
+            writer.Write(n);
             writer.WriteAddress(this.Address);
             writer.WriteByteArray(this.Data);
         }
 
         internal static Event Unserialize(BinaryReader reader)
         {
-            var kind = (EventKind)reader.ReadByte();
+            var kind = (Enum)(object)reader.ReadByte();
             var address = reader.ReadAddress();
             var data = reader.ReadByteArray();
             return new Event(kind, address, data);

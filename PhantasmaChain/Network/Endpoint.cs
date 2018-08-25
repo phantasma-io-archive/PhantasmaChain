@@ -2,7 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using Phantasma.Utils;
+using Phantasma.Core;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Network
 {

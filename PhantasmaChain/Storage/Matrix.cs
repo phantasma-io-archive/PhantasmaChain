@@ -1,6 +1,6 @@
 using System;
 using System.Text;
-using Phantasma.Utils;
+using Phantasma.Core;
 using Phantasma.Mathematics;
 
 /**

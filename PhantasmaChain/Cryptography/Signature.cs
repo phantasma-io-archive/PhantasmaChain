@@ -1,4 +1,4 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Core;
 using System.Collections.Generic;
 using System.IO;
 

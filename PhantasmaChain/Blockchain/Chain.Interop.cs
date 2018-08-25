@@ -2,10 +2,9 @@
 using System.IO;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
-using Phantasma.Utils;
+using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
-using Phantasma.VM.Types;
 
 namespace Phantasma.Blockchain
 {
@@ -79,7 +78,7 @@ namespace Phantasma.Blockchain
         private ExecutionState Runtime_Log(VirtualMachine vm)
         {
             var text = vm.stack.Pop().AsString();
-            this.Log.Write(Utils.Log.LogEntryKind.Message, text);
+            this.Log.Write(Core.Log.LogEntryKind.Message, text);
             return ExecutionState.Running;
         }
 

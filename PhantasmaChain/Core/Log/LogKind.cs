@@ -1,4 +1,4 @@
-﻿namespace Phantasma.Utils.Log
+﻿namespace Phantasma.Core.Log
 {
     /// <summary>
     /// Represents the kind of the log message.

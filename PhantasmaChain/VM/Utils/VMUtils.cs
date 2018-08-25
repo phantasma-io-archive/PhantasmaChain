@@ -1,8 +1,7 @@
 ﻿using Phantasma.Mathematics;
 using Phantasma.VM;
-using Phantasma.VM.Types;
 
-namespace Phantasma.Utils
+namespace Phantasma.VM.Utils
 {
     public static class VMUtils
     {

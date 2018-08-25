@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core
 {
     /// <summary>
     /// Provides methods to do argument validations.

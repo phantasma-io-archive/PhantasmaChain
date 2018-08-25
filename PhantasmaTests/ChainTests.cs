@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Consensus;
 using Phantasma.Cryptography;
-using Phantasma.Utils;
+using Phantasma.Core;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {

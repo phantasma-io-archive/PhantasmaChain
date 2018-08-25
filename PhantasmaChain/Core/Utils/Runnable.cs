@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core
 {
     public abstract class Runnable
     {

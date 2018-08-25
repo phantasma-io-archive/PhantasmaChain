@@ -1,4 +1,4 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Core;
 using System;
 using System.Diagnostics;
 

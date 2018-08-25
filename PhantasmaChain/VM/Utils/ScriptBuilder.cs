@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Phantasma.Core.Utils;
 using Phantasma.Mathematics;
-using Phantasma.VM;
 
-namespace Phantasma.Utils
+namespace Phantasma.VM.Utils
 {
     public class ScriptBuilder
     {

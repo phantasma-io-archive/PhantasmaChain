@@ -1,8 +1,7 @@
 ﻿using System.IO;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Network.Messages;
-using Phantasma.Utils;
-using Phantasma.VM.Types;
 
 namespace Phantasma.Network
 {

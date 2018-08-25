@@ -1,7 +1,7 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Mathematics;
 using System;
 
-namespace Phantasma.Mathematics
+namespace Phantasma.Cryptography.EdDSA
 {
 	public static class MontgomeryOperations
 	{
@@ -200,7 +200,7 @@ namespace Phantasma.Mathematics
 			FieldOperations.fe_invert(out z2, ref z2);
 			FieldOperations.fe_mul(out x2, ref x2, ref z2);
 			q = x2;
-            CryptoUtils.Wipe(e);
+            CryptoExtensions.Wipe(e);
 		}
 	}
 }

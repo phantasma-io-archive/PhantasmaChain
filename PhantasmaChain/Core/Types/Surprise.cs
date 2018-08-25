@@ -1,6 +1,6 @@
-﻿namespace Phantasma.VM.Types
+﻿namespace Phantasma.Core.Types
 {
-    public interface ISurprise<T>
+    public interface IPromise<T>
     {
         T Value { get; }
         Timestamp Timestamp { get; }

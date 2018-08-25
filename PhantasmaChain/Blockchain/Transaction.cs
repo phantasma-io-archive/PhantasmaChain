@@ -5,10 +5,10 @@ using System.Linq;
 
 using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
-using Phantasma.Utils;
+using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.Mathematics;
-using Phantasma.Blockchain.Contracts;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -191,7 +191,7 @@ namespace Phantasma.Blockchain
         private void UpdateHash()
         {
             var data = this.ToByteArray(false);
-            var hash = CryptoUtils.Sha256(data);
+            var hash = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hash);
         }
 

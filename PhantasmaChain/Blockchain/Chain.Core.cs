@@ -4,8 +4,9 @@ using System.Reflection;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
-using Phantasma.Utils.Log;
+using Phantasma.Core;
+using Phantasma.Core.Log;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {

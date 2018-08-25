@@ -1,8 +1,8 @@
 ﻿using Phantasma.Mathematics;
 using Phantasma.Cryptography;
-using Phantasma.VM;
+using Phantasma.Core.Utils;
 
-namespace Phantasma.Utils
+namespace Phantasma.VM.Utils
 {
     public static class ScriptUtils
     {

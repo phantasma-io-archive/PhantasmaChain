@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Blockchain;
-using Phantasma.Utils;
+using Phantasma.Core;
 using Phantasma.Cryptography;
     
 namespace Phantasma.Network.Messages

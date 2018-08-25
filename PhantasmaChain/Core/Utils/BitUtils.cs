@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core.Utils
 {
     public static class BitUtils
     {

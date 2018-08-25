@@ -1,7 +1,7 @@
 ﻿using System;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
+using Phantasma.Core;
 
 namespace Phantasma.Cryptography.EdDSA
 {
@@ -24,7 +24,7 @@ namespace Phantasma.Cryptography.EdDSA
                 sk[skoffset + 32 + i] = pk[pkoffset + i];
             }
 
-            CryptoUtils.Wipe(h);
+            CryptoExtensions.Wipe(h);
         }
 
         public static bool VerifySignature(
@@ -53,9 +53,9 @@ namespace Phantasma.Cryptography.EdDSA
             Array.Copy(sig, sigoffset + 32, sm32, 0, 32);
             GroupOperations.ge_double_scalarmult_vartime(out R, h, ref A, sm32);
             GroupOperations.ge_tobytes(checkr, 0, ref R);
-            var result = CryptoUtils.ConstantTimeEquals(checkr, 0, sig, sigoffset, 32);
-            CryptoUtils.Wipe(h);
-            CryptoUtils.Wipe(checkr);
+            var result = CryptoExtensions.ConstantTimeEquals(checkr, 0, sig, sigoffset, 32);
+            CryptoExtensions.Wipe(h);
+            CryptoExtensions.Wipe(checkr);
             return result;
         }
 
@@ -94,7 +94,7 @@ namespace Phantasma.Cryptography.EdDSA
                 Array.Copy(sig, sigoffset + 32, s, 0, 32);
                 ScalarOperations.sc_muladd(s, hram, az, r);
                 Array.Copy(s, 0, sig, sigoffset + 32, 32);
-                CryptoUtils.Wipe(s);
+                CryptoExtensions.Wipe(s);
             }
         }
     }

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
+using Phantasma.Core;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Cryptography
 {
@@ -24,10 +25,7 @@ namespace Phantasma.Cryptography
             return this.Equals((Hash)obj);
         }
 
-        public override int GetHashCode()
-        {
-            return (int)_data.ToUInt32(0);
-        }
+        public override int GetHashCode() => (int)_data.ToUInt32(0);
 
         public byte[] ToByteArray()
         {

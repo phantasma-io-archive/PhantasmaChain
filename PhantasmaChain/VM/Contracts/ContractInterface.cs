@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Phantasma.Utils;
+using Phantasma.Core;
 
 namespace Phantasma.VM.Contracts
 {

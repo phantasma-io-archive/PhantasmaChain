@@ -1,8 +1,9 @@
-﻿using Phantasma.Cryptography;
-using Phantasma.Mathematics;
-using Phantasma.VM.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using Phantasma.Core.Types;
+using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 
 namespace Phantasma.VM.Contracts
 {

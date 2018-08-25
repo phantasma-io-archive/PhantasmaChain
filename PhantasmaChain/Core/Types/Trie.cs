@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using Phantasma.Cryptography;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core.Types
 {
     public class TrieNode
     {

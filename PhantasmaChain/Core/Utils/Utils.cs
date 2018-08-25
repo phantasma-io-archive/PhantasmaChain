@@ -1,35 +1,22 @@
-﻿using Phantasma.Cryptography;
-using Phantasma.Mathematics;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 
-namespace Phantasma.Utils
+using Phantasma.Cryptography;
+using Phantasma.Mathematics;
+
+namespace Phantasma.Core.Utils
 {
-    public class ByteArrayComparer : IEqualityComparer<byte[]>
+    public static class Utils
     {
-        public bool Equals(byte[] left, byte[] right)
+        public static T[] SubArray<T>(this T[] data, int index, int length)
         {
-            if (left == null || right == null)
-            {
-                return left == right;
-            }
-            return left.SequenceEqual(right);
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
         }
-        public int GetHashCode(byte[] key)
-        {
-            if (key == null)
-                throw new ArgumentNullException("key");
-            return key.Sum(b => b);
-        }
-    }
 
-    public static class ChainUtils
-    {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static uint ToUInt32(this byte[] value, int startIndex)
         {

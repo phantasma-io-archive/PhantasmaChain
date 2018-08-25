@@ -2,9 +2,9 @@
 using System.IO;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
 using Phantasma.VM.Contracts;
-using Phantasma.VM.Types;
+using Phantasma.Core.Types;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -92,7 +92,7 @@ namespace Phantasma.Blockchain
         {
             this.Nonce = nonce;
             var data = ToArray();
-            var hashBytes = CryptoUtils.Sha256(data);
+            var hashBytes = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hashBytes);
         }
 

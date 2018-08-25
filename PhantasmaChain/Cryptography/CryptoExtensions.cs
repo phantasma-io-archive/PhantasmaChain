@@ -4,24 +4,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
-using System.Threading;
-using Phantasma.Cryptography;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Mathematics;
-using Phantasma.VM.Types;
 
-namespace Phantasma.Utils
+namespace Phantasma.Cryptography
 {
-    public static class CryptoUtils
+    public static class CryptoExtensions
     {
-        public static T[] SubArray<T>(this T[] data, int index, int length)
-        {
-            T[] result = new T[length];
-            Array.Copy(data, index, result, 0, length);
-            return result;
-        }
-
         /*public static byte[] AES256Decrypt(this byte[] block, byte[] key)
         {
             using (var aes = Aes.Create())

@@ -1,7 +1,7 @@
 ﻿using Phantasma.Mathematics;
 using System;
 
-namespace Phantasma.VM.Types
+namespace Phantasma.Core.Types
 {
     public interface IMap<Key, Value>
     {

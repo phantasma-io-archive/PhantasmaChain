@@ -2,12 +2,11 @@
 using Phantasma.Cryptography.EdDSA;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Mathematics;
-using Phantasma.VM.Types;
 using System;
 using System.IO;
 using System.Text;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core.Utils
 {
     public static class IOUtils
     {

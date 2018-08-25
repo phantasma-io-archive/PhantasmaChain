@@ -8,8 +8,8 @@ using System.Net.Sockets;
 
 using Phantasma.Cryptography;
 using Phantasma.Network.Messages;
-using Phantasma.Utils;
-using Phantasma.Utils.Log;
+using Phantasma.Core;
+using Phantasma.Core.Log;
 
 namespace Phantasma.Network
 {

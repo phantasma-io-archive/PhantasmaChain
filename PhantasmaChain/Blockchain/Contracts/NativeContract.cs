@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Collections.Generic;
 
-using Phantasma.Utils;
+using Phantasma.Core;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
@@ -30,7 +30,7 @@ namespace Phantasma.Blockchain.Contracts
             var type = this.GetType();
 
             var bytes = Encoding.ASCII.GetBytes(type.Name);
-            var hash = CryptoUtils.Sha256(bytes);
+            var hash = CryptoExtensions.Sha256(bytes);
             _address = new Address(hash);
 
             var srcMethods = type.GetMethods(BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance);

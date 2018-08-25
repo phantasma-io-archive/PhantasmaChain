@@ -1,4 +1,4 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Core;
 using System;
 
 namespace Phantasma.Cryptography.Hashing
@@ -59,7 +59,7 @@ namespace Phantasma.Cryptography.Hashing
                 {
                     ByteIntegerConverter.Array16LoadBigEndian64(out block, _buffer, 0);
                     Core(out _state, ref _state, ref block);
-                    CryptoUtils.InternalWipe(_buffer, 0, _buffer.Length);
+                    CryptoExtensions.InternalWipe(_buffer, 0, _buffer.Length);
                     bytesInBuffer = 0;
                 }
             }
@@ -88,7 +88,7 @@ namespace Phantasma.Cryptography.Hashing
             Update(_padding, 0, _padding.Length);
             Array16<ulong> block;
             ByteIntegerConverter.Array16LoadBigEndian64(out block, _buffer, 0);
-            CryptoUtils.InternalWipe(_buffer, 0, _buffer.Length);
+            CryptoExtensions.InternalWipe(_buffer, 0, _buffer.Length);
             int bytesInBuffer = (int)_totalBytes & (BlockSize - 1);
             if (bytesInBuffer > BlockSize - 16)
             {

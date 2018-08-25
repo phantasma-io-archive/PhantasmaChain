@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
-using Phantasma.VM.Types;
+using Phantasma.Core;
 using Phantasma.Cryptography;
 
 namespace Phantasma.VM

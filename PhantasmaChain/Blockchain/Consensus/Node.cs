@@ -6,9 +6,8 @@ using System.Threading;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Network;
-using Phantasma.Utils;
-using Phantasma.Utils.Log;
-using Phantasma.VM.Types;
+using Phantasma.Core;
+using Phantasma.Core.Log;
 
 namespace Phantasma.Blockchain.Consensus
 {

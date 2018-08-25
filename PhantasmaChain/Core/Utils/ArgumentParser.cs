@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core.Utils
 {
     public class Arguments
     {

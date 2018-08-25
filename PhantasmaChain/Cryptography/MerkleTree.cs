@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Phantasma.Mathematics;
-using Phantasma.Utils;
+using Phantasma.Core;
 
 namespace Phantasma.Cryptography
 {
@@ -54,7 +54,7 @@ namespace Phantasma.Cryptography
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
 
-                parents[i].Hash = new Hash(CryptoUtils.Hash256(parents[i].LeftChild.Hash.ToByteArray().Concat(parents[i].RightChild.Hash.ToByteArray()).ToArray()));
+                parents[i].Hash = new Hash(CryptoExtensions.Hash256(parents[i].LeftChild.Hash.ToByteArray().Concat(parents[i].RightChild.Hash.ToByteArray()).ToArray()));
             }
 
             return Build(parents); 

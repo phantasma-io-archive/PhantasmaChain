@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Phantasma.Utils;
+using Phantasma.Core;
 using Phantasma.Mathematics;
 using Phantasma.Cryptography;
 

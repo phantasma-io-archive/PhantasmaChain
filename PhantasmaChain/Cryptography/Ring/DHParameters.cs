@@ -1,4 +1,4 @@
-﻿using Phantasma.Utils;
+﻿using Phantasma.Core.Utils;
 
 namespace Phantasma.Cryptography.Ring
 {

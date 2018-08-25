@@ -1,11 +1,12 @@
-﻿using Phantasma.Cryptography;
-using Phantasma.Mathematics;
-using Phantasma.VM.Types;
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
+using Phantasma.Core.Types;
+using Phantasma.Core.Utils;
+using Phantasma.Cryptography;
+using Phantasma.Mathematics;
 
-namespace Phantasma.Utils
+namespace Phantasma.Core
 {
     public static class Serialization
     {

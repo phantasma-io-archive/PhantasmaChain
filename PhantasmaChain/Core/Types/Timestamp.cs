@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phantasma.VM.Types
+namespace Phantasma.Core.Types
 {
     public struct Timestamp
     {
