@@ -6,10 +6,12 @@ using Phantasma.Utils;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
+using System;
+using System.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public abstract class NativeContract : Contract
+    public abstract class NativeContract : SmartContract
     {
         private Address _address;
         public override Address Address => _address;

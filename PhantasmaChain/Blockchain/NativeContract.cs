@@ -2,6 +2,7 @@
 {
     public enum NativeContractKind
     {
+        Consensus,
         Token,
         Distribution,
         Reputation,
@@ -14,6 +15,5 @@
         Exchange,
         Naming,
         Mining,
-        Sidechain
     }
 }

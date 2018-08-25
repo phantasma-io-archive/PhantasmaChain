@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Phantasma.Cryptography
+﻿namespace Phantasma.Cryptography
 {
     public enum SignatureKind
     {
         None,
+        Contract,
         Ed25519,
         Ring,
         ECDSA

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
@@ -6,9 +7,12 @@ using Phantasma.VM.Contracts;
 
 namespace Phantasma.Blockchain
 {
-    public abstract class Contract : IContract
+    public abstract class SmartContract : IContract
     {
         public BigInteger Order { get; internal set; }
+
+        internal Hash SignatureHash { get; private set; }
+        protected byte[] SignatureKey;
 
         public abstract Address Address { get; }
         public abstract byte[] Script { get; }
@@ -19,9 +23,15 @@ namespace Phantasma.Blockchain
         protected Transaction Transaction { get; private set; }
         protected Chain Chain { get; private set; }
 
-        public Contract()
+        public SmartContract()
         {
             this.Order = 0;
+
+            var n = new BigInteger(this.Address.PublicKey);
+            n += Environment.TickCount;
+
+            this.SignatureKey = n.ToByteArray();
+            this.SignatureHash = new Hash(this.SignatureKey);
         }
 
         public void SetData(Chain chain, Transaction tx)
@@ -48,6 +58,20 @@ namespace Phantasma.Blockchain
         public int GetSize()
         {
             return this.Address.PublicKey.Length + this.Script.Length;
+        }
+
+        protected byte[] GetSignatureKey()
+        {
+            return SignatureKey;
+        }
+
+        public void Sign(Transaction tx, byte[] signatureKey)
+        {
+            Throw.If(tx == null, "null transaction");
+            Throw.If(tx != this.Transaction, "invalid transaction");
+
+            var signature = new ContractSignature(this, signatureKey);
+            tx.Sign(signature);
         }
     }
 }

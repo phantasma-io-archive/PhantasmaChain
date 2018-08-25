@@ -1,13 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+
 using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Utils;
 using Phantasma.VM;
-using Phantasma.VM.Types;
 using Phantasma.Mathematics;
-using System.Collections.Generic;
-using System.Linq;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -95,7 +96,7 @@ namespace Phantasma.Blockchain
             this.UpdateHash();
         }
 
-        public byte[] ToArray(bool withSignature)
+        public byte[] ToByteArray(bool withSignature)
         {
             using (var stream = new MemoryStream())
             {
@@ -110,22 +111,17 @@ namespace Phantasma.Blockchain
 
         public bool HasSignatures => Signatures != null && Signatures.Length > 0;
 
-        public bool Sign(KeyPair owner)
+        public void Sign(Signature signature)
         {
-            if (HasSignatures)
-            {
-                return false;
-            }
+            this.Signatures = this.Signatures.Union(new Signature[] { signature }).ToArray();
+        }
 
-            if (owner == null)
-            {
-                return false;
-            }
+        public void Sign(KeyPair owner)
+        {
+            Throw.If(owner == null, "invalid keypair");
 
-            var msg = this.ToArray(false);
+            var msg = this.ToByteArray(false);
             this.Signatures = new Signature[] { owner.Sign(msg) };
-
-            return true;
         }
 
         public bool IsSignedBy(Address address)
@@ -140,7 +136,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var msg = this.ToArray(false);
+            var msg = this.ToByteArray(false);
 
             foreach (var signature in this.Signatures)
             {
@@ -194,7 +190,7 @@ namespace Phantasma.Blockchain
 
         private void UpdateHash()
         {
-            var data = this.ToArray(false);
+            var data = this.ToByteArray(false);
             var hash = CryptoUtils.Sha256(data);
             this.Hash = new Hash(hash);
         }

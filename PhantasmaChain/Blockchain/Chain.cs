@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<BigInteger, Block> _blocks = new Dictionary<BigInteger, Block>();
-        private Dictionary<byte[], Contract> _contracts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
+        private Dictionary<byte[], SmartContract> _contracts = new Dictionary<byte[], SmartContract>(new ByteArrayComparer());
         private TrieNode _contractLookup = new TrieNode();
 
         public IEnumerable<Block> Blocks => _blocks.Values;
@@ -117,12 +117,12 @@ namespace Phantasma.Blockchain
             return _contracts.ContainsKey(publicKey);
         }
 
-        public Contract FindContract(NativeContractKind kind)
+        public SmartContract FindContract(NativeContractKind kind)
         {
             return GetNativeContract(kind);
         }
 
-        public Contract FindContract(byte[] publicKey)
+        public SmartContract FindContract(byte[] publicKey)
         {
             if (_contracts.ContainsKey(publicKey))
             {

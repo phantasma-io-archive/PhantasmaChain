@@ -4,7 +4,7 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public sealed class AccountContract : Contract
+    public sealed class AccountContract : SmartContract
     {
         public static readonly byte[] DefaultAccountScript = new byte[] { (byte)Opcode.RET };
 

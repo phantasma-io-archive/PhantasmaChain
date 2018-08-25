@@ -3,7 +3,7 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public sealed class CustomContract : Contract
+    public sealed class CustomContract : SmartContract
     {
         public override Address Address => Address.FromScript(this.Script);
 

@@ -22,8 +22,6 @@ namespace Phantasma.Blockchain.Contracts
         private BigInteger _supply = 0;
         private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
 
-        private Address ownerAddress = Address.Null;
-
         public void Burn(Address target, BigInteger amount)
         {
             Expect(amount > 0);
@@ -41,16 +39,11 @@ namespace Phantasma.Blockchain.Contracts
         public void Mint(Address target, BigInteger amount)
         {
             Expect(amount > 0);
-            
-            if (ownerAddress != Address.Null)
-            {
-                Expect(target == ownerAddress);
-            }
-            else
-            {
-                ownerAddress = target;
-            }
 
+            var nexusContract = (NexusContract) this.Chain.FindContract(NativeContractKind.Nexus);
+            var mintAddress = nexusContract.Address;
+
+            Expect(target == mintAddress);
             Expect(Transaction.IsSignedBy(target));
 
             this._supply += amount;
