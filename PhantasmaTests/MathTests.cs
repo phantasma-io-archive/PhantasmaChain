@@ -1,10 +1,10 @@
-﻿using Phantasma.Mathematics;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Phantasma.Mathematics;
 using Phantasma.Cryptography;
 
-namespace PhantasmaTests
+namespace Phantasma.Tests
 {
     [TestClass]
     public class MathTests

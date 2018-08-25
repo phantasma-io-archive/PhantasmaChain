@@ -1,14 +1,15 @@
-﻿using System.Text;
-using Phantasma.Cryptography;
-using Phantasma.Utils;
-using Phantasma.VM.Types;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using System;
 using System.Linq;
+using System.Text;
+
+using Phantasma.Cryptography;
+using Phantasma.Utils;
 using Phantasma.Mathematics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Cryptography.Ring;
 
-namespace PhantasmaTests
+namespace Phantasma.Tests
 {
     [TestClass]
     public class CryptoTests
