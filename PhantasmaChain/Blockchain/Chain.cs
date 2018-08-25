@@ -11,6 +11,10 @@ namespace Phantasma.Blockchain
 {
     public partial class Chain
     {
+        public readonly Chain Root;
+
+        public Address Address { get; private set; }
+
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<BigInteger, Block> _blocks = new Dictionary<BigInteger, Block>();
         private Dictionary<byte[], Contract> _contracts = new Dictionary<byte[], Contract>(new ByteArrayComparer());
@@ -27,8 +31,20 @@ namespace Phantasma.Blockchain
         private List<NativeExecutionContext> _nativeContexts = new List<NativeExecutionContext>();
         public IEnumerable<NativeExecutionContext> NativeContexts => _nativeContexts;
 
-        public Chain(KeyPair owner, Logger log = null)
+        public bool IsRoot => this.Root == this;
+
+        public Chain(KeyPair owner, Logger log = null, Chain rootChain = null)
         {
+            if (rootChain == null)
+            {
+                this.Root = this;
+            }
+            else
+            {
+                Throw.If(!rootChain.IsRoot, "not a root chain");
+                this.Root = rootChain;
+            }
+
             this.Log = Logger.Init(log);
 
             var list = Enum.GetValues(typeof(NativeContractKind));
@@ -47,6 +63,8 @@ namespace Phantasma.Blockchain
             {
                 throw new ChainException("Genesis block failure");
             }
+
+            this.Address = new Address(block.Hash.ToByteArray());
         }
 
         public bool AddBlock(Block block)
@@ -97,6 +115,11 @@ namespace Phantasma.Blockchain
         public bool HasContract(byte[] publicKey)
         {
             return _contracts.ContainsKey(publicKey);
+        }
+
+        public Contract FindContract(NativeContractKind kind)
+        {
+            return GetNativeContract(kind);
         }
 
         public Contract FindContract(byte[] publicKey)
@@ -159,5 +182,21 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        private Dictionary<Address, Chain> _chains = new Dictionary<Address, Chain>();
+
+        public Chain FindChain(Address address)
+        {
+            if (this.IsRoot)
+            {
+                return _chains.ContainsKey(address) ? _chains[address] : null;
+            }
+
+            return this.Root.FindChain(address);
+        }
+
+        public Transaction FindTransaction(Hash hash)
+        {
+            return _transactions.ContainsKey(hash) ? _transactions[hash] : null;
+        } 
     }
 }

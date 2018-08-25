@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain
             {
                 if (entry.Contract.Address == address)
                 {
-                    entry.Contract.SetTransaction(this.Transaction);
+                    entry.Contract.SetData(this.Chain, this.Transaction);
                     return entry;
                 }
             }

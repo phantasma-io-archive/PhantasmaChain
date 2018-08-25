@@ -117,7 +117,7 @@ namespace Phantasma.Utils
 
         public static Hash ReadHash(this BinaryReader reader)
         {
-            var data = reader.ReadBytes(Hash.SIZE);
+            var data = reader.ReadBytes(Hash.Length);
             var result = new Hash(data);
             return result == Hash.Null ? null : result;
         }

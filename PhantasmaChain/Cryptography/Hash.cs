@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using Phantasma.Mathematics;
 using Phantasma.Utils;
@@ -8,9 +7,9 @@ namespace Phantasma.Cryptography
 {
     public class Hash : IComparable<Hash>, IEquatable<Hash>
     {
-        public const int SIZE = 32;
+        public const int Length = 32;
 
-        public static readonly Hash Null = new Hash(new byte[SIZE]);
+        public static readonly Hash Null = new Hash(new byte[Length]);
 
         private byte[] _data;
 
@@ -44,13 +43,13 @@ namespace Phantasma.Cryptography
 
         public Hash()
         {
-            this._data = new byte[SIZE];
+            this._data = new byte[Length];
         }
 
         public Hash(byte[] value)
         {
             Throw.If(value == null, "value cannot be null");
-            Throw.If(value.Length != SIZE, $"value must have length {SIZE}");
+            Throw.If(value.Length != Length, $"value must have length {Length}");
 
             this._data = value;
         }
@@ -83,7 +82,7 @@ namespace Phantasma.Cryptography
                 return Parse(s.Substring(2));
             }
 
-            Throw.If(s.Length != SIZE, $"length of string must be {SIZE}");
+            Throw.If(s.Length != Length, $"length of string must be {Length}");
 
             return new Hash(s.Decode().Reverse().ToArray());
         }
@@ -159,9 +158,9 @@ namespace Phantasma.Cryptography
         public static implicit operator Hash(BigInteger val)
         {
             var src = val.ToByteArray();
-            Throw.If(src.Length > SIZE, "number is too large");
+            Throw.If(src.Length > Length, "number is too large");
 
-            var bytes = new byte[SIZE];
+            var bytes = new byte[Length];
             Array.Copy(src, bytes, src.Length);
             return new Hash(bytes);
         }

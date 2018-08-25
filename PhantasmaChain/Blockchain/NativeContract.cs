@@ -6,6 +6,7 @@
         Distribution,
         Reputation,
         Governance,
+        Nexus,
         Stake,
         Storage,
         Privacy,

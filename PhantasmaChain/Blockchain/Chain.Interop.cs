@@ -15,19 +15,36 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Chain.Deploy", Chain_deploy);
             vm.RegisterMethod("Account.Rename", Account_Rename);
             vm.RegisterMethod("Address()", Constructor_Address);
+            vm.RegisterMethod("Hash()", Constructor_Hash);
         }
 
         private ExecutionState Constructor_Address(VirtualMachine vm)
         {
-            var key = vm.stack.Pop().AsByteArray();
-            if (key == null || key.Length != Address.PublicKeyLength)
+            var bytes = vm.stack.Pop().AsByteArray();
+            if (bytes == null || bytes.Length != Address.PublicKeyLength)
             {
                 return ExecutionState.Fault;
             }
 
-            var address = new Address(key);
+            var address = new Address(bytes);
             var temp = new VMObject();
             temp.SetValue(address);
+            vm.stack.Push(temp);
+
+            return ExecutionState.Running;
+        }
+
+        private ExecutionState Constructor_Hash(VirtualMachine vm)
+        {
+            var bytes = vm.stack.Pop().AsByteArray();
+            if (bytes == null || bytes.Length != Hash.Length)
+            {
+                return ExecutionState.Fault;
+            }
+
+            var hash = new Hash(bytes);
+            var temp = new VMObject();
+            temp.SetValue(hash);
             vm.stack.Push(temp);
 
             return ExecutionState.Running;

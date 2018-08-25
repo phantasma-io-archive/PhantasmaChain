@@ -16,15 +16,17 @@ namespace Phantasma.Blockchain
 
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
-        protected Transaction Transaction;
+        protected Transaction Transaction { get; private set; }
+        protected Chain Chain { get; private set; }
 
         public Contract()
         {
             this.Order = 0;
         }
 
-        public void SetTransaction(Transaction tx)
+        public void SetData(Chain chain, Transaction tx)
         {
+            this.Chain = chain;
             this.Transaction = tx;
         }
 
