@@ -1,18 +1,74 @@
 ﻿using Phantasma.Mathematics;
 using Phantasma.Cryptography;
+using Phantasma.VM;
 
 namespace Phantasma.Utils
 {
     public static class ScriptUtils
     {
-        public static byte[] TokenIssueScript(string name, string symbol, BigInteger initialSupply, BigInteger maxSupply)
+        public static byte[] CallContractScript(Address contract, string method, object[] args)
         {
-            // TODO
-            /*sb.Emit(1, symbol);
-            sb.Emit(2, initialSupply);
-            sb.Emit(3, maxSupply);
-            sb.Emit(4, (byte)attributes);*/
-            return ContractDeployScript(new byte[] { }, new byte[] { });
+            var sb = new ScriptBuilder();
+            byte dest_reg = 1;
+            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.Concat(contract.PublicKey));
+
+            byte temp_reg = 0;
+
+            for (int i=args.Length-1; i>=0; i--)
+            {
+                var arg = args[i];
+
+                if (arg is string)
+                {
+                    sb.EmitLoad(temp_reg, (string)arg);
+                    sb.EmitPush(temp_reg);
+                }
+                else
+                if (arg is BigInteger)
+                {
+                    sb.EmitLoad(temp_reg, (BigInteger)arg);
+                    sb.EmitPush(temp_reg);
+                }
+                else
+                if (arg is bool)
+                {
+                    sb.EmitLoad(temp_reg, (bool)arg);
+                    sb.EmitPush(temp_reg);
+                }
+                else
+                if (arg is byte[])
+                {
+                    sb.EmitLoad(temp_reg, (byte[])arg, VMType.Bytes);
+                    sb.EmitPush(temp_reg);
+                }
+                else
+                if (arg is Address)
+                {
+                    sb.EmitLoad(temp_reg, ((Address)arg).PublicKey, VMType.Bytes);
+                    sb.EmitPush(temp_reg);
+                    sb.EmitExtCall("Address()", temp_reg);
+                }
+                else
+                {
+                    throw new System.Exception("invalid type");
+                }
+            }
+
+            sb.EmitLoad(temp_reg, method);
+            sb.EmitPush(temp_reg);
+            sb.Emit(VM.Opcode.SWITCH, new byte[] { dest_reg });
+            sb.Emit(VM.Opcode.RET);
+            return sb.ToScript();
+        }
+
+        public static byte[] TokenMintScript(Address token, Address target, BigInteger amount)
+        {
+            return CallContractScript(token, "Mint", new object[] { target, amount });
+        }
+
+        public static byte[] TokenTransferScript(Address token, Address from, Address to, BigInteger amount)
+        {
+            return CallContractScript(token, "Transfer", new object[] { from, to, amount });
         }
 
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)
@@ -25,13 +81,6 @@ namespace Phantasma.Utils
             sb.EmitExtCall("Chain.Deploy");
             sb.Emit(VM.Opcode.RET);
 
-            return sb.ToScript();
-        }
-
-        public static byte[] TransferScript(Address tokenPublicKey, Address from, Address to, int amount)
-        {
-            var sb = new ScriptBuilder();
-            sb.Emit(VM.Opcode.RET);
             return sb.ToScript();
         }
     }
