@@ -1,8 +1,8 @@
-﻿using Phantasma.Blockchain;
+﻿using System.IO;
+using System.Linq;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using System.IO;
-using System.Linq;
 
 namespace Phantasma.VM.Contracts
 {

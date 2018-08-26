@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-
+using System.Text;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 
@@ -103,7 +103,15 @@ namespace Phantasma.Core.Utils
             }
         }
 
-        public static byte[] Concat(this byte[] a1, byte[] a2)
+        public static BigInteger AsBigInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
+
+        public static byte[] AsByteArray(this BigInteger source) { return source.ToByteArray(); }
+
+        public static byte[] AsByteArray(this string source) { return Encoding.UTF8.GetBytes(source); }
+
+        public static string AsString(this byte[] source) { return Encoding.UTF8.GetString(source); }
+
+        public static byte[] ConcatBytes(this byte[] a1, byte[] a2)
         {
             byte[] res = new byte[a1.Length + a2.Length];
             Buffer.BlockCopy(a1, 0, res, 0, a1.Length);

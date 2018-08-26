@@ -4,7 +4,7 @@ using Phantasma.Mathematics;
 using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain.Contracts.Native
 {
     public enum ExchangeOrderSide
     {
@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts
                         break;
                     }
 
-                default: throw new Exception("invalid order side");
+                default: throw new ContractException("invalid order side");
             }
 
 

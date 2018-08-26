@@ -9,6 +9,7 @@ using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.Mathematics;
 using Phantasma.Core.Utils;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {

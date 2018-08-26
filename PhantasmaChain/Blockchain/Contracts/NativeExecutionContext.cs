@@ -1,9 +1,8 @@
-﻿using Phantasma.Blockchain.Contracts;
+﻿using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.VM;
-using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Contracts
 {
     public class NativeExecutionContext : ExecutionContext
     {

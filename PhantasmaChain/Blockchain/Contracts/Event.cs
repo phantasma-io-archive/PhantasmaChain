@@ -2,9 +2,8 @@
 using Phantasma.Cryptography;
 using Phantasma.Core.Utils;
 using System;
-using System.Linq;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Contracts
 {
     public class Event
     {

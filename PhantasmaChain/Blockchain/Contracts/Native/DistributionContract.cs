@@ -1,4 +1,4 @@
-﻿namespace Phantasma.Blockchain.Contracts
+﻿namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class DistributionContract : NativeContract
     {

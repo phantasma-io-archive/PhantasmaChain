@@ -1,9 +1,8 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Mathematics;
-using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class NexusContract : NativeContract
     {
@@ -59,7 +58,7 @@ namespace Phantasma.Blockchain.Contracts
             var tokenABI = Chain.FindABI(NativeABI.Token);
             Expect(tokenContract.ABI.Implements(tokenABI));
 
-            tokenContract.SetData(this.Chain, this.Transaction);
+            tokenContract.SetData(this.Chain, this.Transaction, this.Storage);
 
             tokenABI["Transfer"].Invoke(tokenContract, from, this.Address, amount);
             tokenABI["Burn"].Invoke(tokenContract, this.Address, amount);
@@ -93,7 +92,7 @@ namespace Phantasma.Blockchain.Contracts
             var tokenABI = Chain.FindABI(NativeABI.Token);
             Expect(tokenContract.ABI.Implements(tokenABI));
 
-            tokenContract.SetData(this.Chain, this.Transaction);
+            tokenContract.SetData(this.Chain, this.Transaction, this.Storage);
 
             tokenABI["Mint"].Invoke(tokenContract, this.Address, amount);
             tokenABI["Transfer"].Invoke(tokenContract, this.Address, to, amount);

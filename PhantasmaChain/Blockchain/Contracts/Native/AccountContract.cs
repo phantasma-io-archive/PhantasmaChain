@@ -2,7 +2,7 @@
 using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class AccountContract : SmartContract
     {

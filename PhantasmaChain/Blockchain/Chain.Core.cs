@@ -7,6 +7,7 @@ using Phantasma.Mathematics;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.Blockchain
 {
@@ -132,6 +133,21 @@ namespace Phantasma.Blockchain
 
             return null;
         }
+
+        private Dictionary<Address, StorageContext> _storages = new Dictionary<Address, StorageContext>();
+
+        public StorageContext FindStorage(Address address)
+        {
+            if (_storages.ContainsKey(address))
+            {
+                return _storages[address];
+            }
+
+            var storage = new StorageContext();
+            _storages[address] = storage;
+            return storage;
+        }
+
 
 /*        public Contract GetOrCreateAccount(byte[] publicKey)
         {

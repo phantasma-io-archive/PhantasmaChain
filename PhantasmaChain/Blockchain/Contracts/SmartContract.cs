@@ -6,7 +6,7 @@ using Phantasma.Core;
 using Phantasma.VM.Contracts;
 using Phantasma.Core.Utils;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Contracts
 {
     public abstract class SmartContract : IContract
     {
@@ -20,16 +20,18 @@ namespace Phantasma.Blockchain
 
         protected Transaction Transaction { get; private set; }
         protected Chain Chain { get; private set; }
+        protected StorageContext Storage { get; private set; }
 
         public SmartContract()
         {
             this.Order = 0;
         }
 
-        public void SetData(Chain chain, Transaction tx)
+        public void SetData(Chain chain, Transaction tx, StorageContext storage)
         {
             this.Chain = chain;
             this.Transaction = tx;
+            this.Storage = storage;
         }
 
         protected void Expect(bool condition)

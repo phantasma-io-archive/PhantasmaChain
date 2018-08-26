@@ -2,6 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 using Phantasma.Core.Types;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain.Consensus
 {

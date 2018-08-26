@@ -7,6 +7,7 @@ using Phantasma.Cryptography;
 using Phantasma.Network;
 using Phantasma.VM.Utils;
 using Phantasma.Core.Log;
+using Phantasma.Blockchain.Contracts;
 
 namespace PhantasmaCLIWallet
 {

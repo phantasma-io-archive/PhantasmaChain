@@ -5,7 +5,7 @@ using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Contracts
 {
     public class RuntimeVM : VirtualMachine, IRuntime
     {
@@ -57,7 +57,8 @@ namespace Phantasma.Blockchain
             {
                 if (entry.Contract.Address == address)
                 {
-                    entry.Contract.SetData(this.Chain, this.Transaction);
+                    var storage = this.Chain.FindStorage(address);
+                    entry.Contract.SetData(this.Chain, this.Transaction, storage);
                     return entry;
                 }
             }

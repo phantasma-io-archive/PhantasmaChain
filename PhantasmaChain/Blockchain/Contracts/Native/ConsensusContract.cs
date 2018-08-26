@@ -3,7 +3,7 @@ using Phantasma.Mathematics;
 using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class ConsensusContract : NativeContract
     {

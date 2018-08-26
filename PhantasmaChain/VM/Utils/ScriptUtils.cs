@@ -10,7 +10,7 @@ namespace Phantasma.VM.Utils
         {
             var sb = new ScriptBuilder();
             byte dest_reg = 1;
-            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.Concat(contract.PublicKey));
+            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.ConcatBytes(contract.PublicKey));
 
             byte temp_reg = 0;
 

@@ -120,7 +120,7 @@ namespace Phantasma.Cryptography.Ring
             var L = ConcatInts(null, publicKeys);
             var h = Hash2(L);
             var y0 = mod.Pow(h, privateKey);
-            var prefix = ConcatInts(L, y0).Concat(message);
+            var prefix = ConcatInts(L, y0).ConcatBytes(message);
 
             var h1 = Hash1(ConcatInts(prefix, a, mod.Pow(new[] { h, y0 }, new[] { r, b })));
             c[identity] = (h1 - b).Mod(GroupParameters.SubgroupSize);
@@ -170,7 +170,7 @@ namespace Phantasma.Cryptography.Ring
 
             var L = ConcatInts(null, publicKeys);
             var h = Hash2(L);
-            var prefix = ConcatInts(L, this.Y0).Concat(message);
+            var prefix = ConcatInts(L, this.Y0).ConcatBytes(message);
 
             var h1 = Hash1(ConcatInts(prefix, a, mod.Pow(new[] { h, this.Y0 }, new[] { this.S, b })));
 

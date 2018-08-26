@@ -10,4 +10,12 @@ namespace Phantasma.Blockchain
 
         }
     }
+
+    public class ContractException : Exception
+    {
+        public ContractException(string msg) : base(msg)
+        {
+
+        }
+    }
 }

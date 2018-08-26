@@ -2,6 +2,7 @@
 using Phantasma.Core.Types;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.Blockchain
 {

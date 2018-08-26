@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.Blockchain
 {

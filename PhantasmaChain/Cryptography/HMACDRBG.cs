@@ -53,7 +53,7 @@ namespace Phantasma.Cryptography
         private void Instantiate(byte[] seed, byte[] personalizationString)
         {
             reseedCounter = 1;
-            var seedMaterial = personalizationString == null ? seed : seed.Concat(personalizationString); 
+            var seedMaterial = personalizationString == null ? seed : seed.ConcatBytes(personalizationString); 
             for (int i = 0; i < OutlenBytes; ++i)
             {
                 key[i] = 0;

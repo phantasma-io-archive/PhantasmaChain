@@ -1,7 +1,7 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Mathematics;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class StakeContract : NativeContract
     {

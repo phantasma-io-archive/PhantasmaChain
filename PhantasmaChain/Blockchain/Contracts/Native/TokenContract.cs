@@ -1,8 +1,10 @@
 ﻿using Phantasma.Mathematics;
 using Phantasma.Cryptography;
 using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts.Types;
+using Phantasma.Core.Utils;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain.Contracts.Native
 {
     public class TokenContract : NativeContract
     {
@@ -18,12 +20,16 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         private BigInteger _supply = 0;
-        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
 
         public string GetName() => Name;
         public string GetSymbol() => Symbol;
         public BigInteger GetSupply() => MaxSupply;
         public BigInteger GetDecimals() => 8;
+
+        private Map<Address, BigInteger> GetBalances()
+        {
+            return this.Storage.FindMapForContract<Address, BigInteger>("balances".AsByteArray());
+        }
 
         public void Mint(Address target, BigInteger amount)
         {
@@ -52,47 +58,52 @@ namespace Phantasma.Blockchain.Contracts
             this._supply += amount;
             Expect(_supply <= MaxSupply);
 
-            var balance = _balances.ContainsKey(target)? _balances[target] : 0;
+            var balances = GetBalances();
+            var balance = balances.ContainsKey(target)? balances[target] : 0;
 
             balance += amount;
-            _balances[target] = amount;
+            balances[target] = amount;
         }
 
         public void Burn(Address target, BigInteger amount)
         {
+            var balances = GetBalances();
+
             Expect(amount > 0);
-            Expect(_balances.ContainsKey(target));
+            Expect(balances.ContainsKey(target));
             Expect(IsWitness(target));
 
-            var balance = _balances[target];
+            var balance = balances[target];
             Expect(balance >= amount);
 
             balance -= amount;
-            _balances[target] = amount;
+            balances[target] = amount;
             this._supply -= amount;
         }
 
         public void Transfer(Address source, Address destination, BigInteger amount)
         {
+            var balances = GetBalances();
+
             Expect(amount > 0);
             Expect(source != destination);
             Expect(IsWitness(source));
 
-            Expect(_balances.ContainsKey(source));
+            Expect(balances.ContainsKey(source));
 
-            BigInteger from_balance =  _balances[source];
+            BigInteger from_balance =  balances[source];
             Expect(from_balance >= amount);
 
             from_balance -= amount;
             if (from_balance == 0)
-                _balances.Remove(source);
+                balances.Remove(source);
             else
-                _balances[source] = from_balance;
+                balances[source] = from_balance;
 
             BigInteger to_balance;
-            if (_balances.ContainsKey(destination))
+            if (balances.ContainsKey(destination))
             {
-                to_balance = _balances[destination];
+                to_balance = balances[destination];
             }
             else
             {
@@ -101,12 +112,13 @@ namespace Phantasma.Blockchain.Contracts
 
             to_balance += amount;
 
-            _balances[destination] = to_balance;
+            balances[destination] = to_balance;
         }
 
         public BigInteger BalanceOf(Address address)
         {
-            return _balances.ContainsKey(address) ? _balances[address]: 0;
+            var balances = GetBalances();
+            return balances.ContainsKey(address) ? balances[address]: 0;
         }
     }
 }
