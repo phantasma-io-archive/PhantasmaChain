@@ -35,7 +35,14 @@ namespace Phantasma.Blockchain.Contracts
         
             if (_supply == 0)
             {
-                Expect(amount == MaxSupply);
+                if (Chain.IsRoot)
+                {
+                    Expect(amount == MaxSupply);
+                }
+                else
+                {
+                    Expect(target == mintAddress);
+                }
             }
             else
             {
