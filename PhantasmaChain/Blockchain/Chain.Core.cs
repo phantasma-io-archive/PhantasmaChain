@@ -18,7 +18,8 @@ namespace Phantasma.Blockchain
         public Address Address { get; private set; }
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
-        private Dictionary<BigInteger, Block> _blocks = new Dictionary<BigInteger, Block>();
+        private Dictionary<Hash, Block> _blocks = new Dictionary<Hash, Block>();
+        private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
         private Dictionary<Address, SmartContract> _contracts = new Dictionary<Address, SmartContract>();
         private TrieNode _contractLookup = new TrieNode();
 
@@ -214,6 +215,16 @@ namespace Phantasma.Blockchain
         public Transaction FindTransaction(Hash hash)
         {
             return _transactions.ContainsKey(hash) ? _transactions[hash] : null;
+        }
+
+        public Block FindBlock(Hash hash)
+        {
+            return _blocks.ContainsKey(hash) ? _blocks[hash] : null;
+        }
+
+        public Block FindBlock(BigInteger height)
+        {
+            return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
         public BigInteger GetTokenBalance(Address token, Address account)

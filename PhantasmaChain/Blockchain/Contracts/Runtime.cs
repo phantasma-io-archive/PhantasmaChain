@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public class RuntimeVM : VirtualMachine, IRuntime
+    public class RuntimeVM : VirtualMachine
     {
         public Transaction Transaction { get; }
         public Chain Chain { get; private set; }
@@ -25,10 +24,6 @@ namespace Phantasma.Blockchain.Contracts
             handlers[name] = handler;
         }
 
-        public IFungibleToken NativeToken => throw new NotImplementedException();
-
-        public BigInteger CurrentHeight => Chain.Height;
-
         private Dictionary<string, Func<VirtualMachine, ExecutionState>> handlers = new Dictionary<string, Func<VirtualMachine, ExecutionState>>();
 
         public override ExecutionState ExecuteInterop(string method)
@@ -39,11 +34,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return ExecutionState.Fault;
-        }
-
-        public IBlock GetBlock(BigInteger height)
-        {
-            throw new System.NotImplementedException();
         }
 
         public T GetContract<T>(Address address) where T : IContract
