@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Mathematics;
+using System;
 
 namespace Phantasma.Cryptography
 {
@@ -22,7 +23,7 @@ namespace Phantasma.Cryptography
                 {
                     byte opcode = 74;
                     var bytes = new byte[] { opcode }.Concat(PublicKey).ToArray();
-                    _text =  Base58.Encode(bytes);
+                    _text = Base58.Encode(bytes);
                 }
 
                 return _text;
@@ -33,8 +34,9 @@ namespace Phantasma.Cryptography
         {
             Throw.IfNull(publicKey, "publicKey");
             Throw.If(publicKey.Length != PublicKeyLength, $"publicKey length must be {PublicKeyLength}");
+            this.PublicKey = new byte[PublicKeyLength];
+            Array.Copy(publicKey, this.PublicKey, PublicKeyLength);
             this._text = null;
-            this.PublicKey = publicKey;
         }
 
         public static bool operator ==(Address A, Address B) { return A.PublicKey.SequenceEqual(B.PublicKey); }

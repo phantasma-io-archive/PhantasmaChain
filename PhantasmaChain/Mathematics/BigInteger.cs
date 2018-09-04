@@ -42,7 +42,7 @@ namespace Phantasma.Mathematics
 
             if (num > 0)
             {
-                Throw.If(value != 0L || ((int)_data[_data.Length-1] & -2147483648) != 0, "Positive overflow in constructor.");
+                Throw.If(value != 0L || ((int)_data[_data.Length - 1] & -2147483648) != 0, "Positive overflow in constructor.");
             }
             else
             if (num < 0)
@@ -68,7 +68,7 @@ namespace Phantasma.Mathematics
                 dataLength++;
             }
 
-            Throw.If(value != 0L || ((int)_data[_data.Length-1] & -2147483648) != 0, "Positive overflow in constructor.");
+            Throw.If(value != 0L || ((int)_data[_data.Length - 1] & -2147483648) != 0, "Positive overflow in constructor.");
 
             if (dataLength == 0)
             {
@@ -124,11 +124,11 @@ namespace Phantasma.Mathematics
 
             if (value[0] == '-')
             {
-                Throw.If(((int)bigInteger._data[bigInteger._data.Length-1] & -2147483648) == 0, "Negative underflow in constructor.");
+                Throw.If(((int)bigInteger._data[bigInteger._data.Length - 1] & -2147483648) == 0, "Negative underflow in constructor.");
             }
             else
             {
-                Throw.If(((int)bigInteger._data[bigInteger._data.Length-1] & -2147483648) != 0, "Positive overflow in constructor.");
+                Throw.If(((int)bigInteger._data[bigInteger._data.Length - 1] & -2147483648) != 0, "Positive overflow in constructor.");
             }
 
             _data = new uint[maxLength];
@@ -139,10 +139,14 @@ namespace Phantasma.Mathematics
             dataLength = bigInteger.dataLength;
         }
 
-        public BigInteger(byte[] inData)
+        public BigInteger(byte[] input)
         {
+            var inData = new byte[input.Length];
+            for (int i=0; i<inData.Length; i++)
+            {
+                inData[i] = input[(inData.Length - 1) - i];
+            }
             int num = inData.Length;
-            Array.Reverse(inData);
             dataLength = num >> 2;
             int num2 = num & 3;
             if (num2 != 0)
@@ -321,7 +325,7 @@ namespace Phantasma.Mathematics
             {
                 bigInteger.dataLength--;
             }
-            int num3 = maxLength-1;
+            int num3 = maxLength - 1;
 
             Throw.If(((int)bi1._data[num3] & -2147483648) != ((int)bi2._data[num3] & -2147483648) && ((int)bigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648), "overflow in subtraction");
 
@@ -356,7 +360,7 @@ namespace Phantasma.Mathematics
                 bigInteger.dataLength--;
             }
 
-            int num3 = maxLength-1;
+            int num3 = maxLength - 1;
             Throw.If(((int)bi1._data[num3] & -2147483648) != 0 && ((int)bigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648), "Underflow in decrement.");
 
             return bigInteger;
@@ -364,7 +368,7 @@ namespace Phantasma.Mathematics
 
         public static BigInteger operator *(BigInteger bi1, BigInteger bi2)
         {
-            int num = maxLength-1;
+            int num = maxLength - 1;
             bool flag = false;
             bool flag2 = false;
             try
@@ -505,9 +509,9 @@ namespace Phantasma.Mathematics
         {
             var bigInteger = new BigInteger(bi1);
             bigInteger.dataLength = ShiftRight(bigInteger._data, shiftVal);
-            if (((int)bi1._data[maxLength-1] & -2147483648) != 0)
+            if (((int)bi1._data[maxLength - 1] & -2147483648) != 0)
             {
-                for (int num = maxLength-1; num >= bigInteger.dataLength; num--)
+                for (int num = maxLength - 1; num >= bigInteger.dataLength; num--)
                 {
                     bigInteger._data[num] = uint.MaxValue;
                 }
@@ -599,7 +603,7 @@ namespace Phantasma.Mathematics
                 num2++;
             }
 
-            Throw.If(((int)bi1._data[maxLength-1] & -2147483648) == ((int)bigInteger._data[maxLength-1] & -2147483648), "Overflow in negation.");
+            Throw.If(((int)bi1._data[maxLength - 1] & -2147483648) == ((int)bigInteger._data[maxLength - 1] & -2147483648), "Overflow in negation.");
 
             bigInteger.dataLength = maxLength;
             while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
@@ -622,6 +626,11 @@ namespace Phantasma.Mathematics
 
         public override bool Equals(object o)
         {
+            if (o == null)
+            {
+                return false;
+            }
+
             var bigInteger = (BigInteger)o;
             if (dataLength != bigInteger.dataLength)
             {
@@ -651,7 +660,7 @@ namespace Phantasma.Mathematics
 
         public static bool operator >(BigInteger bi1, BigInteger bi2)
         {
-            int num = maxLength-1;
+            int num = maxLength - 1;
             if (((int)bi1._data[num] & -2147483648) != 0 && ((int)bi2._data[num] & -2147483648) == 0)
             {
                 return false;
@@ -682,7 +691,7 @@ namespace Phantasma.Mathematics
 
         public static bool operator <(BigInteger bi1, BigInteger bi2)
         {
-            int num = maxLength-1;
+            int num = maxLength - 1;
 
             if (((int)bi1._data[num] & -2147483648) != 0 && ((int)bi2._data[num] & -2147483648) == 0)
             {
@@ -883,7 +892,7 @@ namespace Phantasma.Mathematics
         {
             BigInteger bigInteger = new BigInteger();
             BigInteger outRemainder = new BigInteger();
-            int num = maxLength-1;
+            int num = maxLength - 1;
             bool flag = false;
             bool flag2 = false;
             if (((int)bi1._data[num] & -2147483648) != 0)
@@ -919,7 +928,7 @@ namespace Phantasma.Mathematics
         {
             BigInteger outQuotient = new BigInteger();
             BigInteger bigInteger = new BigInteger(bi1);
-            int num = maxLength-1;
+            int num = maxLength - 1;
             bool flag = false;
             if (((int)bi1._data[num] & -2147483648) != 0)
             {
@@ -1036,7 +1045,7 @@ namespace Phantasma.Mathematics
 
         public BigInteger Abs()
         {
-            if (((int)_data[maxLength-1] & -2147483648) != 0)
+            if (((int)_data[maxLength - 1] & -2147483648) != 0)
             {
                 return -this;
             }
@@ -1057,7 +1066,7 @@ namespace Phantasma.Mathematics
             BigInteger bigInteger = this;
             bool flag = false;
 
-            if (((int)bigInteger._data[maxLength-1] & -2147483648) != 0)
+            if (((int)bigInteger._data[maxLength - 1] & -2147483648) != 0)
             {
                 flag = true;
                 try
@@ -1105,8 +1114,8 @@ namespace Phantasma.Mathematics
 
         public BigInteger GCD(BigInteger bi)
         {
-            BigInteger bigInteger = (((int)_data[maxLength-1] & -2147483648) == 0) ? this : (-this);
-            BigInteger bigInteger2 = (((int)bi._data[maxLength-1] & -2147483648) == 0) ? bi : (-bi);
+            BigInteger bigInteger = (((int)_data[maxLength - 1] & -2147483648) == 0) ? this : (-this);
+            BigInteger bigInteger2 = (((int)bi._data[maxLength - 1] & -2147483648) == 0) ? bi : (-bi);
             BigInteger bigInteger3 = bigInteger2;
             while (bigInteger.dataLength > 1 || (bigInteger.dataLength == 1 && bigInteger._data[0] != 0))
             {
@@ -1377,7 +1386,7 @@ namespace Phantasma.Mathematics
             Throw.If(array3[0].dataLength > 1 || (array3[0].dataLength == 1 && array3[0]._data[0] != 1), "No inverse!");
 
             BigInteger bigInteger5 = (array[0] - array[1] * array2[0]) % modulus;
-            if (((int)bigInteger5._data[maxLength-1] & -2147483648) != 0)
+            if (((int)bigInteger5._data[maxLength - 1] & -2147483648) != 0)
             {
                 bigInteger5 += modulus;
             }
