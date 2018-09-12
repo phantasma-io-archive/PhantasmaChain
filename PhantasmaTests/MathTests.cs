@@ -29,7 +29,7 @@ namespace Phantasma.Tests
         public void Base58Tests()
         {
             var bytes = new byte[Address.PublicKeyLength];
-            var rnd = new Random();
+            var rnd = new Random(39545);
             rnd.NextBytes(bytes);
 
             var base58 = Base58.Encode(bytes);
