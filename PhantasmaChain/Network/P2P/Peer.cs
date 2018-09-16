@@ -1,4 +1,4 @@
-﻿namespace Phantasma.Network
+﻿namespace Phantasma.Network.P2P
 {
     public abstract class Peer
     {

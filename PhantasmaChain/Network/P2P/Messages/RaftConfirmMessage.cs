@@ -3,7 +3,7 @@ using Phantasma.Core;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 
-namespace Phantasma.Network.Messages
+namespace Phantasma.Network.P2P.Messages
 {
     internal class RaftConfirmMessage : Message
     {

@@ -3,7 +3,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Network.Messages;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.P2P
 {
     /// <summary>
     /// Represents a generic network message

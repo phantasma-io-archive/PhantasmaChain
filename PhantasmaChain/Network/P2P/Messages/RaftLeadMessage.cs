@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Phantasma.Network.Messages
+namespace Phantasma.Network.P2P.Messages
 {
     internal class RaftLeadMessage : Message
     {

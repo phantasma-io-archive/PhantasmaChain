@@ -1,7 +1,7 @@
 ﻿using Phantasma.Cryptography;
 using System.IO;
 
-namespace Phantasma.Network.Messages
+namespace Phantasma.Network.P2P.Messages
 {
     internal class ChainValuesMessage : Message
     {

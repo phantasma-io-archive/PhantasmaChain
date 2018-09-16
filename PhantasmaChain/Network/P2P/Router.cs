@@ -11,7 +11,7 @@ using Phantasma.Network.Messages;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.P2P
 {
     public class Router: Runnable
     {

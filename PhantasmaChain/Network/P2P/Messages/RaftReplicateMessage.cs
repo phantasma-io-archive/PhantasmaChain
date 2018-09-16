@@ -3,7 +3,7 @@ using Phantasma.Blockchain;
 using Phantasma.Core;
 using Phantasma.Cryptography;
     
-namespace Phantasma.Network.Messages
+namespace Phantasma.Network.P2P.Messages
 {
     internal class RaftReplicateMessage : Message
     {

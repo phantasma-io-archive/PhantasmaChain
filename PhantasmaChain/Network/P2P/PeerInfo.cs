@@ -3,7 +3,7 @@ using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
 
-namespace Phantasma.Network
+namespace Phantasma.Network.P2P
 {
     public struct PeerInfo
     {
