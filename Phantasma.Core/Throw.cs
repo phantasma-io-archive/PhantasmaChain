@@ -131,7 +131,7 @@ namespace Phantasma.Core
         {
             if (constraint)
             {
-                throw new ArgumentException("Cannot be true", constraintName);
+                throw new Exception("Constraint failed: " + constraintName);
             }
         }
 
@@ -149,7 +149,7 @@ namespace Phantasma.Core
         {
             if (!constraint)
             {
-                throw new ArgumentException("Cannot be false", constraintName);
+                throw new Exception("Constraint failed: " + constraintName);
             }
         }
 
