@@ -4,7 +4,7 @@ using System.Threading;
 using Phantasma.Blockchain.Consensus;
 using Phantasma.Blockchain;
 using Phantasma.Cryptography;
-using Phantasma.Network;
+using Phantasma.Network.P2P;
 using Phantasma.VM.Utils;
 using Phantasma.Core.Log;
 using Phantasma.Blockchain.Contracts;

@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 
 using Phantasma.Cryptography;
-using Phantasma.Network.Messages;
+using Phantasma.Network.P2P.Messages;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 

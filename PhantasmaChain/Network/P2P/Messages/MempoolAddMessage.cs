@@ -2,7 +2,7 @@
 using Phantasma.Blockchain;
 using Phantasma.Cryptography;
 
-namespace Phantasma.Network.Messages
+namespace Phantasma.Network.P2P.Messages
 {
     internal class MempoolAddMessage : Message
     {

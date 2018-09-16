@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
-using Phantasma.Network.Messages;
+using Phantasma.Network.P2P.Messages;
 
 namespace Phantasma.Network.P2P
 {

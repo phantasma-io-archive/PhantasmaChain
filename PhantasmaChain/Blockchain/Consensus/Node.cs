@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
-using Phantasma.Network;
+using Phantasma.Network.P2P;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 
