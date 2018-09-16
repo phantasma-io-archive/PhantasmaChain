@@ -1,5 +1,5 @@
 ﻿using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts.Native

@@ -6,7 +6,7 @@ using System.Text;
 
 using Phantasma.Cryptography;
 using Phantasma.Core.Utils;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Cryptography.Ring;
 
 namespace Phantasma.Tests

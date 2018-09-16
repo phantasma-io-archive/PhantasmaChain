@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
  *
  */
 
-namespace Phantasma.Mathematics
+namespace Phantasma.Numerics
 {
 
     public class GaloisField

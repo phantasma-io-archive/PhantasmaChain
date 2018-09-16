@@ -7,7 +7,7 @@ using System.IO;
  * Based on the work of Bazzilic and Chan Keong TAN
  * https://github.com/bazzilic/BigInteger
  */
-namespace Phantasma.Mathematics
+namespace Phantasma.Numerics
 {
     public class BigInteger
     {

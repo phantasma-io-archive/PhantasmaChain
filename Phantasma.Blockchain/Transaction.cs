@@ -7,7 +7,7 @@ using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.IO;
 

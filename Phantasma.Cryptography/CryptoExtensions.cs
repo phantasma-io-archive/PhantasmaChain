@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using Phantasma.Core;
 using Phantasma.Cryptography.Hashing;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography
 {

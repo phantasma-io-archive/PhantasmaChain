@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 
 namespace Phantasma.Cryptography.Ring

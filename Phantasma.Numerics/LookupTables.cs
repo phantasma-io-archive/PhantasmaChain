@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phantasma.Mathematics
+namespace Phantasma.Numerics
 {
 	internal static class LookupTables
 	{

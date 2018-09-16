@@ -2,7 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.EdDSA;
 using Phantasma.Cryptography.Ring;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using System;
 using System.IO;
 using System.Text;

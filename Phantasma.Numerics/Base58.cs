@@ -2,7 +2,7 @@
 using System;
 using System.Text;
 
-namespace Phantasma.Mathematics
+namespace Phantasma.Numerics
 {
     public static class Base58
     {

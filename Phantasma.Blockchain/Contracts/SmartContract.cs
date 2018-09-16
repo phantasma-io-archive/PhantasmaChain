@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.VM.Contracts;
 using Phantasma.Core.Utils;

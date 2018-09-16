@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
 

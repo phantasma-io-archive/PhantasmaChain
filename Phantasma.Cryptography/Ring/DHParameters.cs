@@ -1,5 +1,5 @@
 ﻿using Phantasma.Core.Utils;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography.Ring
 {

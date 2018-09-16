@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.IO;
 

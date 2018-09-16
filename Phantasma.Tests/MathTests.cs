@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Cryptography;
 
 namespace Phantasma.Tests

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Phantasma.Mathematics
+namespace Phantasma.Numerics
 {
 	public static class GroupOperations
 	{

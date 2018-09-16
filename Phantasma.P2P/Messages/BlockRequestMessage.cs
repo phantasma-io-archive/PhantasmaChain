@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 

@@ -1,4 +1,4 @@
-﻿using Phantasma.Mathematics;
+﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts.Types;

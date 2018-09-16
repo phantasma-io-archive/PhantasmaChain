@@ -1,6 +1,6 @@
 ﻿using System;
 using Phantasma.Cryptography.Hashing;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 
 namespace Phantasma.Cryptography.EdDSA

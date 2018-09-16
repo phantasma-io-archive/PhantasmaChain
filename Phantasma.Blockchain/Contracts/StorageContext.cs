@@ -1,5 +1,5 @@
 ﻿using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
@@ -109,7 +109,7 @@ namespace Phantasma.Blockchain.Contracts
             if (key.StartsWith("[") && key.EndsWith("["))
             {
                 key = key.Substring(1, key.Length - 2);
-                var num = Phantasma.Mathematics.BigInteger.Parse(key);
+                var num = Phantasma.Numerics.BigInteger.Parse(key);
                 var result = num.ToByteArray();
                 result = new byte[] { (byte)'<' }.ConcatBytes(result).ConcatBytes(new byte[] { (byte)'>' });
             }
@@ -176,7 +176,7 @@ namespace Phantasma.Blockchain.Contracts
                     int index = i + 1;
                     var first = key.Take(index - 1).Skip(1).ToArray();
 
-                    var num = new Phantasma.Mathematics.BigInteger(first);
+                    var num = new Phantasma.Numerics.BigInteger(first);
 
                     var name = $"[{num}]";
 

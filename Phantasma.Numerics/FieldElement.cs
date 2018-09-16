@@ -1,6 +1,6 @@
 ﻿using Phantasma.Core;
 
-namespace Phantasma.Mathematics
+namespace Phantasma.Numerics
 {
     public struct FieldElement
     {

@@ -4,7 +4,7 @@ using System.Reflection;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 
 namespace Phantasma.IO
 {

@@ -1,4 +1,4 @@
-﻿using Phantasma.Mathematics;
+﻿using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {

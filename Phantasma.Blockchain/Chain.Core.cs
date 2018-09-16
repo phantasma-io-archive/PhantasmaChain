@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;

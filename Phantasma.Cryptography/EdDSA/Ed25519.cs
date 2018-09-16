@@ -1,5 +1,5 @@
 ﻿using Phantasma.Cryptography.Hashing;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 using System;
 

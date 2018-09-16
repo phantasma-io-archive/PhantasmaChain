@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 
 namespace Phantasma.VM.Contracts
 {

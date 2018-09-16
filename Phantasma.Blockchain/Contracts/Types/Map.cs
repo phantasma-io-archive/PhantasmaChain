@@ -1,4 +1,4 @@
-﻿using Phantasma.Mathematics;
+﻿using Phantasma.Numerics;
 using Phantasma.Core.Utils;
 using Phantasma.VM.Utils;
 using Phantasma.IO;

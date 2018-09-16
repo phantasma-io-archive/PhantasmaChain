@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
 using System.IO;

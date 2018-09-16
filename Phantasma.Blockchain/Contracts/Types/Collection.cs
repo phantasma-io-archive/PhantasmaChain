@@ -1,7 +1,7 @@
 ﻿using Phantasma.Core;
 using Phantasma.Core.Utils;
 using Phantasma.IO;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain.Contracts.Types

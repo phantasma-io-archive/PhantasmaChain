@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Phantasma.Core;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 using System;
 using System.IO;
 

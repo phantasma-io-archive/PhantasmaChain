@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using Phantasma.Core.Utils;
 using Phantasma.IO;
-using Phantasma.Mathematics;
+using Phantasma.Numerics;
 
 namespace Phantasma.VM.Utils
 {
