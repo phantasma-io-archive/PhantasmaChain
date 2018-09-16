@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LunarParser" Version="1.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
+    <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
+    <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
+  </ItemGroup>
+
+</Project>

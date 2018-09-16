@@ -2,14 +2,6 @@
 .vs/
 TestResults/
 Published/
-PhantasmaChain/obj/
-PhantasmaChain/bin/
-PhantasmaNode/bin/
-PhantasmaNode/obj/Debug/
+*/obj/
+*/bin/
 packages/
-PhantasmaTests/obj/
-PhantasmaTests/bin/
-PhantasmaSpinner/obj/
-PhantasmaSpinner/bin/
-PhantasmaNode/bin/
-PhantasmaNode/obj
