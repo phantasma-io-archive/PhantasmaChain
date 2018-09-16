@@ -48,12 +48,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestECC()
-        {
-
-        }
-
-        [TestMethod]
         public void TestEdDSA()
         {
             var keys = KeyPair.Generate();
