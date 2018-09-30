@@ -622,11 +622,20 @@ namespace Phantasma.Numerics
 
         public static bool operator ==(BigInteger bi1, BigInteger bi2)
         {
+            if (object.ReferenceEquals(bi1, null))
+            {
+                return object.ReferenceEquals(bi2, null);
+            }
             return bi1.Equals(bi2);
         }
 
         public static bool operator !=(BigInteger bi1, BigInteger bi2)
         {
+            if (object.ReferenceEquals(bi1, null))
+            {
+                return !object.ReferenceEquals(bi2, null);
+            }
+
             return !bi1.Equals(bi2);
         }
 
