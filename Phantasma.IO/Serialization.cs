@@ -255,8 +255,7 @@ namespace Phantasma.IO
             if (type.IsEnum)
             {
                 var val = (uint)reader.ReadVarInt();
-                var name = Enum.GetName(type, val);
-                return Enum.Parse(type, name);
+                return Enum.Parse(type, val.ToString());
             }
 
             if (IsStructOrClass(type)) // check if struct or class

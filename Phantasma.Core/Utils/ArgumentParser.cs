@@ -60,5 +60,10 @@ namespace Phantasma.Core.Utils
 
             throw new Exception("Missing non-optional argument: " + key);
         }
+		
+        public bool HasValue(string key)
+        {
+            return entries.ContainsKey(key);
+        }		
     }
 }
