@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Phantasma.Core;
 using Phantasma.Core.Types;
@@ -261,7 +262,7 @@ namespace Phantasma.IO
             if (IsStructOrClass(type)) // check if struct or class
             {
                 var obj = Activator.CreateInstance(type);
-                var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
+                var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(x => x.MetadataToken);
 
                 foreach (var field in fields)
                 {
@@ -271,7 +272,7 @@ namespace Phantasma.IO
                     field.SetValue(obj, val);
                 }
 
-                var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).OrderBy(x => x.MetadataToken);
 
                 foreach (var prop in props)
                 {
