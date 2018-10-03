@@ -1,9 +1,8 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Phantasma.Core;
-using Phantasma.Numerics;
 using System;
-using System.IO;
+using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography
 {
@@ -11,7 +10,24 @@ namespace Phantasma.Cryptography
     {
         public static readonly Address Null = new Address(new byte[PublicKeyLength]);
 
-        public byte[] PublicKey { get; private set; }
+        private byte[] _publicKey;
+        public byte[] PublicKey
+        {
+            get
+            {
+                if (_publicKey == null)
+                {
+                    return Null.PublicKey;
+                }
+
+                return _publicKey;
+            }
+
+            private set
+            {
+                _publicKey = value;
+            }
+        }
 
         public const int PublicKeyLength = 32;
 
@@ -35,8 +51,8 @@ namespace Phantasma.Cryptography
         {
             Throw.IfNull(publicKey, "publicKey");
             Throw.If(publicKey.Length != PublicKeyLength, $"publicKey length must be {PublicKeyLength}");
-            this.PublicKey = new byte[PublicKeyLength];
-            Array.Copy(publicKey, this.PublicKey, PublicKeyLength);
+            _publicKey = new byte[PublicKeyLength];
+            Array.Copy(publicKey, this._publicKey, PublicKeyLength);
             this._text = null;
         }
 
