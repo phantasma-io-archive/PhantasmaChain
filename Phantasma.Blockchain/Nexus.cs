@@ -135,7 +135,7 @@ namespace Phantasma.Blockchain
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply)
         {
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
-            var script = ScriptUtils.CallContractScript(chain, "CreateToken", symbol, name, totalSupply);
+            var script = ScriptUtils.CallContractScript(chain, "CreateToken", owner.Address, symbol, name, totalSupply);
 
             //var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
 
@@ -147,7 +147,7 @@ namespace Phantasma.Blockchain
 
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript(chain, "MintToken", symbol, amount);
+            var script = ScriptUtils.CallContractScript(chain, "MintToken", owner.Address, symbol, amount);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
             return tx;
@@ -157,7 +157,7 @@ namespace Phantasma.Blockchain
         {
             var name = kind.ToString();
 
-            var script = ScriptUtils.CallContractScript(chain, "CreateChain", name, RootChain.Name);
+            var script = ScriptUtils.CallContractScript(chain, "CreateChain", owner.Address, name, RootChain.Name);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
             return tx;
