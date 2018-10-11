@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Log;
@@ -18,15 +19,19 @@ namespace Phantasma.Blockchain
         private Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
         private Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
 
+        private Logger logger;
+
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
         public Nexus(KeyPair owner, Logger logger = null)
         {
-            this.RootChain = new Chain(owner, "Main", new NexusContract(), logger, null);
+            this.logger = logger;
 
-            var block = CreateGenesisBlock(owner);
-            if (!RootChain.AddBlock(block))
+            this.RootChain = new Chain(owner.Address, "Main", new NexusContract(), logger, null);
+
+            var genesisBlock = CreateGenesisBlock(owner);
+            if (!RootChain.AddBlock(genesisBlock))
             {
                 throw new ChainException("Genesis block failure");
             }
@@ -43,6 +48,26 @@ namespace Phantasma.Blockchain
             }
 
             return null;
+        }
+
+        internal Chain CreateChain(Address owner, string name, Chain parentChain, Block parentBlock)
+        {
+            if (parentChain == null || parentBlock == null)
+            {
+                return null;
+            }
+
+            // check if already exists something with that name
+            var temp = FindChainByName(name);
+            if (temp != null)
+            {
+                return null;
+            }
+
+            SmartContract contract = null;
+
+            var chain = new Chain(owner, name, contract, this.logger, parentChain, parentBlock);
+            return chain;
         }
 
         public Chain FindChainByName(string name)
@@ -65,7 +90,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        private Transaction GenerateTokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply)
+        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply)
         {
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
             var script = ScriptUtils.CallContractScript(chain, "CreateToken", symbol, name, totalSupply);
@@ -78,9 +103,19 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction GenerateTokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
+        private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(chain, "MintToken", symbol, amount);
+            var tx = new Transaction(script, 0, 0);
+            tx.Sign(owner);
+            return tx;
+        }
+
+        private Transaction SideChainCreateTx(Chain chain, KeyPair owner, ContractKind kind)
+        {
+            var name = kind.ToString();
+
+            var script = ScriptUtils.CallContractScript(chain, "CreateChain", name, RootChain.Name);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
             return tx;
@@ -118,13 +153,22 @@ namespace Phantasma.Blockchain
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
-            var issueTx = GenerateTokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply);
-            var mintTx = GenerateTokenMintTx(RootChain, owner, NativeTokenSymbol, 10000);
+            var transactions = new List<Transaction>();
+
+            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply));
+            transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, 10000));
+
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Names));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Messaging));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
+
             /*var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
             var stakeTx = GenerateStakeDeployTx(owner);*/
 
-            var block = new Block(RootChain, owner.Address, Timestamp.Now, new Transaction[] { issueTx, mintTx/*, distTx, govTx, stakeTx*/ });
+            var block = new Block(RootChain, owner.Address, Timestamp.Now, transactions);
 
             return block;
         }

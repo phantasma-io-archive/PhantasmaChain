@@ -19,6 +19,7 @@ namespace Phantasma.Blockchain.Contracts
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
         protected Transaction Transaction { get; private set; }
+        protected Block Block { get; private set; }
         protected StorageContext Storage { get; private set; }
 
         public Chain Chain { get; private set; }
@@ -29,9 +30,10 @@ namespace Phantasma.Blockchain.Contracts
             this.Order = 0;
         }
 
-        public void SetData(Chain chain, Transaction tx, StorageContext storage)
+        public void SetData(Chain chain, Block block, Transaction tx, StorageContext storage)
         {
             this.Chain = chain;
+            this.Block = block;
             this.Transaction = tx;
             this.Storage = storage;
         }

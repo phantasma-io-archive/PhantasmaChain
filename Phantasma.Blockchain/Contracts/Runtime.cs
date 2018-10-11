@@ -10,10 +10,12 @@ namespace Phantasma.Blockchain.Contracts
     {
         public Transaction Transaction { get; }
         public Chain Chain { get; private set; }
+        public Block Block { get; private set; }
 
-        public RuntimeVM(Chain chain, Transaction tx) : base(tx.Script)
+        public RuntimeVM(Chain chain, Block block, Transaction tx) : base(tx.Script)
         {
             this.Transaction = tx;
+            this.Block = block;
             this.Chain = chain;
 
             chain.RegisterInterop(this);
@@ -48,7 +50,7 @@ namespace Phantasma.Blockchain.Contracts
                 if (entry.Contract.Address == address)
                 {
                     var storage = this.Chain.FindStorage(address);
-                    entry.Contract.SetData(this.Chain, this.Transaction, storage);
+                    entry.Contract.SetData(this.Chain, this.Block, this.Transaction, storage);
                     return entry;
                 }
             }

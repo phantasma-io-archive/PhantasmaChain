@@ -10,7 +10,8 @@
         Privacy,
         Bank,
         Exchange,
-        Naming,
+        Names,
+        Messaging,
         Reputation,
         Custom,
     }

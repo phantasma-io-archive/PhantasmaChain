@@ -34,9 +34,22 @@ namespace Phantasma.Blockchain.Contracts.Native
             throw new System.NotImplementedException();
         }
 
-        public void CreateChain(string name)
+        public Chain CreateChain(Address owner, string name, string parentName)
         {
-            throw new System.NotImplementedException();
+            Expect(!string.IsNullOrEmpty(name));
+            Expect(!string.IsNullOrEmpty(parentName));
+
+            Expect(IsWitness(owner));
+
+            Expect(name != parentName);
+
+            var parent = this.Nexus.FindChainByName(parentName);
+            Expect(parent != null);
+
+            var chain = this.Nexus.CreateChain(owner, name, parent, this.Block);
+            Expect(chain != null);
+
+            return chain;
         }
 
         public void SendToken(Address token, Address from, Address to, BigInteger amount)

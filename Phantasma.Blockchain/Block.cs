@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain
             this.MinerAddress = minerAddress;
             this.Timestamp = timestamp;
 
-            this.Height = previous != null & previous.Chain == chain ? previous.Height + 1 : 0;
+            this.Height = previous != null && previous.Chain == chain ? previous.Height + 1 : 0;
             this.PreviousHash = previous != null ? previous.Hash : null;
 
             _transactions = new List<Transaction>();

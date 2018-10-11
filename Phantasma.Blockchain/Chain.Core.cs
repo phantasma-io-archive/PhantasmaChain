@@ -18,6 +18,7 @@ namespace Phantasma.Blockchain
 
         public string Name { get; private set; }
         public Address Address { get; private set; }
+        public Address Owner { get; private set; }
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<Hash, Block> _blocks = new Dictionary<Hash, Block>();
@@ -40,17 +41,19 @@ namespace Phantasma.Blockchain
 
         public bool IsRoot => this.ParentChain == null;
 
-        public Chain(KeyPair owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Address owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
             Throw.IfNull(owner, "owner required");
             Throw.IfNull(contract, "contract required");
 
-            this.Name = name;
-            this.Contract = contract;
-
             var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
             var hash = CryptoExtensions.Sha256(bytes);
+
             this.Address = new Address(hash);
+
+            this.Name = name;
+            this.Contract = contract;
+            this.Owner = owner;
 
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
@@ -83,7 +86,7 @@ namespace Phantasma.Blockchain
 
             foreach (Transaction tx in block.Transactions)
             {
-                if (!tx.Execute(this, block.Notify))
+                if (!tx.Execute(this, block, block.Notify))
                 {
                     return false;
                 }
