@@ -41,10 +41,18 @@ namespace Phantasma.Blockchain
 
         public bool IsRoot => this.ParentChain == null;
 
-        public Chain(Address owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, Address owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
             Throw.IfNull(owner, "owner required");
             Throw.IfNull(contract, "contract required");
+            Throw.IfNull(nexus, "nexus required");
+
+            if (parentChain != null)
+            {
+                Throw.IfNull(parentBlock, "parent block required");
+                Throw.IfNot(nexus.ContainsChain(parentChain), "invalid chain");
+                Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block");
+            }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
             var hash = CryptoExtensions.Sha256(bytes);
@@ -54,6 +62,7 @@ namespace Phantasma.Blockchain
             this.Name = name;
             this.Contract = contract;
             this.Owner = owner;
+            this.Nexus = nexus;
 
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
@@ -68,6 +77,16 @@ namespace Phantasma.Blockchain
             }
 
             this.Log = Logger.Init(log);
+        }
+
+        public bool ContainsBlock(Block block)
+        {
+            if (block == null)
+            {
+                return false;
+            }
+
+            return _blocks.ContainsKey(block.Hash);
         }
 
         public bool AddBlock(Block block)
