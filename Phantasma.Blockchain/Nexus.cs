@@ -41,6 +41,7 @@ namespace Phantasma.Blockchain
             }
         }
 
+        #region CHAINS
         internal Chain CreateChain(Address owner, string name, Chain parentChain, Block parentBlock)
         {
             if (parentChain == null || parentBlock == null)
@@ -95,7 +96,31 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public Token FindToken(string symbol)
+        #endregion
+
+        #region TOKENS
+        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply)
+        {
+            if (symbol == null || name == null || maxSupply <= 0)
+            {
+                return null;
+            }
+
+            // check if already exists something with that name
+            var temp = FindTokenBySymbol(symbol);
+            if (temp != null)
+            {
+                return null;
+            }
+
+            SmartContract contract = null;
+
+            var token = new Token(owner, symbol, name, maxSupply);
+            _tokens[symbol] = token;
+            return token;
+        }
+
+        public Token FindTokenBySymbol(string symbol)
         {
             if (_tokens.ContainsKey(symbol))
             {
@@ -104,7 +129,9 @@ namespace Phantasma.Blockchain
 
             return null;
         }
+        #endregion
 
+        #region GENESIS
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply)
         {
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
@@ -187,5 +214,6 @@ namespace Phantasma.Blockchain
 
             return block;
         }
+        #endregion
     }
 }

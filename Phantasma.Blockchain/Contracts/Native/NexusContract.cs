@@ -1,5 +1,7 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using System;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -29,9 +31,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             return false;
         }
 
-        public void CreateToken(string symbol, string name, BigInteger maxSupply)
+        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply)
         {
-            throw new System.NotImplementedException();
+            Expect(!string.IsNullOrEmpty(symbol));
+            Expect(!string.IsNullOrEmpty(name));
+            Expect(maxSupply > 0);
+
+            Expect(IsWitness(owner));
+
+            symbol = symbol.ToUpperInvariant();
+
+            var token = this.Nexus.CreateToken(owner, symbol, name, maxSupply);
+            Expect(token != null);
+
+            return token;
         }
 
         public Chain CreateChain(Address owner, string name, string parentName)
@@ -41,7 +54,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Expect(IsWitness(owner));
 
-            Expect(name != parentName);
+            name = name.ToLowerInvariant();
+            Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase));
 
             var parent = this.Nexus.FindChainByName(parentName);
             Expect(parent != null);
@@ -131,7 +145,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Expect(amount > 0);
 
-            var token = this.Nexus.FindToken(symbol);
+            var token = this.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             Expect(IsWitness(token.Owner));
@@ -143,7 +157,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(amount > 0);
             Expect(IsWitness(target));
 
-            var token = this.Nexus.FindToken(symbol);
+            var token = this.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             Expect(token.Burn(target, amount));           
@@ -155,7 +169,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(source != destination);
             Expect(IsWitness(source));
 
-            var token = this.Nexus.FindToken(symbol);
+            var token = this.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             Expect(token.Transfer(source, destination, amount));
@@ -163,7 +177,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetBalance(string symbol, Address address)
         {
-            var token = this.Nexus.FindToken(symbol);
+            var token = this.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             return token.GetBalance(address);
