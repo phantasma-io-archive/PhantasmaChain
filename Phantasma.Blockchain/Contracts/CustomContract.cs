@@ -5,7 +5,7 @@ namespace Phantasma.Blockchain.Contracts
 {
     public sealed class CustomContract : SmartContract
     {
-        public override Address Address => Address.FromScript(this.Script);
+        //public override Address Address => Address.FromScript(this.Script);
 
         private byte[] _script;
         public override byte[] Script => _script;

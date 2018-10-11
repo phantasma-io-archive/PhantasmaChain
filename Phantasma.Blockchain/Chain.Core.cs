@@ -7,6 +7,7 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.Blockchain
 {
@@ -34,8 +35,7 @@ namespace Phantasma.Blockchain
 
         public readonly Logger Log;
 
-        private List<NativeExecutionContext> _nativeContexts = new List<NativeExecutionContext>();
-        public IEnumerable<NativeExecutionContext> NativeContexts => _nativeContexts;
+        public NativeExecutionContext ExecutionContext { get; private set; }
 
         private Dictionary<Token, Dictionary<Address, BigInteger>> _tokenBalances = new Dictionary<Token, Dictionary<Address, BigInteger>>();
 
@@ -57,6 +57,15 @@ namespace Phantasma.Blockchain
 
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
+
+            if (contract is NativeContract)
+            {
+                this.ExecutionContext = new NativeExecutionContext((NativeContract)contract);
+            }
+            else
+            {
+                this.ExecutionContext = null;
+            }
 
             this.Log = Logger.Init(log);
         }

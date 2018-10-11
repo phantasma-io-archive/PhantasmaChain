@@ -12,7 +12,6 @@ namespace Phantasma.Blockchain.Contracts
     {
         public BigInteger Order { get; internal set; }
 
-        public abstract Address Address { get; }
         public abstract byte[] Script { get; }
         public abstract ContractInterface ABI { get; }
 
@@ -23,6 +22,7 @@ namespace Phantasma.Blockchain.Contracts
         protected StorageContext Storage { get; private set; }
 
         public Chain Chain { get; private set; }
+        public Address Address => Chain.Address;
         public Nexus Nexus => Chain.Nexus;
 
         public SmartContract()
@@ -55,12 +55,12 @@ namespace Phantasma.Blockchain.Contracts
 
         public int GetSize()
         {
-            return this.Address.PublicKey.Length + this.Script.Length;
+            return this.Script.Length;
         }
 
         public bool IsWitness(Address address)
         {
-            if (address == this.Address)
+            if (address == this.Chain.Address) // TODO this is not right...
             {
                 return true;
             }

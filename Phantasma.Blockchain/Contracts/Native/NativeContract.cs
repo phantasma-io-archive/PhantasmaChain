@@ -11,7 +11,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     public abstract class NativeContract : SmartContract
     {
         private Address _address;
-        public override Address Address => _address;
 
         public override byte[] Script => null;
 

@@ -45,13 +45,15 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(Address address)
         {
-            foreach (var entry in Chain.NativeContexts)
+            var nexus = this.Chain.Nexus;
+
+            foreach (var entry in nexus.Chains)
             {
-                if (entry.Contract.Address == address)
+                if (entry.Address == address)
                 {
                     var storage = this.Chain.FindStorage(address);
                     entry.Contract.SetData(this.Chain, this.Block, this.Transaction, storage);
-                    return entry;
+                    return entry.ExecutionContext;
                 }
             }
 

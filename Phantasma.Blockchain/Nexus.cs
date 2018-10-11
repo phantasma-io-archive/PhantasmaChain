@@ -19,6 +19,9 @@ namespace Phantasma.Blockchain
         private Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
         private Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
 
+        public IEnumerable<Chain> Chains => _chains.Values;
+        public IEnumerable<Token> Tokens => _tokens.Values;
+
         private Logger logger;
 
         /// <summary>
@@ -29,6 +32,7 @@ namespace Phantasma.Blockchain
             this.logger = logger;
 
             this.RootChain = new Chain(owner.Address, "Main", new NexusContract(), logger, null);
+            _chains[RootChain.Name] = RootChain;
 
             var genesisBlock = CreateGenesisBlock(owner);
             if (!RootChain.AddBlock(genesisBlock))
@@ -67,6 +71,7 @@ namespace Phantasma.Blockchain
             SmartContract contract = null;
 
             var chain = new Chain(owner, name, contract, this.logger, parentChain, parentBlock);
+            _chains[name] = chain;
             return chain;
         }
 
