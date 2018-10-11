@@ -10,6 +10,7 @@ using Phantasma.Cryptography;
 using Phantasma.Network.P2P.Messages;
 using Phantasma.Core;
 using Phantasma.Core.Log;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Network.P2P
 {
@@ -34,7 +35,10 @@ namespace Phantasma.Network.P2P
 
         private bool listening = false;
 
-        public Router(IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue, Logger log) {
+        public Nexus Nexus { get; private set; }
+
+        public Router(Nexus nexus, IEnumerable<Endpoint> seeds, int port, ConcurrentQueue<DeliveredMessage> queue, Logger log) {
+            this.Nexus = nexus;
             this.Port = port;
             this.Log = Logger.Init(log);
             this._queue = queue;
@@ -107,7 +111,7 @@ namespace Phantasma.Network.P2P
         public void InitConnection(Socket socket) {
             _connections.Add(socket);
 
-            var msg = new PeerJoinMessage(Address.Null);
+            var msg = new PeerJoinMessage(this.Nexus, Address.Null);
 //            msg.Serialize()
         }
 
@@ -143,7 +147,7 @@ namespace Phantasma.Network.P2P
                 {
                     using (var reader = new BinaryReader(stream))
                     {
-                        var msg = Message.Unserialize(reader);
+                        var msg = Message.Unserialize(this.Nexus, reader);
                         return msg;
                     }
                 }

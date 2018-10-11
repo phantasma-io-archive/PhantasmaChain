@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain.Consensus
 
         public readonly Logger Log;
 
-        public Node(KeyPair keys, int port, IEnumerable<Endpoint> seeds, Logger log)
+        public Node(Nexus nexus, KeyPair keys, int port, IEnumerable<Endpoint> seeds, Logger log)
         {
             this.keys = keys;
             this.Port = port;
@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain.Consensus
 
             this.State = RaftState.Invalid;
 
-            this.router = new Router(seeds, Port, queue, log);
+            this.router = new Router(nexus, seeds, Port, queue, log);
 
             //var kademliaNode = new KademliaNode(server, this.ID);
             //this.dht = new DHT(seeds.First(), kademliaNode, false);

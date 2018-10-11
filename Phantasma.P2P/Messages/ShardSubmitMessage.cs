@@ -13,13 +13,13 @@ namespace Phantasma.Network.P2P.Messages
 
         private Transaction[] _transactions;
 
-        public ShardSubmitMessage(Address address, uint shardID, IEnumerable<Transaction> transactions) : base(Opcode.SHARD_Submit, address)
+        public ShardSubmitMessage(Nexus nexus, Address address, uint shardID, IEnumerable<Transaction> transactions) : base(nexus, Opcode.SHARD_Submit, address)
         {
             this.ShardID = shardID;
             this._transactions = transactions.ToArray();
         }
 
-        internal static Message FromReader(Address address, BinaryReader reader)
+        internal static Message FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
             var shardID = reader.ReadUInt32();
             var txCount = reader.ReadUInt16();
@@ -29,7 +29,7 @@ namespace Phantasma.Network.P2P.Messages
                 var tx = Transaction.Unserialize(reader);
             }
 
-            return new ShardSubmitMessage(address, shardID, txs);
+            return new ShardSubmitMessage(nexus, address, shardID, txs);
         }
     }
 }

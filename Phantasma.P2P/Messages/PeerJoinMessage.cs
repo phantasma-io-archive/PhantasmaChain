@@ -1,17 +1,18 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain;
+using Phantasma.Cryptography;
 using System.IO;
 
 namespace Phantasma.Network.P2P.Messages
 {
     internal class PeerJoinMessage : Message
     {
-        public PeerJoinMessage(Address address) : base(Opcode.PEER_Join, address)
+        public PeerJoinMessage(Nexus nexus, Address address) : base(nexus, Opcode.PEER_Join, address)
         {
         }
 
-        internal static PeerJoinMessage FromReader(Address address, BinaryReader reader)
+        internal static PeerJoinMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
-            return new PeerJoinMessage(address);
+            return new PeerJoinMessage(nexus, address);
         }
     }
 }

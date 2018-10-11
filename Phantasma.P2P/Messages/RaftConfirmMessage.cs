@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Phantasma.Blockchain;
 using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.IO;
@@ -9,17 +10,17 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly byte[] BlockHash;
 
-        public RaftConfirmMessage(Address address, byte[] hash) : base(Opcode.RAFT_Confirm, address)
+        public RaftConfirmMessage(Nexus nexus, Address address, byte[] hash) : base(nexus, Opcode.RAFT_Confirm, address)
         {
             Throw.IfNull(hash, nameof(hash));
             this.BlockHash = hash;
         }
 
-        internal static RaftConfirmMessage FromReader(Address address, BinaryReader reader)
+        internal static RaftConfirmMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
             var hash = reader.ReadByteArray();
 
-            return new RaftConfirmMessage(address, hash);
+            return new RaftConfirmMessage(nexus, address, hash);
         }
     }
 }

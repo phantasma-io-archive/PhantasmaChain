@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain;
+using Phantasma.Cryptography;
 using System.IO;
 
 namespace Phantasma.Network.P2P.Messages
@@ -7,15 +8,15 @@ namespace Phantasma.Network.P2P.Messages
     {
         private readonly uint Term;
 
-        public RaftBeatMessage(Address address, uint term) :base(Opcode.RAFT_Beat, address)
+        public RaftBeatMessage(Nexus nexus, Address address, uint term) :base(nexus, Opcode.RAFT_Beat, address)
         {
             this.Term = term;
         }
 
-        internal static RaftBeatMessage FromReader(Address address, BinaryReader reader)
+        internal static RaftBeatMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
             var term = reader.ReadUInt32();
-            return new RaftBeatMessage(address, term);
+            return new RaftBeatMessage(nexus, address, term);
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
 using Phantasma.Core;
-using Phantasma.Core.Utils;
 using Phantasma.IO;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Network.P2P.Messages
 {
@@ -11,7 +11,7 @@ namespace Phantasma.Network.P2P.Messages
         public readonly Address Vote;
         public readonly uint Nonce;
 
-        public RaftVoteMessage(Address address, Address vote, uint nonce) : base(Opcode.RAFT_Vote, address)
+        public RaftVoteMessage(Nexus nexus, Address address, Address vote, uint nonce) : base(nexus, Opcode.RAFT_Vote, address)
         {
             Throw.If(vote == Address.Null, nameof(vote));
 
@@ -19,11 +19,11 @@ namespace Phantasma.Network.P2P.Messages
             this.Nonce = nonce;
         }
 
-        internal static RaftVoteMessage FromReader(Address address, BinaryReader reader)
+        internal static RaftVoteMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
             var vote = reader.ReadAddress();
             var nonce = reader.ReadUInt32();
-            return new RaftVoteMessage(address, vote, nonce);
+            return new RaftVoteMessage(nexus, address, vote, nonce);
         }
     }
 }

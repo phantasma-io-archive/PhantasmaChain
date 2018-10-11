@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain;
+using Phantasma.Cryptography;
 using System.IO;
 
 namespace Phantasma.Network.P2P.Messages
@@ -7,15 +8,15 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly uint Flags;
 
-        public ChainRequestMessage(Address address, uint flags) :base (Opcode.CHAIN_Request, address)
+        public ChainRequestMessage(Nexus nexus, Address address, uint flags) :base (nexus, Opcode.CHAIN_Request, address)
         {
             this.Flags = flags;
         }
 
-        internal static ChainRequestMessage FromReader(Address address, BinaryReader reader)
+        internal static ChainRequestMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
             var flags = reader.ReadUInt32();
-            return new ChainRequestMessage(address, flags);
+            return new ChainRequestMessage(nexus, address, flags);
         }
     }
 }

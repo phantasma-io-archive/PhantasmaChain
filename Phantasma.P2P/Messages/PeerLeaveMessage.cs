@@ -1,17 +1,18 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain;
+using Phantasma.Cryptography;
 using System.IO;
 
 namespace Phantasma.Network.P2P.Messages
 {
     internal class PeerLeaveMessage : Message
     {
-        public PeerLeaveMessage(Address address) : base( Opcode.PEER_Leave, address)
+        public PeerLeaveMessage(Nexus nexus, Address address) : base(nexus, Opcode.PEER_Leave, address)
         {
         }
 
-        internal static PeerLeaveMessage FromReader(Address address, BinaryReader reader)
+        internal static PeerLeaveMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
-            return new PeerLeaveMessage(address);
+            return new PeerLeaveMessage(nexus, address);
         }
     }
 }

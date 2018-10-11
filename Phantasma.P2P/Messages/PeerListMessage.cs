@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain;
+using Phantasma.Cryptography;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,12 +11,12 @@ namespace Phantasma.Network.P2P.Messages
         private PeerInfo[] _peers;
         public IEnumerable<PeerInfo> Peers => _peers;
 
-        public PeerListMessage(Address address, IEnumerable<PeerInfo> peers) : base(Opcode.PEER_List, address)
+        public PeerListMessage(Nexus nexus, Address address, IEnumerable<PeerInfo> peers) : base(nexus, Opcode.PEER_List, address)
         {
             this._peers = peers.ToArray();
         }
 
-        internal static PeerListMessage FromReader(Address address, BinaryReader reader)
+        internal static PeerListMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
             var peerCount = reader.ReadUInt32();
             var peers = new PeerInfo[peerCount];
@@ -24,7 +25,7 @@ namespace Phantasma.Network.P2P.Messages
                 peers[i] = PeerInfo.Unserialize(reader);
             }
 
-            return new PeerListMessage(address, peers);
+            return new PeerListMessage(nexus, address, peers);
         }
     }
 }

@@ -9,16 +9,16 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly Block block;
 
-        public RaftReplicateMessage(Address address, Block block) : base(Opcode.RAFT_Replicate, address)
+        public RaftReplicateMessage(Nexus nexus, Address address, Block block) : base(nexus, Opcode.RAFT_Replicate, address)
         {
             Throw.IfNull(block, nameof(block));
             this.block = block;
         }
 
-        internal static RaftReplicateMessage FromReader(Address address, BinaryReader reader)
+        internal static RaftReplicateMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
-            var block = Block.Unserialize(reader);
-            return new RaftReplicateMessage(address, block);
+            var block = Block.Unserialize(nexus, reader);
+            return new RaftReplicateMessage(nexus, address, block);
         }
     }
 }
