@@ -141,7 +141,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             knownTransactions.Add(Transaction.Hash);*/
         }
 
-        public void MintToken(string symbol, Address target, BigInteger amount)
+        public void MintToken(Address target, string symbol, BigInteger amount)
         {
             Expect(amount > 0);
 
@@ -152,7 +152,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(token.Mint(target, amount));
         }
 
-        public void BurnToken(string symbol, Address target, BigInteger amount)
+        public void BurnToken(Address target, string symbol, BigInteger amount)
         {           
             Expect(amount > 0);
             Expect(IsWitness(target));
@@ -175,7 +175,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(token.Transfer(source, destination, amount));
         }
 
-        public BigInteger GetBalance(string symbol, Address address)
+        public BigInteger GetBalance(Address address, string symbol)
         {
             var token = this.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
