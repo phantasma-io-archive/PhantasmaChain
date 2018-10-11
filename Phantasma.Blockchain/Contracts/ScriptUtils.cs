@@ -1,16 +1,18 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Core.Utils;
+using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain;
 
 namespace Phantasma.VM.Utils
 {
     public static class ScriptUtils
     {
-        public static byte[] CallContractScript(Address contract, string method, params object[] args)
+        public static byte[] CallContractScript(Chain chain, string method, params object[] args)
         {
             var sb = new ScriptBuilder();
             byte dest_reg = 1;
-            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.ConcatBytes(contract.PublicKey));
+            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.ConcatBytes(chain.Address.PublicKey));
 
             byte temp_reg = 0;
 
@@ -61,14 +63,14 @@ namespace Phantasma.VM.Utils
             return sb.ToScript();
         }
 
-        public static byte[] TokenMintScript(Address token, Address target, BigInteger amount)
+        public static byte[] TokenMintScript(Chain chain, Token token, Address target, BigInteger amount)
         {
-            return CallContractScript(token, "Mint", target, amount);
+            return CallContractScript(chain, "Mint", token.Symbol, target, amount);
         }
 
-        public static byte[] TokenTransferScript(Address token, Address from, Address to, BigInteger amount)
+        public static byte[] TokenTransferScript(Chain chain, Token token, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(token, "Transfer", from, to, amount);
+            return CallContractScript(chain, "Transfer", token.Symbol, from, to, amount);
         }
 
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)

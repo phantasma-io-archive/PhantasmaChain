@@ -6,7 +6,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class NexusContract : NativeContract
     {
-        internal override NativeContractKind Kind => NativeContractKind.Nexus;
+        internal override ContractKind Kind => ContractKind.Nexus;
 
         private HashSet<Hash> knownTransactions = new HashSet<Hash>();
 
@@ -29,6 +29,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             return false;
         }
 
+        public void CreateToken(string symbol, string name, BigInteger maxSupply)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void CreateChain(string name)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public void Send(Address token, Address from, Address to, BigInteger amount)
         {
             Expect(IsWitness(from));
@@ -47,8 +57,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fee = amount / 10;
             Expect(fee > 0);
 
+            throw new System.NotImplementedException();
+            /*
             var otherChain = this.Chain.FindChain(to);
-            var otherConsensus = (ConsensusContract)otherChain.FindContract(NativeContractKind.Consensus);
+            var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
             Expect(otherConsensus.IsValidReceiver(from));
 
             //var tokenContract = (TokenContract) this.Chain.FindContract(NativeContractKind.Token);
@@ -63,7 +75,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             tokenABI["Transfer"].Invoke(tokenContract, from, this.Address, amount);
             tokenABI["Burn"].Invoke(tokenContract, this.Address, amount);
 
-            knownTransactions.Add(Transaction.Hash);
+            knownTransactions.Add(Transaction.Hash);*/
         }
 
         public void Receive(Address token, Address from, Address to, Hash hash)
@@ -79,8 +91,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Expect(!IsKnown(hash));
 
+            throw new System.NotImplementedException();
+            /*
             var otherChain = this.Chain.FindChain(from);
-            var otherNexus = (NexusContract) otherChain.FindContract(NativeContractKind.Nexus);
+            var otherNexus = (NexusContract) otherChain.FindContract(ContractKind.Nexus);
             Expect(otherNexus.IsKnown(hash));
 
             var tx = otherChain.FindTransaction(hash);
@@ -97,7 +111,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             tokenABI["Mint"].Invoke(tokenContract, this.Address, amount);
             tokenABI["Transfer"].Invoke(tokenContract, this.Address, to, amount);
 
-            knownTransactions.Add(Transaction.Hash);
+            knownTransactions.Add(Transaction.Hash);*/
         }
     }
 }

@@ -3,7 +3,7 @@ using Phantasma.Core.Utils;
 using Phantasma.VM.Utils;
 using Phantasma.IO;
 
-namespace Phantasma.Blockchain.Contracts.Types
+namespace Phantasma.Blockchain.Types
 {
     public class Map<K,V>
     {

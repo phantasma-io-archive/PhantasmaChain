@@ -2,7 +2,7 @@
 {
     public sealed class StorageContract : NativeContract
     {
-        internal override NativeContractKind Kind => NativeContractKind.Storage;
+        internal override ContractKind Kind => ContractKind.Storage;
 
         public StorageContract() : base()
         {

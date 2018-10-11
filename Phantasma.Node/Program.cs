@@ -55,13 +55,15 @@ namespace PhantasmaCLIWallet
             var owner = KeyPair.Generate();
             Console.WriteLine("Genesis Address: " + owner.Address);
 
-            var chain = new Chain(owner, log);
+            var nexus = new Nexus(owner, log);
 
             var miner = KeyPair.Generate();
             var third = KeyPair.Generate();
 
-            var nativeToken = chain.FindContract(NativeContractKind.Token);
-            var tx = new Transaction(ScriptUtils.TokenTransferScript(nativeToken.Address, owner.Address, third.Address, 5), 0, 0);
+            var chain = nexus.RootChain;
+            var nativeToken = nexus.NativeToken;
+
+            var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, nexus.NativeToken, owner.Address, third.Address, 5), 0, 0);
             tx.Sign(owner);
 
             var nextHeight = chain.lastBlock.Height + 1;

@@ -6,9 +6,9 @@ using System.Linq;
 using Phantasma.Core.Utils;
 using Phantasma.IO;
 using Phantasma.VM.Utils;
-using Phantasma.Blockchain.Contracts.Types;
+using Phantasma.Blockchain.Types;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain
 {
     public class StorageKeyComparer : IEqualityComparer<StorageKey>
     {

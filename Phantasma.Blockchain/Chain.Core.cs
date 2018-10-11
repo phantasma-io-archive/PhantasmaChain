@@ -1,27 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Log;
-using Phantasma.Core.Types;
-using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
     public partial class Chain
     {
-        public readonly Chain Root;
+        public Chain ParentChain { get; private set; }
 
         public Address Address { get; private set; }
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<Hash, Block> _blocks = new Dictionary<Hash, Block>();
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
-        private Dictionary<Address, SmartContract> _contracts = new Dictionary<Address, SmartContract>();
-        private TrieNode _contractLookup = new TrieNode();
 
         public IEnumerable<Block> Blocks => _blocks.Values;
 
@@ -29,37 +25,24 @@ namespace Phantasma.Blockchain
         
         public Block lastBlock { get; private set; }
 
+        public SmartContract Contract { get; private set; }
+
         public readonly Logger Log;
 
         private List<NativeExecutionContext> _nativeContexts = new List<NativeExecutionContext>();
         public IEnumerable<NativeExecutionContext> NativeContexts => _nativeContexts;
 
-        public bool IsRoot => this.Root == this;
+        private Dictionary<Token, Dictionary<Address, BigInteger>> _tokenBalances = new Dictionary<Token, Dictionary<Address, BigInteger>>();
 
-        public Chain(KeyPair owner, Logger log = null, Chain rootChain = null)
+        public bool IsRoot => this.ParentChain == null;
+
+        public Chain(KeyPair owner, SmartContract contract, Logger log = null, Chain parentChain = null)
         {
-            if (rootChain == null)
-            {
-                this.Root = this;
-            }
-            else
-            {
-                Throw.If(!rootChain.IsRoot, "not a root chain");
-                this.Root = rootChain;
-            }
+            Throw.IfNull(owner, "owner required");
+            Throw.IfNull(contract, "contract required");
 
+            this.ParentChain = parentChain;
             this.Log = Logger.Init(log);
-
-            var list = Enum.GetValues(typeof(NativeContractKind));
-            foreach (NativeContractKind kind in list)
-            {
-                var contract = Chain.GetNativeContract(kind);
-                if (contract != null)
-                {
-                    var context = new NativeExecutionContext(contract);
-                    _nativeContexts.Add(context);
-                }
-            }
 
             var block = CreateGenesisBlock(owner);
             if (!AddBlock(block))
@@ -67,6 +50,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException("Genesis block failure");
             }
 
+            this.Contract = contract;
             this.Address = new Address(block.Hash.ToByteArray());
         }
 
@@ -115,26 +99,6 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public bool HasContract(Address address)
-        {
-            return _contracts.ContainsKey(address);
-        }
-
-        public SmartContract FindContract(NativeContractKind kind)
-        {
-            return GetNativeContract(kind);
-        }
-
-        public SmartContract FindContract(Address address)
-        {
-            if (_contracts.ContainsKey(address))
-            {
-                return _contracts[address];
-            }
-
-            return null;
-        }
-
         private Dictionary<Address, StorageContext> _storages = new Dictionary<Address, StorageContext>();
 
         public StorageContext FindStorage(Address address)
@@ -163,53 +127,39 @@ namespace Phantasma.Blockchain
             return account;
         }*/
 
-        // returns public key of the specified name if existing
-        public byte[] LookUpContract(string name)
-        {
-            var pubKey = _contractLookup.Find(name);
-            return pubKey;
-        }
+        private Dictionary<Address, Chain> _childChains = new Dictionary<Address, Chain>();
 
-        private static Dictionary<NativeContractKind, NativeContract> _nativeContracts = null;
-
-        public static NativeContract GetNativeContract(NativeContractKind kind)
+        public Chain FindChain(Address address)
         {
-            if (_nativeContracts == null)
+            if (address == this.Address)
             {
-                _nativeContracts = new Dictionary<NativeContractKind, NativeContract>();
-
-                var assembly = Assembly.GetExecutingAssembly();
-                var types = assembly.GetTypes();
-
-                foreach (Type type in types)
-                {
-                    if (type.IsClass && !type.IsAbstract && type.IsSubclassOf(typeof(NativeContract)))
-                    {
-                        var contract = (NativeContract) Activator.CreateInstance(type);
-                        _nativeContracts[contract.Kind] = contract;
-                    }
-                }
+                return this;
             }
 
-            if (_nativeContracts.ContainsKey(kind))
+            if (this.IsRoot)
             {
-                return _nativeContracts[kind];
-
+                foreach (var childChain in _childChains.Values)
+                {
+                    var result = childChain.FindChain(address);
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
             }
 
             return null;
         }
 
-        private Dictionary<Address, Chain> _chains = new Dictionary<Address, Chain>();
-
-        public Chain FindChain(Address address)
+        public Chain GetRoot()
         {
-            if (this.IsRoot)
+            var result = this;
+            while (result.ParentChain != null)
             {
-                return _chains.ContainsKey(address) ? _chains[address] : null;
+                result = result.ParentChain;
             }
 
-            return this.Root.FindChain(address);
+            return result;
         }
 
         public Transaction FindTransaction(Hash hash)
@@ -227,16 +177,29 @@ namespace Phantasma.Blockchain
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
-        public BigInteger GetTokenBalance(Address token, Address account)
+        public BigInteger GetTokenBalance(Token token, Address address)
         {
-            var contract = this.FindContract(token);
+            if (_tokenBalances.ContainsKey(token))
+            {
+                var balances = _tokenBalances[token];
+
+                if (balances.ContainsKey(address))
+                {
+                    var balance = balances[address];
+                    return balance;
+                }
+            }
+
+            return 0;
+
+/*            var contract = this.FindContract(token);
             Throw.IfNull(contract, "contract not found");
 
             var tokenABI = Chain.FindABI(NativeABI.Token);
             Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
 
             var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
-            return balance;
+            return balance;*/
         }
     }
 }

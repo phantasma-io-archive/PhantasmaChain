@@ -1,10 +1,9 @@
-﻿using Phantasma.Core;
-using Phantasma.Core.Utils;
+﻿using Phantasma.Core.Utils;
 using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
-namespace Phantasma.Blockchain.Contracts.Types
+namespace Phantasma.Blockchain.Types
 {
     public class Collection<T>
     {

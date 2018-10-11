@@ -2,7 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
-using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Consensus
 {
@@ -11,9 +11,8 @@ namespace Phantasma.Blockchain.Consensus
         public static Block MineBlock(Chain chain, Address minerAddress, IEnumerable<Transaction> txs)
         {
             var timestamp = Timestamp.Now;
-            var nativeToken = chain.FindContract(NativeContractKind.Token);
 
-            var block = new Block(timestamp, minerAddress, nativeToken.Address, txs, chain.lastBlock);
+            var block = new Block(timestamp, minerAddress, chain.Address, txs, chain.lastBlock);
 
             BigInteger target = 0;
             for (int i = 0; i <= block.difficulty; i++)

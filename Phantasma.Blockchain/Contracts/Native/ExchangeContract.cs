@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class ExchangeContract : NativeContract
     {
-        internal override NativeContractKind Kind => NativeContractKind.Exchange;
+        internal override ContractKind Kind => ContractKind.Exchange;
 
         private List<ExchangeOrder> orders = new List<ExchangeOrder>();
         private Dictionary<Hash, BigInteger> fills = new Dictionary<Hash, BigInteger>();
@@ -43,19 +43,17 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void OpenOrder(Address from, Address token, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
+        public void OpenOrder(Address from, Address baseToken, Address quoteToken, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
         {
             Expect(Transaction.IsSignedBy(from));
 
-            var quoteTokenContract = this.Chain.FindContract(NativeContractKind.Token);
-
-            var baseTokenContract = this.Chain.FindContract(token);
-            Expect(baseTokenContract != null);
+            Expect(baseToken!= null);
+            Expect(quoteToken != null);
 
             var tokenABI = Chain.FindABI(NativeABI.Token);
-            Expect(baseTokenContract.ABI.Implements(tokenABI));
+            //Expect(baseTokenContract.ABI.Implements(tokenABI));
 
-            switch (side)
+            /*switch (side)
             {
                 case ExchangeOrderSide.Sell:
                     {
@@ -81,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 default: throw new ContractException("invalid order side");
             }
-
+            */
 
         }
 

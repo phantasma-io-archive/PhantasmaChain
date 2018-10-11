@@ -6,6 +6,7 @@ using Phantasma.VM.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.IO;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -16,7 +17,7 @@ namespace Phantasma.Blockchain
         public static readonly float BlockTimeFlutuation = 0.2f;
 
         public readonly Address MinerAddress;
-        public readonly Address TokenAddress;
+        public readonly Address ChainAddress;
 
         public BigInteger Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
@@ -31,13 +32,13 @@ namespace Phantasma.Blockchain
 
         public List<Event> Events = new List<Event>();
 
-        public Block(Timestamp timestamp, Address minerAddress, Address tokenAddress, IEnumerable<Transaction> transactions, Block previous = null)
+        public Block(Timestamp timestamp, Address minerAddress, Address chainAddress, IEnumerable<Transaction> transactions, Block previous = null)
         {
             this.Height = previous != null ? previous.Height + 1 : 0;
             this.PreviousHash = previous != null ? previous.Hash : null;
             this.Timestamp = timestamp;
             this.MinerAddress = minerAddress;
-            this.TokenAddress = tokenAddress;
+            this.ChainAddress = chainAddress;
 
             _transactions = new List<Transaction>();
             foreach (var tx in transactions)
@@ -104,7 +105,7 @@ namespace Phantasma.Blockchain
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
             writer.WriteAddress(MinerAddress);
-            writer.WriteAddress(TokenAddress);
+            writer.WriteAddress(ChainAddress);
             writer.Write((ushort)Events.Count);
             foreach (var evt in Events)
             {

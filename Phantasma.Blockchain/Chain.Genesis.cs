@@ -12,12 +12,14 @@ namespace Phantasma.Blockchain
         {
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
 
-            var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
+            throw new System.NotImplementedException();
+            /*
+            var nativeToken = Chain.GetNativeContract(ContractKind.Token);
             var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
 
-            return tx;
+            return tx;*/
         }
 
 

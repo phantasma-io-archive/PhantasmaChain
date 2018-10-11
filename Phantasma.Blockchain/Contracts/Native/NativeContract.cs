@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private ContractInterface _ABI;
         public override ContractInterface ABI => _ABI;
 
-        internal abstract NativeContractKind Kind { get; }
+        internal abstract ContractKind Kind { get; }
 
         private Dictionary<string, MethodInfo> _methodTable = new Dictionary<string, MethodInfo>();
 

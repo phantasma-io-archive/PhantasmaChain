@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public class GovernanceContract : NativeContract
     {
-        internal override NativeContractKind Kind => NativeContractKind.Governance;
+        internal override ContractKind Kind => ContractKind.Governance;
 
         public BigInteger FeeMultiplier = 1;
 

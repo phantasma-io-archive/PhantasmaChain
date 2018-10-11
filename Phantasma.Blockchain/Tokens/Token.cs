@@ -1,33 +1,32 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
-using System.Collections.Generic;
-using Phantasma.Blockchain.Contracts.Types;
-using Phantasma.Core.Utils;
+using Phantasma.Blockchain.Types;
 using Phantasma.VM.Utils;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Blockchain.Tokens
 {
-    public class TokenContract : NativeContract
+    public class Token
     {
-        internal override NativeContractKind Kind => NativeContractKind.Token;
+        public string Symbol { get; private set; }
+        public string Name { get; private set; }
 
-        public static string Symbol => "SOUL";
-        public static string Name => "Phantasma";
-
-        public static readonly BigInteger MaxSupply = 93000000;
-
-        public TokenContract(): base()
-        {
-        }
+        public BigInteger MaxSupply { get; private set; } // = 93000000;
 
         private BigInteger _supply = 0;
+
+        private StorageContext _storage;
+
+        public Token(StorageContext storage)
+        {
+            this._storage = storage;
+        }
 
         public string GetName() => Name;
         public string GetSymbol() => Symbol;
         public BigInteger GetSupply() => MaxSupply;
         public BigInteger GetDecimals() => 8;
 
-        private Map<Address, BigInteger> GetBalances()
+/*        private Map<Address, BigInteger> GetBalances()
         {
             return this.Storage.FindMapForContract<Address, BigInteger>("balances".AsByteArray());
         }
@@ -37,7 +36,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(amount > 0);
             Expect(IsWitness(target));
 
-            var nexusContract = (NexusContract) this.Chain.FindContract(NativeContractKind.Nexus);
+            var nexusContract = (NexusContract) this.Chain.FindContract(ContractKind.Nexus);
             var mintAddress = nexusContract.Address;
         
             if (_supply == 0)
@@ -121,5 +120,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = GetBalances();
             return balances.ContainsKey(address) ? balances[address]: 0;
         }
+        */
     }
 }

@@ -1,19 +1,17 @@
 ﻿namespace Phantasma.Blockchain.Contracts
 {
-    public enum NativeContractKind
+    public enum ContractKind
     {
-        Consensus,
-        Token,
-        Distribution,
-        Reputation,
-        Governance,
         Nexus,
+        Governance,
         Stake,
         Storage,
+        Distribution,
         Privacy,
         Bank,
         Exchange,
         Naming,
-        Mining,
+        Reputation,
+        Custom,
     }
 }

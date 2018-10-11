@@ -3,7 +3,6 @@
 using Phantasma.Blockchain;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
-using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Tests
 {
@@ -14,13 +13,15 @@ namespace Phantasma.Tests
         public void TestChain()
         {
             var owner = KeyPair.Generate();
-            var chain = new Chain(owner);
+            var nexus = new Nexus(owner);
 
             var miner = KeyPair.Generate();
             var third = KeyPair.Generate();
 
-            var nativeToken = Chain.GetNativeContract(NativeContractKind.Token);
-            var tx = new Transaction(ScriptUtils.TokenTransferScript(nativeToken.Address, owner.Address, third.Address, 5), 0, 0);
+            var chain = nexus.RootChain;
+            var token = nexus.NativeToken;
+
+            var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, token, owner.Address, third.Address, 5), 0, 0);
             tx.Sign(owner);
 
             /*var block = ProofOfWork.MineBlock(chain, miner.Address, new List<Transaction>() { tx });
