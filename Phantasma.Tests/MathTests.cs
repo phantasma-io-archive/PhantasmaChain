@@ -9,6 +9,7 @@ namespace Phantasma.Tests
     [TestClass]
     public class MathTests
     {
+        #region BASE CONVERSIONS
         [TestMethod]
         public void Base16Tests()
         {
@@ -38,5 +39,88 @@ namespace Phantasma.Tests
             Assert.IsTrue(output.Length == bytes.Length);
             Assert.IsTrue(output.SequenceEqual(bytes));
         }
+        #endregion
+
+        #region BIG INT
+        [TestMethod]
+        public void BigIntAdd()
+        {
+            uint x = 5432543;
+            uint y = 1432543;
+
+            var a1 = new BigInteger(x);
+            var b1 = new BigInteger(y);
+
+            var a2 = new LargeInteger(x);
+            var b2 = new LargeInteger(y);
+
+            var c1 = a1 + b1;
+            var c2 = a2 + b2;
+
+            Assert.IsTrue(a1.ToString() == a2.ToString());
+            Assert.IsTrue(b1.ToString() == b2.ToString());
+            Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+
+        [TestMethod]
+        public void BigIntSub()
+        {
+            uint x = 5432543;
+            uint y = 1432543;
+
+            var a1 = new BigInteger(x);
+            var b1 = new BigInteger(y);
+
+            var a2 = new LargeInteger(x);
+            var b2 = new LargeInteger(y);
+
+            var c1 = a1 - b1;
+            var c2 = a2 - b2;
+
+            Assert.IsTrue(a1.ToString() == a2.ToString());
+            Assert.IsTrue(b1.ToString() == b2.ToString());
+            Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+
+        [TestMethod]
+        public void BigIntMult()
+        {
+            uint x = 5432543;
+            uint y = 1432543;
+
+            var a1 = new BigInteger(x);
+            var b1 = new BigInteger(y);
+
+            var a2 = new LargeInteger(x);
+            var b2 = new LargeInteger(y);
+
+            var c1 = a1 * b1;
+            var c2 = a2 * b2;
+
+            Assert.IsTrue(a1.ToString() == a2.ToString());
+            Assert.IsTrue(b1.ToString() == b2.ToString());
+            Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+
+        [TestMethod]
+        public void BigIntDiv()
+        {
+            uint x = 5432543;
+            uint y = 1432543;
+
+            var a1 = new BigInteger(x);
+            var b1 = new BigInteger(y);
+
+            var a2 = new LargeInteger(x);
+            var b2 = new LargeInteger(y);
+
+            var c1 = a1 / b1;
+            var c2 = a2 / b2;
+
+            Assert.IsTrue(a1.ToString() == a2.ToString());
+            Assert.IsTrue(b1.ToString() == b2.ToString());
+            Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+        #endregion
     }
 }
