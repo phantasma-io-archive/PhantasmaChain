@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain
         {
             this.logger = logger;
 
-            this.RootChain = new Chain(owner.Address, "Main", new NexusContract(), logger, null);
+            this.RootChain = new Chain(this, owner.Address, "Main", new NexusContract(), logger, null);
             _chains[RootChain.Name] = RootChain;
 
             var genesisBlock = CreateGenesisBlock(owner);
@@ -39,19 +39,6 @@ namespace Phantasma.Blockchain
             {
                 throw new ChainException("Genesis block failure");
             }
-        }
-
-        public Chain FindChainByAddress(Address address)
-        {
-            foreach (var entry in _chains.Values)
-            {
-                if (entry.Address == address)
-                {
-                    return entry;
-                }
-            }
-
-            return null;
         }
 
         internal Chain CreateChain(Address owner, string name, Chain parentChain, Block parentBlock)
@@ -70,9 +57,32 @@ namespace Phantasma.Blockchain
 
             SmartContract contract = null;
 
-            var chain = new Chain(owner, name, contract, this.logger, parentChain, parentBlock);
+            var chain = new Chain(this, owner, name, contract, this.logger, parentChain, parentBlock);
             _chains[name] = chain;
             return chain;
+        }
+
+        public bool ContainsChain(Chain chain)
+        {
+            if (chain == null)
+            {
+                return false;
+            }
+
+            return _chains.ContainsKey(chain.Name);
+        }
+
+        public Chain FindChainByAddress(Address address)
+        {
+            foreach (var entry in _chains.Values)
+            {
+                if (entry.Address == address)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
         }
 
         public Chain FindChainByName(string name)
