@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
+using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Log;
@@ -12,7 +13,10 @@ namespace Phantasma.Blockchain
     public partial class Chain
     {
         public Chain ParentChain { get; private set; }
+        public Block ParentBlock { get; private set; }
+        public Nexus Nexus { get; private set; }
 
+        public string Name { get; private set; }
         public Address Address { get; private set; }
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
@@ -36,22 +40,22 @@ namespace Phantasma.Blockchain
 
         public bool IsRoot => this.ParentChain == null;
 
-        public Chain(KeyPair owner, SmartContract contract, Logger log = null, Chain parentChain = null)
+        public Chain(KeyPair owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
             Throw.IfNull(owner, "owner required");
             Throw.IfNull(contract, "contract required");
 
-            this.ParentChain = parentChain;
-            this.Log = Logger.Init(log);
-
-            var block = CreateGenesisBlock(owner);
-            if (!AddBlock(block))
-            {
-                throw new ChainException("Genesis block failure");
-            }
-
+            this.Name = name;
             this.Contract = contract;
-            this.Address = new Address(block.Hash.ToByteArray());
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
+            var hash = CryptoExtensions.Sha256(bytes);
+            this.Address = new Address(hash);
+
+            this.ParentChain = parentChain;
+            this.ParentBlock = parentBlock;
+
+            this.Log = Logger.Init(log);
         }
 
         public bool AddBlock(Block block)

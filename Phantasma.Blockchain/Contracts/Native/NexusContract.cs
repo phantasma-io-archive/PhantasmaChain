@@ -39,7 +39,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             throw new System.NotImplementedException();
         }
 
-        public void Send(Address token, Address from, Address to, BigInteger amount)
+        public void SendToken(Address token, Address from, Address to, BigInteger amount)
         {
             Expect(IsWitness(from));
 
@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             knownTransactions.Add(Transaction.Hash);*/
         }
 
-        public void Receive(Address token, Address from, Address to, Hash hash)
+        public void ReceiveToken(Address token, Address from, Address to, Hash hash)
         {
             if (IsRootChain(this.Chain.Address))
             {
@@ -113,5 +113,48 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             knownTransactions.Add(Transaction.Hash);*/
         }
+
+        public void MintToken(string symbol, Address target, BigInteger amount)
+        {
+            Expect(amount > 0);
+
+            var token = this.Nexus.FindToken(symbol);
+            Expect(token != null);
+
+            Expect(IsWitness(token.Owner));
+            Expect(token.Mint(target, amount));
+        }
+
+        public void BurnToken(string symbol, Address target, BigInteger amount)
+        {           
+            Expect(amount > 0);
+            Expect(IsWitness(target));
+
+            var token = this.Nexus.FindToken(symbol);
+            Expect(token != null);
+
+            Expect(token.Burn(target, amount));           
+        }
+
+        public void TransferToken(string symbol, Address source, Address destination, BigInteger amount)
+        {
+            Expect(amount > 0);
+            Expect(source != destination);
+            Expect(IsWitness(source));
+
+            var token = this.Nexus.FindToken(symbol);
+            Expect(token != null);
+
+            Expect(token.Transfer(source, destination, amount));
+        }
+
+        public BigInteger GetBalance(string symbol, Address address)
+        {
+            var token = this.Nexus.FindToken(symbol);
+            Expect(token != null);
+
+            return token.GetBalance(address);
+        }
+
     }
 }

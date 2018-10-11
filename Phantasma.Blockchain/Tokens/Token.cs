@@ -1,7 +1,7 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
-using Phantasma.Blockchain.Types;
-using Phantasma.VM.Utils;
+using System.Collections.Generic;
+using System;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -12,9 +12,14 @@ namespace Phantasma.Blockchain.Tokens
 
         public BigInteger MaxSupply { get; private set; } // = 93000000;
 
-        private BigInteger _supply = 0;
+        public Address Owner { get; private set; }
 
         private StorageContext _storage;
+
+        private BigInteger _supply = 0;
+        public BigInteger CurrentSupply => _supply;
+
+        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
 
         public Token(StorageContext storage)
         {
@@ -26,100 +31,110 @@ namespace Phantasma.Blockchain.Tokens
         public BigInteger GetSupply() => MaxSupply;
         public BigInteger GetDecimals() => 8;
 
-/*        private Map<Address, BigInteger> GetBalances()
+        internal Token(Address owner, string symbol, string name, BigInteger maxSupply)
         {
-            return this.Storage.FindMapForContract<Address, BigInteger>("balances".AsByteArray());
+            this.Owner = owner;
+            this.Symbol = symbol;
+            this.Name = name;
+            this.MaxSupply = maxSupply;
+
+            _supply = 0;
         }
 
-        public void Mint(Address target, BigInteger amount)
+        internal bool Mint(Address target, BigInteger amount)
         {
-            Expect(amount > 0);
-            Expect(IsWitness(target));
-
-            var nexusContract = (NexusContract) this.Chain.FindContract(ContractKind.Nexus);
-            var mintAddress = nexusContract.Address;
-        
-            if (_supply == 0)
+            if (amount <= 0)
             {
-                if (Chain.IsRoot)
-                {
-                    Expect(amount == MaxSupply);
-                }
-                else
-                {
-                    Expect(target == mintAddress);
-                }
-            }
-            else
-            {
-                Expect(target == mintAddress);
+                return false;
             }
 
-            this._supply += amount;
-            Expect(_supply <= MaxSupply);
+            if (this.CurrentSupply + amount > this.MaxSupply)
+            {
+                return false;
+            }
 
-            var balances = GetBalances();
-            var balance = balances.ContainsKey(target)? balances[target] : 0;
+            var balance = _balances.ContainsKey(target) ? _balances[target] : 0;
 
             balance += amount;
-            balances[target] = amount;
+            _balances[target] = balance;
+
+            this._supply += amount;
+            return true;
         }
 
-        public void Burn(Address target, BigInteger amount)
+        internal bool Burn(Address target, BigInteger amount)
         {
-            var balances = GetBalances();
+            if (amount <= 0)
+            {
+                return false;
+            }
 
-            Expect(amount > 0);
-            Expect(balances.ContainsKey(target));
-            Expect(IsWitness(target));
+            if (this.CurrentSupply - amount < 0)
+            {
+                return false;
+            }
 
-            var balance = balances[target];
-            Expect(balance >= amount);
+            var balance = _balances.ContainsKey(target) ? _balances[target] : 0;
+
+            if (balance < amount)
+            {
+                return false;
+            }
 
             balance -= amount;
-            balances[target] = amount;
+            if (balance == 0)
+            {
+                _balances.Remove(target);
+            }
+            else
+            {
+                _balances[target] = balance;
+            }
+
             this._supply -= amount;
+            return true;
         }
 
-        public void Transfer(Address source, Address destination, BigInteger amount)
+        internal bool Transfer(Address source, Address destination, BigInteger amount)
         {
-            var balances = GetBalances();
-
-            Expect(amount > 0);
-            Expect(source != destination);
-            Expect(IsWitness(source));
-
-            Expect(balances.ContainsKey(source));
-
-            BigInteger from_balance =  balances[source];
-            Expect(from_balance >= amount);
-
-            from_balance -= amount;
-            if (from_balance == 0)
-                balances.Remove(source);
-            else
-                balances[source] = from_balance;
-
-            BigInteger to_balance;
-            if (balances.ContainsKey(destination))
+            if (amount <= 0)
             {
-                to_balance = balances[destination];
+                return false;
+            }
+
+            if (!_balances.ContainsKey(source))
+            {
+                return false;
+            }
+
+            var srcBalance = _balances[source];
+
+            if (srcBalance < amount)
+            {
+                return false;
+            }
+
+            srcBalance -= amount;
+            if (srcBalance == 0)
+            {
+                _balances.Remove(source);
             }
             else
             {
-                to_balance = 0;
+                _balances[source] = srcBalance;
             }
 
-            to_balance += amount;
+            var destBalance = _balances.ContainsKey(destination) ? _balances[destination] : 0;
 
-            balances[destination] = to_balance;
+            destBalance += amount;
+            _balances[destination] = destBalance;
+
+            return true;
         }
 
-        public BigInteger BalanceOf(Address address)
+        internal BigInteger GetBalance(Address address)
         {
-            var balances = GetBalances();
-            return balances.ContainsKey(address) ? balances[address]: 0;
+            return _balances.ContainsKey(address) ? _balances[address] : 0;
         }
-        */
     }
 }

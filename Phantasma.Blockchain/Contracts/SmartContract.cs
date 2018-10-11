@@ -19,8 +19,10 @@ namespace Phantasma.Blockchain.Contracts
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
         protected Transaction Transaction { get; private set; }
-        protected Chain Chain { get; private set; }
         protected StorageContext Storage { get; private set; }
+
+        public Chain Chain { get; private set; }
+        public Nexus Nexus => Chain.Nexus;
 
         public SmartContract()
         {
