@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain
         {
             this.logger = logger;
 
-            this.RootChain = new Chain(this, owner.Address, "Main", new NexusContract(), logger, null);
+            this.RootChain = new Chain(this, owner.Address, "main", new NexusContract(), logger, null);
             _chains[RootChain.Name] = RootChain;
 
             var genesisBlock = CreateGenesisBlock(owner);
@@ -49,6 +49,11 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
+            if (!Chain.ValidateName(name))
+            {
+                return null;
+            }
+
             // check if already exists something with that name
             var temp = FindChainByName(name);
             if (temp != null)
@@ -56,7 +61,30 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
-            SmartContract contract = null;
+            SmartContract contract;
+
+            ContractKind contractKind;
+            if (Enum.TryParse<ContractKind>(name, true, out contractKind))
+            {
+                switch (contractKind)
+                {
+                    case ContractKind.Privacy: contract = new PrivacyContract(); break;
+                    case ContractKind.Distribution: contract = new DistributionContract(); break;
+                    case ContractKind.Exchange: contract = new ExchangeContract(); break;
+                    case ContractKind.Governance: contract = new GovernanceContract(); break;
+                    case ContractKind.Stake: contract = new StakeContract(); break;
+                    case ContractKind.Storage: contract = new StorageContract(); break;
+                    case ContractKind.Naming: contract = new NamingContract(); break;
+                    case ContractKind.Messaging: contract = new MessagingContract(); break;
+
+                    default:
+                        throw new ChainException("Could not create contract for: " + contractKind); 
+                }
+            }
+            else
+            {
+                contract = null; // TODO
+            }
 
             var chain = new Chain(this, owner, name, contract, this.logger, parentChain, parentBlock);
             _chains[name] = chain;
@@ -202,7 +230,7 @@ namespace Phantasma.Blockchain
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Names));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Naming));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Messaging));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
 

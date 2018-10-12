@@ -51,7 +51,7 @@ namespace Phantasma.Blockchain
             {
                 Throw.IfNull(parentBlock, "parent block required");
                 Throw.IfNot(nexus.ContainsChain(parentChain), "invalid chain");
-                Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block");
+                //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
@@ -236,5 +236,34 @@ namespace Phantasma.Blockchain
             var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
             return balance;*/
         }
+
+        public static bool ValidateName(string name)
+        {
+            if (name == null)
+            {
+                return false;
+            }
+
+            if (name.Length <= 4 || name.Length >= 20)
+            {
+                return false;
+            }
+
+            int index = 0;
+            while (index < name.Length)
+            {
+                var c = (int)name[index];
+                index++;
+
+                if (c >= 97 && c <= 122) continue; // lowercase allowed
+                if (c == 95) continue; // underscore allowed
+                if (c >= 48 && c <= 57) continue; // numbers allowed
+
+                return false;
+            }
+
+            return true;
+        }
+
     }
 }
