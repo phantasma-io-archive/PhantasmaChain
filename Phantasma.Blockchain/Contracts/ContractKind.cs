@@ -9,6 +9,7 @@
         Distribution,
         Privacy,
         Bank,
+        Vault,
         Exchange,
         Naming,
         Messaging,

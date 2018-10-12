@@ -145,7 +145,7 @@ namespace Phantasma.Blockchain
 
             var token = new Token(owner, symbol, name, maxSupply);
 
-            if (_tokens.Count == 0)
+            if (name == NativeTokenSymbol)
             {
                 NativeToken = token;
             }
@@ -240,6 +240,7 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Naming));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Messaging));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Vault));
 
             /*var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
