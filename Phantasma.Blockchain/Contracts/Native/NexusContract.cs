@@ -66,7 +66,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return chain;
         }
 
-        public void SendToken(Address token, Address from, Address to, BigInteger amount)
+        public void SendTokens(Address token, Address from, Address to, BigInteger amount)
         {
             Expect(IsWitness(from));
 
@@ -105,7 +105,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             knownTransactions.Add(Transaction.Hash);*/
         }
 
-        public void ReceiveToken(Address token, Address from, Address to, Hash hash)
+        public void ReceiveTokens(Address token, Address from, Address to, Hash hash)
         {
             if (IsRootChain(this.Chain.Address))
             {
@@ -141,7 +141,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             knownTransactions.Add(Transaction.Hash);*/
         }
 
-        public void MintToken(Address target, string symbol, BigInteger amount)
+        public void MintTokens(Address target, string symbol, BigInteger amount)
         {
             Expect(amount > 0);
 
@@ -154,7 +154,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(token.Mint(balances, target, amount));
         }
 
-        public void BurnToken(Address target, string symbol, BigInteger amount)
+        public void BurnTokens(Address target, string symbol, BigInteger amount)
         {           
             Expect(amount > 0);
             Expect(IsWitness(target));
@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(token.Burn(balances, target, amount));           
         }
 
-        public void TransferToken(string symbol, Address source, Address destination, BigInteger amount)
+        public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             Expect(amount > 0);
             Expect(source != destination);
