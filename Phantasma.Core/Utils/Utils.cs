@@ -7,6 +7,18 @@ namespace Phantasma.Core.Utils
 {
     public static class Utils
     {
+        public static string ToTitleCase(this string str)
+        {
+            var tokens = str.Split(new[] { " ", "-" }, StringSplitOptions.RemoveEmptyEntries);
+            for (var i = 0; i < tokens.Length; i++)
+            {
+                var token = tokens[i];
+                tokens[i] = char.ToUpper(token[0]) + token.Substring(1).ToLower();
+            }
+
+            return string.Join(" ", tokens);
+        }
+
         public static byte[] ConcatBytes(this byte[] a1, byte[] a2)
         {
             byte[] res = new byte[a1.Length + a2.Length];
