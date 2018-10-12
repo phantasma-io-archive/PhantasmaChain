@@ -144,7 +144,14 @@ namespace Phantasma.Blockchain
             SmartContract contract = null;
 
             var token = new Token(owner, symbol, name, maxSupply);
+
+            if (_tokens.Count == 0)
+            {
+                NativeToken = token;
+            }
+
             _tokens[symbol] = token;
+
             return token;
         }
 
