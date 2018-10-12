@@ -1,7 +1,5 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
-using System.Collections.Generic;
-using System;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -18,8 +16,6 @@ namespace Phantasma.Blockchain.Tokens
 
         private BigInteger _supply = 0;
         public BigInteger CurrentSupply => _supply;
-
-        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
 
         public Token(StorageContext storage)
         {
@@ -41,7 +37,7 @@ namespace Phantasma.Blockchain.Tokens
             _supply = 0;
         }
 
-        internal bool Mint(Address target, BigInteger amount)
+        internal bool Mint(BalanceSheet balances, Address target, BigInteger amount)
         {
             if (amount <= 0)
             {
@@ -53,16 +49,16 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            var balance = _balances.ContainsKey(target) ? _balances[target] : 0;
-
-            balance += amount;
-            _balances[target] = balance;
+            if (!balances.Add(target, amount))
+            {
+                return false;
+            }
 
             this._supply += amount;
             return true;
         }
 
-        internal bool Burn(Address target, BigInteger amount)
+        internal bool Burn(BalanceSheet balances, Address target, BigInteger amount)
         {
             if (amount <= 0)
             {
@@ -74,67 +70,33 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            var balance = _balances.ContainsKey(target) ? _balances[target] : 0;
-
-            if (balance < amount)
+            if (!balances.Subtract(target, amount))
             {
                 return false;
-            }
-
-            balance -= amount;
-            if (balance == 0)
-            {
-                _balances.Remove(target);
-            }
-            else
-            {
-                _balances[target] = balance;
             }
 
             this._supply -= amount;
             return true;
         }
 
-        internal bool Transfer(Address source, Address destination, BigInteger amount)
+        internal bool Transfer(BalanceSheet balances, Address source, Address destination, BigInteger amount)
         {
             if (amount <= 0)
             {
                 return false;
             }
 
-            if (!_balances.ContainsKey(source))
+            if (!balances.Subtract(source, amount))
             {
                 return false;
             }
 
-            var srcBalance = _balances[source];
-
-            if (srcBalance < amount)
+            if (!balances.Add(destination, amount))
             {
                 return false;
             }
-
-            srcBalance -= amount;
-            if (srcBalance == 0)
-            {
-                _balances.Remove(source);
-            }
-            else
-            {
-                _balances[source] = srcBalance;
-            }
-
-            var destBalance = _balances.ContainsKey(destination) ? _balances[destination] : 0;
-
-            destBalance += amount;
-            _balances[destination] = destBalance;
 
             return true;
-        }
-
-        internal BigInteger GetBalance(Address address)
-        {
-            return _balances.ContainsKey(address) ? _balances[address] : 0;
         }
     }
 }

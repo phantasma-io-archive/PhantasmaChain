@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain
 
         public NativeExecutionContext ExecutionContext { get; private set; }
 
-        private Dictionary<Token, Dictionary<Address, BigInteger>> _tokenBalances = new Dictionary<Token, Dictionary<Address, BigInteger>>();
+        private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
 
         public bool IsRoot => this.ParentChain == null;
 
@@ -212,20 +212,22 @@ namespace Phantasma.Blockchain
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
-        public BigInteger GetTokenBalance(Token token, Address address)
+        internal BalanceSheet GetTokenBalances(Token token)
         {
             if (_tokenBalances.ContainsKey(token))
             {
-                var balances = _tokenBalances[token];
-
-                if (balances.ContainsKey(address))
-                {
-                    var balance = balances[address];
-                    return balance;
-                }
+                return _tokenBalances[token];
             }
 
-            return 0;
+            var sheet = new BalanceSheet();
+            _tokenBalances[token] = sheet;
+            return sheet;
+        }
+
+        public BigInteger GetTokenBalance(Token token, Address address)
+        {
+            var balances = GetTokenBalances(token);
+            return balances.Get(address);
 
 /*            var contract = this.FindContract(token);
             Throw.IfNull(contract, "contract not found");
