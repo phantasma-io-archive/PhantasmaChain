@@ -146,7 +146,7 @@ namespace Phantasma.Blockchain
 
             var token = new Token(owner, symbol, name, maxSupply);
 
-            if (name == NativeTokenSymbol)
+            if (symbol == NativeTokenSymbol)
             {
                 NativeToken = token;
             }
