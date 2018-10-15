@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Phantasma.Core;
 using System;
 using Phantasma.Numerics;
+using Phantasma.Cryptography.Hashing;
 
 namespace Phantasma.Cryptography
 {
@@ -72,13 +73,30 @@ namespace Phantasma.Cryptography
                 return false;
             }
 
-            var address = (Address)obj;
-            return EqualityComparer<byte[]>.Default.Equals(PublicKey, address.PublicKey);
+            var otherAddress = (Address)obj;
+
+            var thisKey = this.PublicKey;
+            var otherKey = otherAddress.PublicKey;
+
+            if (thisKey.Length != otherKey.Length) // failsafe, should never happen
+            {
+                return false;
+            }
+
+            for (int i=0; i<thisKey.Length; i++)
+            {
+                if (thisKey[i] != otherKey[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public override int GetHashCode()
         {
-            return PublicKey.GetHashCode();
+            return Murmur32.Hash(PublicKey);
         }
 
         public static Address FromWIF(string WIF)
