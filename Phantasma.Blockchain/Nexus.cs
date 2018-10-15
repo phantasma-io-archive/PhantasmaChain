@@ -227,7 +227,7 @@ namespace Phantasma.Blockchain
 
         public readonly static string NativeTokenSymbol = "SOUL";
         public readonly static string PlatformName = "Phantasma";
-        public readonly static BigInteger PlatformSupply = 93000000;
+        public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000);
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
