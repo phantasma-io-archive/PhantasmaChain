@@ -21,9 +21,29 @@ namespace Phantasma.Cryptography
         {
             if (ReferenceEquals(obj, null))
                 return false;
+
             if (!(obj is Hash))
                 return false;
-            return this.Equals((Hash)obj);
+
+            var otherHash = (Hash)obj;
+
+            var thisData = this._data;
+            var otherData = otherHash._data;
+
+            if (thisData.Length != otherData.Length)
+            {
+                return false;
+            }
+
+            for (int i=0; i<thisData.Length; i++)
+            {
+                if (otherData[i] != thisData[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public override int GetHashCode() => (int)_data.ToUInt32(0);
@@ -81,7 +101,8 @@ namespace Phantasma.Cryptography
                 return Parse(s.Substring(2));
             }
 
-            Throw.If(s.Length != Length, $"length of string must be {Length}");
+            var ExpectedLength = Length * 2;
+            Throw.If(s.Length != ExpectedLength, $"length of string must be {Length}");
 
             return new Hash(s.Decode().Reverse().ToArray());
         }
