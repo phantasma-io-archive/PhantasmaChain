@@ -25,6 +25,8 @@ namespace Phantasma.Blockchain
         private Dictionary<Hash, Block> _blocks = new Dictionary<Hash, Block>();
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
+        private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
+
         public IEnumerable<Block> Blocks => _blocks.Values;
 
         public uint Height => (uint)_blocks.Count;
@@ -129,6 +131,7 @@ namespace Phantasma.Blockchain
             foreach (Transaction tx in block.Transactions)
             {
                 _transactions[tx.Hash] = tx;
+                _transactionBlockMap[tx.Hash] = block;
             }
 
             return true;
@@ -200,6 +203,16 @@ namespace Phantasma.Blockchain
         public Transaction FindTransaction(Hash hash)
         {
             return _transactions.ContainsKey(hash) ? _transactions[hash] : null;
+        }
+
+        public Block FindTransactionBlock(Transaction tx)
+        {
+            return FindTransactionBlock(tx.Hash);
+        }
+
+        public Block FindTransactionBlock(Hash hash)
+        {
+            return _transactionBlockMap.ContainsKey(hash) ? _transactionBlockMap[hash] : null;
         }
 
         public Block FindBlock(Hash hash)
