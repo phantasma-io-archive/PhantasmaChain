@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(token.Burn(balances, target, amount));           
         }
 
-        public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
+        public void TransferTokens(Address source, Address destination, string symbol, BigInteger amount)
         {
             Expect(amount > 0);
             Expect(source != destination);
