@@ -65,12 +65,12 @@ namespace Phantasma.VM.Utils
 
         public static byte[] TokenMintScript(Chain chain, Token token, Address target, BigInteger amount)
         {
-            return CallContractScript(chain, "Mint", token.Symbol, target, amount);
+            return CallContractScript(chain, "MintTokens", token.Symbol, target, amount);
         }
 
         public static byte[] TokenTransferScript(Chain chain, Token token, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(chain, "Transfer", token.Symbol, from, to, amount);
+            return CallContractScript(chain, "TransferTokens", token.Symbol, from, to, amount);
         }
 
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)

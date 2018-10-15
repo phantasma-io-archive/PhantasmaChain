@@ -76,9 +76,10 @@ namespace Phantasma.Blockchain
                     case ContractKind.Storage: contract = new StorageContract(); break;
                     case ContractKind.Naming: contract = new NamingContract(); break;
                     case ContractKind.Messaging: contract = new MessagingContract(); break;
+                    case ContractKind.Vault: contract = new VaultContract(); break;
 
                     default:
-                        throw new ChainException("Could not create contract for: " + contractKind); 
+                        throw new ChainException("Could not create contract for: " + contractKind);
                 }
             }
             else
@@ -182,7 +183,7 @@ namespace Phantasma.Blockchain
 
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript(chain, "MintToken", owner.Address, symbol, amount);
+            var script = ScriptUtils.CallContractScript(chain, "MintTokens", owner.Address, symbol, amount);
             var tx = new Transaction(script, 0, 0);
             tx.Sign(owner);
             return tx;
