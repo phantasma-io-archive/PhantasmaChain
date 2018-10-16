@@ -12,18 +12,18 @@ namespace Phantasma.Blockchain.Contracts
         public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
         public Block Block { get; private set; }
-        public Nexus Nexus => Chain.Nexus;
+        public Nexus Nexus { get; private set; }
         
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
 
-        public RuntimeVM(Chain chain, Block block, Transaction tx) : base(tx.Script)
+        public RuntimeVM(Nexus nexus, Block block, Transaction tx) : base(tx.Script)
         {
+            this.Nexus = nexus;
             this.Transaction = tx;
             this.Block = block;
-            this.Chain = chain;
-
-            chain.RegisterInterop(this);
+            this.Chain = null;
+            Chain.RegisterInterop(this);
         }
 
         internal void RegisterMethod(string name, Func<VirtualMachine, ExecutionState> handler)
@@ -50,12 +50,11 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(Address address)
         {
-            var nexus = this.Chain.Nexus;
-
-            foreach (var entry in nexus.Chains)
+            foreach (var entry in Nexus.Chains)
             {
                 if (entry.Address == address)
                 {
+                    this.Chain = entry;
                     var storage = this.Chain.FindStorage(address);
                     entry.Contract.SetRuntimeData(this, storage);
                     return entry.ExecutionContext;

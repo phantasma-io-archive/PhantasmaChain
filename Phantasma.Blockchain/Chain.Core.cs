@@ -125,7 +125,7 @@ namespace Phantasma.Blockchain
 
             foreach (Transaction tx in block.Transactions)
             {
-                if (!tx.Execute(this, block, block.Notify))
+                if (!tx.Execute(this.Nexus, block, block.Notify))
                 {
                     return false;
                 }

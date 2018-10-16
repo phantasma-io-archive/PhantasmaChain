@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -102,5 +104,99 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             knownTransactions.Add(hash);
         }
+
+        #region SIDE CHAINS
+        public bool IsChain(Address address)
+        {
+            return Runtime.Nexus.FindChainByAddress(address) != null;
+        }
+
+        public bool IsRootChain(Address address)
+        {
+            return (IsChain(address) && address == this.Runtime.Chain.Address);
+        }
+
+        public bool IsSideChain(Address address)
+        {
+            return (IsChain(address) && address != this.Runtime.Chain.Address);
+        }
+
+        public void SendTokens(Address targetChain, Address from, Address to, string symbol, BigInteger amount)
+        {
+            Expect(IsWitness(from));
+
+            if (IsRootChain(this.Runtime.Chain.Address))
+            {
+                Expect(IsSideChain(targetChain));
+            }
+            else
+            {
+                Expect(IsRootChain(targetChain));
+            }
+
+            var fee = amount / 10;
+            Expect(fee > 0);
+
+            var otherChain = this.Runtime.Chain.FindChain(targetChain);
+            /*TODO
+            var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
+            Expect(otherConsensus.IsValidReceiver(from));*/
+
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Expect(token != null);
+
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            token.Burn(balances, from, amount);
+
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = targetChain });
+        }
+
+        public void ReceiveTokens(Address sourceChain, Address to, Hash hash)
+        {
+            if (IsRootChain(this.Runtime.Chain.Address))
+            {
+                Expect(IsSideChain(sourceChain));
+            }
+            else
+            {
+                Expect(IsRootChain(sourceChain));
+            }
+
+            Expect(!IsKnown(hash));
+
+            var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
+
+            var tx = otherChain.FindTransaction(hash);
+            Expect(tx != null);
+
+            string symbol = null;
+            BigInteger amount = 0;
+            foreach (var evt in tx.Events)
+            {
+                if (evt.Kind == EventKind.TokenSend)
+                {
+                    var data = Serialization.Unserialize<TokenEventData>(evt.Data);
+                    if (data.chainAddress == this.Runtime.Chain.Address)
+                    {
+                        symbol = data.symbol;
+                        amount = data.amount;
+                    }
+                }
+            }
+
+            Expect(symbol != null);
+            Expect(amount > 0);
+
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Expect(token != null);
+
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
+
+            token.Mint(balances, to, amount);
+            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = otherChain.Address });
+
+            RegisterHashAsKnown(Runtime.Transaction.Hash);
+        }
+        #endregion
     }
 }

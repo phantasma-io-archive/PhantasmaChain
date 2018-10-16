@@ -75,9 +75,9 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Chain chain, Block block, Action<Event> notify)
+        internal bool Execute(Nexus nexus, Block block, Action<Event> notify)
         {
-            var vm = new RuntimeVM(chain, block, this);
+            var vm = new RuntimeVM(nexus, block, this);
 
             var state = vm.Execute();
 

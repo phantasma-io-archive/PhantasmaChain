@@ -51,6 +51,13 @@ namespace Phantasma.VM.Utils
                     sb.EmitExtCall("Address()", temp_reg);
                 }
                 else
+                if (arg is Hash)
+                {
+                    sb.EmitLoad(temp_reg, ((Hash)arg).ToByteArray(), VMType.Bytes);
+                    sb.EmitPush(temp_reg);
+                    sb.EmitExtCall("Hash()", temp_reg);
+                }
+                else
                 {
                     throw new System.Exception("invalid type");
                 }

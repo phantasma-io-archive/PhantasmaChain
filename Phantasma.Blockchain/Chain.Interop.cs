@@ -11,7 +11,7 @@ namespace Phantasma.Blockchain
 {
     public partial class Chain
     {
-        internal void RegisterInterop(RuntimeVM vm)
+        internal static void RegisterInterop(RuntimeVM vm)
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
 
@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Contract.Deploy", Chain_deploy);
         }
 
-        private ExecutionState Constructor_Object<T>(VirtualMachine vm, Func<byte[], T> loader) 
+        private static ExecutionState Constructor_Object<T>(VirtualMachine vm, Func<byte[], T> loader) 
         {
             var bytes = vm.stack.Pop().AsByteArray();
 
@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private ExecutionState Constructor_Address(VirtualMachine vm)
+        private static ExecutionState Constructor_Address(VirtualMachine vm)
         {
             return Constructor_Object<Address>(vm, bytes =>
             {
@@ -51,7 +51,7 @@ namespace Phantasma.Blockchain
             });
         }
 
-        private ExecutionState Constructor_Hash(VirtualMachine vm)
+        private static ExecutionState Constructor_Hash(VirtualMachine vm)
         {
             return Constructor_Object<Hash>(vm, bytes =>
             {
@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain
             });
         }
 
-        private ExecutionState Constructor_ABI(VirtualMachine vm)
+        private static ExecutionState Constructor_ABI(VirtualMachine vm)
         {
             return Constructor_Object<ContractInterface>(vm, bytes =>
             {
@@ -76,14 +76,15 @@ namespace Phantasma.Blockchain
             });
         }
 
-        private ExecutionState Runtime_Log(VirtualMachine vm)
+        private static ExecutionState Runtime_Log(VirtualMachine vm)
         {
             var text = vm.stack.Pop().AsString();
-            this.Log.Write(Core.Log.LogEntryKind.Message, text);
+            //this.Log.Write(Core.Log.LogEntryKind.Message, text);
+            Console.WriteLine(text); // TODO fixme
             return ExecutionState.Running;
         }
 
-        private ExecutionState Contract_deploy(VirtualMachine vm)
+        private static ExecutionState Contract_deploy(VirtualMachine vm)
         {
             var script = vm.currentFrame.GetRegister(0).AsByteArray();
             var abi = vm.currentFrame.GetRegister(1).AsByteArray();
@@ -93,7 +94,7 @@ namespace Phantasma.Blockchain
 
             var contract = new CustomContract(script, abi);
 
-            Log.Message($"Deploying contract: Address??");
+            //Log.Message($"Deploying contract: Address??");
 
             var obj = new VMObject();
             obj.SetValue(contract);
@@ -102,7 +103,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private ExecutionState Chain_deploy(VirtualMachine vm)
+        private static ExecutionState Chain_deploy(VirtualMachine vm)
         {
             var script = vm.currentFrame.GetRegister(0).AsByteArray();
 
