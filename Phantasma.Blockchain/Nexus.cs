@@ -77,6 +77,7 @@ namespace Phantasma.Blockchain
                     case ContractKind.Naming: contract = new NamingContract(); break;
                     case ContractKind.Messaging: contract = new MessagingContract(); break;
                     case ContractKind.Vault: contract = new VaultContract(); break;
+                    case ContractKind.Bank: contract = new BankContract(); break;
 
                     default:
                         throw new ChainException("Could not create contract for: " + contractKind);
@@ -242,6 +243,7 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Messaging));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Vault));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Bank));
 
             /*var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
