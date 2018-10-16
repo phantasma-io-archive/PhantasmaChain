@@ -8,7 +8,8 @@ namespace Phantasma.Blockchain.Contracts
     {
         ChainCreate,
         TokenCreate,
-        TokenTransfer,
+        TokenSend,
+        TokenReceive,
         TokenMint,
         TokenBurn,
     }

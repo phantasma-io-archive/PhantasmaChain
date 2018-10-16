@@ -3,10 +3,16 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using System;
-using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public struct TokenEventData
+    {
+        public string symbol;
+        public BigInteger amount;
+        public Address chain;
+    }
+
     public sealed class NexusContract : NativeContract
     {
         internal override ContractKind Kind => ContractKind.Nexus;
@@ -90,7 +96,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             token.Burn(balances, from, amount);
-            Runtime.Notify(EventKind.TokenBurn, from, amount);
+
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chain = this.Runtime.Chain.Address });
         }
 
         public void ReceiveTokens(Address sourceChain, Address from, Address to, Hash hash)
@@ -132,7 +139,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
 
             token.Mint(balances, to, amount);
-            Runtime.Notify(EventKind.TokenMint, to, amount);
+            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, amount = amount, chain = otherChain.Address});
 
             RegisterHashAsKnown(Runtime.Transaction.Hash);
         }
@@ -149,36 +156,37 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(token.Mint(balances, target, amount));
 
-            Runtime.Notify(EventKind.TokenMint, target, amount);
+            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = symbol, amount = amount, chain = this.Runtime.Chain.Address });
         }
 
-        public void BurnTokens(Address target, string symbol, BigInteger amount)
+        public void BurnTokens(Address from, string symbol, BigInteger amount)
         {           
             Expect(amount > 0);
+            Expect(IsWitness(from));
+
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Expect(token != null);
+
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            Expect(token.Burn(balances, from, amount));
+
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, amount = amount });
+        }
+
+        public void TransferTokens(Address target, Address destination, string symbol, BigInteger amount)
+        {
+            Expect(amount > 0);
+            Expect(target != destination);
             Expect(IsWitness(target));
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Expect(token.Burn(balances, target, amount));
+            Expect(token.Transfer(balances, target, destination, amount));
 
-            Runtime.Notify(EventKind.TokenBurn, target, amount);
-        }
-
-        public void TransferTokens(Address source, Address destination, string symbol, BigInteger amount)
-        {
-            Expect(amount > 0);
-            Expect(source != destination);
-            Expect(IsWitness(source));
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Expect(token.Transfer(balances, source, destination, amount));
-
-            Runtime.Notify(EventKind.TokenTransfer, source, new object[] { destination, amount });
+            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chain = this.Runtime.Chain.Address, amount = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chain = this.Runtime.Chain.Address, amount = amount, symbol = symbol });
         }
 
         public BigInteger GetBalance(Address address, string symbol)
