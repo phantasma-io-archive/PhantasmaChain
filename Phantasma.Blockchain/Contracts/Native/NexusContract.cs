@@ -1,6 +1,7 @@
 ﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.VM;
 using System;
 using System.Collections.Generic;
 
@@ -10,15 +11,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         internal override ContractKind Kind => ContractKind.Nexus;
 
-        private HashSet<Hash> knownTransactions = new HashSet<Hash>();
-
         public NexusContract() : base()
         {
-        }
-
-        public bool IsKnown(Hash hash)
-        {
-            return knownTransactions.Contains(hash);
         }
 
         public bool IsRootChain(Address address)
@@ -66,17 +60,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             return chain;
         }
 
-        public void SendTokens(Address token, Address from, Address to, BigInteger amount)
+        public void SendTokens(Address targetChain, Address from, Address to, string symbol, BigInteger amount)
         {
             Expect(IsWitness(from));
 
             if (IsRootChain(this.Chain.Address))
             {
-                Expect(IsSideChain(to));
+                Expect(IsSideChain(targetChain));
             }
             else
             {
-                Expect(IsRootChain(to));
+                Expect(IsRootChain(targetChain));
             }
 
             Expect(!IsKnown(Transaction.Hash));
@@ -84,61 +78,61 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fee = amount / 10;
             Expect(fee > 0);
 
-            throw new System.NotImplementedException();
-            /*
-            var otherChain = this.Chain.FindChain(to);
+            var otherChain = this.Chain.FindChain(targetChain);
+            /*TODO
             var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
-            Expect(otherConsensus.IsValidReceiver(from));
+            Expect(otherConsensus.IsValidReceiver(from));*/
 
-            //var tokenContract = (TokenContract) this.Chain.FindContract(NativeContractKind.Token);
-            var tokenContract = this.Chain.FindContract(token);
-            Expect(tokenContract != null);
+            var token = this.Nexus.FindTokenBySymbol(symbol);
+            Expect(token != null);
 
-            var tokenABI = Chain.FindABI(NativeABI.Token);
-            Expect(tokenContract.ABI.Implements(tokenABI));
+            var balances = this.Chain.GetTokenBalances(token);
+            token.Burn(balances, from, amount);
 
-            tokenContract.SetData(this.Chain, this.Transaction, this.Storage);
-
-            tokenABI["Transfer"].Invoke(tokenContract, from, this.Address, amount);
-            tokenABI["Burn"].Invoke(tokenContract, this.Address, amount);
-
-            knownTransactions.Add(Transaction.Hash);*/
+            RegisterHashAsKnown(Transaction.Hash);
         }
 
-        public void ReceiveTokens(Address token, Address from, Address to, Hash hash)
+        public void ReceiveTokens(Address sourceChain, Address from, Address to, Hash hash)
         {
             if (IsRootChain(this.Chain.Address))
             {
-                Expect(IsSideChain(from));
+                Expect(IsSideChain(sourceChain));
             }
             else
             {
-                Expect(IsRootChain(from));
+                Expect(IsRootChain(sourceChain));
             }
 
             Expect(!IsKnown(hash));
 
-            throw new System.NotImplementedException();
-            /*
-            var otherChain = this.Chain.FindChain(from);
-            var otherNexus = (NexusContract) otherChain.FindContract(ContractKind.Nexus);
-            Expect(otherNexus.IsKnown(hash));
+            var otherChain = this.Chain.FindChain(sourceChain);
 
             var tx = otherChain.FindTransaction(hash);
-            BigInteger amount = null; // TODO obtain real amount from "tx"
+            Expect(tx != null);
 
-            var tokenContract = this.Chain.FindContract(token);
-            Expect(tokenContract != null);
+            var disasm = new Disassembler(tx.Script);
+            var instructions = disasm.GetInstructions();
 
-            var tokenABI = Chain.FindABI(NativeABI.Token);
-            Expect(tokenContract.ABI.Implements(tokenABI));
+            string symbol = null;
+            BigInteger amount = 0;
+            foreach (var ins in instructions)
+            {
+                if (ins.Opcode == Opcode.CALL)
+                {
+                    // TODO
+                }
+            }
 
-            tokenContract.SetData(this.Chain, this.Transaction, this.Storage);
+            Expect(symbol != null);
 
-            tokenABI["Mint"].Invoke(tokenContract, this.Address, amount);
-            tokenABI["Transfer"].Invoke(tokenContract, this.Address, to, amount);
+            var token = this.Nexus.FindTokenBySymbol(symbol);
+            Expect(token != null);
 
-            knownTransactions.Add(Transaction.Hash);*/
+            var balances = this.Chain.GetTokenBalances(token);
+
+            token.Mint(balances, to, amount);
+
+            RegisterHashAsKnown(Transaction.Hash);
         }
 
         public void MintTokens(Address target, string symbol, BigInteger amount)

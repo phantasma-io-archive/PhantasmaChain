@@ -91,5 +91,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             var method = _methodTable[name];
             return method.Invoke(this, args);
         }
+
+        private HashSet<Hash> knownTransactions = new HashSet<Hash>();
+        internal bool IsKnown(Hash hash)
+        {
+            return knownTransactions.Contains(hash);
+        }
+
+        protected void RegisterHashAsKnown(Hash hash)
+        {
+            knownTransactions.Add(hash);
+        }
     }
 }
