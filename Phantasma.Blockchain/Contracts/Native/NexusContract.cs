@@ -10,7 +10,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public string symbol;
         public BigInteger amount;
-        public Address chain;
+        public Address chainAddress;
     }
 
     public sealed class NexusContract : NativeContract
@@ -21,14 +21,19 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
+        public bool IsChain(Address address)
+        {
+            return Runtime.Nexus.FindChainByAddress(address) != null;
+        }
+
         public bool IsRootChain(Address address)
         {
-            return (address == this.Runtime.Chain.Address);
+            return (IsChain(address) && address == this.Runtime.Chain.Address);
         }
 
         public bool IsSideChain(Address address)
         {
-            return false;
+            return (IsChain(address) && address != this.Runtime.Chain.Address);
         }
 
         public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply)
@@ -97,7 +102,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             token.Burn(balances, from, amount);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chain = this.Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = this.Runtime.Chain.Address });
         }
 
         public void ReceiveTokens(Address sourceChain, Address from, Address to, Hash hash)
@@ -139,7 +144,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
 
             token.Mint(balances, to, amount);
-            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, amount = amount, chain = otherChain.Address});
+            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = otherChain.Address});
 
             RegisterHashAsKnown(Runtime.Transaction.Hash);
         }
@@ -156,7 +161,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(token.Mint(balances, target, amount));
 
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = symbol, amount = amount, chain = this.Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = this.Runtime.Chain.Address });
         }
 
         public void BurnTokens(Address from, string symbol, BigInteger amount)
@@ -185,8 +190,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(token.Transfer(balances, target, destination, amount));
 
-            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chain = this.Runtime.Chain.Address, amount = amount, symbol = symbol });
-            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chain = this.Runtime.Chain.Address, amount = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = amount, symbol = symbol });
         }
 
         public BigInteger GetBalance(Address address, string symbol)
