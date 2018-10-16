@@ -4,17 +4,6 @@ using System.Collections.Generic;
 
 namespace Phantasma.VM
 {
-    public struct Instruction
-    {
-        public Opcode Opcode;
-        public object[] args;
-
-        public override string ToString()
-        {
-            return Opcode.ToString();
-        }
-    }
-
     public class Disassembler
     {
         private uint InstructionPointer;
@@ -63,7 +52,7 @@ namespace Phantasma.VM
 
                             var bytes = ReadBytes(len);
 
-                            temp.args = new object[] { dst, type, len, bytes };
+                            temp.args = new object[] { dst, type, bytes };
 
                             break;
                         }
