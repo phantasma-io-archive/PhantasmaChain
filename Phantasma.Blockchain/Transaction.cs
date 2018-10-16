@@ -20,6 +20,7 @@ namespace Phantasma.Blockchain
         public byte[] Script { get; }
 
         public Signature[] Signatures { get; private set; }
+        public Event[] Events { get; private set; }
         public Hash Hash { get; private set; }
 
         public static Transaction Unserialize(BinaryReader reader)
@@ -27,10 +28,17 @@ namespace Phantasma.Blockchain
             var script = reader.ReadByteArray();
             var fee = reader.ReadBigInteger();
             var txOrder = reader.ReadBigInteger();
-            var signatureCount = (int)reader.ReadVarInt();
 
+            var evtCount = (int)reader.ReadVarInt();
+            var events = new Event[evtCount];
+            for (int i = 0; i < evtCount; i++)
+            {
+                events[i] = Event.Unserialize(reader);
+            }
+
+            var signatureCount = (int)reader.ReadVarInt();
             var signatures = new Signature[signatureCount];
-            for (int i=0; i<signatureCount; i++)
+            for (int i = 0; i < signatureCount; i++)
             {
                 signatures[i] = reader.ReadSignature();
             }
@@ -43,6 +51,12 @@ namespace Phantasma.Blockchain
             writer.WriteByteArray(this.Script);
             writer.WriteBigInteger(this.Fee);
             writer.WriteBigInteger(this.Index);
+
+            writer.WriteVarInt(Events.Length);
+            foreach (var evt in this.Events)
+            {
+                evt.Serialize(writer);
+            }
 
             if (withSignature)
             {
@@ -83,6 +97,8 @@ namespace Phantasma.Blockchain
             // TODO take storage changes from vm execution and apply to global state
             //this.Apply(chain, notify);
 
+            this.Events = vm.Events.ToArray();
+
             return true;
         }
 
@@ -93,6 +109,8 @@ namespace Phantasma.Blockchain
             this.Index = txOrder;
 
             this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
+
+            this.Events = new Event[0];
 
             this.UpdateHash();
         }

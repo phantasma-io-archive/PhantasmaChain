@@ -34,7 +34,6 @@ namespace Phantasma.VM.Contracts
     #region CONTRACTS
     public interface IContract
     {
-        Address Address { get; }
         ContractInterface ABI { get; }
         byte[] Script { get; }
     }

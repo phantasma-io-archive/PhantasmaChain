@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void OpenOrder(Address from, Address baseToken, Address quoteToken, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
         {
-            Expect(Transaction.IsSignedBy(from));
+            Expect(IsWitness(from));
 
             Expect(baseToken!= null);
             Expect(quoteToken != null);

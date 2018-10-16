@@ -86,10 +86,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Expect(IsWitness(from));
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             var balance = balances.Get(from);
             Expect(balance >= TransferAmount);
 
@@ -109,7 +109,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void TakePrivate(Address to, string symbol, uint queueID, RingSignature signature)
         {
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             var queue = FindQueue(token, queueID);
@@ -124,7 +124,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Expect(address != to);
             }
 
-            var msg = this.Transaction.ToByteArray(false);
+            var msg = this.Runtime.Transaction.ToByteArray(false);
             Expect(signature.Verify(msg, queue.addresses));
 
             foreach (var otherSignature in queue.signatures)
@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             queue.signatures.Add(signature);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             balances.Add(to, TransferAmount);
         }
     }

@@ -93,7 +93,7 @@ namespace Phantasma.Blockchain
 
             var contract = new CustomContract(script, abi);
 
-            Log.Message($"Deploying contract: {contract.Address.Text}");
+            Log.Message($"Deploying contract: Address??");
 
             var obj = new VMObject();
             obj.SetValue(contract);

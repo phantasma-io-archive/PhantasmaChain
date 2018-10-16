@@ -27,10 +27,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(duration >= 86400); // minimum 1 day
             Expect(IsWitness(from));
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(balances.Subtract(from, amount));
 
             List<VaultEntry> list;
@@ -48,7 +48,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var entry = new VaultEntry()
             {
                 amount = amount,
-                unlockTime = Block.Timestamp.Value + duration,
+                unlockTime = Runtime.Block.Timestamp.Value + duration,
             };
             list.Add(entry);
         }
@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Expect(IsWitness(from));
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             Expect(_entries.ContainsKey(from));
@@ -68,14 +68,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             foreach (var entry in list)
             {
-                if (entry.unlockTime <= Block.Timestamp.Value)
+                if (entry.unlockTime <= Runtime.Block.Timestamp.Value)
                 {
                     amount += entry.amount;
                 }
             }
             Expect(amount > 0);
 
-            list = list.Where(x => x.unlockTime > Block.Timestamp.Value).ToList();
+            list = list.Where(x => x.unlockTime > Runtime.Block.Timestamp.Value).ToList();
             if (list.Count > 0)
             {
                 _entries[from] = list;
@@ -85,7 +85,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 _entries.Remove(from);
             }
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(balances.Add(from, amount));
         }
     }

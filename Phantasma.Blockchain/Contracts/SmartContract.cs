@@ -17,24 +17,17 @@ namespace Phantasma.Blockchain.Contracts
 
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
-        protected Transaction Transaction { get; private set; }
-        protected Block Block { get; private set; }
-        protected StorageContext Storage { get; private set; }
-
-        public Chain Chain { get; private set; }
-        public Address Address => Chain.Address;
-        public Nexus Nexus => Chain.Nexus;
+        public RuntimeVM Runtime { get; private set; }
+        public StorageContext Storage { get; private set; }
 
         public SmartContract()
         {
             this.Order = 0;
         }
 
-        public void SetData(Chain chain, Block block, Transaction tx, StorageContext storage)
+        internal void SetRuntimeData(RuntimeVM VM, StorageContext storage)
         {
-            this.Chain = chain;
-            this.Block = block;
-            this.Transaction = tx;
+            this.Runtime = VM;
             this.Storage = storage;
         }
 
@@ -60,12 +53,12 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool IsWitness(Address address)
         {
-            if (address == this.Chain.Address) // TODO this is not right...
+            if (address == this.Runtime.Chain.Address) // TODO this is not right...
             {
                 return true;
             }
 
-            return Transaction.IsSignedBy(address);
+            return Runtime.Transaction.IsSignedBy(address);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool IsRootChain(Address address)
         {
-            return (address == this.Chain.Address);
+            return (address == this.Runtime.Chain.Address);
         }
 
         public bool IsSideChain(Address address)
@@ -35,8 +35,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             symbol = symbol.ToUpperInvariant();
 
-            var token = this.Nexus.CreateToken(owner, symbol, name, maxSupply);
+            var token = this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply);
             Expect(token != null);
+
+            Runtime.Notify(EventKind.TokenCreate, owner, symbol);
 
             return token;
         }
@@ -51,11 +53,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             name = name.ToLowerInvariant();
             Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase));
 
-            var parent = this.Nexus.FindChainByName(parentName);
+            var parent = this.Runtime.Nexus.FindChainByName(parentName);
             Expect(parent != null);
 
-            var chain = this.Nexus.CreateChain(owner, name, parent, this.Block);
+            var chain = this.Runtime.Nexus.CreateChain(owner, name, parent, this.Runtime.Block);
             Expect(chain != null);
+
+            Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
 
             return chain;
         }
@@ -64,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Expect(IsWitness(from));
 
-            if (IsRootChain(this.Chain.Address))
+            if (IsRootChain(this.Runtime.Chain.Address))
             {
                 Expect(IsSideChain(targetChain));
             }
@@ -73,28 +77,25 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Expect(IsRootChain(targetChain));
             }
 
-            Expect(!IsKnown(Transaction.Hash));
-
             var fee = amount / 10;
             Expect(fee > 0);
 
-            var otherChain = this.Chain.FindChain(targetChain);
+            var otherChain = this.Runtime.Chain.FindChain(targetChain);
             /*TODO
             var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
             Expect(otherConsensus.IsValidReceiver(from));*/
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             token.Burn(balances, from, amount);
-
-            RegisterHashAsKnown(Transaction.Hash);
+            Runtime.Notify(EventKind.TokenBurn, from, amount);
         }
 
         public void ReceiveTokens(Address sourceChain, Address from, Address to, Hash hash)
         {
-            if (IsRootChain(this.Chain.Address))
+            if (IsRootChain(this.Runtime.Chain.Address))
             {
                 Expect(IsSideChain(sourceChain));
             }
@@ -105,7 +106,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Expect(!IsKnown(hash));
 
-            var otherChain = this.Chain.FindChain(sourceChain);
+            var otherChain = this.Runtime.Chain.FindChain(sourceChain);
 
             var tx = otherChain.FindTransaction(hash);
             Expect(tx != null);
@@ -125,27 +126,30 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Expect(symbol != null);
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
 
             token.Mint(balances, to, amount);
+            Runtime.Notify(EventKind.TokenMint, to, amount);
 
-            RegisterHashAsKnown(Transaction.Hash);
+            RegisterHashAsKnown(Runtime.Transaction.Hash);
         }
 
         public void MintTokens(Address target, string symbol, BigInteger amount)
         {
             Expect(amount > 0);
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
             Expect(IsWitness(token.Owner));
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(token.Mint(balances, target, amount));
+
+            Runtime.Notify(EventKind.TokenMint, target, amount);
         }
 
         public void BurnTokens(Address target, string symbol, BigInteger amount)
@@ -153,11 +157,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(amount > 0);
             Expect(IsWitness(target));
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
-            Expect(token.Burn(balances, target, amount));           
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            Expect(token.Burn(balances, target, amount));
+
+            Runtime.Notify(EventKind.TokenBurn, target, amount);
         }
 
         public void TransferTokens(Address source, Address destination, string symbol, BigInteger amount)
@@ -166,19 +172,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(source != destination);
             Expect(IsWitness(source));
 
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             Expect(token.Transfer(balances, source, destination, amount));
+
+            Runtime.Notify(EventKind.TokenTransfer, source, new object[] { destination, amount });
         }
 
         public BigInteger GetBalance(Address address, string symbol)
         {
-            var token = this.Nexus.FindTokenBySymbol(symbol);
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
 
-            var balances = this.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(token);
             return balances.Get(address);
         }
 

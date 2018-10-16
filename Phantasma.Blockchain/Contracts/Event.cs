@@ -1,17 +1,25 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
-using System;
 using Phantasma.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
+    public enum EventKind
+    {
+        ChainCreate,
+        TokenCreate,
+        TokenTransfer,
+        TokenMint,
+        TokenBurn,
+    }
+
     public class Event
     {
-        public readonly Enum Kind;
+        public readonly EventKind Kind;
         public readonly Address Address;
         public readonly byte[] Data;
 
-        public Event(Enum kind, Address address, byte[] data = null)
+        public Event(EventKind kind, Address address, byte[] data = null)
         {
             this.Kind = kind;
             this.Address = address;
@@ -33,7 +41,7 @@ namespace Phantasma.Blockchain.Contracts
 
         internal static Event Unserialize(BinaryReader reader)
         {
-            var kind = (Enum)(object)reader.ReadByte();
+            var kind = (EventKind)reader.ReadByte();
             var address = reader.ReadAddress();
             var data = reader.ReadByteArray();
             return new Event(kind, address, data);

@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
     public class RuntimeVM : VirtualMachine
     {
-        public Transaction Transaction { get; }
+        public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
         public Block Block { get; private set; }
+        public Nexus Nexus => Chain.Nexus;
+        
+        private List<Event> _events = new List<Event>();
+        public IEnumerable<Event> Events => _events;
 
         public RuntimeVM(Chain chain, Block block, Transaction tx) : base(tx.Script)
         {
@@ -52,12 +57,20 @@ namespace Phantasma.Blockchain.Contracts
                 if (entry.Address == address)
                 {
                     var storage = this.Chain.FindStorage(address);
-                    entry.Contract.SetData(this.Chain, this.Block, this.Transaction, storage);
+                    entry.Contract.SetRuntimeData(this, storage);
                     return entry.ExecutionContext;
                 }
             }
 
             return null;
+        }
+
+        public void Notify<T>(EventKind kind, Address address, T content)
+        {
+            var bytes = content == null ? new byte[0]: Serialization.Serialize(content);
+
+            var evt = new Event(kind, address, bytes);
+            _events.Add(evt);
         }
     }
 }
