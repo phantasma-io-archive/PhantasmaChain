@@ -8,6 +8,11 @@ namespace Phantasma.VM
     {
         public Opcode Opcode;
         public object[] args;
+
+        public override string ToString()
+        {
+            return Opcode.ToString();
+        }
     }
 
     public class Disassembler
@@ -23,10 +28,9 @@ namespace Phantasma.VM
 
         public List<Instruction> GetInstructions()
         {
-            uint index = 0;
             var result = new List<Instruction>();
 
-            while (index < Script.Length)
+            while (InstructionPointer < Script.Length)
             {
                 var temp = new Instruction();
                 temp.Opcode = (Opcode)Read8();
@@ -57,7 +61,9 @@ namespace Phantasma.VM
                             var type = (VMType)Read8();
                             var len = (int)ReadVar(0xFFF);
 
-                            temp.args = new object[] { dst, type, len };
+                            var bytes = ReadBytes(len);
+
+                            temp.args = new object[] { dst, type, len, bytes };
 
                             break;
                         }
@@ -198,6 +204,8 @@ namespace Phantasma.VM
                             break;
                         }
                 }
+
+                result.Add(temp);
             }
 
             return result;
