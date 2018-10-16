@@ -102,7 +102,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             token.Burn(balances, from, amount);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = this.Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = targetChain });
         }
 
         public void ReceiveTokens(Address sourceChain, Address from, Address to, Hash hash)
