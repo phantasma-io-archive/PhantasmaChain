@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.Hashing;
@@ -40,6 +41,9 @@ namespace Phantasma.Blockchain
         public NativeExecutionContext ExecutionContext { get; private set; }
 
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
+
+
+        public int TransactionCount => _blocks.Sum(c => c.Value.Transactions.Count());  //todo move this?
 
         public bool IsRoot => this.ParentChain == null;
 
