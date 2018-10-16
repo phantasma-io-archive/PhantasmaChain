@@ -85,6 +85,11 @@ namespace Phantasma.Blockchain
             this.Log = Logger.Init(log);
         }
 
+        public override string ToString()
+        {
+            return $"{Name} ({Address})";
+        }
+
         public bool ContainsBlock(Block block)
         {
             if (block == null)
@@ -264,7 +269,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (name.Length <= 4 || name.Length >= 20)
+            if (name.Length < 3 || name.Length >= 20)
             {
                 return false;
             }
