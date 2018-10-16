@@ -125,7 +125,8 @@ namespace Phantasma.Blockchain
             // from here on, the block is accepted
             Log.Message($"Increased chain height to {block.Height}");
 
-            _blocks[block.Height] = block;
+            _blockHeightMap[block.Height] = block;
+            _blocks[block.Hash] = block;
             lastBlock = block;
 
             foreach (Transaction tx in block.Transactions)
