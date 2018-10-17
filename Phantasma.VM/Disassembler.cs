@@ -6,20 +6,20 @@ namespace Phantasma.VM
 {
     public class Disassembler
     {
-        private uint InstructionPointer;
-        private byte[] Script;
+        private uint _instructionPointer;
+        private byte[] _script;
 
         public Disassembler(byte[] script)
         {
-            this.Script = script;
-            this.InstructionPointer = 0;
+            this._script = script;
+            this._instructionPointer = 0;
         }
 
         public List<Instruction> GetInstructions()
         {
             var result = new List<Instruction>();
 
-            while (InstructionPointer < Script.Length)
+            while (_instructionPointer < _script.Length)
             {
                 var temp = new Instruction();
                 temp.Opcode = (Opcode)Read8();
@@ -39,7 +39,7 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            temp.args = new object[] { src, dst };
+                            temp.Args = new object[] { src, dst };
                             break;
                         }
 
@@ -52,7 +52,7 @@ namespace Phantasma.VM
 
                             var bytes = ReadBytes(len);
 
-                            temp.args = new object[] { dst, type, bytes };
+                            temp.Args = new object[] { dst, type, bytes };
 
                             break;
                         }
@@ -63,7 +63,7 @@ namespace Phantasma.VM
                     case Opcode.EXTCALL:
                         {
                             var src = Read8();
-                            temp.args = new object[] { src };
+                            temp.Args = new object[] { src };
                             break;
                         }
 
@@ -72,7 +72,7 @@ namespace Phantasma.VM
                         {
                             var count = Read8();
                             var ofs = Read16();
-                            temp.args = new object[] { count, ofs };
+                            temp.Args = new object[] { count, ofs };
                             break;
                         }
 
@@ -85,13 +85,13 @@ namespace Phantasma.VM
                             if (temp.Opcode == Opcode.JMP)
                             {
                                 var newPos = (short)Read16();
-                                temp.args = new object[] { newPos };
+                                temp.Args = new object[] { newPos };
                             }
                             else
                             {
                                 var src = Read8();
                                 var newPos = (short)Read16();
-                                temp.args = new object[] { src, newPos };
+                                temp.Args = new object[] { src, newPos };
                             }
                             break;
                         }
@@ -111,7 +111,7 @@ namespace Phantasma.VM
                                 bytes = new byte[0];
                             }
 
-                            temp.args = new object[] { len, bytes };
+                            temp.Args = new object[] { len, bytes };
                             break;
                         }
 
@@ -131,7 +131,7 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
 
-                            temp.args = new object[] { srcA, srcB, dst };
+                            temp.Args = new object[] { srcA, srcB, dst };
                             break;
                         }
 
@@ -143,7 +143,7 @@ namespace Phantasma.VM
                             var dst = Read8();
                             var len = (int)ReadVar(0xFFFF);
 
-                            temp.args = new object[] { src, dst, len};
+                            temp.Args = new object[] { src, dst, len};
                             break;
                         }
 
@@ -154,7 +154,7 @@ namespace Phantasma.VM
                     case Opcode.SWITCH:
                         {
                             var dst = Read8();
-                            temp.args = new object[] { dst };
+                            temp.Args = new object[] { dst };
                             break;
                         }
 
@@ -174,7 +174,7 @@ namespace Phantasma.VM
                             var srcA = Read8();
                             var srcB = Read8();
                             var dst = Read8();
-                            temp.args = new object[] { srcA, srcB, dst };
+                            temp.Args = new object[] { srcA, srcB, dst };
                             break;
                         }
 
@@ -183,13 +183,13 @@ namespace Phantasma.VM
                         {
                             var dst = Read8();
                             var key = ReadBytes(Address.PublicKeyLength);
-                            temp.args = new object[] { dst, key };
+                            temp.Args = new object[] { dst, key };
                             break;
                         }
 
                     default:
                         {
-                            temp.args = new object[0];
+                            temp.Args = new object[0];
                             break;
                         }
                 }
@@ -203,10 +203,10 @@ namespace Phantasma.VM
         #region IO 
         private byte Read8()
         {
-            Throw.If(InstructionPointer >= this.Script.Length, "Outside of range");
+            Throw.If(_instructionPointer >= this._script.Length, "Outside of range");
 
-            var result = this.Script[InstructionPointer];
-            InstructionPointer++;
+            var result = this._script[_instructionPointer];
+            _instructionPointer++;
             return result;
         }
 
@@ -260,13 +260,13 @@ namespace Phantasma.VM
 
         private byte[] ReadBytes(int length)
         {
-            Throw.If(InstructionPointer + length >= this.Script.Length, "Outside of range");
+            Throw.If(_instructionPointer + length >= this._script.Length, "Outside of range");
 
             var result = new byte[length];
             for (int i = 0; i < length; i++)
             {
-                result[i] = this.Script[InstructionPointer];
-                InstructionPointer++;
+                result[i] = this._script[_instructionPointer];
+                _instructionPointer++;
             }
 
             return result;

@@ -6,7 +6,7 @@ namespace Phantasma.VM
     public struct Instruction
     {
         public Opcode Opcode;
-        public object[] args;
+        public object[] Args;
 
         private static void AppendRegister(StringBuilder sb, object reg)
         {
@@ -29,9 +29,9 @@ namespace Phantasma.VM
                 case Opcode.NEGATE:
                 case Opcode.ABS:
                     {
-                        AppendRegister(sb, args[0]);
+                        AppendRegister(sb, Args[0]);
                         sb.Append(',');
-                        AppendRegister(sb, args[1]);
+                        AppendRegister(sb, Args[1]);
                         break;
                     }
 
@@ -39,28 +39,28 @@ namespace Phantasma.VM
                 case Opcode.PUSH:
                 case Opcode.EXTCALL:
                     {
-                        AppendRegister(sb, args[0]);
+                        AppendRegister(sb, Args[0]);
                         break;
                     }
 
                 case Opcode.CALL:
                     {
-                        sb.Append((byte)args[0]);
+                        sb.Append((byte)Args[0]);
                         sb.Append(',');
                         sb.Append(' ');
-                        sb.Append((ushort)args[1]);
+                        sb.Append((ushort)Args[1]);
                         break;
                     }
 
                 // args: byte dst_reg, byte type, var length, var data_bytes
                 case Opcode.LOAD:
                     {
-                        AppendRegister(sb, args[0]);
+                        AppendRegister(sb, Args[0]);
                         sb.Append(',');
                         sb.Append(' ');
 
-                        var type = (VMType)args[1];
-                        var bytes = (byte[])args[2];
+                        var type = (VMType)Args[1];
+                        var bytes = (byte[])Args[2];
                         switch (type)
                         {
                             case VMType.String:
@@ -70,7 +70,7 @@ namespace Phantasma.VM
                                 break;
 
                             default:
-                                sb.Append(Base16.Encode(bytes));
+                                sb.Append(bytes.Encode());
                                 break;
                         }
 
