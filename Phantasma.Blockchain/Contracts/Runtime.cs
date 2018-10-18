@@ -5,6 +5,7 @@ using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Blockchain.Storage;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -13,19 +14,23 @@ namespace Phantasma.Blockchain.Contracts
         public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
         public Block Block { get; private set; }
-        public Nexus Nexus { get; private set; }
+        public Nexus Nexus => Chain.Nexus;
         
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
 
-        private Dictionary<Address, StorageChangeSetContext> _changeSets = new Dictionary<Address, StorageChangeSetContext>();
+        public StorageChangeSetContext ChangeSet { get; private set; }
 
-        public RuntimeVM(Nexus nexus, Block block, Transaction tx) : base(tx.Script)
+        public RuntimeVM(Chain chain, Block block, Transaction transaction) : base(transaction.Script)
         {
-            this.Nexus = nexus;
-            this.Transaction = tx;
+            Throw.IfNull(chain, nameof(chain));
+            Throw.IfNull(block, nameof(block));
+            Throw.IfNull(transaction, nameof(transaction));
+
+            this.Chain = chain;
             this.Block = block;
-            this.Chain = null;
+            this.Transaction = transaction;
+            this.ChangeSet = new StorageChangeSetContext(chain.Storage);
             Chain.RegisterInterop(this);
         }
 
@@ -53,26 +58,10 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(Address address)
         {
-            foreach (var chain in Nexus.Chains)
+            if (address == this.Chain.Address)
             {
-                if (chain.Address == address)
-                {
-                    StorageChangeSetContext changeSet;
-                    
-                    if (_changeSets.ContainsKey(address))
-                    {
-                        changeSet = _changeSets[address];
-                    }
-                    else
-                    {
-                        changeSet = new StorageChangeSetContext(chain.Storage);
-                        _changeSets[address] = changeSet;
-                    }
-
-                    this.Chain = chain;
-                    chain.Contract.SetRuntimeData(this, changeSet);
-                    return chain.ExecutionContext;
-                }
+                this.Chain.Contract.SetRuntimeData(this);
+                return this.Chain.ExecutionContext;
             }
 
             return null;

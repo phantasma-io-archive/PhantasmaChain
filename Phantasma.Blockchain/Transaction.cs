@@ -75,18 +75,18 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Nexus nexus, Block block, Action<Event> notify)
+        internal bool Execute(Chain chain, Block block, Action<Event> notify)
         {
-            var vm = new RuntimeVM(nexus, block, this);
+            var runtime = new RuntimeVM(chain, block, this);
 
-            var state = vm.Execute();
+            var state = runtime.Execute();
 
             if (state != ExecutionState.Halt)
             {
                 return false;
             }
 
-            var cost = vm.gas;
+            var cost = runtime.gas;
 
             // fee distribution TODO
 //            if (chain.NativeTokenAddress != null && cost > 0)
@@ -94,10 +94,10 @@ namespace Phantasma.Blockchain
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
 
-            // TODO take storage changes from vm execution and apply to global state
-            //this.Apply(chain, notify);
+            // take storage changes from vm execution and apply to chain global state
+            runtime.ChangeSet.Execute();
 
-            this.Events = vm.Events.ToArray();
+            this.Events = runtime.Events.ToArray();
 
             return true;
         }

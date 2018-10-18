@@ -137,7 +137,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fee = amount / 10;
             Expect(fee > 0);
 
-            var otherChain = this.Runtime.Chain.FindChain(targetChain);
+            var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
             /*TODO
             var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
             Expect(otherConsensus.IsValidReceiver(from));*/

@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using System;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Storage
@@ -46,21 +47,32 @@ namespace Phantasma.Blockchain.Storage
             return baseContext.Get(key);
         }
 
-        public override void Put(StorageKey key, byte[] value)
+        public override void Put(StorageKey key, byte[] newValue)
         {
             StorageChangeSetEntry change;
 
             if (_entries.ContainsKey(key))
             {
                 change = _entries[key];
-                change.newValue = value;
+                change.newValue = newValue;
             }
             else
             {
+                byte[] oldValue;
+
+                if (baseContext.Has(key))
+                {
+                    oldValue = baseContext.Get(key);
+                }
+                else
+                {
+                    oldValue = null;
+                }
+
                 change = new StorageChangeSetEntry()
                 {
-                    oldValue = baseContext.Get(key),
-                    newValue = value,
+                    oldValue = oldValue,
+                    newValue = newValue,
                 };
             }
 
@@ -70,6 +82,36 @@ namespace Phantasma.Blockchain.Storage
         public override void Delete(StorageKey key)
         {
             Put(key, null);
+        }
+
+        public void Execute()
+        {
+            foreach (var entry in _entries)
+            {
+                if (entry.Value.newValue == null)
+                {
+                    baseContext.Delete(entry.Key);
+                }
+                else
+                {
+                    baseContext.Put(entry.Key, entry.Value.newValue);
+                }
+            }
+        }
+
+        public void Undo()
+        {
+            foreach (var entry in _entries)
+            {
+                if (entry.Value.oldValue == null)
+                {
+                    baseContext.Delete(entry.Key);
+                }
+                else
+                {
+                    baseContext.Put(entry.Key, entry.Value.oldValue);
+                }
+            }
         }
     }
 }

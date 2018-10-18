@@ -18,17 +18,16 @@ namespace Phantasma.Blockchain.Contracts
         private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
         public RuntimeVM Runtime { get; private set; }
-        public StorageContext Storage { get; private set; }
+        public StorageContext Storage => Runtime.ChangeSet;
 
         public SmartContract()
         {
             this.Order = 0;
         }
 
-        internal void SetRuntimeData(RuntimeVM VM, StorageContext storage)
+        internal void SetRuntimeData(RuntimeVM VM)
         {
             this.Runtime = VM;
-            this.Storage = storage;
         }
 
         protected void Expect(bool condition)

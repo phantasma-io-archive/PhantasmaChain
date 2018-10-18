@@ -8,6 +8,7 @@ using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
+using System;
 
 namespace Phantasma.Blockchain
 {
@@ -128,7 +129,7 @@ namespace Phantasma.Blockchain
 
             foreach (Transaction tx in block.Transactions)
             {
-                if (!tx.Execute(this.Nexus, block, block.Notify))
+                if (!tx.Execute(this, block, block.Notify))
                 {
                     return false;
                 }
@@ -150,38 +151,26 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-
-/*        public Contract GetOrCreateAccount(byte[] publicKey)
-        {
-            var account = FindContract(publicKey);
-
-            if (account == null)
-            {
-                account = new AccountContract(this, publicKey);
-                _contracts[publicKey] = account;
-            }
-
-            return account;
-        }*/
-
         private Dictionary<Address, Chain> _childChains = new Dictionary<Address, Chain>();
 
-        public Chain FindChain(Address address)
+        public Chain FindChildChain(Address address)
         {
-            if (address == this.Address)
+            Throw.If(address == Address.Null, "invalid address");
+
+            foreach (var childChain in _childChains.Values)
             {
-                return this;
+                if (childChain.Address == address)
+                {
+                    return childChain;
+                }
             }
 
-            if (this.IsRoot)
+            foreach (var childChain in _childChains.Values)
             {
-                foreach (var childChain in _childChains.Values)
+                var result = childChain.FindChildChain(address);
+                if (result != null)
                 {
-                    var result = childChain.FindChain(address);
-                    if (result != null)
-                    {
-                        return result;
-                    }
+                    return result;
                 }
             }
 
