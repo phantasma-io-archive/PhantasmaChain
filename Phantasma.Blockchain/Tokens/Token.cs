@@ -1,5 +1,6 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Blockchain.Tokens
 {

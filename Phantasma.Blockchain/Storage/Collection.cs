@@ -3,7 +3,7 @@ using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
-namespace Phantasma.Blockchain.Types
+namespace Phantasma.Blockchain.Storage
 {
     public class Collection<T>
     {

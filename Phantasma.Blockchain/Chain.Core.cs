@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
-using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Blockchain
 {
@@ -156,7 +155,7 @@ namespace Phantasma.Blockchain
                 return _storages[address];
             }
 
-            var storage = new StorageContext();
+            var storage = new MemoryStorageContext();
             _storages[address] = storage;
             return storage;
         }
