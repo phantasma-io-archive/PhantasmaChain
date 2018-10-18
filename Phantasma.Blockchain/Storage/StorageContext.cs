@@ -1,17 +1,38 @@
-﻿using Phantasma.Cryptography;
+﻿using System.Text;
+using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using System.Text;
 
 namespace Phantasma.Blockchain.Storage
 {
     public abstract class StorageContext
     {
-        public abstract bool Has(byte[] key);
-        public abstract byte[] Get(byte[] key);
-        public abstract void Put(byte[] key, byte[] value);
-        public abstract void Delete(byte[] key);
+        public abstract void Clear();
+        public abstract bool Has(StorageKey key);
+        public abstract byte[] Get(StorageKey key);
+        public abstract void Put(StorageKey key, byte[] value);
+        public abstract void Delete(StorageKey key);
+
+        public bool Has(byte[] key)
+        {
+            return Has(new StorageKey(key));
+        }
+
+        public byte[] Get(byte[] key)
+        {
+            return Get(new StorageKey(key));
+        }
+
+        public void Put(byte[] key, byte[] value)
+        {
+            Put(new StorageKey(key), value);
+        }
+
+        public void Delete(byte[] key)
+        {
+            Delete(new StorageKey(key));
+        }
 
         public bool Has(string key)
         {

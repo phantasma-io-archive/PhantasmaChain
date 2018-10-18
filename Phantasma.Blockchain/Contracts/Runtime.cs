@@ -4,6 +4,7 @@ using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.IO;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -16,6 +17,8 @@ namespace Phantasma.Blockchain.Contracts
         
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
+
+        private Dictionary<Address, StorageChangeSetContext> _changeSets = new Dictionary<Address, StorageChangeSetContext>();
 
         public RuntimeVM(Nexus nexus, Block block, Transaction tx) : base(tx.Script)
         {
@@ -50,14 +53,25 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(Address address)
         {
-            foreach (var entry in Nexus.Chains)
+            foreach (var chain in Nexus.Chains)
             {
-                if (entry.Address == address)
+                if (chain.Address == address)
                 {
-                    this.Chain = entry;
-                    var storage = this.Chain.FindStorage(address);
-                    entry.Contract.SetRuntimeData(this, storage);
-                    return entry.ExecutionContext;
+                    StorageChangeSetContext changeSet;
+                    
+                    if (_changeSets.ContainsKey(address))
+                    {
+                        changeSet = _changeSets[address];
+                    }
+                    else
+                    {
+                        changeSet = new StorageChangeSetContext(chain.Storage);
+                        _changeSets[address] = changeSet;
+                    }
+
+                    this.Chain = chain;
+                    chain.Contract.SetRuntimeData(this, changeSet);
+                    return chain.ExecutionContext;
                 }
             }
 

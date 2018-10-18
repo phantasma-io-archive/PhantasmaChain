@@ -41,6 +41,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
 
+        public StorageContext Storage { get; private set; }
 
         public int TransactionCount => _blocks.Sum(c => c.Value.Transactions.Count());  //todo move this?
 
@@ -80,6 +81,9 @@ namespace Phantasma.Blockchain
             {
                 this.ExecutionContext = null;
             }
+
+            // TODO support persistence storage
+            this.Storage = new MemoryStorageContext();
 
             this.Log = Logger.Init(log);
         }
@@ -144,20 +148,6 @@ namespace Phantasma.Blockchain
             }
 
             return true;
-        }
-
-        private Dictionary<Address, StorageContext> _storages = new Dictionary<Address, StorageContext>();
-
-        public StorageContext FindStorage(Address address)
-        {
-            if (_storages.ContainsKey(address))
-            {
-                return _storages[address];
-            }
-
-            var storage = new MemoryStorageContext();
-            _storages[address] = storage;
-            return storage;
         }
 
 

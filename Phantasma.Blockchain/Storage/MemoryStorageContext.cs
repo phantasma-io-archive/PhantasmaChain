@@ -1,54 +1,18 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using Phantasma.Core.Utils;
-using Phantasma.IO;
-using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain.Storage
 {
-    public class StorageKeyComparer : IEqualityComparer<StorageKey>
-    {
-        public bool Equals(StorageKey left, StorageKey right)
-        {
-            return left.data.SequenceEqual(right.data);
-        }
-
-        public int GetHashCode(StorageKey key)
-        {
-            return key.data.Sum(b => b);
-        }
-    }
-
-    public struct StorageKey
-    {
-        public byte[] data;
-
-        public StorageKey(byte[] data)
-        {
-            this.data = data;
-        }
-
-        public override string ToString()
-        {
-            return MemoryStorageContext.ToHumanKey(data);
-        }
-
-        public override int GetHashCode()
-        {
-            return data.GetHashCode();
-        }
-    }
-
     public class MemoryStorageContext: StorageContext
     {
-        public readonly Dictionary<StorageKey, byte[]> Entries = new Dictionary<StorageKey, byte[]>(new StorageKeyComparer());
+        private Dictionary<StorageKey, byte[]> _entries = new Dictionary<StorageKey, byte[]>(new StorageKeyComparer());
 
-        public void Clear()
+        public override void Clear()
         {
-            Entries.Clear();
+            _entries.Clear();
         }
 
         private void Log(string s)
@@ -57,19 +21,6 @@ namespace Phantasma.Blockchain.Storage
             global::System.Console.ForegroundColor = global::System.ConsoleColor.Yellow;
             global::System.Console.WriteLine(s);
             global::System.Console.ForegroundColor = temp;
-        }
-
-        public static bool IsASCII(byte[] key)
-        {
-            for (int i = 0; i < key.Length; i++)
-            {
-                if (key[i] < 32 || key[i] >= 127)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         public static byte[] FromHumanKey(string key, bool forceSep = false)
@@ -108,7 +59,7 @@ namespace Phantasma.Blockchain.Storage
             if (key.StartsWith("[") && key.EndsWith("["))
             {
                 key = key.Substring(1, key.Length - 2);
-                var num = Phantasma.Numerics.BigInteger.Parse(key);
+                var num = BigInteger.Parse(key);
                 var result = num.ToByteArray();
                 result = new byte[] { (byte)'<' }.ConcatBytes(result).ConcatBytes(new byte[] { (byte)'>' });
             }
@@ -123,143 +74,38 @@ namespace Phantasma.Blockchain.Storage
             }
         }
 
-        public static string ToHumanValue(byte[] key, byte[] value)
+        public override bool Has(StorageKey key)
         {
-            if (key.Length == Address.PublicKeyLength)
-            {
-                return new global::System.Numerics.BigInteger(value).ToString();
-            }
-
-            return "0x" + Base16.Encode(value);
+            return _entries.ContainsKey(key);
         }
 
-        private static string DecodeKey(byte[] key)
+        public override byte[] Get(StorageKey key)
         {
-            for (int i = 0; i < key.Length; i++)
-            {
-                if (key[i] == (byte)'}')
-                {
-                    int index = i + 1;
-                    var first = key.Take(index).ToArray();
+            var value = _entries.ContainsKey(key) ? _entries[key] : new byte[0];
 
-                    if (IsASCII(first))
-                    {
-                        var name = global::System.Text.Encoding.ASCII.GetString(first);
-                        if (name.StartsWith("{") && name.EndsWith("}"))
-                        {
-                            name = name.Substring(1, name.Length - 2);
-
-                            if (i == key.Length - 1)
-                            {
-                                return name;
-                            }
-
-                            var temp = key.Skip(index).ToArray();
-
-                            var rest = DecodeKey(temp);
-
-                            if (rest == null)
-                            {
-                                return null;
-                            }
-
-                            return $"{name}.{rest}";
-                        }
-                    }
-
-                    return null;
-                }
-                else
-                if (key[0] == (byte)'<' && key[i] == (byte)'>')
-                {
-                    int index = i + 1;
-                    var first = key.Take(index - 1).Skip(1).ToArray();
-
-                    var num = new Phantasma.Numerics.BigInteger(first);
-
-                    var name = $"[{num}]";
-
-                    if (i == key.Length - 1)
-                    {
-                        return name;
-                    }
-
-                    var temp = key.Skip(index).ToArray();
-
-                    var rest = DecodeKey(temp);
-
-                    if (rest == null)
-                    {
-                        return null;
-                    }
-
-                    return $"{name}{rest}";
-                }
-            }
-
-            return null;
-        }
-
-        public static string ToHumanKey(byte[] key)
-        {
-            if (key.Length == Address.PublicKeyLength)
-            {
-                return new Address(key).Text;
-            }
-
-            if (key.Length > Address.PublicKeyLength)
-            {
-                var address = key.Take(Address.PublicKeyLength).ToArray();
-                var temp = key.Skip(Address.PublicKeyLength).ToArray();
-
-                var rest = DecodeKey(temp);
-                if (rest != null)
-                {
-                    return $"{ToHumanKey(address)}.{rest}";
-                }
-            }
-
-            {
-                var rest = DecodeKey(key);
-                if (rest != null)
-                {
-                    return rest;
-                }
-            }
-
-            return "0x" + Base16.Encode(key);
-        }
-
-        public override bool Has(byte[] key)
-        {
-            var sKey = new StorageKey(key);
-            return Entries.ContainsKey(sKey);
-        }
-
-        public override byte[] Get(byte[] key)
-        {
-            var sKey = new StorageKey(key);
-            var value = Entries.ContainsKey(sKey) ? Entries[sKey] : new byte[0];
-
-            Log($"GET: {ToHumanKey(key)} => {ToHumanValue(key, value)}");
+            Log($"GET: {StorageKey.ToHumanKey(key.keyData)} => {StorageKey.ToHumanValue(key.keyData, value)}");
 
             return value;
         }
 
-        public override void Put(byte[] key, byte[] value)
+        public override void Put(StorageKey key, byte[] value)
         {
-            Log($"PUT: {ToHumanKey(key)} => {ToHumanValue(key, value)}");
-
-            var sKey = new StorageKey(key);
-            if (value == null) value = new byte[0]; Entries[sKey] = value;
+            Log($"PUT: {StorageKey.ToHumanKey(key.keyData)} => {StorageKey.ToHumanValue(key.keyData, value)}");
+            if (value == null)
+            {
+                value = new byte[0];
+            }
+            _entries[key] = value;
         }
 
-        public override void Delete(byte[] key)
+        public override void Delete(StorageKey key)
         {
-            Log($"DELETE: {ToHumanKey(key)}");
+            Log($"DELETE: {StorageKey.ToHumanKey(key.keyData)}");
 
-            var sKey = new StorageKey(key);
-            if (Entries.ContainsKey(sKey)) Entries.Remove(sKey);
+            if (_entries.ContainsKey(key))
+            {
+                _entries.Remove(key);
+            }
         }
     }
 }
