@@ -9,6 +9,7 @@ using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Storage;
 using Phantasma.IO;
 
 namespace Phantasma.Blockchain
@@ -75,9 +76,9 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Chain chain, Block block, Action<Event> notify)
+        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Event> notify)
         {
-            var runtime = new RuntimeVM(chain, block, this);
+            var runtime = new RuntimeVM(chain, block, this, changeSet);
 
             var state = runtime.Execute();
 
@@ -93,9 +94,6 @@ namespace Phantasma.Blockchain
             {
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
-
-            // take storage changes from vm execution and apply to chain global state
-            runtime.ChangeSet.Execute();
 
             this.Events = runtime.Events.ToArray();
 

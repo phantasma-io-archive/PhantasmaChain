@@ -15,7 +15,7 @@ namespace Phantasma.VM.Contracts
 
     public interface IBlock
     {
-        BigInteger Height { get; }
+        uint Height { get; }
         Hash Hash { get; }
         Hash PreviousHash { get; }
         Timestamp Timestamp { get; }

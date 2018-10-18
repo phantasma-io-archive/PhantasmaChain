@@ -21,7 +21,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public StorageChangeSetContext ChangeSet { get; private set; }
 
-        public RuntimeVM(Chain chain, Block block, Transaction transaction) : base(transaction.Script)
+        public RuntimeVM(Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet) : base(transaction.Script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(block, nameof(block));
@@ -30,7 +30,7 @@ namespace Phantasma.Blockchain.Contracts
             this.Chain = chain;
             this.Block = block;
             this.Transaction = transaction;
-            this.ChangeSet = new StorageChangeSetContext(chain.Storage);
+            this.ChangeSet = changeSet;
             Chain.RegisterInterop(this);
         }
 

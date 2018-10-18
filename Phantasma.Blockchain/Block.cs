@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain
 
         public readonly Address MinerAddress;
 
-        public BigInteger Height { get; private set; }
+        public uint Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
         public uint Nonce { get; private set; }
         public Hash Hash { get; private set; }

@@ -8,10 +8,15 @@ using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
-using System;
 
 namespace Phantasma.Blockchain
 {
+    public struct ChainDiffEntry
+    {
+        public Block block;
+        public StorageChangeSetContext changeSet;
+    }
+    
     public partial class Chain
     {
         public Chain ParentChain { get; private set; }
@@ -23,16 +28,18 @@ namespace Phantasma.Blockchain
         public Address Owner { get; private set; }
 
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
-        private Dictionary<Hash, Block> _blocks = new Dictionary<Hash, Block>();
+        private Dictionary<Hash, Block> _blockHashes = new Dictionary<Hash, Block>();
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
 
-        public IEnumerable<Block> Blocks => _blocks.Values;
+        private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
-        public uint Height => (uint)_blocks.Count;
+        public IEnumerable<Block> Blocks => _blockHashes.Values;
+
+        public uint BlockHeight => (uint)_blockHashes.Count;
         
-        public Block lastBlock { get; private set; }
+        public Block LastBlock { get; private set; }
 
         public SmartContract Contract { get; private set; }
 
@@ -44,7 +51,7 @@ namespace Phantasma.Blockchain
 
         public StorageContext Storage { get; private set; }
 
-        public int TransactionCount => _blocks.Sum(c => c.Value.Transactions.Count());  //todo move this?
+        public int TransactionCount => _blockHashes.Sum(c => c.Value.Transactions.Count());  //todo move this?
 
         public bool IsRoot => this.ParentChain == null;
 
@@ -101,19 +108,19 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            return _blocks.ContainsKey(block.Hash);
+            return _blockHashes.ContainsKey(block.Hash);
         }
 
         public bool AddBlock(Block block)
         {
-            if (lastBlock != null)
+            if (LastBlock != null)
             {
-                if (lastBlock.Height != block.Height - 1)
+                if (LastBlock.Height != block.Height - 1)
                 {
                     return false;
                 }
 
-                if (block.PreviousHash != lastBlock.Hash)
+                if (block.PreviousHash != LastBlock.Hash)
                 {
                     return false;
                 }
@@ -127,9 +134,11 @@ namespace Phantasma.Blockchain
                 }
             }
 
+            var changeSet = new StorageChangeSetContext(this.Storage);
+
             foreach (Transaction tx in block.Transactions)
             {
-                if (!tx.Execute(this, block, block.Notify))
+                if (!tx.Execute(this, block, changeSet, block.Notify))
                 {
                     return false;
                 }
@@ -139,8 +148,10 @@ namespace Phantasma.Blockchain
             Log.Message($"Increased chain height to {block.Height}");
 
             _blockHeightMap[block.Height] = block;
-            _blocks[block.Hash] = block;
-            lastBlock = block;
+            _blockHashes[block.Hash] = block;
+            _blockChangeSets[block.Hash] = changeSet;
+
+            LastBlock = block;
 
             foreach (Transaction tx in block.Transactions)
             {
@@ -203,12 +214,12 @@ namespace Phantasma.Blockchain
             return _transactionBlockMap.ContainsKey(hash) ? _transactionBlockMap[hash] : null;
         }
 
-        public Block FindBlock(Hash hash)
+        public Block FindBlockByHash(Hash hash)
         {
-            return _blocks.ContainsKey(hash) ? _blocks[hash] : null;
+            return _blockHashes.ContainsKey(hash) ? _blockHashes[hash] : null;
         }
 
-        public Block FindBlock(BigInteger height)
+        public Block FindBlockByHeight(BigInteger height)
         {
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
@@ -268,5 +279,68 @@ namespace Phantasma.Blockchain
             return true;
         }
 
+        /// <summary>
+        /// Deletes all blocks starting at the specified hash.
+        /// </summary>
+        public void DeleteBlocks(Hash targetHash)
+        {
+            var targetBlock = FindBlockByHash(targetHash);
+            Throw.IfNull(targetBlock, nameof(targetBlock));
+
+            var currentBlock = this.LastBlock;
+            while (true)
+            {
+                Throw.IfNull(currentBlock, nameof(currentBlock));
+
+                var changeSet = _blockChangeSets[currentBlock.Hash];
+                changeSet.Undo();
+
+                _blockChangeSets.Remove(currentBlock.Hash);
+                _blockHeightMap.Remove(currentBlock.Height);
+                _blockHashes.Remove(currentBlock.Hash);
+
+                currentBlock = FindBlockByHash(currentBlock.PreviousHash);
+                this.LastBlock = currentBlock;
+
+                if (currentBlock.PreviousHash == targetHash)
+                {
+                    break;
+                }
+            }
+        }
+
+        public void MergeBlocks(IEnumerable<ChainDiffEntry> entries)
+        {
+            Throw.IfNot(entries.Any(), "empty entries");
+
+            var firstBlockHeight = entries.First().block.Height;
+
+            var expectedLastHeight = firstBlockHeight + entries.Count();
+            Throw.If(expectedLastHeight <= this.BlockHeight, "short chain");
+
+            var currentBlockHeight = firstBlockHeight;
+
+            foreach (var entry in entries)
+            {
+                if (currentBlockHeight <= this.BlockHeight)
+                {
+                    var localBlock = FindBlockByHeight(currentBlockHeight);
+
+                    if (entry.block.Hash != localBlock.Hash)
+                    {
+                        DeleteBlocks(localBlock.Hash);
+                        var diffHeight = currentBlockHeight - firstBlockHeight;
+                        MergeBlocks(entries.Skip((int)diffHeight));
+                        return;
+                    }
+                }
+                else
+                {
+                    this.AddBlock(entry.block);
+                }
+
+                currentBlockHeight++;
+            }
+        }
     }
 }

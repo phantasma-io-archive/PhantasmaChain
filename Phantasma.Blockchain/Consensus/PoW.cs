@@ -12,7 +12,7 @@ namespace Phantasma.Blockchain.Consensus
         {
             var timestamp = Timestamp.Now;
 
-            var block = new Block(chain, minerAddress, timestamp, txs, chain.lastBlock);
+            var block = new Block(chain, minerAddress, timestamp, txs, chain.LastBlock);
 
             BigInteger target = 0;
             for (int i = 0; i <= block.difficulty; i++)
