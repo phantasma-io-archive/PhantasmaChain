@@ -244,9 +244,8 @@ namespace Phantasma.Blockchain
             var transactions = new List<Transaction>();
 
             transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply));
-            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, PlatformSupply));
             transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
-            transactions.Add(TokenMintTx(RootChain, owner, StableTokenSymbol, PlatformSupply));
+            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));

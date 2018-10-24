@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var nativeToken = Runtime.Nexus.FindTokenBySymbol(Nexus.NativeTokenSymbol);
             Expect(nativeToken != null);
 
-            var stableToken = Runtime.Nexus.FindTokenBySymbol(Nexus.StableTokenName);
+            var stableToken = Runtime.Nexus.FindTokenBySymbol(Nexus.StableTokenSymbol);
             Expect(stableToken != null);
 
             var nativeBalances = Runtime.Chain.GetTokenBalances(nativeToken);
@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stableAmount = amount * GetRate(Nexus.NativeTokenSymbol);
 
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
-            Expect(nativeToken.Mint(stableBalances, target, stableAmount));
+            Expect(stableToken.Mint(stableBalances, target, stableAmount));
 
             Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = amount, symbol = Nexus.NativeTokenSymbol });
             Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = stableAmount, symbol = Nexus.StableTokenSymbol });
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var nativeToken = Runtime.Nexus.FindTokenBySymbol(Nexus.NativeTokenSymbol);
             Expect(nativeToken != null);
 
-            var stableToken = Runtime.Nexus.FindTokenBySymbol(Nexus.StableTokenName);
+            var stableToken = Runtime.Nexus.FindTokenBySymbol(Nexus.StableTokenSymbol);
             Expect(stableToken != null);
 
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
@@ -54,7 +54,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var expectedAmount = amount / GetRate(Nexus.NativeTokenSymbol);
 
             var nativeBalances = Runtime.Chain.GetTokenBalances(nativeToken);
-            Expect(nativeToken.Transfer(stableBalances, Runtime.Chain.Address, target, expectedAmount));
+            Expect(nativeToken.Transfer(nativeBalances, Runtime.Chain.Address, target, expectedAmount));
 
             Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = expectedAmount, symbol = Nexus.NativeTokenSymbol });
             Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = amount, symbol = Nexus.StableTokenSymbol });
