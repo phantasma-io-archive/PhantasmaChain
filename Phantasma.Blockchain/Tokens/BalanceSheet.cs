@@ -1,6 +1,7 @@
 ﻿using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using System;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Tokens
@@ -11,9 +12,12 @@ namespace Phantasma.Blockchain.Tokens
 
         public BigInteger Get(Address address)
         {
-            if (_balances.ContainsKey(address))
+            lock (_balances)
             {
-                return _balances[address];
+                if (_balances.ContainsKey(address))
+                {
+                    return _balances[address];
+                }
             }
 
             return 0;
@@ -28,7 +32,12 @@ namespace Phantasma.Blockchain.Tokens
 
             var balance = Get(address);
             balance += amount;
-            _balances[address] = balance;
+
+            lock (_balances)
+            {
+                _balances[address] = balance;
+            }
+
             return true;
         }
 
@@ -48,16 +57,32 @@ namespace Phantasma.Blockchain.Tokens
 
             balance -= amount;
 
-            if (balance == 0)
+            lock (_balances)
             {
-                _balances.Remove(address);
-            }
-            else
-            {
-                _balances[address] = balance;
+                if (balance == 0)
+                {
+                    _balances.Remove(address);
+                }
+                else
+                {
+                    _balances[address] = balance;
+                }
             }
 
             return true;
+        }
+
+        public void ForEach(Action<Address, BigInteger> visitor)
+        {
+            Throw.IfNull(visitor, nameof(visitor));
+
+            lock (_balances)
+            {
+                foreach (var entry in _balances)
+                {
+                    visitor(entry.Key, entry.Value);
+                }
+            }
         }
     }
 }
