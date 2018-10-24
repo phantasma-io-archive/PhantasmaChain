@@ -1,4 +1,5 @@
-﻿using Phantasma.Core.Types;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
 using System;
@@ -17,10 +18,14 @@ namespace Phantasma.Blockchain
 
         private DateTime _currentTime;
 
+        private Chain bankChain;
+
         public ChainSimulator(KeyPair ownerKey, int seed)
         {
             _owner = ownerKey;
             this.Nexus = new Nexus(_owner);
+
+            this.bankChain = Nexus.FindChainByName("bank");
 
             var miner = KeyPair.Generate();
             var third = KeyPair.Generate();
@@ -37,40 +42,64 @@ namespace Phantasma.Blockchain
 
             int transferCount = 1 + _rnd.Next() % 10;
 
-            var chain = Nexus.RootChain;
-            var token = Nexus.NativeToken;
-
             while (transactions.Count < transferCount)
             {
                 var source = _keys[_rnd.Next() % _keys.Count];
 
-                var temp = _rnd.Next() % 5;
-                Address targetAddress;
+                var chain = Nexus.RootChain;
+                var token = Nexus.NativeToken;
 
-                if (_keys.Count < 2 || temp == 0)
+                switch (_rnd.Next() % 4)
                 {
-                    var key = KeyPair.Generate();
-                    _keys.Add(key);
-                    targetAddress = key.Address;
-                }
-                else
-                {
-                    targetAddress = _keys[_rnd.Next() % _keys.Count].Address;
+                    case 1:
+                        {
+                            var balance = chain.GetTokenBalance(token, source.Address);
+
+                            var total = balance / 10;
+                            if (total > 0)
+                            {
+                                var script = ScriptUtils.CallContractScript(chain, "SendTokens", bankChain.Address, source.Address, source.Address, token.Symbol, total);
+                                var tx = new Transaction(script, 0, 0);
+                                tx.Sign(source);
+                                transactions.Add(tx);
+                            }
+
+                            break;
+                        }
+
+                    default:
+                        {
+                            var temp = _rnd.Next() % 5;
+                            Address targetAddress;
+
+                            if (_keys.Count < 2 || temp == 0)
+                            {
+                                var key = KeyPair.Generate();
+                                _keys.Add(key);
+                                targetAddress = key.Address;
+                            }
+                            else
+                            {
+                                targetAddress = _keys[_rnd.Next() % _keys.Count].Address;
+                            }
+
+                            if (source.Address != targetAddress)
+                            {
+                                var balance = chain.GetTokenBalance(token, source.Address);
+
+                                var total = balance / 10;
+                                if (total > 0)
+                                {
+                                    var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, targetAddress, token.Symbol, total);
+                                    var tx = new Transaction(script, 0, 0);
+                                    tx.Sign(source);
+                                    transactions.Add(tx);
+                                }
+                            }
+                            break;
+                        }
                 }
 
-                if (source.Address != targetAddress)
-                {
-                    var balance = chain.GetTokenBalance(token, source.Address);
-
-                    var total = balance / 10;
-                    if (total > 0)
-                    {
-                        var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, targetAddress, token.Symbol, total);
-                        var tx = new Transaction(script, 0, 0);
-                        tx.Sign(source);
-                        transactions.Add(tx);
-                    }
-                }
             }
 
             var block = new Block(Nexus.RootChain, _owner.Address, _currentTime, transactions, Nexus.RootChain.LastBlock);
