@@ -48,6 +48,7 @@ namespace Phantasma.Blockchain
 
                 var chain = Nexus.RootChain;
                 var token = Nexus.NativeToken;
+                var stableToken = Nexus.StableToken;
 
                 switch (_rnd.Next() % 4)
                 {
@@ -59,6 +60,17 @@ namespace Phantasma.Blockchain
                             if (total > 0)
                             {
                                 var script = ScriptUtils.CallContractScript(chain, "SendTokens", bankChain.Address, source.Address, source.Address, token.Symbol, total);
+                                var tx = new Transaction(script, 0, 0);
+                                tx.Sign(source);
+                                transactions.Add(tx);
+                            }
+
+                            var balanceStable = chain.GetTokenBalance(stableToken, source.Address);
+
+                            var totalStable = balanceStable / 10;
+                            if (totalStable > 0)
+                            {
+                                var script = ScriptUtils.CallContractScript(chain, "SendTokens", bankChain.Address, source.Address, source.Address, stableToken.Symbol, totalStable);
                                 var tx = new Transaction(script, 0, 0);
                                 tx.Sign(source);
                                 transactions.Add(tx);
