@@ -45,7 +45,19 @@ namespace Phantasma.Cryptography
             
             var q = n % max;
 
-            return new KeyPair(q.ToByteArray());
+            bytes = q.ToByteArray();
+
+            // TODO this is a fix for a bug that appears sometimes, it appears that the math before has a mistake somewhere
+            var diff = KeyPair.PrivateKeyLength - bytes.Length;
+            if (diff > 0)
+            {
+                var pad = new byte[diff];
+                rnd.NextBytes(pad);
+
+                bytes = bytes.Concat(pad).ToArray();
+            }
+
+            return new KeyPair(bytes);
         }
 
         public static KeyPair FromWIF(string wif)
