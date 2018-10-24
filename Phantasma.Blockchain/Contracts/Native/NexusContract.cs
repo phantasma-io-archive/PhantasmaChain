@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Expect(!string.IsNullOrEmpty(symbol));
             Expect(!string.IsNullOrEmpty(name));
-            Expect(maxSupply > 0);
+            Expect(maxSupply >= 0);
 
             Expect(IsWitness(owner));
 

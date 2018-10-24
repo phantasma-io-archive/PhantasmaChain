@@ -15,6 +15,7 @@ namespace Phantasma.Blockchain
     {
         public Chain RootChain { get; private set; }
         public Token NativeToken { get; private set; }
+        public Token StableToken { get; private set; }
 
         private Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
         private Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
@@ -131,7 +132,7 @@ namespace Phantasma.Blockchain
         #region TOKENS
         internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply)
         {
-            if (symbol == null || name == null || maxSupply <= 0)
+            if (symbol == null || name == null || maxSupply < 0)
             {
                 return null;
             }
@@ -150,6 +151,11 @@ namespace Phantasma.Blockchain
             if (symbol == NativeTokenSymbol)
             {
                 NativeToken = token;
+            }
+            else
+            if (symbol == StableTokenSymbol)
+            {
+                StableToken = token;
             }
 
             _tokens[symbol] = token;
@@ -230,11 +236,15 @@ namespace Phantasma.Blockchain
         public readonly static string PlatformName = "Phantasma";
         public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000);
 
+        public readonly static string StableTokenSymbol = "DEAL";
+        public readonly static string StableTokenName = "Stable";
+
         private Block CreateGenesisBlock(KeyPair owner)
         {
             var transactions = new List<Transaction>();
 
             transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply));
+            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0));
             transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));

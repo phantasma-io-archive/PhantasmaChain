@@ -9,7 +9,8 @@ namespace Phantasma.Blockchain.Tokens
         public string Symbol { get; private set; }
         public string Name { get; private set; }
 
-        public BigInteger MaxSupply { get; private set; } // = 93000000;
+        public BigInteger MaxSupply { get; private set; }
+        public bool IsCapped => MaxSupply > 0;
 
         public Address Owner { get; private set; }
 
@@ -23,10 +24,7 @@ namespace Phantasma.Blockchain.Tokens
             this._storage = storage;
         }
 
-        public string GetName() => Name;
-        public string GetSymbol() => Symbol;
-        public BigInteger GetSupply() => MaxSupply;
-        public BigInteger GetDecimals() => 8;
+        public BigInteger Decimals => 8;
 
         internal Token(Address owner, string symbol, string name, BigInteger maxSupply)
         {
@@ -45,7 +43,7 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (this.CurrentSupply + amount > this.MaxSupply)
+            if (IsCapped && this.CurrentSupply + amount > this.MaxSupply)
             {
                 return false;
             }
