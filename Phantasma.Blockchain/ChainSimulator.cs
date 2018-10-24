@@ -15,6 +15,8 @@ namespace Phantasma.Blockchain
         private List<KeyPair> _keys = new List<KeyPair>();
         private KeyPair _owner;
 
+        private DateTime _currentTime;
+
         public ChainSimulator(KeyPair ownerKey, int seed)
         {
             _owner = ownerKey;
@@ -25,6 +27,8 @@ namespace Phantasma.Blockchain
 
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
+
+            _currentTime = new DateTime(2018, 8, 26);
         }
 
         public void GenerateBlock()
@@ -69,9 +73,13 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var block = new Block(Nexus.RootChain, _owner.Address, Timestamp.Now, transactions, Nexus.RootChain.LastBlock);
-            if (!block.Chain.AddBlock(block))
+            var block = new Block(Nexus.RootChain, _owner.Address, _currentTime, transactions, Nexus.RootChain.LastBlock);
+            if (block.Chain.AddBlock(block))
             {
+                _currentTime += TimeSpan.FromSeconds(15);
+            }
+            else
+            { 
                 throw new Exception("add block failed");
             }
 
