@@ -391,24 +391,33 @@ namespace Phantasma.Numerics
 
         private static byte[] Multiply(byte[] X, byte[] Y)
         {
-            int n = 0;
+            var r = new byte[X.Length + Y.Length + 1];
 
-            // BUG how to calculate the proper length of a X times Y when X has N bits and Y has M bits?
-            var r = new byte[X.Length + Y.Length];
+            Int32 sum = 0;
+            Int32 carryOver = 0;
 
-            uint overflow = 0;
             for (int j = 0; j < Y.Length; j++)
             {
                 for (int i = 0; i < X.Length; i++)
                 {
-                    var sum = (X[i] * Y[j]) + overflow;
-                    r[n] = (byte)sum;
-                    n++;
-                    overflow = (byte)(sum >> 8);
+                    sum = r[i+j] + (X[i] * Y[j]);
+
+                    r[i + j] = (byte) sum;
+                    carryOver = (byte) (sum >> 8);
+
+                    int z = 1;
+                    while (carryOver > 0)
+                    {
+                        sum = r[i + j + z] + carryOver;
+
+                        r[i + j + z] = (byte) sum;
+                        carryOver = (byte) (sum >> 8);
+
+                        z++;
+                    }
+                    
                 }
             }
-
-            r[n] = (byte)overflow;
 
             return r;
         }
