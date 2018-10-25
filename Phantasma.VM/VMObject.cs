@@ -436,13 +436,29 @@ namespace Phantasma.VM
             {
                 case VMType.Bool: result.SetValue((bool)obj); break;
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
-                case VMType.String: result.SetValue((string)obj);break;
+                case VMType.String: result.SetValue((string)obj); break;
                 case VMType.Number: result.SetValue((BigInteger)obj); break;
                 case VMType.Object: result.SetValue(obj); break;
                 default: return null;
             }
 
             return result;
+        }
+
+
+        public object ToObject()
+        {
+            Throw.If(Type == VMType.None, "not a valid object");
+
+            switch (Type)
+            {
+                case VMType.Bool: return this.AsBool();
+                case VMType.Bytes: return this.AsByteArray();
+                case VMType.String: return this.AsString();
+                case VMType.Number: return this.AsNumber();
+                case VMType.Object: return this.Data;
+                default: return null;
+            }
         }
 
     }

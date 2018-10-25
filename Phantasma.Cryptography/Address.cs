@@ -63,6 +63,11 @@ namespace Phantasma.Cryptography
 
         public override string ToString()
         {
+            if (this == Null)
+            {
+                return "[Burner address]";
+            }
+
             return this.Text;
         }
 

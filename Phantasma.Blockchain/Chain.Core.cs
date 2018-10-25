@@ -9,6 +9,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
 using System;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -308,6 +309,20 @@ namespace Phantasma.Blockchain
                     break;
                 }
             }
+        }
+
+        internal object InvokeContract(string methodName, params object[] args)
+        {
+            var script = ScriptUtils.CallContractScript(this, methodName, args);
+            var changeSet = new StorageChangeSetContext(this.Storage);
+            var vm = new RuntimeVM(script, this, null, null, changeSet);
+            Contract.SetRuntimeData(vm);
+
+            vm.Execute();
+
+            var result = vm.stack.Pop();
+
+            return result.ToObject();
         }
 
         public void MergeBlocks(IEnumerable<ChainDiffEntry> entries)

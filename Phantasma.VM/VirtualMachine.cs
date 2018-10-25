@@ -27,6 +27,8 @@ namespace Phantasma.VM
 
         public VirtualMachine(byte[] script)
         {
+            Throw.IfNull(script, nameof(script));
+
             this.entryAddress = Address.FromScript(script);
             this.entryContext = new ScriptContext(script);
             RegisterContext(this.entryAddress, this.entryContext);

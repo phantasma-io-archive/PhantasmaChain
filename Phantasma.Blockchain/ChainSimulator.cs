@@ -1,6 +1,7 @@
-﻿using Phantasma.Blockchain.Contracts.Native;
+﻿using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Core.Types;
+using Phantasma.Blockchain.Storage;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
 using System;
@@ -33,12 +34,12 @@ namespace Phantasma.Blockchain
         private Chain nameChain;
 
         private static readonly string[] accountNames = {
-            "aberration", "absence", "ace", "acid", "alakazam", "alien", "alpha", "angel", "angler", "anomaly", "answer", "ant", "aqua", "archangel",
+            "aberration", "absence", "aceman", "acid", "alakazam", "alien", "alpha", "angel", "angler", "anomaly", "answer", "antsharer", "aqua", "archangel",
             "aspect", "atom", "avatar", "azure", "behemoth", "beta", "bishop", "bite", "blade", "blank", "blazer", "bliss", "boggle", "bolt",
             "bullet", "bullseye", "burn", "chaos", "charade", "charm", "chase", "chief", "chimera", "chronicle", "cipher", "claw", "cloud", "combo",
             "comet", "complex", "conjurer", "cowboy", "craze", "crotchet", "crow", "crypto", "cryptonic", "curse", "dagger", "dante", "daydream",
-            "dexter", "diablo", "doc", "doppelganger", "drake", "dread", "ecstasy", "enigma", "epitome", "essence", "eternity", "face",
-            "fetish", "fiend", "flash", "fragment", "freak", "fury", "gem", "ghoul", "gloom", "gluttony", "grace", "griffin", "grim",
+            "dexter", "diablo", "doctor", "doppelganger", "drake", "dread", "ecstasy", "enigma", "epitome", "essence", "eternity", "face",
+            "fetish", "fiend", "flash", "fragment", "freak", "fury", "ghoul", "gloom", "gluttony", "grace", "griffin", "grim",
             "whiz", "wolf", "wrath", "zero", "zigzag", "zion"
         };
 
@@ -70,6 +71,8 @@ namespace Phantasma.Blockchain
             var txChainMap = new Dictionary<Hash, Chain>();
             var txHashMap = new Dictionary<Hash, Transaction>();
 
+            var pendingNames = new HashSet<Address>();
+
             int transferCount = 1 + _rnd.Next() % 10;
             while (transactions.Count < transferCount)
             {
@@ -92,10 +95,13 @@ namespace Phantasma.Blockchain
                         {
                             var balance = chain.GetTokenBalance(token, source.Address);
 
+                            var chainList = Nexus.Chains.ToArray();
+                            var targetChain = chainList[_rnd.Next() % chainList.Length];
+
                             var total = balance / 10;
-                            if (total > 0)
+                            if (total > 0 && targetChain != chain)
                             {
-                                var script = ScriptUtils.CallContractScript(chain, "SendTokens", bankChain.Address, source.Address, source.Address, token.Symbol, total);
+                                var script = ScriptUtils.CallContractScript(chain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, total);
                                 var tx = new Transaction(script, 0, 0);
                                 tx.Sign(source);
 
@@ -107,7 +113,7 @@ namespace Phantasma.Blockchain
                                 {
                                     address = source.Address,
                                     sourceChain = chain,
-                                    destChain = bankChain,
+                                    destChain = targetChain,
                                     hash = tx.Hash,
                                     block = null,
                                 };
@@ -123,8 +129,9 @@ namespace Phantasma.Blockchain
                             SideChainPendingTransaction targetTransaction = null;
                             foreach (var entry in _pendingTxs)
                             {
-                                if (entry.address == source.Address && entry.sourceChain == chain)
+                                if (entry.address == source.Address)
                                 {
+                                    chain = entry.sourceChain;
                                     targetTransaction = entry;
                                     break;
                                 }
@@ -201,16 +208,41 @@ namespace Phantasma.Blockchain
                             token = Nexus.NativeToken;
 
                             var balance = chain.GetTokenBalance(token, source.Address);
-                            if (balance >= NamesContract.RegistrationCost)
+                            if (balance >= NamesContract.RegistrationCost && !pendingNames.Contains(source.Address))
                             {
                                 var randomName = accountNames[_rnd.Next() % accountNames.Length];
-                                var script = ScriptUtils.CallContractScript(chain, "Register", source.Address, randomName);
-                                var tx = new Transaction(script, 0, 0);
-                                tx.Sign(source);
 
-                                txChainMap[tx.Hash] = chain;
-                                txHashMap[tx.Hash] = tx;
-                                transactions.Add(tx);
+                                switch (_rnd.Next() % 10)
+                                {
+                                    case 1:
+                                    case 2:
+                                        randomName += (_rnd.Next() % 10).ToString();
+                                        break;
+
+                                    case 3:
+                                    case 4:
+                                    case 5:
+                                        randomName += (10 + _rnd.Next() % 90).ToString();
+                                        break;
+
+                                    case 6:
+                                        randomName += (100 +_rnd.Next() % 900).ToString();
+                                        break;
+                                }
+
+                                var lookup = (Address)chain.InvokeContract("LookUpName", randomName);
+                                if (lookup == Address.Null)
+                                {
+                                    var script = ScriptUtils.CallContractScript(chain, "Register", source.Address, randomName);
+                                    var tx = new Transaction(script, 0, 0);
+                                    tx.Sign(source);
+
+                                    txChainMap[tx.Hash] = chain;
+                                    txHashMap[tx.Hash] = tx;
+                                    transactions.Add(tx);
+
+                                    pendingNames.Add(source.Address);
+                                }
                             }
 
                             break;

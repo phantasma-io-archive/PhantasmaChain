@@ -21,11 +21,14 @@ namespace Phantasma.Blockchain.Contracts
 
         public StorageChangeSetContext ChangeSet { get; private set; }
 
-        public RuntimeVM(Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet) : base(transaction.Script)
+        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
-            Throw.IfNull(block, nameof(block));
-            Throw.IfNull(transaction, nameof(transaction));
+            Throw.IfNull(changeSet, nameof(changeSet));
+
+            // NOTE: block and transaction can be null, required for Chain.InvokeContract
+            //Throw.IfNull(block, nameof(block));
+            //Throw.IfNull(transaction, nameof(transaction));
 
             this.Chain = chain;
             this.Block = block;
