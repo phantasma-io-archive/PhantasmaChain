@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain.Tokens
             return 0;
         }
 
-        public bool Add(Address address, BigInteger amount)
+        internal bool Add(Address address, BigInteger amount)
         {
             if (amount <= 0)
             {
@@ -41,7 +41,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool Subtract(Address address, BigInteger amount)
+        internal bool Subtract(Address address, BigInteger amount)
         {
             if (amount <= 0)
             {

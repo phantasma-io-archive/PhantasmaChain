@@ -225,7 +225,7 @@ namespace Phantasma.Blockchain
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
-        internal BalanceSheet GetTokenBalances(Token token)
+        public BalanceSheet GetTokenBalances(Token token)
         {
             if (_tokenBalances.ContainsKey(token))
             {
