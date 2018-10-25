@@ -10,7 +10,7 @@ namespace Phantasma.Tests
     public class ChainTests
     {
         [TestMethod]
-        public void TestChain()
+        public void TestNexus()
         {
             var owner = KeyPair.Generate();
             var nexus = new Nexus(owner);
@@ -27,5 +27,25 @@ namespace Phantasma.Tests
             /*var block = ProofOfWork.MineBlock(chain, miner.Address, new List<Transaction>() { tx });
             chain.AddBlock(block);*/
         }
+
+        [TestMethod]
+        public void TestChainDelete()
+        {
+            var owner = KeyPair.Generate();
+            var nexus = new Nexus(owner);
+
+            var miner = KeyPair.Generate();
+            var third = KeyPair.Generate();
+
+            var chain = nexus.RootChain;
+            var token = nexus.NativeToken;
+
+            var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, token, owner.Address, third.Address, 5), 0, 0);
+            tx.Sign(owner);
+
+            /*var block = ProofOfWork.MineBlock(chain, miner.Address, new List<Transaction>() { tx });
+            chain.AddBlock(block);*/
+        }
+
     }
 }

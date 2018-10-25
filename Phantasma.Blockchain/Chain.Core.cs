@@ -8,6 +8,7 @@ using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
+using System;
 
 namespace Phantasma.Blockchain
 {
