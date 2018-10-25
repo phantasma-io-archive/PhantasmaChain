@@ -69,6 +69,11 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public override string ToString()
+        {
+            return $"{Hash}";
+        }
+
         // TODO should run the script and return true if sucess or false if exception
         private bool Validate(Chain chain, out BigInteger fee)
         {
