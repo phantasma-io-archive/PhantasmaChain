@@ -234,7 +234,7 @@ namespace Phantasma.Blockchain
                     var block = new Block(chain, _owner.Address, _currentTime, txs, chain.LastBlock);
                     if (block.Chain.AddBlock(block))
                     {
-                        _currentTime += TimeSpan.FromSeconds(15);
+                        _currentTime += TimeSpan.FromMinutes(45);
 
                         foreach (var entry in _pendingTxs)
                         {
