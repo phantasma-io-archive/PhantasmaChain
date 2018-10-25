@@ -12,6 +12,7 @@ namespace Phantasma.Blockchain.Contracts
         TokenReceive,
         TokenMint,
         TokenBurn,
+        AddressRegister,
     }
 
     public class Event
@@ -27,9 +28,14 @@ namespace Phantasma.Blockchain.Contracts
             this.Data = data;
         }
 
-        public T GetValue<T>()
+        public T GetKind<T>()
         {
             return (T)(object)Kind;
+        }
+
+        public T GetContent<T>()
+        {
+            return Serialization.Unserialize<T>(this.Data);
         }
 
         public void Serialize(BinaryWriter writer)
