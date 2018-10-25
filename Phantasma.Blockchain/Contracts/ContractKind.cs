@@ -11,7 +11,7 @@
         Bank,
         Vault,
         Exchange,
-        Naming,
+        Names,
         Messaging,
         Reputation,
         Custom,

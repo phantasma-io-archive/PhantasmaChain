@@ -64,6 +64,16 @@ namespace Phantasma.Blockchain.Storage
 
         private static readonly byte[] global_prefix = "{global}".AsByteArray();
 
+        public Collection<T> FindCollectionForAddress<T>(string name, Address address)
+        {
+            return FindCollectionForAddress<T>(Encoding.UTF8.GetBytes(name), address);
+        }
+
+        public Collection<T> FindCollectionForContract<T>(string name)
+        {
+            return FindCollectionForContract<T>(Encoding.UTF8.GetBytes(name));
+        }
+
         public Collection<T> FindCollectionForAddress<T>(byte[] name, Address address)
         {
             return new Collection<T>(this, name, address.PublicKey);
@@ -72,6 +82,17 @@ namespace Phantasma.Blockchain.Storage
         public Collection<T> FindCollectionForContract<T>(byte[] name)
         {
             return new Collection<T>(this, name, global_prefix);
+        }
+
+        public Map<K, V> FindMapForAddress<K, V>(string name, Address address)
+        {
+            return FindMapForAddress<K, V>(Encoding.UTF8.GetBytes(name), address);
+
+        }
+
+        public Map<K, V> FindMapForContract<K, V>(string name)
+        {
+            return FindMapForContract<K, V>(Encoding.UTF8.GetBytes(name));
         }
 
         public Map<K, V> FindMapForAddress<K, V>(byte[] name, Address address)
