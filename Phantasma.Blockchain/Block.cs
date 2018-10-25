@@ -103,6 +103,16 @@ namespace Phantasma.Blockchain
             this.Hash = new Hash(hashBytes);
         }
 
+        public BigInteger GetReward()
+        {
+            BigInteger result = 0;
+            foreach (var tx in Transactions)
+            {
+                result += tx.Fee;
+            }
+            return result;
+        }
+
         #region SERIALIZATION
 
         internal void Serialize(BinaryWriter writer) {
