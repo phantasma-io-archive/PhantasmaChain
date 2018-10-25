@@ -13,6 +13,8 @@ namespace Phantasma.Blockchain.Contracts
         TokenMint,
         TokenBurn,
         AddressRegister,
+        FriendAdd,
+        FriendRemove,
     }
 
     public class Event

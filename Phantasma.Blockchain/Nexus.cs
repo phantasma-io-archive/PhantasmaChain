@@ -76,7 +76,8 @@ namespace Phantasma.Blockchain
                     case ContractKind.Stake: contract = new StakeContract(); break;
                     case ContractKind.Storage: contract = new StorageContract(); break;
                     case ContractKind.Names: contract = new NamesContract(); break;
-                    case ContractKind.Messaging: contract = new MessagingContract(); break;
+                    case ContractKind.Messages: contract = new MessagesContract(); break;
+                    case ContractKind.Friends: contract = new FriendsContract(); break;
                     case ContractKind.Vault: contract = new VaultContract(); break;
                     case ContractKind.Bank: contract = new BankContract(); break;
 
@@ -250,7 +251,8 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Names));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Messaging));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Messages));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Friends));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Vault));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Bank));

@@ -12,7 +12,8 @@
         Vault,
         Exchange,
         Names,
-        Messaging,
+        Messages,
+        Friends,
         Reputation,
         Custom,
     }
