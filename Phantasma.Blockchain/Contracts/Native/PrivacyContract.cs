@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    internal class PrivacyQueue
+    internal struct PrivacyQueue
     {
         public uint ID;
         public int size;
@@ -40,8 +40,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            return null;
-           
+            return new PrivacyQueue();
         }
 
         private PrivacyQueue FetchQueue(Token token)
@@ -60,18 +59,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             PrivacyQueue queue;
 
-            if (list.Count == 0)
-            {
-                queue = null;
-            }
-            else
+            if (list.Count > 0)
             {
                 var last = list[list.Count - 1];
-                if (last.addresses.Count >= last.size)
-                {
-                    queue = null;
-                }
-                else
+                if (last.addresses.Count < last.size)
                 {
                     return last;
                 }
@@ -113,7 +104,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(token != null);
 
             var queue = FindQueue(token, queueID);
-            Expect(queue != null);
+            Expect(queue.ID > 0);
 
             Expect(queue.ID == queueID);
             Expect(queue.addresses.Count == queue.size);

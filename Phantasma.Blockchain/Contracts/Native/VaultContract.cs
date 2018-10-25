@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    internal class VaultEntry
+    internal struct VaultEntry
     {
         public BigInteger amount;
         public uint unlockTime;

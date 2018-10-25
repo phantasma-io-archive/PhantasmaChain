@@ -35,16 +35,6 @@ namespace Phantasma.Blockchain.Contracts
             Throw.If(!condition, "contract assertion failed");
         }
 
-        public byte[] ReadStorage(byte[] key)
-        {
-            return _storage.ContainsKey(key) ? _storage[key] : null;
-        }
-
-        public void WriteStorage(byte[] key, byte[] value)
-        {
-            _storage[key] = value;
-        }
-
         public int GetSize()
         {
             return this.Script.Length;
