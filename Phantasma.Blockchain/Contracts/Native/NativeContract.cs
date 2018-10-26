@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
 
-            var tx = otherChain.FindTransaction(hash);
+            var tx = otherChain.FindTransactionByHash(hash);
             Expect(tx != null);
 
             string symbol = null;

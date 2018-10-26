@@ -23,6 +23,8 @@ namespace Phantasma.Blockchain
         public IEnumerable<Chain> Chains => _chains.Values;
         public IEnumerable<Token> Tokens => _tokens.Values;
 
+        private List<INexusPlugin> _plugins = new List<INexusPlugin>();
+
         private Logger logger;
 
         /// <summary>
@@ -42,6 +44,24 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public void AddPlugin(INexusPlugin plugin)
+        {
+            _plugins.Add(plugin);
+        }
+
+        internal void PluginTriggerBlock(Chain chain, Block block)
+        {
+            foreach (var plugin in _plugins)
+            {
+                plugin.OnNewBlock(chain, block);
+
+                foreach (var tx in block.Transactions)
+                {
+                    plugin.OnNewTransaction(chain, block, (Transaction) tx);
+                }
+            }
+        }
+
         #region ADDRESSES 
         public Address LookUpName(string name)
         {
@@ -52,6 +72,22 @@ namespace Phantasma.Blockchain
 
             var chain = FindChainByKind(ContractKind.Account); // TODO cache this
             return (Address)chain.InvokeContract("LookUpName", name);
+        }
+        #endregion
+
+        #region TRANSACTIONS
+        public Transaction FindTransactionByHash(Hash hash)
+        {
+            foreach (var chain in Chains)
+            {
+                var tx = chain.FindTransactionByHash(hash);
+                if (tx != null)
+                {
+                    return tx;
+                }
+            }
+
+            return null;
         }
         #endregion
 
@@ -103,6 +139,12 @@ namespace Phantasma.Blockchain
 
             var chain = new Chain(this, owner, name, contract, this.logger, parentChain, parentBlock);
             _chains[name] = chain;
+
+            foreach (var plugin in _plugins)
+            {
+                plugin.OnNewChain(chain);
+            }
+
             return chain;
         }
 

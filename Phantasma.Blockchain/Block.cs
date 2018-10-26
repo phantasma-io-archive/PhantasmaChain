@@ -6,7 +6,6 @@ using Phantasma.VM.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.IO;
-using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -17,6 +16,7 @@ namespace Phantasma.Blockchain
         public static readonly float BlockTimeFlutuation = 0.2f;
 
         public readonly Chain Chain;
+        public Nexus Nexus => Chain.Nexus;
 
         public readonly Address MinerAddress;
 

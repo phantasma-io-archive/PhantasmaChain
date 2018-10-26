@@ -28,6 +28,9 @@ namespace Phantasma.Blockchain
         public Event[] Events { get; private set; }
         public Hash Hash { get; private set; }
 
+        public Block Block { get; private set; }
+        public Nexus Nexus => Block != null ? Block.Nexus : null;
+
         public static Transaction Unserialize(BinaryReader reader)
         {
             var script = reader.ReadByteArray();
@@ -229,6 +232,12 @@ namespace Phantasma.Blockchain
             var data = this.ToByteArray(false);
             var hash = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hash);
+        }
+
+        internal void SetBlock(Block block)
+        {
+            Throw.IfNull(block, nameof(block));
+            this.Block = block;
         }
 
     }

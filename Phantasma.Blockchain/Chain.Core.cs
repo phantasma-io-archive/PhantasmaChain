@@ -157,9 +157,12 @@ namespace Phantasma.Blockchain
 
             foreach (Transaction tx in block.Transactions)
             {
+                tx.SetBlock(block);
                 _transactions[tx.Hash] = tx;
                 _transactionBlockMap[tx.Hash] = block;
             }
+
+            Nexus.PluginTriggerBlock(this, block);
 
             return true;
         }
@@ -201,7 +204,7 @@ namespace Phantasma.Blockchain
             return result;
         }
 
-        public Transaction FindTransaction(Hash hash)
+        public Transaction FindTransactionByHash(Hash hash)
         {
             return _transactions.ContainsKey(hash) ? _transactions[hash] : null;
         }
