@@ -63,15 +63,77 @@ namespace Phantasma.Tests
             _currentTime = new DateTime(2018, 8, 26);
         }
 
-        public void GenerateBlock()
+        private List<Transaction> transactions = new List<Transaction>();
+
+        // there are more elegant ways of doing this...
+        private Dictionary<Hash, Chain> txChainMap = new Dictionary<Hash, Chain>();
+        private Dictionary<Hash, Transaction>  txHashMap = new Dictionary<Hash, Transaction>();
+
+        private HashSet<Address> pendingNames = new HashSet<Address>();
+
+        private bool blockOpen = false;
+
+        public void BeginBlock()
         {
-            var transactions = new List<Transaction>();
+            if (blockOpen)
+            {
+                throw new Exception("Simulator block not terminated");
+            }
 
-            // there are more elegant ways of doing this...
-            var txChainMap = new Dictionary<Hash, Chain>();
-            var txHashMap = new Dictionary<Hash, Transaction>();
+            transactions.Clear();
+            txChainMap.Clear();
+            txHashMap.Clear();
+            pendingNames.Clear();
 
-            var pendingNames = new HashSet<Address>();
+            blockOpen = true;
+        }
+
+        public void EndBlock()
+        {
+            if (!blockOpen)
+            {
+                throw new Exception("Simulator block not open");
+            }
+
+            var chains = txChainMap.Values.Distinct();
+
+            foreach (var chain in chains)
+            {
+                var hashes = txChainMap.Where((p) => p.Value == chain).Select(x => x.Key);
+                if (hashes.Any())
+                {
+                    var txs = new List<Transaction>();
+                    foreach (var hash in hashes)
+                    {
+                        txs.Add(txHashMap[hash]);
+                    }
+
+                    var block = new Block(chain, _owner.Address, _currentTime, txs, chain.LastBlock);
+                    if (block.Chain.AddBlock(block))
+                    {
+                        _currentTime += TimeSpan.FromMinutes(45);
+
+                        foreach (var entry in _pendingTxs)
+                        {
+                            if (txHashMap.ContainsKey(entry.hash))
+                            {
+                                entry.block = block;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"add block in {chain.Name} failed");
+                    }
+                }
+            }
+
+            blockOpen = false;
+        }
+
+        public void GenerateRandomBlock()
+        {
+            BeginBlock();
 
             int transferCount = 1 + _rnd.Next() % 10;
             while (transactions.Count < transferCount)
@@ -286,38 +348,7 @@ namespace Phantasma.Tests
                 }
             }
 
-            var chains = txChainMap.Values.Distinct();
-
-            foreach (var chain in chains)
-            {
-                var hashes = txChainMap.Where((p) => p.Value == chain).Select(x => x.Key);
-                if (hashes.Any())
-                {
-                    var txs = new List<Transaction>();
-                    foreach (var hash in hashes)
-                    {
-                        txs.Add(txHashMap[hash]);
-                    }
-
-                    var block = new Block(chain, _owner.Address, _currentTime, txs, chain.LastBlock);
-                    if (block.Chain.AddBlock(block))
-                    {
-                        _currentTime += TimeSpan.FromMinutes(45);
-
-                        foreach (var entry in _pendingTxs)
-                        {
-                            if (txHashMap.ContainsKey(entry.hash))
-                            {
-                                entry.block = block;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        throw new Exception($"add block in {chain.Name} failed");
-                    }
-                }
-            }
+            EndBlock();
         }
     }
 
