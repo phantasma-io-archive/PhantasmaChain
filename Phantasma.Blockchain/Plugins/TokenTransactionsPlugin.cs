@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Plugins
                 if (evt.Kind == Contracts.EventKind.TokenReceive || evt.Kind == Contracts.EventKind.TokenSend)
                 {
                     var info = evt.GetContent<TokenEventData>();
-                    var token = Nexus.FindChainByName(info.symbol);
+                    var token = Nexus.FindTokenBySymbol(info.symbol);
                     if (token != null)
                     {
                         RegisterTransaction(token, transaction);
