@@ -17,10 +17,10 @@ namespace Phantasma.Blockchain.Storage
 
         private void Log(string s)
         {
-            var temp = global::System.Console.ForegroundColor;
+/*            var temp = global::System.Console.ForegroundColor;
             global::System.Console.ForegroundColor = global::System.ConsoleColor.Yellow;
             global::System.Console.WriteLine(s);
-            global::System.Console.ForegroundColor = temp;
+            global::System.Console.ForegroundColor = temp;*/
         }
 
         public static byte[] FromHumanKey(string key, bool forceSep = false)
