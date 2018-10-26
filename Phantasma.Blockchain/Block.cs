@@ -106,9 +106,9 @@ namespace Phantasma.Blockchain
         public BigInteger GetReward()
         {
             BigInteger result = 0;
-            foreach (var tx in Transactions)
+            foreach (Transaction tx in Transactions)
             {
-                result += tx.Fee;
+                result += tx.GasPrice * tx.GasLimit; // TODO fix this
             }
             return result;
         }

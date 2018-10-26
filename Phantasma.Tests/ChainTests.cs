@@ -22,9 +22,9 @@ namespace Phantasma.Tests
             var chain = nexus.RootChain;
             var token = nexus.NativeToken;
 
-            var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, token, owner.Address, third.Address, 5), 0, 0);
+            /*var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, token, owner.Address, third.Address, 5), 0, 0);
             tx.Sign(owner);
-
+            */
             /*var block = ProofOfWork.MineBlock(chain, miner.Address, new List<Transaction>() { tx });
             chain.AddBlock(block);*/
         }

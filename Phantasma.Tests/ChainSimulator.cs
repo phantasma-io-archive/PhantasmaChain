@@ -43,7 +43,6 @@ namespace Phantasma.Tests
             "whiz", "wolf", "wrath", "zero", "zigzag", "zion"
         };
 
-
         private List<SideChainPendingTransaction> _pendingTxs = new List<SideChainPendingTransaction>();
 
         public ChainSimulator(KeyPair ownerKey, int seed)
@@ -131,6 +130,19 @@ namespace Phantasma.Tests
             blockOpen = false;
         }
 
+        private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
+        {
+            var tx = new Transaction(script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
+
+            tx.Sign(source);
+
+            txChainMap[tx.Hash] = chain;
+            txHashMap[tx.Hash] = tx;
+            transactions.Add(tx);
+
+            return tx;
+        }
+
         public void GenerateRandomBlock()
         {
             BeginBlock();
@@ -164,12 +176,7 @@ namespace Phantasma.Tests
                             if (total > 0 && targetChain != chain)
                             {
                                 var script = ScriptUtils.CallContractScript(chain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, total);
-                                var tx = new Transaction(script, 0, 0);
-                                tx.Sign(source);
-
-                                txChainMap[tx.Hash] = chain;
-                                txHashMap[tx.Hash] = tx;
-                                transactions.Add(tx);
+                                var tx = MakeTransaction(source, chain, script);
 
                                 var pending = new SideChainPendingTransaction()
                                 {
@@ -206,12 +213,7 @@ namespace Phantasma.Tests
                                 chain = targetTransaction.destChain;
 
                                 var script = ScriptUtils.CallContractScript(chain, "ReceiveTokens", targetTransaction.sourceChain.Address, targetTransaction.address, targetTransaction.hash);
-                                var tx = new Transaction(script, 0, 0);
-                                tx.Sign(source);
-
-                                txChainMap[tx.Hash] = chain;
-                                txHashMap[tx.Hash] = tx;
-                                transactions.Add(tx);
+                                MakeTransaction(source, chain, script);
                             }
 
                             break;
@@ -229,12 +231,7 @@ namespace Phantasma.Tests
                             if (total > 0)
                             {
                                 var script = ScriptUtils.CallContractScript(chain, "Claim", source.Address, total);
-                                var tx = new Transaction(script, 0, 0);
-                                tx.Sign(source);
-
-                                txChainMap[tx.Hash] = chain;
-                                txHashMap[tx.Hash] = tx;
-                                transactions.Add(tx);
+                                MakeTransaction(source, chain, script);
                             }
 
                             break;
@@ -252,12 +249,7 @@ namespace Phantasma.Tests
                             if (total > 0)
                             {
                                 var script = ScriptUtils.CallContractScript(chain, "Redeem", source.Address, total);
-                                var tx = new Transaction(script, 0, 0);
-                                tx.Sign(source);
-
-                                txChainMap[tx.Hash] = chain;
-                                txHashMap[tx.Hash] = tx;
-                                transactions.Add(tx);
+                                MakeTransaction(source, chain, script);
                             }
 
                             break;
@@ -296,12 +288,7 @@ namespace Phantasma.Tests
                                 if (lookup == Address.Null)
                                 {
                                     var script = ScriptUtils.CallContractScript(chain, "Register", source.Address, randomName);
-                                    var tx = new Transaction(script, 0, 0);
-                                    tx.Sign(source);
-
-                                    txChainMap[tx.Hash] = chain;
-                                    txHashMap[tx.Hash] = tx;
-                                    transactions.Add(tx);
+                                    MakeTransaction(source, chain, script);
 
                                     pendingNames.Add(source.Address);
                                 }
@@ -335,12 +322,7 @@ namespace Phantasma.Tests
                                 if (total > 0)
                                 {
                                     var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, targetAddress, token.Symbol, total);
-                                    var tx = new Transaction(script, 0, 0);
-                                    tx.Sign(source);
-
-                                    txChainMap[tx.Hash] = chain;
-                                    txHashMap[tx.Hash] = tx;
-                                    transactions.Add(tx);
+                                    MakeTransaction(source, chain, script);
                                 }
                             }
                             break;

@@ -65,5 +65,9 @@ namespace Phantasma.Core.Types
         {
             return unixEpoch.AddSeconds(timestamp.Value);
         }
+
+        public static uint operator +(Timestamp A, TimeSpan B) { return A.Value + (uint)B.TotalSeconds; }
+        public static uint operator -(Timestamp A, TimeSpan B) { return A.Value - (uint)B.TotalSeconds; }
+
     }
 }

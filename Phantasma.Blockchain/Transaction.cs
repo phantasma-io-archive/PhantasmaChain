@@ -11,14 +11,18 @@ using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Storage;
 using Phantasma.IO;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
     public sealed class Transaction: ITransaction
     {
-        public BigInteger Fee { get; }
-        public BigInteger Index { get; }
+        public Timestamp Expiration { get; }
         public byte[] Script { get; }
+        public uint Nonce { get; }
+
+        public BigInteger GasPrice { get; }
+        public BigInteger GasLimit { get; }
 
         public Signature[] Signatures { get; private set; }
         public Event[] Events { get; private set; }
@@ -27,8 +31,10 @@ namespace Phantasma.Blockchain
         public static Transaction Unserialize(BinaryReader reader)
         {
             var script = reader.ReadByteArray();
-            var fee = reader.ReadBigInteger();
-            var txOrder = reader.ReadBigInteger();
+            var gasPrice = reader.ReadBigInteger();
+            var gasLimit = reader.ReadBigInteger();
+            var nonce = reader.ReadUInt32();
+            var expiration = reader.ReadUInt32();
 
             var evtCount = (int)reader.ReadVarInt();
             var events = new Event[evtCount];
@@ -44,14 +50,16 @@ namespace Phantasma.Blockchain
                 signatures[i] = reader.ReadSignature();
             }
 
-            return new Transaction(script, fee, txOrder, signatures);
+            return new Transaction(script, gasPrice, gasLimit, new Timestamp(expiration), nonce, signatures);
         }
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
             writer.WriteByteArray(this.Script);
-            writer.WriteBigInteger(this.Fee);
-            writer.WriteBigInteger(this.Index);
+            writer.WriteBigInteger(this.GasPrice);
+            writer.WriteBigInteger(this.GasLimit);
+            writer.Write(this.Nonce);
+            writer.Write(this.Expiration.Value);
 
             writer.WriteVarInt(Events.Length);
             foreach (var evt in this.Events)
@@ -105,11 +113,17 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Transaction(byte[] script, BigInteger fee, BigInteger txOrder, IEnumerable<Signature> signatures = null)
+        public Transaction(byte[] script, BigInteger gasPrice, BigInteger gasLimit, Timestamp expiration, uint nonce, IEnumerable<Signature> signatures = null)
         {
+            Throw.IfNull(script, nameof(script));
+            Throw.IfNull(gasPrice, nameof(gasPrice));
+            Throw.IfNull(gasLimit, nameof(gasLimit));
+
             this.Script = script;
-            this.Fee = fee;
-            this.Index = txOrder;
+            this.GasPrice = gasPrice;
+            this.GasLimit = gasLimit;
+            this.Expiration = expiration;
+            this.Nonce = nonce;
 
             this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
 
