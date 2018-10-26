@@ -11,10 +11,7 @@
         Bank,
         Vault,
         Exchange,
-        Names,
-        Messages,
-        Friends,
-        Reputation,
+        Account,
         Custom,
     }
 }

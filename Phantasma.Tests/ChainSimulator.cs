@@ -1,14 +1,14 @@
-﻿using Phantasma.Blockchain.Contracts;
+﻿using Phantasma.Blockchain;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Storage;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Tests
 {
     public class SideChainPendingTransaction
     {
@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain
         private DateTime _currentTime;
 
         private Chain bankChain;
-        private Chain nameChain;
+        private Chain accountChain;
 
         private static readonly string[] accountNames = {
             "aberration", "absence", "aceman", "acid", "alakazam", "alien", "alpha", "angel", "angler", "anomaly", "answer", "antsharer", "aqua", "archangel",
@@ -51,8 +51,8 @@ namespace Phantasma.Blockchain
             _owner = ownerKey;
             this.Nexus = new Nexus(_owner);
 
-            this.bankChain = Nexus.FindChainByName("bank");
-            this.nameChain = Nexus.FindChainByName("names");
+            this.bankChain = Nexus.FindChainByKind(ContractKind.Bank);
+            this.accountChain = Nexus.FindChainByKind(ContractKind.Account);
 
             var miner = KeyPair.Generate();
             var third = KeyPair.Generate();
@@ -204,11 +204,11 @@ namespace Phantasma.Blockchain
                     // name register
                     case 5:
                         {
-                            chain = nameChain;
+                            chain = accountChain;
                             token = Nexus.NativeToken;
 
                             var balance = chain.GetTokenBalance(token, source.Address);
-                            if (balance >= NamesContract.RegistrationCost && !pendingNames.Contains(source.Address))
+                            if (balance >= AcountContract.RegistrationCost && !pendingNames.Contains(source.Address))
                             {
                                 var randomName = accountNames[_rnd.Next() % accountNames.Length];
 
@@ -230,7 +230,7 @@ namespace Phantasma.Blockchain
                                         break;
                                 }
 
-                                var lookup = (Address)chain.InvokeContract("LookUpName", randomName);
+                                var lookup = Nexus.LookUpName(randomName);
                                 if (lookup == Address.Null)
                                 {
                                     var script = ScriptUtils.CallContractScript(chain, "Register", source.Address, randomName);
