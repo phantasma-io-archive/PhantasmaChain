@@ -44,6 +44,7 @@ namespace Phantasma.Blockchain
             }
         }
 
+        #region PLUGINS
         public void AddPlugin(INexusPlugin plugin)
         {
             _plugins.Add(plugin);
@@ -62,7 +63,21 @@ namespace Phantasma.Blockchain
             }
         }
 
-        #region ADDRESSES 
+        public T GetPlugin<T>() where T: INexusPlugin
+        {
+            foreach (var plugin in _plugins)
+            {
+                if (plugin is T)
+                {
+                    return (T)plugin;
+                }
+            }
+
+            return default(T);
+        }
+        #endregion
+
+        #region NAME SERVIEC
         public Address LookUpName(string name)
         {
             if (!AcountContract.ValidateAddressName(name))
@@ -72,6 +87,12 @@ namespace Phantasma.Blockchain
 
             var chain = FindChainByKind(ContractKind.Account); // TODO cache this
             return (Address)chain.InvokeContract("LookUpName", name);
+        }
+
+        public string LookUpAddress(Address address)
+        {
+            var chain = FindChainByKind(ContractKind.Account); // TODO cache this
+            return (string)chain.InvokeContract("LookUpAddress", address);
         }
         #endregion
 
