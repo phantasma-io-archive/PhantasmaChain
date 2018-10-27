@@ -312,15 +312,16 @@ namespace Phantasma.Blockchain
                 }
         */
 
-        public readonly static string NativeTokenSymbol = "SOUL";
-        public readonly static string PlatformName = "Phantasma";
+        public const string NativeTokenSymbol = "SOUL";
+        public const string PlatformName = "Phantasma";
+
+        public const string StableTokenSymbol = "ALMA";
+        public const string StableTokenName = "Stable";
+
+        public const int NativeTokenDecimals = 8;
+        public const int StableTokenDecimals = 8;
+
         public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000, NativeTokenDecimals);
-
-        public readonly static int NativeTokenDecimals = 8;
-        public readonly static int StableTokenDecimals = 8;
-
-        public readonly static string StableTokenSymbol = "ALMA";
-        public readonly static string StableTokenName = "Stable";
 
         private Block CreateGenesisBlock(KeyPair owner)
         {

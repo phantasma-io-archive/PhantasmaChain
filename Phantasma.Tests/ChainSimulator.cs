@@ -245,8 +245,9 @@ namespace Phantasma.Tests
 
                             var balance = chain.GetTokenBalance(token, source.Address);
 
+                            var rate = ((BankContract)bankChain.Contract).GetRate(Nexus.NativeTokenSymbol);
                             var total = balance / 10;
-                            if (total > 0)
+                            if (total >= rate)
                             {
                                 var script = ScriptUtils.CallContractScript(chain, "Redeem", source.Address, total);
                                 MakeTransaction(source, chain, script);

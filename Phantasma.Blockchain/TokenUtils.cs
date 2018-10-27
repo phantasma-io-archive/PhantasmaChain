@@ -24,12 +24,15 @@ namespace Phantasma.Blockchain
             }
 
             var n = (long)value;
-            return n / GetMultiplier(units);
+
+            var multiplier = GetMultiplier(units);
+            return n / multiplier;
         }
 
         public static BigInteger ToBigInteger(decimal n, int units)
         {
-            var l = (long)(n * GetMultiplier(units));
+            var multiplier = GetMultiplier(units);
+            var l = (long)(n * multiplier);
             return new BigInteger(l);
         }
     }

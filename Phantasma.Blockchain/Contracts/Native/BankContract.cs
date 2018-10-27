@@ -52,6 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Expect(stableToken.Burn(stableBalances, target, amount));
 
             var expectedAmount = amount / GetRate(Nexus.NativeTokenSymbol);
+            Expect(expectedAmount > 0);
 
             var nativeBalances = Runtime.Chain.GetTokenBalances(nativeToken);
             Expect(nativeToken.Transfer(nativeBalances, Runtime.Chain.Address, target, expectedAmount));
