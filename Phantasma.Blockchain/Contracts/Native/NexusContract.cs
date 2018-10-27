@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals)
+        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals)
         {
             Expect(!string.IsNullOrEmpty(symbol));
             Expect(!string.IsNullOrEmpty(name));

@@ -26,6 +26,12 @@ namespace Phantasma.VM.Utils
                     sb.EmitPush(temp_reg);
                 }
                 else
+                if (arg is int)
+                {
+                    sb.EmitLoad(temp_reg, new BigInteger((int)arg));
+                    sb.EmitPush(temp_reg);
+                }
+                else
                 if (arg is BigInteger)
                 {
                     sb.EmitLoad(temp_reg, (BigInteger)arg);

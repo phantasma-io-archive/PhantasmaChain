@@ -2,6 +2,7 @@
 
 using Phantasma.Blockchain;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using System;
 
@@ -10,6 +11,20 @@ namespace Phantasma.Tests
     [TestClass]
     public class ChainTests
     {
+        [TestMethod]
+        public void TestDecimals()
+        {
+            var places = 8;
+            decimal d = 93000000;
+            BigInteger n = 9300000000000000;
+
+            Assert.IsTrue(n == TokenUtils.ToBigInteger(TokenUtils.ToDecimal(n, places), places));
+            Assert.IsTrue(d == TokenUtils.ToDecimal(TokenUtils.ToBigInteger(d, places), places));
+
+            Assert.IsTrue(d == TokenUtils.ToDecimal(n, places));
+            Assert.IsTrue(n == TokenUtils.ToBigInteger(d, places));
+        }
+
         [TestMethod]
         public void TestNexus()
         {
