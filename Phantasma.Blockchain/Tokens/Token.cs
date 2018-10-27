@@ -19,12 +19,12 @@ namespace Phantasma.Blockchain.Tokens
         private BigInteger _supply = 0;
         public BigInteger CurrentSupply => _supply;
 
+        public int Decimals => 8;
+
         public Token(StorageContext storage)
         {
             this._storage = storage;
         }
-
-        public BigInteger Decimals => 8;
 
         internal Token(Address owner, string symbol, string name, BigInteger maxSupply)
         {
@@ -34,6 +34,11 @@ namespace Phantasma.Blockchain.Tokens
             this.MaxSupply = maxSupply;
 
             _supply = 0;
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} ({Symbol})";
         }
 
         internal bool Mint(BalanceSheet balances, Address target, BigInteger amount)

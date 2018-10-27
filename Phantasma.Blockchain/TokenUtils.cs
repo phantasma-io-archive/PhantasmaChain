@@ -1,13 +1,22 @@
-﻿using System;
-using Phantasma.Numerics;
+﻿using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain
 {
     public static class TokenUtils
     {
-        private const decimal units = 100000000m;
+        private static decimal GetMultiplier(int units)
+        {
+            decimal unitMultiplier = 1m;
+            while (units > 0)
+            {
+                unitMultiplier *= 10;
+                units--;
+            }
 
-        public static decimal ToDecimal(BigInteger value)
+            return unitMultiplier;
+        }
+
+        public static decimal ToDecimal(BigInteger value, int units)
         {
             if (value == null || value == 0)
             {
@@ -15,12 +24,12 @@ namespace Phantasma.Blockchain
             }
 
             var n = (long)value;
-            return n / units;
+            return n / GetMultiplier(units);
         }
 
-        public static BigInteger ToBigInteger(decimal n)
+        public static BigInteger ToBigInteger(decimal n, int units)
         {
-            var l = (long)(n * units);
+            var l = (long)(n * GetMultiplier(units));
             return new BigInteger(l);
         }
     }

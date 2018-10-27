@@ -11,7 +11,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Expect(symbol == Nexus.NativeTokenSymbol);
 
-            return TokenUtils.ToBigInteger(0.08m);
+            return TokenUtils.ToBigInteger(0.08m, Nexus.NativeTokenDecimals);
         }
 
         // SOUL => stable

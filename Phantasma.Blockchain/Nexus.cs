@@ -255,10 +255,10 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply)
+        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals)
         {
             //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
-            var script = ScriptUtils.CallContractScript(chain, "CreateToken", owner.Address, symbol, name, totalSupply);
+            var script = ScriptUtils.CallContractScript(chain, "CreateToken", owner.Address, symbol, name, totalSupply, decimals);
 
             //var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
 
@@ -314,18 +314,21 @@ namespace Phantasma.Blockchain
 
         public readonly static string NativeTokenSymbol = "SOUL";
         public readonly static string PlatformName = "Phantasma";
-        public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000);
+        public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000, NativeTokenDecimals);
 
-        public readonly static string StableTokenSymbol = "DEAL";
+        public readonly static int NativeTokenDecimals = 8;
+        public readonly static int StableTokenDecimals = 8;
+
+        public readonly static string StableTokenSymbol = "ALMA";
         public readonly static string StableTokenName = "Stable";
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
             var transactions = new List<Transaction>();
 
-            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply));
+            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals));
             transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
-            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0));
+            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));

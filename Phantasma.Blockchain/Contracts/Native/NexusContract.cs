@@ -16,15 +16,19 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         internal override ContractKind Kind => ContractKind.Nexus;
 
+        public const int MAX_TOKEN_DECIMALS = 12;
+
         public NexusContract() : base()
         {
         }
 
-        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply)
+        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals)
         {
             Expect(!string.IsNullOrEmpty(symbol));
             Expect(!string.IsNullOrEmpty(name));
             Expect(maxSupply >= 0);
+            Expect(decimals >= 0);
+            Expect(decimals <= MAX_TOKEN_DECIMALS);
 
             Expect(IsWitness(owner));
 
