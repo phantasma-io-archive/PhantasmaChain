@@ -168,6 +168,33 @@ namespace Phantasma.Tests
             MakeTransaction(source, destChain, script);
         }
 
+        public void GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
+        {
+            var script = ScriptUtils.CallContractScript(sourceChain, "Claim", source.Address, amount);
+            MakeTransaction(source, sourceChain, script);
+        }
+
+        public void GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
+        {
+            var script = ScriptUtils.CallContractScript(sourceChain, "Redeem", source.Address, amount);
+            MakeTransaction(source, sourceChain, script);
+        }
+
+        public void GenerateAccountRegister(KeyPair source, string name)
+        {
+            var sourceChain = accountChain;
+            var script = ScriptUtils.CallContractScript(sourceChain, "Register", source.Address, name);
+            MakeTransaction(source, sourceChain, script);
+
+            pendingNames.Add(source.Address);
+        }
+
+        public void GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
+        {
+            var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, dest, token.Symbol, amount);
+            MakeTransaction(source, chain, script);
+        }
+
         public void GenerateRandomBlock()
         {
             BeginBlock();
@@ -238,8 +265,7 @@ namespace Phantasma.Tests
                             var total = balance / 10;
                             if (total > 0)
                             {
-                                var script = ScriptUtils.CallContractScript(sourceChain, "Claim", source.Address, total);
-                                MakeTransaction(source, sourceChain, script);
+                                GenerateStableClaim(source, sourceChain, total);
                             }
 
                             break;
@@ -257,8 +283,7 @@ namespace Phantasma.Tests
                             var total = balance / 10;
                             if (total >= rate)
                             {
-                                var script = ScriptUtils.CallContractScript(sourceChain, "Redeem", source.Address, total);
-                                MakeTransaction(source, sourceChain, script);
+                                GenerateStableRedeem(source, sourceChain, total);
                             }
 
                             break;
@@ -296,10 +321,7 @@ namespace Phantasma.Tests
                                 var lookup = Nexus.LookUpName(randomName);
                                 if (lookup == Address.Null)
                                 {
-                                    var script = ScriptUtils.CallContractScript(sourceChain, "Register", source.Address, randomName);
-                                    MakeTransaction(source, sourceChain, script);
-
-                                    pendingNames.Add(source.Address);
+                                    GenerateAccountRegister(source, randomName);
                                 }
                             }
 
@@ -330,8 +352,7 @@ namespace Phantasma.Tests
                                 var total = balance / 10;
                                 if (total > 0)
                                 {
-                                    var script = ScriptUtils.CallContractScript(sourceChain, "TransferTokens", source.Address, targetAddress, token.Symbol, total);
-                                    MakeTransaction(source, sourceChain, script);
+                                    GenerateTransfer(source, targetAddress, sourceChain, token, total);
                                 }
                             }
                             break;
