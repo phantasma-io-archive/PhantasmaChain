@@ -2,7 +2,7 @@
 {
     public sealed class DistributionContract : NativeContract
     {
-        internal override ContractKind Kind => ContractKind.Distribution; 
+        public override ContractKind Kind => ContractKind.Distribution; 
 
         public DistributionContract() : base()
         {

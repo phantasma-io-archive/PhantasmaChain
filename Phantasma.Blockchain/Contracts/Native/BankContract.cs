@@ -5,7 +5,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class BankContract : NativeContract
     {
-        internal override ContractKind Kind => ContractKind.Bank;
+        public override ContractKind Kind => ContractKind.Bank;
 
         public BigInteger GetRate(string symbol)
         {

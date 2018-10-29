@@ -12,11 +12,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte[] content;
     }
 
-    public sealed class AcountContract : NativeContract
+    public sealed class AccountContract : NativeContract
     {
-        internal override ContractKind Kind => ContractKind.Account;
+        public override ContractKind Kind => ContractKind.Account;
 
         public static readonly string ANONYMOUS = "anonymous";
+        public static readonly string GENESIS = "genesis";
 
         public const int MIN_MESSAGE_LENGTH = 1024 * 64;
         public const int MAX_MESSAGE_LENGTH = 16;
@@ -28,13 +29,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly BigInteger RegistrationCost = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
 
-        public AcountContract() : base()
+        public AccountContract() : base()
         {
         }
 
         public void Register(Address target, string name)
         {
             Expect(target != Address.Null);
+            Expect(target != Runtime.Nexus.GenesisAddress);
             Expect(IsWitness(target));
             Expect(ValidateAddressName(name));
 
@@ -55,6 +57,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public string LookUpAddress(Address target)
         {
+            if (target == Runtime.Nexus.GenesisAddress)
+            {
+                return GENESIS;
+            }
+
             var map = Storage.FindMapForContract<Address, string>(ADDRESS_MAP);
 
             if (map.ContainsKey(target))
@@ -67,6 +74,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public Address LookUpName(string name)
         {
+            if (name == ANONYMOUS)
+            {
+                return Address.Null;
+            }
+
+            if (name == GENESIS)
+            {
+                return Runtime.Nexus.GenesisAddress;
+            }
+
             var map = Storage.FindMapForContract<string, Address>(NAME_MAP);
 
             if (map.ContainsKey(name))

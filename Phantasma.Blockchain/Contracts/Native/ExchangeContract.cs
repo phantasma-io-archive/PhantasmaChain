@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class ExchangeContract : NativeContract
     {
-        internal override ContractKind Kind => ContractKind.Exchange;
+        public override ContractKind Kind => ContractKind.Exchange;
 
         private List<ExchangeOrder> orders = new List<ExchangeOrder>();
         private Dictionary<Hash, BigInteger> fills = new Dictionary<Hash, BigInteger>();

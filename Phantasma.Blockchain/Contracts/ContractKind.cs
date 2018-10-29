@@ -12,6 +12,7 @@
         Vault,
         Exchange,
         Account,
+        Apps,
         Custom,
     }
 }

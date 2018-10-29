@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class NexusContract : NativeContract
     {
-        internal override ContractKind Kind => ContractKind.Nexus;
+        public override ContractKind Kind => ContractKind.Nexus;
 
         public const int MAX_TOKEN_DECIMALS = 12;
 

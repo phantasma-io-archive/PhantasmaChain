@@ -13,7 +13,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class VaultContract : NativeContract
     {
-        internal override ContractKind Kind => ContractKind.Vault;
+        public override ContractKind Kind => ContractKind.Vault;
 
         private Dictionary<Address, List<VaultEntry>> _entries = new Dictionary<Address, List<VaultEntry>>();
 

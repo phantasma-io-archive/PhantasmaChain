@@ -310,7 +310,7 @@ namespace Phantasma.Tests
                             token = Nexus.NativeToken;
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
-                            if (balance >= AcountContract.RegistrationCost && !pendingNames.Contains(source.Address))
+                            if (balance >= AccountContract.RegistrationCost && !pendingNames.Contains(source.Address))
                             {
                                 var randomName = accountNames[_rnd.Next() % accountNames.Length];
 
@@ -332,10 +332,14 @@ namespace Phantasma.Tests
                                         break;
                                 }
 
-                                var lookup = Nexus.LookUpName(randomName);
-                                if (lookup == Address.Null)
+                                var currentName = Nexus.LookUpAddress(source.Address);
+                                if (currentName == AccountContract.ANONYMOUS)
                                 {
-                                    GenerateAccountRegister(source, randomName);
+                                    var lookup = Nexus.LookUpName(randomName);
+                                    if (lookup == Address.Null)
+                                    {
+                                        GenerateAccountRegister(source, randomName);
+                                    }
                                 }
                             }
 

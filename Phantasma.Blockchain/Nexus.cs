@@ -24,6 +24,8 @@ namespace Phantasma.Blockchain
         public IEnumerable<Chain> Chains => _chains.Values;
         public IEnumerable<Token> Tokens => _tokens.Values;
 
+        public Address GenesisAddress { get; private set; }
+
         private List<INexusPlugin> _plugins = new List<INexusPlugin>();
 
         private Logger logger;
@@ -81,7 +83,7 @@ namespace Phantasma.Blockchain
         #region NAME SERVICE
         public Address LookUpName(string name)
         {
-            if (!AcountContract.ValidateAddressName(name))
+            if (!AccountContract.ValidateAddressName(name))
             {
                 return Address.Null;
             }
@@ -126,6 +128,14 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
+            if (owner != this.GenesisAddress)
+            {
+                if (parentChain.Contract.Kind != ContractKind.Apps && parentChain.Contract.Kind != ContractKind.Custom)
+                {
+                    return null;
+                }
+            }
+
             if (!Chain.ValidateName(name))
             {
                 return null;
@@ -151,9 +161,10 @@ namespace Phantasma.Blockchain
                     case ContractKind.Governance: contract = new GovernanceContract(); break;
                     case ContractKind.Stake: contract = new StakeContract(); break;
                     case ContractKind.Storage: contract = new StorageContract(); break;
-                    case ContractKind.Account: contract = new AcountContract(); break;
+                    case ContractKind.Account: contract = new AccountContract(); break;
                     case ContractKind.Vault: contract = new VaultContract(); break;
                     case ContractKind.Bank: contract = new BankContract(); break;
+                    case ContractKind.Apps: contract = new AppsContract(); break;
 
                     default:
                         throw new ChainException("Could not create contract for: " + contractKind);
@@ -331,6 +342,8 @@ namespace Phantasma.Blockchain
 
         private Block CreateGenesisBlock(KeyPair owner)
         {
+            this.GenesisAddress = owner.Address;
+
             var transactions = new List<Transaction>();
 
             transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals));
@@ -343,6 +356,7 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Vault));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Bank));
+            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Apps));
 
             /*var distTx = GenerateDistributionDeployTx(owner);
             var govTx = GenerateDistributionDeployTx(owner);
