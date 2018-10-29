@@ -33,8 +33,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
             Expect(stableToken.Mint(stableBalances, target, stableAmount));
 
-            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = amount, symbol = Nexus.NativeTokenSymbol });
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = stableAmount, symbol = Nexus.StableTokenSymbol });
+            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.NativeTokenSymbol });
+            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = stableAmount, symbol = Nexus.StableTokenSymbol });
         }
 
         // stable => SOUL
@@ -57,8 +57,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var nativeBalances = Runtime.Chain.GetTokenBalances(nativeToken);
             Expect(nativeToken.Transfer(nativeBalances, Runtime.Chain.Address, target, expectedAmount));
 
-            Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = expectedAmount, symbol = Nexus.NativeTokenSymbol });
-            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, amount = amount, symbol = Nexus.StableTokenSymbol });
+            Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = expectedAmount, symbol = Nexus.NativeTokenSymbol });
+            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.StableTokenSymbol });
         }
     }
 }

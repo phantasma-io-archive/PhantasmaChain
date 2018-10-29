@@ -50,6 +50,9 @@ namespace Phantasma.Blockchain
         public NativeExecutionContext ExecutionContext { get; private set; }
 
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
+        private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
+
+        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
 
         public StorageContext Storage { get; private set; }
 
@@ -238,6 +241,8 @@ namespace Phantasma.Blockchain
 
         public BalanceSheet GetTokenBalances(Token token)
         {
+            Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
+
             if (_tokenBalances.ContainsKey(token))
             {
                 return _tokenBalances[token];
@@ -245,6 +250,20 @@ namespace Phantasma.Blockchain
 
             var sheet = new BalanceSheet();
             _tokenBalances[token] = sheet;
+            return sheet;
+        }
+
+        public OwnershipSheet GetTokenOwnerships(Token token)
+        {
+            Throw.If(token.Flags.HasFlag(TokenFlags.Fungible), "cannot be fungible");
+
+            if (_tokenOwnerships.ContainsKey(token))
+            {
+                return _tokenOwnerships[token];
+            }
+
+            var sheet = new OwnershipSheet();
+            _tokenOwnerships[token] = sheet;
             return sheet;
         }
 
@@ -261,6 +280,12 @@ namespace Phantasma.Blockchain
 
             var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
             return balance;*/
+        }
+
+        public IEnumerable<BigInteger> GetOwnedTokens(Token token, Address address)
+        {
+            var ownership = GetTokenOwnerships(token);
+            return ownership.Get(address);
         }
 
         public static bool ValidateName(string name)
@@ -368,5 +393,69 @@ namespace Phantasma.Blockchain
                 currentBlockHeight++;
             }
         }
+
+        #region NFT
+        internal BigInteger CreateNFT(Token token, byte[] data)
+        {
+            lock (_tokenContents)
+            {
+                Dictionary<BigInteger, TokenContent> contents;
+
+                if (_tokenContents.ContainsKey(token))
+                {
+                    contents = _tokenContents[token];
+                }
+                else
+                {
+                    contents = new Dictionary<BigInteger, TokenContent>();
+                    _tokenContents[token] = contents;
+                }
+
+                var tokenID = token.GenerateID();
+
+                var content = new TokenContent(data);
+                contents[tokenID] = content;
+
+                return tokenID;
+            }
+        }
+
+        internal bool DestroyNFT(Token token, BigInteger tokenID)
+        {
+            lock (_tokenContents)
+            {
+                if (_tokenContents.ContainsKey(token))
+                {
+                    var contents = _tokenContents[token];
+
+                    if (contents.ContainsKey(tokenID))
+                    {
+                        contents.Remove(tokenID);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public TokenContent GetNFT(Token token, BigInteger tokenID)
+        {
+            lock (_tokenContents)
+            {
+                if (_tokenContents.ContainsKey(token))
+                {
+                    var contents = _tokenContents[token];
+
+                    if (contents.ContainsKey(tokenID))
+                    {
+                        return contents[tokenID];
+                    }
+                }
+            }
+
+            return null;
+        }
+        #endregion
     }
 }

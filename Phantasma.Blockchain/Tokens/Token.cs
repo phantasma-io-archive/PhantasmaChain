@@ -23,10 +23,14 @@ namespace Phantasma.Blockchain.Tokens
 
         public TokenFlags Flags { get; private set; }
 
+        public Chain Chain { get; private set; }
+
         public BigInteger MaxSupply { get; private set; }
         public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
 
         public Address Owner { get; private set; }
+
+        internal BigInteger LastID { get; private set; }
 
         private StorageContext _storage;
 
@@ -40,14 +44,18 @@ namespace Phantasma.Blockchain.Tokens
             this._storage = storage;
         }
 
-        internal Token(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             Throw.If(maxSupply < 0, "negative supply");
             Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
             Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
 
 
-            if (!flags.HasFlag(TokenFlags.Fungible))
+            if (flags.HasFlag(TokenFlags.Fungible))
+            {
+                Throw.If(!chain.IsRoot, "root chain required");
+            }
+            else
             {
                 Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible must be indivisible");
                 Throw.If(decimals != 0, "non-fungible must be indivisible");
@@ -154,5 +162,11 @@ namespace Phantasma.Blockchain.Tokens
 
             return true;
         }
-    }
+
+        internal BigInteger GenerateID()
+        {
+            LastID++;
+            return LastID;
+        }
+   }
 }

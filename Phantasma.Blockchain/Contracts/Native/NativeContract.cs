@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             token.Burn(balances, from, amount);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = targetChain });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
         public void ReceiveTokens(Address sourceChain, Address to, Hash hash)
@@ -191,7 +191,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     if (data.chainAddress == this.Runtime.Chain.Address)
                     {
                         symbol = data.symbol;
-                        amount = data.amount;
+                        amount = data.value;
                     }
                 }
             }
@@ -205,7 +205,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
 
             token.Mint(balances, to, amount);
-            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, amount = amount, chainAddress = otherChain.Address });
+            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = otherChain.Address });
 
             RegisterHashAsKnown(Runtime.Transaction.Hash);
         }

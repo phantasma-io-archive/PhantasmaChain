@@ -113,7 +113,7 @@ namespace Phantasma.Tests
                         Assert.IsTrue(tx.Events.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     result = false;
                 }

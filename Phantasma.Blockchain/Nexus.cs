@@ -227,7 +227,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token CreateToken(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -241,7 +241,7 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
-            var token = new Token(owner, symbol, name, maxSupply, decimals, flags);
+            var token = new Token(chain, owner, symbol, name, maxSupply, decimals, flags);
 
             if (symbol == NativeTokenSymbol)
             {
@@ -358,10 +358,6 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Vault));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Bank));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Apps));
-
-            /*var distTx = GenerateDistributionDeployTx(owner);
-            var govTx = GenerateDistributionDeployTx(owner);
-            var stakeTx = GenerateStakeDeployTx(owner);*/
 
             var block = new Block(RootChain, owner.Address, Timestamp.Now, transactions);
 
