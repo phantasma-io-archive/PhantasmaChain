@@ -11,13 +11,11 @@ using System.Linq;
 
 namespace Phantasma.Tests
 {
-    public class SideChainPendingTransaction
+    public class SideChainPendingBlock
     {
-        public Address address;
         public Hash hash;
         public Chain sourceChain;
         public Chain destChain;
-        public Block block;
     }
 
     // TODO this should be moved to a better place, refactored or even just deleted if no longer useful
@@ -44,7 +42,8 @@ namespace Phantasma.Tests
             "whiz", "wolf", "wrath", "zero", "zigzag", "zion"
         };
 
-        private List<SideChainPendingTransaction> _pendingTxs = new List<SideChainPendingTransaction>();
+        private Dictionary<Chain, SideChainPendingBlock> _pendingEntries = new Dictionary<Chain, SideChainPendingBlock>();
+        private List<SideChainPendingBlock> _pendingBlocks = new List<SideChainPendingBlock>();
 
         public ChainSimulator(KeyPair ownerKey, int seed)
         {
@@ -91,6 +90,9 @@ namespace Phantasma.Tests
             pendingNames.Clear();
 
             blockOpen = true;
+
+            step++;
+            Console.WriteLine($"Begin block #{step}");
         }
 
         public bool EndBlock()
@@ -122,21 +124,35 @@ namespace Phantasma.Tests
                         {
                             _currentTime += TimeSpan.FromMinutes(45);
 
-                            foreach (var entry in _pendingTxs)
+                            // add the finished block hash to each pending side chain tx
+                            if (_pendingEntries.Count > 0)
                             {
-                                if (txHashMap.ContainsKey(entry.hash))
+                                foreach (var entry in _pendingEntries.Values)
                                 {
-                                    entry.block = block;
+                                    if (entry.sourceChain != chain) continue;
+
+                                    var pendingBlock = new SideChainPendingBlock()
+                                    {
+                                        sourceChain = entry.sourceChain, 
+                                        destChain = entry.destChain,
+                                        hash = block.Hash,
+                                    };
+
+                                    _pendingBlocks.Add(pendingBlock);
+                                    Console.WriteLine($"...Sending {entry.sourceChain.Name}=>{entry.destChain.Name}: {block.Hash}");
                                 }
                             }
+
+                            Console.WriteLine($"End block #{step}: {block.Hash}");
                         }
-                        else
-                        {
-                            throw new Exception($"add block in {chain.Name} failed");
-                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"add block in {chain.Name} failed");
                     }
                 }
 
+                _pendingEntries.Clear();
                 return true;
             }
 
@@ -147,7 +163,10 @@ namespace Phantasma.Tests
         {
             var tx = new Transaction(script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
 
-            tx.Sign(source);
+            if (source != null)
+            {
+                tx.Sign(source);
+            }
 
             txChainMap[tx.Hash] = chain;
             txHashMap[tx.Hash] = tx;
@@ -161,24 +180,21 @@ namespace Phantasma.Tests
             var script = ScriptUtils.CallContractScript(sourceChain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
             var tx = MakeTransaction(source, sourceChain, script);
 
-            var pending = new SideChainPendingTransaction()
+            _pendingEntries[sourceChain] = new SideChainPendingBlock()
             {
-                address = source.Address,
                 sourceChain = sourceChain,
                 destChain = targetChain,
-                hash = tx.Hash,
-                block = null,
+                hash = null,
             };
-            _pendingTxs.Add(pending);
             return tx;
         }
 
-        public Transaction GenerateSideChainReceive(KeyPair source, Chain sourceChain, Chain destChain, Hash targetHash)
+        public Transaction GenerateSideChainSettlement(Chain sourceChain, Chain destChain, Hash targetHash)
         {
-            _pendingTxs.RemoveAll(x => x.hash == targetHash);
+            _pendingBlocks.RemoveAll(x => x.hash == targetHash);
 
-            var script = ScriptUtils.CallContractScript(destChain, "SettleBlock", sourceChain.Address, source.Address, targetHash);
-            var tx = MakeTransaction(source, destChain, script);
+            var script = ScriptUtils.CallContractScript(destChain, "SettleBlock", sourceChain.Address, targetHash);
+            var tx = MakeTransaction(null, destChain, script);
             return tx;
         }
 
@@ -222,6 +238,8 @@ namespace Phantasma.Tests
             return tx;
         }
 
+        private int step;
+
         public void GenerateRandomBlock()
         {
             BeginBlock();
@@ -262,20 +280,11 @@ namespace Phantasma.Tests
                     // side-chain receive
                     case 2:
                         {
-                            SideChainPendingTransaction targetTransaction = null;
-                            foreach (var entry in _pendingTxs)
+                            if (_pendingBlocks.Any())
                             {
-                                if (entry.address == source.Address)
-                                {
-                                    sourceChain = entry.sourceChain;
-                                    targetTransaction = entry;
-                                    break;
-                                }
-                            }
-
-                            if (targetTransaction != null && targetTransaction.block != null)
-                            {
-                                GenerateSideChainReceive(source, sourceChain, targetTransaction.destChain, targetTransaction.hash);
+                                var pendingBlock = _pendingBlocks.First();
+                                Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
+                                GenerateSideChainSettlement(pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
                             }
 
                             break;
