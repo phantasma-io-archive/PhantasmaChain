@@ -3,6 +3,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
@@ -143,6 +144,30 @@ namespace Phantasma.Tests
             return tx;
         }
 
+        public void GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Chain targetChain, BigInteger amount)
+        {
+            var script = ScriptUtils.CallContractScript(sourceChain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
+            var tx = MakeTransaction(source, sourceChain, script);
+
+            var pending = new SideChainPendingTransaction()
+            {
+                address = source.Address,
+                sourceChain = sourceChain,
+                destChain = targetChain,
+                hash = tx.Hash,
+                block = null,
+            };
+            _pendingTxs.Add(pending);
+        }
+
+        public void GenerateSideChainReceive(KeyPair source, Chain sourceChain, Chain destChain, Hash targetHash)
+        {
+            _pendingTxs.RemoveAll(x => x.hash == targetHash);
+
+            var script = ScriptUtils.CallContractScript(destChain, "ReceiveTokens", sourceChain.Address, source.Address, targetHash);
+            MakeTransaction(source, destChain, script);
+        }
+
         public void GenerateRandomBlock()
         {
             BeginBlock();
@@ -152,7 +177,7 @@ namespace Phantasma.Tests
             {
                 var source = _keys[_rnd.Next() % _keys.Count];
 
-                var chain = Nexus.RootChain;
+                var sourceChain = Nexus.RootChain;
                 Token token;
 
                 switch (_rnd.Next() % 4)
@@ -167,28 +192,16 @@ namespace Phantasma.Tests
                     // side-chain send
                     case 1:
                         {
-                            var balance = chain.GetTokenBalance(token, source.Address);
-
                             var chainList = Nexus.Chains.ToArray();
                             var targetChain = chainList[_rnd.Next() % chainList.Length];
 
+                            var balance = sourceChain.GetTokenBalance(token, source.Address);
+
                             var total = balance / 10;
-                            if (total > 0 && targetChain != chain)
+                            if (total > 0 && targetChain != sourceChain)
                             {
-                                var script = ScriptUtils.CallContractScript(chain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, total);
-                                var tx = MakeTransaction(source, chain, script);
-
-                                var pending = new SideChainPendingTransaction()
-                                {
-                                    address = source.Address,
-                                    sourceChain = chain,
-                                    destChain = targetChain,
-                                    hash = tx.Hash,
-                                    block = null,
-                                };
-                                _pendingTxs.Add(pending);
+                                GenerateSideChainSend(source, token, sourceChain, targetChain, total);
                             }
-
                             break;
                         }
 
@@ -200,7 +213,7 @@ namespace Phantasma.Tests
                             {
                                 if (entry.address == source.Address)
                                 {
-                                    chain = entry.sourceChain;
+                                    sourceChain = entry.sourceChain;
                                     targetTransaction = entry;
                                     break;
                                 }
@@ -208,12 +221,7 @@ namespace Phantasma.Tests
 
                             if (targetTransaction != null && targetTransaction.block != null)
                             {
-                                _pendingTxs.RemoveAll(x => x.hash == targetTransaction.hash);
-
-                                chain = targetTransaction.destChain;
-
-                                var script = ScriptUtils.CallContractScript(chain, "ReceiveTokens", targetTransaction.sourceChain.Address, targetTransaction.address, targetTransaction.hash);
-                                MakeTransaction(source, chain, script);
+                                GenerateSideChainReceive(source, sourceChain, targetTransaction.destChain, targetTransaction.hash);
                             }
 
                             break;
@@ -222,16 +230,16 @@ namespace Phantasma.Tests
                     // stable claim
                     case 3:
                         {
-                            chain = bankChain;
+                            sourceChain = bankChain;
                             token = Nexus.NativeToken;
 
-                            var balance = chain.GetTokenBalance(token, source.Address);
+                            var balance = sourceChain.GetTokenBalance(token, source.Address);
 
                             var total = balance / 10;
                             if (total > 0)
                             {
-                                var script = ScriptUtils.CallContractScript(chain, "Claim", source.Address, total);
-                                MakeTransaction(source, chain, script);
+                                var script = ScriptUtils.CallContractScript(sourceChain, "Claim", source.Address, total);
+                                MakeTransaction(source, sourceChain, script);
                             }
 
                             break;
@@ -240,17 +248,17 @@ namespace Phantasma.Tests
                     // stable redeem
                     case 4:
                         {
-                            chain = bankChain;
+                            sourceChain = bankChain;
                             token = Nexus.StableToken;
 
-                            var balance = chain.GetTokenBalance(token, source.Address);
+                            var balance = sourceChain.GetTokenBalance(token, source.Address);
 
                             var rate = ((BankContract)bankChain.Contract).GetRate(Nexus.NativeTokenSymbol);
                             var total = balance / 10;
                             if (total >= rate)
                             {
-                                var script = ScriptUtils.CallContractScript(chain, "Redeem", source.Address, total);
-                                MakeTransaction(source, chain, script);
+                                var script = ScriptUtils.CallContractScript(sourceChain, "Redeem", source.Address, total);
+                                MakeTransaction(source, sourceChain, script);
                             }
 
                             break;
@@ -259,10 +267,10 @@ namespace Phantasma.Tests
                     // name register
                     case 5:
                         {
-                            chain = accountChain;
+                            sourceChain = accountChain;
                             token = Nexus.NativeToken;
 
-                            var balance = chain.GetTokenBalance(token, source.Address);
+                            var balance = sourceChain.GetTokenBalance(token, source.Address);
                             if (balance >= AcountContract.RegistrationCost && !pendingNames.Contains(source.Address))
                             {
                                 var randomName = accountNames[_rnd.Next() % accountNames.Length];
@@ -288,8 +296,8 @@ namespace Phantasma.Tests
                                 var lookup = Nexus.LookUpName(randomName);
                                 if (lookup == Address.Null)
                                 {
-                                    var script = ScriptUtils.CallContractScript(chain, "Register", source.Address, randomName);
-                                    MakeTransaction(source, chain, script);
+                                    var script = ScriptUtils.CallContractScript(sourceChain, "Register", source.Address, randomName);
+                                    MakeTransaction(source, sourceChain, script);
 
                                     pendingNames.Add(source.Address);
                                 }
@@ -317,13 +325,13 @@ namespace Phantasma.Tests
 
                             if (source.Address != targetAddress)
                             {
-                                var balance = chain.GetTokenBalance(token, source.Address);
+                                var balance = sourceChain.GetTokenBalance(token, source.Address);
 
                                 var total = balance / 10;
                                 if (total > 0)
                                 {
-                                    var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, targetAddress, token.Symbol, total);
-                                    MakeTransaction(source, chain, script);
+                                    var script = ScriptUtils.CallContractScript(sourceChain, "TransferTokens", source.Address, targetAddress, token.Symbol, total);
+                                    MakeTransaction(source, sourceChain, script);
                                 }
                             }
                             break;
