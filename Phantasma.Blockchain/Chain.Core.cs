@@ -193,6 +193,17 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        public Dictionary<string, string> GetChildChains()
+        {
+            var childChains = new Dictionary<string,string>();
+            foreach (var childChain in _childChains.Keys)
+            {
+                childChains[childChain.Text] = _childChains[childChain].Name;
+            }
+
+            return childChains;
+        }
+
         public Chain GetRoot()
         {
             var result = this;
