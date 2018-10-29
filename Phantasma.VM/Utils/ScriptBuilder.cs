@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Phantasma.Core.Utils;
 using Phantasma.IO;
 using Phantasma.Numerics;
 
@@ -72,6 +71,13 @@ namespace Phantasma.VM.Utils
         {
             var bytes = new byte[1] { (byte)(val ? 1 : 0) };
             EmitLoad(reg, bytes, VMType.Bool);
+        }
+
+        public void EmitLoad(byte reg, Enum val)
+        {
+            var temp = Convert.ToUInt32(val);
+            var bytes = BitConverter.GetBytes(temp);
+            EmitLoad(reg, bytes, VMType.Enum);
         }
 
         public void EmitMove(byte src_reg, byte dst_reg)

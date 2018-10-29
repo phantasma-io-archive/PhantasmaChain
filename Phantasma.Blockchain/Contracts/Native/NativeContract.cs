@@ -7,6 +7,7 @@ using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.IO;
+using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -89,6 +90,22 @@ namespace Phantasma.Blockchain.Contracts.Native
         public object CallMethod(string name, object[] args)
         {
             var method = _methodTable[name];
+
+            var parameters = method.GetParameters();
+            for (int i=0; i<parameters.Length; i++)
+            {
+                var p = parameters[i];
+                if (p.ParameterType.IsEnum)
+                {
+                    var receivedType = args[i].GetType();
+                    if (!receivedType.IsEnum)
+                    {
+                        var val = Enum.Parse(p.ParameterType, args[i].ToString());
+                        args[i] = val; 
+                    }
+                }
+            }
+
             return method.Invoke(this, args);
         }
 

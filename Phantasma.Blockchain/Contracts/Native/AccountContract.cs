@@ -1,7 +1,6 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {

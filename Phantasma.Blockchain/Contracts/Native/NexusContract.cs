@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals)
+        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags)
         {
             Expect(!string.IsNullOrEmpty(symbol));
             Expect(!string.IsNullOrEmpty(name));
@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             symbol = symbol.ToUpperInvariant();
 
-            var token = this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply);
+            var token = this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags);
             Expect(token != null);
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);

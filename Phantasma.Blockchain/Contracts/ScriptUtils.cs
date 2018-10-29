@@ -3,6 +3,7 @@ using Phantasma.Cryptography;
 using Phantasma.Core.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain;
+using System;
 
 namespace Phantasma.VM.Utils
 {
@@ -47,6 +48,12 @@ namespace Phantasma.VM.Utils
                 if (arg is byte[])
                 {
                     sb.EmitLoad(temp_reg, (byte[])arg, VMType.Bytes);
+                    sb.EmitPush(temp_reg);
+                }
+                else
+                if (arg is Enum)
+                {
+                    sb.EmitLoad(temp_reg, (Enum)arg);
                     sb.EmitPush(temp_reg);
                 }
                 else

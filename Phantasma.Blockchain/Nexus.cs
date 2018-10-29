@@ -227,7 +227,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply)
+        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -241,9 +241,7 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
-            SmartContract contract = null;
-
-            var token = new Token(owner, symbol, name, maxSupply);
+            var token = new Token(owner, symbol, name, maxSupply, decimals, flags);
 
             if (symbol == NativeTokenSymbol)
             {
@@ -272,10 +270,9 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals)
+        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
-            //var script = ScriptUtils.TokenIssueScript("Phantasma", "SOUL", 100000000, 100000000, Contracts.TokenAttribute.Burnable | Contracts.TokenAttribute.Tradable);
-            var script = ScriptUtils.CallContractScript(chain, "CreateToken", owner.Address, symbol, name, totalSupply, decimals);
+            var script = ScriptUtils.CallContractScript(chain, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
 
             //var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
 
@@ -333,7 +330,10 @@ namespace Phantasma.Blockchain
         public const string PlatformName = "Phantasma";
 
         public const string StableTokenSymbol = "ALMA";
-        public const string StableTokenName = "Stable";
+        public const string StableTokenName = "Stable Coin";
+
+        public const string TrophyTokenSymbol = "TROPHY";
+        public const string TrophyTokenName = "Trophy";
 
         public const int NativeTokenDecimals = 8;
         public const int StableTokenDecimals = 8;
@@ -346,9 +346,10 @@ namespace Phantasma.Blockchain
 
             var transactions = new List<Transaction>();
 
-            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals));
+            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible));
             transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
-            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals));
+            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
+            transactions.Add(TokenCreateTx(RootChain, owner, TrophyTokenSymbol, TrophyTokenName, 0, 0, TokenFlags.None));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));

@@ -16,6 +16,7 @@ namespace Phantasma.VM
         Number,
         String,
         Bool,
+        Enum,
         Object
     }
 
@@ -68,6 +69,21 @@ namespace Phantasma.VM
             return (BigInteger)Data;
         }
 
+        public T AsEnum<T>() where T: struct, IConvertible
+        {
+            if (this.Type != VMType.Enum)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            if (!typeof(T).IsEnum)
+            {
+                throw new ArgumentException("T must be an enumerated type");
+            }
+
+            return (T)Data;
+        }
+
         public string AsString()
         {
             switch (this.Type)
@@ -80,6 +96,9 @@ namespace Phantasma.VM
 
                 case VMType.Bytes:
                     return Base16.Encode((byte[])Data);
+
+                case VMType.Enum:
+                    return ((uint)Data).ToString();
 
                 case VMType.Object:
                     return "Interop:" + Data.GetType().Name;
@@ -188,6 +207,12 @@ namespace Phantasma.VM
                         break;
                     }
 
+                case VMType.Enum:
+                    {
+                        this.Data = BitConverter.ToUInt32(val, 0);
+                        break;
+                    }
+
                 default:
                     {
                         throw new Exception("Invalid cast");
@@ -228,6 +253,14 @@ namespace Phantasma.VM
             this.Type = VMType.Bool;
             this.Data = val;
             this._localSize = 1;
+            return this;
+        }
+
+        public VMObject SetValue(Enum val)
+        {
+            this.Type = VMType.Enum;
+            this.Data = val;
+            this._localSize = 4;
             return this;
         }
 
@@ -379,6 +412,7 @@ namespace Phantasma.VM
                 case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
+                case VMType.Enum: return $"[Enum] => {((uint)Data)}";
                 case VMType.Object: return $"[Object] => {Data.GetType().Name}";
                 default: return "Unknown";
             }
@@ -386,6 +420,11 @@ namespace Phantasma.VM
 
         public static VMType GetVMType(Type type)
         {
+            if (type.IsEnum)
+            {
+                return VMType.Enum;
+            }
+
             if (type == typeof(bool))
             {
                 return VMType.Bool;
@@ -438,13 +477,13 @@ namespace Phantasma.VM
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
                 case VMType.String: result.SetValue((string)obj); break;
                 case VMType.Number: result.SetValue((BigInteger)obj); break;
+                case VMType.Enum: result.SetValue((Enum)obj); break;
                 case VMType.Object: result.SetValue(obj); break;
                 default: return null;
             }
 
             return result;
         }
-
 
         public object ToObject()
         {
@@ -457,6 +496,7 @@ namespace Phantasma.VM
                 case VMType.String: return this.AsString();
                 case VMType.Number: return this.AsNumber();
                 case VMType.Object: return this.Data;
+                case VMType.Enum: return this.Data;
                 default: return null;
             }
         }
