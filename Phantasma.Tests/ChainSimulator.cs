@@ -61,6 +61,11 @@ namespace Phantasma.Tests
             _keys.Add(_owner);
 
             _currentTime = new DateTime(2018, 8, 26);
+
+            BeginBlock();
+            GenerateAppRegistration(_owner, "nachomen", "https://nacho.men", "Collect, train and battle against other players in Nacho Men!");
+            GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
+            EndBlock();
         }
 
         private List<Transaction> transactions = new List<Transaction>();
@@ -192,7 +197,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateAccountRegister(KeyPair source, string name)
+        public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
             var sourceChain = accountChain;
             var script = ScriptUtils.CallContractScript(sourceChain, "Register", source.Address, name);
@@ -205,6 +210,14 @@ namespace Phantasma.Tests
         public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, dest, token.Symbol, amount);
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
+        }
+
+        public Transaction GenerateAppRegistration(KeyPair source, string name, string url, string description)
+        {
+            var chain = Nexus.FindChainByName("apps");
+            var script = ScriptUtils.CallContractScript(chain, "RegisterApp", source.Address, name);
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
@@ -233,13 +246,13 @@ namespace Phantasma.Tests
                     // side-chain send
                     case 1:
                         {
-                            var chainList = Nexus.Chains.ToArray();
+                            var chainList = Nexus.Chains.Where(x => x.ParentChain == sourceChain).ToArray();
                             var targetChain = chainList[_rnd.Next() % chainList.Length];
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
 
                             var total = balance / 10;
-                            if (total > 0 && targetChain != sourceChain)
+                            if (total > 0)
                             {
                                 GenerateSideChainSend(source, token, sourceChain, targetChain, total);
                             }
@@ -338,7 +351,7 @@ namespace Phantasma.Tests
                                     var lookup = Nexus.LookUpName(randomName);
                                     if (lookup == Address.Null)
                                     {
-                                        GenerateAccountRegister(source, randomName);
+                                        GenerateAccountRegistration(source, randomName);
                                     }
                                 }
                             }

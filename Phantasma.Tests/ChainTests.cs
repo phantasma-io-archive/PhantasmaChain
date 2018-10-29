@@ -104,7 +104,7 @@ namespace Phantasma.Tests
                 try
                 {
                     simulator.BeginBlock();
-                    var tx = simulator.GenerateAccountRegister(keypair, name);
+                    var tx = simulator.GenerateAccountRegistration(keypair, name);
                     result = simulator.EndBlock();
 
                     if (result)
