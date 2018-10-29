@@ -94,8 +94,12 @@ namespace Phantasma.Blockchain
 
             // TODO support persistence storage
             this.Storage = new MemoryStorageContext();
-
             this.Log = Logger.Init(log);
+
+            if (parentChain != null)
+            {
+                parentChain._childChains[name] = this;
+            }
         }
 
         public override string ToString()
@@ -167,7 +171,8 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        private Dictionary<Address, Chain> _childChains = new Dictionary<Address, Chain>();
+        private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();
+        public IEnumerable<Chain> ChildChains => _childChains.Values;
 
         public Chain FindChildChain(Address address)
         {
@@ -191,17 +196,6 @@ namespace Phantasma.Blockchain
             }
 
             return null;
-        }
-
-        public Dictionary<string, string> GetChildChains()
-        {
-            var childChains = new Dictionary<string,string>();
-            foreach (var childChain in _childChains.Keys)
-            {
-                childChains[childChain.Text] = _childChains[childChain].Name;
-            }
-
-            return childChains;
         }
 
         public Chain GetRoot()

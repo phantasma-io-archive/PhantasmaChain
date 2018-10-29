@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-        #region NAME SERVIEC
+        #region NAME SERVICE
         public Address LookUpName(string name)
         {
             if (!AcountContract.ValidateAddressName(name))

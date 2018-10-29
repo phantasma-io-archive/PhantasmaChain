@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using System;
+using System.Linq;
 
 namespace Phantasma.Tests
 {
@@ -40,6 +41,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(rootChain != null);
             Assert.IsTrue(rootChain.BlockHeight > 0);
+            Assert.IsTrue(rootChain.ChildChains.Any());
 
             var txCount = nexus.GetTotalTransactionCount();
             Assert.IsTrue(txCount > 0);
