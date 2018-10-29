@@ -104,8 +104,14 @@ namespace Phantasma.Tests
                 try
                 {
                     simulator.BeginBlock();
-                    simulator.GenerateAccountRegister(keypair, name);
-                    simulator.EndBlock();
+                    var tx = simulator.GenerateAccountRegister(keypair, name);
+                    result = simulator.EndBlock();
+
+                    if (result)
+                    {
+                        Assert.IsTrue(tx != null);
+                        Assert.IsTrue(tx.Events.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
+                    }
                 }
                 catch (Exception e)
                 {
@@ -144,9 +150,20 @@ namespace Phantasma.Tests
             balance = accountChain.GetTokenBalance(token, testUser.Address);
             Assert.IsTrue(balance > 0);
 
-            Assert.IsFalse(registerName(testUser, "Hello"));
-            Assert.IsFalse(registerName(testUser, "hello!"));
-            Assert.IsTrue(registerName(testUser, "hello"));
+            var targetName = "hello";
+            Assert.IsTrue(targetName == targetName.ToLower());
+
+            Assert.IsFalse(registerName(testUser, targetName.Substring(3)));
+            Assert.IsFalse(registerName(testUser, targetName.ToUpper()));
+            Assert.IsFalse(registerName(testUser, targetName+"!"));
+            Assert.IsTrue(registerName(testUser, targetName));
+
+            var currentName = nexus.LookUpAddress(testUser.Address);
+            Assert.IsTrue(currentName == targetName);
+
+            var someAddress = nexus.LookUpName(targetName);
+            Assert.IsTrue(someAddress == testUser.Address);
+
             Assert.IsFalse(registerName(testUser, "other"));
         }
 
