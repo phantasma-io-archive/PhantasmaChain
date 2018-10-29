@@ -8,6 +8,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.IO;
 using System;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -156,6 +157,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Expect(token != null);
+            Expect(token.Flags.HasFlag(TokenFlags.Fungible));
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             token.Burn(balances, from, amount);
@@ -163,7 +165,32 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
-        public void ReceiveTokens(Address sourceChain, Address to, Hash hash)
+        public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
+        {
+            Expect(IsWitness(from));
+
+            if (IsRootChain(this.Runtime.Chain.Address))
+            {
+                Expect(IsSideChain(targetChain));
+            }
+            else
+            {
+                Expect(IsRootChain(targetChain));
+            }
+
+            var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
+
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Expect(token != null);
+            Expect(!token.Flags.HasFlag(TokenFlags.Fungible));
+
+            var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
+            Expect(ownerships.Take(from, tokenID));
+
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
+        }
+
+        public void SettleBlock(Address sourceChain, Hash hash)
         {
             if (IsRootChain(this.Runtime.Chain.Address))
             {
@@ -178,36 +205,57 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
 
-            var tx = otherChain.FindTransactionByHash(hash);
-            Expect(tx != null);
+            var block = otherChain.FindBlockByHash(hash);
+            Expect(block != null);
 
-            string symbol = null;
-            BigInteger amount = 0;
-            foreach (var evt in tx.Events)
+            int settlements = 0;
+
+            foreach (Transaction tx in block.Transactions)
             {
-                if (evt.Kind == EventKind.TokenSend)
+                string symbol = null;
+                BigInteger value = 0;
+                Address targetAddress = Address.Null;
+
+                foreach (var evt in tx.Events)
                 {
-                    var data = Serialization.Unserialize<TokenEventData>(evt.Data);
-                    if (data.chainAddress == this.Runtime.Chain.Address)
+                    if (evt.Kind == EventKind.TokenSend)
                     {
-                        symbol = data.symbol;
-                        amount = data.value;
+                        var data = Serialization.Unserialize<TokenEventData>(evt.Data);
+                        if (data.chainAddress == this.Runtime.Chain.Address)
+                        {
+                            symbol = data.symbol;
+                            value = data.value;
+                            targetAddress = evt.Address;
+                        }
                     }
+                }
+
+                if (symbol != null)
+                {
+                    settlements++;
+                    Expect(value > 0);
+                    Expect(targetAddress != Address.Null);
+
+                    var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+                    Expect(token != null);
+
+                    if (token.Flags.HasFlag(TokenFlags.Fungible))
+                    {
+                        var balances = this.Runtime.Chain.GetTokenBalances(token);
+                        Expect(token.Mint(balances, targetAddress, value));
+                    }
+                    else
+                    {
+                        var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
+                        Expect(ownerships.Give(targetAddress, value));
+                    }
+
+                    Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = otherChain.Address });
                 }
             }
 
-            Expect(symbol != null);
-            Expect(amount > 0);
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-
-            token.Mint(balances, to, amount);
-            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = otherChain.Address });
-
-            RegisterHashAsKnown(Runtime.Transaction.Hash);
+            Expect(settlements > 0);
+            RegisterHashAsKnown(hash);
         }
         #endregion
     }

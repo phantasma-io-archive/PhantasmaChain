@@ -177,7 +177,7 @@ namespace Phantasma.Tests
         {
             _pendingTxs.RemoveAll(x => x.hash == targetHash);
 
-            var script = ScriptUtils.CallContractScript(destChain, "ReceiveTokens", sourceChain.Address, source.Address, targetHash);
+            var script = ScriptUtils.CallContractScript(destChain, "SettleBlock", sourceChain.Address, source.Address, targetHash);
             var tx = MakeTransaction(source, destChain, script);
             return tx;
         }
