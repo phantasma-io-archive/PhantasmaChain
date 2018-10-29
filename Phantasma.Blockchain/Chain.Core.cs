@@ -157,6 +157,8 @@ namespace Phantasma.Blockchain
             _blockHashes[block.Hash] = block;
             _blockChangeSets[block.Hash] = changeSet;
 
+            changeSet.Execute();
+
             LastBlock = block;
 
             foreach (Transaction tx in block.Transactions)
