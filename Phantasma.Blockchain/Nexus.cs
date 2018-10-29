@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
@@ -109,6 +110,11 @@ namespace Phantasma.Blockchain
             }
 
             return null;
+        }
+
+        public int GetTotalTransactionCount()
+        {
+            return Chains.Sum(x => x.TransactionCount);
         }
         #endregion
 
