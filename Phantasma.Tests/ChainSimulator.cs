@@ -88,47 +88,54 @@ namespace Phantasma.Tests
             blockOpen = true;
         }
 
-        public void EndBlock()
+        public bool EndBlock()
         {
             if (!blockOpen)
             {
                 throw new Exception("Simulator block not open");
             }
 
-            var chains = txChainMap.Values.Distinct();
+            blockOpen = false;
 
-            foreach (var chain in chains)
+            if (txChainMap.Count > 0)
             {
-                var hashes = txChainMap.Where((p) => p.Value == chain).Select(x => x.Key);
-                if (hashes.Any())
+                var chains = txChainMap.Values.Distinct();
+
+                foreach (var chain in chains)
                 {
-                    var txs = new List<Transaction>();
-                    foreach (var hash in hashes)
+                    var hashes = txChainMap.Where((p) => p.Value == chain).Select(x => x.Key);
+                    if (hashes.Any())
                     {
-                        txs.Add(txHashMap[hash]);
-                    }
-
-                    var block = new Block(chain, _owner.Address, _currentTime, txs, chain.LastBlock);
-                    if (block.Chain.AddBlock(block))
-                    {
-                        _currentTime += TimeSpan.FromMinutes(45);
-
-                        foreach (var entry in _pendingTxs)
+                        var txs = new List<Transaction>();
+                        foreach (var hash in hashes)
                         {
-                            if (txHashMap.ContainsKey(entry.hash))
+                            txs.Add(txHashMap[hash]);
+                        }
+
+                        var block = new Block(chain, _owner.Address, _currentTime, txs, chain.LastBlock);
+                        if (block.Chain.AddBlock(block))
+                        {
+                            _currentTime += TimeSpan.FromMinutes(45);
+
+                            foreach (var entry in _pendingTxs)
                             {
-                                entry.block = block;
+                                if (txHashMap.ContainsKey(entry.hash))
+                                {
+                                    entry.block = block;
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        throw new Exception($"add block in {chain.Name} failed");
+                        else
+                        {
+                            throw new Exception($"add block in {chain.Name} failed");
+                        }
                     }
                 }
+
+                return true;
             }
 
-            blockOpen = false;
+            return false;
         }
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
@@ -144,7 +151,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public void GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Chain targetChain, BigInteger amount)
+        public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Chain targetChain, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(sourceChain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
             var tx = MakeTransaction(source, sourceChain, script);
@@ -158,41 +165,48 @@ namespace Phantasma.Tests
                 block = null,
             };
             _pendingTxs.Add(pending);
+            return tx;
         }
 
-        public void GenerateSideChainReceive(KeyPair source, Chain sourceChain, Chain destChain, Hash targetHash)
+        public Transaction GenerateSideChainReceive(KeyPair source, Chain sourceChain, Chain destChain, Hash targetHash)
         {
             _pendingTxs.RemoveAll(x => x.hash == targetHash);
 
             var script = ScriptUtils.CallContractScript(destChain, "ReceiveTokens", sourceChain.Address, source.Address, targetHash);
-            MakeTransaction(source, destChain, script);
+            var tx = MakeTransaction(source, destChain, script);
+            return tx;
         }
 
-        public void GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
+        public Transaction GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(sourceChain, "Claim", source.Address, amount);
-            MakeTransaction(source, sourceChain, script);
+            var tx = MakeTransaction(source, sourceChain, script);
+            tx.Sign(source);
+            return tx;
         }
 
-        public void GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
+        public Transaction GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(sourceChain, "Redeem", source.Address, amount);
-            MakeTransaction(source, sourceChain, script);
+            var tx = MakeTransaction(source, sourceChain, script);
+            return tx;
         }
 
-        public void GenerateAccountRegister(KeyPair source, string name)
+        public Transaction GenerateAccountRegister(KeyPair source, string name)
         {
             var sourceChain = accountChain;
             var script = ScriptUtils.CallContractScript(sourceChain, "Register", source.Address, name);
-            MakeTransaction(source, sourceChain, script);
+            var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);
+            return tx;
         }
 
-        public void GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
+        public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(chain, "TransferTokens", source.Address, dest, token.Symbol, amount);
-            MakeTransaction(source, chain, script);
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
         }
 
         public void GenerateRandomBlock()

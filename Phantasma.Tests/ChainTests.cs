@@ -31,13 +31,24 @@ namespace Phantasma.Tests
             var owner = KeyPair.Generate();
             var nexus = new Nexus(owner);
 
+            var rootChain = nexus.RootChain;
+            var token = nexus.NativeToken;
+
+            Assert.IsTrue(token != null);
+            Assert.IsTrue(token.CurrentSupply > 0);
+            Assert.IsTrue(token.MaxSupply > 0);
+
+            Assert.IsTrue(rootChain != null);
+            Assert.IsTrue(rootChain.BlockHeight > 0);
+
+            var txCount = nexus.GetTotalTransactionCount();
+            Assert.IsTrue(txCount > 0);
+
+            /*
             var miner = KeyPair.Generate();
             var third = KeyPair.Generate();
 
-            var chain = nexus.RootChain;
-            var token = nexus.NativeToken;
-
-            /*var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, token, owner.Address, third.Address, 5), 0, 0);
+            var tx = new Transaction(ScriptUtils.TokenTransferScript(chain, token, owner.Address, third.Address, 5), 0, 0);
             tx.Sign(owner);
             */
             /*var block = ProofOfWork.MineBlock(chain, miner.Address, new List<Transaction>() { tx });
@@ -45,7 +56,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestChainDelete()
+        public void TestTokenTransfer()
         {
             var owner = KeyPair.Generate();
             var simulator = new ChainSimulator(owner, 1234);
@@ -54,10 +65,87 @@ namespace Phantasma.Tests
             var accountChain = nexus.FindChainByKind(Blockchain.Contracts.ContractKind.Account);
             var token = nexus.NativeToken;
 
-            Action<string> registerName = (name) =>
-            {
+            var testUser = KeyPair.Generate();
 
+            var amount = TokenUtils.ToBigInteger(400, token.Decimals);
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, token, amount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var transferBalance = nexus.RootChain.GetTokenBalance(token, testUser.Address);
+            Assert.IsTrue(transferBalance == amount);
+
+            var newBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+
+            Assert.IsTrue(transferBalance + newBalance == oldBalance);
+        }
+
+        [TestMethod]
+        public void TestAccountRegister()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var accountChain = nexus.FindChainByKind(Blockchain.Contracts.ContractKind.Account);
+            var token = nexus.NativeToken;
+
+            Func<KeyPair, string, bool> registerName = (keypair, name) =>
+            {
+                bool result = true;
+
+                try
+                {
+                    simulator.BeginBlock();
+                    simulator.GenerateAccountRegister(keypair, name);
+                    simulator.EndBlock();
+                }
+                catch (Exception e)
+                {
+                    result = false;
+                }
+
+                return result;
             };
+
+            var testUser = KeyPair.Generate();
+
+            var amount = TokenUtils.ToBigInteger(10, token.Decimals);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, token, amount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var balance = nexus.RootChain.GetTokenBalance(token, testUser.Address);
+            Assert.IsTrue(balance == amount);
+
+            // do a side chain send using test user balance from root to account chain
+            simulator.BeginBlock();
+            var txA = simulator.GenerateSideChainSend(testUser, token, nexus.RootChain, accountChain, TokenUtils.ToBigInteger(10, token.Decimals));
+            simulator.EndBlock();
+
+            Assert.IsFalse(registerName(testUser, "hello"));
+
+            // finish the chain transfer
+            simulator.BeginBlock();
+            simulator.GenerateSideChainReceive(testUser, nexus.RootChain, accountChain, txA.Hash);
+            Assert.IsTrue(simulator.EndBlock());
+
+            // verify balances
+            balance = accountChain.GetTokenBalance(token, testUser.Address);
+            Assert.IsTrue(balance > 0);
+
+            Assert.IsFalse(registerName(testUser, "Hello"));
+            Assert.IsFalse(registerName(testUser, "hello!"));
+            Assert.IsTrue(registerName(testUser, "hello"));
+            Assert.IsFalse(registerName(testUser, "other"));
         }
 
     }
