@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Node", "Phantasma.Node\Phantasma.Node.csproj", "{E367B675-E407-4191-877D-5AEE77C56C2C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Tests", "Phantasma.Tests\Phantasma.Tests.csproj", "{9E20F89B-7A94-41C8-9583-2F7405479F04}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.RPC", "Phantasma.RPC\Phantasma.RPC.csproj", "{9ED89052-2E36-4BAA-9419-8095D91CE7E6}"
@@ -23,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.VM", "Phantasma.V
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Blockchain", "Phantasma.Blockchain\Phantasma.Blockchain.csproj", "{2E68A24D-2BDA-48E9-8F14-6F3548128E5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phantasma.IO", "Phantasma.IO\Phantasma.IO.csproj", "{10618242-A4A0-4900-B51C-C2A6DF2E5A80}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.IO", "Phantasma.IO\Phantasma.IO.csproj", "{10618242-A4A0-4900-B51C-C2A6DF2E5A80}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,10 +29,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E367B675-E407-4191-877D-5AEE77C56C2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E367B675-E407-4191-877D-5AEE77C56C2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E367B675-E407-4191-877D-5AEE77C56C2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E367B675-E407-4191-877D-5AEE77C56C2C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9E20F89B-7A94-41C8-9583-2F7405479F04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E20F89B-7A94-41C8-9583-2F7405479F04}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E20F89B-7A94-41C8-9583-2F7405479F04}.Release|Any CPU.ActiveCfg = Release|Any CPU
