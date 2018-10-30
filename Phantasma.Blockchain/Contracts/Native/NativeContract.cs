@@ -139,53 +139,53 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SendTokens(Address targetChain, Address from, Address to, string symbol, BigInteger amount)
         {
-            Expect(IsWitness(from));
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
             if (IsRootChain(this.Runtime.Chain.Address))
             {
-                Expect(IsSideChain(targetChain));
+                Runtime.Expect(IsSideChain(targetChain), "target must be sidechain");
             }
             else
             {
-                Expect(IsRootChain(targetChain));
+                Runtime.Expect(IsRootChain(targetChain), "target must be rootchain");
             }
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
             /*TODO
             var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
-            Expect(otherConsensus.IsValidReceiver(from));*/
+            Runtime.Expect(otherConsensus.IsValidReceiver(from));*/
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
-            Expect(token.Flags.HasFlag(TokenFlags.Fungible));
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            token.Burn(balances, from, amount);
+            Runtime.Expect(token.Burn(balances, from, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
         public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
         {
-            Expect(IsWitness(from));
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
             if (IsRootChain(this.Runtime.Chain.Address))
             {
-                Expect(IsSideChain(targetChain));
+                Runtime.Expect(IsSideChain(targetChain), "target must be sidechain");
             }
             else
             {
-                Expect(IsRootChain(targetChain));
+                Runtime.Expect(IsRootChain(targetChain), "target must be rootchain");
             }
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
-            Expect(!token.Flags.HasFlag(TokenFlags.Fungible));
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "must be non-fungible token");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Expect(ownerships.Take(from, tokenID));
+            Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
         }
@@ -194,19 +194,20 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (IsRootChain(this.Runtime.Chain.Address))
             {
-                Expect(IsSideChain(sourceChain));
+                Runtime.Expect(IsSideChain(sourceChain), "source must be sidechain");
             }
             else
             {
-                Expect(IsRootChain(sourceChain));
+                Runtime.Expect(IsRootChain(sourceChain), "source must be rootchain");
             }
 
-            Expect(!IsKnown(hash));
+
+            Runtime.Expect(!IsKnown(hash), "hash already settled");
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
 
             var block = otherChain.FindBlockByHash(hash);
-            Expect(block != null);
+            Runtime.Expect(block != null, "invalid block");
 
             int settlements = 0;
 
@@ -233,28 +234,28 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (symbol != null)
                 {
                     settlements++;
-                    Expect(value > 0);
-                    Expect(targetAddress != Address.Null);
+                    Runtime.Expect(value > 0, "value must be greater than zero");
+                    Runtime.Expect(targetAddress != Address.Null, "target must not be null");
 
                     var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-                    Expect(token != null);
+                    Runtime.Expect(token != null, "invalid token");
 
                     if (token.Flags.HasFlag(TokenFlags.Fungible))
                     {
                         var balances = this.Runtime.Chain.GetTokenBalances(token);
-                        Expect(token.Mint(balances, targetAddress, value));
+                        Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
                     }
                     else
                     {
                         var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-                        Expect(ownerships.Give(targetAddress, value));
+                        Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
                     }
 
                     Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = otherChain.Address });
                 }
             }
 
-            Expect(settlements > 0);
+            Runtime.Expect(settlements > 0, "no settlements in the block");
             RegisterHashAsKnown(hash);
         }
         #endregion

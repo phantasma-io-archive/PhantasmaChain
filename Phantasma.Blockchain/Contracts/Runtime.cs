@@ -77,5 +77,11 @@ namespace Phantasma.Blockchain.Contracts
             var evt = new Event(kind, address, bytes);
             _events.Add(evt);
         }
+
+        public void Expect(bool condition, string description)
+        {
+            Throw.If(!condition, $"contract assertion failed: {description}");
+        }
+
     }
 }

@@ -75,21 +75,22 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public uint PutPrivate(Address from, string symbol)
         {
-            Expect(IsWitness(from));
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             var balance = balances.Get(from);
-            Expect(balance >= TransferAmount);
+            Runtime.Expect(balance >= TransferAmount, "not enough balance");
 
             var queue = FetchQueue(token);
-            Expect(queue.addresses.Count < queue.size);
+            Runtime.Expect(queue.addresses.Count < queue.size, "queue full");
 
             foreach (var address in queue.addresses)
             {
-                Expect(address != from);
+                Runtime.Expect(address != from, "address already in queue");
             }
 
             balances.Subtract(from, TransferAmount);
@@ -101,26 +102,26 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void TakePrivate(Address to, string symbol, uint queueID, RingSignature signature)
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var queue = FindQueue(token, queueID);
-            Expect(queue.ID > 0);
+            Runtime.Expect(queue.ID > 0, "invalid queue");
 
-            Expect(queue.ID == queueID);
-            Expect(queue.addresses.Count == queue.size);
+            Runtime.Expect(queue.ID == queueID, "mismatching queue");
+            Runtime.Expect(queue.addresses.Count == queue.size, "queue not full yet");
 
-            // cant send to anyone already part of this queue
             foreach (var address in queue.addresses)
             {
-                Expect(address != to);
+                Runtime.Expect(address != to, "cant send to anyone already in the queue");
             }
 
             var msg = this.Runtime.Transaction.ToByteArray(false);
-            Expect(signature.Verify(msg, queue.addresses));
+            Runtime.Expect(signature.Verify(msg, queue.addresses), "ring signature failed");
 
             foreach (var otherSignature in queue.signatures)
             {
-                Expect(!signature.IsLinked(otherSignature));
+                Runtime.Expect(!signature.IsLinked(otherSignature), "ring signature already linked");
             }
 
             queue.signatures.Add(signature);

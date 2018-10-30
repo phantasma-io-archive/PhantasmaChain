@@ -34,17 +34,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void Register(Address target, string name)
         {
-            Expect(target != Address.Null);
-            Expect(target != Runtime.Nexus.GenesisAddress);
-            Expect(IsWitness(target));
-            Expect(ValidateAddressName(name));
+            Runtime.Expect(target != Address.Null, "address must not be null");
+            Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
+            Runtime.Expect(IsWitness(target), "invalid witness");
+            Runtime.Expect(ValidateAddressName(name), "invalid name");
 
             var addressMap = Storage.FindMapForContract<Address, string>(ADDRESS_MAP);
-            Expect(!addressMap.ContainsKey(target));
+            Runtime.Expect(!addressMap.ContainsKey(target), "address already has a name");
 
             var token = Runtime.Nexus.NativeToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
-            Expect(token.Transfer(balances, target, Runtime.Chain.Address, RegistrationCost));
+            Runtime.Expect(token.Transfer(balances, target, Runtime.Chain.Address, RegistrationCost), "fee failed");
 
             addressMap.Set(target, name);
 
@@ -128,10 +128,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SendMessage(Address from, Address to, byte[] content)
         {
-            Expect(IsWitness(from));
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Expect(content.Length >= MIN_MESSAGE_LENGTH);
-            Expect(content.Length <= MAX_MESSAGE_LENGTH);
+            Runtime.Expect(content.Length >= MIN_MESSAGE_LENGTH, "message too small");
+            Runtime.Expect(content.Length <= MAX_MESSAGE_LENGTH, "message too large");
 
             var msg = new AddressMessage()
             {
@@ -153,10 +153,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         #region FRIENDLIST
         public void AddFriend(Address target, Address friend)
         {
-            Expect(IsWitness(target));
+            Runtime.Expect(IsWitness(target), "invalid witness");
 
-            Expect(friend != target);
-            Expect(friend != Address.Null);
+            Runtime.Expect(friend != Address.Null, "friend address must not be null");
+            Runtime.Expect(friend != target, "friend must be different from target address");
 
             var list = Storage.FindCollectionForAddress<Address>(FRIEND_ID, target);
             list.Add(friend);
@@ -166,13 +166,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void RemoveFriend(Address target, Address friend)
         {
-            Expect(IsWitness(target));
+            Runtime.Expect(IsWitness(target), "invalid witness");
 
-            Expect(friend != target);
-            Expect(friend != Address.Null);
+            Runtime.Expect(friend != Address.Null, "friend address must not be null");
+            Runtime.Expect(friend != target, "friend must be different from target address");
 
             var list = Storage.FindCollectionForAddress<Address>(FRIEND_ID, target);
-            Expect(list.Contains(friend));
+            Runtime.Expect(list.Contains(friend), "friend not found");
             list.Remove(friend);
 
             Runtime.Notify(EventKind.FriendRemove, target, friend);

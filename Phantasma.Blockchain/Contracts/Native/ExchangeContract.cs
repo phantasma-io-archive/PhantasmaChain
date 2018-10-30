@@ -1,4 +1,5 @@
-﻿using Phantasma.Core.Types;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System;
@@ -43,22 +44,27 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void OpenOrder(Address from, Address baseToken, Address quoteToken, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
+        public void OpenOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
         {
-            Expect(IsWitness(from));
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Expect(baseToken!= null);
-            Expect(quoteToken != null);
+            var baseToken = Runtime.Nexus.FindTokenBySymbol(baseSymbol);
+            Runtime.Expect(baseToken != null, "invalid base token");
+            Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+
+            var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
+            Runtime.Expect(quoteToken != null, "invalid quote token");
+            Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var tokenABI = Chain.FindABI(NativeABI.Token);
-            //Expect(baseTokenContract.ABI.Implements(tokenABI));
+            //Runtime.Expect(baseTokenContract.ABI.Implements(tokenABI));
 
             /*switch (side)
             {
                 case ExchangeOrderSide.Sell:
                     {
                         var balance = tokenABI["BalanceOf"].Invoke<BigInteger>(baseTokenContract, from);
-                        Expect(balance >= quantity);
+                        Runtime.Expect(balance >= quantity);
 
                         tokenABI["Transfer"].Invoke(baseTokenContract, from, this.Address, quantity);
 
@@ -68,11 +74,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                 case ExchangeOrderSide.Buy:
                     {
                         var balance = tokenABI["BalanceOf"].Invoke<BigInteger>(quoteTokenContract, from);
-                        var expectedAmount = quantity / rate;
-                        Expect(expectedAmount > 0);
-                        Expect(balance >= expectedAmount);
+                        var Runtime.ExpectedAmount = quantity / rate;
+                        Runtime.Expect(Runtime.ExpectedAmount > 0);
+                        Runtime.Expect(balance >= Runtime.ExpectedAmount);
 
-                        tokenABI["Transfer"].Invoke(quoteTokenContract, from, this.Address, expectedAmount);
+                        tokenABI["Transfer"].Invoke(quoteTokenContract, from, this.Address, Runtime.ExpectedAmount);
 
                         break;
                     }
@@ -81,10 +87,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             */
 
-        }
-
-        public void Unstake(BigInteger amount)
-        {
         }
     }
 }

@@ -33,11 +33,6 @@ namespace Phantasma.Blockchain.Contracts
             this.Runtime = VM;
         }
 
-        protected void Expect(bool condition)
-        {
-            Throw.If(!condition, "contract assertion failed");
-        }
-
         public int GetSize()
         {
             return this.Script.Length;

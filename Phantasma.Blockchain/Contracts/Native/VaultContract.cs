@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,15 +24,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void LockTokens(Address from, string symbol, BigInteger amount, uint duration)
         {
-            Expect(amount > 0);
-            Expect(duration >= 86400); // minimum 1 day
-            Expect(IsWitness(from));
+            Runtime.Expect(amount > 0, "amount must be greater than zero");
+            Runtime.Expect(duration >= 86400, "minimum duration should be one day"); // minimum 1 day
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Expect(balances.Subtract(from, amount));
+            Runtime.Expect(token.Transfer(balances, from, Runtime.Chain.Address, amount), "transfer failed");
 
             List<VaultEntry> list;
 
@@ -55,12 +57,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void UnlockTokens(Address from, string symbol)
         {
-            Expect(IsWitness(from));
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Expect(token != null);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            Expect(_entries.ContainsKey(from));
+            Runtime.Expect(_entries.ContainsKey(from), "address not in vault");
 
             var list = _entries[from];
 
@@ -73,7 +76,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     amount += entry.amount;
                 }
             }
-            Expect(amount > 0);
+            Runtime.Expect(amount > 0, "available amount must be greater than zero");
 
             list = list.Where(x => x.unlockTime > Runtime.Block.Timestamp.Value).ToList();
             if (list.Count > 0)
@@ -86,7 +89,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Expect(balances.Add(from, amount));
+            Runtime.Expect(token.Transfer(balances, Runtime.Chain.Address, from, amount), "transfer failed");
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void RegisterApp(Address owner, string name)
         {
-            Expect(IsWitness(owner));
+            Runtime.Expect(IsWitness(owner), "invalid witness");
 
             var chain = this.Runtime.Nexus.CreateChain(owner, name, Runtime.Chain, Runtime.Block);
             var app = new AppInfo()
@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
             var index = FindAppIndex(name, list);
-            Expect(index >= 0);
+            Runtime.Expect(index >= 0, "app not found");
 
             var app = list.Get(index);
             app.title = title;
@@ -71,7 +71,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
             var index = FindAppIndex(name, list);
-            Expect(index >= 0);
+            Runtime.Expect(index >= 0, "app not found");
 
             var app = list.Get(index);
             app.url = url;
@@ -82,7 +82,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
             var index = FindAppIndex(name, list);
-            Expect(index >= 0);
+            Runtime.Expect(index >= 0, "app not found");
 
             var app = list.Get(index);
             app.description = description;
