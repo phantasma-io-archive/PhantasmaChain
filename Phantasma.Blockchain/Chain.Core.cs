@@ -269,17 +269,26 @@ namespace Phantasma.Blockchain
 
         public BigInteger GetTokenBalance(Token token, Address address)
         {
-            var balances = GetTokenBalances(token);
-            return balances.Get(address);
+            if (token.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                var balances = GetTokenBalances(token);
+                return balances.Get(address);
+            }
+            else
+            {
+                var ownerships = GetTokenOwnerships(token);
+                var items = ownerships.Get(address);
+                return items.Count();
+            }
 
-/*            var contract = this.FindContract(token);
-            Throw.IfNull(contract, "contract not found");
+            /*            var contract = this.FindContract(token);
+                        Throw.IfNull(contract, "contract not found");
 
-            var tokenABI = Chain.FindABI(NativeABI.Token);
-            Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
+                        var tokenABI = Chain.FindABI(NativeABI.Token);
+                        Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
 
-            var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
-            return balance;*/
+                        var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
+                        return balance;*/
         }
 
         public IEnumerable<BigInteger> GetOwnedTokens(Token token, Address address)
