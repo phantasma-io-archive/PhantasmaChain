@@ -63,6 +63,21 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void BigIntAddNegatives()
+        {
+            int x = 100000;
+            int y = 1000;
+
+            Assert.IsTrue((new LargeInteger(-x) + new LargeInteger(y)).ToString() == (new BigInteger(-x) + new BigInteger(y)).ToString());
+            Assert.IsTrue((new LargeInteger(x) + new LargeInteger(-y)).ToString() == (new BigInteger(x) + new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) + new LargeInteger(-y)).ToString() == (new BigInteger(-x) + new BigInteger(-y)).ToString());
+
+            Assert.IsTrue((new LargeInteger(-y) + new LargeInteger(x)).ToString() == (new BigInteger(-y) + new BigInteger(x)).ToString());
+            Assert.IsTrue((new LargeInteger(y) + new LargeInteger(-x)).ToString() == (new BigInteger(y) + new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) + new LargeInteger(-x)).ToString() == (new BigInteger(-y) + new BigInteger(-x)).ToString());
+        }
+
+        [TestMethod]
         public void BigIntSub()
         {
             uint x = 5432543;
@@ -80,6 +95,21 @@ namespace Phantasma.Tests
             Assert.IsTrue(a1.ToString() == a2.ToString());
             Assert.IsTrue(b1.ToString() == b2.ToString());
             Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+
+        [TestMethod]
+        public void BigIntSubNegatives()
+        {
+            int x = 100000;
+            int y = 1000;
+
+            Assert.IsTrue((new LargeInteger(-x) - new LargeInteger(y)).ToString() == (new BigInteger(-x) - new BigInteger(y)).ToString());
+            Assert.IsTrue((new LargeInteger(x) - new LargeInteger(-y)).ToString() == (new BigInteger(x) - new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) - new LargeInteger(-y)).ToString() == (new BigInteger(-x) - new BigInteger(-y)).ToString());
+
+            Assert.IsTrue((new LargeInteger(-y) - new LargeInteger(x)).ToString() == (new BigInteger(-y) - new BigInteger(x)).ToString());
+            Assert.IsTrue((new LargeInteger(y) - new LargeInteger(-x)).ToString() == (new BigInteger(y) - new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) - new LargeInteger(-x)).ToString() == (new BigInteger(-y) - new BigInteger(-x)).ToString());
         }
 
         [TestMethod]
@@ -103,6 +133,21 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void BigIntMultNegatives()
+        {
+            int x = 100000;
+            int y = 1000;
+
+            Assert.IsTrue((new LargeInteger(-x) * new LargeInteger(y)).ToString() == (new BigInteger(-x) * new BigInteger(y)).ToString());
+            Assert.IsTrue((new LargeInteger(x) * new LargeInteger(-y)).ToString() == (new BigInteger(x) * new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) * new LargeInteger(-y)).ToString() == (new BigInteger(-x) * new BigInteger(-y)).ToString());
+
+            Assert.IsTrue((new LargeInteger(-y) * new LargeInteger(x)).ToString() == (new BigInteger(-y) * new BigInteger(x)).ToString());
+            Assert.IsTrue((new LargeInteger(y) * new LargeInteger(-x)).ToString() == (new BigInteger(y) * new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) * new LargeInteger(-x)).ToString() == (new BigInteger(-y) * new BigInteger(-x)).ToString());
+        }
+
+        [TestMethod]
         public void BigIntDiv()
         {
             long x = 4311810559;
@@ -120,6 +165,21 @@ namespace Phantasma.Tests
             Assert.IsTrue(a1.ToString() == a2.ToString());
             Assert.IsTrue(b1.ToString() == b2.ToString());
             Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+
+        [TestMethod]
+        public void BigIntDivNegatives()
+        {
+            int x = 100000;
+            int y = 1000;
+
+            Assert.IsTrue((new LargeInteger(-x) / new LargeInteger(y)).ToString() == (new BigInteger(-x) / new BigInteger(y)).ToString());
+            Assert.IsTrue((new LargeInteger(x) / new LargeInteger(-y)).ToString() == (new BigInteger(x) / new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) / new LargeInteger(-y)).ToString() == (new BigInteger(-x) / new BigInteger(-y)).ToString());
+
+            Assert.IsTrue((new LargeInteger(-y) / new LargeInteger(x)).ToString() == (new BigInteger(-y) / new BigInteger(x)).ToString());
+            Assert.IsTrue((new LargeInteger(y) / new LargeInteger(-x)).ToString() == (new BigInteger(y) / new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) / new LargeInteger(-x)).ToString() == (new BigInteger(-y) / new BigInteger(-x)).ToString());
         }
 
         [TestMethod]

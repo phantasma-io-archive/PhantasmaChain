@@ -461,23 +461,110 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator +(LargeInteger a, LargeInteger b)
         {
-            return new LargeInteger(Add(a._data, b._data));
+            LargeInteger result;
+
+            //all these if-else's are to make sure we don't attempt operations that would give a negative result,
+            //allowing the large int operations to deal only in the scope of unsigned numbers
+            if (a._sign < 0 && b._sign < 0)
+            {
+                result = new LargeInteger(Add(a._data, b._data));
+                result._sign = result == 0 ? 0 : -1;
+            }
+            else
+            if (a._sign < 0)
+            {
+                if (Abs(a) < b)
+                {
+                    result = new LargeInteger(Subtract(b._data, a._data));
+                    result._sign = result == 0 ? 0 : 1;
+                }
+                else
+                {
+                    result = new LargeInteger(Subtract(a._data, b._data));
+                    result._sign = result == 0 ? 0 : -1;
+                }
+            }
+            else if (b._sign < 0)
+            {
+                if (a < Abs(b))
+                {
+                    result = new LargeInteger(Subtract(b._data, a._data));
+                    result._sign = result == 0 ? 0 : -1;
+                }
+                else
+                {
+                    result = new LargeInteger(Subtract(a._data, b._data));
+                    result._sign = result == 0 ? 0 : 1;
+                }
+            }
+            else
+            {
+                result = new LargeInteger(Add(b._data, a._data));
+                result._sign = result == 0 ? 0 : 1;
+            }
+
+            return result;
         }
 
         public static LargeInteger operator -(LargeInteger a, LargeInteger b)
         {
-            return new LargeInteger(Subtract(a._data, b._data));
+            LargeInteger result;
+
+            //all these if-else's are to make sure we don't attempt operations that would give a negative result,
+            //allowing the large int operations to deal only in the scope of unsigned numbers
+            if (a._sign < 0 && b._sign < 0)
+            {
+                if (Abs(a) < Abs(b))
+                {
+                    result = new LargeInteger(Subtract(b._data, a._data));
+                    result._sign = result == 0 ? 0 : 1;
+                }
+                else
+                {
+                    result = new LargeInteger(Subtract(a._data, b._data));
+                    result._sign = result == 0 ? 0 : -1;
+                }
+            }
+            else
+            if (a._sign < 0)
+            {
+                result = new LargeInteger(Add(a._data, b._data));
+                result._sign = result == 0 ? 0 : -1;
+            }
+            else if (b._sign < 0)
+            {
+                result = new LargeInteger(Add(a._data, b._data));
+                result._sign = result == 0 ? 0 : 1;
+            }
+            else
+            {
+                if (a < b)
+                {
+                    result = new LargeInteger(Subtract(b._data, a._data));
+                    result._sign = result == 0 ? 0 : -1;
+                }
+                else
+                {
+                    result = new LargeInteger(Subtract(a._data, b._data));
+                    result._sign = result == 0 ? 0 : 1;
+                }
+            }
+
+            return result;
         }
 
         public static LargeInteger operator *(LargeInteger a, LargeInteger b)
         {
-            return new LargeInteger(Multiply(a._data, b._data));
+            var result = new LargeInteger(Multiply(a._data, b._data));
+            result._sign = a._sign * b._sign;
+            return result;
         }
 
         public static LargeInteger operator /(LargeInteger a, LargeInteger b)
         {
             LargeInteger quot, rem;
-            DivMod(a, b, out quot, out rem);
+            DivMod(Abs(a), Abs(b), out quot, out rem);
+            quot._sign = quot._sign == 0 ? 0 : a._sign * b._sign;
             return quot;
         }
 
@@ -485,7 +572,18 @@ namespace Phantasma.Numerics
         {
             LargeInteger quot, rem;
             DivMod(a, b, out quot, out rem);
+
+            if (rem < 0)    //using the convention that 0 <= rem <= divisor. So if rem < 0, add the divisor to it
+                rem += b;
+
             return rem;
+        }
+
+        public static void DivideAndModulus(LargeInteger a, LargeInteger b, out LargeInteger quot, out LargeInteger rem)
+        {
+            DivMod(a, b, out quot, out rem);
+            quot._sign = a._sign * b._sign;
+            
         }
 
         public static LargeInteger operator >>(LargeInteger n, int bits)
