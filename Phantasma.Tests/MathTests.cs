@@ -105,8 +105,8 @@ namespace Phantasma.Tests
         [TestMethod]
         public void BigIntDiv()
         {
-            uint x = 5432543;
-            uint y = 1432543;
+            long x = 4311810559;
+            uint y = 1048575;
 
             var a1 = new BigInteger(x);
             var b1 = new BigInteger(y);
@@ -120,6 +120,54 @@ namespace Phantasma.Tests
             Assert.IsTrue(a1.ToString() == a2.ToString());
             Assert.IsTrue(b1.ToString() == b2.ToString());
             Assert.IsTrue(c1.ToString() == c2.ToString());
+        }
+
+        [TestMethod]
+        public void TestSubtractionBorrowing()
+        {
+            var x1 = new LargeInteger(new byte[] {0x01, 0x00, 0x00, 0x01});
+            var y1 = new LargeInteger(new byte[] {0xff, 0xfe, 0xfe});
+
+            var x2 = new BigInteger(new byte[] { 0x01, 0x00, 0x00, 0x01 });
+            var y2 = new BigInteger(new byte[] { 0xff, 0xfe, 0xfe });
+
+            var groundTruth1 = new LargeInteger(new byte[] { 0x02, 0x01, 0x01 });
+            var groundTruth2 = new BigInteger(new byte[] { 0x02, 0x01, 0x01 });
+
+            var z1 = x1 - y1;
+            var z2 = x2 - y2;
+
+            Assert.IsTrue(z1 == groundTruth1);
+            Assert.IsTrue(z2 == groundTruth2);
+        }
+
+        [TestMethod]
+        public void TestToString()
+        {
+            var x = new LargeInteger(new byte[] {0x10, 0x10});
+            Assert.IsTrue(x.ToString() == "4112");
+        }
+
+        [TestMethod]
+        public void TestComparison()
+        {
+            var x1 = new LargeInteger(new byte[] { 0x00, 0x00, 0x00, 0x01 });
+            var y1 = new LargeInteger(new byte[] { 0xff, 0xff, 0xff });
+
+            var x2 = new BigInteger(new byte[] { 0x00, 0x00, 0x00, 0x01 });
+            var y2 = new BigInteger(new byte[] { 0xff, 0xff, 0xff });
+
+            var z1 = x1 / y1;
+            var z2 = x2 / y2;
+
+            Assert.IsTrue(z1.ToString() == "1");
+            Assert.IsTrue(z2.ToString() == "1");
+
+            var test1 = new LargeInteger(new byte[]{0x00, 0x01});
+            var test2 = new BigInteger(new byte[]{0x00, 0x01});
+
+            Assert.IsTrue(test1 > z1);
+            Assert.IsTrue(test2 > z2);
         }
         #endregion
     }

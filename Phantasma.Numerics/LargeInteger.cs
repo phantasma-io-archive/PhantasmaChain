@@ -30,6 +30,7 @@ namespace Phantasma.Numerics
         {
             this._sign = sign;
             this._data = null;
+
             InitFromArray(bytes);
         }
 
@@ -175,32 +176,33 @@ namespace Phantasma.Numerics
             int outLength = 0;
 
             var val = new LargeInteger(this);
-            var b = 256;
-            var radix = 10;
+            var sourceBase = 256;
+            var targetBase = 10;
             while (true)
             {
-                var u = val._data;
-                var m = val._data.Length;
-                var q = new byte[m];
+                var byteArray = val._data;
+                var arrayLength = val._data.Length;
+                var newArray = new byte[arrayLength];
 
                 var k = 0;
-                for (var j = m - 1; j >= 0; j--)
+                for (var j = arrayLength - 1; j >= 0; j--)
                 {
-                    q[j] = (byte)((k * b + u[j]) / radix);
-                    k = (k * b + u[j]) - (q[j] * radix);
+                    newArray[j] = (byte)((k * sourceBase + byteArray[j]) / targetBase);
+                    k = (k * sourceBase + byteArray[j]) - (newArray[j] * targetBase);
                 }
 
                 var c = (char)(48 + k);
                 buffer[outLength] = c;
                 outLength++;
 
-                if (q.Length == 1 && q[0] == 0)
+                if (newArray.Length == 1 && newArray[0] == 0)
                 {
                     break;
                 }
 
-                val = new LargeInteger(q);
+                val = new LargeInteger(newArray);
             }
+
 
             if (_sign < 0)
             {
@@ -237,35 +239,38 @@ namespace Phantasma.Numerics
         //2. Space r for the remainder(optional), n halfwords.
         //3. The dividend u, m halfwords, m >= 1.   
 
-        private static void DivMod(LargeInteger X, LargeInteger Y, out LargeInteger quot, out LargeInteger rem)
+        private static void DivMod(LargeInteger dividend, LargeInteger divisor, out LargeInteger quot, out LargeInteger rem)
         {
-            if (Y == 0)
+            if (divisor == 0)
             {
                 quot = LargeInteger.Zero;
                 rem = LargeInteger.Zero;
                 return;
             }
 
-            var u = X._data;
-            var v = Y._data;
-            var q = new byte[X._data.Length - Y._data.Length + 1];
-            var r = new byte[Y._data.Length];
+            var dividendArray = dividend._data;
+            var divisorArray = divisor._data;
+            var quotient = new byte[dividend._data.Length - divisor._data.Length + 1];
+            var rest = new byte[divisor._data.Length];
 
             var b = 256; // Number base (8 bits).
             //unsigned short* un, *vn;  // Normalized form of u, v.
             byte qhat;            // Estimated quotient digit.
             byte rhat;            // A remainder.
             int p;               // Product of two digits.
-            int s, i, j;
+            int i, j, q;
             byte t;
             byte k;
 
-            var m = u.Length;
-            var n = v.Length;
+            var m = dividendArray.Length;
+            var n = divisorArray.Length;
 
-            /*if (m < n)
-                return 1;              // Return if invalid param.
-                */
+            if (m < n)
+            {
+                quot = new LargeInteger(0);
+                rem = new LargeInteger(dividend);
+                return;
+            }
 
             // single digit divisor
             if (n == 1)
@@ -273,86 +278,85 @@ namespace Phantasma.Numerics
                 k = 0;
                 for (j = m - 1; j >= 0; j--)
                 {
-                    q[j] = (byte)((k * b + u[j]) / v[0]);
-                    k = (byte)((k * b + u[j]) - q[j] * v[0]);
+                    quotient[j] = (byte)((k * b + dividendArray[j]) / divisorArray[0]);
+                    k = (byte)((k * b + dividendArray[j]) - quotient[j] * divisorArray[0]);
                 }
 
-                r[0] = k;
-                quot = new LargeInteger(q);
-                rem = new LargeInteger(r);
+                rest[0] = k;
+                quot = new LargeInteger(quotient);
+                rem = new LargeInteger(rest);
                 return;
             }
 
-            // Normalize by shifting v left just enough so that
-            // its high-order bit is on, and shift u left the
-            // same amount.  We may have to append a high-order
-            // digit on the dividend; we do that unconditionally.
+            var interimDividend = new LargeInteger(0);
 
-            s = nlz(v[n - 1]) - 8;        // 0 <= s <= 7.
-            var vn = new byte[2 * n];
-            for (i = n - 1; i > 0; i--)
-                vn[i] = (byte)((v[i] << s) | (v[i - 1] >> 16 - s));
-            vn[0] = (byte)(v[0] << s);
+            for (i = 0, j = m - 1, q = 0; j >= 0; i++, j--)
+            {
+                interimDividend.ShiftAndInsertByte(dividendArray[j]); //"down goes one"
 
-            var un = new byte[2 * (m + 1)];
-            un[m] = (byte)(u[m - 1] >> 16 - s);
-            for (i = m - 1; i > 0; i--)
-                un[i] = (byte)((u[i] << s) | (u[i - 1] >> 16 - s));
-            un[0] = (byte)(u[0] << s);
+                if (interimDividend < divisor)
+                    continue;
 
-            for (j = m - n; j >= 0; j--)
-            {       // Main loop.
-                    // Compute estimate qhat of q[j].
-                qhat = (byte)((un[j + n] * b + un[j + n - 1]) / vn[n - 1]);
-                rhat = (byte)((un[j + n] * b + un[j + n - 1]) - qhat * vn[n - 1]);
-                again:
-                if (qhat >= b || qhat * vn[n - 2] > b * rhat + un[j + n - 2])
+                //how many times does the divisor fit on the current dividend
+                while (true)
                 {
-                    qhat--;
-                    rhat += vn[n - 1];
-                    if (rhat < b) goto again;
-                }
 
-                // Multiply and subtract.
-                k = 0;
-                for (i = 0; i < n; i++)
-                {
-                    p = qhat * vn[i];
-                    t = (byte)(un[i + j] - k - (p & 0xFF));
-                    un[i + j] = t;
-                    k = (byte)((p >> 16) - (t >> 16));
-                }
+                    interimDividend -= divisor;
+                    quotient[q]++;
 
-                t = (byte)(un[j + n] - k);
-                un[j + n] = t;
-
-                q[j] = qhat;              // Store quotient digit.
-                if (t < 0)
-                {              // If we subtracted too
-                    q[j]--;       // much, add back.
-                    k = 0;
-                    for (i = 0; i < n; i++)
+                    if (interimDividend < divisor)  //if it doesn't fit anymore, go to the next iteration
                     {
-                        t = (byte)(un[i + j] + vn[i] + k);
-                        un[i + j] = t;
-                        k = (byte)(t >> 8);
+                        q++;
+                        break;
                     }
-
-                    un[j + n] += k;
                 }
-            } // End j.
+            }
 
-            for (i = 0; i < n; i++)
-                r[i] = (byte)((un[i] >> s) | (un[i + 1] << 16 - s));
+            quot = new LargeInteger(quotient);
+            rem = new LargeInteger(interimDividend);
+        }
 
-            quot = new LargeInteger(q);
-            rem = new LargeInteger(r);
+        // Left-shifts a byte array in place. Assumes little-endian. Throws on overflow.
+        private static void ShiftByteArrayLeft(byte[] array, byte newVal = 0)
+        {
+            if (array == null || array.Length == 0)
+                throw new ArgumentNullException("array");
+
+            // move left-to-right, left-shifting each byte
+            for (int i = array.Length - 1; i >= 1; --i)
+            {
+                array[i] = array[i - 1];
+            }
+
+            array[0] = newVal;
+        }
+
+        private void ShiftAndInsertByte(byte newVal)
+        {
+            _sign = 1;
+
+            if (_data.Length == 1 && _data[0] == 0)
+            {
+                _data[0] = newVal;
+                return;
+            }
+                
+            byte[] newData = new byte[_data.Length + 1];
+
+            for (int i = newData.Length - 1; i > 0; i--)
+                newData[i] = _data[i - 1];
+
+            newData[0] = newVal;
+
+            _data = newData;
         }
 
         private static byte[] Add(byte[] X, byte[] Y)
         {
             var longest = Math.Max(X.Length, Y.Length);
             var r = new byte[longest + 1];
+
+            
 
             uint overflow = 0;
             for (int i = 0; i < longest; i++)
@@ -372,20 +376,45 @@ namespace Phantasma.Numerics
         private static byte[] Subtract(byte[] X, byte[] Y)
         {
             var longest = Math.Max(X.Length, Y.Length);
-            var r = new byte[longest + 1];
+            var r = new byte[longest];
 
-            uint overflow = 0;
+            uint borrow = 0;
             for (int i = 0; i < longest; i++)
             {
                 byte x = i < X.Length ? X[i] : (byte)0;
                 byte y = i < Y.Length ? Y[i] : (byte)0;
-                uint sum = (overflow + x) - y;
+
+                //check if borrowing is necessary
+                if (x < y)
+                {
+                    int j = i + 1;
+
+                    //check what is the first non zero column to the left of the current one
+                    while (j < X.Length && X[j] == 0)
+                        j++;
+
+                    if(j == X.Length)
+                        throw new Exception("This subtraction will lead to a negative number. Why do you do this to me senpai");
+
+                    X[j]--; //borrow from the first non zero
+
+                    //now go back, merrily distributing the borrow along the way
+                    j--;
+                    while (j != i)
+                    {
+                        X[j] = Byte.MaxValue; //remember that this code is reached only if X[j] is 0
+                        j--;
+                    }
+
+                    borrow = Byte.MaxValue + 1;
+                }
+
+                uint sum = (borrow + x) - y;
+                borrow = 0;
 
                 r[i] = (byte)sum;
-                overflow = sum >> 8;
             }
 
-            r[longest] = (byte)overflow;
             return r;
         }
 
@@ -420,6 +449,14 @@ namespace Phantasma.Numerics
             }
 
             return r;
+        }
+
+        private static void ApplyTwosComplement(byte[] array)
+        {
+            for (int i = 0; i < array.Length; i++)
+                array[i] = (byte) ~array[i];
+
+            array[0]++;
         }
 
         public static LargeInteger operator +(LargeInteger a, LargeInteger b)
