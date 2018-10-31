@@ -143,7 +143,7 @@ namespace Phantasma.Tests
 
             // finish the chain transfer
             simulator.BeginBlock();
-            simulator.GenerateSideChainSettlement(nexus.RootChain, accountChain, txA.Hash);
+            simulator.GenerateSideChainSettlement(nexus.RootChain, accountChain, txA.Block.Hash);
             Assert.IsTrue(simulator.EndBlock());
 
             // verify balances
