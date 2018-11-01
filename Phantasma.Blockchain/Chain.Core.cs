@@ -355,7 +355,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal object InvokeContract(string methodName, params object[] args)
+        public object InvokeContract(string methodName, params object[] args)
         {
             var script = ScriptUtils.CallContractScript(this, methodName, args);
             var changeSet = new StorageChangeSetContext(this.Storage);
