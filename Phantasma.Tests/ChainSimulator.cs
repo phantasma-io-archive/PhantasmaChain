@@ -235,6 +235,13 @@ namespace Phantasma.Tests
             var chain = Nexus.FindChainByName("apps");
             var script = ScriptUtils.CallContractScript(chain, "RegisterApp", source.Address, name);
             var tx = MakeTransaction(source, chain, script);
+
+            script = ScriptUtils.CallContractScript(chain, "SetAppUrl", name, url);
+            tx = MakeTransaction(source, chain, script);
+
+            script = ScriptUtils.CallContractScript(chain, "SetAppDescription", name, description);
+            tx = MakeTransaction(source, chain, script);
+
             return tx;
         }
 

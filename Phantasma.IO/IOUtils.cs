@@ -135,7 +135,7 @@ namespace Phantasma.IO
         {
             var data = reader.ReadBytes(Hash.Length);
             var result = new Hash(data);
-            return result == Hash.Null ? null : result;
+            return result == Hash.Null ? Hash.Null : result;
         }
 
         public static BigInteger ReadBigInteger(this BinaryReader reader)
