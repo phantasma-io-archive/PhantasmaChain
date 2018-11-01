@@ -172,7 +172,8 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                contract = new CustomContract(null, null); // TODO
+                var sb = new ScriptBuilder();
+                contract = new CustomContract(sb.ToScript(), null); // TODO
             }
 
             var chain = new Chain(this, owner, name, contract, this.logger, parentChain, parentBlock);

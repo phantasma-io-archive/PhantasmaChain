@@ -6,7 +6,7 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.VM
 {
-    class ScriptContext: ExecutionContext
+    public class ScriptContext: ExecutionContext
     {
         public byte[] Script { get; private set; }
 
@@ -701,6 +701,7 @@ namespace Phantasma.VM
                             if (context == null)
                             {
                                 SetState(ExecutionState.Fault);
+                                return;
                             }
 
                             currentFrame.Registers[dst].SetValue(context);

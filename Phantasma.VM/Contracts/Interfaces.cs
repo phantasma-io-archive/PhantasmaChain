@@ -33,7 +33,6 @@ namespace Phantasma.VM.Contracts
     public interface IContract
     {
         ContractInterface ABI { get; }
-        byte[] Script { get; }
     }
 
     public interface IMigratable : IContract

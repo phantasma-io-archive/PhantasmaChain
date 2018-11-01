@@ -133,7 +133,7 @@ namespace Phantasma.Tests
 
                                     var pendingBlock = new SideChainPendingBlock()
                                     {
-                                        sourceChain = entry.sourceChain, 
+                                        sourceChain = entry.sourceChain,
                                         destChain = entry.destChain,
                                         hash = block.Hash,
                                     };
@@ -145,10 +145,10 @@ namespace Phantasma.Tests
 
                             Console.WriteLine($"End block #{step}: {block.Hash}");
                         }
-                    }
-                    else
-                    {
-                        throw new Exception($"add block in {chain.Name} failed");
+                        else
+                        {
+                            throw new Exception($"add block in {chain.Name} failed");
+                        }
                     }
                 }
 
@@ -271,14 +271,22 @@ namespace Phantasma.Tests
                     // side-chain send
                     case 1:
                         {
-                            var chainList = Nexus.Chains.Where(x => x.ParentChain == sourceChain).ToArray();
-                            var targetChain = chainList[_rnd.Next() % chainList.Length];
+                            var sourceChainList = Nexus.Chains.ToArray();
+                            sourceChain = sourceChainList[_rnd.Next() % sourceChainList.Length];
+
+                            var targetChainList = Nexus.Chains.Where(x => x.ParentChain == sourceChain || sourceChain.ParentChain == x).ToArray();
+                            var targetChain = targetChainList[_rnd.Next() % targetChainList.Length];
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
 
                             var total = balance / 10;
                             if (total > 0)
                             {
+                                if (sourceChain.Contract.Kind == ContractKind.Apps && !targetChain.IsRoot)
+                                {
+                                    sourceChain = sourceChain;
+                                }
+
                                 GenerateSideChainSend(source, token, sourceChain, targetChain, total);
                             }
                             break;
@@ -291,6 +299,7 @@ namespace Phantasma.Tests
                             {
                                 var pendingBlock = _pendingBlocks.First();
                                 Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
+
                                 GenerateSideChainSettlement(pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
                             }
 

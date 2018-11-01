@@ -1,21 +1,23 @@
-﻿using Phantasma.Blockchain.Contracts.Native;
+﻿using Phantasma.Core;
 using Phantasma.VM;
+using Phantasma.VM.Contracts;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts
 {
     public class NativeExecutionContext : ExecutionContext
     {
-        public readonly NativeContract Contract;
+        public readonly SmartContract Contract;
 
-        public NativeExecutionContext(NativeContract contract)
+        public NativeExecutionContext(SmartContract contract)
         {
             this.Contract = contract;
         }
 
         public override ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack)
         {
-            var methodName = stack.Pop().AsString();
+            var stackObj = stack.Pop();
+            var methodName = stackObj.AsString();
             var method = this.Contract.ABI.FindMethod(methodName);
 
             if (stack.Count < method.parameters.Length)
@@ -23,8 +25,24 @@ namespace Phantasma.Blockchain.Contracts
                 return ExecutionState.Fault;
             }
 
+            if (this.Contract.HasInternalMethod(methodName))
+            {
+                return InternalCall(method, frame, stack);
+            }
+
+            var customContract = this.Contract as CustomContract;
+            Throw.IfNull(customContract, nameof(customContract));
+            stack.Push(stackObj);
+
+            var context = new ScriptContext(customContract.Script);
+            return context.Execute(frame, stack);
+        }
+
+        private ExecutionState InternalCall(ContractMethod method, ExecutionFrame frame, Stack<VMObject> stack)
+        {
             var args = new object[method.parameters.Length];
-            for (int i=0; i<args.Length; i++) {
+            for (int i = 0; i < args.Length; i++)
+            {
                 var arg = stack.Pop();
 
                 var temp = arg.Data;
@@ -41,7 +59,7 @@ namespace Phantasma.Blockchain.Contracts
                 args[i] = temp;
             }
 
-            var result = this.Contract.CallMethod(methodName, args);
+            var result = this.Contract.CallInternalMethod(method.name, args);
 
             if (method.returnType != VMType.None)
             {

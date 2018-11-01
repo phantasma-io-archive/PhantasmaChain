@@ -1,5 +1,5 @@
 ﻿using Phantasma.VM.Contracts;
-using Phantasma.Cryptography;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -9,16 +9,12 @@ namespace Phantasma.Blockchain.Contracts
 
         //public override Address Address => Address.FromScript(this.Script);
 
-        private byte[] _script;
-        public override byte[] Script => _script;
-
-        private byte[] _ABI;
-        public override ContractInterface ABI => null;
+        public byte[] Script { get; private set; }
 
         public CustomContract(byte[] script, byte[] ABI) : base()
         {
-            this._script = script;
-            this._ABI = ABI;
+            Throw.IfNull(script, nameof(script));
+            this.Script = script;
         }
     }
 }

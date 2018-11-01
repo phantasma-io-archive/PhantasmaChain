@@ -10,6 +10,7 @@ using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
 using System;
 using Phantasma.VM.Utils;
+using Phantasma.VM;
 
 namespace Phantasma.Blockchain
 {
@@ -47,7 +48,7 @@ namespace Phantasma.Blockchain
 
         public readonly Logger Log;
 
-        public NativeExecutionContext ExecutionContext { get; private set; }
+        public ExecutionContext ExecutionContext { get; private set; }
 
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
         private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
@@ -86,14 +87,7 @@ namespace Phantasma.Blockchain
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
 
-            if (contract is NativeContract)
-            {
-                this.ExecutionContext = new NativeExecutionContext((NativeContract)contract);
-            }
-            else
-            {
-                this.ExecutionContext = null;
-            }
+            this.ExecutionContext = new NativeExecutionContext(contract);
 
             // TODO support persistence storage
             this.Storage = new MemoryStorageContext();
