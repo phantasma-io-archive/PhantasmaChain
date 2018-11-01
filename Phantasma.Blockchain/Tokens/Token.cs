@@ -165,6 +165,11 @@ namespace Phantasma.Blockchain.Tokens
 
         internal BigInteger GenerateID()
         {
+            if (LastID == null)
+            {
+                LastID = new BigInteger(0);
+            }
+
             LastID++;
             return LastID;
         }

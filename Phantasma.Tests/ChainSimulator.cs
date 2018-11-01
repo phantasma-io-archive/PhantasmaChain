@@ -53,9 +53,6 @@ namespace Phantasma.Tests
             this.bankChain = Nexus.FindChainByKind(ContractKind.Bank);
             this.accountChain = Nexus.FindChainByKind(ContractKind.Account);
 
-            var miner = KeyPair.Generate();
-            var third = KeyPair.Generate();
-
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
 
@@ -64,6 +61,14 @@ namespace Phantasma.Tests
             BeginBlock();
             GenerateAppRegistration(_owner, "nachomen", "https://nacho.men", "Collect, train and battle against other players in Nacho Men!");
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
+
+            var trophy = Nexus.FindTokenBySymbol("TROPHY");
+            for (int i=1; i<5; i++)
+            {
+                var nftKey = KeyPair.Generate();
+                GenerateNFT(_owner, nftKey.Address, Nexus.RootChain, trophy, new byte[0]);
+            }
+
             EndBlock();
         }
 
@@ -230,6 +235,13 @@ namespace Phantasma.Tests
             return tx;
         }
 
+        public Transaction GenerateNFT(KeyPair source, Address address, Chain chain, Token token, byte[] data)
+        {
+            var script = ScriptUtils.CallContractScript(chain, "MintToken", source.Address, token.Symbol, data);
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
+        }
+    
         public Transaction GenerateAppRegistration(KeyPair source, string name, string url, string description)
         {
             var chain = Nexus.FindChainByName("apps");
