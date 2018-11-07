@@ -130,7 +130,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             return ownerships.Get(address).ToArray();
@@ -142,7 +142,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
 
             var tokenID = this.Runtime.Chain.CreateNFT(token, data);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
@@ -178,7 +178,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(source, tokenID), "take token failed");
@@ -186,6 +186,21 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
+        }
+
+        public void SetTokenViewer(Address source, string symbol, string url)
+        {
+            Runtime.Expect(IsWitness(source), "invalid witness");
+
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
+
+            Runtime.Expect(token.Owner == source, "owner expected");
+
+            token.SetViewer(url);
+
+            Runtime.Notify(EventKind.TokenInfo, source, url);
         }
 
         #endregion

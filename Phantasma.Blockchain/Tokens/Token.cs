@@ -26,6 +26,8 @@ namespace Phantasma.Blockchain.Tokens
         public Chain Chain { get; private set; }
 
         public BigInteger MaxSupply { get; private set; }
+
+        public bool IsFungible => Flags.HasFlag(TokenFlags.Fungible);
         public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
 
         public Address Owner { get; private set; }
@@ -38,6 +40,8 @@ namespace Phantasma.Blockchain.Tokens
         public BigInteger CurrentSupply => _supply;
 
         public int Decimals { get; private set; }
+
+        public string Viewer { get; private set; }
 
         public Token(StorageContext storage)
         {
@@ -161,6 +165,13 @@ namespace Phantasma.Blockchain.Tokens
             }
 
             return true;
+        }
+
+        internal void SetViewer(string url)
+        {
+            Throw.If(IsFungible, "NFT expected");
+
+            this.Viewer = url;
         }
 
         internal BigInteger GenerateID()
