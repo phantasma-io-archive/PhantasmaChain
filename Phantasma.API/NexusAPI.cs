@@ -6,7 +6,7 @@ namespace Phantasma.API
 {
     public class NexusAPI
     {
-        public Nexus Nexus { get; private set; } 
+        public Nexus Nexus { get; private set; }
 
         public NexusAPI(Nexus nexus)
         {
@@ -15,7 +15,7 @@ namespace Phantasma.API
 
         public DataNode GetAccount(Address address)
         {
-            var result = DataNode.CreateObject("account");
+            var result = DataNode.CreateObject();
 
             result.AddField("address", address.Text);
 
@@ -56,29 +56,48 @@ namespace Phantasma.API
             return result;
         }
 
-        /*public DataNode GetBlock(Hash hash)
+        public DataNode GetBlock(Hash hash)
         {
+            var result = DataNode.CreateObject();
 
+            result.AddField("hash", hash.ToString());
+            foreach (var chain in Nexus.Chains)
+            {
+                var block = chain.FindBlockByHash(hash);
+                if (block != null)
+                {
+
+                    result.AddField("timestamp", block.Timestamp);
+                    result.AddField("height", block.Height);
+                    result.AddField("chainAddress", block.Chain.Address);
+                    result.AddField("chainName", block.Chain.Name);
+                    result.AddField("previousHash", block.PreviousHash);
+                    result.AddField("nonce", block.Nonce);
+                    result.AddField("minerAddress", block.MinerAddress.Text);
+                }
+            }
+
+            return result;
         }
+        /*
+       public DataNode GetTransaction(Hash hash)
+       {
 
-        public DataNode GetTransaction(Hash hash)
-        {
+       }
 
-        }
+       public DataNode GetChains()
+       {
 
-        public DataNode GetChains()
-        {
+       }
 
-        }
+       public DataNode GetTokens()
+       {
 
-        public DataNode GetTokens()
-        {
+       }
 
-        }
+       public DataNode GetApps()
+       {
 
-        public DataNode GetApps()
-        {
-
-        }*/
+       }*/
     }
 }
