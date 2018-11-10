@@ -43,15 +43,15 @@ To learn more about Phantasma, please read the [White Paper](https://phantasma.i
 
 Component	| Description	| Status	| Percentage
 :---------------------- | :------------ | :------------  | :------------ 
-Chain Core 		| eg: accounts, transactions, blocks | In development | 70%
-Wallet | CLI wallet | In development | 20%
-VM 		| Virtual machine to run smart contracts | In development | 50%
+Chain Core 		| eg: accounts, transactions, blocks | In development | 80%
+Wallet | CLI wallet | In development | 30%
+VM 		| Virtual machine to run smart contracts | In development | 60%
 Smart Contracts | eg: language features, compilers | In development | 30%
-Network 			| P2P communication | In development | 40%
+Network 			| P2P communication | In development | 60%
 Consensus | Distributed consensus for nodes | In development | 20%
 Relay | Off-chain relay | In development | 10%
-Storage | Distributed storage | In development| 30%
-API 			| RPC api for nodes | Planned | -
+Storage | Distributed storage | In development| 40%
+API 			| RPC api for nodes | Planned | 40%
 
 ## Compatibility
 
@@ -78,7 +78,7 @@ To build Phantasma on Windows, you need to download [Visual Studio 2017](https:/
 
 If you need to develop on Linux or macOS, just install the [.NET Core SDK](https://www.microsoft.com/net/core).
 
-For more information about how to build dApps for Phantasma, please read the [documentation](http://phantasma.io/development),
+For more information about how to build dApps for Phantasma, please read the [documentation](http://phantasma.io/development).
 
 ## Contributing
 
