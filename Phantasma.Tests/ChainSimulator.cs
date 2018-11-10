@@ -2,6 +2,8 @@
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Core;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
@@ -62,14 +64,32 @@ namespace Phantasma.Tests
             GenerateAppRegistration(_owner, "nachomen", "https://nacho.men", "Collect, train and battle against other players in Nacho Men!");
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
 
+            GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
+            EndBlock();
+
+            BeginBlock();
+
             var trophy = Nexus.FindTokenBySymbol("TROPHY");
-            for (int i=1; i<5; i++)
-            {
-                var nftKey = KeyPair.Generate();
-                GenerateNFT(_owner, nftKey.Address, Nexus.RootChain, trophy, new byte[0]);
-            }
+            RandomSpreadNFC(trophy);
+
+            var nacho = Nexus.FindTokenBySymbol("NACHO");
+            RandomSpreadNFC(nacho);
+
+            GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
 
             EndBlock();
+        }
+
+        private void RandomSpreadNFC(Token token)
+        {
+            Throw.IfNull(token, nameof(token));
+            Throw.If(token.IsFungible, "expected NFT");
+
+            for (int i = 1; i < 5; i++)
+            {
+                var nftKey = KeyPair.Generate();
+                GenerateNFT(_owner, nftKey.Address, Nexus.RootChain, token, new byte[0]);
+            }
         }
 
         private List<Transaction> transactions = new List<Transaction>();
@@ -180,6 +200,18 @@ namespace Phantasma.Tests
             return tx;
         }
 
+        public Transaction GenerateToken(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
+        {
+            var chain = Nexus.RootChain;
+
+            var script = ScriptUtils.CallContractScript(chain, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
+
+            var tx = MakeTransaction(owner, chain, script);
+            tx.Sign(owner);
+
+            return tx;
+        }
+
         public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Chain targetChain, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(sourceChain, "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
@@ -254,6 +286,15 @@ namespace Phantasma.Tests
             script = ScriptUtils.CallContractScript(chain, "SetAppDescription", name, description);
             tx = MakeTransaction(source, chain, script);
 
+            return tx;
+        }
+
+        public Transaction GenerateSetTokenViewer(KeyPair source, Token token, string url)
+        {
+            var chain = Nexus.RootChain;
+            var script = ScriptUtils.CallContractScript(chain, "SetTokenViewer", source.Address, token.Symbol, url);
+            var tx = MakeTransaction(source, chain, script);
+            
             return tx;
         }
 
