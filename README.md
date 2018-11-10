@@ -47,8 +47,10 @@ Chain Core 		| eg: accounts, transactions, blocks | In development | 80%
 Wallet | CLI wallet | In development | 30%
 VM 		| Virtual machine to run smart contracts | In development | 60%
 Smart Contracts | eg: language features, compilers | In development | 30%
+Economy | Tokens / NFT | In development | 70%
 Network 			| P2P communication | In development | 60%
 Consensus | Distributed consensus for nodes | In development | 20%
+Scalabilty | Side-chains / Channels | In development | 60%
 Relay | Off-chain relay | In development | 10%
 Storage | Distributed storage | In development| 40%
 API 			| RPC api for nodes | In development | 40%
