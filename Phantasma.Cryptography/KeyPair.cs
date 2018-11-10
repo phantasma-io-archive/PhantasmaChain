@@ -29,35 +29,8 @@ namespace Phantasma.Cryptography
 
         public static KeyPair Generate()
         {
-            var securityParameter = 64;
-            var bytes = new byte[PrivateKeyLength + (securityParameter / 8) + 1];
-            rnd.NextBytes(bytes);
-            bytes[bytes.Length - 1] = 0;
-
-            var maxBytes = new byte[PrivateKeyLength];
-            for (int i=0; i<maxBytes.Length; i++)
-            {
-                maxBytes[i] = 255;
-            }
-
-            var n = new BigInteger(bytes);
-            var max = new BigInteger(maxBytes);
-            
-            var q = n % max;
-
-            bytes = q.ToByteArray();
-
-            // TODO this is a fix for a bug that appears sometimes, it appears that the math before has a mistake somewhere
-            var diff = KeyPair.PrivateKeyLength - bytes.Length;
-            if (diff > 0)
-            {
-                var pad = new byte[diff];
-                rnd.NextBytes(pad);
-
-                bytes = bytes.Concat(pad).ToArray();
-            }
-
-            return new KeyPair(bytes);
+            var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
+            return new KeyPair(privateKey);
         }
 
         public static KeyPair FromWIF(string wif)

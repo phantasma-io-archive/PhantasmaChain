@@ -124,5 +124,22 @@ namespace Phantasma.Tests
                 }
             }
         }
+
+        [TestMethod]
+        public void TestSeedPhrases()
+        {
+            string passphrase = "hello world";
+            string seedPhrase;
+            var keys = SeedPhraseGenerator.Generate(passphrase, out seedPhrase);
+
+            Assert.IsTrue(keys != null);
+            Assert.IsTrue(keys.PrivateKey.Length == KeyPair.PrivateKeyLength);
+            Assert.IsTrue(keys.Address.PublicKey.Length == Address.PublicKeyLength);
+
+            var otherKeys = SeedPhraseGenerator.FromSeedPhrase(passphrase, seedPhrase);
+            Assert.IsTrue(otherKeys != null);
+            Assert.IsTrue(keys.Address.Text == otherKeys.Address.Text);
+        }
+
     }
 }
