@@ -51,7 +51,7 @@ Network 			| P2P communication | In development | 60%
 Consensus | Distributed consensus for nodes | In development | 20%
 Relay | Off-chain relay | In development | 10%
 Storage | Distributed storage | In development| 40%
-API 			| RPC api for nodes | Planned | 40%
+API 			| RPC api for nodes | In development | 40%
 
 ## Compatibility
 
