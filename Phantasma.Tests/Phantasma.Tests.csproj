@@ -19,7 +19,9 @@
     <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
+    <ProjectReference Include="..\Phantasma.IO\Phantasma.IO.csproj" />
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
+    <ProjectReference Include="..\Phantasma.P2P\Phantasma.P2P.csproj" />
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
     <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />
   </ItemGroup>

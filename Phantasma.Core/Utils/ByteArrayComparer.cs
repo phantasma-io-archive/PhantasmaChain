@@ -13,12 +13,25 @@ namespace Phantasma.Core.Utils
                 return left == right;
             }
 
-            return left.SequenceEqual(right);
+            if (left.Length != right.Length)
+            {
+                return false;
+            }
+
+            for (int i=0; i<left.Length; i++)
+            {
+                if (left[i] != right[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public int GetHashCode(byte[] key)
         {
-            Throw.IfNull(key , "key");
+            Throw.IfNull(key, nameof(key));
             return key.Sum(b => b);
         }
     }

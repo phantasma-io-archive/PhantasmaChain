@@ -101,7 +101,10 @@ namespace Phantasma.Cryptography
 
         public override int GetHashCode()
         {
-            return Murmur32.Hash(PublicKey);
+            unchecked
+            {
+                return (int)Murmur32.Hash(PublicKey);
+            }
         }
 
         public static Address FromWIF(string WIF)

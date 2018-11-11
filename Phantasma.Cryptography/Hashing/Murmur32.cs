@@ -7,12 +7,12 @@ namespace Phantasma.Cryptography.Hashing
 {
     public static class Murmur32 
     {
-        public static int Hash(byte[] data, uint seed = 144)
+        public static uint Hash(byte[] data, uint seed = 144)
         {
             return Hash(data, 0, (uint)data.Length, seed);
         }
 
-        public static int Hash(byte[] data, uint offset, uint length, uint seed)
+        public static uint Hash(byte[] data, uint offset, uint length, uint seed)
         {
             const uint c1 = 0xcc9e2d51;
             const uint c2 = 0x1b873593;
@@ -72,10 +72,7 @@ namespace Phantasma.Cryptography.Hashing
             h1 ^= streamLength;
             h1 = fmix(h1);
 
-            unchecked //ignore overflow
-            {
-                return (int)h1;
-            }
+            return h1;
         }
 
         private static uint rotl32(uint x, byte r)
