@@ -49,6 +49,7 @@ namespace Phantasma.API
                     var entryNode = DataNode.CreateObject();
                     tokenNode.AddNode(entryNode);
                     entryNode.AddField("symbol", token.Symbol);
+                    entryNode.AddField("name", token.Name);
                     entryNode.AddNode(chainNode);
                 }
             }
