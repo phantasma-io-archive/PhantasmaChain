@@ -8,7 +8,6 @@ using Phantasma.Blockchain.Plugins;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.VM;
 
 namespace Phantasma.API
 {
@@ -65,28 +64,46 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetBlock(Hash hash)
+        private DataNode GetBlock(Block block)
         {
             var result = DataNode.CreateObject();
 
-            result.AddField("hash", hash.ToString());
+            result.AddField("hash", block.Hash.ToString());
+            result.AddField("timestamp", block.Timestamp);
+            result.AddField("height", block.Height);
+            result.AddField("chainAddress", block.Chain.Address);
+            result.AddField("chainName", block.Chain.Name);
+            result.AddField("previousHash", block.PreviousHash);
+            result.AddField("nonce", block.Nonce);
+            result.AddField("minerAddress", block.MinerAddress.Text);
+
+            return result;
+        }
+
+        public DataNode GetBlockByHash(Hash hash)
+        {
             foreach (var chain in Nexus.Chains)
             {
                 var block = chain.FindBlockByHash(hash);
                 if (block != null)
                 {
-
-                    result.AddField("timestamp", block.Timestamp);
-                    result.AddField("height", block.Height);
-                    result.AddField("chainAddress", block.Chain.Address);
-                    result.AddField("chainName", block.Chain.Name);
-                    result.AddField("previousHash", block.PreviousHash);
-                    result.AddField("nonce", block.Nonce);
-                    result.AddField("minerAddress", block.MinerAddress.Text);
+                    return GetBlock(block);
                 }
             }
 
-            return result;
+            return null;
+        }
+
+        public DataNode GetBlockByHeight(uint height, string chainName)
+        {
+            var chain = Nexus.FindChainByName(chainName);
+            var block = chain.FindBlockByHeight(height);
+            if (block != null)
+            {
+                return GetBlock(block);
+            }
+
+            return null;
         }
 
         public DataNode GetAddressTransactions(Address address, int amountTx)
@@ -195,7 +212,7 @@ namespace Phantasma.API
 
         public void SendRawTransaction(string signedTransaction)
         {
-
+            var bytes = Base16.Decode(signedTransaction);
         }
 
         /*
