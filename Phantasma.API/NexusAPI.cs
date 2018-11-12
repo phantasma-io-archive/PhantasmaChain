@@ -1,8 +1,14 @@
-﻿using System.Linq;
+﻿using System.Globalization;
+using System.Linq;
 using Phantasma.Blockchain;
 using LunarLabs.Parser;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Plugins;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
+using Phantasma.VM;
 
 namespace Phantasma.API
 {
@@ -83,15 +89,15 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetAddressTransactions(Address address, int amount)
+        public DataNode GetAddressTransactions(Address address, int amountTx)
         {
             var result = DataNode.CreateObject();
             var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
             var txsNode = DataNode.CreateArray("txs");
             result.AddField("address", address.Text);
-            result.AddField("amount", amount);
+            result.AddField("amount", amountTx);
             result.AddNode(txsNode);
-            var txs = plugin?.GetAddressTransactions(address).OrderByDescending(p => p.Block.Timestamp.Value).Take(amount);
+            var txs = plugin?.GetAddressTransactions(address).OrderByDescending(p => p.Block.Timestamp.Value).Take(amountTx);
             if (txs != null)
             {
                 foreach (var transaction in txs)
@@ -104,12 +110,94 @@ namespace Phantasma.API
                     entryNode.AddField("blockHeight", transaction.Block.Height);
                     entryNode.AddField("gasLimit", transaction.GasLimit.ToString());
                     entryNode.AddField("gasPrice", transaction.GasPrice.ToString());
+
+                    string description = null;
+
+                    Token senderToken = null;
+                    Address senderAddress = Address.Null;
+
+                    Token receiverToken = null;
+                    Address receiverAddress = Address.Null;
+
+                    BigInteger amount = 0;
+                    foreach (var evt in transaction.Events)//todo move this
+                    {
+                        switch (evt.Kind)
+                        {
+                            case EventKind.TokenSend:
+                                {
+                                    var data = evt.GetContent<TokenEventData>();
+                                    amount = data.value;
+                                    senderAddress = evt.Address;
+                                    senderToken = Nexus.FindTokenBySymbol(data.symbol);
+                                }
+                                break;
+
+                            case EventKind.TokenReceive:
+                                {
+                                    var data = evt.GetContent<TokenEventData>();
+                                    amount = data.value;
+                                    receiverAddress = evt.Address;
+                                    receiverToken = Nexus.FindTokenBySymbol(data.symbol);
+                                }
+                                break;
+
+                            case EventKind.AddressRegister:
+                                {
+                                    var name = evt.GetContent<string>();
+                                    description = $"{evt.Address} registered the name '{name}'";
+                                }
+                                break;
+
+                            case EventKind.FriendAdd:
+                                {
+                                    var address2 = evt.GetContent<Address>();
+                                    description = $"{evt.Address} added '{address2} to friends.'";
+                                }
+                                break;
+
+                            case EventKind.FriendRemove:
+                                {
+                                    var address2 = evt.GetContent<Address>();
+                                    description = $"{evt.Address} removed '{address2} from friends.'";
+                                }
+                                break;
+                        }
+                    }
+
+                    if (description == null)
+                    {
+                        if (amount > 0 && senderAddress != Address.Null && receiverAddress != Address.Null && senderToken != null && senderToken == receiverToken)
+                        {
+                            var amountDecimal = TokenUtils.ToDecimal(amount, senderToken.Decimals);
+                            description = $"{amountDecimal} {senderToken.Symbol} sent from {senderAddress.Text} to {receiverAddress.Text}";
+                            entryNode.AddField("amount", amountDecimal.ToString(CultureInfo.InvariantCulture));
+                            entryNode.AddField("asset", senderToken.Symbol);
+                            entryNode.AddField("addressTo", senderAddress.Text);
+                            entryNode.AddField("addressFrom", receiverAddress.Text);
+                        }
+                        else
+                        {
+                            description = "Custom transaction";
+                        }
+                    }
+
+                    entryNode.AddField("description", description);
                     txsNode.AddNode(entryNode);
                 }
             }
 
+
+
+
             return result;
         }
+
+        public void SendRawTransaction(string signedTransaction)
+        {
+
+        }
+
         /*
        public DataNode GetTransaction(Hash hash)
        {
