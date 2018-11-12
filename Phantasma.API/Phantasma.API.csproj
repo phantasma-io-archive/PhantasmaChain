@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LunarLabs.Server" Version="1.2.3" />
     <PackageReference Include="LunarParser" Version="1.1.4" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\LunarServer\LunarServer\LunarServer.csproj" />
     <ProjectReference Include="..\..\PhantasmaChain\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
   </ItemGroup>
 
