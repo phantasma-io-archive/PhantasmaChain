@@ -1,5 +1,7 @@
-﻿using Phantasma.Blockchain;
+﻿using System.Linq;
+using Phantasma.Blockchain;
 using LunarLabs.Parser;
+using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 
 namespace Phantasma.API
@@ -75,6 +77,34 @@ namespace Phantasma.API
                     result.AddField("previousHash", block.PreviousHash);
                     result.AddField("nonce", block.Nonce);
                     result.AddField("minerAddress", block.MinerAddress.Text);
+                }
+            }
+
+            return result;
+        }
+
+        public DataNode GetAddressTransactions(Address address, int amount)
+        {
+            var result = DataNode.CreateObject();
+            var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
+            var txsNode = DataNode.CreateArray("txs");
+            result.AddField("address", address.Text);
+            result.AddField("amount", amount);
+            result.AddNode(txsNode);
+            var txs = plugin?.GetAddressTransactions(address).OrderByDescending(p => p.Block.Timestamp.Value).Take(amount);
+            if (txs != null)
+            {
+                foreach (var transaction in txs)
+                {
+                    var entryNode = DataNode.CreateObject();
+                    entryNode.AddField("txid", transaction.Hash.ToString());
+                    entryNode.AddField("chainAddress", transaction.Block.Chain.Address);
+                    entryNode.AddField("chainName", transaction.Block.Chain.Name);
+                    entryNode.AddField("timestamp", transaction.Block.Timestamp.Value);
+                    entryNode.AddField("blockHeight", transaction.Block.Height);
+                    entryNode.AddField("gasLimit", transaction.GasLimit.ToString());
+                    entryNode.AddField("gasPrice", transaction.GasPrice.ToString());
+                    txsNode.AddNode(entryNode);
                 }
             }
 
