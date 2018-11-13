@@ -73,7 +73,7 @@ namespace Phantasma.API
 
                               try
                               {
-                                  var address = Address.FromText(paramNode.GetString("address"));
+                                  var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
                                   result = _API.GetAccount(address);
                               }
                               catch
@@ -91,8 +91,8 @@ namespace Phantasma.API
 
                               try
                               {
-                                  var address = Address.FromText(paramNode.GetString("address"));
-                                  var amountTx = paramNode.GetInt32("amount", 20);
+                                  var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
+                                  var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
                                   result = _API.GetAddressTransactions(address, amountTx);
                               }
                               catch
@@ -106,11 +106,12 @@ namespace Phantasma.API
                               {
                                   return GenerateRPCError("Invalid params", -32602);
                               }
-                              try
+                              try //todo validation
                               {
-                                  var chain = paramNode.GetString("chain");
-                                  var txData = paramNode.GetString("data");
-                                  result = _API.SendRawTransaction(chain, txData);
+                                  var chain = paramNode.GetNodeByIndex(0).ToString();
+                                  var signedTx = paramNode.GetNodeByIndex(1).ToString();
+                                  result = _API.SendRawTransaction(chain, signedTx);
+
                               }
                               catch
                               {
