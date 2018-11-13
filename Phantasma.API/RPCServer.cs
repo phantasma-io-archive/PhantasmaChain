@@ -7,7 +7,7 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.API
 {
-    public class RPCServer: Runnable
+    public class RPCServer : Runnable
     {
         public int Port { get; private set; }
         public string EndPoint { get; private set; }
@@ -34,100 +34,100 @@ namespace Phantasma.API
 
             _site = new Site(_server, null);
 
-            _site.Post("/"+EndPoint, (request) =>
-            {
-                if (string.IsNullOrEmpty(request.postBody))
-                {
-                    return GenerateRPCError("Invalid request", -32600);
-                }
-                else
-                {
-                    DataNode root;
-                    try
-                    {
-                        root = JSONReader.ReadFromString(request.postBody);
-                    }
-                    catch
-                    {
-                        return GenerateRPCError("Parsing error", -32700);
-                    }
+            _site.Post("/" + EndPoint, (request) =>
+              {
+                  if (string.IsNullOrEmpty(request.postBody))
+                  {
+                      return GenerateRPCError("Invalid request", -32600);
+                  }
+                  else
+                  {
+                      DataNode root;
+                      try
+                      {
+                          root = JSONReader.ReadFromString(request.postBody);
+                      }
+                      catch
+                      {
+                          return GenerateRPCError("Parsing error", -32700);
+                      }
 
-                    var version = root.GetString("jsonrpc");
-                    if (version != "2" && version != "2.0")
-                    {
-                        return GenerateRPCError("Invalid jsonrpc version", -32602);
-                    }
+                      var version = root.GetString("jsonrpc");
+                      if (version != "2" && version != "2.0")
+                      {
+                          return GenerateRPCError("Invalid jsonrpc version", -32602);
+                      }
 
-                    var method = root.GetString("method");
-                    object result = null;
+                      var method = root.GetString("method");
+                      object result = null;
 
-                    var paramNode = root.GetNode("params");
+                      var paramNode = root.GetNode("params");
 
-                    switch (method)
-                    {
-                        case "getaccount":
-                            if (paramNode == null)
-                            {
-                                return GenerateRPCError("Invalid params", -32602);
-                            }
+                      switch (method)
+                      {
+                          case "getaccount":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
 
-                            try
-                            {
-                                var address = Address.FromText(paramNode.GetString("address"));
-                                result = _API.GetAccount(address);
-                            }
-                            catch
-                            {
+                              try
+                              {
+                                  var address = Address.FromText(paramNode.GetString("address"));
+                                  result = _API.GetAccount(address);
+                              }
+                              catch
+                              {
                                 // ignore, it will be handled below
                             }
 
-                            break;
+                              break;
 
-                        case "getaddresstransactions":
-                            if (paramNode == null)
-                            {
-                                return GenerateRPCError("Invalid params", -32602);
-                            }
+                          case "getaddresstransactions":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
 
-                            try
-                            {
-                                var address = Address.FromText(paramNode.GetString("address"));
-                                var amountTx = paramNode.GetInt32("amount", 20);
-                                result = _API.GetAddressTransactions(address, amountTx);
-                            }
-                            catch
-                            {
+                              try
+                              {
+                                  var address = Address.FromText(paramNode.GetString("address"));
+                                  var amountTx = paramNode.GetInt32("amount", 20);
+                                  result = _API.GetAddressTransactions(address, amountTx);
+                              }
+                              catch
+                              {
                                 // ignore, it will be handled below
                             }
 
-                            break;
+                              break;
 
-                        default:
-                            return GenerateRPCError("Method not found", -32601);
-                    }
+                          default:
+                              return GenerateRPCError("Method not found", -32601);
+                      }
 
-                    if (result == null)
-                    {
-                        return GenerateRPCError("Missing result", -32603);
-                    }
+                      if (result == null)
+                      {
+                          return GenerateRPCError("Missing result", -32603);
+                      }
 
-                    var id = root.GetString("id", "0");
+                      var id = root.GetString("id", "0");
 
-                    string content;
+                      string content;
 
-                    if (result is DataNode)
-                    {
-                        content = JSONWriter.WriteToString((DataNode)result);
-                    }
-                    else
-                    {
-                        return GenerateRPCError("Not implemented", -32603);
-                    }
+                      if (result is DataNode)
+                      {
+                          content = JSONWriter.WriteToString((DataNode)result);
+                      }
+                      else
+                      {
+                          return GenerateRPCError("Not implemented", -32603);
+                      }
 
-                    return "{\"jsonrpc\": \"2.0\", \"result\": "+content+", \"id\": \"" + id + "\"}";
-                }
+                      return "{\"jsonrpc\": \"2.0\", \"result\": " + content + ", \"id\": \"" + id + "\"}";
+                  }
 
-            });
+              });
         }
 
         private string GenerateRPCError(string msg, int code = -32000, int id = 0)
