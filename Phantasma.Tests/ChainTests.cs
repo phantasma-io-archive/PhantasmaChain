@@ -30,7 +30,7 @@ namespace Phantasma.Tests
         public void TestNexus()
         {
             var owner = KeyPair.Generate();
-            var nexus = new Nexus(owner);
+            var nexus = new Nexus("tests", owner);
 
             var rootChain = nexus.RootChain;
             var token = nexus.NativeToken;

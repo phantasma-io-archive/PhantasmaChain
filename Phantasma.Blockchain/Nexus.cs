@@ -14,6 +14,8 @@ namespace Phantasma.Blockchain
 {
     public class Nexus
     {
+        public string Name { get; private set; }
+
         public Chain RootChain { get; private set; }
         public Token NativeToken { get; private set; }
         public Token StableToken { get; private set; }
@@ -33,7 +35,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(KeyPair owner, Logger logger = null)
+        public Nexus(string name, KeyPair owner, Logger logger = null)
         {
             this.logger = logger;
 
@@ -277,7 +279,7 @@ namespace Phantasma.Blockchain
 
             //var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
 
-            var tx = new Transaction(script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
             return tx;
@@ -286,7 +288,7 @@ namespace Phantasma.Blockchain
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(chain.Address, "MintTokens", owner.Address, symbol, amount);
-            var tx = new Transaction(script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -296,36 +298,10 @@ namespace Phantasma.Blockchain
             var name = kind.ToString();
 
             var script = ScriptUtils.CallContractScript(chain.Address, "CreateChain", owner.Address, name, RootChain.Name);
-            var tx = new Transaction(script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
-
-        /*        
-                private Transaction GenerateDistributionDeployTx(KeyPair owner)
-                {
-                    var script = ScriptUtils.ContractDeployScript(DistributionContract.DefaultScript, DistributionContract.DefaultABI);
-                    var tx = new Transaction(owner.Address, script, 0, 0);
-                    tx.Sign(owner);
-                    return tx;
-                }
-
-                private Transaction GenerateGovernanceDeployTx(KeyPair owner)
-                {
-                    var script = ScriptUtils.ContractDeployScript(GovernanceContract.DefaultScript, GovernanceContract.DefaultABI);
-                    var tx = new Transaction(owner.Address, script, 0, 0);
-                    tx.Sign(owner);
-                    return tx;
-                }
-
-                private Transaction GenerateStakeDeployTx(KeyPair owner)
-                {
-                    var script = ScriptUtils.ContractDeployScript(StakeContract.DefaultScript, StakeContract.DefaultABI);
-                    var tx = new Transaction(owner.Address, script, 0, 0);
-                    tx.Sign(owner);
-                    return tx;
-                }
-        */
 
         public const string NativeTokenSymbol = "SOUL";
         public const string PlatformName = "Phantasma";

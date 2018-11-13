@@ -50,7 +50,7 @@ namespace Phantasma.Tests
         public ChainSimulator(KeyPair ownerKey, int seed)
         {
             _owner = ownerKey;
-            this.Nexus = new Nexus(_owner);
+            this.Nexus = new Nexus("simnet", _owner);
 
             this.bankChain = Nexus.FindChainByKind(ContractKind.Bank);
             this.accountChain = Nexus.FindChainByKind(ContractKind.Account);
@@ -186,7 +186,7 @@ namespace Phantasma.Tests
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
-            var tx = new Transaction(script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
+            var tx = new Transaction(Nexus.Name, script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
 
             if (source != null)
             {
