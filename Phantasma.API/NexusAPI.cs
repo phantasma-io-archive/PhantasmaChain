@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Phantasma.Blockchain;
 using LunarLabs.Parser;
+using LunarLabs.Parser.JSON;
 using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -132,7 +133,7 @@ namespace Phantasma.API
                     entryNode.AddField("gasLimit", transaction.GasLimit.ToString());
                     entryNode.AddField("gasPrice", transaction.GasPrice.ToString());
                     entryNode.AddField("script", ByteArrayToHex(transaction.Script));
-                    
+
                     foreach (var evt in transaction.Events)
                     {
                         var eventNode = DataNode.CreateObject();
@@ -172,6 +173,24 @@ namespace Phantasma.API
                 result.AddField("error", "No mempool");
             }
 
+            return result;
+        }
+
+        public DataNode GetChains()
+        {
+            var result = DataNode.CreateObject();
+            var chainArray = DataNode.CreateArray();
+
+            foreach (var chain in Nexus.Chains)
+            {
+                var single = DataNode.CreateObject();
+                single.AddField("name", chain.Name);
+                single.AddField("address", chain.Address.Text);
+                chainArray.AddNode(single);
+            }
+
+            result.AddNode(chainArray);
+            var test = JSONWriter.WriteToString(result);
             return result;
         }
 

@@ -101,6 +101,18 @@ namespace Phantasma.API
                               }
                               break;
 
+                          case "getchains":
+                              try 
+                              {
+                                  result = _API.GetChains();
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+
+                              break;
+
                           case "sendrawtransaction":
                               if (paramNode == null)
                               {
