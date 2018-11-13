@@ -351,7 +351,7 @@ namespace Phantasma.Blockchain
 
         public object InvokeContract(string methodName, params object[] args)
         {
-            var script = ScriptUtils.CallContractScript(this, methodName, args);
+            var script = ScriptUtils.CallContractScript(this.Address, methodName, args);
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null, null, changeSet);
             Contract.SetRuntimeData(vm);
