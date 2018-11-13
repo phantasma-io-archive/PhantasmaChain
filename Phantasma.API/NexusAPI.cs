@@ -176,17 +176,22 @@ namespace Phantasma.API
 
         public DataNode GetChains()
         {
-            var result = DataNode.CreateArray("chains");
+            var result = DataNode.CreateObject();
+
+            var arrayNode = DataNode.CreateArray("chains");
 
             foreach (var chain in Nexus.Chains)
             {
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
-                result.AddNode(single);
+                arrayNode.AddNode(single);
             }
 
+            result.AddNode(arrayNode);
+
             var test = JSONWriter.WriteToString(result);
+            System.Console.WriteLine(test);
             return result;
         }
 
