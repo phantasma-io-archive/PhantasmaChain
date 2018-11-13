@@ -78,8 +78,8 @@ namespace Phantasma.API
                               }
                               catch
                               {
-                                // ignore, it will be handled below
-                            }
+                                  // ignore, it will be handled below
+                              }
 
                               break;
 
@@ -97,8 +97,25 @@ namespace Phantasma.API
                               }
                               catch
                               {
-                                // ignore, it will be handled below
-                            }
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          case "sendrawtransaction":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+                              try
+                              {
+                                  var chain = paramNode.GetString("chain");
+                                  var signedTx = paramNode.GetString("signedTx");
+                                  result = _API.SendRawTransaction(chain, signedTx);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
 
                               break;
 

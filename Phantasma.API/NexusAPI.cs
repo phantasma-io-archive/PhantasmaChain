@@ -144,7 +144,7 @@ namespace Phantasma.API
             return result;
         }
 
-        public void SendRawTransaction(string chainName, string signedTransaction)
+        public bool SendRawTransaction(string chainName, string signedTransaction)
         {
             var bytes = Base16.Decode(signedTransaction);
             var tx = Transaction.Unserialize(bytes);
@@ -154,6 +154,7 @@ namespace Phantasma.API
             // TODO this should go to a mempool instead
             var miner = KeyPair.Generate();
             var block = new Block(chain, miner.Address, Timestamp.Now, new Transaction[] { tx }, chain.LastBlock);
+            return true;
         }
 
         /*
