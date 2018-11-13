@@ -36,7 +36,7 @@ namespace Phantasma.API
 
             _site.Post("/"+EndPoint, (request) =>
             {
-                if (string.IsNullOrEmpty(request.body))
+                if (string.IsNullOrEmpty(request.postBody))
                 {
                     return GenerateRPCError("Invalid request", -32600);
                 }
@@ -45,7 +45,7 @@ namespace Phantasma.API
                     DataNode root;
                     try
                     {
-                        root = JSONReader.ReadFromString(request.body);
+                        root = JSONReader.ReadFromString(request.postBody);
                     }
                     catch
                     {
@@ -142,7 +142,7 @@ namespace Phantasma.API
 
         protected override bool Run()
         {
-            _server.Run();
+            _server.Run(_site);
             return true;
         }
     }

@@ -1,11 +1,7 @@
-﻿using System.Globalization;
-using System.Linq;
+﻿using System.Linq;
 using Phantasma.Blockchain;
 using LunarLabs.Parser;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Plugins;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
@@ -111,6 +107,7 @@ namespace Phantasma.API
             var result = DataNode.CreateObject();
             var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
             var txsNode = DataNode.CreateArray("txs");
+            var eventsNode = DataNode.CreateArray("events");
             result.AddField("address", address.Text);
             result.AddField("amount", amountTx);
             result.AddNode(txsNode);
@@ -127,85 +124,21 @@ namespace Phantasma.API
                     entryNode.AddField("blockHeight", transaction.Block.Height);
                     entryNode.AddField("gasLimit", transaction.GasLimit.ToString());
                     entryNode.AddField("gasPrice", transaction.GasPrice.ToString());
-
-                    string description = null;
-
-                    Token senderToken = null;
-                    Address senderAddress = Address.Null;
-
-                    Token receiverToken = null;
-                    Address receiverAddress = Address.Null;
-
-                    BigInteger amount = 0;
-                    foreach (var evt in transaction.Events)//todo move this
+                    entryNode.AddField("script", ByteArrayToHex(transaction.Script));
+                    
+                    foreach (var evt in transaction.Events)
                     {
-                        switch (evt.Kind)
-                        {
-                            case EventKind.TokenSend:
-                                {
-                                    var data = evt.GetContent<TokenEventData>();
-                                    amount = data.value;
-                                    senderAddress = evt.Address;
-                                    senderToken = Nexus.FindTokenBySymbol(data.symbol);
-                                }
-                                break;
-
-                            case EventKind.TokenReceive:
-                                {
-                                    var data = evt.GetContent<TokenEventData>();
-                                    amount = data.value;
-                                    receiverAddress = evt.Address;
-                                    receiverToken = Nexus.FindTokenBySymbol(data.symbol);
-                                }
-                                break;
-
-                            case EventKind.AddressRegister:
-                                {
-                                    var name = evt.GetContent<string>();
-                                    description = $"{evt.Address} registered the name '{name}'";
-                                }
-                                break;
-
-                            case EventKind.FriendAdd:
-                                {
-                                    var address2 = evt.GetContent<Address>();
-                                    description = $"{evt.Address} added '{address2} to friends.'";
-                                }
-                                break;
-
-                            case EventKind.FriendRemove:
-                                {
-                                    var address2 = evt.GetContent<Address>();
-                                    description = $"{evt.Address} removed '{address2} from friends.'";
-                                }
-                                break;
-                        }
+                        var eventNode = DataNode.CreateObject();
+                        eventNode.AddField("eventAddress", evt.Address);
+                        eventNode.AddField("data", ByteArrayToHex(evt.Data));
+                        eventNode.AddField("evtKind", evt.Kind);
+                        eventsNode.AddNode(eventNode);
                     }
 
-                    if (description == null)
-                    {
-                        if (amount > 0 && senderAddress != Address.Null && receiverAddress != Address.Null && senderToken != null && senderToken == receiverToken)
-                        {
-                            var amountDecimal = TokenUtils.ToDecimal(amount, senderToken.Decimals);
-                            description = $"{amountDecimal} {senderToken.Symbol} sent from {senderAddress.Text} to {receiverAddress.Text}";
-                            entryNode.AddField("amount", amountDecimal.ToString(CultureInfo.InvariantCulture));
-                            entryNode.AddField("asset", senderToken.Symbol);
-                            entryNode.AddField("addressTo", senderAddress.Text);
-                            entryNode.AddField("addressFrom", receiverAddress.Text);
-                        }
-                        else
-                        {
-                            description = "Custom transaction";
-                        }
-                    }
-
-                    entryNode.AddField("description", description);
+                    entryNode.AddNode(eventsNode);
                     txsNode.AddNode(entryNode);
                 }
             }
-
-
-
 
             return result;
         }
@@ -235,5 +168,33 @@ namespace Phantasma.API
        {
 
        }*/
+
+
+        //todo remove this, just for testing
+        private static readonly uint[] _lookup32 = CreateLookup32();
+
+        private static uint[] CreateLookup32()
+        {
+            var result = new uint[256];
+            for (int i = 0; i < 256; i++)
+            {
+                string s = i.ToString("X2");
+                result[i] = ((uint)s[0]) + ((uint)s[1] << 16);
+            }
+            return result;
+        }
+
+        private static string ByteArrayToHex(byte[] bytes)
+        {
+            var lookup32 = _lookup32;
+            var result = new char[bytes.Length * 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                var val = lookup32[bytes[i]];
+                result[2 * i] = (char)val;
+                result[2 * i + 1] = (char)(val >> 16);
+            }
+            return new string(result);
+        }
     }
 }
