@@ -9,7 +9,6 @@ namespace Phantasma.Blockchain
 {
     public struct MempoolEntry
     {
-        public Chain chain;
         public Transaction transaction;
         public Timestamp timestamp;
     }
@@ -18,6 +17,17 @@ namespace Phantasma.Blockchain
     {
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
+
+        private KeyPair _minerKeys;
+
+        public Nexus Nexus { get; private set; }
+        public Address MinerAddress => _minerKeys.Address;
+
+        public Mempool(KeyPair minerKeys, Nexus nexus)
+        {
+            this._minerKeys = minerKeys;
+            this.Nexus = nexus;
+        }
 
         public bool Submit(Chain chain, Transaction tx, Func<Transaction, bool> validator = null)
         {
@@ -37,7 +47,7 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            var entry = new MempoolEntry() { chain = chain, transaction = tx, timestamp = Timestamp.Now };
+            var entry = new MempoolEntry() { transaction = tx, timestamp = Timestamp.Now };
 
             List<MempoolEntry> list;
 
@@ -84,6 +94,33 @@ namespace Phantasma.Blockchain
             }
 
             return Enumerable.Empty<Transaction>();
+        }
+
+        public void Update()
+        {
+            foreach (var chainName in _entries.Keys)
+            {
+                var list = _entries[chainName];
+                if (list.Count == 0)
+                {
+                    continue;
+                }
+
+                var transactions = new List<Transaction>();
+
+                while (transactions.Count < 20 && list.Count > 0)
+                {
+                    var entry = list[0];
+                    
+                    transactions.Add(entry.transaction);
+                }
+
+                var chain = Nexus.FindChainByName(chainName);
+
+                var block = new Block(chain, MinerAddress, Timestamp.Now, transactions, chain.LastBlock);
+
+                chain.AddBlock(block);
+            }
         }
     }
 }
