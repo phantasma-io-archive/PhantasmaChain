@@ -2,18 +2,19 @@
 using Phantasma.Cryptography;
 using Phantasma.Core.Utils;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain;
 using System;
+using Phantasma.VM;
+using Phantasma.VM.Utils;
 
-namespace Phantasma.VM.Utils
+namespace Phantasma.Blockchain
 {
     public static class ScriptUtils
     {
-        public static byte[] CallContractScript(Chain chain, string method, params object[] args)
+        public static byte[] CallContractScript(Address chain, string method, params object[] args)
         {
             var sb = new ScriptBuilder();
             byte dest_reg = 1;
-            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.ConcatBytes(chain.Address.PublicKey));
+            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.ConcatBytes(chain.PublicKey));
 
             byte temp_reg = 0;
 
