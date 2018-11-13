@@ -4,7 +4,6 @@ using LunarLabs.Parser;
 using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Core.Types;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
 
@@ -132,13 +131,13 @@ namespace Phantasma.API
                     entryNode.AddField("blockHeight", transaction.Block.Height);
                     entryNode.AddField("gasLimit", transaction.GasLimit.ToString());
                     entryNode.AddField("gasPrice", transaction.GasPrice.ToString());
-                    entryNode.AddField("script", ByteArrayToHex(transaction.Script));
+                    entryNode.AddField("script", Base16.Encode(transaction.Script));
                     
                     foreach (var evt in transaction.Events)
                     {
                         var eventNode = DataNode.CreateObject();
                         eventNode.AddField("eventAddress", evt.Address);
-                        eventNode.AddField("data", ByteArrayToHex(evt.Data));
+                        eventNode.AddField("data", Base16.Encode(evt.Data));
                         eventNode.AddField("evtKind", evt.Kind);
                         eventsNode.AddNode(eventNode);
                     }
@@ -215,33 +214,5 @@ namespace Phantasma.API
        {
 
        }*/
-
-
-        //todo remove this, just for testing
-        private static readonly uint[] _lookup32 = CreateLookup32();
-
-        private static uint[] CreateLookup32()
-        {
-            var result = new uint[256];
-            for (int i = 0; i < 256; i++)
-            {
-                string s = i.ToString("X2");
-                result[i] = ((uint)s[0]) + ((uint)s[1] << 16);
-            }
-            return result;
-        }
-
-        private static string ByteArrayToHex(byte[] bytes)
-        {
-            var lookup32 = _lookup32;
-            var result = new char[bytes.Length * 2];
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                var val = lookup32[bytes[i]];
-                result[2 * i] = (char)val;
-                result[2 * i + 1] = (char)(val >> 16);
-            }
-            return new string(result);
-        }
     }
 }
