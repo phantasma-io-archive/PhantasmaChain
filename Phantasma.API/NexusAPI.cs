@@ -138,8 +138,8 @@ namespace Phantasma.API
                     {
                         var eventNode = DataNode.CreateObject();
                         eventNode.AddField("eventAddress", evt.Address);
-                        eventNode.AddField("data", ByteArrayToHex(evt.Data));
-                        eventNode.AddField("evtKind", evt.Kind);
+                        eventNode.AddField("eventData", ByteArrayToHex(evt.Data));
+                        eventNode.AddField("eventKind", evt.Kind);
                         eventsNode.AddNode(eventNode);
                     }
 
@@ -176,16 +176,17 @@ namespace Phantasma.API
 
         public DataNode GetChains()
         {
-            var result = DataNode.CreateObject("chains");
-
+            var result = DataNode.CreateObject();
+            var array = DataNode.CreateArray("chains");
             foreach (var chain in Nexus.Chains)
             {
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
-                result.AddNode(single);
+                array.AddNode(single);
             }
 
+            result.AddNode(array);
             var test = JSONWriter.WriteToString(result);
             return result;
         }
