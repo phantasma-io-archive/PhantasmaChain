@@ -4,6 +4,7 @@ using LunarLabs.Parser;
 using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Core.Types;
 
 namespace Phantasma.API
 {
@@ -90,7 +91,7 @@ namespace Phantasma.API
             return null;
         }
 
-        public DataNode GetBlockByHeight(uint height, string chainName)
+        public DataNode GetBlockByHeight(string chainName, uint height)
         {
             var chain = Nexus.FindChainByName(chainName);
             var block = chain.FindBlockByHeight(height);
@@ -143,9 +144,16 @@ namespace Phantasma.API
             return result;
         }
 
-        public void SendRawTransaction(string signedTransaction)
+        public void SendRawTransaction(string chainName, string signedTransaction)
         {
             var bytes = Base16.Decode(signedTransaction);
+            var tx = Transaction.Unserialize(bytes);
+
+            var chain = Nexus.FindChainByName(chainName);
+
+            // TODO this should go to a mempool instead
+            var miner = KeyPair.Generate();
+            var block = new Block(chain, miner.Address, Timestamp.Now, new Transaction[] { tx }, chain.LastBlock);
         }
 
         /*
