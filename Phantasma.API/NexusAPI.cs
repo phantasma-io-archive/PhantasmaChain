@@ -23,6 +23,51 @@ namespace Phantasma.API
             this.Mempool = mempool;
         }
 
+        #region UTILS
+        private DataNode FillTransaction(Transaction tx)
+        {
+            var result = DataNode.CreateObject();
+            result.AddField("txid", tx.Hash.ToString());
+            result.AddField("chainAddress", tx.Block.Chain.Address);
+            result.AddField("chainName", tx.Block.Chain.Name);
+            result.AddField("timestamp", tx.Block.Timestamp.Value);
+            result.AddField("blockHeight", tx.Block.Height);
+            result.AddField("gasLimit", tx.GasLimit.ToString());
+            result.AddField("gasPrice", tx.GasPrice.ToString());
+            result.AddField("script", Base16.Encode(tx.Script));
+
+            var eventsNode = DataNode.CreateArray("events");
+            foreach (var evt in tx.Events)
+            {
+                var eventNode = DataNode.CreateObject();
+                eventNode.AddField("eventAddress", evt.Address);
+                eventNode.AddField("data", Base16.Encode(evt.Data));
+                eventNode.AddField("evtKind", evt.Kind);
+                eventsNode.AddNode(eventNode);
+            }
+
+            result.AddNode(eventsNode);
+
+            return result;
+        }
+
+        private DataNode FillBlock(Block block)
+        {
+            var result = DataNode.CreateObject();
+
+            result.AddField("hash", block.Hash.ToString());
+            result.AddField("timestamp", block.Timestamp);
+            result.AddField("height", block.Height);
+            result.AddField("chainAddress", block.Chain.Address);
+            result.AddField("chainName", block.Chain.Name);
+            result.AddField("previousHash", block.PreviousHash);
+            result.AddField("nonce", block.Nonce);
+            result.AddField("minerAddress", block.MinerAddress.Text);
+
+            return result;
+        }
+        #endregion
+
         public DataNode GetAccount(Address address)
         {
             var result = DataNode.CreateObject();
@@ -67,22 +112,6 @@ namespace Phantasma.API
             return result;
         }
 
-        private DataNode GetBlock(Block block)
-        {
-            var result = DataNode.CreateObject();
-
-            result.AddField("hash", block.Hash.ToString());
-            result.AddField("timestamp", block.Timestamp);
-            result.AddField("height", block.Height);
-            result.AddField("chainAddress", block.Chain.Address);
-            result.AddField("chainName", block.Chain.Name);
-            result.AddField("previousHash", block.PreviousHash);
-            result.AddField("nonce", block.Nonce);
-            result.AddField("minerAddress", block.MinerAddress.Text);
-
-            return result;
-        }
-
         public DataNode GetBlockByHash(Hash hash)
         {
             foreach (var chain in Nexus.Chains)
@@ -90,7 +119,7 @@ namespace Phantasma.API
                 var block = chain.FindBlockByHash(hash);
                 if (block != null)
                 {
-                    return GetBlock(block);
+                    return FillBlock(block);
                 }
             }
 
@@ -103,7 +132,7 @@ namespace Phantasma.API
             var block = chain.FindBlockByHeight(height);
             if (block != null)
             {
-                return GetBlock(block);
+                return FillBlock(block);
             }
 
             return null;
@@ -114,7 +143,7 @@ namespace Phantasma.API
             var result = DataNode.CreateObject();
             var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
             var txsNode = DataNode.CreateArray("txs");
-            var eventsNode = DataNode.CreateArray("events");
+
             result.AddField("address", address.Text);
             result.AddField("amount", amountTx);
             result.AddNode(txsNode);
@@ -123,26 +152,7 @@ namespace Phantasma.API
             {
                 foreach (var transaction in txs)
                 {
-                    var entryNode = DataNode.CreateObject();
-                    entryNode.AddField("txid", transaction.Hash.ToString());
-                    entryNode.AddField("chainAddress", transaction.Block.Chain.Address);
-                    entryNode.AddField("chainName", transaction.Block.Chain.Name);
-                    entryNode.AddField("timestamp", transaction.Block.Timestamp.Value);
-                    entryNode.AddField("blockHeight", transaction.Block.Height);
-                    entryNode.AddField("gasLimit", transaction.GasLimit.ToString());
-                    entryNode.AddField("gasPrice", transaction.GasPrice.ToString());
-                    entryNode.AddField("script", Base16.Encode(transaction.Script));
-                    
-                    foreach (var evt in transaction.Events)
-                    {
-                        var eventNode = DataNode.CreateObject();
-                        eventNode.AddField("eventAddress", evt.Address);
-                        eventNode.AddField("data", Base16.Encode(evt.Data));
-                        eventNode.AddField("evtKind", evt.Kind);
-                        eventsNode.AddNode(eventNode);
-                    }
-
-                    entryNode.AddNode(eventsNode);
+                    var entryNode = FillTransaction(transaction);
                     txsNode.AddNode(entryNode);
                 }
             }
@@ -194,25 +204,23 @@ namespace Phantasma.API
             return result;
         }
 
+        public DataNode GetTransaction(Hash hash)
+        {
+            var tx = Nexus.FindTransactionByHash(hash);
+
+            var result = FillTransaction(tx);
+            return result;
+        }
+
         /*
-       public DataNode GetTransaction(Hash hash)
-       {
+               public DataNode GetTokens()
+               {
 
-       }
+               }
 
-       public DataNode GetChains()
-       {
+               public DataNode GetApps()
+               {
 
-       }
-
-       public DataNode GetTokens()
-       {
-
-       }
-
-       public DataNode GetApps()
-       {
-
-       }*/
+               }*/
     }
 }

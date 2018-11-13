@@ -114,6 +114,23 @@ namespace Phantasma.API
 
                               break;
 
+                          case "gettransaction":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+
+                              try
+                              {
+                                  var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+                                  result = _API.GetTransaction(hash);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
                           case "sendrawtransaction":
                               if (paramNode == null)
                               {
