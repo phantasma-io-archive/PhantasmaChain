@@ -111,6 +111,7 @@ namespace Phantasma.API
                                   var chain = paramNode.GetNodeByIndex(0).ToString();
                                   var signedTx = paramNode.GetNodeByIndex(1).ToString();
                                   result = _API.SendRawTransaction(chain, signedTx);
+
                               }
                               catch
                               {
