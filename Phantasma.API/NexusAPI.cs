@@ -5,6 +5,7 @@ using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
+using Phantasma.Core;
 
 namespace Phantasma.API
 {
@@ -12,9 +13,14 @@ namespace Phantasma.API
     {
         public Nexus Nexus { get; private set; }
 
-        public NexusAPI(Nexus nexus)
+        public Mempool Mempool { get; private set; }
+
+        public NexusAPI(Nexus nexus, Mempool mempool = null)
         {
+            Throw.IfNull(nexus, nameof(nexus));
+
             this.Nexus = nexus;
+            this.Mempool = mempool;
         }
 
         public DataNode GetAccount(Address address)
@@ -144,17 +150,29 @@ namespace Phantasma.API
             return result;
         }
 
-        public bool SendRawTransaction(string chainName, string signedTransaction)
+        public DataNode SendRawTransaction(string chainName, string txData)
         {
-            var bytes = Base16.Decode(signedTransaction);
-            var tx = Transaction.Unserialize(bytes);
+            var result = DataNode.CreateObject();
 
-            var chain = Nexus.FindChainByName(chainName);
+            if (Mempool != null)
+            {
+                var bytes = Base16.Decode(txData);
+                var tx = Transaction.Unserialize(bytes);
 
-            // TODO this should go to a mempool instead
-            var miner = KeyPair.Generate();
-            var block = new Block(chain, miner.Address, Timestamp.Now, new Transaction[] { tx }, chain.LastBlock);
-            return true;
+                var chain = Nexus.FindChainByName(chainName);
+
+                // TODO this should go to a mempool instead
+                var miner = KeyPair.Generate();
+                var block = new Block(chain, miner.Address, Timestamp.Now, new Transaction[] { tx }, chain.LastBlock);
+
+                result.AddField("hash", tx.Hash);
+            }
+            else
+            {
+                result.AddField("error", "No mempool");
+            }
+
+            return result;
         }
 
         /*

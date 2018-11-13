@@ -109,8 +109,8 @@ namespace Phantasma.API
                               try
                               {
                                   var chain = paramNode.GetString("chain");
-                                  var signedTx = paramNode.GetString("signedTx");
-                                  result = _API.SendRawTransaction(chain, signedTx);
+                                  var txData = paramNode.GetString("data");
+                                  result = _API.SendRawTransaction(chain, txData);
                               }
                               catch
                               {

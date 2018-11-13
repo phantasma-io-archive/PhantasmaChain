@@ -335,11 +335,6 @@ namespace Phantasma.Tests
                             var total = balance / 10;
                             if (total > 0)
                             {
-                                if (sourceChain.Contract.Kind == ContractKind.Apps && !targetChain.IsRoot)
-                                {
-                                    sourceChain = sourceChain;
-                                }
-
                                 GenerateSideChainSend(source, token, sourceChain, targetChain, total);
                             }
                             break;
