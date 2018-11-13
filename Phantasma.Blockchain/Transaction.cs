@@ -31,6 +31,17 @@ namespace Phantasma.Blockchain
         public Block Block { get; private set; }
         public Nexus Nexus => Block != null ? Block.Nexus : null;
 
+        public static Transaction Unserialize(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    return Unserialize(reader);
+                }
+            }
+        }
+
         public static Transaction Unserialize(BinaryReader reader)
         {
             var script = reader.ReadByteArray();
