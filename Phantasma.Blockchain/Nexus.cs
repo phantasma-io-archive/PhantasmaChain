@@ -38,6 +38,7 @@ namespace Phantasma.Blockchain
         public Nexus(string name, KeyPair owner, Logger logger = null)
         {
             this.logger = logger;
+            this.Name = name;
 
             this.RootChain = new Chain(this, owner.Address, "main", new NexusContract(), logger, null);
             _chains[RootChain.Name] = RootChain;

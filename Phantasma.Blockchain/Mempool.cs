@@ -135,7 +135,7 @@ namespace Phantasma.Blockchain
                 if (transactions.Any())
                 {
                     var block = new Block(chain, MinerAddress, Timestamp.Now, transactions, chain.LastBlock);
-                    chain.AddBlock(block);
+                    var success = chain.AddBlock(block);
                 }
             }
 
