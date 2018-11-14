@@ -179,11 +179,15 @@ namespace Phantasma.Blockchain
             }
 
             var chain = new Chain(this, owner, name, contract, this.logger, parentChain, parentBlock);
-            _chains[name] = chain;
 
-            foreach (var plugin in _plugins)
+            lock (_chains)
             {
-                plugin.OnNewChain(chain);
+                _chains[name] = chain;
+
+                foreach (var plugin in _plugins)
+                {
+                    plugin.OnNewChain(chain);
+                }
             }
 
             return chain;
@@ -196,16 +200,25 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            return _chains.ContainsKey(chain.Name);
+            bool result;
+            lock (_chains)
+            {
+                result = _chains.ContainsKey(chain.Name);
+            }
+
+            return result;
         }
 
         public Chain FindChainByAddress(Address address)
         {
-            foreach (var entry in _chains.Values)
+            lock (_chains)
             {
-                if (entry.Address == address)
+                foreach (var entry in _chains.Values)
                 {
-                    return entry;
+                    if (entry.Address == address)
+                    {
+                        return entry;
+                    }
                 }
             }
 
@@ -219,9 +232,12 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainByName(string name)
         {
-            if (_chains.ContainsKey(name))
+            lock (_chains)
             {
-                return _chains[name];
+                if (_chains.ContainsKey(name))
+                {
+                    return _chains[name];
+                }
             }
 
             return null;
