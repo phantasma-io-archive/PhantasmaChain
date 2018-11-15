@@ -79,10 +79,10 @@ namespace Phantasma.Cryptography
         private byte[] Concat(byte[] v, byte p, byte[] providedData)
         {
             byte[] res = new byte[v.Length + 1 + (providedData == null ? 0 : providedData.Length)];
-            Buffer.BlockCopy(v, 0, res, 0, v.Length);
+            Array.Copy(v, 0, res, 0, v.Length); // TODO Buffer.BlockCopy
             res[v.Length] = p;
             if (providedData != null)
-                Buffer.BlockCopy(providedData, 0, res, v.Length + 1, providedData.Length);
+                Array.Copy(providedData, 0, res, v.Length + 1, providedData.Length); // TODO Buffer.BlockCopy
 
             return res;
         }
@@ -101,7 +101,7 @@ namespace Phantasma.Cryptography
             while (idx < data.Length)
             {
                 v = HMAC512.ComputeHash(key, v);
-                Buffer.BlockCopy(v, 0, data, idx, Math.Min(v.Length, data.Length - idx));
+                Array.Copy(v, 0, data, idx, Math.Min(v.Length, data.Length - idx)); // TODO Buffer.BlockCopy
                 idx += v.Length;
             }
 

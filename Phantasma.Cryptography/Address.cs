@@ -4,6 +4,7 @@ using Phantasma.Core;
 using System;
 using Phantasma.Numerics;
 using Phantasma.Cryptography.Hashing;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Cryptography
 {
@@ -40,7 +41,7 @@ namespace Phantasma.Cryptography
                 if (string.IsNullOrEmpty(_text))
                 {
                     byte opcode = 74;
-                    var bytes = new byte[] { opcode }.Concat(PublicKey).ToArray();
+                    var bytes = Utils.MergeByteArrays(new byte[] { opcode }, PublicKey);
                     _text = Base58.Encode(bytes);
                 }
 

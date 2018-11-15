@@ -24,6 +24,17 @@ namespace Phantasma.Core
 
             _state = State.Running;
 
+#if BRIDGE_NET
+            OnStart();
+            do
+            {
+                if (!Run())
+                {
+                    break;
+                }
+            } while (_state == State.Running);
+            OnStop();
+#else 
             new Thread(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
@@ -41,6 +52,7 @@ namespace Phantasma.Core
                 _state = State.Stopped;
                 OnStop();
             }).Start();
+#endif
         }
 
         public bool IsRunning => _state == State.Running;

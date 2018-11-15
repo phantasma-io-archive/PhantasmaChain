@@ -130,10 +130,25 @@ namespace Phantasma.Core.Utils
         {
             //Most efficient way to merge two arrays this according to http://stackoverflow.com/questions/415291/best-way-to-combine-two-or-more-byte-arrays-in-c-sharp
             var buffer = new byte[source1.Length + source2.Length];
-            Buffer.BlockCopy(source1, 0, buffer, 0, source1.Length);
-            Buffer.BlockCopy(source2, 0, buffer, source1.Length, source2.Length);
+            Array.Copy(source1, 0, buffer, 0, source1.Length);
+            Array.Copy(source2, 0, buffer, source1.Length, source2.Length);
+            // TODO use Buffer.BlockCopy instead
 
             return buffer;
+        }
+
+        public static byte[] ReverseByteArray(byte[] source)
+        {
+            Throw.IfNull(source, nameof(source));
+            var result = new byte[source.Length];
+            var last = source.Length - 1;
+            for (int i=0; i<source.Length; i++)
+            {
+                result[i] = source[last];
+                last--;
+            }
+
+            return result;
         }
     }
 }

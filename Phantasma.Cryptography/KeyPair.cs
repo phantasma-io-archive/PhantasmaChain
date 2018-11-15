@@ -18,7 +18,7 @@ namespace Phantasma.Cryptography
             Throw.If(privateKey.Length != PrivateKeyLength, $"privateKey should have length {PrivateKeyLength}");
 
             this.PrivateKey = new byte[PrivateKeyLength];
-            Buffer.BlockCopy(privateKey, 0, PrivateKey, 0, PrivateKeyLength);            
+            Array.Copy(privateKey, 0, PrivateKey, 0, PrivateKeyLength); // TODO Buffer.BlockCopy
 
             var publicKey = Ed25519.PublicKeyFromSeed(privateKey);
 
@@ -41,7 +41,7 @@ namespace Phantasma.Cryptography
             Throw.If(data.Length != 34 || data[0] != 0x80 || data[33] != 0x01, "Invalid WIF format");
 
             byte[] privateKey = new byte[32];
-            Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
+            Array.Copy(data, 1, privateKey, 0, privateKey.Length); // TODO Buffer.BlockCopy
             Array.Clear(data, 0, data.Length);
             return new KeyPair(privateKey);
         }
@@ -50,7 +50,7 @@ namespace Phantasma.Cryptography
         {
             byte[] data = new byte[34];
             data[0] = 0x80;
-            Buffer.BlockCopy(PrivateKey, 0, data, 1, 32);
+            Array.Copy(PrivateKey, 0, data, 1, 32); // Buffer.BlockCopy
             data[33] = 0x01;
             string wif = data.Base58CheckEncode();
             Array.Clear(data, 0, data.Length);
