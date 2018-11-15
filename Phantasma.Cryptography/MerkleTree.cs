@@ -55,7 +55,7 @@ namespace Phantasma.Cryptography
                     leaves[i * 2 + 1].Parent = parents[i];
                 }
 
-                var temp = Utils.MergeByteArrays(parents[i].LeftChild.Hash.ToByteArray(), parents[i].RightChild.Hash.ToByteArray());
+                var temp = ByteArrayUtils.ConcatBytes(parents[i].LeftChild.Hash.ToByteArray(), parents[i].RightChild.Hash.ToByteArray());
                 parents[i].Hash = new Hash(CryptoExtensions.Hash256(temp));
             }
 

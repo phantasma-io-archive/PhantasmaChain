@@ -463,7 +463,7 @@ namespace Phantasma.Cryptography
         public byte[] CalculateSeedBytes()
         {
             //literally this is the bulk of the decoupled seed generation code, easy.
-            byte[] salt = Utils.MergeByteArrays(UTF8Encoding.UTF8.GetBytes(SaltHeader), _passphraseBytes);
+            byte[] salt = ByteArrayUtils.ConcatBytes(UTF8Encoding.UTF8.GetBytes(SaltHeader), _passphraseBytes);
             var temp = new PBKDF2(UTF8Encoding.UTF8.GetBytes(NormaliseString(SeedPhrase)), salt);
             return temp.GetBytes(KeyPair.PrivateKeyLength);
         }

@@ -41,7 +41,7 @@ namespace Phantasma.Cryptography
                 if (string.IsNullOrEmpty(_text))
                 {
                     byte opcode = 74;
-                    var bytes = Utils.MergeByteArrays(new byte[] { opcode }, PublicKey);
+                    var bytes = ByteArrayUtils.ConcatBytes(new byte[] { opcode }, PublicKey);
                     _text = Base58.Encode(bytes);
                 }
 

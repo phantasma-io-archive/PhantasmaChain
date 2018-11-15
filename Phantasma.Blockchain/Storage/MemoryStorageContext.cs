@@ -38,7 +38,7 @@ namespace Phantasma.Blockchain.Storage
                 foreach (var entry in temp)
                 {
                     var sub = FromHumanKey(entry, true);
-                    result = result.ConcatBytes(sub);
+                    result = ByteArrayUtils.ConcatBytes(result, sub);
                 }
             }
 
@@ -61,14 +61,16 @@ namespace Phantasma.Blockchain.Storage
                 key = key.Substring(1, key.Length - 2);
                 var num = BigInteger.Parse(key);
                 var result = num.ToByteArray();
-                result = new byte[] { (byte)'<' }.ConcatBytes(result).ConcatBytes(new byte[] { (byte)'>' });
+                result = ByteArrayUtils.ConcatBytes(new byte[] { (byte)'<' }, result);
+                result = ByteArrayUtils.ConcatBytes(result, new byte[] { (byte)'>' });
             }
 
             {
                 var result = global::System.Text.Encoding.ASCII.GetBytes(key);
                 if (forceSep)
                 {
-                    result = new byte[] { (byte)'{' }.ConcatBytes(result).ConcatBytes(new byte[] { (byte)'}' });
+                    result = ByteArrayUtils.ConcatBytes(new byte[] { (byte)'{' }, result);
+                    result = ByteArrayUtils.ConcatBytes(result, new byte[] { (byte)'}' });
                 }
                 return result;
             }

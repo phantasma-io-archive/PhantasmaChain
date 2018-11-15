@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography.Hashing;
 using System;
 using System.Text;
@@ -66,11 +67,11 @@ namespace Phantasma.Cryptography
             { 
                 if (count < bufferCount) //if there is enough data in buffer
                 {
-                    Array.Copy(this.BufferBytes, this.BufferStartIndex, result, 0, count); // TODO Buffer.BlockCopy
+                    ByteArrayUtils.CopyBytes(this.BufferBytes, this.BufferStartIndex, result, 0, count); 
                     this.BufferStartIndex += count;
                     return result;
                 }
-                Array.Copy(this.BufferBytes, this.BufferStartIndex, result, 0, bufferCount); // TODO Buffer.BlockCopy
+                ByteArrayUtils.CopyBytes(this.BufferBytes, this.BufferStartIndex, result, 0, bufferCount);
                 this.BufferStartIndex = this.BufferEndIndex = 0;
                 resultOffset += bufferCount;
             }
@@ -80,13 +81,13 @@ namespace Phantasma.Cryptography
                 int needCount = count - resultOffset;
                 this.BufferBytes = this.Func();
                 if (needCount > this.BlockSize) //we one (or more) additional passes
-                { 
-                    Array.Copy(this.BufferBytes, 0, result, resultOffset, this.BlockSize); //TODO Buffer.BlockCopy
+                {
+                    ByteArrayUtils.CopyBytes(this.BufferBytes, 0, result, resultOffset, this.BlockSize); 
                     resultOffset += this.BlockSize;
                 }
                 else
                 {
-                    Array.Copy(this.BufferBytes, 0, result, resultOffset, needCount); // TODO Buffer.BlockCopy
+                    ByteArrayUtils.CopyBytes(this.BufferBytes, 0, result, resultOffset, needCount); 
                     this.BufferStartIndex = needCount;
                     this.BufferEndIndex = this.BlockSize;
                     return result;
@@ -99,8 +100,8 @@ namespace Phantasma.Cryptography
         private byte[] Func()
         {
             var hash1Input = new byte[this.Salt.Length + 4];
-            Array.Copy(this.Salt, 0, hash1Input, 0, this.Salt.Length); // TODO Buffer.BlockCopy
-            Array.Copy(GetBytesFromInt(this.BlockIndex), 0, hash1Input, this.Salt.Length, 4); // TODO Buffer.BlockCopy
+            ByteArrayUtils.CopyBytes(this.Salt, 0, hash1Input, 0, this.Salt.Length);
+            ByteArrayUtils.CopyBytes(GetBytesFromInt(this.BlockIndex), 0, hash1Input, this.Salt.Length, 4); 
 
             var sha256 = new SHA256();
             var hash1 = sha256.ComputeHash(hash1Input);

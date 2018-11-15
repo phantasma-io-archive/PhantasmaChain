@@ -38,7 +38,7 @@ namespace Phantasma.Cryptography
                 var pad = new byte[diff];
                 rnd.NextBytes(pad);
 
-                bytes = Utils.MergeByteArrays(bytes, pad);
+                bytes = ByteArrayUtils.ConcatBytes(bytes, pad);
             }
 
             return bytes;

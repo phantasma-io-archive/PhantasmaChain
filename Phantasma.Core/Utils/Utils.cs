@@ -19,21 +19,6 @@ namespace Phantasma.Core.Utils
             return string.Join(" ", tokens);
         }
 
-        public static byte[] ConcatBytes(this byte[] a1, byte[] a2)
-        {
-            byte[] res = new byte[a1.Length + a2.Length];
-            Array.Copy(a1, 0, res, 0, a1.Length);
-            Array.Copy(a2, 0, res, a1.Length, a2.Length);
-            return res;
-        }
-
-        public static T[] SubArray<T>(this T[] data, int index, int length)
-        {
-            T[] result = new T[length];
-            Array.Copy(data, index, result, 0, length);
-            return result;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ToUInt32(this byte[] value, int startIndex)
         {
@@ -118,37 +103,6 @@ namespace Phantasma.Core.Utils
                 }
                 yield return resultSelector(item, weight);
             }
-        }
-
-        /// <summary>
-        /// Merges two byte arrays
-        /// </summary>
-        /// <param name="source1">first byte array</param>
-        /// <param name="source2">second byte array</param>
-        /// <returns>A byte array which contains source1 bytes followed by source2 bytes</returns>
-        public static byte[] MergeByteArrays(byte[] source1, byte[] source2)
-        {
-            //Most efficient way to merge two arrays this according to http://stackoverflow.com/questions/415291/best-way-to-combine-two-or-more-byte-arrays-in-c-sharp
-            var buffer = new byte[source1.Length + source2.Length];
-            Array.Copy(source1, 0, buffer, 0, source1.Length);
-            Array.Copy(source2, 0, buffer, source1.Length, source2.Length);
-            // TODO use Buffer.BlockCopy instead
-
-            return buffer;
-        }
-
-        public static byte[] ReverseByteArray(byte[] source)
-        {
-            Throw.IfNull(source, nameof(source));
-            var result = new byte[source.Length];
-            var last = source.Length - 1;
-            for (int i=0; i<source.Length; i++)
-            {
-                result[i] = source[last];
-                last--;
-            }
-
-            return result;
         }
     }
 }

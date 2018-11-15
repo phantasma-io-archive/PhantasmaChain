@@ -53,7 +53,7 @@ namespace Phantasma.Cryptography
         private void Instantiate(byte[] seed, byte[] personalizationString)
         {
             reseedCounter = 1;
-            var seedMaterial = personalizationString == null ? seed : seed.ConcatBytes(personalizationString); 
+            var seedMaterial = personalizationString == null ? seed : ByteArrayUtils.ConcatBytes(seed, personalizationString); 
             for (int i = 0; i < OutlenBytes; ++i)
             {
                 key[i] = 0;
@@ -79,10 +79,13 @@ namespace Phantasma.Cryptography
         private byte[] Concat(byte[] v, byte p, byte[] providedData)
         {
             byte[] res = new byte[v.Length + 1 + (providedData == null ? 0 : providedData.Length)];
-            Array.Copy(v, 0, res, 0, v.Length); // TODO Buffer.BlockCopy
+            ByteArrayUtils.CopyBytes(v, 0, res, 0, v.Length); 
             res[v.Length] = p;
+
             if (providedData != null)
-                Array.Copy(providedData, 0, res, v.Length + 1, providedData.Length); // TODO Buffer.BlockCopy
+            {
+                ByteArrayUtils.CopyBytes(providedData, 0, res, v.Length + 1, providedData.Length);                
+            }
 
             return res;
         }
@@ -101,7 +104,7 @@ namespace Phantasma.Cryptography
             while (idx < data.Length)
             {
                 v = HMAC512.ComputeHash(key, v);
-                Array.Copy(v, 0, data, idx, Math.Min(v.Length, data.Length - idx)); // TODO Buffer.BlockCopy
+                ByteArrayUtils.CopyBytes(v, 0, data, idx, Math.Min(v.Length, data.Length - idx)); 
                 idx += v.Length;
             }
 
