@@ -369,7 +369,7 @@ namespace Phantasma.Blockchain
         public const int NativeTokenDecimals = 8;
         public const int StableTokenDecimals = 8;
 
-        public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000, NativeTokenDecimals);
+        public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(91136374, NativeTokenDecimals);
 
         private bool CreateGenesisBlock(KeyPair owner)
         {
