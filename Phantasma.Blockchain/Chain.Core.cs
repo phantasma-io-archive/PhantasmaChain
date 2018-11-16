@@ -22,14 +22,7 @@ namespace Phantasma.Blockchain
     
     public partial class Chain
     {
-        public Chain ParentChain { get; private set; }
-        public Block ParentBlock { get; private set; }
-        public Nexus Nexus { get; private set; }
-
-        public string Name { get; private set; }
-        public Address Address { get; private set; }
-        public Address Owner { get; private set; }
-
+        #region PRIVATE
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<Hash, Block> _blockHashes = new Dictionary<Hash, Block>();
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
@@ -38,10 +31,27 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
+        private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
+        private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
+
+        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
+
+        private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
+        #endregion
+
+        #region PUBLIC
+        public Chain ParentChain { get; private set; }
+        public Block ParentBlock { get; private set; }
+        public Nexus Nexus { get; private set; }
+
+        public string Name { get; private set; }
+        public Address Address { get; private set; }
+        public Address Owner { get; private set; }
+
         public IEnumerable<Block> Blocks => _blockHashes.Values;
 
         public uint BlockHeight => (uint)_blockHashes.Count;
-        
+       
         public Block LastBlock { get; private set; }
 
         public SmartContract Contract { get; private set; }
@@ -49,17 +59,11 @@ namespace Phantasma.Blockchain
         public readonly Logger Log;
 
         public ExecutionContext ExecutionContext { get; private set; }
-
-        private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
-        private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
-
-        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
-
         public StorageContext Storage { get; private set; }
 
         public int TransactionCount => _blockHashes.Sum(c => c.Value.Transactions.Count());  //todo move this?
-
         public bool IsRoot => this.ParentChain == null;
+        #endregion
 
         public Chain(Nexus nexus, Address owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
@@ -244,6 +248,35 @@ namespace Phantasma.Blockchain
 
             var sheet = new BalanceSheet();
             _tokenBalances[token] = sheet;
+            return sheet;
+        }
+
+        internal void InitSupplySheet(Token token, BigInteger maxSupply)
+        {
+            Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
+            Throw.If(!token.IsCapped, "should be capped");
+            Throw.If(_tokenSupplies.ContainsKey(token), "supply sheet already created");
+
+            var sheet = new SupplySheet(0, 0, maxSupply);
+            _tokenSupplies[token] = sheet;
+        }
+
+        internal SupplySheet GetTokenSupplies(Token token)
+        {
+            Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
+            Throw.If(!token.IsCapped, "should be capped");
+
+            if (_tokenSupplies.ContainsKey(token))
+            {
+                return _tokenSupplies[token];
+            }
+
+            Throw.If(this.ParentChain == null, "supply sheet not created");
+
+            var parentSupplies = this.ParentChain.GetTokenSupplies(token);
+
+            var sheet = new SupplySheet(parentSupplies.LocalBalance, 0, token.MaxSupply);
+            _tokenSupplies[token] = sheet;
             return sheet;
         }
 
