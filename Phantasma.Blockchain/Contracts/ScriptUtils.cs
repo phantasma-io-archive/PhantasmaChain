@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain
         {
             var sb = new ScriptBuilder();
             byte dest_reg = 1;
-            sb.Emit(VM.Opcode.CTX, new byte[] { dest_reg }.ConcatBytes(chain.PublicKey));
+            sb.Emit(VM.Opcode.CTX, ByteArrayUtils.ConcatBytes(new byte[] { dest_reg }, chain.PublicKey));
 
             byte temp_reg = 0;
 

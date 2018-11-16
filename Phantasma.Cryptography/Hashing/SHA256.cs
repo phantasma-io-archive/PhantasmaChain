@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+using Phantasma.Core.Utils;
 using System;
 using System.Diagnostics;
 
@@ -178,7 +179,7 @@ namespace Phantasma.Cryptography.Hashing
                     amount_to_copy = 64 - pending_block_off;
                 }
 
-                Array.Copy(data, offset, pending_block, pending_block_off, amount_to_copy);
+                ByteArrayUtils.CopyBytes(data, (int)offset, pending_block, (int)pending_block_off, (int)amount_to_copy);
                 len -= amount_to_copy;
                 offset += amount_to_copy;
                 pending_block_off += amount_to_copy;

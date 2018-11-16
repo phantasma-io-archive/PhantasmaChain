@@ -28,18 +28,18 @@ namespace Phantasma.Blockchain.Storage
         internal Map(StorageContext context, byte[] name, byte[] prefix)
         {
             this.Context = context;
-            this.BaseKey = prefix.ConcatBytes(name);
+            this.BaseKey = ByteArrayUtils.ConcatBytes(prefix, name);
         }
 
         private byte[] CountKey()
         {
-            return BaseKey.ConcatBytes(count_prefix);
+            return ByteArrayUtils.ConcatBytes(BaseKey, count_prefix);
         }
 
         private byte[] ElementKey(K index)
         {
             byte[] bytes = Serialization.Serialize(index);
-            return BaseKey.ConcatBytes(bytes);
+            return ByteArrayUtils.ConcatBytes(BaseKey, bytes);
         }
 
         public BigInteger Count()

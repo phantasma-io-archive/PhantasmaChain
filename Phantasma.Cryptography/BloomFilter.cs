@@ -25,7 +25,7 @@ namespace Phantasma.Cryptography
 
         public void Add(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => Murmur32.Hash(element)))
+            foreach (uint i in seeds.Select(s => Murmur32.Hash(element)))
             {
                 bits.Set((int)(i % (uint)bits.Length), true);
             }
@@ -33,7 +33,7 @@ namespace Phantasma.Cryptography
 
         public bool Check(byte[] element)
         {
-            foreach (uint i in seeds.AsParallel().Select(s => Murmur32.Hash(element, s)))
+            foreach (uint i in seeds.Select(s => Murmur32.Hash(element, s)))
             {
                 if (!bits.Get((int)(i % (uint)bits.Length)))
                     return false;

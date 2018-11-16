@@ -55,7 +55,7 @@ namespace Phantasma.Cryptography
 
         public override string ToString()
         {
-            return "0x" + Base16.Encode(_data.Reverse().ToArray());
+            return "0x" + Base16.Encode(ByteArrayUtils.ReverseBytes(_data));
         }
 
         public static readonly Hash Zero = new Hash();
@@ -104,7 +104,7 @@ namespace Phantasma.Cryptography
             var ExpectedLength = Length * 2;
             Throw.If(s.Length != ExpectedLength, $"length of string must be {Length}");
 
-            return new Hash(s.Decode().Reverse().ToArray());
+            return new Hash(ByteArrayUtils.ReverseBytes(s.Decode()));
         }
 
         public static bool TryParse(string s, out Hash result)
@@ -129,7 +129,7 @@ namespace Phantasma.Cryptography
             {
                 byte[] data = Base16.Decode(s);
 
-                result = new Hash(data.Reverse().ToArray());
+                result = new Hash(ByteArrayUtils.ReverseBytes(data));
                 return true;
             }
             catch

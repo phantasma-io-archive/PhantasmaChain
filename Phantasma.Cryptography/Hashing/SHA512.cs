@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using System;
 
 namespace Phantasma.Cryptography.Hashing
@@ -51,7 +52,7 @@ namespace Phantasma.Cryptography.Hashing
             if (bytesInBuffer != 0)
             {
                 var toCopy = System.Math.Min(BlockSize - bytesInBuffer, count);
-                Buffer.BlockCopy(data, offset, _buffer, bytesInBuffer, toCopy);
+                ByteArrayUtils.CopyBytes(data, offset, _buffer, bytesInBuffer, toCopy); 
                 offset += toCopy;
                 count -= toCopy;
                 bytesInBuffer += toCopy;
@@ -74,7 +75,7 @@ namespace Phantasma.Cryptography.Hashing
             // Copy remainder into buffer
             if (count > 0)
             {
-                Buffer.BlockCopy(data, offset, _buffer, bytesInBuffer, count);
+                ByteArrayUtils.CopyBytes(data, offset, _buffer, bytesInBuffer, count); 
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using Phantasma.Numerics;
+﻿using Phantasma.Core.Utils;
+using Phantasma.Numerics;
 using System;
 using System.Linq;
 
@@ -37,7 +38,7 @@ namespace Phantasma.Cryptography
                 var pad = new byte[diff];
                 rnd.NextBytes(pad);
 
-                bytes = bytes.Concat(pad).ToArray();
+                bytes = ByteArrayUtils.ConcatBytes(bytes, pad);
             }
 
             return bytes;

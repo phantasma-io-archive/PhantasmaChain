@@ -17,12 +17,12 @@ namespace Phantasma.Blockchain.Storage
         internal Collection(StorageContext context, byte[] name, byte[] prefix)
         {
             this.Context = context;
-            this.BaseKey = prefix.ConcatBytes(name);
+            this.BaseKey = ByteArrayUtils.ConcatBytes(prefix, name);
         }
 
         private byte[] CountKey()
         {
-            return BaseKey.ConcatBytes(count_prefix);
+            return ByteArrayUtils.ConcatBytes(BaseKey, count_prefix);
         }
 
         private byte[] ElementKey(BigInteger index)
@@ -31,16 +31,16 @@ namespace Phantasma.Blockchain.Storage
 
             if (index == 0)
             {
-                right = element_begin_prefix.ConcatBytes(new byte[] { 0 });
+                right = ByteArrayUtils.ConcatBytes(element_begin_prefix, new byte[] { 0 });
             }
             else
             {
-                right = element_begin_prefix.ConcatBytes(index.AsByteArray());
+                right = ByteArrayUtils.ConcatBytes(element_begin_prefix, index.AsByteArray());
             }
 
-            right = right.ConcatBytes(element_end_prefix);
+            right = ByteArrayUtils.ConcatBytes(right, element_end_prefix);
 
-            return BaseKey.ConcatBytes(right);
+            return ByteArrayUtils.ConcatBytes(BaseKey, right);
         }
 
         public BigInteger Count()

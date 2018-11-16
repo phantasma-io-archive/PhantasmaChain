@@ -31,12 +31,12 @@ namespace Phantasma.Core.Types
 
         public int GetSize()
         {
-            return sizeof(uint);
+            return 4; // sizeof(uint);
         }
 
         public static bool operator ==(Timestamp A, Timestamp B) { return A.Value == B.Value; }
 
-        public static bool operator !=(Timestamp A, Timestamp B) { return A.Value != B.Value; }
+        public static bool operator !=(Timestamp A, Timestamp B) { return !(A.Value == B.Value); }
 
         public static bool operator <(Timestamp A, Timestamp B) { return A.Value < B.Value; }
 

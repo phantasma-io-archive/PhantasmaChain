@@ -23,8 +23,6 @@ namespace Phantasma.Blockchain
         public Nexus Nexus { get; private set; }
         public Address MinerAddress => _minerKeys.Address;
 
-        private object LockObject = new object();
-
         public Mempool(KeyPair minerKeys, Nexus nexus)
         {
             this._minerKeys = minerKeys;
@@ -53,7 +51,7 @@ namespace Phantasma.Blockchain
 
             List<MempoolEntry> list;
 
-            lock (LockObject)
+            lock (_entries)
             {
                 if (_entries.ContainsKey(chain.Name))
                 {
@@ -79,10 +77,13 @@ namespace Phantasma.Blockchain
                 var chainName = _hashMap[tx.Hash];
                 _hashMap.Remove(tx.Hash);
 
-                if (_entries.ContainsKey(chainName))
+                lock (_entries)
                 {
-                    var list = _entries[chainName];
-                    list.RemoveAll(x => x.transaction.Hash == tx.Hash);
+                    if (_entries.ContainsKey(chainName))
+                    {
+                        var list = _entries[chainName];
+                        list.RemoveAll(x => x.transaction.Hash == tx.Hash);
+                    }
                 }
 
                 return true;
@@ -103,7 +104,7 @@ namespace Phantasma.Blockchain
 
         private IEnumerable<Transaction> GetNextTransactions(Chain chain)
         {
-            lock (LockObject)
+            lock (_entries)
             {
                 var list = _entries[chain.Name];
                 if (list.Count == 0)
@@ -134,7 +135,7 @@ namespace Phantasma.Blockchain
                 if (transactions.Any())
                 {
                     var block = new Block(chain, MinerAddress, Timestamp.Now, transactions, chain.LastBlock);
-                    chain.AddBlock(block);
+                    var success = chain.AddBlock(block);
                 }
             }
 

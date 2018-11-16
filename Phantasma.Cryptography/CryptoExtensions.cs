@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
 
@@ -112,8 +113,8 @@ namespace Phantasma.Cryptography
         {
             byte[] checksum = data.Sha256().Sha256();
             byte[] buffer = new byte[data.Length + 4];
-            Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
-            Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
+            Array.Copy(data, 0, buffer, 0, data.Length);
+            ByteArrayUtils.CopyBytes(checksum, 0, buffer, data.Length, 4); 
             return Base58.Encode(buffer);
         }
 
@@ -227,7 +228,7 @@ namespace Phantasma.Cryptography
             data = default(T);
         }
 
-        internal static byte[] ToArray(this SecureString s)
+        /*internal static byte[] ToArray(this SecureString s)
         {
             if (s == null)
                 throw new NullReferenceException();
@@ -251,7 +252,7 @@ namespace Phantasma.Cryptography
                 Marshal.ZeroFreeGlobalAllocAnsi(ptr);
             }
             return result.ToArray();
-        }
+        }*/
 
         private static int BitLen(int w)
         {
