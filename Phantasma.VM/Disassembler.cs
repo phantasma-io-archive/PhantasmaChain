@@ -9,13 +9,17 @@ namespace Phantasma.VM
         private uint _instructionPointer;
         private byte[] _script;
 
+        private List<Instruction> _instructions;
+        public IEnumerable<Instruction> Instructions => _instructions;
+
         public Disassembler(byte[] script)
         {
             this._script = script;
             this._instructionPointer = 0;
+            this._instructions = GetInstructions();
         }
 
-        public List<Instruction> GetInstructions()
+        private List<Instruction> GetInstructions()
         {
             var result = new List<Instruction>();
 
@@ -23,6 +27,8 @@ namespace Phantasma.VM
             {
                 var temp = new Instruction();
                 temp.Opcode = (Opcode)Read8();
+
+                System.Console.WriteLine("disasm => " + temp.Opcode);
 
                 switch (temp.Opcode)
                 {

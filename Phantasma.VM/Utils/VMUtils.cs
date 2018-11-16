@@ -20,12 +20,12 @@ namespace Phantasma.VM.Utils
 
             for (int i=args.Length - 1; i>=0; i--)
             {
-                vm.stack.Push(ToVMObject(args[i]));
+                vm.Stack.Push(ToVMObject(args[i]));
             }
                        
             vm.Execute();
 
-            return (vm.stack.Count > 0 ? vm.stack.Peek() : null);
+            return (vm.Stack.Count > 0 ? vm.Stack.Peek() : null);
         }
 
         public static VMObject ToVMObject(object obj)
