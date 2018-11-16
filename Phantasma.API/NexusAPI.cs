@@ -45,9 +45,9 @@ namespace Phantasma.API
             foreach (var evt in evts)
             {
                 var eventNode = DataNode.CreateObject();
-                eventNode.AddField("eventAddress", evt.Address);
+                eventNode.AddField("address", evt.Address);
                 eventNode.AddField("data", Base16.Encode(evt.Data));
-                eventNode.AddField("evtKind", evt.Kind);
+                eventNode.AddField("kind", evt.Kind);
                 eventsNode.AddNode(eventNode);
             }
 
