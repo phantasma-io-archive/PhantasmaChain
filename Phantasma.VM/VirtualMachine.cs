@@ -7,10 +7,10 @@ namespace Phantasma.VM
 {
     public abstract class VirtualMachine
     {
-        public const int DefaultRegisterCount = 4;
+        public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
         public const int MaxRegisterCount = 32;
 
-        public readonly Stack<VMObject> stack = new Stack<VMObject>();
+        public readonly Stack<VMObject> Stack = new Stack<VMObject>();
 
         public readonly byte[] entryScript;
         public Address entryAddress { get; private set; }
@@ -88,7 +88,7 @@ namespace Phantasma.VM
         {
             this.currentContext = context;
             PushFrame(context, 0, DefaultRegisterCount);
-            return context.Execute(this.currentFrame, this.stack);
+            return context.Execute(this.currentFrame, this.Stack);
         }
 
         #endregion

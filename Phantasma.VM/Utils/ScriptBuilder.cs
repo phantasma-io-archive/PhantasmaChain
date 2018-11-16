@@ -96,14 +96,12 @@ namespace Phantasma.VM.Utils
 
         public void EmitLabel(string label)
         {
+            Emit(Opcode.NOP);
             _labelLocations[label] = (int)stream.Position;
         }
 
         public void EmitJump(Opcode opcode, string label, byte reg = 0)
         {
-            var ofs = (int)stream.Position;
-            ofs++;
-
             switch (opcode)
             {
                 case Opcode.JMP:
@@ -116,13 +114,14 @@ namespace Phantasma.VM.Utils
                     throw new Exception("Invalid jump opcode: " + opcode);
             }
 
-            writer.Write((ushort)0);
-            _jumpLocations[ofs] = label;
-
             if (opcode != Opcode.JMP)
             {
                 writer.Write(reg);
             }
+
+            var ofs = (int)stream.Position;
+            writer.Write((ushort)0);
+            _jumpLocations[ofs] = label;
         }
 
         public void EmitCall(string label, byte regCount)

@@ -28,6 +28,8 @@ namespace Phantasma.VM
                 var temp = new Instruction();
                 temp.Opcode = (Opcode)Read8();
 
+                System.Console.WriteLine("disasm => " + temp.Opcode);
+
                 switch (temp.Opcode)
                 {
                     // args: byte src_reg, byte dest_reg

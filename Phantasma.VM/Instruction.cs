@@ -28,6 +28,15 @@ namespace Phantasma.VM
                 case Opcode.NOT:
                 case Opcode.NEGATE:
                 case Opcode.ABS:
+                case Opcode.ADD:
+                case Opcode.SUB:
+                case Opcode.MUL:
+                case Opcode.DIV:
+                case Opcode.MOD:
+                case Opcode.SHR:
+                case Opcode.SHL:
+                case Opcode.MIN:
+                case Opcode.MAX:
                     {
                         AppendRegister(sb, Args[0]);
                         sb.Append(',');
