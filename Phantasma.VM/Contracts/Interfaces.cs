@@ -13,22 +13,6 @@ namespace Phantasma.VM.Contracts
 
     }
 
-    public interface IBlock
-    {
-        uint Height { get; }
-        Hash Hash { get; }
-        Hash PreviousHash { get; }
-        Timestamp Timestamp { get; }
-        IEnumerable<ITransaction> Transactions { get; }
-    }
-
-    public interface ITransaction
-    {
-        byte[] Script { get; }
-        Signature[] Signatures { get; }
-        Hash Hash { get; }
-    }
-
     #region CONTRACTS
     public interface IContract
     {
@@ -49,7 +33,7 @@ namespace Phantasma.VM.Contracts
     #endregion
 
     #region TOKENS
-    public interface FungibleTransferTransaction : ITransaction
+    /*public interface FungibleTransferTransaction : ITransaction
     {
         IFungibleToken Token { get; }
         Address Destination { get; }
@@ -61,7 +45,7 @@ namespace Phantasma.VM.Contracts
         INonFungibleToken Token { get; }
         Address Destination { get; }
         BigInteger ID { get; }
-    }
+    }*/
 
     public interface IToken: IContract
     {

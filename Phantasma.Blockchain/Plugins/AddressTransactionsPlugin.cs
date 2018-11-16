@@ -25,7 +25,9 @@ namespace Phantasma.Blockchain.Plugins
 
         public void OnNewTransaction(Chain chain, Block block, Transaction transaction)
         {
-            foreach (var evt in transaction.Events)
+            var evts = block.GetEventsForTransaction(transaction.Hash);
+
+            foreach (var evt in evts)
             {
                 RegisterTransaction(evt.Address, transaction);
             }

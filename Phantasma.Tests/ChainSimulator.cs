@@ -144,8 +144,11 @@ namespace Phantasma.Tests
                             txs.Add(txHashMap[hash]);
                         }
 
-                        var block = new Block(chain, _owner.Address, _currentTime, txs, chain.LastBlock);
-                        if (block.Chain.AddBlock(block))
+                        uint nextHeight = chain.LastBlock != null ? chain.LastBlock.Height + 1 : Chain.InitialHeight;
+                        var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
+
+                        var block = new Block(nextHeight, chain.Address, _owner.Address, _currentTime, hashes, prevHash);
+                        if (chain.AddBlock(block, txs))
                         {
                             _currentTime += TimeSpan.FromMinutes(45);
 

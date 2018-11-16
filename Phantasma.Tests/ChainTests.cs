@@ -110,7 +110,10 @@ namespace Phantasma.Tests
                     if (result)
                     {
                         Assert.IsTrue(tx != null);
-                        Assert.IsTrue(tx.Events.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
+
+                        var lastBlock = accountChain.LastBlock;
+                        var evts = lastBlock.GetEventsForTransaction(tx.Hash);
+                        Assert.IsTrue(evts.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
                     }
                 }
                 catch (Exception)
@@ -138,12 +141,13 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             var txA = simulator.GenerateSideChainSend(testUser, token, nexus.RootChain, accountChain, TokenUtils.ToBigInteger(10, token.Decimals));
             simulator.EndBlock();
+            var blockA = nexus.RootChain.LastBlock;
 
             Assert.IsFalse(registerName(testUser, "hello"));
 
             // finish the chain transfer
             simulator.BeginBlock();
-            simulator.GenerateSideChainSettlement(nexus.RootChain, accountChain, txA.Block.Hash);
+            simulator.GenerateSideChainSettlement(nexus.RootChain, accountChain, blockA.Hash);
             Assert.IsTrue(simulator.EndBlock());
 
             // verify balances

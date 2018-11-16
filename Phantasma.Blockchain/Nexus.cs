@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
@@ -43,8 +44,7 @@ namespace Phantasma.Blockchain
             this.RootChain = new Chain(this, owner.Address, "main", new NexusContract(), logger, null);
             _chains[RootChain.Name] = RootChain;
 
-            var genesisBlock = CreateGenesisBlock(owner);
-            if (!RootChain.AddBlock(genesisBlock))
+            if (!CreateGenesisBlock(owner))
             {
                 throw new ChainException("Genesis block failure");
             }
@@ -62,11 +62,48 @@ namespace Phantasma.Blockchain
             {
                 plugin.OnNewBlock(chain, block);
 
-                foreach (var tx in block.Transactions)
+                var txs = chain.GetBlockTransactions(block);
+                foreach (var tx in txs)
                 {
                     plugin.OnNewTransaction(chain, block, (Transaction) tx);
                 }
             }
+        }
+
+        public Chain FindChainForBlock(Block block)
+        {
+            return FindChainForBlock(block.Hash);
+        }
+
+        public Chain FindChainForBlock(Hash hash)
+        {
+            foreach (var chain in _chains.Values)
+            {
+                if (chain.ContainsBlock(hash))
+                {
+                    return chain;
+                }
+            }
+
+            return null;
+        }
+
+        public Block FindBlockForTransaction(Transaction tx)
+        {
+            return FindBlockForTransaction(tx.Hash);
+        }
+
+        public Block FindBlockForTransaction(Hash hash)
+        {
+            foreach (var chain in _chains.Values)
+            {
+                if (chain.ContainsTransaction(hash))
+                {
+                    return chain.FindTransactionBlock(hash);
+                }
+            }
+
+            return null;
         }
 
         public T GetPlugin<T>() where T: INexusPlugin
@@ -334,8 +371,13 @@ namespace Phantasma.Blockchain
 
         public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(93000000, NativeTokenDecimals);
 
-        private Block CreateGenesisBlock(KeyPair owner)
+        private bool CreateGenesisBlock(KeyPair owner)
         {
+            if (this.NativeToken != null)
+            {
+                return false;
+            }
+
             this.GenesisAddress = owner.Address;
 
             var transactions = new List<Transaction>();
@@ -353,9 +395,10 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Bank));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Apps));
 
-            var block = new Block(RootChain, owner.Address, Timestamp.Now, transactions);
+            var genesisMessage = Encoding.UTF8.GetBytes("SOUL genesis");
+            var block = new Block(Chain.InitialHeight, RootChain.Address, owner.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
-            return block;
+            return RootChain.AddBlock(block, transactions);
         }
         #endregion
     }

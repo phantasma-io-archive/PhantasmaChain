@@ -64,10 +64,10 @@ namespace Phantasma.IO
         {
             if (bytes == null)
             {
-                writer.Write((byte)0);
+                writer.WriteVarInt(0);
                 return;
             }
-            writer.Write((byte)bytes.Length);
+            writer.WriteVarInt(bytes.Length);
             writer.Write(bytes);
         }
 
@@ -147,9 +147,10 @@ namespace Phantasma.IO
 
         public static byte[] ReadByteArray(this BinaryReader reader)
         {
-            var length = reader.ReadByte();
+            var length = (int)reader.ReadVarInt();
             if (length == 0)
                 return null;
+
             var bytes = reader.ReadBytes(length);
             return bytes;
         }

@@ -279,13 +279,15 @@ namespace Phantasma.Blockchain.Contracts
 
             int settlements = 0;
 
-            foreach (Transaction tx in block.Transactions)
+            foreach (var txHash in block.TransactionHashes)
             {
                 string symbol = null;
                 BigInteger value = 0;
                 Address targetAddress = Address.Null;
 
-                foreach (var evt in tx.Events)
+                var evts = block.GetEventsForTransaction(txHash);
+
+                foreach (var evt in evts)
                 {
                     if (evt.Kind == EventKind.TokenSend)
                     {

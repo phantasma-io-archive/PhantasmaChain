@@ -15,7 +15,7 @@ using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Transaction: ITransaction
+    public sealed class Transaction
     {
         public Timestamp Expiration { get; }
         public byte[] Script { get; }
@@ -27,11 +27,7 @@ namespace Phantasma.Blockchain
         public BigInteger GasLimit { get; }
 
         public Signature[] Signatures { get; private set; }
-        public Event[] Events { get; private set; }
         public Hash Hash { get; private set; }
-
-        public Block Block { get; private set; }
-        public Nexus Nexus => Block != null ? Block.Nexus : null;
 
         public static Transaction Unserialize(byte[] bytes)
         {
@@ -79,12 +75,6 @@ namespace Phantasma.Blockchain
             writer.Write(this.Nonce);
             writer.Write(this.Expiration.Value);
 
-            writer.WriteVarInt(Events.Length);
-            foreach (var evt in this.Events)
-            {
-                evt.Serialize(writer);
-            }
-
             if (withSignature)
             {
                 writer.WriteVarInt(Signatures.Length);
@@ -107,7 +97,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Event> notify)
+        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify)
         {
             var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet);
 
@@ -126,8 +116,11 @@ namespace Phantasma.Blockchain
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
 
-            this.Events = runtime.Events.ToArray();
-
+            foreach (var evt in runtime.Events)
+            {
+                onNotify(this.Hash, evt);
+            }
+            
             return true;
         }
 
@@ -145,8 +138,6 @@ namespace Phantasma.Blockchain
             this.Nonce = nonce;
 
             this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
-
-            this.Events = new Event[0];
 
             this.UpdateHash();
         }
@@ -254,12 +245,5 @@ namespace Phantasma.Blockchain
             var hash = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hash);
         }
-
-        internal void SetBlock(Block block)
-        {
-            Throw.IfNull(block, nameof(block));
-            this.Block = block;
-        }
-
     }
 }

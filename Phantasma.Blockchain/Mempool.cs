@@ -134,8 +134,9 @@ namespace Phantasma.Blockchain
                 var transactions = GetNextTransactions(chain);
                 if (transactions.Any())
                 {
-                    var block = new Block(chain, MinerAddress, Timestamp.Now, transactions, chain.LastBlock);
-                    var success = chain.AddBlock(block);
+                    var hashes = transactions.Select(tx => tx.Hash);
+                    var block = new Block(chain.LastBlock.Height +1, chain.Address, MinerAddress, Timestamp.Now, hashes, chain.LastBlock.PreviousHash);
+                    var success = chain.AddBlock(block, transactions);
                 }
             }
 

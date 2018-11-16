@@ -1,24 +1,22 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.VM.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.IO;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Block: IBlock
+    public sealed class Block
     {
         public static readonly BigInteger InitialDifficulty = 127;
         public static readonly float IdealBlockTime = 5;
         public static readonly float BlockTimeFlutuation = 0.2f;
 
-        public readonly Chain Chain;
-        public Nexus Nexus => Chain.Nexus;
-
-        public readonly Address MinerAddress;
+        public Address ChainAddress { get; private set; }
+        public Address MinerAddress { get; private set; }
 
         public uint Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
@@ -26,32 +24,37 @@ namespace Phantasma.Blockchain
         public Hash Hash { get; private set; }
         public Hash PreviousHash { get; private set; }
 
-        public readonly BigInteger difficulty;
+        public byte[] Data { get; private set; }
 
-        private List<Transaction> _transactions;
-        public IEnumerable<ITransaction> Transactions => _transactions;
+        private List<Hash> _transactionHashes;
+        public IEnumerable<Hash> TransactionHashes => _transactionHashes;
 
-        public List<Event> Events = new List<Event>();
-
+        // stores the events for each included transaction
+        private Dictionary<Hash, List<Event>> _eventMap = new Dictionary<Hash, List<Event>>();
+        
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(Chain chain, Address minerAddress, Timestamp timestamp, IEnumerable<Transaction> transactions, Block previous = null)
+        public Block(uint height, Address chainAddress, Address minerAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
         {
-            this.Chain = chain;
+            this.ChainAddress = chainAddress;
             this.MinerAddress = minerAddress;
             this.Timestamp = timestamp;
+            this.Data = data;
 
-            this.Height = previous != null && previous.Chain == chain ? previous.Height + 1 : 0;
-            this.PreviousHash = previous != null ? previous.Hash : null;
+            //this.Height = previous != null && previous.Chain == chain ? previous.Height + 1 : 0;
+            //this.PreviousHash = previous != null ? previous.Hash : null;
 
-            _transactions = new List<Transaction>();
-            foreach (var tx in transactions)
+            this.Height = height;
+            this.PreviousHash = previousHash;
+
+            _transactionHashes = new List<Hash>();
+            foreach (var hash in hashes)
             {
-                _transactions.Add(tx);
+                _transactionHashes.Add(hash);
             }
 
-            if (previous != null)
+            /*if (previous != null)
             {
                 var delta = this.Timestamp - previous.Timestamp;
 
@@ -71,7 +74,7 @@ namespace Phantasma.Blockchain
             else
             {
                 this.difficulty = InitialDifficulty;
-            }
+            }*/
 
             this.UpdateHash(0);
         }
@@ -89,9 +92,21 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void Notify(Event evt)
+        internal void Notify(Hash hash, Event evt)
         {
-            this.Events.Add(evt);
+            List<Event> list;
+
+            if (_eventMap.ContainsKey(hash))
+            {
+                list = _eventMap[hash];
+            }
+            else
+            {
+                list = new List<Event>();
+                _eventMap[hash] = list;
+            }
+
+            list.Add(evt);
         }
 
         // TODO - Optimize this to avoid recalculating the arrays if only the nonce changed
@@ -103,50 +118,71 @@ namespace Phantasma.Blockchain
             this.Hash = new Hash(hashBytes);
         }
 
-        public BigInteger GetReward()
+        public IEnumerable<Event> GetEventsForTransaction(Hash hash)
         {
-            BigInteger result = 0;
-            foreach (Transaction tx in Transactions)
+            if (_eventMap.ContainsKey(hash))
             {
-                result += tx.GasPrice * tx.GasLimit; // TODO fix this
+                return _eventMap[hash];
             }
-            return result;
+
+            return Enumerable.Empty<Event>();
         }
 
         #region SERIALIZATION
 
         internal void Serialize(BinaryWriter writer) {
-            writer.WriteBigInteger(Height);
+            writer.Write((uint)Height);
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
             writer.WriteAddress(MinerAddress);
-            writer.WriteAddress(Chain.Address);
-            writer.Write((ushort)Events.Count);
-            foreach (var evt in Events)
+            writer.WriteAddress(ChainAddress);
+            writer.WriteByteArray(Data);
+
+            writer.Write((ushort)_transactionHashes.Count);
+            foreach (var hash in _transactionHashes)
             {
-                evt.Serialize(writer);
+                writer.WriteHash(hash);
+                var evts = GetEventsForTransaction(hash).ToArray();
+                writer.Write((ushort)evts.Length);
+                foreach (var evt in evts)
+                {
+                    evt.Serialize(writer);
+                }
             }
             writer.Write(Nonce);
         }
 
-        public static Block Unserialize(Nexus nexus, BinaryReader reader) {
-            var height = reader.ReadBigInteger();
+        public static Block Unserialize(BinaryReader reader) {
+            var height = reader.ReadUInt32();
             var timestamp = new Timestamp(reader.ReadUInt32());
             var prevHash = reader.ReadHash();
             var minerAddress =  reader.ReadAddress();
             var chainAddress = reader.ReadAddress();
+            var extraContent = reader.ReadByteArray();
 
-            var evtCount = reader.ReadUInt16();
-            var evts = new Event[evtCount];
-            for (int i=0;i<evtCount; i++)
+            var hashCount = reader.ReadUInt16();
+            var hashes = new List<Hash>();
+
+            var eventMap = new Dictionary<Hash, Event[]>();
+            for (int j=0; j<hashCount; j++)
             {
-                evts[i] = Event.Unserialize(reader); 
+                var hash = reader.ReadHash();
+                hashes.Add(hash);
+
+                var evtCount = reader.ReadUInt16();
+                var evts = new Event[evtCount];
+                for (int i = 0; i < evtCount; i++)
+                {
+                    evts[i] = Event.Unserialize(reader);
+                }
+
+                eventMap[hash] = evts;
             }
+
             var nonce = reader.ReadUInt32();
 
-            var chain = nexus.FindChainByAddress(chainAddress);
-
-            return new Block(chain, minerAddress, timestamp, null, null); // TODO fix me
+            var block = new Block(height, chainAddress, minerAddress, timestamp, hashes, prevHash, extraContent); 
+            return block;
         }
         #endregion
     }

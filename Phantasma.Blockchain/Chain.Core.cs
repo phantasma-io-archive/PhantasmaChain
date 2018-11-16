@@ -40,6 +40,8 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region PUBLIC
+        public static readonly uint InitialHeight = 1;
+
         public Chain ParentChain { get; private set; }
         public Block ParentBlock { get; private set; }
         public Nexus Nexus { get; private set; }
@@ -61,7 +63,7 @@ namespace Phantasma.Blockchain
         public ExecutionContext ExecutionContext { get; private set; }
         public StorageContext Storage { get; private set; }
 
-        public int TransactionCount => _blockHashes.Sum(c => c.Value.Transactions.Count());  //todo move this?
+        public int TransactionCount => _blockHashes.Sum(entry => entry.Value.TransactionHashes.Count());  //todo move this?
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
@@ -108,17 +110,22 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
-        public bool ContainsBlock(Block block)
+        public bool ContainsBlock(Hash hash)
         {
-            if (block == null)
+            if (hash == null)
             {
                 return false;
             }
 
-            return _blockHashes.ContainsKey(block.Hash);
+            return _blockHashes.ContainsKey(hash);
         }
 
-        public bool AddBlock(Block block)
+        public IEnumerable<Transaction> GetBlockTransactions(Block block)
+        {
+            return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
+        }
+
+        public bool AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
             if (LastBlock != null)
             {
@@ -133,7 +140,25 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            foreach (Transaction tx in block.Transactions)
+            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
+            foreach (var hash in block.TransactionHashes)
+            {
+                if (!inputHashes.Contains(hash))
+                {
+                    return false;
+                }
+            }
+
+            var outputHashes = new HashSet<Hash>(block.TransactionHashes);
+            foreach (var tx in transactions)
+            {
+                if (!outputHashes.Contains(tx.Hash))
+                {
+                    return false;
+                }
+            }
+
+            foreach (var tx in transactions)
             {
                 if (!tx.IsValid(this))
                 {
@@ -143,7 +168,7 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
-            foreach (Transaction tx in block.Transactions)
+            foreach (var  tx in transactions)
             {
                 if (!tx.Execute(this, block, changeSet, block.Notify))
                 {
@@ -152,7 +177,7 @@ namespace Phantasma.Blockchain
             }
 
             // from here on, the block is accepted
-            Log.Message($"Increased chain height to {block.Height}");
+            Log.Message($"{Name} height is now {block.Height}");
 
             _blockHeightMap[block.Height] = block;
             _blockHashes[block.Hash] = block;
@@ -162,9 +187,8 @@ namespace Phantasma.Blockchain
 
             LastBlock = block;
 
-            foreach (Transaction tx in block.Transactions)
+            foreach (Transaction tx in transactions)
             {
-                tx.SetBlock(block);
                 _transactions[tx.Hash] = tx;
                 _transactionBlockMap[tx.Hash] = block;
             }
@@ -172,6 +196,17 @@ namespace Phantasma.Blockchain
             Nexus.PluginTriggerBlock(this, block);
 
             return true;
+        }
+
+        public BigInteger GetBlockReward(Block block)
+        {
+            BigInteger result = 0;
+            var transactions = GetBlockTransactions(block);
+            foreach (Transaction tx in transactions)
+            {
+                result += tx.GasPrice * tx.GasLimit; // TODO fix this
+            }
+            return result;
         }
 
         private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();
@@ -210,6 +245,11 @@ namespace Phantasma.Blockchain
             }
 
             return result;
+        }
+
+        public bool ContainsTransaction(Hash hash)
+        {
+            return _transactions.ContainsKey(hash);
         }
 
         public Transaction FindTransactionByHash(Hash hash)
@@ -423,7 +463,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    this.AddBlock(entry.block);
+                    this.AddBlock(entry.block, null); // TODO fixme
                 }
 
                 currentBlockHeight++;

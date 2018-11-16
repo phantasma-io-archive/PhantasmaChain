@@ -26,18 +26,23 @@ namespace Phantasma.API
         #region UTILS
         private DataNode FillTransaction(Transaction tx)
         {
+            var block = Nexus.FindBlockForTransaction(tx);
+            var chain = Nexus.FindChainForBlock(block.Hash);
+
             var result = DataNode.CreateObject();
             result.AddField("txid", tx.Hash.ToString());
-            result.AddField("chainAddress", tx.Block.Chain.Address);
-            result.AddField("chainName", tx.Block.Chain.Name);
-            result.AddField("timestamp", tx.Block.Timestamp.Value);
-            result.AddField("blockHeight", tx.Block.Height);
+            result.AddField("chainAddress", chain.Address);
+            result.AddField("chainName", chain.Name);
+            result.AddField("timestamp", block.Timestamp.Value);
+            result.AddField("blockHeight", block.Height);
             result.AddField("gasLimit", tx.GasLimit.ToString());
             result.AddField("gasPrice", tx.GasPrice.ToString());
             result.AddField("script", Base16.Encode(tx.Script));
 
             var eventsNode = DataNode.CreateArray("events");
-            foreach (var evt in tx.Events)
+
+            var evts = block.GetEventsForTransaction(tx.Hash);
+            foreach (var evt in evts)
             {
                 var eventNode = DataNode.CreateObject();
                 eventNode.AddField("eventAddress", evt.Address);
@@ -53,13 +58,15 @@ namespace Phantasma.API
 
         private DataNode FillBlock(Block block)
         {
+            var chain = Nexus.FindChainForBlock(block.Hash);
+
             var result = DataNode.CreateObject();
 
             result.AddField("hash", block.Hash.ToString());
             result.AddField("timestamp", block.Timestamp);
             result.AddField("height", block.Height);
-            result.AddField("chainAddress", block.Chain.Address);
-            result.AddField("chainName", block.Chain.Name);
+            result.AddField("chainAddress", chain.Address);
+            result.AddField("chainName", chain.Name);
             result.AddField("previousHash", block.PreviousHash);
             result.AddField("nonce", block.Nonce);
             result.AddField("minerAddress", block.MinerAddress.Text);
@@ -147,7 +154,7 @@ namespace Phantasma.API
             result.AddField("address", address.Text);
             result.AddField("amount", amountTx);
             result.AddNode(txsNode);
-            var txs = plugin?.GetAddressTransactions(address).OrderByDescending(p => p.Block.Timestamp.Value).Take(amountTx);
+            var txs = plugin?.GetAddressTransactions(address).OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).Take(amountTx);
             if (txs != null)
             {
                 foreach (var transaction in txs)

@@ -3,19 +3,23 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Tokens;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Consensus
 {
     public class ProofOfWork
     {
-        public static Block MineBlock(Chain chain, Address minerAddress, IEnumerable<Transaction> txs)
+        public static Block MineBlock(Chain chain, Address minerAddress, IEnumerable<Transaction> txs, byte[] extraContent = null)
         {
             var timestamp = Timestamp.Now;
 
-            var block = new Block(chain, minerAddress, timestamp, txs, chain.LastBlock);
+            var hashes = txs.Select(tx => tx.Hash);
+            var block = new Block(chain.LastBlock.Height + 1, chain.Address, minerAddress, timestamp, hashes, chain.LastBlock.Hash, extraContent);
+
+            var blockDifficulty = Block.InitialDifficulty; // TODO change this later
 
             BigInteger target = 0;
-            for (int i = 0; i <= block.difficulty; i++)
+            for (int i = 0; i <= blockDifficulty; i++)
             {
                 BigInteger k = 1;
                 k <<= i;
