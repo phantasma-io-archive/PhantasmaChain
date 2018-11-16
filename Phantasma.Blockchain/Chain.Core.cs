@@ -391,7 +391,7 @@ namespace Phantasma.Blockchain
 
             vm.Execute();
 
-            var result = vm.stack.Pop();
+            var result = vm.Stack.Pop();
 
             return result.ToObject();
         }
