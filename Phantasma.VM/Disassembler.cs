@@ -26,6 +26,7 @@ namespace Phantasma.VM
             while (_instructionPointer < _script.Length)
             {
                 var temp = new Instruction();
+                temp.Offset = _instructionPointer;
                 temp.Opcode = (Opcode)Read8();
 
                 System.Console.WriteLine("disasm => " + temp.Opcode);

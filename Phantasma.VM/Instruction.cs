@@ -5,6 +5,7 @@ namespace Phantasma.VM
 {
     public struct Instruction
     {
+        public uint Offset;
         public Opcode Opcode;
         public object[] Args;
 
@@ -16,6 +17,8 @@ namespace Phantasma.VM
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.Append(Offset);
+            sb.Append(": ");
             sb.Append(Opcode.ToString());
 
             switch (Opcode)
@@ -28,6 +31,13 @@ namespace Phantasma.VM
                 case Opcode.NOT:
                 case Opcode.NEGATE:
                 case Opcode.ABS:
+                    {
+                        AppendRegister(sb, Args[0]);
+                        sb.Append(',');
+                        AppendRegister(sb, Args[1]);
+                        break;
+                    }
+
                 case Opcode.ADD:
                 case Opcode.SUB:
                 case Opcode.MUL:
@@ -41,6 +51,8 @@ namespace Phantasma.VM
                         AppendRegister(sb, Args[0]);
                         sb.Append(',');
                         AppendRegister(sb, Args[1]);
+                        sb.Append(',');
+                        AppendRegister(sb, Args[2]);
                         break;
                     }
 
