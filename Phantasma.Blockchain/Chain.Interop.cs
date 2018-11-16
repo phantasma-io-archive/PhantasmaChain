@@ -25,14 +25,14 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Constructor_Object<T>(VirtualMachine vm, Func<byte[], T> loader) 
         {
-            var bytes = vm.stack.Pop().AsByteArray();
+            var bytes = vm.Stack.Pop().AsByteArray();
 
             try
             {
                 T obj = loader(bytes);
                 var temp = new VMObject();
                 temp.SetValue(obj);
-                vm.stack.Push(temp);
+                vm.Stack.Push(temp);
             }
             catch 
             {
@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_Log(VirtualMachine vm)
         {
-            var text = vm.stack.Pop().AsString();
+            var text = vm.Stack.Pop().AsString();
             //this.Log.Write(Core.Log.LogEntryKind.Message, text);
             Console.WriteLine(text); // TODO fixme
             return ExecutionState.Running;
@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain
 
             var obj = new VMObject();
             obj.SetValue(contract);
-            vm.stack.Push(obj);
+            vm.Stack.Push(obj);
 
             return ExecutionState.Running;
         }
