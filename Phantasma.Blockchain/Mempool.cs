@@ -104,43 +104,43 @@ namespace Phantasma.Blockchain
 
         private IEnumerable<Transaction> GetNextTransactions(Chain chain)
         {
-            lock (_entries)
+            var list = _entries[chain.Name];
+            if (list.Count == 0)
             {
-                var list = _entries[chain.Name];
-                if (list.Count == 0)
-                {
-                    return Enumerable.Empty<Transaction>();
-                }
-
-                var transactions = new List<Transaction>();
-
-                while (transactions.Count < 20 && list.Count > 0)
-                {
-                    var entry = list[0];
-                    list.RemoveAt(0);
-                    transactions.Add(entry.transaction);
-                }
-
-                return transactions;
+                return Enumerable.Empty<Transaction>();
             }
+
+            var transactions = new List<Transaction>();
+
+            while (transactions.Count < 20 && list.Count > 0)
+            {
+                var entry = list[0];
+                list.RemoveAt(0);
+                transactions.Add(entry.transaction);
+            }
+
+            return transactions;
         }
 
         protected override bool Run()
         {
-            foreach (var chainName in _entries.Keys)
+            lock (_entries)
             {
-                var chain = Nexus.FindChainByName(chainName);
-
-                var transactions = GetNextTransactions(chain);
-                if (transactions.Any())
+                foreach (var chainName in _entries.Keys)
                 {
-                    var hashes = transactions.Select(tx => tx.Hash);
-                    var block = new Block(chain.LastBlock.Height +1, chain.Address, MinerAddress, Timestamp.Now, hashes, chain.LastBlock.PreviousHash);
-                    var success = chain.AddBlock(block, transactions);
-                }
-            }
+                    var chain = Nexus.FindChainByName(chainName);
 
-            return true;
+                    var transactions = GetNextTransactions(chain);
+                    if (transactions.Any())
+                    {
+                        var hashes = transactions.Select(tx => tx.Hash);
+                        var block = new Block(chain.LastBlock.Height + 1, chain.Address, MinerAddress, Timestamp.Now, hashes, chain.LastBlock.PreviousHash);
+                        var success = chain.AddBlock(block, transactions);
+                    }
+                }
+
+                return true;
+            }
         }
     }
 }
