@@ -69,10 +69,7 @@ namespace Phantasma.Tests
 
             BeginBlock();
 
-            var trophy = Nexus.FindTokenBySymbol("TROPHY");
-            RandomSpreadNFC(trophy);
-
-            var nacho = Nexus.FindTokenBySymbol("NACHO");
+            var nacho = Nexus.FindTokenBySymbol("NACHO"); 
             RandomSpreadNFC(nacho);
 
             GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
