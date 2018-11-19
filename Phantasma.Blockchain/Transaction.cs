@@ -49,13 +49,6 @@ namespace Phantasma.Blockchain
             var nonce = reader.ReadUInt32();
             var expiration = reader.ReadUInt32();
 
-            var evtCount = (int)reader.ReadVarInt();
-            var events = new Event[evtCount];
-            for (int i = 0; i < evtCount; i++)
-            {
-                events[i] = Event.Unserialize(reader);
-            }
-
             Signature[] signatures;
 
             // check if we have some signatures attached
