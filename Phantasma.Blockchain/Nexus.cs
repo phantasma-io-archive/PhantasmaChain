@@ -363,9 +363,6 @@ namespace Phantasma.Blockchain
         public const string StableTokenSymbol = "ALMA";
         public const string StableTokenName = "Stable Coin";
 
-        public const string TrophyTokenSymbol = "TROPHY";
-        public const string TrophyTokenName = "Trophy";
-
         public const int NativeTokenDecimals = 8;
         public const int StableTokenDecimals = 8;
 
@@ -385,7 +382,6 @@ namespace Phantasma.Blockchain
             transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible));
             transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
             transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
-            transactions.Add(TokenCreateTx(RootChain, owner, TrophyTokenSymbol, TrophyTokenName, 0, 0, TokenFlags.None));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));
