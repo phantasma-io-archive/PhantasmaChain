@@ -120,7 +120,7 @@ namespace Phantasma.Tests
             Console.WriteLine($"Begin block #{step}");
         }
 
-        public bool EndBlock()
+        public bool EndBlock(Mempool mempool = null)
         {
             if (!blockOpen)
             {
@@ -148,7 +148,23 @@ namespace Phantasma.Tests
                         var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
 
                         var block = new Block(nextHeight, chain.Address, _owner.Address, _currentTime, hashes, prevHash);
-                        if (chain.AddBlock(block, txs))
+
+                        bool submitted;
+
+                        if (mempool != null)
+                        {
+                            submitted = true;
+                            foreach (var tx in txs)
+                            {
+                                submitted |= mempool.Submit(chain, tx);
+                            }
+                        }
+                        else
+                        {
+                            submitted = chain.AddBlock(block, txs);
+                        }
+
+                        if (submitted)
                         {
                             _currentTime += TimeSpan.FromMinutes(45);
 
@@ -303,7 +319,7 @@ namespace Phantasma.Tests
 
         private int step;
 
-        public void GenerateRandomBlock()
+        public void GenerateRandomBlock(Mempool mempool = null)
         {
             BeginBlock();
 
@@ -467,7 +483,7 @@ namespace Phantasma.Tests
                 }
             }
 
-            EndBlock();
+            EndBlock(mempool);
         }
     }
 
