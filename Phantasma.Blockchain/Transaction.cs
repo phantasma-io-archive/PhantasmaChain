@@ -56,11 +56,21 @@ namespace Phantasma.Blockchain
                 events[i] = Event.Unserialize(reader);
             }
 
-            var signatureCount = (int)reader.ReadVarInt();
-            var signatures = new Signature[signatureCount];
-            for (int i = 0; i < signatureCount; i++)
+            Signature[] signatures;
+
+            // check if we have some signatures attached
+            if (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                signatures[i] = reader.ReadSignature();
+                var signatureCount = (int)reader.ReadVarInt();
+                signatures = new Signature[signatureCount];
+                for (int i = 0; i < signatureCount; i++)
+                {
+                    signatures[i] = reader.ReadSignature();
+                }
+            }
+            else
+            {
+                signatures = new Signature[0];
             }
 
             return new Transaction(nexusName, script, gasPrice, gasLimit, new Timestamp(expiration), nonce, signatures);
