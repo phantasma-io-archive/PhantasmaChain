@@ -13,20 +13,25 @@ namespace Phantasma.Numerics
     public struct LargeInteger : IEquatable<LargeInteger>, IComparable<LargeInteger>
     {
         private int _sign;
-        private byte[] _data;
+        private uint[] _data;
+        private const int _Base = sizeof(uint) * 8;    //number of bits required for shift operations
+
+        private static uint _MaxVal => (uint) Math.Pow(2, _Base) - 1;
 
         public static readonly LargeInteger Zero = new LargeInteger(0L);
 
         public static readonly LargeInteger One = new LargeInteger(1L);
 
+        
+
         public LargeInteger(LargeInteger other)
         {
             this._sign = other._sign;
-            this._data = new byte[other._data.Length];
+            this._data = new uint[other._data.Length];
             Array.Copy(other._data, this._data, this._data.Length);
         }
 
-        public LargeInteger(byte[] bytes, int sign = 1)
+        public LargeInteger(uint[] bytes, int sign = 1)
         {
             this._sign = sign;
             this._data = null;
@@ -47,7 +52,7 @@ namespace Phantasma.Numerics
             if (val == 0)
             {
                 this._sign = 0;
-                this._data = new byte[1] { 0 };
+                this._data = new uint[1] { 0 };
                 return;
             }
 
@@ -55,12 +60,24 @@ namespace Phantasma.Numerics
 
             if (val < 0) val = -val;
 
+            
             var bytes = BitConverter.GetBytes(val);
+
+            var uintBytes = new uint[(bytes.Length / 4) + 1];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                int uintIndex = (i / 4);
+                int shiftAmount = (i % 4) * 8;
+                uintBytes[uintIndex] += (uint) (bytes[i] << shiftAmount);
+            }
+
             _data = null;
-            InitFromArray(bytes);
+            InitFromArray(uintBytes);
         }
 
-        private void InitFromArray(byte[] bytes)
+        //TODO: CONVERT TO UINT INSTEAD OF BYTES
+        private void InitFromArray(uint[] bytes)
         {
             int n = bytes.Length;
             for (int i = n - 1; i >= 0; i--)
@@ -75,7 +92,7 @@ namespace Phantasma.Numerics
                 }
             }
 
-            _data = new byte[n];
+            _data = new uint[n];
             Array.Copy(bytes, _data, n);
         }
 
@@ -86,7 +103,7 @@ namespace Phantasma.Numerics
             if (value == "0")
             {
                 this._sign = 0;
-                this._data = new byte[1] { 0 };
+                this._data = new uint[1] { 0 };
                 return;
             }
 
@@ -138,7 +155,29 @@ namespace Phantasma.Numerics
             for (int i = 0; i < max; i++)
             {
                 var bits = i * 8;
-                result += value._data[i] * (1 << bits);
+                result += (int) value._data[i] * (1 << bits);
+            }
+
+            if (value._sign < 0)
+            {
+                result *= -1;
+            }
+
+            return result;
+        }
+
+        public static explicit operator long(LargeInteger value)
+        {
+            long result = 0;
+
+            int max = value._data.Length;
+
+            if (max > 8) max = 8;
+
+            for (int i = 0; i < max; i++)
+            {
+                var bits = i * 8;
+                result += (uint)((value._data[i]) * (1 << bits));
             }
 
             if (value._sign < 0)
@@ -164,6 +203,7 @@ namespace Phantasma.Numerics
             return new LargeInteger(x._data, 1);
         }
 
+        /*
         public override string ToString()
         {
             if (_sign == 0)
@@ -176,18 +216,18 @@ namespace Phantasma.Numerics
             int outLength = 0;
 
             var val = new LargeInteger(this);
-            var sourceBase = 256;
+            var sourceBase = 4294967296;
             var targetBase = 10;
             while (true)
             {
                 var byteArray = val._data;
                 var arrayLength = val._data.Length;
-                var newArray = new byte[arrayLength];
+                var newArray = new uint[arrayLength];
 
-                var k = 0;
+                long k = 0;
                 for (var j = arrayLength - 1; j >= 0; j--)
                 {
-                    newArray[j] = (byte)((k * sourceBase + byteArray[j]) / targetBase);
+                    newArray[j] = (uint)((k * sourceBase + byteArray[j]) / targetBase);
                     k = (k * sourceBase + byteArray[j]) - (newArray[j] * targetBase);
                 }
 
@@ -218,7 +258,45 @@ namespace Phantasma.Numerics
 
             return temp.ToString();
         }
+        */
+        public override string ToString()
+        {
+            int radix = 10;
+            Throw.If(radix < 2 || radix > 36, "Radix must be >= 2 and <= 36");
 
+            string text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            string text2 = "";
+            LargeInteger largeInteger = this;
+            bool flag = false;
+
+            var largeInteger2 = new LargeInteger();
+            var largeInteger3 = new LargeInteger();
+            var bi = new LargeInteger(radix);
+            if (largeInteger._data.Length == 0 || (largeInteger._data.Length == 1 && largeInteger._data[0] == 0))
+            {
+                text2 = "0";
+            }
+            else
+            {
+                while (largeInteger._data.Length > 1 || (largeInteger._data.Length == 1 && largeInteger._data[0] != 0))
+                {
+                    DivMod(largeInteger, bi, out largeInteger2, out largeInteger3);
+                    if (largeInteger3._data.Length == 0)
+                        text2 = "0" + text2;
+                    else
+                        text2 = ((largeInteger3._data[0] >= 10) ? (text[(int)(largeInteger3._data[0] - 10)].ToString() + text2) : (largeInteger3._data[0] + text2));
+                    largeInteger = largeInteger2;
+                }
+                if (_sign < 1 && text != "0")
+                {
+                    text2 = "-" + text2;
+                }
+            }
+
+            return text2;
+        }
+
+        /*
         private static int nlz(int x)
         {
             int n;
@@ -232,12 +310,7 @@ namespace Phantasma.Numerics
             if (x <= 0x7FFFFFFF) { n = n + 1; }
             return n;
         }
-
-        // implementation of Knuth's Algorithm D, for a binary computer with base b = 2**8.  
-        // The caller supplies
-        //1. Space q for the quotient, m - n + 1 halfwords(at least one).
-        //2. Space r for the remainder(optional), n halfwords.
-        //3. The dividend u, m halfwords, m >= 1.   
+        */
 
         private static void DivMod(LargeInteger dividend, LargeInteger divisor, out LargeInteger quot, out LargeInteger rem)
         {
@@ -250,17 +323,12 @@ namespace Phantasma.Numerics
 
             var dividendArray = dividend._data;
             var divisorArray = divisor._data;
-            var quotient = new byte[dividend._data.Length - divisor._data.Length + 1];
-            var rest = new byte[divisor._data.Length];
+            var quotient = new uint[dividend._data.Length - divisor._data.Length + 1];
+            var rest = new uint[divisor._data.Length];
 
-            var b = 256; // Number base (8 bits).
+            var b = _Base; // Number base (32 bits).
             //unsigned short* un, *vn;  // Normalized form of u, v.
-            byte qhat;            // Estimated quotient digit.
-            byte rhat;            // A remainder.
-            int p;               // Product of two digits.
             int i, j, q;
-            byte t;
-            byte k;
 
             var m = dividendArray.Length;
             var n = divisorArray.Length;
@@ -272,42 +340,53 @@ namespace Phantasma.Numerics
                 return;
             }
 
-            // single digit divisor
-            if (n == 1)
-            {
-                k = 0;
-                for (j = m - 1; j >= 0; j--)
-                {
-                    quotient[j] = (byte)((k * b + dividendArray[j]) / divisorArray[0]);
-                    k = (byte)((k * b + dividendArray[j]) - quotient[j] * divisorArray[0]);
-                }
-
-                rest[0] = k;
-                quot = new LargeInteger(quotient);
-                rem = new LargeInteger(rest);
-                return;
-            }
-
             var interimDividend = new LargeInteger(0);
 
-            for (i = 0, j = m - 1, q = 0; j >= 0; i++, j--)
+            /*
+            // single digit divisor
+            //if (n == 1)
             {
-                interimDividend.ShiftAndInsertByte(dividendArray[j]); //"down goes one"
-
-                if (interimDividend < divisor)
-                    continue;
-
-                //how many times does the divisor fit on the current dividend
-                while (true)
+                for (i = 0, j = m - 1, q = 0; j >= 0; i++, j--)
                 {
+                    interimDividend.ShiftAndInsertUint(dividendArray[j]); //"down goes one"
 
-                    interimDividend -= divisor;
-                    quotient[q]++;
+                    if (interimDividend < divisor)
+                        continue;
 
-                    if (interimDividend < divisor)  //if it doesn't fit anymore, go to the next iteration
+                    //how many times does the divisor fit on the current dividend
+                    if (interimDividend._data.Length == 1)
                     {
-                        q++;
-                        break;
+                        quotient[q] = (uint)(((long)interimDividend) / ((long)divisor));
+                        interimDividend -= divisor * quotient[q];
+                    }
+                    else if (interimDividend._data.Length == 2)
+                    {
+
+                    }
+
+                    q++;
+                }
+            }
+            else*/
+            {
+                for (i = 0, j = m - 1, q = 0; j >= 0; i++, j--)
+                {
+                    interimDividend.ShiftAndInsertUint(dividendArray[j]); //"down goes one"
+
+                    if (interimDividend < divisor)
+                        continue;
+
+                    //how many times does the divisor fit on the current dividend
+                    while (true)
+                    {
+                        interimDividend -= divisor;
+                        quotient[q]++;
+
+                        if (interimDividend < divisor)  //if it doesn't fit anymore, go to the next iteration
+                        {
+                            q++;
+                            break;
+                        }
                     }
                 }
             }
@@ -331,7 +410,7 @@ namespace Phantasma.Numerics
             array[0] = newVal;
         }
 
-        private void ShiftAndInsertByte(byte newVal)
+        private void ShiftAndInsertUint(uint newVal)
         {
             _sign = 1;
 
@@ -341,7 +420,7 @@ namespace Phantasma.Numerics
                 return;
             }
                 
-            byte[] newData = new byte[_data.Length + 1];
+            uint[] newData = new uint[_data.Length + 1];
 
             for (int i = newData.Length - 1; i > 0; i--)
                 newData[i] = _data[i - 1];
@@ -351,38 +430,36 @@ namespace Phantasma.Numerics
             _data = newData;
         }
 
-        private static byte[] Add(byte[] X, byte[] Y)
+        private static uint[] Add(uint[] X, uint[] Y)
         {
             var longest = Math.Max(X.Length, Y.Length);
-            var r = new byte[longest + 1];
-
+            var r = new uint[longest + 1];
             
-
             uint overflow = 0;
             for (int i = 0; i < longest; i++)
             {
-                byte x = i < X.Length ? X[i] : (byte)0;
-                byte y = i < Y.Length ? Y[i] : (byte)0;
-                uint sum = overflow + x + y;
+                uint x = i < X.Length ? X[i] : (uint)0;
+                uint y = i < Y.Length ? Y[i] : (uint)0;
+                long sum = overflow + x + y;
 
-                r[i] = (byte)sum;
-                overflow = sum >> 8;
+                r[i] = (uint)sum;
+                overflow = (uint) (sum >> _Base);
             }
 
             r[longest] = (byte)overflow;
             return r;
         }
 
-        private static byte[] Subtract(byte[] X, byte[] Y)
+        private static uint[] Subtract(uint[] X, uint[] Y)
         {
             var longest = Math.Max(X.Length, Y.Length);
-            var r = new byte[longest];
+            var r = new uint[longest];
 
             uint borrow = 0;
             for (int i = 0; i < longest; i++)
             {
-                byte x = i < X.Length ? X[i] : (byte)0;
-                byte y = i < Y.Length ? Y[i] : (byte)0;
+                uint x = i < X.Length ? X[i] : (uint)0;
+                uint y = i < Y.Length ? Y[i] : (uint)0;
 
                 //check if borrowing is necessary
                 if (x < y)
@@ -402,45 +479,46 @@ namespace Phantasma.Numerics
                     j--;
                     while (j != i)
                     {
-                        X[j] = Byte.MaxValue; //remember that this code is reached only if X[j] is 0
+                        X[j] = _MaxVal; //remember that this code is reached only if X[j] is 0
                         j--;
                     }
 
-                    borrow = Byte.MaxValue + 1;
+                    borrow = _MaxVal + 1;
                 }
 
                 uint sum = (borrow + x) - y;
                 borrow = 0;
 
-                r[i] = (byte)sum;
+                r[i] = sum;
             }
 
             return r;
         }
 
-        private static byte[] Multiply(byte[] X, byte[] Y)
+        private static uint[] Multiply(uint[] X, uint[] Y)
         {
-            var r = new byte[X.Length + Y.Length + 1];
+            var r = new uint[X.Length + Y.Length + 1];
 
-            Int32 sum = 0;
-            Int32 carryOver = 0;
+            long sum = 0;
+            uint carryOver = 0;
+            
 
             for (int j = 0; j < Y.Length; j++)
             {
                 for (int i = 0; i < X.Length; i++)
                 {
-                    sum = r[i+j] + (X[i] * Y[j]);
+                    sum = r[i+j] + ((long)X[i] * Y[j]);
 
-                    r[i + j] = (byte) sum;
-                    carryOver = (byte) (sum >> 8);
+                    r[i + j] = (uint) sum;
+                    carryOver = (uint) (sum >> _Base);
 
                     int z = 1;
                     while (carryOver > 0)
                     {
                         sum = r[i + j + z] + carryOver;
 
-                        r[i + j + z] = (byte) sum;
-                        carryOver = (byte) (sum >> 8);
+                        r[i + j + z] = (uint) sum;
+                        carryOver = (uint) (sum >> _Base);
 
                         z++;
                     }
@@ -449,14 +527,6 @@ namespace Phantasma.Numerics
             }
 
             return r;
-        }
-
-        private static void ApplyTwosComplement(byte[] array)
-        {
-            for (int i = 0; i < array.Length; i++)
-                array[i] = (byte) ~array[i];
-
-            array[0]++;
         }
 
         public static LargeInteger operator +(LargeInteger a, LargeInteger b)
@@ -690,13 +760,13 @@ namespace Phantasma.Numerics
         public static LargeInteger operator ^(LargeInteger a, LargeInteger b)
         {
             var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
-            var temp = new byte[len];
+            var temp = new uint[len];
 
 
             for (int i = 0; i < len; i++)
             {
-                byte A = i < a._data.Length ? a._data[i] : (byte)0;
-                byte B = i < b._data.Length ? b._data[i] : (byte)0;
+                uint A = i < a._data.Length ? a._data[i] : (uint)0;
+                uint B = i < b._data.Length ? b._data[i] : (uint)0;
                 temp[i] = (byte)(A ^ B);
             }
 
@@ -706,13 +776,13 @@ namespace Phantasma.Numerics
         public static LargeInteger operator |(LargeInteger a, LargeInteger b)
         {
             var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
-            var temp = new byte[len];
+            var temp = new uint[len];
 
 
             for (int i = 0; i < len; i++)
             {
-                byte A = i < a._data.Length ? a._data[i] : (byte)0;
-                byte B = i < b._data.Length ? b._data[i] : (byte)0;
+                uint A = i < a._data.Length ? a._data[i] : (uint)0;
+                uint B = i < b._data.Length ? b._data[i] : (uint)0;
                 temp[i] = (byte)(A | B);
             }
 
@@ -722,13 +792,13 @@ namespace Phantasma.Numerics
         public static LargeInteger operator &(LargeInteger a, LargeInteger b)
         {
             var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
-            var temp = new byte[len];
+            var temp = new uint[len];
 
 
             for (int i = 0; i < len; i++)
             {
-                byte A = i < a._data.Length ? a._data[i] : (byte)0;
-                byte B = i < b._data.Length ? b._data[i] : (byte)0;
+                uint A = i < a._data.Length ? a._data[i] : (uint)0;
+                uint B = i < b._data.Length ? b._data[i] : (uint)0;
                 temp[i] = (byte)(A & B);
             }
 
@@ -816,17 +886,18 @@ namespace Phantasma.Numerics
             return (byte[])_data.Clone();
         }
 
+        //TODO: this probably needs looking into..
         public override int GetHashCode()
         {
-            var hashCode = -1521134295 * _sign;
+            long hashCode = -1521134295 * _sign;
 
             // Rotate by 3 bits and XOR the new value
             for (var i = 0; i < _data.Length; i++)
             {
-                hashCode = (hashCode << 3) | (hashCode >> (29)) ^ _data[i];
+                hashCode = (int) ((hashCode << 3) | (hashCode >> (29)) ^ _data[i]);
             }
 
-            return hashCode;
+            return (int)hashCode;
         }
 
         public override bool Equals(object obj)

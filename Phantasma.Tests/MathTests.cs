@@ -185,13 +185,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestSubtractionBorrowing()
         {
-            var x1 = new LargeInteger(new byte[] {0x01, 0x00, 0x00, 0x01});
-            var y1 = new LargeInteger(new byte[] {0xff, 0xfe, 0xfe});
+            var x1 = new LargeInteger(new uint[] {0x01000001});
+            var y1 = new LargeInteger(new uint[] {0xfefeff});
 
             var x2 = new BigInteger(new byte[] { 0x01, 0x00, 0x00, 0x01 });
             var y2 = new BigInteger(new byte[] { 0xff, 0xfe, 0xfe });
 
-            var groundTruth1 = new LargeInteger(new byte[] { 0x02, 0x01, 0x01 });
+            var groundTruth1 = new LargeInteger(new uint[] { 0x010102 });
             var groundTruth2 = new BigInteger(new byte[] { 0x02, 0x01, 0x01 });
 
             var z1 = x1 - y1;
@@ -204,15 +204,15 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestToString()
         {
-            var x = new LargeInteger(new byte[] {0x10, 0x10});
+            var x = new LargeInteger(new uint[] {0x1010});
             Assert.IsTrue(x.ToString() == "4112");
         }
 
         [TestMethod]
         public void TestComparison()
         {
-            var x1 = new LargeInteger(new byte[] { 0x00, 0x00, 0x00, 0x01 });
-            var y1 = new LargeInteger(new byte[] { 0xff, 0xff, 0xff });
+            var x1 = new LargeInteger(new uint[] { 0x01000000});
+            var y1 = new LargeInteger(new uint[] { 0xffffff });
 
             var x2 = new BigInteger(new byte[] { 0x00, 0x00, 0x00, 0x01 });
             var y2 = new BigInteger(new byte[] { 0xff, 0xff, 0xff });
@@ -223,7 +223,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(z1.ToString() == "1");
             Assert.IsTrue(z2.ToString() == "1");
 
-            var test1 = new LargeInteger(new byte[]{0x00, 0x01});
+            var test1 = new LargeInteger(new uint[]{0x0100});
             var test2 = new BigInteger(new byte[]{0x00, 0x01});
 
             Assert.IsTrue(test1 > z1);
