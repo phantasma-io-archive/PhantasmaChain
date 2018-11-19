@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
+using System;
 
 namespace Phantasma.API
 {
@@ -164,6 +165,28 @@ namespace Phantasma.API
                 }
             }
 
+            return result;
+        }
+
+        public DataNode GetConfirmations(Hash hash)
+        {
+            var result = DataNode.CreateObject();
+
+            Block block = Nexus.FindBlockForHash(hash);
+
+            int confirmations = 0;
+
+            if (block != null)
+            {
+                var chain = Nexus.FindChainForBlock(block);
+                if (chain != null)
+                {
+                    confirmations = (int)(chain.LastBlock.Height - block.Height);
+                }
+            }
+
+            result.AddField("confirmations", confirmations);
+            result.AddField("hash", hash.ToString());
             return result;
         }
 

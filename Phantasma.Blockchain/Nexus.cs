@@ -90,10 +90,10 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockForTransaction(Transaction tx)
         {
-            return FindBlockForTransaction(tx.Hash);
+            return FindBlockForHash(tx.Hash);
         }
 
-        public Block FindBlockForTransaction(Hash hash)
+        public Block FindBlockForHash(Hash hash)
         {
             foreach (var chain in _chains.Values)
             {
