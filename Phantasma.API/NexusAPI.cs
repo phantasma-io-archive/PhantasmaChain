@@ -172,18 +172,7 @@ namespace Phantasma.API
         {
             var result = DataNode.CreateObject();
 
-            Block block = Nexus.FindBlockForHash(hash);
-
-            int confirmations = 0;
-
-            if (block != null)
-            {
-                var chain = Nexus.FindChainForBlock(block);
-                if (chain != null)
-                {
-                    confirmations = (int)(chain.LastBlock.Height - block.Height);
-                }
-            }
+            int confirmations = Nexus.GetConfirmationsOfHash(hash);
 
             result.AddField("confirmations", confirmations);
             result.AddField("hash", hash.ToString());

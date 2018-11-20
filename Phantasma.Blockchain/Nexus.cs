@@ -5,10 +5,12 @@ using System.Text;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Tests;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
@@ -395,6 +397,52 @@ namespace Phantasma.Blockchain
             var block = new Block(Chain.InitialHeight, RootChain.Address, owner.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
             return RootChain.AddBlock(block, transactions);
+        }
+
+        public int GetConfirmationsOfHash(Hash hash)
+        {
+            var block = FindBlockForHash(hash);
+            if (block != null)
+            {
+                return GetConfirmationsOfBlock(block);
+            }
+
+            var tx = FindTransactionByHash(hash);
+            if (tx != null)
+            {
+                return GetConfirmationsOfTransaction(tx);
+            }
+
+            return 0;
+        }
+
+        public int GetConfirmationsOfTransaction(Transaction transaction)
+        {
+            Throw.IfNull(transaction, nameof(transaction));
+
+            var block = FindBlockForTransaction(transaction);
+            if (block == null)
+            {
+                return 0;
+            }
+
+            return GetConfirmationsOfBlock(block);
+        }
+
+        public int GetConfirmationsOfBlock(Block block)
+        {
+            Throw.IfNull(block, nameof(block));
+
+            if (block != null)
+            {
+                var chain = FindChainForBlock(block);
+                if (chain != null)
+                {
+                    return (int)(chain.LastBlock.Height - block.Height);
+                }
+            }
+
+            return 0;
         }
         #endregion
     }
