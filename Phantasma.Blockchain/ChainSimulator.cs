@@ -362,9 +362,13 @@ namespace Phantasma.Tests
                             if (_pendingBlocks.Any())
                             {
                                 var pendingBlock = _pendingBlocks.First();
-                                Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
 
-                                GenerateSideChainSettlement(pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
+                                if (Nexus.GetConfirmationsOfHash(pendingBlock.hash) > 0)
+                                {
+                                    Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
+
+                                    GenerateSideChainSettlement(pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
+                                }
                             }
 
                             break;
