@@ -113,6 +113,7 @@ namespace Phantasma.API
                     tokenNode.AddNode(entryNode);
                     entryNode.AddField("symbol", token.Symbol);
                     entryNode.AddField("name", token.Name);
+                    entryNode.AddField("decimals", token.Decimals);
                     entryNode.AddNode(chainNode);
                 }
             }
