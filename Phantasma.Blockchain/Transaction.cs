@@ -22,6 +22,7 @@ namespace Phantasma.Blockchain
         public uint Nonce { get; }
 
         public string NexusName { get; }
+        public string ChainName { get; }
 
         public BigInteger GasPrice { get; }
         public BigInteger GasLimit { get; }
@@ -43,6 +44,7 @@ namespace Phantasma.Blockchain
         public static Transaction Unserialize(BinaryReader reader)
         {
             var nexusName = reader.ReadShortString();
+            var chainName = reader.ReadShortString();
             var script = reader.ReadByteArray();
             var gasPrice = reader.ReadBigInteger();
             var gasLimit = reader.ReadBigInteger();
@@ -66,12 +68,13 @@ namespace Phantasma.Blockchain
                 signatures = new Signature[0];
             }
 
-            return new Transaction(nexusName, script, gasPrice, gasLimit, new Timestamp(expiration), nonce, signatures);
+            return new Transaction(nexusName, chainName, script, gasPrice, gasLimit, new Timestamp(expiration), nonce, signatures);
         }
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
             writer.WriteShortString(this.NexusName);
+            writer.WriteShortString(this.ChainName);
             writer.WriteByteArray(this.Script);
             writer.WriteBigInteger(this.GasPrice);
             writer.WriteBigInteger(this.GasLimit);
@@ -127,13 +130,14 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Transaction(string nexusName, byte[] script, BigInteger gasPrice, BigInteger gasLimit, Timestamp expiration, uint nonce, IEnumerable<Signature> signatures = null)
+        public Transaction(string nexusName, string chainName, byte[] script, BigInteger gasPrice, BigInteger gasLimit, Timestamp expiration, uint nonce, IEnumerable<Signature> signatures = null)
         {
             Throw.IfNull(script, nameof(script));
             Throw.IfNull(gasPrice, nameof(gasPrice));
             Throw.IfNull(gasLimit, nameof(gasLimit));
 
             this.NexusName = nexusName;
+            this.ChainName = chainName;
             this.Script = script;
             this.GasPrice = gasPrice;
             this.GasLimit = gasLimit;
@@ -200,6 +204,11 @@ namespace Phantasma.Blockchain
 
         public bool IsValid(Chain chain)
         {
+            if (chain.Name != this.ChainName)
+            {
+                return false;
+            }
+
             if (chain.Nexus.Name != this.NexusName)
             {
                 return false;

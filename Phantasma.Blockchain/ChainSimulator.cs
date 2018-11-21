@@ -153,7 +153,7 @@ namespace Phantasma.Tests
                             submitted = true;
                             foreach (var tx in txs)
                             {
-                                submitted |= mempool.Submit(chain, tx);
+                                submitted |= mempool.Submit(tx);
                             }
                         }
                         else
@@ -202,7 +202,7 @@ namespace Phantasma.Tests
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
-            var tx = new Transaction(Nexus.Name, script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
+            var tx = new Transaction(Nexus.Name, chain.Name, script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
 
             if (source != null)
             {

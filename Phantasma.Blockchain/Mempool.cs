@@ -31,10 +31,12 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
         }
 
-        public bool Submit(Chain chain, Transaction tx, Func<Transaction, bool> validator = null)
+        public bool Submit(Transaction tx, Func<Transaction, bool> validator = null)
         {
-            Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(tx, nameof(tx));
+
+            var chain = Nexus.FindChainByName(tx.ChainName);
+            Throw.IfNull(chain, nameof(chain));
 
             if (_hashMap.ContainsKey(tx.Hash))
             {
