@@ -71,6 +71,7 @@ namespace Phantasma.Cryptography
                     this.BufferStartIndex += count;
                     return result;
                 }
+
                 ByteArrayUtils.CopyBytes(this.BufferBytes, this.BufferStartIndex, result, 0, bufferCount);
                 this.BufferStartIndex = this.BufferEndIndex = 0;
                 resultOffset += bufferCount;
@@ -79,7 +80,7 @@ namespace Phantasma.Cryptography
             while (resultOffset < count)
             {
                 int needCount = count - resultOffset;
-                this.BufferBytes = this.Func();
+                this.BufferBytes = this.Execute();
                 if (needCount > this.BlockSize) //we one (or more) additional passes
                 {
                     ByteArrayUtils.CopyBytes(this.BufferBytes, 0, result, resultOffset, this.BlockSize); 
@@ -93,11 +94,12 @@ namespace Phantasma.Cryptography
                     return result;
                 }
             }
+
             return result;
         }
 
 
-        private byte[] Func()
+        private byte[] Execute()
         {
             var hash1Input = new byte[this.Salt.Length + 4];
             ByteArrayUtils.CopyBytes(this.Salt, 0, hash1Input, 0, this.Salt.Length);
