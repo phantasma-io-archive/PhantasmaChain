@@ -192,7 +192,7 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode SendRawTransaction(string chainName, string txData)
+        public DataNode SendRawTransaction(string txData)
         {
             var result = DataNode.CreateObject();
 
@@ -201,9 +201,7 @@ namespace Phantasma.API
                 var bytes = Base16.Decode(txData);
                 var tx = Transaction.Unserialize(bytes);
 
-                var chain = Nexus.FindChainByName(chainName);
-
-                Mempool.Submit(chain, tx);
+                Mempool.Submit(tx);
 
                 result.AddField("hash", tx.Hash);
             }
