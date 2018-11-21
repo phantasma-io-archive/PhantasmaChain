@@ -7,6 +7,7 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
 using System;
+using System.Collections.Generic;
 
 namespace Phantasma.API
 {
@@ -104,6 +105,16 @@ namespace Phantasma.API
 
                         balanceNode.AddField("chain", chain.Name);
                         balanceNode.AddField("balance", balance);
+                        if (!token.IsFungible)
+                        {
+                            var idList = chain.GetTokenOwnerships(token).Get(address);
+                            if (idList != null && idList.Any())
+                            {
+                                var nodeId = DataNode.CreateArray("ids");
+                                idList.ForEach(p => nodeId.AddValue(p.ToString()));
+                                balanceNode.AddNode(nodeId);
+                            }
+                        }
                     }
                 }
 
@@ -114,6 +125,7 @@ namespace Phantasma.API
                     entryNode.AddField("symbol", token.Symbol);
                     entryNode.AddField("name", token.Name);
                     entryNode.AddField("decimals", token.Decimals);
+                    entryNode.AddField("fungible", token.IsFungible);
                     entryNode.AddNode(chainNode);
                 }
             }
