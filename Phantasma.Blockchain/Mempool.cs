@@ -23,6 +23,8 @@ namespace Phantasma.Blockchain
         public Nexus Nexus { get; private set; }
         public Address MinerAddress => _minerKeys.Address;
 
+        public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
+
         public Mempool(KeyPair minerKeys, Nexus nexus)
         {
             this._minerKeys = minerKeys;
@@ -35,6 +37,18 @@ namespace Phantasma.Blockchain
             Throw.IfNull(tx, nameof(tx));
 
             if (_hashMap.ContainsKey(tx.Hash))
+            {
+                return false;
+            }
+
+            var currentTime = Timestamp.Now;
+            if (tx.Expiration <= currentTime)
+            {
+                return false;
+            }
+
+            var diff = tx.Expiration - currentTime;
+            if (diff > MaxExpirationTimeDifferenceInSeconds)
             {
                 return false;
             }
@@ -109,6 +123,9 @@ namespace Phantasma.Blockchain
             {
                 return Enumerable.Empty<Transaction>();
             }
+
+            var currentTime = Timestamp.Now;
+            list.RemoveAll(entry => entry.transaction.Expiration < currentTime);
 
             var transactions = new List<Transaction>();
 
