@@ -363,7 +363,7 @@ namespace Phantasma.Tests
                             {
                                 var pendingBlock = _pendingBlocks.First();
 
-                                if (Nexus.GetConfirmationsOfHash(pendingBlock.hash) > 0)
+                                if (mempool == null || Nexus.GetConfirmationsOfHash(pendingBlock.hash) > 0)
                                 {
                                     Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
 
