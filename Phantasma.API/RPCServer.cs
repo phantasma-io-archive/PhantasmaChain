@@ -155,10 +155,8 @@ namespace Phantasma.API
                               }
                               try //todo validation
                               {
-                                  var chain = paramNode.GetNodeByIndex(0).ToString();
-                                  var signedTx = paramNode.GetNodeByIndex(1).ToString();
-                                  result = _API.SendRawTransaction(chain, signedTx);
-
+                                  var signedTx = paramNode.GetNodeByIndex(0).ToString();
+                                  result = _API.SendRawTransaction(signedTx);
                               }
                               catch
                               {

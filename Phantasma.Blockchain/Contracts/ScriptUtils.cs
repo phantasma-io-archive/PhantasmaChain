@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain
 
             byte temp_reg = 0;
 
-            for (int i=args.Length-1; i>=0; i--)
+            for (int i = args.Length - 1; i >= 0; i--)
             {
                 var arg = args[i];
 
@@ -89,9 +89,23 @@ namespace Phantasma.Blockchain
             return CallContractScript(chain, "MintTokens", token.Symbol, target, amount);
         }
 
-        public static byte[] TokenTransferScript(Address chain, Token token, Address from, Address to, BigInteger amount)
+        public static byte[] TokenTransferScript(Address chain, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(chain, "TransferTokens", token.Symbol, from, to, amount);
+            return CallContractScript(chain, "TransferTokens", from, to, tokenSymbol, amount);
+        }
+
+        public static byte[] NfTokenTransferScript(Address chain, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
+        {
+            return CallContractScript(chain, "TransferToken", from, to, tokenSymbol, tokenId);
+        }
+
+        public static byte[] CrossTokenTransferScript(Address chain, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
+        {
+            return CallContractScript(chain, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
+        }
+        public static byte[] CrossNfTokenTransferScript(Address chain, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
+        {
+            return CallContractScript(chain, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
 
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)

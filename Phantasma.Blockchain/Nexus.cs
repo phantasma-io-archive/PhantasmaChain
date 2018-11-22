@@ -332,10 +332,7 @@ namespace Phantasma.Blockchain
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
             var script = ScriptUtils.CallContractScript(chain.Address, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
-
-            //var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
-
-            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
             return tx;
@@ -344,7 +341,7 @@ namespace Phantasma.Blockchain
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(chain.Address, "MintTokens", owner.Address, symbol, amount);
-            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -354,7 +351,7 @@ namespace Phantasma.Blockchain
             var name = kind.ToString();
 
             var script = ScriptUtils.CallContractScript(chain.Address, "CreateChain", owner.Address, name, RootChain.Name);
-            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }

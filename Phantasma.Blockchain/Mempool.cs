@@ -23,18 +23,34 @@ namespace Phantasma.Blockchain
         public Nexus Nexus { get; private set; }
         public Address MinerAddress => _minerKeys.Address;
 
+        public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
+
         public Mempool(KeyPair minerKeys, Nexus nexus)
         {
             this._minerKeys = minerKeys;
             this.Nexus = nexus;
         }
 
-        public bool Submit(Chain chain, Transaction tx, Func<Transaction, bool> validator = null)
+        public bool Submit(Transaction tx, Func<Transaction, bool> validator = null)
         {
-            Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(tx, nameof(tx));
 
+            var chain = Nexus.FindChainByName(tx.ChainName);
+            Throw.IfNull(chain, nameof(chain));
+
             if (_hashMap.ContainsKey(tx.Hash))
+            {
+                return false;
+            }
+
+            var currentTime = Timestamp.Now;
+            if (tx.Expiration <= currentTime)
+            {
+                return false;
+            }
+
+            var diff = tx.Expiration - currentTime;
+            if (diff > MaxExpirationTimeDifferenceInSeconds)
             {
                 return false;
             }
@@ -109,6 +125,9 @@ namespace Phantasma.Blockchain
             {
                 return Enumerable.Empty<Transaction>();
             }
+
+            var currentTime = Timestamp.Now;
+            list.RemoveAll(entry => entry.transaction.Expiration < currentTime);
 
             var transactions = new List<Transaction>();
 
