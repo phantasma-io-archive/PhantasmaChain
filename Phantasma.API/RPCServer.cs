@@ -103,7 +103,7 @@ namespace Phantasma.API
                               break;
 
                           case "getchains":
-                              try 
+                              try
                               {
                                   result = _API.GetChains();
                               }
@@ -130,7 +130,16 @@ namespace Phantasma.API
                                   // ignore, it will be handled below
                               }
                               break;
-
+                          case "gettokens":
+                              try
+                              {
+                                  result = _API.GetTokens();
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
                           case "getconfirmations":
                               if (paramNode == null)
                               {

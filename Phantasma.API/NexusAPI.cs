@@ -125,7 +125,7 @@ namespace Phantasma.API
                     entryNode.AddField("symbol", token.Symbol);
                     entryNode.AddField("name", token.Name);
                     entryNode.AddField("decimals", token.Decimals);
-                    entryNode.AddField("fungible", token.IsFungible);
+                    entryNode.AddField("isFungible", token.IsFungible);
                     entryNode.AddNode(chainNode);
                 }
             }
@@ -241,6 +241,27 @@ namespace Phantasma.API
             var result = FillTransaction(tx);
             return result;
         }
+
+        public DataNode GetTokens()
+        {
+            var result = DataNode.CreateObject();
+            var node = DataNode.CreateArray("tokens");
+            foreach (var token in Nexus.Tokens)
+            {
+                var temp = DataNode.CreateObject();
+                temp.AddField("symbol", token.Symbol);
+                temp.AddField("name", token.Name);
+                temp.AddField("currentSupply", token.CurrentSupply);
+                temp.AddField("maxSupply", token.MaxSupply);
+                temp.AddField("decimals", token.Decimals);
+                temp.AddField("isFungible", token.IsFungible);
+                node.AddNode(temp);
+                //todo add flags
+            }
+            result.AddNode(node);
+            return result;
+        }
+
 
         /*
                public DataNode GetTokens()
