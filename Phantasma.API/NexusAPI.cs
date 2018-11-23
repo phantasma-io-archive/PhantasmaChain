@@ -133,6 +133,36 @@ namespace Phantasma.API
             return result;
         }
 
+        public DataNode GetBlockNumber(Address address)
+        {
+            var chain = Nexus.FindChainByAddress(address);
+            if (chain == null) return null;
+            return GetBlockNumber(chain);
+        }
+
+        public DataNode GetBlockNumber(string chainName)
+        {
+            var chain = Nexus.FindChainByName(chainName);
+            if (chain == null) return null;
+            return GetBlockNumber(chain);
+        }
+
+        private DataNode GetBlockNumber(Chain chain)
+        {
+            var result = DataNode.CreateObject();
+            result.AddField("chain", chain.Address.Text);
+            result.AddField("height", chain.BlockHeight);
+            return result;
+        }
+
+        public DataNode GetBlockTransactionCountByHash(Hash blockHash)
+        {
+            var result = DataNode.CreateObject();
+            var count = Nexus.FindBlockForHash(blockHash).TransactionHashes.Count();
+            result.AddValue(count);
+            return result;
+        }
+
         public DataNode GetBlockByHash(Hash hash)
         {
             foreach (var chain in Nexus.Chains)
@@ -150,6 +180,17 @@ namespace Phantasma.API
         public DataNode GetBlockByHeight(string chainName, uint height)
         {
             var chain = Nexus.FindChainByName(chainName);
+            return GetBlockByHeight(chain, height);
+        }
+
+        public DataNode GetBlockByHeight(Address chainAddress, uint height)
+        {
+            var chain = Nexus.FindChainByAddress(chainAddress);
+            return GetBlockByHeight(chain, height);
+        }
+
+        private DataNode GetBlockByHeight(Chain chain, uint height)
+        {
             var block = chain.FindBlockByHeight(height);
             if (block != null)
             {
@@ -157,6 +198,13 @@ namespace Phantasma.API
             }
 
             return null;
+        }
+
+        public DataNode GetTransactionByBlockHashAndIndex(Hash blockHash, int index)
+        {
+            var block = Nexus.FindBlockForHash(blockHash);
+            var txHash = block.TransactionHashes.ElementAt(index);
+            return FillTransaction(Nexus.FindTransactionByHash(txHash));
         }
 
         public DataNode GetAddressTransactions(Address address, int amountTx)

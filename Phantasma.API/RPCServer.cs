@@ -1,5 +1,4 @@
-﻿using System.Text;
-using LunarLabs.Parser;
+﻿using LunarLabs.Parser;
 using LunarLabs.Parser.JSON;
 using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
@@ -35,7 +34,7 @@ namespace Phantasma.API
 
             _site = new Site(_server, null);
 
-            _site.Post("/" + EndPoint, (request) =>
+            _site.Get("/" + EndPoint, (request) =>
               {
                   if (string.IsNullOrEmpty(request.postBody))
                   {
@@ -66,7 +65,7 @@ namespace Phantasma.API
 
                       switch (method)
                       {
-                          case "getaccount":
+                          case "getAccount":
                               if (paramNode == null)
                               {
                                   return GenerateRPCError("Invalid params", -32602);
@@ -84,7 +83,127 @@ namespace Phantasma.API
 
                               break;
 
-                          case "getaddresstransactions":
+                          #region BLOCKS
+
+                          case "getBlockNumber":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+
+                              try
+                              {
+                                  var chain = paramNode.GetNodeByIndex(0).ToString();
+                                  result = _API.GetBlockNumber(chain) ?? _API.GetBlockNumber(Address.FromText(chain));
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          case "getBlockTransactionCountByHash":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+
+                              try
+                              {
+                                  var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+                                  result = _API.GetBlockTransactionCountByHash(blockHash);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          case "getBlockByHash":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+
+                              try
+                              {
+                                  var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+                                  result = _API.GetBlockByHash(blockHash);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          case "getBlockByNumber":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+
+                              try
+                              {
+                                  var chain = paramNode.GetNodeByIndex(0).ToString();
+                                  var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
+                                  result = _API.GetBlockByHeight(chain, height) ?? _API.GetBlockByHeight(Address.FromText(chain), height);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          #endregion
+
+                          case "getChains":
+                              try
+                              {
+                                  result = _API.GetChains();
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+
+                              break;
+
+                          #region Transactions
+                          case "getTransactionByHash":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+
+                              try
+                              {
+                                  var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+                                  result = _API.GetTransaction(hash);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          case "getTransactionByBlockHashAndIndex":
+                              if (paramNode == null)
+                              {
+                                  return GenerateRPCError("Invalid params", -32602);
+                              }
+                              try
+                              {
+                                  var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+                                  int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
+                                  result = _API.GetTransactionByBlockHashAndIndex(blockHash, index);
+                              }
+                              catch
+                              {
+                                  // ignore, it will be handled below
+                              }
+                              break;
+
+                          case "getAddressTransactions":
                               if (paramNode == null)
                               {
                                   return GenerateRPCError("Invalid params", -32602);
@@ -102,35 +221,9 @@ namespace Phantasma.API
                               }
                               break;
 
-                          case "getchains":
-                              try
-                              {
-                                  result = _API.GetChains();
-                              }
-                              catch
-                              {
-                                  // ignore, it will be handled below
-                              }
+                          #endregion
 
-                              break;
-
-                          case "gettransaction":
-                              if (paramNode == null)
-                              {
-                                  return GenerateRPCError("Invalid params", -32602);
-                              }
-
-                              try
-                              {
-                                  var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-                                  result = _API.GetTransaction(hash);
-                              }
-                              catch
-                              {
-                                  // ignore, it will be handled below
-                              }
-                              break;
-                          case "gettokens":
+                          case "getTokens":
                               try
                               {
                                   result = _API.GetTokens();
@@ -140,7 +233,7 @@ namespace Phantasma.API
                                   // ignore, it will be handled below
                               }
                               break;
-                          case "getconfirmations":
+                          case "getConfirmations":
                               if (paramNode == null)
                               {
                                   return GenerateRPCError("Invalid params", -32602);
@@ -157,7 +250,7 @@ namespace Phantasma.API
                               }
                               break;
 
-                          case "sendrawtransaction":
+                          case "sendRawTransaction":
                               if (paramNode == null)
                               {
                                   return GenerateRPCError("Invalid params", -32602);
