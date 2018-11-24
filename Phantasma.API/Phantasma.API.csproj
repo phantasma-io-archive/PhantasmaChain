@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="LunarLabs.Parser" Version="1.2.4" />
-    <PackageReference Include="LunarLabs.Server" Version="1.2.10" />
+    <PackageReference Include="LunarLabs.Server" Version="1.2.12" />
   </ItemGroup>
 
   <ItemGroup>
