@@ -307,7 +307,7 @@ namespace Phantasma.API
 
         protected override bool Run()
         {
-            _server.Run(_site);
+            _server.Run();
             return true;
         }
     }
