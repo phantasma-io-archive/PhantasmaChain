@@ -297,6 +297,7 @@ namespace Phantasma.Blockchain.Contracts
                             symbol = data.symbol;
                             value = data.value;
                             targetAddress = evt.Address;
+                            // TODO what about multiple send events in the same tx, seems not supported yet?
                         }
                     }
                 }
