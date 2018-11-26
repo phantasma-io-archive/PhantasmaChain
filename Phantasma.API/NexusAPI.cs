@@ -272,6 +272,10 @@ namespace Phantasma.API
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
+                if (chain.ParentChain != null)
+                {
+                    single.AddField("parent", chain.ParentChain.Name);
+                }
                 arrayNode.AddNode(single);
             }
 
