@@ -435,7 +435,7 @@ namespace Phantasma.Blockchain
                 var chain = FindChainForBlock(block);
                 if (chain != null)
                 {
-                    return (int)(chain.LastBlock.Height - block.Height);
+                    return (int)(1 + (chain.LastBlock.Height - block.Height));
                 }
             }
 
