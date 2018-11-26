@@ -34,7 +34,7 @@ namespace Phantasma.API
 
             _site = new Site(_server, null);
 
-            _site.Get("/" + EndPoint, (request) =>
+            _site.Post("/" + EndPoint, (request) =>
               {
                   if (string.IsNullOrEmpty(request.postBody))
                   {
