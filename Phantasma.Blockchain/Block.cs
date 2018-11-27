@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain
         public Hash Hash { get; private set; }
         public Hash PreviousHash { get; private set; }
 
-        public byte[] Data { get; private set; }
+        public byte[] Payload { get; private set; }
 
         private List<Hash> _transactionHashes;
         public IEnumerable<Hash> TransactionHashes => _transactionHashes;
@@ -40,7 +40,7 @@ namespace Phantasma.Blockchain
             this.ChainAddress = chainAddress;
             this.MinerAddress = minerAddress;
             this.Timestamp = timestamp;
-            this.Data = data;
+            this.Payload = data;
 
             //this.Height = previous != null && previous.Chain == chain ? previous.Height + 1 : 0;
             //this.PreviousHash = previous != null ? previous.Hash : null;
@@ -136,7 +136,7 @@ namespace Phantasma.Blockchain
             writer.WriteHash(PreviousHash);
             writer.WriteAddress(MinerAddress);
             writer.WriteAddress(ChainAddress);
-            writer.WriteByteArray(Data);
+            writer.WriteByteArray(Payload);
 
             writer.Write((ushort)_transactionHashes.Count);
             foreach (var hash in _transactionHashes)

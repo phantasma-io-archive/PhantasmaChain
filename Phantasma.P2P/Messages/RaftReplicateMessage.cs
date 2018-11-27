@@ -17,7 +17,7 @@ namespace Phantasma.Network.P2P.Messages
 
         internal static RaftReplicateMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
-            var block = Block.Unserialize(nexus, reader);
+            var block = Block.Unserialize(reader);
             return new RaftReplicateMessage(nexus, address, block);
         }
     }

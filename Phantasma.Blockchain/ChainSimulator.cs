@@ -69,10 +69,7 @@ namespace Phantasma.Tests
 
             BeginBlock();
 
-            var trophy = Nexus.FindTokenBySymbol("TROPHY");
-            RandomSpreadNFC(trophy);
-
-            var nacho = Nexus.FindTokenBySymbol("NACHO");
+            var nacho = Nexus.FindTokenBySymbol("NACHO"); 
             RandomSpreadNFC(nacho);
 
             GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
@@ -120,7 +117,7 @@ namespace Phantasma.Tests
             Console.WriteLine($"Begin block #{step}");
         }
 
-        public bool EndBlock()
+        public bool EndBlock(Mempool mempool = null)
         {
             if (!blockOpen)
             {
@@ -148,7 +145,23 @@ namespace Phantasma.Tests
                         var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
 
                         var block = new Block(nextHeight, chain.Address, _owner.Address, _currentTime, hashes, prevHash);
-                        if (chain.AddBlock(block, txs))
+
+                        bool submitted;
+
+                        if (mempool != null)
+                        {
+                            submitted = true;
+                            foreach (var tx in txs)
+                            {
+                                submitted |= mempool.Submit(tx);
+                            }
+                        }
+                        else
+                        {
+                            submitted = chain.AddBlock(block, txs);
+                        }
+
+                        if (submitted)
                         {
                             _currentTime += TimeSpan.FromMinutes(45);
 
@@ -189,7 +202,7 @@ namespace Phantasma.Tests
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
-            var tx = new Transaction(Nexus.Name, script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
+            var tx = new Transaction(Nexus.Name, chain.Name, script, 0, 0, _currentTime + TimeSpan.FromDays(10), 0);
 
             if (source != null)
             {
@@ -303,7 +316,7 @@ namespace Phantasma.Tests
 
         private int step;
 
-        public void GenerateRandomBlock()
+        public void GenerateRandomBlock(Mempool mempool = null)
         {
             BeginBlock();
 
@@ -349,9 +362,13 @@ namespace Phantasma.Tests
                             if (_pendingBlocks.Any())
                             {
                                 var pendingBlock = _pendingBlocks.First();
-                                Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
 
-                                GenerateSideChainSettlement(pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
+                                if (mempool == null || Nexus.GetConfirmationsOfHash(pendingBlock.hash) > 0)
+                                {
+                                    Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
+
+                                    GenerateSideChainSettlement(pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
+                                }
                             }
 
                             break;
@@ -467,7 +484,7 @@ namespace Phantasma.Tests
                 }
             }
 
-            EndBlock();
+            EndBlock(mempool);
         }
     }
 

@@ -5,10 +5,12 @@ using System.Text;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Tests;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
@@ -90,10 +92,10 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockForTransaction(Transaction tx)
         {
-            return FindBlockForTransaction(tx.Hash);
+            return FindBlockForHash(tx.Hash);
         }
 
-        public Block FindBlockForTransaction(Hash hash)
+        public Block FindBlockForHash(Hash hash)
         {
             foreach (var chain in _chains.Values)
             {
@@ -330,10 +332,7 @@ namespace Phantasma.Blockchain
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
             var script = ScriptUtils.CallContractScript(chain.Address, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
-
-            //var script = ScriptUtils.TokenMintScript(nativeToken.Address, owner.Address, TokenContract.MaxSupply);
-
-            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
             return tx;
@@ -342,7 +341,7 @@ namespace Phantasma.Blockchain
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
             var script = ScriptUtils.CallContractScript(chain.Address, "MintTokens", owner.Address, symbol, amount);
-            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -352,7 +351,7 @@ namespace Phantasma.Blockchain
             var name = kind.ToString();
 
             var script = ScriptUtils.CallContractScript(chain.Address, "CreateChain", owner.Address, name, RootChain.Name);
-            var tx = new Transaction(this.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -362,9 +361,6 @@ namespace Phantasma.Blockchain
 
         public const string StableTokenSymbol = "ALMA";
         public const string StableTokenName = "Stable Coin";
-
-        public const string TrophyTokenSymbol = "TROPHY";
-        public const string TrophyTokenName = "Trophy";
 
         public const int NativeTokenDecimals = 8;
         public const int StableTokenDecimals = 8;
@@ -385,7 +381,6 @@ namespace Phantasma.Blockchain
             transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible));
             transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
             transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
-            transactions.Add(TokenCreateTx(RootChain, owner, TrophyTokenSymbol, TrophyTokenName, 0, 0, TokenFlags.None));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
             transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));
@@ -399,6 +394,52 @@ namespace Phantasma.Blockchain
             var block = new Block(Chain.InitialHeight, RootChain.Address, owner.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
             return RootChain.AddBlock(block, transactions);
+        }
+
+        public int GetConfirmationsOfHash(Hash hash)
+        {
+            var block = FindBlockForHash(hash);
+            if (block != null)
+            {
+                return GetConfirmationsOfBlock(block);
+            }
+
+            var tx = FindTransactionByHash(hash);
+            if (tx != null)
+            {
+                return GetConfirmationsOfTransaction(tx);
+            }
+
+            return 0;
+        }
+
+        public int GetConfirmationsOfTransaction(Transaction transaction)
+        {
+            Throw.IfNull(transaction, nameof(transaction));
+
+            var block = FindBlockForTransaction(transaction);
+            if (block == null)
+            {
+                return 0;
+            }
+
+            return GetConfirmationsOfBlock(block);
+        }
+
+        public int GetConfirmationsOfBlock(Block block)
+        {
+            Throw.IfNull(block, nameof(block));
+
+            if (block != null)
+            {
+                var chain = FindChainForBlock(block);
+                if (chain != null)
+                {
+                    return (int)(1 + (chain.LastBlock.Height - block.Height));
+                }
+            }
+
+            return 0;
         }
         #endregion
     }
