@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Phantasma.Core;
 
@@ -75,13 +75,12 @@ namespace Phantasma.Numerics
             InitFromArray(uintBytes);
         }
 
-        //TODO: CONVERT TO UINT INSTEAD OF BYTES
-        private void InitFromArray(uint[] bytes)
+        private void InitFromArray(uint[] digits)
         {
-            int n = bytes.Length;
+            int n = digits.Length;
             for (int i = n - 1; i >= 0; i--)
             {
-                if (bytes[i] == 0)
+                if (digits[i] == 0)
                 {
                     n--;
                 }
@@ -92,7 +91,7 @@ namespace Phantasma.Numerics
             }
 
             _data = new uint[n];
-            Array.Copy(bytes, _data, n);
+            Array.Copy(digits, _data, n);
         }
 
         public LargeInteger(string value, int radix)
@@ -231,41 +230,6 @@ namespace Phantasma.Numerics
             }
 
             return result;
-        }
-
-        // Left-shifts a byte array in place. Assumes little-endian. Throws on overflow.
-        private static void ShiftByteArrayLeft(byte[] array, byte newVal = 0)
-        {
-            if (array == null || array.Length == 0)
-                throw new ArgumentNullException("array");
-
-            // move left-to-right, left-shifting each byte
-            for (int i = array.Length - 1; i >= 1; --i)
-            {
-                array[i] = array[i - 1];
-            }
-
-            array[0] = newVal;
-        }
-
-        private void ShiftAndInsertUint(uint newVal)
-        {
-            _sign = 1;
-
-            if (_data.Length == 1 && _data[0] == 0)
-            {
-                _data[0] = newVal;
-                return;
-            }
-
-            uint[] newData = new uint[_data.Length + 1];
-
-            for (int i = newData.Length - 1; i > 0; i--)
-                newData[i] = _data[i - 1];
-
-            newData[0] = newVal;
-
-            _data = newData;
         }
 
         private static uint[] Add(uint[] X, uint[] Y)
@@ -445,10 +409,6 @@ namespace Phantasma.Numerics
         {
             LargeInteger quot, rem;
             DivideAndModulus(a, b, out quot, out rem);
-
-            if (rem < 0)    //using the convention that 0 <= rem <= denominator. So if rem < 0, add the denominator to it
-                rem += b;
-
             return rem;
         }
 
@@ -473,10 +433,14 @@ namespace Phantasma.Numerics
             else
                 MultiDigitDivMod(a, b, out quot, out rem);
 
+            if (rem < 0)    //using the convention that 0 <= rem <= denominator. So if rem < 0, add the denominator to it
+                rem += b;
+
             quot._sign = a._sign * b._sign;
 
         }
 
+        //do not access this function directly under any circumstances, always go through DivideAndModulus
         private static void SingleDigitDivMod(LargeInteger numerator, LargeInteger denominator, out LargeInteger quotient, out LargeInteger remainder)
         {
             uint[] tmpQuotArray = new uint[numerator.dataLength - denominator.dataLength + 1];
@@ -518,6 +482,7 @@ namespace Phantasma.Numerics
             remainder = new LargeInteger(remArray);
         }
 
+        //do not access this function directly under any circumstances, always go through DivideAndModulus
         private static void MultiDigitDivMod(LargeInteger numerator, LargeInteger denominator, out LargeInteger quot, out LargeInteger rem)
         {
             uint[] quotArray = new uint[numerator.dataLength - denominator.dataLength + 1];
@@ -603,117 +568,98 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator >>(LargeInteger n, int bits)
         {
-            var mult = Pow(2, bits);
-            return n / mult;
+            ShiftRight(ref n._data, bits);
+            return n;
         }
 
-        private static void ShiftRight(ref uint[] buffer, int shiftVal)
+        private static void ShiftRight(ref uint[] buffer, int shiftBitCount)
         {
-            int bitCount = 32;
-            int shiftCount = 0;
             int length = buffer.Length;
 
-            for (int i = shiftVal; i > 0; i -= bitCount)
-            {
-                if (i < bitCount)
-                {
-                    bitCount = i;
-                    shiftCount = 32 - bitCount;
-                }
+            int shrinkage = shiftBitCount / 32;  //amount of digits we need to cut from the buffer
 
-                ulong carry = 0uL;
-                for (int j = length - 1; j >= 0; j--)
-                {
-                    ulong tmp = (ulong)buffer[j] >> bitCount;
-                    tmp |= carry;
-                    carry = (((ulong)buffer[j] << shiftCount) & uint.MaxValue);
-                    buffer[j] = (uint)tmp;
-                }
+            int quickShiftAmount = shiftBitCount % 32;
+
+
+            uint msd = buffer[length - 1] >> quickShiftAmount;  //shifts the most significant digit
+            int extraShrinkage = (msd == 0) ? 1 : 0;    //if that shift goes to 0, it means we need to cut
+                                                        //an extra position of the array to account for an MSD == 0
+
+            int newLength = buffer.Length - shrinkage - extraShrinkage;
+
+            if(newLength <= 0)
+            {
+                buffer = new uint[1];
+                return;
             }
+
+            uint[] newBuffer = new uint[newLength];
+
+            quickShiftAmount = 32 - quickShiftAmount;   //we'll use this new shift amount to pre-left shift the applicable digits
+                                                        //so we have easy access to the potential underflow of any given digit's right shift operation
+
+            if (extraShrinkage == 1)
+                newBuffer[newLength - 1] = buffer[length - 1] << quickShiftAmount;
+
+            for (int i = length - (1 + extraShrinkage) , j = newLength - 1; j >= 1; i--, j--)
+            {
+                ulong upshiftedVal = (ulong) buffer[i] << quickShiftAmount;
+
+                uint shiftMsd = (uint)(upshiftedVal >> 32);
+                uint shiftLsd = (uint) upshiftedVal;
+
+                newBuffer[j] |= shiftMsd;
+                newBuffer[j - 1] |= shiftLsd;
+            }
+
+            newBuffer[0] |= buffer[shrinkage] >> shiftBitCount;
+
+            buffer = newBuffer;
         }
 
 
         public static LargeInteger operator <<(LargeInteger n, int bits)
         {
-            /*
-            var mult = Pow(2, bits);
-            return n * mult;
-            */
             ShiftLeft(ref n._data, bits);
-
             return n;
         }
 
-        private static void ShiftLeft(ref uint[] buffer, int shiftVal)
+        private static void ShiftLeft(ref uint[] buffer, int shiftBitCount)
         {
-            int bitCount = 32;
             int length = buffer.Length;
 
-            int amountOfZeros = shiftVal / 32;  //amount of least significant digit zero padding we need
-            int quickShiftAmount = shiftVal % 32;
+            int amountOfZeros = shiftBitCount / 32;  //amount of least significant digit zero padding we need
+            int quickShiftAmount = shiftBitCount % 32;
 
             long msd = ((long)buffer[length - 1]) << quickShiftAmount;  //shifts the most significant digit
-            bool needsExtra = msd != (uint) msd;    //if it goes above the uint range, we need to add
-                                                    //a new position for the new MSD
 
-            int newLength = buffer.Length + amountOfZeros + (needsExtra ? 1 : 0);
+            int extraDigit = (msd != (uint) msd) ? 1 : 0;  //if it goes above the uint range, we need to add
+                                                            //a new position for the new MSD
+
+            int newLength = buffer.Length + amountOfZeros + extraDigit;
             uint[] newBuffer = new uint[newLength];
-
-            uint lowerShifted = 0, upperShifted = 0;
 
             for (int i = 0, j = amountOfZeros; i < length; i++, j++)
             {
                 ulong shiftedVal = ((ulong)buffer[i]) << quickShiftAmount;
                 
-                lowerShifted = (uint) shiftedVal;
-                upperShifted = (uint)(shiftedVal >> 32);
+                var shiftLsd = (uint) shiftedVal;
+                var shiftMsd = (uint)(shiftedVal >> 32);
 
-                newBuffer[j] |= lowerShifted;
+                newBuffer[j] |= shiftLsd;
 
-                if(upperShifted > 0)
-                    newBuffer[j + 1] |= upperShifted;
-
-                var debugString = newBuffer[j+1].ToString("X8") + newBuffer[j].ToString("X8");
+                if(shiftMsd > 0)
+                    newBuffer[j + 1] |= shiftMsd;
             }
 
             buffer = newBuffer;
-
-            /*
-            Array.Copy(buffer, newBuffer, length);
-
-            for (int i = shiftVal; i > 0; i -= bitCount)
-            {
-                if (i < bitCount)
-                    bitCount = i;
-
-                ulong num4 = 0uL;
-
-                for (int j = 0; j < length; j++)
-                {
-                    ulong num5 = (ulong)newBuffer[j] << bitCount;
-                    num5 |= num4;
-                    newBuffer[j] = (uint)(num5 & uint.MaxValue);
-                    num4 = num5 >> 32;
-                }
-
-                if (num4 != 0 && length + 1 <= newBuffer.Length)
-                {
-                    newBuffer[length] = (uint)num4;
-                    length++;
-                }
-            }
-
-            buffer = newBuffer;
-            */
         }
 
-        // TODO optimize me
         public static LargeInteger operator ++(LargeInteger n)
         {
             return n + 1;
         }
 
-        // TODO optimize me
         public static LargeInteger operator --(LargeInteger n)
         {
             return n - 1;
@@ -721,7 +667,8 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator -(LargeInteger n)
         {
-            return new LargeInteger(n._data, -n._sign);
+            n._sign = -n._sign;
+            return n;
         }
 
         public static bool operator ==(LargeInteger a, LargeInteger b)
@@ -806,7 +753,7 @@ namespace Phantasma.Numerics
             {
                 uint A = i < a._data.Length ? a._data[i] : 0;
                 uint B = i < b._data.Length ? b._data[i] : 0;
-                temp[i] = (byte)(A ^ B);
+                temp[i] = (A ^ B);
             }
 
             return new LargeInteger(temp);
@@ -822,7 +769,7 @@ namespace Phantasma.Numerics
             {
                 uint A = i < a._data.Length ? a._data[i] : 0;
                 uint B = i < b._data.Length ? b._data[i] : 0;
-                temp[i] = (byte)(A | B);
+                temp[i] = A | B;
             }
 
             return new LargeInteger(temp);
@@ -838,7 +785,7 @@ namespace Phantasma.Numerics
             {
                 uint A = i < a._data.Length ? a._data[i] : 0;
                 uint B = i < b._data.Length ? b._data[i] : 0;
-                temp[i] = (byte)(A & B);
+                temp[i] = A & B;
             }
 
             return new LargeInteger(temp);
@@ -914,10 +861,9 @@ namespace Phantasma.Numerics
             }
         }
 
-        // TODO check if correct
         public int GetBitLength()
         {
-            return _data.Length * 8;
+            return _data.Length * _Base;
         }
 
         public uint[] ToUintArray()
