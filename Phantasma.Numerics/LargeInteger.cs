@@ -1,7 +1,6 @@
-﻿using Phantasma.Core;
-using System;
+﻿using System;
 using System.Linq;
-using System.Text;
+using Phantasma.Core;
 
 /*
  * Implementation of LargeInteger class, written for Phantasma project
@@ -26,15 +25,15 @@ namespace Phantasma.Numerics
 
         public LargeInteger(LargeInteger other)
         {
-            this._sign = other._sign;
-            this._data = new uint[other._data.Length];
-            Array.Copy(other._data, this._data, this._data.Length);
+            _sign = other._sign;
+            _data = new uint[other._data.Length];
+            Array.Copy(other._data, _data, _data.Length);
         }
 
         public LargeInteger(uint[] bytes, int sign = 1)
         {
-            this._sign = sign;
-            this._data = null;
+            _sign = sign;
+            _data = null;
 
             InitFromArray(bytes);
         }
@@ -51,8 +50,8 @@ namespace Phantasma.Numerics
         {
             if (val == 0)
             {
-                this._sign = 0;
-                this._data = new uint[1] { 0 };
+                _sign = 0;
+                _data = new uint[1] { 0 };
                 return;
             }
 
@@ -105,8 +104,8 @@ namespace Phantasma.Numerics
 
             if (value == "0")
             {
-                this._sign = 0;
-                this._data = new uint[1] { 0 };
+                _sign = 0;
+                _data = new uint[1] { 0 };
                 return;
             }
 
@@ -210,7 +209,7 @@ namespace Phantasma.Numerics
                     if (largeInteger3._data.Length == 0)
                         text2 = "0" + text2;
                     else
-                        text2 = ((largeInteger3._data[0] >= 10) ? (text[(int)(largeInteger3._data[0] - 10)].ToString() + text2) : (largeInteger3._data[0] + text2));
+                        text2 = ((largeInteger3._data[0] >= 10) ? (text[(int)(largeInteger3._data[0] - 10)] + text2) : (largeInteger3._data[0] + text2));
                     largeInteger = largeInteger2;
                 }
                 if (_sign < 1 && text != "0")
@@ -277,8 +276,8 @@ namespace Phantasma.Numerics
             uint overflow = 0;
             for (int i = 0; i < longest; i++)
             {
-                uint x = i < X.Length ? X[i] : (uint)0;
-                uint y = i < Y.Length ? Y[i] : (uint)0;
+                uint x = i < X.Length ? X[i] : 0;
+                uint y = i < Y.Length ? Y[i] : 0;
                 ulong sum = (ulong)overflow + x + y;
 
                 r[i] = (uint)sum;
@@ -294,64 +293,18 @@ namespace Phantasma.Numerics
             var longest = X.Length > Y.Length ? X.Length : Y.Length;
             var r = new uint[longest];
 
-            long num = 0L, num2;
-
-            long x, y;
+            long carry = 0;
 
             for (int i = 0; i < r.Length; i++)
             {
-                x = i < X.Length ? X[i] : 0;
-                y = i < Y.Length ? Y[i] : 0;
-                num2 = x - y - num;
-                r[i] = (uint)(num2 & uint.MaxValue);
-                num = ((num2 >= 0) ? 0 : 1);
-            }
-
-            //int num3 = maxLength - 1;
-            //Throw.If(((int)X[num3] & -2147483648) != ((int)Y[num3] & -2147483648) && ((int)r[num3] & -2147483648) != ((int)X[num3] & -2147483648), "overflow in subtraction");
-
-            return r;
-
-            /*
-            uint borrow = 0;
-            for (int i = 0; i < longest; i++)
-            {
-                uint x = i < X.Length ? X[i] : (uint)0;
-                uint y = i < Y.Length ? Y[i] : (uint)0;
-
-                //check if borrowing is necessary
-                if (x < y)
-                {
-                    int j = i + 1;
-
-                    //check what is the first non zero column to the left of the current one
-                    while (j < X.Length && X[j] == 0)
-                        j++;
-
-                    if(j == X.Length)
-                        throw new Exception("This subtraction will lead to a negative number. Why do you do this to me senpai");
-
-                    X[j]--; //borrow from the first non zero
-
-                    //now go back, merrily distributing the borrow along the way
-                    j--;
-                    while (j != i)
-                    {
-                        X[j] = _MaxVal; //remember that this code is reached only if X[j] is 0
-                        j--;
-                    }
-
-                    borrow = _MaxVal + 1;
-                }
-
-                uint sum = (borrow + x) - y;
-                borrow = 0;
-
-                r[i] = sum;
+                long x = i < X.Length ? X[i] : 0;
+                long y = i < Y.Length ? Y[i] : 0;
+                var tmpSub = x - y - carry;
+                r[i] = (uint)(tmpSub & uint.MaxValue);
+                carry = ((tmpSub >= 0) ? 0 : 1);
             }
 
             return r;
-            */
         }
 
         private static uint[] Multiply(uint[] X, uint[] Y)
@@ -360,60 +313,23 @@ namespace Phantasma.Numerics
 
             for (int i = 0; i < X.Length; i++)
             {
-                if (X[i] != 0)
+                if (X[i] == 0)
+                    continue;
+
+                ulong carry = 0uL;
+                int k = i;
+
+                for (int j = 0; j < Y.Length; j++, k++)
                 {
-                    ulong num2 = 0uL;
-                    int num3 = 0;
-                    int num4 = i;
-                    while (num3 < Y.Length)
-                    {
-                        ulong num5 = (ulong)((long)X[i] * (long)Y[num3] + output[num4] + (long)num2);
-                        output[num4] = (uint)(num5 & uint.MaxValue);
-                        num2 = num5 >> 32;
-                        num3++;
-                        num4++;
-                    }
-                    if (num2 != 0)
-                    {
-                        output[i + Y.Length] = (uint)num2;
-                    }
+                    ulong tmp = (ulong)(X[i] * (long)Y[j] + output[k] + (long)carry);
+                    output[k] = (uint) (tmp);
+                    carry = tmp >> 32;
                 }
+
+                output[i + Y.Length] = (uint)carry;
             }
 
             return output;
-
-            /*
-            var r = new uint[X.Length + Y.Length + 1];
-
-            long sum = 0;
-            uint carryOver = 0;
-            
-
-            for (int j = 0; j < Y.Length; j++)
-            {
-                for (int i = 0; i < X.Length; i++)
-                {
-                    sum = r[i+j] + ((long)X[i] * Y[j]);
-
-                    r[i + j] = (uint) sum;
-                    carryOver = (uint) (sum >> _Base);
-
-                    int z = 1;
-                    while (carryOver > 0)
-                    {
-                        sum = r[i + j + z] + carryOver;
-
-                        r[i + j + z] = (uint) sum;
-                        carryOver = (uint) (sum >> _Base);
-
-                        z++;
-                    }
-                    
-                }
-            }
-
-            return r;
-            */
         }
 
         public static LargeInteger operator +(LargeInteger a, LargeInteger b)
@@ -540,8 +456,8 @@ namespace Phantasma.Numerics
         {
             if (b == 0)
             {
-                quot = LargeInteger.Zero;
-                rem = LargeInteger.Zero;
+                quot = Zero;
+                rem = Zero;
                 return;
             }
 
@@ -563,43 +479,39 @@ namespace Phantasma.Numerics
 
         private static void SingleDigitDivMod(LargeInteger numerator, LargeInteger denominator, out LargeInteger quotient, out LargeInteger remainder)
         {
-            uint[] array = new uint[numerator.dataLength - denominator.dataLength + 1];
+            uint[] tmpQuotArray = new uint[numerator.dataLength - denominator.dataLength + 1];
             uint[] remArray = new uint[numerator.dataLength];
-            int num = 0;
+            int quotIter = 0;   //quotient array iterator index
             for (int i = 0; i < numerator.dataLength; i++)
             {
                 remArray[i] = numerator._data[i];
             }
 
-            ulong num2 = denominator._data[0];
-            int num3 = remArray.Length - 1;
-            ulong num4 = remArray[num3];
+            ulong quickDen = denominator._data[0];  //quick denominator
+            int remIter = remArray.Length - 1;  //remainder array iterator index
+            ulong tmpRem = remArray[remIter];   //temporary remainder digit
 
-            if (num4 >= num2)
+            if (tmpRem >= quickDen)
             {
-                ulong num5 = num4 / num2;
-                array[num++] = (uint)num5;
-                remArray[num3] = (uint)(num4 % num2);
+                ulong tmpQuot = tmpRem / quickDen;
+                tmpQuotArray[quotIter++] = (uint)tmpQuot;
+                remArray[remIter] = (uint)(tmpRem % quickDen);
             }
 
-            num3--;
-            while (num3 >= 0)
+            remIter--;
+            while (remIter >= 0)
             {
-                num4 = ((ulong)remArray[num3 + 1] << 32) + remArray[num3];
-                ulong num7 = num4 / num2;
-                array[num++] = (uint)num7;
-                remArray[num3 + 1] = 0u;
-                remArray[num3--] = (uint)(num4 % num2);
+                tmpRem = ((ulong)remArray[remIter + 1] << 32) + remArray[remIter];
+                ulong tmpQuot = tmpRem / quickDen;
+                tmpQuotArray[quotIter++] = (uint)tmpQuot;
+                remArray[remIter + 1] = 0u;
+                remArray[remIter--] = (uint)(tmpRem % quickDen);
             }
 
-            uint[] quotArray = new uint[num];
-            int j = 0;
-            int num10 = quotArray.Length - 1;
-            while (num10 >= 0)
+            uint[] quotArray = new uint[quotIter];
+            for(int i = quotArray.Length - 1, j = 0; i >= 0; i--, j++)
             {
-                quotArray[j] = array[num10];
-                num10--;
-                j++;
+                quotArray[j] = tmpQuotArray[i];
             }
 
             quotient = new LargeInteger(quotArray);
@@ -609,84 +521,84 @@ namespace Phantasma.Numerics
         private static void MultiDigitDivMod(LargeInteger numerator, LargeInteger denominator, out LargeInteger quot, out LargeInteger rem)
         {
             uint[] quotArray = new uint[numerator.dataLength - denominator.dataLength + 1];
-            uint[] numArrayTmp = new uint[numerator.dataLength + 1];
-            uint num2 = 2147483648u;
-            uint num3 = denominator._data[denominator.dataLength - 1];
-            int num4 = 0;
-            int num5 = 0;
+            uint[] remArray = new uint[numerator.dataLength + 1];
 
-            while (num2 != 0 && (num3 & num2) == 0)
+            uint tmp = 2147483648u;
+            uint tmp2 = denominator._data[denominator.dataLength - 1];    //denominator most significant digit
+            int shiftCount = 0;
+
+            while (tmp != 0 && (tmp2 & tmp) == 0)
             {
-                num4++;
-                num2 >>= 1;
+                shiftCount++;
+                tmp >>= 1;
             }
             for (int i = 0; i < numerator.dataLength; i++)
             {
-                numArrayTmp[i] = numerator._data[i];
+                remArray[i] = numerator._data[i];
             }
 
-            ShiftLeft(numArrayTmp, num4);
-            denominator <<= num4;
+            ShiftLeft(ref remArray, shiftCount);
+            denominator <<= shiftCount;
 
             int j = numerator.dataLength - denominator.dataLength + 1;
-            int num7 = numerator.dataLength;
-            ulong num8 = denominator._data[denominator.dataLength - 1];
-            ulong num9 = denominator._data[denominator.dataLength - 2];
-            int num10 = denominator.dataLength + 1;
+            int remIter = numerator.dataLength; //yes, numerator, not remArray
+            ulong denMsd = denominator._data[denominator.dataLength - 1];       //denominator most significant digit
+            ulong denSubMsd = denominator._data[denominator.dataLength - 2];    //denominator second most significant digit
+            int denSize = denominator.dataLength + 1;
 
-            uint[] array3 = new uint[num10];
+            uint[] tmpRemSubArray = new uint[denSize];
 
             while (j > 0)
             {
-                ulong num11 = ((ulong)numArrayTmp[num7] << 32) + numArrayTmp[num7 - 1];
-                ulong num12 = num11 / num8;
-                ulong num13 = num11 % num8;
+                ulong quickDenominator = ((ulong)remArray[remIter] << 32) + remArray[remIter - 1];
+                ulong tmpQuot = quickDenominator / denMsd;
+                ulong tmpRem = quickDenominator % denMsd;
                 bool flag = false;
                 while (!flag)
                 {
                     flag = true;
-                    if (num12 == 4294967296L || num12 * num9 > (num13 << 32) + numArrayTmp[num7 - 2])
+                    if (tmpQuot == 4294967296L || tmpQuot * denSubMsd > (tmpRem << 32) + remArray[remIter - 2])
                     {
-                        num12--;
-                        num13 += num8;
-                        if (num13 < 4294967296L)
+                        tmpQuot--;
+                        tmpRem += denMsd;
+                        if (tmpRem < 4294967296L)
                         {
                             flag = false;
                         }
                     }
                 }
 
-                for (int k = 0; k < num10; k++)
+                for (int k = 0; k < denSize; k++)
                 {
-                    array3[(array3.Length - 1) - k] = numArrayTmp[num7 - k];
+                    tmpRemSubArray[(tmpRemSubArray.Length - 1) - k] = remArray[remIter - k];
                 }
 
-                var bigInteger = new LargeInteger(array3);
-                LargeInteger bigInteger2 = denominator * (long)num12;
-                while (bigInteger2 > bigInteger)
+                var tmpRemBigInt = new LargeInteger(tmpRemSubArray);
+                LargeInteger estimNumBigInt = denominator * (long)tmpQuot;  //current numerator estimate
+                while (estimNumBigInt > tmpRemBigInt)
                 {
-                    num12--;
-                    bigInteger2 -= denominator;
+                    tmpQuot--;
+                    estimNumBigInt -= denominator;
                 }
-                LargeInteger bigInteger3 = bigInteger - bigInteger2;
-                for (int k = 0; k < num10; k++)
+                LargeInteger estimRemBigInt = tmpRemBigInt - estimNumBigInt;    //current remainder estimate
+                for (int k = 0; k < denSize; k++)
                 {
-                    uint tmp = denominator.dataLength - k < bigInteger3._data.Length
-                        ? bigInteger3._data[denominator.dataLength - k]
+                    tmp = denominator.dataLength - k < estimRemBigInt._data.Length
+                        ? estimRemBigInt._data[denominator.dataLength - k]
                         : 0;
-                    numArrayTmp[num7 - k] = tmp;
+                    remArray[remIter - k] = tmp;
                 }
 
-                num7--;
+                remIter--;
                 j--;
-                quotArray[j] = (uint)num12;
+                quotArray[j] = (uint)tmpQuot;
             }
 
             quot = new LargeInteger(quotArray);
 
-            ShiftRight(numArrayTmp, num4);
+            ShiftRight(ref remArray, shiftCount);
 
-            rem = new LargeInteger(numArrayTmp);
+            rem = new LargeInteger(remArray);
         }
 
         public static LargeInteger operator >>(LargeInteger n, int bits)
@@ -695,85 +607,104 @@ namespace Phantasma.Numerics
             return n / mult;
         }
 
-        private static void ShiftRight(uint[] buffer, int shiftVal)
+        private static void ShiftRight(ref uint[] buffer, int shiftVal)
         {
-            int num = 32;
-            int num2 = 0;
-            int num3 = buffer.Length;
-            while (num3 > 1 && buffer[num3 - 1] == 0)
-            {
-                num3--;
-            }
+            int bitCount = 32;
+            int shiftCount = 0;
+            int length = buffer.Length;
 
-            for (int num4 = shiftVal; num4 > 0; num4 -= num)
+            for (int i = shiftVal; i > 0; i -= bitCount)
             {
-                if (num4 < num)
+                if (i < bitCount)
                 {
-                    num = num4;
-                    num2 = 32 - num;
+                    bitCount = i;
+                    shiftCount = 32 - bitCount;
                 }
 
-                ulong num5 = 0uL;
-                for (int num6 = num3 - 1; num6 >= 0; num6--)
+                ulong carry = 0uL;
+                for (int j = length - 1; j >= 0; j--)
                 {
-                    ulong num7 = (ulong)buffer[num6] >> num;
-                    num7 |= num5;
-                    num5 = (((ulong)buffer[num6] << num2) & uint.MaxValue);
-                    buffer[num6] = (uint)num7;
+                    ulong tmp = (ulong)buffer[j] >> bitCount;
+                    tmp |= carry;
+                    carry = (((ulong)buffer[j] << shiftCount) & uint.MaxValue);
+                    buffer[j] = (uint)tmp;
                 }
-            }
-
-            while (num3 > 1 && buffer[num3 - 1] == 0)
-            {
-                num3--;
             }
         }
 
 
         public static LargeInteger operator <<(LargeInteger n, int bits)
         {
-
+            /*
             var mult = Pow(2, bits);
             return n * mult;
-            /*
-            var result = new LargeInteger(n);
-            ShiftLeft(result._data, bits);
-            return result;
             */
+            ShiftLeft(ref n._data, bits);
+
+            return n;
         }
 
-        private static void ShiftLeft(uint[] buffer, int shiftVal)
+        private static void ShiftLeft(ref uint[] buffer, int shiftVal)
         {
-            int num = 32;
-            int num2 = buffer.Length;
-            while (num2 > 1 && buffer[num2 - 1] == 0)
+            int bitCount = 32;
+            int length = buffer.Length;
+
+            int amountOfZeros = shiftVal / 32;  //amount of least significant digit zero padding we need
+            int quickShiftAmount = shiftVal % 32;
+
+            long msd = ((long)buffer[length - 1]) << quickShiftAmount;  //shifts the most significant digit
+            bool needsExtra = msd != (uint) msd;    //if it goes above the uint range, we need to add
+                                                    //a new position for the new MSD
+
+            int newLength = buffer.Length + amountOfZeros + (needsExtra ? 1 : 0);
+            uint[] newBuffer = new uint[newLength];
+
+            uint lowerShifted = 0, upperShifted = 0;
+
+            for (int i = 0, j = amountOfZeros; i < length; i++, j++)
             {
-                num2--;
+                ulong shiftedVal = ((ulong)buffer[i]) << quickShiftAmount;
+                
+                lowerShifted = (uint) shiftedVal;
+                upperShifted = (uint)(shiftedVal >> 32);
+
+                newBuffer[j] |= lowerShifted;
+
+                if(upperShifted > 0)
+                    newBuffer[j + 1] |= upperShifted;
+
+                var debugString = newBuffer[j+1].ToString("X8") + newBuffer[j].ToString("X8");
             }
 
-            for (int num3 = shiftVal; num3 > 0; num3 -= num)
+            buffer = newBuffer;
+
+            /*
+            Array.Copy(buffer, newBuffer, length);
+
+            for (int i = shiftVal; i > 0; i -= bitCount)
             {
-                if (num3 < num)
-                {
-                    num = num3;
-                }
+                if (i < bitCount)
+                    bitCount = i;
 
                 ulong num4 = 0uL;
 
-                for (int i = 0; i < num2; i++)
+                for (int j = 0; j < length; j++)
                 {
-                    ulong num5 = (ulong)buffer[i] << num;
+                    ulong num5 = (ulong)newBuffer[j] << bitCount;
                     num5 |= num4;
-                    buffer[i] = (uint)(num5 & uint.MaxValue);
+                    newBuffer[j] = (uint)(num5 & uint.MaxValue);
                     num4 = num5 >> 32;
                 }
 
-                if (num4 != 0 && num2 + 1 <= buffer.Length)
+                if (num4 != 0 && length + 1 <= newBuffer.Length)
                 {
-                    buffer[num2] = (uint)num4;
-                    num2++;
+                    newBuffer[length] = (uint)num4;
+                    length++;
                 }
             }
+
+            buffer = newBuffer;
+            */
         }
 
         // TODO optimize me
@@ -809,7 +740,7 @@ namespace Phantasma.Numerics
             {
                 return op;
             }
-            else
+
             if (a._sign > b._sign)
             {
                 return !op;
@@ -819,7 +750,7 @@ namespace Phantasma.Numerics
             {
                 return op;
             }
-            else
+
             if (a._data.Length > b._data.Length)
             {
                 return !op;
@@ -835,7 +766,7 @@ namespace Phantasma.Numerics
                 {
                     return op;
                 }
-                else
+
                 if (x > y)
                 {
                     return !op;
@@ -873,8 +804,8 @@ namespace Phantasma.Numerics
 
             for (int i = 0; i < len; i++)
             {
-                uint A = i < a._data.Length ? a._data[i] : (uint)0;
-                uint B = i < b._data.Length ? b._data[i] : (uint)0;
+                uint A = i < a._data.Length ? a._data[i] : 0;
+                uint B = i < b._data.Length ? b._data[i] : 0;
                 temp[i] = (byte)(A ^ B);
             }
 
@@ -889,8 +820,8 @@ namespace Phantasma.Numerics
 
             for (int i = 0; i < len; i++)
             {
-                uint A = i < a._data.Length ? a._data[i] : (uint)0;
-                uint B = i < b._data.Length ? b._data[i] : (uint)0;
+                uint A = i < a._data.Length ? a._data[i] : 0;
+                uint B = i < b._data.Length ? b._data[i] : 0;
                 temp[i] = (byte)(A | B);
             }
 
@@ -905,8 +836,8 @@ namespace Phantasma.Numerics
 
             for (int i = 0; i < len; i++)
             {
-                uint A = i < a._data.Length ? a._data[i] : (uint)0;
-                uint B = i < b._data.Length ? b._data[i] : (uint)0;
+                uint A = i < a._data.Length ? a._data[i] : 0;
+                uint B = i < b._data.Length ? b._data[i] : 0;
                 temp[i] = (byte)(A & B);
             }
 
@@ -915,7 +846,7 @@ namespace Phantasma.Numerics
 
         public bool Equals(LargeInteger other)
         {
-            if (other._data.Length != this._data.Length)
+            if (other._data.Length != _data.Length)
             {
                 return false;
             }
@@ -940,13 +871,13 @@ namespace Phantasma.Numerics
 
         public static LargeInteger Pow(LargeInteger a, LargeInteger b)
         {
-            var val = LargeInteger.One;
-            var i = LargeInteger.Zero;
+            var val = One;
+            var i = Zero;
 
             while (i < b)
             {
                 val *= a;
-                i = i + LargeInteger.One;
+                i = i + One;
             }
             return val;
         }
@@ -978,7 +909,7 @@ namespace Phantasma.Numerics
             }
             catch
             {
-                output = LargeInteger.Zero;
+                output = Zero;
                 return false;
             }
         }
@@ -1013,7 +944,7 @@ namespace Phantasma.Numerics
             if (obj is LargeInteger)
             {
                 var temp = (LargeInteger)obj;
-                return temp._sign == this._sign && temp._data.SequenceEqual(this._data);
+                return temp._sign == _sign && temp._data.SequenceEqual(_data);
             }
 
             return false;

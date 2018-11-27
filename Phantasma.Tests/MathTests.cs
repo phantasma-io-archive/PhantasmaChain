@@ -148,84 +148,45 @@ namespace Phantasma.Tests
         [TestMethod]
         public void BigIntMultiDigitDiv()
         {
-            bool bigIntFlag = false;
-
             string bx = "332f389d332f3831332f389e332f37a5332f3959332f3914332f318533333333129873102938abfe298102967238291029850912890345297864812798570912830";
             string by = "18273910598278301928412039581203918927840501928391029237623187492834729018034982903478091248398457";
             string bq = "21e81159046f0d4c1fc54daf52b4638c36";
             string br = "16473496497eb5be6dcf5ac855637242609f07345a89d8c2c4fe00aa3d2cccd1dc504bad02805b41b5ffe15401666aa9d6";
 
+            var numerator = new LargeInteger(bx, 16);
+            var denominator = new LargeInteger(by, 16);
 
-            if (bigIntFlag == false)
-            {
-                var numerator = new LargeInteger(bx, 16);
-                var denominator = new LargeInteger(by, 16);
+            var target_quot = new LargeInteger(bq, 16);
+            var target_rem = new LargeInteger(br, 16);
 
-                var target_quot = new LargeInteger(bq, 16);
-                var target_rem = new LargeInteger(br, 16);
+            LargeInteger quot;
+            LargeInteger rem;
+            LargeInteger.DivideAndModulus(numerator, denominator, out quot, out rem);
 
-                LargeInteger quot;
-                LargeInteger rem;
-                LargeInteger.DivideAndModulus(numerator, denominator, out quot, out rem);
-
-                Assert.IsTrue(quot == target_quot);
-                Assert.IsTrue(rem == target_rem);
-            }
-            else
-            {
-                var numerator = new BigInteger(bx, 16);
-                var denominator = new BigInteger(by, 16);
-
-                var target_quot = new BigInteger(bq, 16);
-                var target_rem = new BigInteger(br, 16);
-
-                var quot = numerator / denominator;
-                var rem = numerator % denominator;
-
-                Assert.IsTrue(quot == target_quot);
-                Assert.IsTrue(rem == target_rem);
-            }
+            Assert.IsTrue(quot == target_quot);
+            Assert.IsTrue(rem == target_rem);
         }
 
         [TestMethod]
         public void BigIntSingleDigitDiv()
         {
-            bool bigIntFlag = false;
-
             string bx = "332f389d332f3831332f389e332f37a5332f3959332f3914332f318533333333129873102938abfe29810296723829";
             string by = "A";
             string bq = "51e52761eb7ec04eb84b8dc9eb7ebf6eb84b8ef51eb1f4ed1eb1e8d51eb851eb50f3eb4d0ec1133042680423e9f37";
             string br = "3";
 
-            if (bigIntFlag == false)
-            {
-                var numerator = new LargeInteger(bx, 16);
-                var denominator = new LargeInteger(by, 16);
+            var numerator = new LargeInteger(bx, 16);
+            var denominator = new LargeInteger(by, 16);
 
-                var target_quot = new LargeInteger(bq, 16);
-                var target_rem = new LargeInteger(br, 16);
+            var target_quot = new LargeInteger(bq, 16);
+            var target_rem = new LargeInteger(br, 16);
 
-                LargeInteger quot;
-                LargeInteger rem;
-                LargeInteger.DivideAndModulus(numerator, denominator, out quot, out rem);
+            LargeInteger quot;
+            LargeInteger rem;
+            LargeInteger.DivideAndModulus(numerator, denominator, out quot, out rem);
 
-                Assert.IsTrue(quot == target_quot);
-                Assert.IsTrue(rem == target_rem);
-            }
-            else
-            {
-                var numerator = new BigInteger(bx, 16);
-                var denominator = new BigInteger(by, 16);
-
-                var target_quot = new BigInteger(bq, 16);
-                var target_rem = new BigInteger(br, 16);
-
-                var quot = numerator / denominator;
-                var rem = numerator % denominator;
-
-                Assert.IsTrue(quot == target_quot);
-                Assert.IsTrue(rem == target_rem);
-            }
+            Assert.IsTrue(quot == target_quot);
+            Assert.IsTrue(rem == target_rem);
         }
 
         [TestMethod]
@@ -278,6 +239,17 @@ namespace Phantasma.Tests
             var test1 = new LargeInteger("0100", 16);
 
             Assert.IsTrue(test1 > z);
+        }
+
+        [TestMethod]
+        public void TestLeftShift()
+        {
+            var x = new LargeInteger("123a876b234587c621e9387304f0912309823498712398723985719283701938", 16);
+            var target = new LargeInteger("123a876b234587c621e9387304f09123098234987123987239857192837019380000000000000000000000000000000000000000000000000000000", 16);
+
+            var y = x << 220;
+
+            Assert.IsTrue(y == target);
         }
         #endregion
     }
