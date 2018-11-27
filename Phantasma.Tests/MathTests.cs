@@ -45,91 +45,89 @@ namespace Phantasma.Tests
         [TestMethod]
         public void BigIntAdd()
         {
-            uint x = 5432543;
-            uint y = 1432543;
+            string x = "1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+            string y = "1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
-            var a1 = new BigInteger(x);
-            var b1 = new BigInteger(y);
+            string z = "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe";
 
-            var a2 = new LargeInteger(x);
-            var b2 = new LargeInteger(y);
+            //var a1 = new BigInteger(x);
+            //var b1 = new BigInteger(y);
 
-            var c1 = a1 + b1;
+            var a2 = new LargeInteger(x, 16);
+            var b2 = new LargeInteger(y, 16);
+
+            var r = new LargeInteger(z, 16);
+
+            //var c1 = a1 + b1;
             var c2 = a2 + b2;
 
-            Assert.IsTrue(a1.ToString() == a2.ToString());
-            Assert.IsTrue(b1.ToString() == b2.ToString());
-            Assert.IsTrue(c1.ToString() == c2.ToString());
+            //Assert.IsTrue(a1.ToString() == a2.ToString());
+            //Assert.IsTrue(b1.ToString() == b2.ToString());
+            //Assert.IsTrue(c1.ToString() == c2.ToString());
+            Assert.IsTrue(c2 == r);
         }
 
         [TestMethod]
         public void BigIntAddNegatives()
         {
-            int x = 100000;
-            int y = 1000;
+            string x = "1000";
+            string y = "2000";
 
-            Assert.IsTrue((new LargeInteger(-x) + new LargeInteger(y)).ToString() == (new BigInteger(-x) + new BigInteger(y)).ToString());
-            Assert.IsTrue((new LargeInteger(x) + new LargeInteger(-y)).ToString() == (new BigInteger(x) + new BigInteger(-y)).ToString());
-            Assert.IsTrue((new LargeInteger(-x) + new LargeInteger(-y)).ToString() == (new BigInteger(-x) + new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger("-" + x, 10) + new LargeInteger(y, 10)).ToDecimal() == "1000");
+            Assert.IsTrue((new LargeInteger(x, 10) + new LargeInteger("-" + y, 10)).ToDecimal() == "-1000");
+            Assert.IsTrue((new LargeInteger("-" + x, 10) + new LargeInteger("-" + y, 10)).ToDecimal() == "-3000");
 
-            Assert.IsTrue((new LargeInteger(-y) + new LargeInteger(x)).ToString() == (new BigInteger(-y) + new BigInteger(x)).ToString());
-            Assert.IsTrue((new LargeInteger(y) + new LargeInteger(-x)).ToString() == (new BigInteger(y) + new BigInteger(-x)).ToString());
-            Assert.IsTrue((new LargeInteger(-y) + new LargeInteger(-x)).ToString() == (new BigInteger(-y) + new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger("-" + y, 10) + new LargeInteger(x, 10)).ToDecimal() == "-1000");
+            Assert.IsTrue((new LargeInteger(y, 10) + new LargeInteger("-" + x, 10)).ToDecimal() == "1000");
+            Assert.IsTrue((new LargeInteger("-" + y, 10) + new LargeInteger("-" + x, 10)).ToDecimal() == "-3000");
         }
 
         [TestMethod]
         public void BigIntSub()
         {
-            uint x = 5432543;
-            uint y = 1432543;
+            string bx = "332f389d332f3831332f389e332f37a5332f3959332f3914332f318533333333129873102938abfe298102967238291029850912890345297864812798570912830";
+            string by = "18273910598278301928412039581203918927840501928391029237623187492834729018034982903478091248398457129387129837198237918274985791875";
+            string bz = "1b07ff8cd9acc0011a06f77df9d725a1a1a611d52e2da690a22c9f4dd101abe9ea6400801135627b994c8a8d5fefef8bd272758b766b0e0ff62cefa523beb180fbb";
 
-            var a1 = new BigInteger(x);
-            var b1 = new BigInteger(y);
+            var a = new LargeInteger(bx, 16);
+            var b = new LargeInteger(by, 16);
 
-            var a2 = new LargeInteger(x);
-            var b2 = new LargeInteger(y);
+            var c = a - b;
+            var target = new LargeInteger(bz, 16);
 
-            var c1 = a1 - b1;
-            var c2 = a2 - b2;
-
-            Assert.IsTrue(a1.ToString() == a2.ToString());
-            Assert.IsTrue(b1.ToString() == b2.ToString());
-            Assert.IsTrue(c1.ToString() == c2.ToString());
+            Assert.IsTrue(c == target);
         }
 
         [TestMethod]
         public void BigIntSubNegatives()
         {
-            int x = 100000;
-            int y = 1000;
+            int x = 1000;
+            int y = 2000;
 
-            Assert.IsTrue((new LargeInteger(-x) - new LargeInteger(y)).ToString() == (new BigInteger(-x) - new BigInteger(y)).ToString());
-            Assert.IsTrue((new LargeInteger(x) - new LargeInteger(-y)).ToString() == (new BigInteger(x) - new BigInteger(-y)).ToString());
-            Assert.IsTrue((new LargeInteger(-x) - new LargeInteger(-y)).ToString() == (new BigInteger(-x) - new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) - new LargeInteger(y)).ToDecimal() == "-3000");
+            Assert.IsTrue((new LargeInteger(x) - new LargeInteger(-y)).ToDecimal() == "3000");
+            Assert.IsTrue((new LargeInteger(-x) - new LargeInteger(-y)).ToDecimal() == "1000");
 
-            Assert.IsTrue((new LargeInteger(-y) - new LargeInteger(x)).ToString() == (new BigInteger(-y) - new BigInteger(x)).ToString());
-            Assert.IsTrue((new LargeInteger(y) - new LargeInteger(-x)).ToString() == (new BigInteger(y) - new BigInteger(-x)).ToString());
-            Assert.IsTrue((new LargeInteger(-y) - new LargeInteger(-x)).ToString() == (new BigInteger(-y) - new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) - new LargeInteger(x)).ToDecimal() == "-3000");
+            Assert.IsTrue((new LargeInteger(y) - new LargeInteger(-x)).ToDecimal() == "3000");
+            Assert.IsTrue((new LargeInteger(-y) - new LargeInteger(-x)).ToDecimal() == "-1000");
         }
 
         [TestMethod]
         public void BigIntMult()
         {
-            uint x = 5432543;
-            uint y = 1432543;
+            string x = "120938109581209348298572913834710238901381847238471902348083410abefbaebf112987319828738192387509856";
+            string y = "671035689173764871689727651290298572184350928350918429057384756781347915789013472348957aebfdc";
+            string z = "742d9e573c9dd18b1ff173c47c69b9d6eb11462370e26720d642f3a430268ddd8e1996c9ccba94a880345a7d623b9fd5da50354f5ab846da8758b16eea574942abe7b7b01b1013d70423cdc160ac301b4cdef1be51e32664f7877102f5f13e8";
 
-            var a1 = new BigInteger(x);
-            var b1 = new BigInteger(y);
+            var a = new LargeInteger(x, 16);
+            var b = new LargeInteger(y, 16);
+            var target = new LargeInteger(z, 16);
 
-            var a2 = new LargeInteger(x);
-            var b2 = new LargeInteger(y);
-
-            var c1 = a1 * b1;
-            var c2 = a2 * b2;
-
-            Assert.IsTrue(a1.ToString() == a2.ToString());
-            Assert.IsTrue(b1.ToString() == b2.ToString());
-            Assert.IsTrue(c1.ToString() == c2.ToString());
+            var c = a * b;
+            var tmp = (new BigInteger(x, 16) * new BigInteger(y, 16)).ToString();
+            var tmp2 = target.ToDecimal();
+            Assert.IsTrue(c == target);
         }
 
         [TestMethod]
@@ -138,33 +136,96 @@ namespace Phantasma.Tests
             int x = 100000;
             int y = 1000;
 
-            Assert.IsTrue((new LargeInteger(-x) * new LargeInteger(y)).ToString() == (new BigInteger(-x) * new BigInteger(y)).ToString());
-            Assert.IsTrue((new LargeInteger(x) * new LargeInteger(-y)).ToString() == (new BigInteger(x) * new BigInteger(-y)).ToString());
-            Assert.IsTrue((new LargeInteger(-x) * new LargeInteger(-y)).ToString() == (new BigInteger(-x) * new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) * new LargeInteger(y)).ToDecimal() == "-100000000");
+            Assert.IsTrue((new LargeInteger(x) * new LargeInteger(-y)).ToDecimal() == "-100000000");
+            Assert.IsTrue((new LargeInteger(-x) * new LargeInteger(-y)).ToDecimal() == "100000000");
 
-            Assert.IsTrue((new LargeInteger(-y) * new LargeInteger(x)).ToString() == (new BigInteger(-y) * new BigInteger(x)).ToString());
-            Assert.IsTrue((new LargeInteger(y) * new LargeInteger(-x)).ToString() == (new BigInteger(y) * new BigInteger(-x)).ToString());
-            Assert.IsTrue((new LargeInteger(-y) * new LargeInteger(-x)).ToString() == (new BigInteger(-y) * new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) * new LargeInteger(x)).ToDecimal() == "-100000000");
+            Assert.IsTrue((new LargeInteger(y) * new LargeInteger(-x)).ToDecimal() == "-100000000");
+            Assert.IsTrue((new LargeInteger(-y) * new LargeInteger(-x)).ToDecimal() == "100000000");
         }
 
         [TestMethod]
-        public void BigIntDiv()
+        public void BigIntMultiDigitDiv()
         {
-            long x = 4311810559;
-            uint y = 1048575;
+            bool bigIntFlag = false;
 
-            var a1 = new BigInteger(x);
-            var b1 = new BigInteger(y);
+            string bx = "332f389d332f3831332f389e332f37a5332f3959332f3914332f318533333333129873102938abfe298102967238291029850912890345297864812798570912830";
+            string by = "18273910598278301928412039581203918927840501928391029237623187492834729018034982903478091248398457";
+            string bq = "21e81159046f0d4c1fc54daf52b4638c36";
+            string br = "16473496497eb5be6dcf5ac855637242609f07345a89d8c2c4fe00aa3d2cccd1dc504bad02805b41b5ffe15401666aa9d6";
 
-            var a2 = new LargeInteger(x);
-            var b2 = new LargeInteger(y);
 
-            var c1 = a1 / b1;
-            var c2 = a2 / b2;
+            if (bigIntFlag == false)
+            {
+                var numerator = new LargeInteger(bx, 16);
+                var denominator = new LargeInteger(by, 16);
 
-            Assert.IsTrue(a1.ToString() == a2.ToString());
-            Assert.IsTrue(b1.ToString() == b2.ToString());
-            Assert.IsTrue(c1.ToString() == c2.ToString());
+                var target_quot = new LargeInteger(bq, 16);
+                var target_rem = new LargeInteger(br, 16);
+
+                LargeInteger quot;
+                LargeInteger rem;
+                LargeInteger.DivideAndModulus(numerator, denominator, out quot, out rem);
+
+                Assert.IsTrue(quot == target_quot);
+                Assert.IsTrue(rem == target_rem);
+            }
+            else
+            {
+                var numerator = new BigInteger(bx, 16);
+                var denominator = new BigInteger(by, 16);
+
+                var target_quot = new BigInteger(bq, 16);
+                var target_rem = new BigInteger(br, 16);
+
+                var quot = numerator / denominator;
+                var rem = numerator % denominator;
+
+                Assert.IsTrue(quot == target_quot);
+                Assert.IsTrue(rem == target_rem);
+            }
+        }
+
+        [TestMethod]
+        public void BigIntSingleDigitDiv()
+        {
+            bool bigIntFlag = false;
+
+            string bx = "332f389d332f3831332f389e332f37a5332f3959332f3914332f318533333333129873102938abfe29810296723829";
+            string by = "A";
+            string bq = "51e52761eb7ec04eb84b8dc9eb7ebf6eb84b8ef51eb1f4ed1eb1e8d51eb851eb50f3eb4d0ec1133042680423e9f37";
+            string br = "3";
+
+            if (bigIntFlag == false)
+            {
+                var numerator = new LargeInteger(bx, 16);
+                var denominator = new LargeInteger(by, 16);
+
+                var target_quot = new LargeInteger(bq, 16);
+                var target_rem = new LargeInteger(br, 16);
+
+                LargeInteger quot;
+                LargeInteger rem;
+                LargeInteger.DivideAndModulus(numerator, denominator, out quot, out rem);
+
+                Assert.IsTrue(quot == target_quot);
+                Assert.IsTrue(rem == target_rem);
+            }
+            else
+            {
+                var numerator = new BigInteger(bx, 16);
+                var denominator = new BigInteger(by, 16);
+
+                var target_quot = new BigInteger(bq, 16);
+                var target_rem = new BigInteger(br, 16);
+
+                var quot = numerator / denominator;
+                var rem = numerator % denominator;
+
+                Assert.IsTrue(quot == target_quot);
+                Assert.IsTrue(rem == target_rem);
+            }
         }
 
         [TestMethod]
@@ -173,61 +234,50 @@ namespace Phantasma.Tests
             int x = 100000;
             int y = 1000;
 
-            Assert.IsTrue((new LargeInteger(-x) / new LargeInteger(y)).ToString() == (new BigInteger(-x) / new BigInteger(y)).ToString());
-            Assert.IsTrue((new LargeInteger(x) / new LargeInteger(-y)).ToString() == (new BigInteger(x) / new BigInteger(-y)).ToString());
-            Assert.IsTrue((new LargeInteger(-x) / new LargeInteger(-y)).ToString() == (new BigInteger(-x) / new BigInteger(-y)).ToString());
+            Assert.IsTrue((new LargeInteger(-x) / new LargeInteger(y)).ToDecimal() == "-100");
+            Assert.IsTrue((new LargeInteger(x) / new LargeInteger(-y)).ToDecimal() == "-100");
+            Assert.IsTrue((new LargeInteger(-x) / new LargeInteger(-y)).ToDecimal() == "100");
 
-            Assert.IsTrue((new LargeInteger(-y) / new LargeInteger(x)).ToString() == (new BigInteger(-y) / new BigInteger(x)).ToString());
-            Assert.IsTrue((new LargeInteger(y) / new LargeInteger(-x)).ToString() == (new BigInteger(y) / new BigInteger(-x)).ToString());
-            Assert.IsTrue((new LargeInteger(-y) / new LargeInteger(-x)).ToString() == (new BigInteger(-y) / new BigInteger(-x)).ToString());
+            Assert.IsTrue((new LargeInteger(-y) / new LargeInteger(x)).ToDecimal() == "0");
+            Assert.IsTrue((new LargeInteger(y) / new LargeInteger(-x)).ToDecimal() == "0");
+            Assert.IsTrue((new LargeInteger(-y) / new LargeInteger(-x)).ToDecimal() == "0");
         }
 
         [TestMethod]
         public void TestSubtractionBorrowing()
         {
-            var x1 = new LargeInteger(new uint[] {0x01000001});
-            var y1 = new LargeInteger(new uint[] {0xfefeff});
+            var x1 = new LargeInteger(new uint[] { 0x01000001 });
+            var y1 = new LargeInteger(new uint[] { 0xfefeff });
 
-            var x2 = new BigInteger(new byte[] { 0x01, 0x00, 0x00, 0x01 });
-            var y2 = new BigInteger(new byte[] { 0xff, 0xfe, 0xfe });
 
             var groundTruth1 = new LargeInteger(new uint[] { 0x010102 });
-            var groundTruth2 = new BigInteger(new byte[] { 0x02, 0x01, 0x01 });
 
             var z1 = x1 - y1;
-            var z2 = x2 - y2;
 
             Assert.IsTrue(z1 == groundTruth1);
-            Assert.IsTrue(z2 == groundTruth2);
         }
 
         [TestMethod]
         public void TestToString()
         {
-            var x = new LargeInteger(new uint[] {0x1010});
-            Assert.IsTrue(x.ToString() == "4112");
+            uint[] xu = new uint[] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 };
+            var x = new LargeInteger(xu);
+            Assert.IsTrue(x.ToDecimal() == "231584178474632390847141970017375815706539969331281128078915168015826259279871");
         }
 
         [TestMethod]
         public void TestComparison()
         {
-            var x1 = new LargeInteger(new uint[] { 0x01000000});
-            var y1 = new LargeInteger(new uint[] { 0xffffff });
+            var x = new LargeInteger("1000000", 16);
+            var y = new LargeInteger("ffffff", 16);
 
-            var x2 = new BigInteger(new byte[] { 0x00, 0x00, 0x00, 0x01 });
-            var y2 = new BigInteger(new byte[] { 0xff, 0xff, 0xff });
+            var z = x / y;
 
-            var z1 = x1 / y1;
-            var z2 = x2 / y2;
+            Assert.IsTrue(z.ToDecimal() == "1");
 
-            Assert.IsTrue(z1.ToString() == "1");
-            Assert.IsTrue(z2.ToString() == "1");
+            var test1 = new LargeInteger("0100", 16);
 
-            var test1 = new LargeInteger(new uint[]{0x0100});
-            var test2 = new BigInteger(new byte[]{0x00, 0x01});
-
-            Assert.IsTrue(test1 > z1);
-            Assert.IsTrue(test2 > z2);
+            Assert.IsTrue(test1 > z);
         }
         #endregion
     }
