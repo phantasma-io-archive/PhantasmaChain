@@ -4,7 +4,6 @@
     {
         Nexus,
         Governance,
-        Stake,
         Storage,
         Distribution,
         Privacy,
