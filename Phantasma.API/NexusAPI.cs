@@ -82,6 +82,8 @@ namespace Phantasma.API
             var result = DataNode.CreateObject();
 
             result.AddField("address", address.Text);
+            var name = Nexus.LookUpAddress(address);
+            result.AddField("name", name);
 
             var tokenNode = DataNode.CreateArray("tokens");
             result.AddNode(tokenNode);
