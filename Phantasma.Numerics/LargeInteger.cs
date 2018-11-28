@@ -831,15 +831,40 @@ namespace Phantasma.Numerics
 
         /// <summary>
         /// Modulo Exponentiation
+        /// Ported from http://developer.classpath.org/doc/java/math/BigInteger-source.html
         /// </summary>
         /// <param name="exp">Exponential</param>
-        /// <param name="n">Modulo</param>
+        /// <param name="mod">Modulo</param>
         /// <returns>LargeInteger result of raising this to the power of exp and then modulo n </returns>
-        public LargeInteger ModPow(LargeInteger exp, LargeInteger n)
+        public static LargeInteger ModPow(LargeInteger b, LargeInteger exp, LargeInteger mod)
         {
-            Throw.If(exp._sign < 0, "Positive exponents only.");
-            var temp = this * exp;
-            return temp % n;
+            Throw.If(mod._sign == -1 || mod == 0, "Non-positive modulo");
+
+            if (exp._sign < 0)
+                return ModPow(modInverse(mod), -exp, mod);
+
+            if (exp == 1)
+                return b % mod;
+
+            LargeInteger s = new LargeInteger(1);
+            LargeInteger t = new LargeInteger(b);
+
+            while (exp != Zero)
+            {
+                if ((exp & One) == One)
+                    s = (s * t) % mod;
+
+                exp = exp >> 1;
+                t = (t * t) % mod;
+            }
+
+            return s;
+        }
+
+        //TODO: Port this from http://developer.classpath.org/doc/java/math/BigInteger-source.html
+        private static LargeInteger modInverse(LargeInteger mod)
+        {
+            throw new NotImplementedException();
         }
 
         public static LargeInteger Parse(string input, int radix = 10)

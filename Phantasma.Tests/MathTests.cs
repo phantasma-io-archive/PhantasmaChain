@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using Phantasma.Numerics;
@@ -317,6 +317,33 @@ namespace Phantasma.Tests
             LargeInteger target = new LargeInteger(bz, 16);
 
             Assert.IsTrue(result == target);
+        }
+
+        [TestMethod]
+        public void TestZeroSign()
+        {
+            //TODO: try all possible operations that could change a large int to 0, and validate if the sign changes accordingly
+        }
+
+        [TestMethod]
+        public void TestModPow()
+        {
+            LargeInteger b = new LargeInteger("332f389d332f3831332f389e332f37a5332f3959332f3914332f31853331947182937109805983456120394582304719284720459801283490657359687231098405982130983123498759234823019834589723985734582314097359837493817498709346908723498721309481309834095734895729689230853490833333129873102938abfe29810296723829", 16);
+            LargeInteger exp = new LargeInteger(100);
+            LargeInteger mod = new LargeInteger("120398120948109480194811238927958714290501938412092389023484903", 16);
+
+            var result = LargeInteger.ModPow(b, exp, mod);
+
+            var target = new LargeInteger("24c59f542554271f199bb50074796df8a4a0a8bafa6d3bc25f8f96ea1fce4", 16);
+
+            Assert.IsTrue(result == target);
+
+            //TODO: we cant test negative exponentials yet because we need to implement the modInverse operation first!
+            /*
+            result = LargeInteger.ModPow(b, -exp, mod);
+            target = new LargeInteger("? dont know, need to find out first");
+            Assert.IsTrue(result == target);
+            */
         }
         #endregion
     }
