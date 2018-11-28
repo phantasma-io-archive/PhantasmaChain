@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Phantasma.Core;
 
@@ -568,7 +568,12 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator >>(LargeInteger n, int bits)
         {
+            bits = bits < 0 ? -bits : bits;
             ShiftRight(ref n._data, bits);
+
+            if (n._data[0] == 0 && n.dataLength == 1)
+                n._sign = 0;
+
             return n;
         }
 
@@ -620,6 +625,7 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator <<(LargeInteger n, int bits)
         {
+            bits = bits < 0 ? -bits : bits;
             ShiftLeft(ref n._data, bits);
             return n;
         }
