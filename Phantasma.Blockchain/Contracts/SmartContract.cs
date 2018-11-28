@@ -152,15 +152,16 @@ namespace Phantasma.Blockchain.Contracts
 
         #region SIDE CHAINS
         // NOTE we should later prevent contracts from manipulating those
-        private HashSet<Hash> knownTransactions = new HashSet<Hash>();
-        internal bool IsKnown(Hash hash)
+        private HashSet<Hash> settledTransactions = new HashSet<Hash>();
+
+        public bool IsSettled(Hash hash)
         {
-            return knownTransactions.Contains(hash);
+            return settledTransactions.Contains(hash);
         }
 
         protected void RegisterHashAsKnown(Hash hash)
         {
-            knownTransactions.Add(hash);
+            settledTransactions.Add(hash);
         }
 
         public bool IsChain(Address address)
@@ -270,7 +271,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             Runtime.Expect(IsParentChain(sourceChain) || IsChildChain(sourceChain), "source must be parent or child chain");
 
-            Runtime.Expect(!IsKnown(hash), "hash already settled");
+            Runtime.Expect(!IsSettled(hash), "hash already settled");
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
 

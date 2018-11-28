@@ -275,6 +275,7 @@ namespace Phantasma.API
                         // ignore, it will be handled below
                     }
                     break;
+
                 case "getConfirmations":
                     if (paramNode == null)
                     {
@@ -285,6 +286,23 @@ namespace Phantasma.API
                     {
                         var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
                         result = _API.GetConfirmations(hash);
+                    }
+                    catch
+                    {
+                        // ignore, it will be handled below
+                    }
+                    break;
+
+                case "settleBlock":
+                    if (paramNode == null)
+                    {
+                        return GenerateRPCError("Invalid params", -32602);
+                    }
+
+                    try
+                    {
+                        var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+                        result = _API.SettleBlock(hash);
                     }
                     catch
                     {

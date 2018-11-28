@@ -235,11 +235,47 @@ namespace Phantasma.API
         {
             var result = DataNode.CreateObject();
 
-            int confirmations = Nexus.GetConfirmationsOfHash(hash);
+            int confirmations = -1;
 
-            result.AddField("confirmations", confirmations);
-            result.AddField("hash", hash.ToString());
+            var block = Nexus.FindBlockForHash(hash);
+            if (block != null)
+            {
+                confirmations = Nexus.GetConfirmationsOfBlock(block);
+            }
+            else
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
+                if (tx != null)
+                {
+                    block = Nexus.FindBlockForTransaction(tx);
+                    if (block != null)
+                    {
+                        confirmations = Nexus.GetConfirmationsOfBlock(block);
+                    }
+                }
+            }
+
+            Chain chain = (block != null) ? Nexus.FindChainForBlock(block) : null;
+
+            if (confirmations == -1 || block == null || chain == null)
+            {
+                result.AddField("confirmations", (int)0);
+                result.AddField("error", "unknown hash");
+            }
+            else
+            {
+                result.AddField("confirmations", confirmations);
+                result.AddField("hash", block.Hash.ToString());
+                result.AddField("height", block.Height);
+                result.AddField("chain", chain.Address);
+            }
+
             return result;
+        }
+
+        public DataNode SettleBlock(Hash hash)
+        {
+            throw new NotImplementedException();
         }
 
         public DataNode SendRawTransaction(string txData)
