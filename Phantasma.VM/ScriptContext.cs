@@ -692,12 +692,14 @@ namespace Phantasma.VM
                     // args: byte dest_reg, var key
                     case Opcode.CTX:
                         {
+                            var src = Read8();
                             var dst = Read8();
-                            var key = ReadBytes(Address.PublicKeyLength);
 
+                            Expect(src < currentFrame.Registers.Length);
                             Expect(dst < currentFrame.Registers.Length);
 
-                            var contextName = Encoding.ASCII.GetString(key);
+                            var contextName = currentFrame.Registers[src].AsString();
+
                             ExecutionContext context = currentFrame.VM.FindContext(contextName);
 
                             if (context == null)

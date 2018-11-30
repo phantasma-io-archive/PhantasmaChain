@@ -15,9 +15,10 @@ namespace Phantasma.Blockchain
         public static byte[] CallContractScript(string contractName, string method, params object[] args)
         {
             var sb = new ScriptBuilder();
+            byte src_reg = 0;
             byte dest_reg = 1;
-            var contractNameBytes = Encoding.ASCII.GetBytes(contractName);
-            sb.Emit(VM.Opcode.CTX, ByteArrayUtils.ConcatBytes(new byte[] { dest_reg }, contractNameBytes));
+            sb.EmitLoad(src_reg, contractName);
+            sb.Emit(VM.Opcode.CTX, new byte[] { src_reg, dest_reg });
 
             byte temp_reg = 0;
 
