@@ -64,7 +64,7 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var accountChain = nexus.FindChainByKind(Blockchain.Contracts.ContractKind.Account);
+            var accountChain = nexus.FindChainByName("account");
             var token = nexus.NativeToken;
 
             var testUser = KeyPair.Generate();
@@ -94,7 +94,7 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var accountChain = nexus.FindChainByKind(Blockchain.Contracts.ContractKind.Account);
+            var accountChain = nexus.FindChainByName("account");
             var token = nexus.NativeToken;
 
             Func<KeyPair, string, bool> registerName = (keypair, name) =>
