@@ -1,24 +1,27 @@
-﻿using System.Text;
-
-using Phantasma.VM.Contracts;
-using Phantasma.VM;
-using Phantasma.Cryptography;
-using System;
-using Phantasma.Core;
+﻿using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
     public abstract class NativeContract : SmartContract
     {
-        private Address _address;
+        private string _name;
+        public override string Name => _name;
+
+        // TODO this is temporary, remove later
+        public static string GetNameForContract<T>() where T : SmartContract
+        {
+            var type = typeof(T);
+            return GetNameForContract(type);
+        }
+
+        private static string GetNameForContract(Type type)
+        {
+            return type.Name;
+        }
 
         public NativeContract() : base()
         {
-            var type = this.GetType();
-
-            var bytes = Encoding.ASCII.GetBytes(type.Name);
-            var hash = CryptoExtensions.Sha256(bytes);
-            _address = new Address(hash);
+            _name = GetNameForContract(this.GetType());
         }
     }
 }

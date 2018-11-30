@@ -59,12 +59,13 @@ namespace Phantasma.Blockchain.Contracts
             throw new System.NotImplementedException();
         }
 
-        public override ExecutionContext LoadContext(Address address)
+        public override ExecutionContext LoadContext(string contextName)
         {
-            if (address == this.Chain.Address)
+            var contract = this.Chain.FindContract(contextName);
+            if (contract != null)
             {
-                this.Chain.Contract.SetRuntimeData(this);
-                return this.Chain.ExecutionContext;
+                contract.SetRuntimeData(this);
+                return Chain.GetContractContext(contract);
             }
 
             return null;

@@ -37,10 +37,17 @@ namespace Phantasma.Blockchain
         private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
 
         private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
+
+        private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
+        private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
+
+        private int _level;
         #endregion
 
         #region PUBLIC
         public static readonly uint InitialHeight = 1;
+
+        public int Level => _level;
 
         public Chain ParentChain { get; private set; }
         public Block ParentBlock { get; private set; }
@@ -56,22 +63,19 @@ namespace Phantasma.Blockchain
        
         public Block LastBlock { get; private set; }
 
-        public SmartContract Contract { get; private set; }
-
         public readonly Logger Log;
 
-        public ExecutionContext ExecutionContext { get; private set; }
         public StorageContext Storage { get; private set; }
 
         public int TransactionCount => _blockHashes.Sum(entry => entry.Value.TransactionHashes.Count());  //todo move this?
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
-        public Chain(Nexus nexus, Address owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, Address owner, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
             Throw.IfNull(owner, "owner required");
-            Throw.IfNull(contract, "contract required");
             Throw.IfNull(nexus, "nexus required");
+            Throw.If(contracts == null || !contracts.Any(), "contracts required");
 
             if (parentChain != null)
             {
@@ -85,15 +89,18 @@ namespace Phantasma.Blockchain
 
             this.Address = new Address(hash);
 
+            foreach (var contract in contracts)
+            {
+                this._contracts[contract.Name] = contract;
+                this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
+            }
+
             this.Name = name;
-            this.Contract = contract;
             this.Owner = owner;
             this.Nexus = nexus;
 
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
-
-            this.ExecutionContext = new NativeExecutionContext(contract);
 
             // TODO support persistence storage
             this.Storage = new MemoryStorageContext();
@@ -102,6 +109,11 @@ namespace Phantasma.Blockchain
             if (parentChain != null)
             {
                 parentChain._childChains[name] = this;
+                _level = ParentChain.Level + 1;
+            }
+            else
+            {
+                _level = 1;
             }
         }
 
@@ -422,12 +434,36 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public object InvokeContract(string methodName, params object[] args)
+        public SmartContract FindContract(string contractName)
         {
-            var script = ScriptUtils.CallContractScript(this.Address, methodName, args);
+            if (_contracts.ContainsKey(contractName))
+            {
+                return _contracts[contractName];
+            }
+
+            return null;
+        }
+
+        internal ExecutionContext GetContractContext(SmartContract contract)
+        {
+            if (_contractContexts.ContainsKey(contract.Name))
+            {
+                return _contractContexts[contract.Name];
+            }
+
+            return null;
+        }
+
+        public object InvokeContract(string contractName, string methodName, params object[] args)
+        {
+            var contract = FindContract(contractName);
+            Throw.IfNull(contract, nameof(contract));
+
+            var script = ScriptUtils.CallContractScript(contractName, methodName, args);
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null, null, changeSet);
-            Contract.SetRuntimeData(vm);
+
+            contract.SetRuntimeData(vm);
 
             vm.Execute();
 

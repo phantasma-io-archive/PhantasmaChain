@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
+using System.Text;
 
 namespace Phantasma.VM
 {
@@ -696,7 +697,8 @@ namespace Phantasma.VM
 
                             Expect(dst < currentFrame.Registers.Length);
 
-                            ExecutionContext context = currentFrame.VM.FindContext(new Address(key));
+                            var contextName = Encoding.ASCII.GetString(key);
+                            ExecutionContext context = currentFrame.VM.FindContext(contextName);
 
                             if (context == null)
                             {

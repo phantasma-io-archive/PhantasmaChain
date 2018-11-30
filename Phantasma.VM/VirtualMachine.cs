@@ -18,7 +18,7 @@ namespace Phantasma.VM
         public readonly ExecutionContext entryContext;
         public ExecutionContext currentContext { get; private set; }
 
-        private Dictionary<Address, ExecutionContext> _contextList = new Dictionary<Address, ExecutionContext>();
+        private Dictionary<string, ExecutionContext> _contextList = new Dictionary<string, ExecutionContext>();
 
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame currentFrame { get; private set; }
@@ -31,19 +31,19 @@ namespace Phantasma.VM
 
             this.entryAddress = Address.FromScript(script);
             this.entryContext = new ScriptContext(script);
-            RegisterContext(this.entryAddress, this.entryContext);
+            RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
             this.gas = 0;
             this.entryScript = script;
         }
 
-        internal void RegisterContext(Address address, ExecutionContext context)
+        internal void RegisterContext(string contextName, ExecutionContext context)
         {
-            _contextList[address] = context;
+            _contextList[contextName] = context;
         }
 
         public abstract ExecutionState ExecuteInterop(string method);
-        public abstract ExecutionContext LoadContext(Address address);
+        public abstract ExecutionContext LoadContext(string contextName);
 
         public ExecutionState Execute()
         {
@@ -71,15 +71,15 @@ namespace Phantasma.VM
             return instructionPointer;
         }
 
-        internal ExecutionContext FindContext(Address address)
+        internal ExecutionContext FindContext(string contextName)
         {
-            if (_contextList.ContainsKey(address))
+            if (_contextList.ContainsKey(contextName))
             {
-                return _contextList[address];
+                return _contextList[contextName];
             }
 
-            var result = LoadContext(address);
-            _contextList[address] = result;
+            var result = LoadContext(contextName);
+            _contextList[contextName] = result;
 
             return result;
         }

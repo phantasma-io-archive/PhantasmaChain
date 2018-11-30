@@ -5,16 +5,19 @@ using Phantasma.Blockchain.Tokens;
 using System;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
+using Phantasma.Blockchain.Contracts.Native;
+using System.Text;
 
 namespace Phantasma.Blockchain
 {
     public static class ScriptUtils
     {
-        public static byte[] CallContractScript(Address chain, string method, params object[] args)
+        public static byte[] CallContractScript(string contractName, string method, params object[] args)
         {
             var sb = new ScriptBuilder();
             byte dest_reg = 1;
-            sb.Emit(VM.Opcode.CTX, ByteArrayUtils.ConcatBytes(new byte[] { dest_reg }, chain.PublicKey));
+            var contractNameBytes = Encoding.ASCII.GetBytes(contractName);
+            sb.Emit(VM.Opcode.CTX, ByteArrayUtils.ConcatBytes(new byte[] { dest_reg }, contractNameBytes));
 
             byte temp_reg = 0;
 
@@ -84,29 +87,31 @@ namespace Phantasma.Blockchain
             return sb.ToScript();
         }
 
-        public static byte[] TokenMintScript(Address chain, Token token, Address target, BigInteger amount)
+        public static readonly string NexusContract = "nexus";
+
+        public static byte[] TokenMintScript(string tokenSymbol, Address target, BigInteger amount)
         {
-            return CallContractScript(chain, "MintTokens", token.Symbol, target, amount);
+            return CallContractScript(NexusContract, "MintTokens", tokenSymbol, target, amount);
         }
 
-        public static byte[] TokenTransferScript(Address chain, string tokenSymbol, Address from, Address to, BigInteger amount)
+        public static byte[] TokenTransferScript(string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(chain, "TransferTokens", from, to, tokenSymbol, amount);
+            return CallContractScript(NexusContract, "TransferTokens", from, to, tokenSymbol, amount);
         }
 
-        public static byte[] NfTokenTransferScript(Address chain, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
+        public static byte[] NfTokenTransferScript(string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
         {
-            return CallContractScript(chain, "TransferToken", from, to, tokenSymbol, tokenId);
+            return CallContractScript(NexusContract, "TransferToken", from, to, tokenSymbol, tokenId);
         }
 
-        public static byte[] CrossTokenTransferScript(Address chain, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
+        public static byte[] CrossTokenTransferScript(Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(chain, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
+            return CallContractScript(NexusContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
-        public static byte[] CrossNfTokenTransferScript(Address chain, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
+        public static byte[] CrossNfTokenTransferScript(Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
         {
-            return CallContractScript(chain, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
+            return CallContractScript(NexusContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
 
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)

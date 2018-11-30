@@ -17,11 +17,12 @@ namespace Phantasma.Blockchain.Contracts
 {
     public abstract class SmartContract : IContract
     {
-        public BigInteger Order { get; internal set; }
-
         public ContractInterface ABI { get; private set; }
+        public abstract string Name { get; }
 
-        private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
+        public BigInteger Order { get; internal set; } // TODO remove this?
+
+        private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer()); // TODO remove this?
 
         public RuntimeVM Runtime { get; private set; }
         public StorageContext Storage => Runtime.ChangeSet;
