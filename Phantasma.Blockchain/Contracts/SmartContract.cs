@@ -246,7 +246,8 @@ namespace Phantasma.Blockchain.Contracts
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             Runtime.Expect(token.Burn(balances, from, amount), "burn failed");
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
         public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
@@ -264,7 +265,8 @@ namespace Phantasma.Blockchain.Contracts
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
         }
 
         public void SettleBlock(Address sourceChain, Hash hash)
@@ -290,7 +292,7 @@ namespace Phantasma.Blockchain.Contracts
 
                 foreach (var evt in evts)
                 {
-                    if (evt.Kind == EventKind.TokenSend)
+                    if (evt.Kind == EventKind.TokenEscrow)
                     {
                         var data = Serialization.Unserialize<TokenEventData>(evt.Data);
                         if (data.chainAddress == this.Runtime.Chain.Address)
@@ -298,7 +300,7 @@ namespace Phantasma.Blockchain.Contracts
                             symbol = data.symbol;
                             value = data.value;
                             targetAddress = evt.Address;
-                            // TODO what about multiple send events in the same tx, seems not supported yet?
+                            // TODO what about multiple escrow events in the same tx, seems not supported yet?
                         }
                     }
                 }

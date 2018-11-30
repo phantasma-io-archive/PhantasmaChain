@@ -6,8 +6,6 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
-using System;
-using System.Collections.Generic;
 
 namespace Phantasma.API
 {
