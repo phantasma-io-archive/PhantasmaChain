@@ -320,7 +320,6 @@ namespace Phantasma.API
             result.AddNode(arrayNode);
 
             var test = JSONWriter.WriteToString(result);
-            System.Console.WriteLine(test);
             return result;
         }
 
@@ -351,7 +350,6 @@ namespace Phantasma.API
             result.AddNode(node);
             return result;
         }
-
 
         /*
                public DataNode GetTokens()
