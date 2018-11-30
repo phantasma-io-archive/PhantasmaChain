@@ -152,15 +152,16 @@ namespace Phantasma.Blockchain.Contracts
 
         #region SIDE CHAINS
         // NOTE we should later prevent contracts from manipulating those
-        private HashSet<Hash> knownTransactions = new HashSet<Hash>();
-        internal bool IsKnown(Hash hash)
+        private HashSet<Hash> settledTransactions = new HashSet<Hash>();
+
+        public bool IsSettled(Hash hash)
         {
-            return knownTransactions.Contains(hash);
+            return settledTransactions.Contains(hash);
         }
 
         protected void RegisterHashAsKnown(Hash hash)
         {
-            knownTransactions.Add(hash);
+            settledTransactions.Add(hash);
         }
 
         public bool IsChain(Address address)
@@ -245,7 +246,8 @@ namespace Phantasma.Blockchain.Contracts
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             Runtime.Expect(token.Burn(balances, from, amount), "burn failed");
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
         public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
@@ -263,14 +265,15 @@ namespace Phantasma.Blockchain.Contracts
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
         }
 
         public void SettleBlock(Address sourceChain, Hash hash)
         {
             Runtime.Expect(IsParentChain(sourceChain) || IsChildChain(sourceChain), "source must be parent or child chain");
 
-            Runtime.Expect(!IsKnown(hash), "hash already settled");
+            Runtime.Expect(!IsSettled(hash), "hash already settled");
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
 
@@ -289,7 +292,7 @@ namespace Phantasma.Blockchain.Contracts
 
                 foreach (var evt in evts)
                 {
-                    if (evt.Kind == EventKind.TokenSend)
+                    if (evt.Kind == EventKind.TokenEscrow)
                     {
                         var data = Serialization.Unserialize<TokenEventData>(evt.Data);
                         if (data.chainAddress == this.Runtime.Chain.Address)
@@ -297,7 +300,7 @@ namespace Phantasma.Blockchain.Contracts
                             symbol = data.symbol;
                             value = data.value;
                             targetAddress = evt.Address;
-                            // TODO what about multiple send events in the same tx, seems not supported yet?
+                            // TODO what about multiple escrow events in the same tx, seems not supported yet?
                         }
                     }
                 }

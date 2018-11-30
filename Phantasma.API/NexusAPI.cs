@@ -6,8 +6,6 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
-using System;
-using System.Collections.Generic;
 
 namespace Phantasma.API
 {
@@ -82,6 +80,8 @@ namespace Phantasma.API
             var result = DataNode.CreateObject();
 
             result.AddField("address", address.Text);
+            var name = Nexus.LookUpAddress(address);
+            result.AddField("name", name);
 
             var tokenNode = DataNode.CreateArray("tokens");
             result.AddNode(tokenNode);
@@ -133,6 +133,36 @@ namespace Phantasma.API
             return result;
         }
 
+        public DataNode GetBlockNumber(Address address)
+        {
+            var chain = Nexus.FindChainByAddress(address);
+            if (chain == null) return null;
+            return GetBlockNumber(chain);
+        }
+
+        public DataNode GetBlockNumber(string chainName)
+        {
+            var chain = Nexus.FindChainByName(chainName);
+            if (chain == null) return null;
+            return GetBlockNumber(chain);
+        }
+
+        private DataNode GetBlockNumber(Chain chain)
+        {
+            var result = DataNode.CreateObject();
+            result.AddField("chain", chain.Address.Text);
+            result.AddField("height", chain.BlockHeight);
+            return result;
+        }
+
+        public DataNode GetBlockTransactionCountByHash(Hash blockHash)
+        {
+            var result = DataNode.CreateObject();
+            var count = Nexus.FindBlockForHash(blockHash).TransactionHashes.Count();
+            result.AddValue(count);
+            return result;
+        }
+
         public DataNode GetBlockByHash(Hash hash)
         {
             foreach (var chain in Nexus.Chains)
@@ -150,6 +180,17 @@ namespace Phantasma.API
         public DataNode GetBlockByHeight(string chainName, uint height)
         {
             var chain = Nexus.FindChainByName(chainName);
+            return GetBlockByHeight(chain, height);
+        }
+
+        public DataNode GetBlockByHeight(Address chainAddress, uint height)
+        {
+            var chain = Nexus.FindChainByAddress(chainAddress);
+            return GetBlockByHeight(chain, height);
+        }
+
+        private DataNode GetBlockByHeight(Chain chain, uint height)
+        {
             var block = chain.FindBlockByHeight(height);
             if (block != null)
             {
@@ -157,6 +198,13 @@ namespace Phantasma.API
             }
 
             return null;
+        }
+
+        public DataNode GetTransactionByBlockHashAndIndex(Hash blockHash, int index)
+        {
+            var block = Nexus.FindBlockForHash(blockHash);
+            var txHash = block.TransactionHashes.ElementAt(index);
+            return FillTransaction(Nexus.FindTransactionByHash(txHash));
         }
 
         public DataNode GetAddressTransactions(Address address, int amountTx)
@@ -185,10 +233,41 @@ namespace Phantasma.API
         {
             var result = DataNode.CreateObject();
 
-            int confirmations = Nexus.GetConfirmationsOfHash(hash);
+            int confirmations = -1;
 
-            result.AddField("confirmations", confirmations);
-            result.AddField("hash", hash.ToString());
+            var block = Nexus.FindBlockForHash(hash);
+            if (block != null)
+            {
+                confirmations = Nexus.GetConfirmationsOfBlock(block);
+            }
+            else
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
+                if (tx != null)
+                {
+                    block = Nexus.FindBlockForTransaction(tx);
+                    if (block != null)
+                    {
+                        confirmations = Nexus.GetConfirmationsOfBlock(block);
+                    }
+                }
+            }
+
+            Chain chain = (block != null) ? Nexus.FindChainForBlock(block) : null;
+
+            if (confirmations == -1 || block == null || chain == null)
+            {
+                result.AddField("confirmations", (int)0);
+                result.AddField("error", "unknown hash");
+            }
+            else
+            {
+                result.AddField("confirmations", confirmations);
+                result.AddField("hash", block.Hash.ToString());
+                result.AddField("height", block.Height);
+                result.AddField("chain", chain.Address);
+            }
+
             return result;
         }
 
@@ -224,13 +303,16 @@ namespace Phantasma.API
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
+                if (chain.ParentChain != null)
+                {
+                    single.AddField("parent", chain.ParentChain.Name);
+                }
                 arrayNode.AddNode(single);
             }
 
             result.AddNode(arrayNode);
 
             var test = JSONWriter.WriteToString(result);
-            System.Console.WriteLine(test);
             return result;
         }
 
@@ -261,7 +343,6 @@ namespace Phantasma.API
             result.AddNode(node);
             return result;
         }
-
 
         /*
                public DataNode GetTokens()

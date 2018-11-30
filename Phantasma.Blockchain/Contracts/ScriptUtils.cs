@@ -103,6 +103,7 @@ namespace Phantasma.Blockchain
         {
             return CallContractScript(chain, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
+
         public static byte[] CrossNfTokenTransferScript(Address chain, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
         {
             return CallContractScript(chain, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
