@@ -273,11 +273,6 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode SettleBlock(Hash hash)
-        {
-            throw new NotImplementedException();
-        }
-
         public DataNode SendRawTransaction(string txData)
         {
             var result = DataNode.CreateObject();
