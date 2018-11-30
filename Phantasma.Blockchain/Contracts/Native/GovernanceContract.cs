@@ -16,9 +16,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         ShardLimit
     }
 
-    public class GovernanceContract : NativeContract
+    public class GovernanceContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Governance;
+        public override string Name => "governance";
 
         public BigInteger FeeMultiplier = 1;
 

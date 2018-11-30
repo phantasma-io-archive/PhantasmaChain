@@ -12,9 +12,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public uint unlockTime;
     }
 
-    public sealed class VaultContract : NativeContract
+    public sealed class VaultContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Vault;
+        public override string Name => "vault";
 
         private Dictionary<Address, List<VaultEntry>> _entries = new Dictionary<Address, List<VaultEntry>>();
 

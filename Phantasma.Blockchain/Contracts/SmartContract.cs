@@ -27,8 +27,6 @@ namespace Phantasma.Blockchain.Contracts
         public RuntimeVM Runtime { get; private set; }
         public StorageContext Storage => Runtime.ChangeSet;
 
-        public abstract ContractKind Kind { get; }
-
         private Dictionary<string, MethodInfo> _methodTable = new Dictionary<string, MethodInfo>();
 
         public SmartContract()

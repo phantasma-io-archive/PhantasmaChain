@@ -434,11 +434,11 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public SmartContract FindContract(string contractName)
+        public T FindContract<T>(string contractName) where T: SmartContract
         {
             if (_contracts.ContainsKey(contractName))
             {
-                return _contracts[contractName];
+                return (T)_contracts[contractName];
             }
 
             return null;
@@ -456,7 +456,7 @@ namespace Phantasma.Blockchain
 
         public object InvokeContract(string contractName, string methodName, params object[] args)
         {
-            var contract = FindContract(contractName);
+            var contract = FindContract<SmartContract>(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.CallContractScript(contractName, methodName, args);

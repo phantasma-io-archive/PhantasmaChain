@@ -13,9 +13,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Address chainAddress;
     }
 
-    public sealed class NexusContract : NativeContract
+    public sealed class NexusContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Nexus;
+        public override string Name => "nexus";
 
         public const int MAX_TOKEN_DECIMALS = 12;
 

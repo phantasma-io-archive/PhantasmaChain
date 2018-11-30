@@ -11,9 +11,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte[] content;
     }
 
-    public sealed class AccountContract : NativeContract
+    public sealed class AccountContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Account;
+        public override string Name => "account";
 
         public static readonly string ANONYMOUS = "anonymous";
         public static readonly string GENESIS = "genesis";

@@ -33,9 +33,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
     }
 
-    public sealed class ExchangeContract : NativeContract
+    public sealed class ExchangeContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Exchange;
+        public override string Name => "exchange";
 
         private List<ExchangeOrder> orders = new List<ExchangeOrder>();
         private Dictionary<Hash, BigInteger> fills = new Dictionary<Hash, BigInteger>();

@@ -2,9 +2,9 @@
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public sealed class ConsensusContract : NativeContract
+    public sealed class ConsensusContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Custom;
+        public override string Name => "consensus";
 
         public ConsensusContract() : base()
         {

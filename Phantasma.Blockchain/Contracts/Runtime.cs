@@ -61,7 +61,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(string contextName)
         {
-            var contract = this.Chain.FindContract(contextName);
+            var contract = this.Chain.FindContract<SmartContract>(contextName);
             if (contract != null)
             {
                 contract.SetRuntimeData(this);

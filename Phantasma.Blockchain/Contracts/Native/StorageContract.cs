@@ -1,8 +1,8 @@
 ﻿namespace Phantasma.Blockchain.Contracts.Native
 {
-    public sealed class StorageContract : NativeContract
+    public sealed class StorageContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Storage;
+        public override string Name => "storage";
 
         public StorageContract() : base()
         {

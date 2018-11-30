@@ -5,8 +5,6 @@ namespace Phantasma.Blockchain.Contracts
 {
     public sealed class CustomContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Custom;
-
         private string _name;
         public override string Name => _name;
 

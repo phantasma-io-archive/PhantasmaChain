@@ -4,9 +4,9 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public sealed class BankContract : NativeContract
+    public sealed class BankContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Bank;
+        public override string Name => "bank";
 
         public BigInteger GetRate(string symbol)
         {           

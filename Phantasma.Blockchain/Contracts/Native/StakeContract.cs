@@ -3,9 +3,9 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public sealed class StakeContract : NativeContract
+    public sealed class StakeContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Custom;
+        public override string Name => "stake";
 
         public StakeContract() : base()
         {
