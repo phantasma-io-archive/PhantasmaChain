@@ -16,12 +16,39 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack)
         {
+            if (this.Contract.ABI == null)
+            {
+#if DEBUG
+                throw new VMDebugException($"VM nativecall failed: ABI is missing for contract '{this.Contract.Name}'");
+#endif
+                return ExecutionState.Fault;
+            }
+
+            if (stack.Count <= 0)
+            {
+#if DEBUG
+                throw new VMDebugException($"VM nativecall failed: method name not present in the VM stack");
+#endif
+                return ExecutionState.Fault;
+            }
+
             var stackObj = stack.Pop();
             var methodName = stackObj.AsString();
             var method = this.Contract.ABI.FindMethod(methodName);
 
+            if (method == null)
+            {
+#if DEBUG
+                throw new VMDebugException($"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
+#endif
+                return ExecutionState.Fault;
+            }
+
             if (stack.Count < method.parameters.Length)
             {
+#if DEBUG
+                throw new VMDebugException($"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
+#endif
                 return ExecutionState.Fault;
             }
 
@@ -31,7 +58,15 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var customContract = this.Contract as CustomContract;
-            Throw.IfNull(customContract, nameof(customContract));
+
+            if (customContract == null)
+            {
+#if DEBUG
+                throw new VMDebugException($"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
+#endif
+                return ExecutionState.Fault;
+            }
+
             stack.Push(stackObj);
 
             var context = new ScriptContext(customContract.Script);

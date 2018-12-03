@@ -27,8 +27,12 @@ namespace Phantasma.VM.Contracts
 
         public ContractMethod FindMethod(string name)
         {
-            Throw.If(!_methods.ContainsKey(name), "method not found");
-            return _methods[name];
+            if (_methods.ContainsKey(name))
+            {
+                return _methods[name];
+            }
+
+            return null;
         }
 
         /// <summary>

@@ -1,12 +1,21 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Numerics;
-using Phantasma.Cryptography;
-using System.Text;
 
 namespace Phantasma.VM
 {
+#if DEBUG
+    public class VMDebugException: Exception
+    {
+        public VMDebugException(string msg): base(msg)
+        {
+
+        }
+    }
+#endif
+
     public class ScriptContext: ExecutionContext
     {
         public byte[] Script { get; private set; }
@@ -240,6 +249,9 @@ namespace Phantasma.VM
                             var state = currentFrame.VM.ExecuteInterop(method);
                             if (state != ExecutionState.Running)
                             {
+#if DEBUG
+                                throw new VMDebugException("VM extcall failed: " + method);
+#endif
                                 return;
                             }
 
@@ -704,6 +716,9 @@ namespace Phantasma.VM
 
                             if (context == null)
                             {
+#if DEBUG
+                                throw new VMDebugException("VM ctx failed: " + contextName);
+#endif
                                 SetState(ExecutionState.Fault);
                                 return;
                             }
@@ -738,6 +753,12 @@ namespace Phantasma.VM
                         }
                 }
             }
+#if DEBUG
+            catch (VMDebugException ex)
+            {
+                throw ex;
+            }
+#endif
             catch (Exception ex)
             {
                 System.Console.WriteLine(ex.ToString());
