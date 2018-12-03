@@ -101,6 +101,11 @@ namespace Phantasma.VM
             }
 
             var result = LoadContext(contextName);
+            if (result == null)
+            {
+                return null;
+            }
+
             _contextList[contextName] = result;
 
             return result;
