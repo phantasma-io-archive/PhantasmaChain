@@ -91,6 +91,11 @@ namespace Phantasma.Blockchain
 
             foreach (var contract in contracts)
             {
+                if (this._contracts.ContainsKey(contract.Name))
+                {
+                    throw new ChainException("Duplicated contract name: " + contract.Name);
+                }
+
                 this._contracts[contract.Name] = contract;
                 this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
             }

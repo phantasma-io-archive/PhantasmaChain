@@ -43,7 +43,7 @@ namespace Phantasma.Blockchain
             this.logger = logger;
             this.Name = name;
 
-            this.RootChain = new Chain(this, owner.Address, "main", new SmartContract[] { new NexusContract() }, logger, null);
+            this.RootChain = new Chain(this, owner.Address, "main", new SmartContract[] { new NexusContract(), new TokenContract() }, logger, null);
             _chains[RootChain.Name] = RootChain;
 
             if (!CreateGenesisBlock(owner))
@@ -211,7 +211,9 @@ namespace Phantasma.Blockchain
                     }
             }
 
-            var chain = new Chain(this, owner, name, new SmartContract[] { contract }, this.logger, parentChain, parentBlock);
+            var tokenContract = new TokenContract();
+
+            var chain = new Chain(this, owner, name, new SmartContract[] { contract, tokenContract }, this.logger, parentChain, parentBlock);
 
             lock (_chains)
             {
@@ -328,7 +330,7 @@ namespace Phantasma.Blockchain
 
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.NexusContract, "MintTokens", owner.Address, symbol, amount);
+            var script = ScriptUtils.CallContractScript(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, amount);
             var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;

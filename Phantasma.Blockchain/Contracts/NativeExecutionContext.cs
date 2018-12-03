@@ -19,7 +19,7 @@ namespace Phantasma.Blockchain.Contracts
             if (this.Contract.ABI == null)
             {
 #if DEBUG
-                throw new VMDebugException($"VM nativecall failed: ABI is missing for contract '{this.Contract.Name}'");
+                throw new VMDebugException(frame, stack, $"VM nativecall failed: ABI is missing for contract '{this.Contract.Name}'");
 #endif
                 return ExecutionState.Fault;
             }
@@ -27,7 +27,7 @@ namespace Phantasma.Blockchain.Contracts
             if (stack.Count <= 0)
             {
 #if DEBUG
-                throw new VMDebugException($"VM nativecall failed: method name not present in the VM stack");
+                throw new VMDebugException(frame, stack, $"VM nativecall failed: method name not present in the VM stack");
 #endif
                 return ExecutionState.Fault;
             }
@@ -39,7 +39,7 @@ namespace Phantasma.Blockchain.Contracts
             if (method == null)
             {
 #if DEBUG
-                throw new VMDebugException($"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
+                throw new VMDebugException(frame, stack, $"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
 #endif
                 return ExecutionState.Fault;
             }
@@ -47,7 +47,7 @@ namespace Phantasma.Blockchain.Contracts
             if (stack.Count < method.parameters.Length)
             {
 #if DEBUG
-                throw new VMDebugException($"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
+                throw new VMDebugException(frame, stack, $"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
 #endif
                 return ExecutionState.Fault;
             }
@@ -62,7 +62,7 @@ namespace Phantasma.Blockchain.Contracts
             if (customContract == null)
             {
 #if DEBUG
-                throw new VMDebugException($"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
+                throw new VMDebugException(frame, stack, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
 #endif
                 return ExecutionState.Fault;
             }
