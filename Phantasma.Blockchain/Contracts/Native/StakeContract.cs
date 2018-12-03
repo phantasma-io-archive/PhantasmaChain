@@ -1,4 +1,5 @@
-﻿using Phantasma.Core.Types;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
@@ -15,8 +16,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "stake";
 
-        private const string ENTRY_MAP = "_mmap";
-        private const string ENTRY_LIST = "_mlst";
+        private Collection<Address> _entryList;
+        private Map<Address, ValidatorInfo> _entryMap;
 
         public StakeContract() : base()
         {
@@ -34,16 +35,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool IsValidator(Address address)
         {
-            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP, this);
-            return map.ContainsKey(address);
+            return _entryMap.ContainsKey(address);
         }
 
         public void Stake(Address address, BigInteger amount)
         {
             Runtime.Expect(IsWitness(address), "witness failed");
 
-            var list = Storage.FindCollectionForContract<Address>(ENTRY_LIST, this);
-            var count = list.Count();
+            var count = _entryList.Count();
             var max = GetMaxValidators();
             Runtime.Expect(count < max, "no open validators spots");
 
@@ -56,9 +55,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Subtract(address, stakeAmount), "balance subtract failed");
             Runtime.Expect(balances.Add(Runtime.Chain.Address, stakeAmount), "balance add failed");
 
-            list.Add(address);
-
-            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP, this);
+            _entryList.Add(address);
 
             var entry = new ValidatorInfo()
             {
@@ -66,17 +63,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                 stake = stakeAmount,
                 timestamp = Timestamp.Now,
             };
-            map.Set(address, entry);
+            _entryMap.Set(address, entry);
         }
 
         public void Unstake(Address address)
         {
             Runtime.Expect(IsWitness(address), "witness failed");
 
-            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP, this);
-            Runtime.Expect(map.ContainsKey(address), "not a validator address");
+            Runtime.Expect(_entryMap.ContainsKey(address), "not a validator address");
 
-            var entry = map.Get(address);
+            var entry = _entryMap.Get(address);
 
             var diff = Timestamp.Now - entry.timestamp;
             var days = diff / 86400; // convert seconds to days
@@ -91,10 +87,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Subtract(Runtime.Chain.Address, stakeAmount), "balance subtract failed");
             Runtime.Expect(balances.Add(address, stakeAmount), "balance add failed");
 
-            map.Remove(address);
+            _entryMap.Remove(address);
 
-            var list = Storage.FindCollectionForContract<Address>(ENTRY_LIST, this);
-            list.Remove(address);
+            _entryList.Remove(address);
         }
 
         public BigInteger GetStake(Address address)
