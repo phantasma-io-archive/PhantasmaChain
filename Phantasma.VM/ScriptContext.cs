@@ -4,22 +4,9 @@ using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Numerics;
 
+
 namespace Phantasma.VM
 {
-#if DEBUG
-    public class VMDebugException: Exception
-    {
-        public ExecutionFrame frame;
-        public Stack<VMObject> stack;
-
-        public VMDebugException(ExecutionFrame frame, Stack<VMObject> stack, string msg): base(msg)
-        {
-            this.frame = frame;
-            this.stack = stack;
-        }
-    }
-#endif
-
     public class ScriptContext: ExecutionContext
     {
         public byte[] Script { get; private set; }
