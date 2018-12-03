@@ -50,6 +50,7 @@ namespace Phantasma.Blockchain
             contracts.Add(new StakeContract());
             contracts.Add(new GovernanceContract());
             contracts.Add(new AccountContract());
+            contracts.Add(new OracleContract());
 
             this.RootChain = new Chain(this, owner.Address, "main", contracts, logger, null);
             _chains[RootChain.Name] = RootChain;
