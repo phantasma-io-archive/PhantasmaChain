@@ -11,6 +11,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.IO;
 using Phantasma.VM;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -38,11 +39,27 @@ namespace Phantasma.Blockchain.Contracts
         internal void SetRuntimeData(RuntimeVM VM)
         {
             this.Runtime = VM;
-        }
 
-        public int GetSize()
-        {
-            return 0; // TODO
+            var contractType = this.GetType();
+            FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+
+            var storageFields = fields.Where(x => x.FieldType.IsGenericType).ToList();
+
+            if (storageFields.Count > 0)
+            {
+                BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
+                
+                foreach (var field in storageFields)
+                {
+                    var fieldHash = field.Name.Sha256();
+                    var args = new object[] { (StorageContext)VM.ChangeSet, fieldHash, StorageContext.MakeContractPrefix(this) };
+
+                    // NOTE this is done this way due to the constructor being internal
+                    var obj = Activator.CreateInstance(field.FieldType, flags, null, args, null);
+
+                    field.SetValue(this, obj);
+                }
+            }
         }
 
         public bool IsWitness(Address address)

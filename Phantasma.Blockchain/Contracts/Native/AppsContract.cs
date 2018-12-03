@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 icon = Hash.Null,
             };
             
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             list.Add(app);
         }
 
@@ -58,7 +58,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetAppTitle(string name, string title)
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             var index = FindAppIndex(name, list);
             Runtime.Expect(index >= 0, "app not found");
 
@@ -69,7 +69,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetAppUrl(string name, string url)
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             var index = FindAppIndex(name, list);
             Runtime.Expect(index >= 0, "app not found");
 
@@ -80,7 +80,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetAppDescription(string name, string description)
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             var index = FindAppIndex(name, list);
             Runtime.Expect(index >= 0, "app not found");
 
@@ -91,13 +91,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public AppInfo[] GetApps()
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             return list.All();
         }
 
         public string GetTokenViewer(string symbol)
         {
-            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS);
+            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS, this);
             return map.Get(symbol);
         }
 
@@ -109,7 +109,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsWitness(token.Owner), "owner expected");
 
-            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS);
+            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS, this);
             map.Set(symbol, url);
 
             //Runtime.Notify(EventKind.TokenInfo, source, url); TODO custom events

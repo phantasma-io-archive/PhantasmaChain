@@ -32,11 +32,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             return TokenUtils.ToBigInteger(50000, Nexus.NativeTokenDecimals); // TODO this should be dynamic
         }
 
+        public bool IsValidator(Address address)
+        {
+            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP, this);
+            return map.ContainsKey(address);
+        }
+
         public void Stake(Address address, BigInteger amount)
         {
             Runtime.Expect(IsWitness(address), "witness failed");
 
-            var list = Storage.FindCollectionForContract<Address>(ENTRY_LIST);
+            var list = Storage.FindCollectionForContract<Address>(ENTRY_LIST, this);
             var count = list.Count();
             var max = GetMaxValidators();
             Runtime.Expect(count < max, "no open validators spots");
@@ -52,7 +58,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             list.Add(address);
 
-            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP);
+            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP, this);
 
             var entry = new ValidatorInfo()
             {
@@ -67,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(address), "witness failed");
 
-            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP);
+            var map = Storage.FindMapForContract<Address, ValidatorInfo>(ENTRY_MAP, this);
             Runtime.Expect(map.ContainsKey(address), "not a validator address");
 
             var entry = map.Get(address);
@@ -87,7 +93,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             map.Remove(address);
 
-            var list = Storage.FindCollectionForContract<Address>(ENTRY_LIST);
+            var list = Storage.FindCollectionForContract<Address>(ENTRY_LIST, this);
             list.Remove(address);
         }
 
