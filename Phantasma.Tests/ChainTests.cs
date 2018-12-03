@@ -94,7 +94,6 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var accountChain = nexus.FindChainByName("account");
             var token = nexus.NativeToken;
 
             Func<KeyPair, string, bool> registerName = (keypair, name) =>
@@ -111,7 +110,7 @@ namespace Phantasma.Tests
                     {
                         Assert.IsTrue(tx != null);
 
-                        var lastBlock = accountChain.LastBlock;
+                        var lastBlock = nexus.RootChain.LastBlock;
                         var evts = lastBlock.GetEventsForTransaction(tx.Hash);
                         Assert.IsTrue(evts.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
                     }
@@ -136,23 +135,6 @@ namespace Phantasma.Tests
             // verify test user balance
             var balance = nexus.RootChain.GetTokenBalance(token, testUser.Address);
             Assert.IsTrue(balance == amount);
-
-            // do a side chain send using test user balance from root to account chain
-            simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(testUser, token, nexus.RootChain, accountChain, TokenUtils.ToBigInteger(10, token.Decimals));
-            simulator.EndBlock();
-            var blockA = nexus.RootChain.LastBlock;
-
-            Assert.IsFalse(registerName(testUser, "hello"));
-
-            // finish the chain transfer
-            simulator.BeginBlock();
-            simulator.GenerateSideChainSettlement(nexus.RootChain, accountChain, blockA.Hash);
-            Assert.IsTrue(simulator.EndBlock());
-
-            // verify balances
-            balance = accountChain.GetTokenBalance(token, testUser.Address);
-            Assert.IsTrue(balance > 0);
 
             var targetName = "hello";
             Assert.IsTrue(targetName == targetName.ToLower());

@@ -228,6 +228,12 @@ namespace Phantasma.Tests
 
         public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Chain targetChain, BigInteger amount)
         {
+            Throw.IfNull(source, nameof(source));
+            Throw.IfNull(token, nameof(token));
+            Throw.IfNull(sourceChain, nameof(sourceChain));
+            Throw.IfNull(targetChain, nameof(targetChain));
+            Throw.If(amount<=0, "positive amount required");
+
             var script = ScriptUtils.CallContractScript("token", "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
             var tx = MakeTransaction(source, sourceChain, script);
 
