@@ -32,7 +32,6 @@ namespace Phantasma.Tests
         private DateTime _currentTime;
 
         private Chain bankChain;
-        private Chain accountChain;
 
         private static readonly string[] accountNames = {
             "aberration", "absence", "aceman", "acid", "alakazam", "alien", "alpha", "angel", "angler", "anomaly", "answer", "antsharer", "aqua", "archangel",
@@ -53,8 +52,7 @@ namespace Phantasma.Tests
             this.Nexus = new Nexus("simnet", _owner);
 
             this.bankChain = Nexus.FindChainByName("bank");
-            this.accountChain = Nexus.FindChainByName("account");
-
+            
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
 
@@ -230,7 +228,13 @@ namespace Phantasma.Tests
 
         public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Chain targetChain, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript("nexus", "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
+            Throw.IfNull(source, nameof(source));
+            Throw.IfNull(token, nameof(token));
+            Throw.IfNull(sourceChain, nameof(sourceChain));
+            Throw.IfNull(targetChain, nameof(targetChain));
+            Throw.If(amount<=0, "positive amount required");
+
+            var script = ScriptUtils.CallContractScript("token", "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, amount);
             var tx = MakeTransaction(source, sourceChain, script);
 
             _pendingEntries[sourceChain] = new SideChainPendingBlock()
@@ -246,14 +250,14 @@ namespace Phantasma.Tests
         {
             _pendingBlocks.RemoveAll(x => x.hash == targetHash);
 
-            var script = ScriptUtils.CallContractScript("nexus", "SettleBlock", sourceChain.Address, targetHash);
+            var script = ScriptUtils.CallContractScript("token", "SettleBlock", sourceChain.Address, targetHash);
             var tx = MakeTransaction(null, destChain, script);
             return tx;
         }
 
         public Transaction GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript("nexus", "Claim", source.Address, amount);
+            var script = ScriptUtils.CallContractScript("bank", "Claim", source.Address, amount);
             var tx = MakeTransaction(source, sourceChain, script);
             tx.Sign(source);
             return tx;
@@ -261,15 +265,15 @@ namespace Phantasma.Tests
 
         public Transaction GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript("nexus", "Redeem", source.Address, amount);
+            var script = ScriptUtils.CallContractScript("bank", "Redeem", source.Address, amount);
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
 
         public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
-            var sourceChain = accountChain;
-            var script = ScriptUtils.CallContractScript("nexus", "Register", source.Address, name);
+            var sourceChain = this.Nexus.RootChain;
+            var script = ScriptUtils.CallContractScript("account", "Register", source.Address, name);
             var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);
@@ -278,30 +282,30 @@ namespace Phantasma.Tests
 
         public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript("nexus", "TransferTokens", source.Address, dest, token.Symbol, amount);
+            var script = ScriptUtils.CallContractScript("token", "TransferTokens", source.Address, dest, token.Symbol, amount);
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
 
         public Transaction GenerateNFT(KeyPair source, Address address, Chain chain, Token token, byte[] data)
         {
-            var script = ScriptUtils.CallContractScript("nexus", "MintToken", source.Address, token.Symbol, data);
+            var script = ScriptUtils.CallContractScript("token", "MintToken", source.Address, token.Symbol, data);
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
     
         public Transaction GenerateAppRegistration(KeyPair source, string name, string url, string description)
         {
-            var hash = "nexus";
+            var contract = "apps";
 
             var chain = Nexus.FindChainByName("apps");
-            var script = ScriptUtils.CallContractScript(hash, "RegisterApp", source.Address, name);
+            var script = ScriptUtils.CallContractScript(contract, "RegisterApp", source.Address, name);
             var tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.CallContractScript(hash, "SetAppUrl", name, url);
+            script = ScriptUtils.CallContractScript(contract, "SetAppUrl", name, url);
             tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.CallContractScript(hash, "SetAppDescription", name, description);
+            script = ScriptUtils.CallContractScript(contract, "SetAppDescription", name, description);
             tx = MakeTransaction(source, chain, script);
 
             return tx;
@@ -309,8 +313,8 @@ namespace Phantasma.Tests
 
         public Transaction GenerateSetTokenViewer(KeyPair source, Token token, string url)
         {
-            var chain = Nexus.RootChain;
-            var script = ScriptUtils.CallContractScript("nexus", "SetTokenViewer", source.Address, token.Symbol, url);
+            var chain = Nexus.FindChainByName("apps");
+            var script = ScriptUtils.CallContractScript("apps", "SetTokenViewer", token.Symbol, url);
             var tx = MakeTransaction(source, chain, script);
             
             return tx;
@@ -415,7 +419,7 @@ namespace Phantasma.Tests
                     // name register
                     case 5:
                         {
-                            sourceChain = accountChain;
+                            sourceChain = this.Nexus.RootChain;                            
                             token = Nexus.NativeToken;
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);

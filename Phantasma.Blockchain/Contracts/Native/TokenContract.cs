@@ -184,22 +184,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
         }
 
-        public void SetTokenViewer(Address source, string symbol, string url)
-        {
-            Runtime.Expect(IsWitness(source), "invalid witness");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            Runtime.Expect(token.Owner == source, "owner expected");
-
-            token.SetViewer(url);
-
-            Runtime.Notify(EventKind.TokenInfo, source, url);
-        }
-
-
         public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");

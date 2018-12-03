@@ -2,9 +2,31 @@
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Cryptography;
+#if DEBUG
+using System;
+using System.Linq;
+using System.IO;
+#endif
 
 namespace Phantasma.VM
 {
+#if DEBUG
+    public class VMDebugException : Exception
+    {
+        public ExecutionFrame frame;
+        public Stack<VMObject> stack;
+
+        public VMDebugException(ExecutionFrame frame, Stack<VMObject> stack, string msg) : base(msg)
+        {
+            this.frame = frame;
+            this.stack = stack;
+            var temp = new Disassembler(frame.VM.entryScript);
+            var disasm = string.Join("\n", temp.Instructions.Select(inst => inst.ToString()));
+            File.WriteAllText("vm_dump.txt", disasm);
+        }
+    }
+#endif
+
     public abstract class VirtualMachine
     {
         public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
@@ -79,6 +101,11 @@ namespace Phantasma.VM
             }
 
             var result = LoadContext(contextName);
+            if (result == null)
+            {
+                return null;
+            }
+
             _contextList[contextName] = result;
 
             return result;

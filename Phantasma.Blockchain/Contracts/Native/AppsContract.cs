@@ -17,6 +17,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public override string Name => "apps";
 
         private const string APP_LIST = "_apps";
+        private const string TOKEN_VIEWERS = "_viewers";
 
         public AppsContract() : base()
         {
@@ -93,5 +94,27 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
             return list.All();
         }
+
+        public string GetTokenViewer(string symbol)
+        {
+            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS);
+            return map.Get(symbol);
+        }
+
+        public void SetTokenViewer(string symbol, string url)
+        {
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
+
+            Runtime.Expect(IsWitness(token.Owner), "owner expected");
+
+            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS);
+            map.Set(symbol, url);
+
+            //Runtime.Notify(EventKind.TokenInfo, source, url); TODO custom events
+        }
+
+
     }
 }
