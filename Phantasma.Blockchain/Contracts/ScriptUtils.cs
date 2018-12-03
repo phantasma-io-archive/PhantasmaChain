@@ -88,33 +88,36 @@ namespace Phantasma.Blockchain
             return sb.ToScript();
         }
 
+        // TODO should this be here?
         public static readonly string NexusContract = "nexus";
+        public static readonly string TokenContract = "token";
 
         public static byte[] TokenMintScript(string tokenSymbol, Address target, BigInteger amount)
         {
-            return CallContractScript(NexusContract, "MintTokens", tokenSymbol, target, amount);
+            return CallContractScript(TokenContract, "MintTokens", tokenSymbol, target, amount);
         }
 
         public static byte[] TokenTransferScript(string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(NexusContract, "TransferTokens", from, to, tokenSymbol, amount);
+            return CallContractScript(TokenContract, "TransferTokens", from, to, tokenSymbol, amount);
         }
 
         public static byte[] NfTokenTransferScript(string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
         {
-            return CallContractScript(NexusContract, "TransferToken", from, to, tokenSymbol, tokenId);
+            return CallContractScript(TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
         }
 
         public static byte[] CrossTokenTransferScript(Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(NexusContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
+            return CallContractScript(TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
         public static byte[] CrossNfTokenTransferScript(Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
         {
-            return CallContractScript(NexusContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
+            return CallContractScript(TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
 
+        // TODO this probably does not work anymore!
         public static byte[] ContractDeployScript(byte[] script, byte[] abi)
         {
             var sb = new ScriptBuilder();
