@@ -32,7 +32,6 @@ namespace Phantasma.Tests
         private DateTime _currentTime;
 
         private Chain bankChain;
-        private Chain accountChain;
 
         private static readonly string[] accountNames = {
             "aberration", "absence", "aceman", "acid", "alakazam", "alien", "alpha", "angel", "angler", "anomaly", "answer", "antsharer", "aqua", "archangel",
@@ -53,8 +52,7 @@ namespace Phantasma.Tests
             this.Nexus = new Nexus("simnet", _owner);
 
             this.bankChain = Nexus.FindChainByName("bank");
-            this.accountChain = Nexus.FindChainByName("account");
-
+            
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
 
@@ -268,7 +266,7 @@ namespace Phantasma.Tests
 
         public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
-            var sourceChain = accountChain;
+            var sourceChain = this.Nexus.RootChain;
             var script = ScriptUtils.CallContractScript("account", "Register", source.Address, name);
             var tx = MakeTransaction(source, sourceChain, script);
 
@@ -292,16 +290,16 @@ namespace Phantasma.Tests
     
         public Transaction GenerateAppRegistration(KeyPair source, string name, string url, string description)
         {
-            var hash = "nexus";
+            var contract = "apps";
 
             var chain = Nexus.FindChainByName("apps");
-            var script = ScriptUtils.CallContractScript(hash, "RegisterApp", source.Address, name);
+            var script = ScriptUtils.CallContractScript(contract, "RegisterApp", source.Address, name);
             var tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.CallContractScript(hash, "SetAppUrl", name, url);
+            script = ScriptUtils.CallContractScript(contract, "SetAppUrl", name, url);
             tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.CallContractScript(hash, "SetAppDescription", name, description);
+            script = ScriptUtils.CallContractScript(contract, "SetAppDescription", name, description);
             tx = MakeTransaction(source, chain, script);
 
             return tx;
@@ -309,8 +307,8 @@ namespace Phantasma.Tests
 
         public Transaction GenerateSetTokenViewer(KeyPair source, Token token, string url)
         {
-            var chain = Nexus.RootChain;
-            var script = ScriptUtils.CallContractScript("apps", "SetTokenViewer", source.Address, token.Symbol, url);
+            var chain = Nexus.FindChainByName("apps");
+            var script = ScriptUtils.CallContractScript("apps", "SetTokenViewer", token.Symbol, url);
             var tx = MakeTransaction(source, chain, script);
             
             return tx;
@@ -415,7 +413,7 @@ namespace Phantasma.Tests
                     // name register
                     case 5:
                         {
-                            sourceChain = accountChain;
+                            sourceChain = this.Nexus.RootChain;                            
                             token = Nexus.NativeToken;
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);

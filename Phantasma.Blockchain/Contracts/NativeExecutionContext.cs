@@ -1,6 +1,7 @@
 ﻿using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
+using System;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts
@@ -54,7 +55,18 @@ namespace Phantasma.Blockchain.Contracts
 
             if (this.Contract.HasInternalMethod(methodName))
             {
-                return InternalCall(method, frame, stack);
+                ExecutionState result;
+                try
+                {
+                    result = InternalCall(method, frame, stack);
+                }
+                catch (ArgumentException ex)
+                {
+#if DEBUG
+                    throw new VMDebugException(frame, stack, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, "+ex.ToString());
+#endif
+                }
+                return result;
             }
 
             var customContract = this.Contract as CustomContract;

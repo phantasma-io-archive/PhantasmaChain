@@ -441,6 +441,8 @@ namespace Phantasma.Blockchain
 
         public T FindContract<T>(string contractName) where T: SmartContract
         {
+            Throw.IfNullOrEmpty(contractName, nameof(contractName));
+
             if (_contracts.ContainsKey(contractName))
             {
                 return (T)_contracts[contractName];

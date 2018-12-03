@@ -43,7 +43,15 @@ namespace Phantasma.Blockchain
             this.logger = logger;
             this.Name = name;
 
-            this.RootChain = new Chain(this, owner.Address, "main", new SmartContract[] { new NexusContract(), new TokenContract() }, logger, null);
+            // TODO this probably should be done using a normal transaction instead of here
+            var contracts = new List<SmartContract>();
+            contracts.Add(new NexusContract());
+            contracts.Add(new TokenContract());
+            contracts.Add(new StakeContract());
+            contracts.Add(new GovernanceContract());
+            contracts.Add(new AccountContract());
+
+            this.RootChain = new Chain(this, owner.Address, "main", contracts, logger, null);
             _chains[RootChain.Name] = RootChain;
 
             if (!CreateGenesisBlock(owner))
@@ -130,14 +138,14 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
-            var chain = FindChainByName("account"); // TODO cache this
-            return (Address)chain.InvokeContract(null, "LookUpName", name); // TODO  replace null with proper
+            var chain = this.RootChain;
+            return (Address)chain.InvokeContract("account", "LookUpName", name);
         }
 
         public string LookUpAddress(Address address)
         {
-            var chain = FindChainByName("account"); // TODO cache this
-            return (string)chain.InvokeContract(null, "LookUpAddress", address); // TODO  replace null with proper
+            var chain = this.RootChain;
+            return (string)chain.InvokeContract("account", "LookUpAddress", address);
         }
         #endregion
 
@@ -195,11 +203,8 @@ namespace Phantasma.Blockchain
             switch (name)
             {
                 case "privacy": contract = new PrivacyContract(); break;
-                case "distribution": contract = new DistributionContract(); break;
                 case "exchange": contract = new ExchangeContract(); break;
-                case "governance": contract = new GovernanceContract(); break;
                 case "storage": contract = new StorageContract(); break;
-                case "account": contract = new AccountContract(); break;
                 case "vault": contract = new VaultContract(); break;
                 case "bank": contract = new BankContract(); break;
                 case "apps": contract = new AppsContract(); break;
@@ -371,8 +376,6 @@ namespace Phantasma.Blockchain
             transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, "privacy"));
-            transactions.Add(SideChainCreateTx(RootChain, owner, "distribution"));
-            transactions.Add(SideChainCreateTx(RootChain, owner, "account"));
             transactions.Add(SideChainCreateTx(RootChain, owner, "vault"));
             transactions.Add(SideChainCreateTx(RootChain, owner, "bank"));
             transactions.Add(SideChainCreateTx(RootChain, owner, "apps"));

@@ -41,8 +41,6 @@ namespace Phantasma.Blockchain.Tokens
 
         public int Decimals { get; private set; }
 
-        public string Viewer { get; private set; }
-
         public Token(StorageContext storage)
         {
             this._storage = storage;
@@ -165,13 +163,6 @@ namespace Phantasma.Blockchain.Tokens
             }
 
             return true;
-        }
-
-        internal void SetViewer(string url)
-        {
-            Throw.If(IsFungible, "NFT expected");
-
-            this.Viewer = url;
         }
 
         internal BigInteger GenerateID()
