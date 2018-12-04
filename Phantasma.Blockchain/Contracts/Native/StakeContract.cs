@@ -33,6 +33,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             return TokenUtils.ToBigInteger(50000, Nexus.NativeTokenDecimals); // TODO this should be dynamic
         }
 
+        public Address[] GetValidators()
+        {
+            return _entryList.All();
+        }
+
         public bool IsValidator(Address address)
         {
             return _entryMap.ContainsKey(address);

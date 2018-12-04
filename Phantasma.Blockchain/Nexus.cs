@@ -433,5 +433,19 @@ namespace Phantasma.Blockchain
             return 0;
         }
         #endregion
+
+        #region VALIDATORS
+        public IEnumerable<Address> GetValidators()
+        {
+            var validators = (Address[])RootChain.InvokeContract("stake", "GetValidators");
+            return validators;
+        }
+
+        public bool IsValidator(Address address)
+        {
+            var result = (bool)RootChain.InvokeContract("stake", "IsValidator", address);
+            return result;
+        }
+        #endregion
     }
 }
