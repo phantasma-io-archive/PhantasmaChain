@@ -83,7 +83,7 @@ namespace Phantasma.Tests
             for (int i = 1; i < 5; i++)
             {
                 var nftKey = KeyPair.Generate();
-                GenerateNFT(_owner, nftKey.Address, Nexus.RootChain, token, new byte[0]);
+                GenerateNft(_owner, nftKey.Address, Nexus.RootChain, token, new byte[0]);
             }
         }
 
@@ -287,13 +287,35 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateNFT(KeyPair source, Address address, Chain chain, Token token, byte[] data)
+        public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger tokenId)
+        {
+            var script = ScriptUtils.CallContractScript("token", "TransferToken", source.Address, dest, token.Symbol, tokenId);
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
+        }
+
+        public Transaction GenerateNftSidechainTransfer(KeyPair sourceUser, Address destAddress, Chain sourceChain,
+            Chain destChain, Token token, BigInteger tokenId)
+        {
+            var script = ScriptUtils.CallContractScript("token", "SendToken", destChain.Address, sourceUser.Address, destAddress, token.Symbol, tokenId);
+            var tx = MakeTransaction(sourceUser, sourceChain, script);
+            return tx;
+        }
+
+        public Transaction GenerateNftBurn(KeyPair source, Chain chain, Token token, BigInteger tokenId)
+        {
+            var script = ScriptUtils.CallContractScript("token", "BurnToken", source.Address, token.Symbol, tokenId);
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
+        }
+
+        public Transaction GenerateNft(KeyPair source, Address address, Chain chain, Token token, byte[] data)
         {
             var script = ScriptUtils.CallContractScript("token", "MintToken", source.Address, token.Symbol, data);
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
-    
+
         public Transaction GenerateAppRegistration(KeyPair source, string name, string url, string description)
         {
             var contract = "apps";
