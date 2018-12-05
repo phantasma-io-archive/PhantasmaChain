@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Blockchain.Storage;
 using Phantasma.Core;
+using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -20,6 +21,8 @@ namespace Phantasma.Blockchain.Contracts
         public IEnumerable<Event> Events => _events;
 
         public StorageChangeSetContext ChangeSet { get; private set; }
+
+        public override BigInteger gasLimit => Transaction.GasLimit;
 
         public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet) : base(script)
         {

@@ -125,6 +125,19 @@ namespace Phantasma.VM
             {
                 var opcode = (Opcode)Read8();
 
+                var gasCost = GetGasCostForOpcode(opcode);
+                var VM = frame.VM;
+                VM.usedGas += gasCost;
+
+                if (VM.usedGas > VM.gasLimit)
+                {
+#if DEBUG
+                    throw new VMDebugException(frame, stack, "VM gas limit exceeded");
+#endif
+                    SetState(ExecutionState.Fault);
+                    return;
+                }
+
                 switch (opcode)
                 {
                     case Opcode.NOP:
@@ -757,5 +770,30 @@ namespace Phantasma.VM
             }
         }
 
+        public static BigInteger GetGasCostForOpcode(Opcode opcode)
+        {
+            switch (opcode)
+            {
+                case Opcode.GET:
+                case Opcode.PUT:
+                case Opcode.CALL:
+                case Opcode.LOAD:
+                    return 2;
+
+                case Opcode.EXTCALL:
+                    return 3;
+
+                case Opcode.CTX:
+                    return 5;
+
+                case Opcode.SWITCH:
+                    return 10;
+
+                case Opcode.NOP:
+                    return 0;
+
+                default: return 1;
+            }
+        }
     }
 }

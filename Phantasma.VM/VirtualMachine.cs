@@ -45,7 +45,8 @@ namespace Phantasma.VM
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame currentFrame { get; private set; }
 
-        public BigInteger gas { get; private set; }
+        public BigInteger usedGas { get; internal set; }
+        public abstract BigInteger gasLimit { get; }
 
         public VirtualMachine(byte[] script)
         {
@@ -55,7 +56,7 @@ namespace Phantasma.VM
             this.entryContext = new ScriptContext(script);
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
-            this.gas = 0;
+            this.usedGas = 0;
             this.entryScript = script;
         }
 
