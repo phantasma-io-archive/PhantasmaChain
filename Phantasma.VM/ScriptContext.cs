@@ -760,7 +760,7 @@ namespace Phantasma.VM
 #if DEBUG
             catch (VMDebugException ex)
             {
-                throw ex;
+                SetState(frame.VM.HandleException(ex));
             }
 #endif
             catch (Exception ex)

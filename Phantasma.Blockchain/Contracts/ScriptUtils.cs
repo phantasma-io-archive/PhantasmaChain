@@ -1,25 +1,34 @@
-﻿using Phantasma.Numerics;
+﻿using System;
+using Phantasma.Numerics;
 using Phantasma.Cryptography;
-using Phantasma.Core.Utils;
-using Phantasma.Blockchain.Tokens;
-using System;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
-using Phantasma.Blockchain.Contracts.Native;
-using System.Text;
 
 namespace Phantasma.Blockchain
 {
     public static class ScriptUtils
     {
-        public static byte[] CallContractScript(string contractName, string method, params object[] args)
+        // TODO should this be here?
+        public static readonly string NexusContract = "nexus";
+        public static readonly string TokenContract = "token";
+
+
+        public static ScriptBuilder BeginScript(BigInteger gasPrice, BigInteger gasLimit)
         {
             var sb = new ScriptBuilder();
-            byte src_reg = 0;
-            byte dest_reg = 1;
-            sb.EmitLoad(src_reg, contractName);
-            sb.Emit(VM.Opcode.CTX, new byte[] { src_reg, dest_reg });
 
+            return sb;
+        }
+
+        public static byte[] EndScript(this ScriptBuilder sb)
+        {
+            sb.Emit(VM.Opcode.RET);
+            return sb.ToScript();
+        }
+
+        // returns register slot that contains the method name
+        private static void InsertMethodArgs(ScriptBuilder sb, object[] args)
+        {
             byte temp_reg = 0;
 
             for (int i = args.Length - 1; i >= 0; i--)
@@ -80,55 +89,59 @@ namespace Phantasma.Blockchain
                     throw new System.Exception("invalid type");
                 }
             }
+        }
 
+        public static ScriptBuilder CallInterop(this ScriptBuilder sb, string method, params object[] args)
+        {
+            InsertMethodArgs(sb, args);
+
+            byte dest_reg = 0;
+            sb.EmitLoad(dest_reg, method);
+
+            sb.Emit(VM.Opcode.EXTCALL, new byte[] { dest_reg });
+            return sb;
+        }
+
+        public static ScriptBuilder CallContract(this ScriptBuilder sb, string contractName, string method, params object[] args)
+        {
+            byte src_reg = 0;
+            byte dest_reg = 1;
+            sb.EmitLoad(src_reg, contractName);
+            sb.Emit(VM.Opcode.CTX, new byte[] { src_reg, dest_reg });
+
+            InsertMethodArgs(sb, args);
+
+            byte temp_reg = 0;
             sb.EmitLoad(temp_reg, method);
             sb.EmitPush(temp_reg);
+
             sb.Emit(VM.Opcode.SWITCH, new byte[] { dest_reg });
-            sb.Emit(VM.Opcode.RET);
-            return sb.ToScript();
+            return sb;
         }
 
-        // TODO should this be here?
-        public static readonly string NexusContract = "nexus";
-        public static readonly string TokenContract = "token";
-
-        public static byte[] TokenMintScript(string tokenSymbol, Address target, BigInteger amount)
+        public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, BigInteger amount)
         {
-            return CallContractScript(TokenContract, "MintTokens", tokenSymbol, target, amount);
+            return CallContract(sb, TokenContract, "MintTokens", tokenSymbol, target, amount);
         }
 
-        public static byte[] TokenTransferScript(string tokenSymbol, Address from, Address to, BigInteger amount)
+        public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(TokenContract, "TransferTokens", from, to, tokenSymbol, amount);
+            return CallContract(sb, TokenContract, "TransferTokens", from, to, tokenSymbol, amount);
         }
 
-        public static byte[] NfTokenTransferScript(string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
+        public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
         {
-            return CallContractScript(TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
+            return CallContract(sb, TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
         }
 
-        public static byte[] CrossTokenTransferScript(Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
+        public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return CallContractScript(TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
+            return CallContract(sb, TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
-        public static byte[] CrossNfTokenTransferScript(Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
+        public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
         {
-            return CallContractScript(TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
-        }
-
-        // TODO this probably does not work anymore!
-        public static byte[] ContractDeployScript(byte[] script, byte[] abi)
-        {
-            var sb = new ScriptBuilder();
-
-            sb.EmitLoad(0, script);
-            sb.EmitLoad(1, abi);
-
-            sb.EmitExtCall("Chain.Deploy");
-            sb.Emit(VM.Opcode.RET);
-
-            return sb.ToScript();
+            return CallContract(sb, TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
     }
 }

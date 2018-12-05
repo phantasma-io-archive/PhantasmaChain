@@ -327,7 +327,7 @@ namespace Phantasma.Blockchain
         #region GENESIS
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
+            var script = ScriptUtils.BeginScript(1, 9999).CallContract(ScriptUtils.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags).EndScript();
             var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
@@ -336,7 +336,7 @@ namespace Phantasma.Blockchain
 
         private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
         {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, amount);
+            var script = ScriptUtils.BeginScript(1, 9999).CallContract(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, amount).EndScript();
             var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
@@ -344,7 +344,7 @@ namespace Phantasma.Blockchain
 
         private Transaction SideChainCreateTx(Chain chain, KeyPair owner, string name)
         {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.NexusContract, "CreateChain", owner.Address, name, RootChain.Name);
+            var script = ScriptUtils.BeginScript(1, 9999).CallContract(ScriptUtils.NexusContract, "CreateChain", owner.Address, name, RootChain.Name).EndScript();
             var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;

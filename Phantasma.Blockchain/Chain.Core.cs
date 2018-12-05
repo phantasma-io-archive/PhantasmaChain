@@ -466,7 +466,7 @@ namespace Phantasma.Blockchain
             var contract = FindContract<SmartContract>(contractName);
             Throw.IfNull(contract, nameof(contract));
 
-            var script = ScriptUtils.CallContractScript(contractName, methodName, args);
+            var script = ScriptUtils.BeginScript(1, 999999).CallContract(contractName, methodName, args).EndScript();
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null, null, changeSet);
 

@@ -121,5 +121,11 @@ namespace Phantasma.VM
 
         #endregion
 
+#if DEBUG
+        public virtual ExecutionState HandleException(VMDebugException ex)
+        {
+            throw ex;
+        }
+#endif
     }
 }

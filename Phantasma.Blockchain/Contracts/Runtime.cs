@@ -40,12 +40,12 @@ namespace Phantasma.Blockchain.Contracts
             Chain.RegisterInterop(this);
         }
 
-        internal void RegisterMethod(string name, Func<VirtualMachine, ExecutionState> handler)
+        internal void RegisterMethod(string name, Func<RuntimeVM, ExecutionState> handler)
         {
             handlers[name] = handler;
         }
 
-        private Dictionary<string, Func<VirtualMachine, ExecutionState>> handlers = new Dictionary<string, Func<VirtualMachine, ExecutionState>>();
+        private Dictionary<string, Func<RuntimeVM, ExecutionState>> handlers = new Dictionary<string, Func<RuntimeVM, ExecutionState>>();
 
         public override ExecutionState ExecuteInterop(string method)
         {
