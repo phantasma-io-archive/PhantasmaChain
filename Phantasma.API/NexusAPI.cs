@@ -6,6 +6,8 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
+using System;
+using System.Collections.Generic;
 
 namespace Phantasma.API
 {
@@ -305,7 +307,22 @@ namespace Phantasma.API
                 single.AddField("address", chain.Address.Text);
                 if (chain.ParentChain != null)
                 {
-                    single.AddField("parent", chain.ParentChain.Name);
+                    single.AddField("parentName", chain.ParentChain.Name);
+                    single.AddField("parentAddress", chain.ParentChain.Name);
+                }
+
+                if (chain.ChildChains != null && chain.ChildChains.Any())
+                {
+                    var children = DataNode.CreateArray("children");
+                    foreach (var childChain in chain.ChildChains)
+                    {
+                        var child = DataNode.CreateObject();
+                        child.AddField("name", childChain.Name);
+                        child.AddField("address", childChain.Address.Text);
+                        children.AddNode(child);
+                    }
+
+                    single.AddNode(children);
                 }
                 arrayNode.AddNode(single);
             }
@@ -313,6 +330,7 @@ namespace Phantasma.API
             result.AddNode(arrayNode);
 
             var test = JSONWriter.WriteToString(result);
+            System.Console.WriteLine(test);
             return result;
         }
 
@@ -343,6 +361,7 @@ namespace Phantasma.API
             result.AddNode(node);
             return result;
         }
+
 
         /*
                public DataNode GetTokens()
