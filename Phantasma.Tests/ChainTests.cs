@@ -476,6 +476,13 @@ namespace Phantasma.Tests
             var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, token, tokenId);
             simulator.EndBlock();
 
+            var blockA = nexus.RootChain.LastBlock;
+
+            // finish the chain transfer
+            simulator.BeginBlock();
+            simulator.GenerateSideChainSettlement(nexus.RootChain, targetChain, blockA.Hash);
+            Assert.IsTrue(simulator.EndBlock());
+
             // verify the sender no longer has it
             ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender still have one?");
