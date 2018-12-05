@@ -37,8 +37,6 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("blockHeight", block.Height);
-            result.AddField("gasLimit", tx.GasLimit.ToString());
-            result.AddField("gasPrice", tx.GasPrice.ToString());
             result.AddField("script", Base16.Encode(tx.Script));
 
             var eventsNode = DataNode.CreateArray("events");

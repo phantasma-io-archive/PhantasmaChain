@@ -13,10 +13,9 @@ namespace Phantasma.Blockchain
         public static readonly string TokenContract = "token";
 
 
-        public static ScriptBuilder BeginScript(BigInteger gasPrice, BigInteger gasLimit)
+        public static ScriptBuilder BeginScript()
         {
             var sb = new ScriptBuilder();
-
             return sb;
         }
 
@@ -24,6 +23,18 @@ namespace Phantasma.Blockchain
         {
             sb.Emit(VM.Opcode.RET);
             return sb.ToScript();
+        }
+
+        public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address address, BigInteger gasPrice, BigInteger gasLimit)
+        {
+            CallContract(sb, "gas", "AllowGas", address, gasPrice, gasLimit);
+            return sb;
+        }
+
+        public static ScriptBuilder SpendGas(this ScriptBuilder sb, Address address)
+        {
+            CallContract(sb, "gas", "SpendGas", address);
+            return sb;
         }
 
         // returns register slot that contains the method name

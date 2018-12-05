@@ -104,13 +104,12 @@ namespace Phantasma.Tests
                 {
                     simulator.BeginBlock();
                     var tx = simulator.GenerateAccountRegistration(keypair, name);
-                    result = simulator.EndBlock();
+                    var lastBlock = simulator.EndBlock().FirstOrDefault();
 
-                    if (result)
+                    if (lastBlock != null)
                     {
                         Assert.IsTrue(tx != null);
 
-                        var lastBlock = nexus.RootChain.LastBlock;
                         var evts = lastBlock.GetEventsForTransaction(tx.Hash);
                         Assert.IsTrue(evts.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
                     }
@@ -194,8 +193,8 @@ namespace Phantasma.Tests
 
             // finish the chain transfer
             simulator.BeginBlock();
-            simulator.GenerateSideChainSettlement(nexus.RootChain, targetChain, blockA.Hash);
-            Assert.IsTrue(simulator.EndBlock());
+            simulator.GenerateSideChainSettlement(sender, nexus.RootChain, targetChain, blockA.Hash);
+            Assert.IsTrue(simulator.EndBlock().Any());
 
             // verify balances
             balance = targetChain.GetTokenBalance(token, receiver.Address);
@@ -246,8 +245,8 @@ namespace Phantasma.Tests
 
             // finish the chain transfer
             simulator.BeginBlock();
-            simulator.GenerateSideChainSettlement(nexus.RootChain, targetChain, blockA.Hash);
-            Assert.IsTrue(simulator.EndBlock());
+            simulator.GenerateSideChainSettlement(sender, nexus.RootChain, targetChain, blockA.Hash);
+            Assert.IsTrue(simulator.EndBlock().Any());
 
             // verify balances
             balance = targetChain.GetTokenBalance(token, receiver.Address);
@@ -480,8 +479,8 @@ namespace Phantasma.Tests
 
             // finish the chain transfer
             simulator.BeginBlock();
-            simulator.GenerateSideChainSettlement(nexus.RootChain, targetChain, blockA.Hash);
-            Assert.IsTrue(simulator.EndBlock());
+            simulator.GenerateSideChainSettlement(sender, nexus.RootChain, targetChain, blockA.Hash);
+            Assert.IsTrue(simulator.EndBlock().Any());
 
             // verify the sender no longer has it
             ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sender.Address);

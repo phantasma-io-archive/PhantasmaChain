@@ -15,16 +15,9 @@ namespace Phantasma.Tests
         private Dictionary<string, Func<ExecutionFrame, ExecutionState>> _interops = new Dictionary<string, Func<ExecutionFrame, ExecutionState>>();
         private Func<string, ExecutionContext> _contextLoader;
 
-        public TestVM(byte[] script) : this(script, 99999)
+        public TestVM(byte[] script) : base(script)
         {
         }
-
-        public TestVM(byte[] script, BigInteger gasLimit) : base(script)
-        {
-            this._gasLimit = gasLimit;
-        }
-
-        public override BigInteger gasLimit => _gasLimit;
 
 #if DEBUG
         public override ExecutionState HandleException(VMDebugException ex)
@@ -82,9 +75,10 @@ namespace Phantasma.Tests
         [TestMethod]
         public void GasLimit()
         {
-            var script = ScriptUtils.BeginScript(1, 9999).CallInterop("Upper", "hello").EndScript();
+            var source = KeyPair.Generate();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallInterop("Upper", "hello").EndScript();
 
-            var vm = new TestVM(script, 9999);
+            var vm = new TestVM(script);
             vm.RegisterDefaultInterops();
             var state = vm.Execute();
             Assert.IsTrue(state == ExecutionState.Halt);
@@ -94,7 +88,7 @@ namespace Phantasma.Tests
             var result = vm.Stack.Pop().AsString();
             Assert.IsTrue(result == "HELLO");
 
-            vm = new TestVM(script, 1);
+            vm = new TestVM(script);
             vm.RegisterDefaultInterops();
             state = vm.Execute();
             Assert.IsTrue(state == ExecutionState.Fault);

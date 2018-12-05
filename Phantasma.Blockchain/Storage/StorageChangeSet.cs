@@ -31,7 +31,8 @@ namespace Phantasma.Blockchain.Storage
         {
             if (_entries.ContainsKey(key))
             {
-                return true;
+                var entry = _entries[key];
+                return entry.newValue != null;
             }
 
             return baseContext.Has(key);

@@ -123,7 +123,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void AccumulateFees()
         {
-            var txFee = Runtime.Chain.GetBlockReward(Runtime.Block);
+            BigInteger txFee = 0; // Runtime.Chain.GetBlockReward(Runtime.Block); TODO fixme
             _unclaimedFees += txFee;
 
             var token = this.Runtime.Nexus.NativeToken;

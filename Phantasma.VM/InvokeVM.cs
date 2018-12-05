@@ -11,8 +11,6 @@ namespace Phantasma.VM
 
         }
 
-        public override BigInteger gasLimit => 999999;
-
         public override ExecutionState ExecuteInterop(string method)
         {
             throw new NotImplementedException();

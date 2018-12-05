@@ -12,13 +12,14 @@ namespace Phantasma.VM
         public byte[] Script { get; private set; }
 
         public uint InstructionPointer { get; private set; }
-        public ExecutionState State { get; private set; }
+
+        private ExecutionState _state;
 
         public ScriptContext(byte[] script)
         {
             this.Script = script;
             this.InstructionPointer = 0;
-            this.State = ExecutionState.Running;
+            this._state = ExecutionState.Running;
         }
 
         public override int GetSize()
@@ -28,12 +29,12 @@ namespace Phantasma.VM
 
         public override ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack)
         {
-            while (State == ExecutionState.Running)
+            while (_state == ExecutionState.Running)
             {
                 this.Step(frame, stack);
             }
 
-            return State;
+            return _state;
         }
 
         #region IO 
@@ -116,7 +117,7 @@ namespace Phantasma.VM
 
         private void SetState(ExecutionState state)
         {
-            this.State = state;
+            this._state = state;
         }
 
         public void Step(ExecutionFrame frame, Stack<VMObject> stack)
@@ -125,18 +126,7 @@ namespace Phantasma.VM
             {
                 var opcode = (Opcode)Read8();
 
-                var gasCost = GetGasCostForOpcode(opcode);
-                var VM = frame.VM;
-                VM.usedGas += gasCost;
-
-                if (VM.usedGas > VM.gasLimit)
-                {
-#if DEBUG
-                    throw new VMDebugException(frame, stack, "VM gas limit exceeded");
-#endif
-                    SetState(ExecutionState.Fault);
-                    return;
-                }
+                frame.VM.ValidateOpcode(opcode);
 
                 switch (opcode)
                 {
@@ -254,7 +244,7 @@ namespace Phantasma.VM
                             if (state != ExecutionState.Running)
                             {
 #if DEBUG
-                                throw new VMDebugException(frame, stack, "VM extcall failed: " + method);
+                                throw new VMDebugException(frame.VM, "VM extcall failed: " + method);
 #endif
                                 return;
                             }
@@ -721,7 +711,7 @@ namespace Phantasma.VM
                             if (context == null)
                             {
 #if DEBUG
-                                throw new VMDebugException(frame, stack, $"VM ctx instruction failed: could not find context with name '{contextName}'");
+                                throw new VMDebugException(frame.VM, $"VM ctx instruction failed: could not find context with name '{contextName}'");
 #endif
                                 SetState(ExecutionState.Fault);
                                 return;
@@ -740,9 +730,9 @@ namespace Phantasma.VM
 
                             var context = frame.Registers[src].AsInterop<ExecutionContext>();
 
-                            State = frame.VM.SwitchContext(context);
+                            _state = frame.VM.SwitchContext(context);
 
-                            if (State == ExecutionState.Running)
+                            if (_state == ExecutionState.Running)
                             {
                                 frame.VM.PopFrame();
                             }
@@ -770,30 +760,5 @@ namespace Phantasma.VM
             }
         }
 
-        public static BigInteger GetGasCostForOpcode(Opcode opcode)
-        {
-            switch (opcode)
-            {
-                case Opcode.GET:
-                case Opcode.PUT:
-                case Opcode.CALL:
-                case Opcode.LOAD:
-                    return 2;
-
-                case Opcode.EXTCALL:
-                    return 3;
-
-                case Opcode.CTX:
-                    return 5;
-
-                case Opcode.SWITCH:
-                    return 10;
-
-                case Opcode.NOP:
-                    return 0;
-
-                default: return 1;
-            }
-        }
     }
 }

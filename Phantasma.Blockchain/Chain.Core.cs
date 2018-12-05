@@ -11,6 +11,7 @@ using Phantasma.Blockchain.Storage;
 using System;
 using Phantasma.VM.Utils;
 using Phantasma.VM;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -213,17 +214,6 @@ namespace Phantasma.Blockchain
             Nexus.PluginTriggerBlock(this, block);
 
             return true;
-        }
-
-        public BigInteger GetBlockReward(Block block)
-        {
-            BigInteger result = 0;
-            var transactions = GetBlockTransactions(block);
-            foreach (Transaction tx in transactions)
-            {
-                result += tx.GasPrice * tx.GasLimit; // TODO fix this
-            }
-            return result;
         }
 
         private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();
@@ -466,7 +456,7 @@ namespace Phantasma.Blockchain
             var contract = FindContract<SmartContract>(contractName);
             Throw.IfNull(contract, nameof(contract));
 
-            var script = ScriptUtils.BeginScript(1, 999999).CallContract(contractName, methodName, args).EndScript();
+            var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null, null, changeSet);
 
@@ -511,6 +501,25 @@ namespace Phantasma.Blockchain
 
                 currentBlockHeight++;
             }
+        }
+
+        public BigInteger GetBlockReward(Block block)
+        {
+            BigInteger total = 0;
+            foreach (var hash in block.TransactionHashes)
+            {
+                var events = block.GetEventsForTransaction(hash);
+                foreach (var evt in events)
+                {
+                    if (evt.Kind == EventKind.GasPayment)
+                    {
+                        var gasInfo = evt.GetContent<GasEventData>();
+                        total += gasInfo.price * gasInfo.amount;
+                    }
+                }
+            }
+
+            return total;
         }
 
         #region NFT
