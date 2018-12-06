@@ -104,5 +104,27 @@ namespace Phantasma.Blockchain.Contracts.Native
             var entry = _entryMap.Get(address);
             return entry.stake;
         }
+
+        public BigInteger GetIndexOfValidator(Address address)
+        {
+            if (address == Address.Null)
+            {
+                return -1;
+            }
+
+            var index = _entryList.IndexOf(address);
+            return index;
+        }
+
+        public Address GetValidatorByIndex(int index)
+        {
+            Runtime.Expect(index >= 0, "invalid validator index");
+
+            var count = _entryList.Count();
+            Runtime.Expect(index < count, "invalid validator index");
+
+            var address = _entryList.Get(index);
+            return address;
+        }
     }
 }

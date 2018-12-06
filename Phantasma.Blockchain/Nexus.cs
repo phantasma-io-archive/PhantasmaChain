@@ -457,7 +457,25 @@ namespace Phantasma.Blockchain
 
         public bool IsValidator(Address address)
         {
-            var result = (bool)RootChain.InvokeContract("stake", "IsValidator", address);
+            return GetIndexOfValidator(address) < 0;
+        }
+
+        public int GetIndexOfValidator(Address address)
+        {
+            if (address == Address.Null)
+            {
+                return -1;
+            }
+
+            var result = (int)(BigInteger)RootChain.InvokeContract("stake", "GetIndexOfValidator", address);
+            return result;
+        }
+
+        public Address GetValidatorByIndex(int index)
+        {
+            Throw.If(index < 0, "invalid validator index");
+
+            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", index);
             return result;
         }
         #endregion
