@@ -149,6 +149,16 @@ namespace Phantasma.Blockchain
 
         public bool AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
+            if (CurrentEpoch == null)
+            {
+                return false;
+            }
+
+            if (CurrentEpoch.IsSlashed(Timestamp.Now))
+            {
+                return false;
+            }
+
             if (LastBlock != null)
             {
                 if (LastBlock.Height != block.Height - 1)

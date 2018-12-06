@@ -167,10 +167,8 @@ namespace Phantasma.Blockchain
                 var signatureCount = (int)reader.ReadVarInt();
                 for (int i = 0; i < signatureCount; i++)
                 {
-                    var sig = reader.ReadSignature() as RingSignature;
-
                     // TODO sig should always be not-null in most cases, but add error handling later
-                    if (sig != null)
+                    if (reader.ReadSignature() is RingSignature sig)
                     {
                         epoch.AddSignature(sig);
                     }

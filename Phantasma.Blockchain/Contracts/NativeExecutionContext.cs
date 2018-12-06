@@ -69,9 +69,8 @@ namespace Phantasma.Blockchain.Contracts
                 return result;
             }
 
-            var customContract = this.Contract as CustomContract;
 
-            if (customContract == null)
+            if (!(this.Contract is CustomContract customContract))
             {
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");

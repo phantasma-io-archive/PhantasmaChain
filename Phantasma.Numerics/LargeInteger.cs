@@ -219,7 +219,7 @@ namespace Phantasma.Numerics
             return temp.ToString();
         }
 
-        private static int nlz(int x)
+        private static int Nlz(int x)
         {
             int n;
 
@@ -255,11 +255,7 @@ namespace Phantasma.Numerics
 
             var b = 256; // Number base (8 bits).
             //unsigned short* un, *vn;  // Normalized form of u, v.
-            byte qhat;            // Estimated quotient digit.
-            byte rhat;            // A remainder.
-            int p;               // Product of two digits.
             int i, j, q;
-            byte t;
             byte k;
 
             var m = dividendArray.Length;
@@ -555,23 +551,23 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator *(LargeInteger a, LargeInteger b)
         {
-            var result = new LargeInteger(Multiply(a._data, b._data));
-            result._sign = a._sign * b._sign;
+            var result = new LargeInteger(Multiply(a._data, b._data))
+            {
+                _sign = a._sign * b._sign
+            };
             return result;
         }
 
         public static LargeInteger operator /(LargeInteger a, LargeInteger b)
         {
-            LargeInteger quot, rem;
-            DivMod(Abs(a), Abs(b), out quot, out rem);
+            DivMod(Abs(a), Abs(b), out LargeInteger quot, out LargeInteger rem);
             quot._sign = quot._sign == 0 ? 0 : a._sign * b._sign;
             return quot;
         }
 
         public static LargeInteger operator %(LargeInteger a, LargeInteger b)
         {
-            LargeInteger quot, rem;
-            DivMod(a, b, out quot, out rem);
+            DivMod(a, b, out LargeInteger quot, out LargeInteger rem);
 
             if (rem < 0)    //using the convention that 0 <= rem <= divisor. So if rem < 0, add the divisor to it
                 rem += b;
@@ -831,10 +827,9 @@ namespace Phantasma.Numerics
 
         public override bool Equals(object obj)
         {
-            if (obj is LargeInteger)
+            if (obj is LargeInteger temp)
             {
-                var temp = (LargeInteger)obj;
-                return temp._sign == this._sign && temp._data.SequenceEqual(this._data);
+                return temp._sign == _sign && temp._data.SequenceEqual(this._data);
             }
 
             return false;

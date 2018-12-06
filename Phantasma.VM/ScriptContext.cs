@@ -309,7 +309,7 @@ namespace Phantasma.VM
                             if (frame.VM.frames.Count > 1)
                             {
                                 InstructionPointer = frame.VM.PopFrame();
-                                Expect(frame.VM.currentContext == this);
+                                Expect(frame.VM.CurrentContext == this);
                                 Expect(InstructionPointer < this.Script.Length);
                             }
                             else

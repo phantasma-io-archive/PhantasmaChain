@@ -33,25 +33,27 @@ namespace Phantasma.Blockchain
 
         private List<INexusPlugin> _plugins = new List<INexusPlugin>();
 
-        private Logger logger;
+        private readonly Logger _logger;
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
         public Nexus(string name, KeyPair owner, Logger logger = null)
         {
-            this.logger = logger;
+            this._logger = logger;
             this.Name = name;
 
             // TODO this probably should be done using a normal transaction instead of here
-            var contracts = new List<SmartContract>();
-            contracts.Add(new NexusContract());
-            contracts.Add(new TokenContract());
-            contracts.Add(new StakeContract());
-            contracts.Add(new GovernanceContract());
-            contracts.Add(new AccountContract());
-            contracts.Add(new OracleContract());
-            contracts.Add(new GasContract());
+            var contracts = new List<SmartContract>
+            {
+                new NexusContract(),
+                new TokenContract(),
+                new StakeContract(),
+                new GovernanceContract(),
+                new AccountContract(),
+                new OracleContract(),
+                new GasContract()
+            };
 
             this.RootChain = new Chain(this, "main", contracts, logger, null);
             _chains[RootChain.Name] = RootChain;
@@ -221,7 +223,7 @@ namespace Phantasma.Blockchain
             var tokenContract = new TokenContract();
             var gasContract = new GasContract();
 
-            var chain = new Chain(this, name, new SmartContract[] { tokenContract, gasContract, contract }, this.logger, parentChain, parentBlock);
+            var chain = new Chain(this, name, new SmartContract[] { tokenContract, gasContract, contract }, this._logger, parentChain, parentBlock);
 
             lock (_chains)
             {
@@ -400,17 +402,18 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var transactions = new List<Transaction>();
+            var transactions = new List<Transaction>
+            {
+                TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible),
+                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible),
 
-            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible));
-            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
+                SideChainCreateTx(RootChain, owner, "privacy"),
+                SideChainCreateTx(RootChain, owner, "vault"),
+                SideChainCreateTx(RootChain, owner, "bank"),
+                SideChainCreateTx(RootChain, owner, "apps"),
 
-            transactions.Add(SideChainCreateTx(RootChain, owner, "privacy"));
-            transactions.Add(SideChainCreateTx(RootChain, owner, "vault"));
-            transactions.Add(SideChainCreateTx(RootChain, owner, "bank"));
-            transactions.Add(SideChainCreateTx(RootChain, owner, "apps"));
-
-            transactions.Add(StakeCreateTx(RootChain, owner));
+                StakeCreateTx(RootChain, owner)
+            };
 
             var genesisMessage = Encoding.UTF8.GetBytes("SOUL genesis");
             var block = new Block(Chain.InitialHeight, RootChain.Address, owner.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
