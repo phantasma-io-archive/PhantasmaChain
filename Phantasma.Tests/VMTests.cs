@@ -73,10 +73,10 @@ namespace Phantasma.Tests
     public class VMTests
     {
         [TestMethod]
-        public void GasLimit()
+        public void Interop()
         {
             var source = KeyPair.Generate();
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallInterop("Upper", "hello").EndScript();
+            var script = ScriptUtils.BeginScript().CallInterop("Upper", "hello").EndScript();
 
             var vm = new TestVM(script);
             vm.RegisterDefaultInterops();
@@ -87,11 +87,6 @@ namespace Phantasma.Tests
 
             var result = vm.Stack.Pop().AsString();
             Assert.IsTrue(result == "HELLO");
-
-            vm = new TestVM(script);
-            vm.RegisterDefaultInterops();
-            state = vm.Execute();
-            Assert.IsTrue(state == ExecutionState.Fault);
         }
     }
 }

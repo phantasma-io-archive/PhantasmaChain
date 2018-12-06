@@ -527,6 +527,34 @@ namespace Phantasma.Blockchain
             return total;
         }
 
+        public BigInteger GetTransactionFee(Transaction tx)
+        {
+            Throw.IfNull(tx, nameof(tx));
+            return GetTransactionFee(tx.Hash);
+        }
+
+        public BigInteger GetTransactionFee(Hash hash)
+        {
+            Throw.IfNull(hash, nameof(hash));
+
+            BigInteger fee = 0;
+
+            var block = FindTransactionBlock(hash);
+            Throw.IfNull(block, nameof(block));
+
+            var events = block.GetEventsForTransaction(hash);
+            foreach (var evt in events)
+            {
+                if (evt.Kind == EventKind.GasPayment)
+                {
+                    var info = evt.GetContent<GasEventData>();
+                    fee += info.amount * info.price;
+                }
+            }
+
+            return fee;
+        }
+    
         #region NFT
         internal BigInteger CreateNFT(Token token, byte[] data)
         {
