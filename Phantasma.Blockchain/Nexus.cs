@@ -10,7 +10,6 @@ using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Tests;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
@@ -51,6 +50,7 @@ namespace Phantasma.Blockchain
             contracts.Add(new GovernanceContract());
             contracts.Add(new AccountContract());
             contracts.Add(new OracleContract());
+            contracts.Add(new GasContract());
 
             this.RootChain = new Chain(this, owner.Address, "main", contracts, logger, null);
             _chains[RootChain.Name] = RootChain;
@@ -218,8 +218,9 @@ namespace Phantasma.Blockchain
             }
 
             var tokenContract = new TokenContract();
+            var gasContract = new GasContract();
 
-            var chain = new Chain(this, owner, name, new SmartContract[] { contract, tokenContract }, this.logger, parentChain, parentBlock);
+            var chain = new Chain(this, owner, name, new SmartContract[] { tokenContract, gasContract, contract }, this.logger, parentChain, parentBlock);
 
             lock (_chains)
             {
@@ -327,25 +328,39 @@ namespace Phantasma.Blockchain
         #region GENESIS
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
-            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var sb = ScriptUtils.BeginScript();
+
+            if (symbol != NativeTokenSymbol)
+            {
+                sb.AllowGas(owner.Address, 1, 9999);
+            }
+
+            sb.CallContract(ScriptUtils.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
+
+            if (symbol == NativeTokenSymbol)
+            {
+                sb.CallContract(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
+                sb.AllowGas(owner.Address, 1, 9999);
+            }
+
+            var script = sb.SpendGas(owner.Address).EndScript();
+
+            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
-            return tx;
-        }
-
-        private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
-        {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, amount);
-            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
-            tx.Sign(owner);
             return tx;
         }
 
         private Transaction SideChainCreateTx(Chain chain, KeyPair owner, string name)
         {
-            var script = ScriptUtils.CallContractScript(ScriptUtils.NexusContract, "CreateChain", owner.Address, name, RootChain.Name);
-            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, 1, 9999).
+                CallContract(ScriptUtils.NexusContract, "CreateChain", owner.Address, name, RootChain.Name).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -373,7 +388,6 @@ namespace Phantasma.Blockchain
             var transactions = new List<Transaction>();
 
             transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible));
-            transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
             transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
 
             transactions.Add(SideChainCreateTx(RootChain, owner, "privacy"));
@@ -431,6 +445,20 @@ namespace Phantasma.Blockchain
             }
 
             return 0;
+        }
+        #endregion
+
+        #region VALIDATORS
+        public IEnumerable<Address> GetValidators()
+        {
+            var validators = (Address[])RootChain.InvokeContract("stake", "GetValidators");
+            return validators;
+        }
+
+        public bool IsValidator(Address address)
+        {
+            var result = (bool)RootChain.InvokeContract("stake", "IsValidator", address);
+            return result;
         }
         #endregion
     }

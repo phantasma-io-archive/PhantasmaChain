@@ -24,9 +24,6 @@ namespace Phantasma.Blockchain
         public string NexusName { get; }
         public string ChainName { get; }
 
-        public BigInteger GasPrice { get; }
-        public BigInteger GasLimit { get; }
-
         public Signature[] Signatures { get; private set; }
         public Hash Hash { get; private set; }
 
@@ -46,8 +43,6 @@ namespace Phantasma.Blockchain
             var nexusName = reader.ReadShortString();
             var chainName = reader.ReadShortString();
             var script = reader.ReadByteArray();
-            var gasPrice = reader.ReadBigInteger();
-            var gasLimit = reader.ReadBigInteger();
             var nonce = reader.ReadUInt32();
             var expiration = reader.ReadUInt32();
 
@@ -68,7 +63,7 @@ namespace Phantasma.Blockchain
                 signatures = new Signature[0];
             }
 
-            return new Transaction(nexusName, chainName, script, gasPrice, gasLimit, new Timestamp(expiration), nonce, signatures);
+            return new Transaction(nexusName, chainName, script, new Timestamp(expiration), nonce, signatures);
         }
 
         private void Serialize(BinaryWriter writer, bool withSignature)
@@ -76,8 +71,6 @@ namespace Phantasma.Blockchain
             writer.WriteShortString(this.NexusName);
             writer.WriteShortString(this.ChainName);
             writer.WriteByteArray(this.Script);
-            writer.WriteBigInteger(this.GasPrice);
-            writer.WriteBigInteger(this.GasLimit);
             writer.Write(this.Nonce);
             writer.Write(this.Expiration.Value);
 
@@ -105,7 +98,7 @@ namespace Phantasma.Blockchain
 
         internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify)
         {
-            var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet);
+            var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet, false);
 
             var state = runtime.Execute();
 
@@ -114,7 +107,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var cost = runtime.gas;
+            var cost = runtime.usedGas;
 
             // fee distribution TODO
 //            if (chain.NativeTokenAddress != null && cost > 0)
@@ -130,17 +123,13 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Transaction(string nexusName, string chainName, byte[] script, BigInteger gasPrice, BigInteger gasLimit, Timestamp expiration, uint nonce, IEnumerable<Signature> signatures = null)
+        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, uint nonce, IEnumerable<Signature> signatures = null)
         {
             Throw.IfNull(script, nameof(script));
-            Throw.IfNull(gasPrice, nameof(gasPrice));
-            Throw.IfNull(gasLimit, nameof(gasLimit));
 
             this.NexusName = nexusName;
             this.ChainName = chainName;
             this.Script = script;
-            this.GasPrice = gasPrice;
-            this.GasLimit = gasLimit;
             this.Expiration = expiration;
             this.Nonce = nonce;
 

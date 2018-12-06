@@ -1,4 +1,5 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using System;
 
 namespace Phantasma.VM

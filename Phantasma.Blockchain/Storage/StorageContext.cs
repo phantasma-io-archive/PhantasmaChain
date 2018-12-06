@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
@@ -62,16 +63,19 @@ namespace Phantasma.Blockchain.Storage
 
         public void Delete(string key) { Delete(Encoding.UTF8.GetBytes(key)); }
 
-        private static readonly byte[] global_prefix = "{global}".AsByteArray();
+        internal static byte[] MakeContractPrefix(SmartContract contract)
+        {
+            return $"[global.{contract.Name}]".AsByteArray();
+        }
 
         public Collection<T> FindCollectionForAddress<T>(string name, Address address)
         {
             return FindCollectionForAddress<T>(Encoding.UTF8.GetBytes(name), address);
         }
 
-        public Collection<T> FindCollectionForContract<T>(string name)
+        public Collection<T> FindCollectionForContract<T>(string name, SmartContract contract)
         {
-            return FindCollectionForContract<T>(Encoding.UTF8.GetBytes(name));
+            return FindCollectionForContract<T>(Encoding.UTF8.GetBytes(name), contract);
         }
 
         public Collection<T> FindCollectionForAddress<T>(byte[] name, Address address)
@@ -79,9 +83,9 @@ namespace Phantasma.Blockchain.Storage
             return new Collection<T>(this, name, address.PublicKey);
         }
 
-        public Collection<T> FindCollectionForContract<T>(byte[] name)
+        public Collection<T> FindCollectionForContract<T>(byte[] name, SmartContract contract)
         {
-            return new Collection<T>(this, name, global_prefix);
+            return new Collection<T>(this, name, MakeContractPrefix(contract));
         }
 
         public Map<K, V> FindMapForAddress<K, V>(string name, Address address)
@@ -90,9 +94,9 @@ namespace Phantasma.Blockchain.Storage
 
         }
 
-        public Map<K, V> FindMapForContract<K, V>(string name)
+        public Map<K, V> FindMapForContract<K, V>(string name, SmartContract contract)
         {
-            return FindMapForContract<K, V>(Encoding.UTF8.GetBytes(name));
+            return FindMapForContract<K, V>(Encoding.UTF8.GetBytes(name), contract);
         }
 
         public Map<K, V> FindMapForAddress<K, V>(byte[] name, Address address)
@@ -100,9 +104,9 @@ namespace Phantasma.Blockchain.Storage
             return new Map<K, V>(this, name, address.PublicKey);
         }
 
-        public Map<K, V> FindMapForContract<K, V>(byte[] name)
+        public Map<K, V> FindMapForContract<K, V>(byte[] name, SmartContract contract)
         {
-            return new Map<K, V>(this, name, global_prefix);
+            return new Map<K, V>(this, name, MakeContractPrefix(contract));
         }
     }
 }

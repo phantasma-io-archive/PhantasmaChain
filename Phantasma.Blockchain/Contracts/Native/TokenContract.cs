@@ -1,6 +1,9 @@
-﻿using Phantasma.Blockchain.Tokens;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 using Phantasma.Numerics;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -205,5 +208,100 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #endregion
 
+        #region SETTLEMENTS
+        // NOTE we should later prevent contracts from manipulating those
+        private Map<Hash, bool> _settledTransactions;
+
+        public bool IsSettled(Hash hash)
+        {
+            return _settledTransactions.ContainsKey(hash);
+        }
+
+        protected void RegisterHashAsKnown(Hash hash)
+        {
+            _settledTransactions.Set(hash, true);
+        }
+
+        public void SettleBlock(Address sourceChain, Hash hash)
+        {
+            Runtime.Expect(IsParentChain(sourceChain) || IsChildChain(sourceChain), "source must be parent or child chain");
+
+            Runtime.Expect(!IsSettled(hash), "hash already settled");
+
+            var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
+
+            var block = otherChain.FindBlockByHash(hash);
+            Runtime.Expect(block != null, "invalid block");
+
+            int settlements = 0;
+
+            foreach (var txHash in block.TransactionHashes)
+            {
+                string symbol = null;
+                BigInteger value = 0;
+                Address targetAddress = Address.Null;
+
+                var evts = block.GetEventsForTransaction(txHash);
+
+                foreach (var evt in evts)
+                {
+                    if (evt.Kind == EventKind.TokenEscrow)
+                    {
+                        var data = Serialization.Unserialize<TokenEventData>(evt.Data);
+                        if (data.chainAddress == this.Runtime.Chain.Address)
+                        {
+                            symbol = data.symbol;
+                            value = data.value;
+                            targetAddress = evt.Address;
+                            // TODO what about multiple escrow events in the same tx, seems not supported yet?
+                        }
+                    }
+                }
+
+                if (symbol != null)
+                {
+                    settlements++;
+                    Runtime.Expect(value > 0, "value must be greater than zero");
+                    Runtime.Expect(targetAddress != Address.Null, "target must not be null");
+
+                    var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+                    Runtime.Expect(token != null, "invalid token");
+
+                    if (token.Flags.HasFlag(TokenFlags.Fungible))
+                    {
+                        if (token.IsCapped)
+                        {
+                            var sourceSupplies = otherChain.GetTokenSupplies(token);
+                            var targetSupplies = this.Runtime.Chain.GetTokenSupplies(token);
+
+                            if (IsParentChain(sourceChain))
+                            {
+                                Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
+                                Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
+                            }
+                            else // child chain
+                            {
+                                Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
+                                Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
+                            }
+                        }
+
+                        var balances = this.Runtime.Chain.GetTokenBalances(token);
+                        Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
+                    }
+                    else
+                    {
+                        var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
+                        Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
+                    }
+
+                    Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = otherChain.Address });
+                }
+            }
+
+            Runtime.Expect(settlements > 0, "no settlements in the block");
+            RegisterHashAsKnown(hash);
+        }
+        #endregion
     }
 }

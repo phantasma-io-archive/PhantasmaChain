@@ -17,7 +17,7 @@ namespace Phantasma.VM
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append(Offset);
+            sb.Append(Offset.ToString().PadLeft(3, '0'));
             sb.Append(": ");
             sb.Append(Opcode.ToString());
 
@@ -88,6 +88,10 @@ namespace Phantasma.VM
                                 sb.Append('"');
                                 sb.Append(Encoding.UTF8.GetString(bytes));
                                 sb.Append('"');
+                                break;
+
+                            case VMType.Number:
+                                sb.Append(new BigInteger(bytes));
                                 break;
 
                             default:

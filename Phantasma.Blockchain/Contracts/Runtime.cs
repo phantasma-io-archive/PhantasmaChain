@@ -6,6 +6,8 @@ using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Blockchain.Storage;
 using Phantasma.Core;
+using Phantasma.Numerics;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -21,7 +23,13 @@ namespace Phantasma.Blockchain.Contracts
 
         public StorageChangeSetContext ChangeSet { get; private set; }
 
-        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet) : base(script)
+        public BigInteger usedGas { get; private set; }
+        public BigInteger paidGas { get; private set; }
+        public BigInteger maxGas { get; private set; }
+        public BigInteger gasPrice { get; private set; }
+        public readonly bool readOnlyMode;
+
+        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -30,19 +38,26 @@ namespace Phantasma.Blockchain.Contracts
             //Throw.IfNull(block, nameof(block));
             //Throw.IfNull(transaction, nameof(transaction));
 
+            this.gasPrice = 0;
+            this.usedGas = 0;
+            this.paidGas = 0;
+            this.maxGas = 100;  // a minimum amount required for allowing calls to Gas contract etc
+
             this.Chain = chain;
             this.Block = block;
             this.Transaction = transaction;
             this.ChangeSet = changeSet;
+            this.readOnlyMode = readOnlyMode;
+
             Chain.RegisterInterop(this);
         }
 
-        internal void RegisterMethod(string name, Func<VirtualMachine, ExecutionState> handler)
+        internal void RegisterMethod(string name, Func<RuntimeVM, ExecutionState> handler)
         {
             handlers[name] = handler;
         }
 
-        private Dictionary<string, Func<VirtualMachine, ExecutionState>> handlers = new Dictionary<string, Func<VirtualMachine, ExecutionState>>();
+        private Dictionary<string, Func<RuntimeVM, ExecutionState>> handlers = new Dictionary<string, Func<RuntimeVM, ExecutionState>>();
 
         public override ExecutionState ExecuteInterop(string method)
         {
@@ -52,6 +67,35 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return ExecutionState.Fault;
+        }
+
+        public override ExecutionState Execute()
+        {
+            var result = base.Execute();
+
+            if (result == ExecutionState.Halt)
+            {
+                if (readOnlyMode)
+                {
+                    if (ChangeSet.Any())
+                    {
+#if DEBUG
+                        throw new VMDebugException(this, "VM changeset modified in read-only mode");
+#endif
+                        result = ExecutionState.Fault;
+                    }
+                }
+                else
+                if (paidGas < usedGas && Nexus.NativeToken != null)
+                {
+#if DEBUG
+                    throw new VMDebugException(this, "VM unpaid gas");
+#endif
+                    result = ExecutionState.Fault;
+                }
+            }
+
+            return result;
         }
 
         public T GetContract<T>(Address address) where T : IContract
@@ -75,14 +119,91 @@ namespace Phantasma.Blockchain.Contracts
         {
             var bytes = content == null ? new byte[0]: Serialization.Serialize(content);
 
+            switch (kind)
+            {
+                case EventKind.GasEscrow:
+                    {
+                        var gasInfo = (GasEventData)(object)content;
+                        this.maxGas = gasInfo.amount;
+                        this.gasPrice = gasInfo.price;
+                        break;
+                    }
+
+                case EventKind.GasPayment:
+                    {
+                        var gasInfo = (GasEventData)(object)content;
+                        this.paidGas = gasInfo.amount;
+                        break;
+                    }
+            }
+
             var evt = new Event(kind, address, bytes);
             _events.Add(evt);
         }
 
         public void Expect(bool condition, string description)
         {
+#if DEBUG
+            if (!condition)
+            {
+                throw new VMDebugException(this, description);
+            }
+#endif
+
             Throw.If(!condition, $"contract assertion failed: {description}");
         }
 
+        #region GAS
+        public override ExecutionState ValidateOpcode(Opcode opcode)
+        {
+            // required for allowing transactions to occur pre-minting of native token
+            if (readOnlyMode || Nexus.NativeToken == null || Nexus.NativeToken.CurrentSupply == 0)
+            {
+                return ExecutionState.Running;
+            }
+
+            var gasCost = GetGasCostForOpcode(opcode);
+            Throw.If(gasCost < 0, "invalid gas amount");
+
+            usedGas += gasCost;
+
+            if (usedGas > maxGas)
+            {
+#if DEBUG
+                throw new VMDebugException(this, "VM gas limit exceeded");
+#endif
+                return ExecutionState.Fault;
+            }
+
+            return ExecutionState.Running;
+        }
+
+        public static BigInteger GetGasCostForOpcode(Opcode opcode)
+        {
+            switch (opcode)
+            {
+                case Opcode.GET:
+                case Opcode.PUT:
+                case Opcode.CALL:
+                case Opcode.LOAD:
+                    return 2;
+
+                case Opcode.EXTCALL:
+                    return 3;
+
+                case Opcode.CTX:
+                    return 5;
+
+                case Opcode.SWITCH:
+                    return 10;
+
+                case Opcode.NOP:
+                case Opcode.RET:
+                    return 0;
+
+                default: return 1;
+            }
+        }
+        #endregion
     }
 }

@@ -13,16 +13,70 @@ namespace Phantasma.VM
 #if DEBUG
     public class VMDebugException : Exception
     {
-        public ExecutionFrame frame;
-        public Stack<VMObject> stack;
+        public VirtualMachine vm;
 
-        public VMDebugException(ExecutionFrame frame, Stack<VMObject> stack, string msg) : base(msg)
+        private string Header(string s)
         {
-            this.frame = frame;
-            this.stack = stack;
-            var temp = new Disassembler(frame.VM.entryScript);
-            var disasm = string.Join("\n", temp.Instructions.Select(inst => inst.ToString()));
-            File.WriteAllText("vm_dump.txt", disasm);
+            return $"*********{s}*********";
+        }
+
+        public VMDebugException(VirtualMachine vm, string msg) : base(msg)
+        {
+            this.vm = vm;
+
+            var temp = new Disassembler(vm.entryScript);
+
+            var lines = new List<string>();
+
+            if (vm.currentContext is ScriptContext)
+            {
+                var sc = (ScriptContext)vm.currentContext;
+                lines.Add(Header("CURRENT OFFSET"));
+                lines.Add(sc.InstructionPointer.ToString());
+                lines.Add("");
+            }
+
+            lines.Add(Header("STACK"));
+            var stack = vm.Stack.ToArray();
+            for (int i = 0; i < stack.Length; i++)
+            {
+                lines.Add(stack[i].ToString());
+            }
+            lines.Add("");
+
+            lines.Add(Header("FRAMES"));
+            int ct = 0;
+            var frames = vm.frames.ToArray();
+            foreach (var frame in frames)
+            {
+                if (ct > 0)
+                {
+                    lines.Add("");
+                }
+
+                lines.Add("Active = " + (frame == vm.currentFrame).ToString());
+                lines.Add("Entry Offset = " + frame.Offset.ToString());
+                lines.Add("Registers:");
+                int ri = 0;
+                foreach (var reg in frame.Registers)
+                {
+                    if (reg.Type != VMType.None)
+                    {
+                        lines.Add($"\tR{ri} = {reg}");
+                    }
+
+                    ri++;
+                }
+                ct++;
+            }
+            lines.Add("");
+
+            var disasm = temp.Instructions.Select(inst => inst.ToString());
+            lines.Add(Header("DISASM"));
+            lines.AddRange(disasm);
+            lines.Add("");
+
+            File.WriteAllLines("vm_dump.txt", lines.ToArray());
         }
     }
 #endif
@@ -45,8 +99,6 @@ namespace Phantasma.VM
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame currentFrame { get; private set; }
 
-        public BigInteger gas { get; private set; }
-
         public VirtualMachine(byte[] script)
         {
             Throw.IfNull(script, nameof(script));
@@ -55,7 +107,6 @@ namespace Phantasma.VM
             this.entryContext = new ScriptContext(script);
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
-            this.gas = 0;
             this.entryScript = script;
         }
 
@@ -67,7 +118,7 @@ namespace Phantasma.VM
         public abstract ExecutionState ExecuteInterop(string method);
         public abstract ExecutionContext LoadContext(string contextName);
 
-        public ExecutionState Execute()
+        public virtual ExecutionState Execute()
         {
             return SwitchContext(entryContext);
         }
@@ -111,14 +162,24 @@ namespace Phantasma.VM
             return result;
         }
 
+        public virtual ExecutionState ValidateOpcode(Opcode opcode)
+        {
+            return ExecutionState.Running;
+        }
+
         internal ExecutionState SwitchContext(ExecutionContext context)
         {
             this.currentContext = context;
             PushFrame(context, 0, DefaultRegisterCount);
             return context.Execute(this.currentFrame, this.Stack);
         }
-
         #endregion
 
+#if DEBUG
+        public virtual ExecutionState HandleException(VMDebugException ex)
+        {
+            throw ex;
+        }
+#endif
     }
 }
