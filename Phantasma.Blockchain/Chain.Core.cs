@@ -12,6 +12,7 @@ using System;
 using Phantasma.VM.Utils;
 using Phantasma.VM;
 using Phantasma.IO;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
@@ -29,6 +30,8 @@ namespace Phantasma.Blockchain
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
+
+        private Dictionary<Hash, Epoch> _epochMap = new Dictionary<Hash, Epoch>();
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
@@ -56,7 +59,8 @@ namespace Phantasma.Blockchain
 
         public string Name { get; private set; }
         public Address Address { get; private set; }
-        public Address Owner { get; private set; }
+
+        public Epoch CurrentEpoch { get; private set; }
 
         public IEnumerable<Block> Blocks => _blockHashes.Values;
 
@@ -72,9 +76,8 @@ namespace Phantasma.Blockchain
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
-        public Chain(Nexus nexus, Address owner, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
-            Throw.IfNull(owner, "owner required");
             Throw.IfNull(nexus, "nexus required");
             Throw.If(contracts == null || !contracts.Any(), "contracts required");
 
@@ -102,7 +105,6 @@ namespace Phantasma.Blockchain
             }
 
             this.Name = name;
-            this.Owner = owner;
             this.Nexus = nexus;
 
             this.ParentChain = parentChain;
@@ -121,6 +123,8 @@ namespace Phantasma.Blockchain
             {
                 _level = 1;
             }
+
+            GenerateEpoch();
         }
 
         public override string ToString()
@@ -202,6 +206,9 @@ namespace Phantasma.Blockchain
             _blockChangeSets[block.Hash] = changeSet;
 
             changeSet.Execute();
+
+            CurrentEpoch.AddBlockHash(block.Hash);
+            CurrentEpoch.UpdateHash();
 
             LastBlock = block;
 
@@ -508,6 +515,7 @@ namespace Phantasma.Blockchain
             }
         }
 
+        #region FEES 
         public BigInteger GetBlockReward(Block block)
         {
             BigInteger total = 0;
@@ -554,7 +562,18 @@ namespace Phantasma.Blockchain
 
             return fee;
         }
-    
+#endregion
+
+        #region EPOCH
+        private void GenerateEpoch()
+        {
+            var validator = Nexus.GetValidatorByIndex(0);
+            var epoch = new Epoch(Timestamp.Now, validator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
+
+            CurrentEpoch = epoch;
+        }
+        #endregion
+
         #region NFT
         internal BigInteger CreateNFT(Token token, byte[] data)
         {

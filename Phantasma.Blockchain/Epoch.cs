@@ -2,6 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.Ring;
 using Phantasma.IO;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,18 +16,29 @@ namespace Phantasma.Blockchain
 
         public readonly Hash PreviousHash;
         public readonly Timestamp StartTime;
+        public readonly Timestamp EndTime;
         public readonly Address Validator;
         public IEnumerable<Signature> Signatures => _signatures;
         public IEnumerable<Hash> BlockHashes => _blockHashes;
 
+        public Hash Hash { get; private set; }
+
         private List<RingSignature> _signatures = new List<RingSignature>();
         private HashSet<Hash> _blockHashes = new HashSet<Hash>();
+
+        public bool WasSlashed => IsSlashed(EndTime);
 
         public Epoch(Timestamp time, Address validator, Hash previousHash)
         {
             this.Validator = validator;
             this.StartTime = time;
+            this.EndTime = StartTime;
             this.PreviousHash = previousHash;
+        }
+
+        public override string ToString()
+        {
+            return $"{Hash}";
         }
 
         public void AddSignature(RingSignature signature)
@@ -47,6 +59,17 @@ namespace Phantasma.Blockchain
             }
 
             var validatorSet = new HashSet<Address>(knownValidators);
+            if (_signatures.Count > validatorSet.Count)
+            {
+                return false;
+            }
+
+            // check for majority signatures
+            var requiredSignatureCount = 1 + validatorSet.Count / 2;
+            if (_signatures.Count < requiredSignatureCount)
+            {
+                return false;
+            }
 
             if (!validatorSet.Contains(this.Validator))
             {
@@ -154,9 +177,9 @@ namespace Phantasma.Blockchain
                 }
             }
 
+            epoch.UpdateHash();
             return epoch;
         }
-
 
         public static Epoch Unserialize(byte[] bytes)
         {
@@ -167,6 +190,18 @@ namespace Phantasma.Blockchain
                     return Unserialize(reader);
                 }
             }
+        }
+
+        internal void UpdateHash()
+        {
+            var data = this.ToByteArray(false);
+            var hash = CryptoExtensions.Sha256(data);
+            this.Hash = new Hash(hash);
+        }
+
+        public bool IsSlashed(Timestamp time)
+        {
+            return ((time - StartTime) - DurationInSeconds) >= SlashLimitInSeconds;
         }
     }
 }

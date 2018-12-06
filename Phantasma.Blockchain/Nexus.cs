@@ -9,6 +9,7 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Cryptography.Ring;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
@@ -52,7 +53,7 @@ namespace Phantasma.Blockchain
             contracts.Add(new OracleContract());
             contracts.Add(new GasContract());
 
-            this.RootChain = new Chain(this, owner.Address, "main", contracts, logger, null);
+            this.RootChain = new Chain(this, "main", contracts, logger, null);
             _chains[RootChain.Name] = RootChain;
 
             if (!CreateGenesisBlock(owner))
@@ -220,7 +221,7 @@ namespace Phantasma.Blockchain
             var tokenContract = new TokenContract();
             var gasContract = new GasContract();
 
-            var chain = new Chain(this, owner, name, new SmartContract[] { tokenContract, gasContract, contract }, this.logger, parentChain, parentBlock);
+            var chain = new Chain(this, name, new SmartContract[] { tokenContract, gasContract, contract }, this.logger, parentChain, parentBlock);
 
             lock (_chains)
             {
