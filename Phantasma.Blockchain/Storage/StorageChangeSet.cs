@@ -14,7 +14,8 @@ namespace Phantasma.Blockchain.Storage
     {
         public StorageContext baseContext { get; private set; }
 
-        public readonly Dictionary<StorageKey, StorageChangeSetEntry> _entries = new Dictionary<StorageKey, StorageChangeSetEntry>(new StorageKeyComparer());
+        private readonly Dictionary<StorageKey, StorageChangeSetEntry> _entries = new Dictionary<StorageKey, StorageChangeSetEntry>(new StorageKeyComparer());
+//        public IEnumerable<KeyValuePair<StorageKey, StorageChangeSetEntry>> Entries => _entries;
 
         public StorageChangeSetContext(StorageContext baseContext)
         {
@@ -113,6 +114,11 @@ namespace Phantasma.Blockchain.Storage
                     baseContext.Put(entry.Key, entry.Value.oldValue);
                 }
             }
+        }
+
+        public bool Any()
+        {
+            return _entries.Count > 0;
         }
     }
 }

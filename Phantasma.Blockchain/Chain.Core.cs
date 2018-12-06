@@ -458,11 +458,16 @@ namespace Phantasma.Blockchain
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null, null, changeSet);
+            var vm = new RuntimeVM(script, this, null, null, changeSet, true);
 
             contract.SetRuntimeData(vm);
 
-            vm.Execute();
+            var state = vm.Execute();
+
+            if (state != ExecutionState.Halt)
+            {
+                throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed with state: " + state);
+            }
 
             var result = vm.Stack.Pop();
 

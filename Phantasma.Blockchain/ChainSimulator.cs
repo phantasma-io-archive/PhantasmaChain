@@ -18,6 +18,7 @@ namespace Phantasma.Tests
         public Hash hash;
         public Chain sourceChain;
         public Chain destChain;
+        public Token token;
     }
 
     // TODO this should be moved to a better place, refactored or even just deleted if no longer useful
@@ -60,7 +61,7 @@ namespace Phantasma.Tests
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, 1);
+            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals));
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -185,6 +186,7 @@ namespace Phantasma.Tests
                                         sourceChain = entry.sourceChain,
                                         destChain = entry.destChain,
                                         hash = block.Hash,
+                                        token = entry.token
                                     };
 
                                     _pendingBlocks.Add(pendingBlock);
@@ -263,6 +265,7 @@ namespace Phantasma.Tests
                 sourceChain = sourceChain,
                 destChain = targetChain,
                 hash = null,
+                token = token
             };
             return tx;
         }
@@ -414,9 +417,13 @@ namespace Phantasma.Tests
 
                                 if (mempool == null || Nexus.GetConfirmationsOfHash(pendingBlock.hash) > 0)
                                 {
-                                    Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
 
-                                    GenerateSideChainSettlement(source, pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
+                                    var balance = pendingBlock.destChain.GetTokenBalance(pendingBlock.token, source.Address);
+                                    if (balance > 0)
+                                    {
+                                        Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
+                                        GenerateSideChainSettlement(source, pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
+                                    }
                                 }
                             }
 

@@ -27,8 +27,9 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger paidGas { get; private set; }
         public BigInteger maxGas { get; private set; }
         public BigInteger gasPrice { get; private set; }
+        public readonly bool readOnlyMode;
 
-        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet) : base(script)
+        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -40,12 +41,14 @@ namespace Phantasma.Blockchain.Contracts
             this.gasPrice = 0;
             this.usedGas = 0;
             this.paidGas = 0;
-            this.maxGas = 50;  // a minimum amount required for allowing calls to Gas contract etc
+            this.maxGas = 100;  // a minimum amount required for allowing calls to Gas contract etc
 
             this.Chain = chain;
             this.Block = block;
             this.Transaction = transaction;
             this.ChangeSet = changeSet;
+            this.readOnlyMode = readOnlyMode;
+
             Chain.RegisterInterop(this);
         }
 
@@ -72,6 +75,17 @@ namespace Phantasma.Blockchain.Contracts
 
             if (result == ExecutionState.Halt)
             {
+                if (readOnlyMode)
+                {
+                    if (ChangeSet.Any())
+                    {
+#if DEBUG
+                        throw new VMDebugException(this, "VM changeset modified in read-only mode");
+#endif
+                        result = ExecutionState.Fault;
+                    }
+                }
+                else
                 if (paidGas < usedGas && Nexus.NativeToken != null)
                 {
 #if DEBUG
@@ -143,7 +157,7 @@ namespace Phantasma.Blockchain.Contracts
         public override ExecutionState ValidateOpcode(Opcode opcode)
         {
             // required for allowing transactions to occur pre-minting of native token
-            if (Nexus.NativeToken == null || Nexus.NativeToken.CurrentSupply == 0)
+            if (readOnlyMode || Nexus.NativeToken == null || Nexus.NativeToken.CurrentSupply == 0)
             {
                 return ExecutionState.Running;
             }

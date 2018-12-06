@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain
 
         internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify)
         {
-            var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet);
+            var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet, false);
 
             var state = runtime.Execute();
 

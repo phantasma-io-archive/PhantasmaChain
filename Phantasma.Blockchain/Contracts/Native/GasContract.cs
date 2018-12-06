@@ -19,6 +19,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void AllowGas(Address from, BigInteger price, BigInteger limit)
         {
+            if (Runtime.readOnlyMode)
+            {
+                return;
+            }
+
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(price > 0, "price must be positive amount");
@@ -42,6 +47,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         public void SpendGas(Address from) {
+            if (Runtime.readOnlyMode)
+            {
+                return;
+            }
+
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");

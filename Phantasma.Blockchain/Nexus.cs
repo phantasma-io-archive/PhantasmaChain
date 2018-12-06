@@ -10,7 +10,6 @@ using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Tests;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain

@@ -29,7 +29,7 @@ namespace Phantasma.VM
                 temp.Offset = _instructionPointer;
                 temp.Opcode = (Opcode)Read8();
 
-                System.Console.WriteLine("disasm => " + temp.Opcode);
+                //System.Console.WriteLine("disasm => " + temp.Opcode);
 
                 switch (temp.Opcode)
                 {
