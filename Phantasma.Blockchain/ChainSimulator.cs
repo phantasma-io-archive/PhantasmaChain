@@ -274,7 +274,12 @@ namespace Phantasma.Tests
         {
             _pendingBlocks.RemoveAll(x => x.hash == targetHash);
 
-            var script = ScriptUtils.BeginScript().CallContract("token", "SettleBlock", sourceChain.Address, targetHash).AllowGas(source.Address, 1, 9999).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.
+                BeginScript().
+                CallContract("token", "SettleBlock", sourceChain.Address, targetHash).
+                AllowGas(source.Address, 1, 9999).
+                SpendGas(source.Address).
+                EndScript();
             var tx = MakeTransaction(source, destChain, script);
             return tx;
         }
@@ -333,9 +338,15 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateNft(KeyPair source, Address address, Chain chain, Token token, byte[] data)
+        public Transaction GenerateNft(KeyPair source, Address destAddress, Chain chain, Token token, byte[] data)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "MintToken", source.Address, token.Symbol, data).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(source.Address, 1, 9999).
+                CallContract("token", "MintToken", destAddress, token.Symbol, data).
+                SpendGas(source.Address).
+                EndScript();
+
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }

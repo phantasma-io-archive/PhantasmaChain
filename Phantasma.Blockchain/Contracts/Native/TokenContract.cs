@@ -52,7 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
-        public void MintTokens(Address target, string symbol, BigInteger amount)
+        public void MintTokens(Address to, string symbol, BigInteger amount)
         {
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
@@ -69,9 +69,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Mint(balances, target, amount), "minting failed");
+            Runtime.Expect(token.Mint(balances, to, amount), "minting failed");
 
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
         }
 
         public void BurnTokens(Address from, string symbol, BigInteger amount)
@@ -135,21 +135,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             return ownerships.Get(address).ToArray();
         }
 
-        public BigInteger MintToken(Address from, string symbol, byte[] data)
+        public BigInteger MintToken(Address to, string symbol, byte[] data)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
+            Runtime.Expect(IsWitness(token.Owner), "invalid witness");
 
             var tokenID = this.Runtime.Chain.CreateNFT(token, data);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Give(from, tokenID), "give token failed");
+            Runtime.Expect(ownerships.Give(to, tokenID), "give token failed");
 
-            Runtime.Notify(EventKind.TokenMint, from, new TokenEventData() { symbol = symbol, value = tokenID });
+            Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = tokenID });
             return tokenID;
         }
 
