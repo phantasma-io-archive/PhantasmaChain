@@ -39,12 +39,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             return _entryList.All();
         }
 
-        public bool IsValidator(Address address)
+        // here we reintroduce this method, as a faster way to check if an address is a validator
+        private new bool IsValidator(Address address)
         {
             return _entryMap.ContainsKey(address);
         }
 
-        public void Stake(Address address, BigInteger amount)
+        public void Stake(Address address)
         {
             Runtime.Expect(IsWitness(address), "witness failed");
 

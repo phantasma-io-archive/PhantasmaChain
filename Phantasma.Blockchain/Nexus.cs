@@ -365,6 +365,20 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
+        private Transaction StakeCreateTx(Chain chain, KeyPair owner)
+        {
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, 1, 9999).
+                CallContract("stake", "Stake", owner.Address).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            tx.Sign(owner);
+            return tx;
+        }
+
         public const string NativeTokenSymbol = "SOUL";
         public const string PlatformName = "Phantasma";
 
@@ -394,6 +408,8 @@ namespace Phantasma.Blockchain
             transactions.Add(SideChainCreateTx(RootChain, owner, "vault"));
             transactions.Add(SideChainCreateTx(RootChain, owner, "bank"));
             transactions.Add(SideChainCreateTx(RootChain, owner, "apps"));
+
+            transactions.Add(StakeCreateTx(RootChain, owner));
 
             var genesisMessage = Encoding.UTF8.GetBytes("SOUL genesis");
             var block = new Block(Chain.InitialHeight, RootChain.Address, owner.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
@@ -457,7 +473,7 @@ namespace Phantasma.Blockchain
 
         public bool IsValidator(Address address)
         {
-            return GetIndexOfValidator(address) < 0;
+            return GetIndexOfValidator(address) >= 0;
         }
 
         public int GetIndexOfValidator(Address address)
