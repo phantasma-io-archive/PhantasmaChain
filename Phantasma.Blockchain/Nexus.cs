@@ -493,9 +493,14 @@ namespace Phantasma.Blockchain
 
         public Address GetValidatorByIndex(int index)
         {
+            if (RootChain == null)
+            {
+                return Address.Null;
+            }
+
             Throw.If(index < 0, "invalid validator index");
 
-            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", index);
+            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (BigInteger) index);
             return result;
         }
         #endregion

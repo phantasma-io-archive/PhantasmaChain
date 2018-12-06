@@ -117,7 +117,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return index;
         }
 
-        public Address GetValidatorByIndex(int index)
+        public Address GetValidatorByIndex(BigInteger index)
         {
             Runtime.Expect(index >= 0, "invalid validator index");
 

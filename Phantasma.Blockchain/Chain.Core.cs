@@ -123,8 +123,6 @@ namespace Phantasma.Blockchain
             {
                 _level = 1;
             }
-
-            GenerateEpoch();
         }
 
         public override string ToString()
@@ -149,15 +147,10 @@ namespace Phantasma.Blockchain
 
         public bool AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
-            if (CurrentEpoch == null)
+            /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
             {
                 return false;
-            }
-
-            if (CurrentEpoch.IsSlashed(Timestamp.Now))
-            {
-                return false;
-            }
+            }*/
 
             if (LastBlock != null)
             {
@@ -216,6 +209,11 @@ namespace Phantasma.Blockchain
             _blockChangeSets[block.Hash] = changeSet;
 
             changeSet.Execute();
+
+            if (CurrentEpoch == null)
+            {
+                GenerateEpoch();
+            }
 
             CurrentEpoch.AddBlockHash(block.Hash);
             CurrentEpoch.UpdateHash();
