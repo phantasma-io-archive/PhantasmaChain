@@ -570,13 +570,44 @@ namespace Phantasma.Blockchain
 
             return fee;
         }
-#endregion
+        #endregion
 
         #region EPOCH
+        public bool IsCurrentValidator(Address address)
+        {
+            if (CurrentEpoch != null)
+            {
+                return CurrentEpoch.ValidatorAddress == address;
+            }
+
+            var firstValidator = Nexus.GetValidatorByIndex(0);
+            return address == firstValidator;
+        }
+
         private void GenerateEpoch()
         {
-            var validator = Nexus.GetValidatorByIndex(0);
-            var epoch = new Epoch(Timestamp.Now, validator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
+            Address nextValidator;
+
+            if (CurrentEpoch != null)
+            {
+                var currentIndex = Nexus.GetIndexOfValidator(CurrentEpoch.ValidatorAddress);
+                currentIndex++;
+
+                var validatorCount = Nexus.GetValidatorCount();
+
+                if (currentIndex >= validatorCount)
+                {
+                    currentIndex = 0;
+                }
+
+                nextValidator = Nexus.GetValidatorByIndex(currentIndex);
+            }
+            else
+            {
+                nextValidator = Nexus.GetValidatorByIndex(0);
+            }
+
+            var epoch = new Epoch(Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
 
             CurrentEpoch = epoch;
         }

@@ -475,6 +475,12 @@ namespace Phantasma.Blockchain
             return validators;
         }
 
+        public int GetValidatorCount()
+        {
+            var count = (BigInteger)RootChain.InvokeContract("stake", "GetActiveValidatorss");
+            return (int)count;
+        }
+
         public bool IsValidator(Address address)
         {
             return GetIndexOfValidator(address) >= 0;

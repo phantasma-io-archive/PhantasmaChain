@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain
         public readonly Hash PreviousHash;
         public readonly Timestamp StartTime;
         public readonly Timestamp EndTime;
-        public readonly Address Validator;
+        public readonly Address ValidatorAddress;
         public IEnumerable<Signature> Signatures => _signatures;
         public IEnumerable<Hash> BlockHashes => _blockHashes;
 
@@ -30,7 +30,7 @@ namespace Phantasma.Blockchain
 
         public Epoch(Timestamp time, Address validator, Hash previousHash)
         {
-            this.Validator = validator;
+            this.ValidatorAddress = validator;
             this.StartTime = time;
             this.EndTime = StartTime;
             this.PreviousHash = previousHash;
@@ -71,7 +71,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (!validatorSet.Contains(this.Validator))
+            if (!validatorSet.Contains(this.ValidatorAddress))
             {
                 return false;
             }
@@ -122,7 +122,7 @@ namespace Phantasma.Blockchain
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
-            writer.WriteAddress(Validator);
+            writer.WriteAddress(ValidatorAddress);
             writer.WriteHash(PreviousHash);
             writer.Write(StartTime.Value);
 

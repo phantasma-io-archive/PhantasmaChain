@@ -24,9 +24,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public int GetMaxValidators()
+        public BigInteger GetMaxValidators()
         {
             return 3; // TODO this should be dynamic
+        }
+
+        public BigInteger GetActiveValidators()
+        {
+            return _entryList.Count();
         }
 
         public BigInteger GetRequiredStake()
