@@ -118,6 +118,17 @@ namespace Phantasma.Blockchain
             return Enumerable.Empty<Transaction>();
         }
 
+        public IEnumerable<Transaction> GetTransactions()
+        {
+            var result = new List<Transaction>();
+            foreach (var entry in _entries.Values)
+            {
+                result.AddRange( entry.Select(x => x.transaction));
+            }
+
+            return result;
+        }
+
         private IEnumerable<Transaction> GetNextTransactions(Chain chain)
         {
             var list = _entries[chain.Name];

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Blockchain;
+using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Network.P2P.Messages;
@@ -34,15 +35,9 @@ namespace Phantasma.Network.P2P
 
             switch (opcode)
             {
-                case Opcode.PEER_Join:
+                case Opcode.PEER_Identity:
                     {
-                        msg = PeerJoinMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.PEER_Leave:
-                    {
-                        msg = PeerLeaveMessage.FromReader(nexus, address, reader);
+                        msg = PeerIdentityMessage.FromReader(nexus, address, reader);
                         break;
                     }
 
@@ -58,27 +53,9 @@ namespace Phantasma.Network.P2P
                         break;
                     }
 
-                case Opcode.MEMPOOL_Get:
+                case Opcode.MEMPOOL_List:
                     {
                         msg = MempoolGetMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.BLOCKS_Request:
-                    {
-                        msg = ChainRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.BLOCKS_List:
-                    {
-                        msg = ChainRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.CHAIN_Request:
-                    {
-                        msg = BlockRequestMessage.FromReader(nexus, address, reader);
                         break;
                     }
 
@@ -104,11 +81,35 @@ namespace Phantasma.Network.P2P
 
             return msg;
         }
-    }
 
-    public struct DeliveredMessage
-    {
-        public Message message;
-        public Endpoint source;
+        public byte[] ToByteArray(bool withSignature)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    Serialize(writer, withSignature);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        public void Serialize(BinaryWriter writer, bool withSignature)
+        {
+            writer.Write((byte)Opcode);
+            writer.WriteAddress(Address);
+
+            OnSerialize(writer);
+
+            if (withSignature)
+            {
+                Throw.IfNull(Signature, nameof(Signature));
+
+                writer.WriteByteArray(Signature);
+            }
+        }
+
+        protected abstract void OnSerialize(BinaryWriter writer);
     }
 }

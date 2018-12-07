@@ -3,7 +3,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
-using Phantasma.VM.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;

@@ -40,5 +40,11 @@ namespace Phantasma.Network.P2P.Messages
             */
             throw new System.NotImplementedException();
         }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
+
     }
 }

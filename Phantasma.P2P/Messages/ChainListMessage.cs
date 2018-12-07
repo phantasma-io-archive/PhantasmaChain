@@ -1,19 +1,23 @@
-﻿using Phantasma.Blockchain;
+﻿using System.IO;
+using Phantasma.Blockchain;
 using Phantasma.Cryptography;
-using System.IO;
 
 namespace Phantasma.Network.P2P.Messages
 {
-    internal class ChainListMessage : Message
+    internal sealed class ChainListMessage : Message
     {
-        public ChainListMessage(Nexus nexus, Address address) : base(nexus, Opcode.CHAIN_List, address)
+        public ChainListMessage(Nexus nexus, Address address) :base(nexus, Opcode.CHAIN_List, address)
         {
         }
 
-        internal static ChainListMessage FromReader(Nexus nexus, Address pubKey, BinaryReader reader)
+        internal static ChainListMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
+        {
+            return new ChainListMessage(nexus, address);
+        }
+
+        protected override void OnSerialize(BinaryWriter writer)
         {
             throw new System.NotImplementedException();
-//            return new ChainValuesMessage(code, text);
         }
 
     }
