@@ -178,9 +178,11 @@ namespace Phantasma.Tests
             var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
+            var crossFee = TokenUtils.ToBigInteger(0.001m, token.Decimals);
+
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain, sideAmount);
+            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain, sideAmount, crossFee);
             simulator.EndBlock();
             var blockA = nexus.RootChain.LastBlock;
 
@@ -195,7 +197,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(balance == sideAmount - feeB);
 
             var feeA = sourceChain.GetTransactionFee(txA);
-            var leftoverAmount = originalAmount - (sideAmount + feeA);
+            var leftoverAmount = originalAmount - (sideAmount + feeA + crossFee);
 
             balance = sourceChain.GetTokenBalance(token, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
@@ -233,7 +235,7 @@ namespace Phantasma.Tests
 
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain, sideAmount);
+            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain, sideAmount, 0);
             simulator.EndBlock();
             var blockA = nexus.RootChain.LastBlock;
 
@@ -252,6 +254,69 @@ namespace Phantasma.Tests
 
             balance = sourceChain.GetTokenBalance(token, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
+        }
+
+        [TestMethod]
+        public void SideChainTransferMultipleSteps()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var sourceChain = nexus.RootChain;
+            var appsChain = nexus.FindChainByName("apps");
+
+            var token = nexus.NativeToken;
+
+            var sender = KeyPair.Generate();
+            var receiver = KeyPair.Generate();
+
+            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var sideAmount = originalAmount / 2;
+
+            Assert.IsTrue(sideAmount > 0);
+
+            var newChainName = "testing";
+
+            // Send from Genesis address to "sender" user
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.GenerateChain(owner, appsChain, newChainName);
+            simulator.EndBlock();
+
+            var targetChain = nexus.FindChainByName(newChainName);
+
+            // verify test user balance
+            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            Assert.IsTrue(balance == originalAmount);
+
+            // do a side chain send using test user balance from root to apps chain
+            simulator.BeginBlock();
+            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, sender.Address, appsChain, sideAmount, 0);
+            var blockA = simulator.EndBlock().FirstOrDefault();
+
+            // finish the chain transfer
+            simulator.BeginBlock();
+            var txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, appsChain, blockA.Hash);
+            Assert.IsTrue(simulator.EndBlock().Any());
+
+            // we cant transfer the full side amount due to fees
+            // TODO  calculate the proper fee values instead of this
+            sideAmount /= 2;
+            var extraFree = TokenUtils.ToBigInteger(0.01m, token.Decimals);
+
+            // do another side chain send using test user balance from apps to target chain
+            simulator.BeginBlock();
+            var txC = simulator.GenerateSideChainSend(sender, token, appsChain, receiver.Address, targetChain, sideAmount, extraFree);
+            var blockC = simulator.EndBlock().FirstOrDefault();
+
+            // finish the chain transfer
+            simulator.BeginBlock();
+            var txD = simulator.GenerateSideChainSettlement(sender, appsChain, targetChain, blockC.Hash);
+            Assert.IsTrue(simulator.EndBlock().Any());
+
+            // TODO  verify balances
         }
 
         [TestMethod]
@@ -481,11 +546,12 @@ namespace Phantasma.Tests
             // verify nft presence on the receiver pre-transfer
             ownedTokenList = targetChain.GetTokenOwnerships(token).Get(receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
-            
+
+            var extraFee = TokenUtils.ToBigInteger(0.001m, nexus.NativeToken.Decimals);
 
             // transfer that nft from sender to receiver
             simulator.BeginBlock();
-            simulator.GenerateSideChainSend(sender, simulator.Nexus.NativeToken, sourceChain, receiver.Address, targetChain, smallAmount);
+            simulator.GenerateSideChainSend(sender, simulator.Nexus.NativeToken, sourceChain, receiver.Address, targetChain, smallAmount, extraFee);
             var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, token, tokenId);
             simulator.EndBlock();
 

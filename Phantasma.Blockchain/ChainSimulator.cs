@@ -57,7 +57,7 @@ namespace Phantasma.Tests
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals));
+            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -239,7 +239,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Address targetAddress, Chain targetChain, BigInteger amount)
+        public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Address targetAddress, Chain targetChain, BigInteger amount, BigInteger fee)
         {
             Throw.IfNull(source, nameof(source));
             Throw.IfNull(token, nameof(token));
@@ -247,10 +247,26 @@ namespace Phantasma.Tests
             Throw.IfNull(targetChain, nameof(targetChain));
             Throw.If(amount<=0, "positive amount required");
 
-            var script = ScriptUtils.
+            if (source.Address == targetAddress && token == Nexus.NativeToken)
+            {
+                Throw.If(fee != 0, "no fees for same address");
+            }
+            else
+            {
+                Throw.If(fee <= 0, "fee required when target is different address or token not native");
+            }
+
+            var sb = ScriptUtils.
                 BeginScript().
-                AllowGas(source.Address, 1, 9999).
-                CallContract("token", "SendTokens", targetChain.Address, source.Address, targetAddress, token.Symbol, amount).
+                AllowGas(source.Address, 1, 9999);
+
+            if (targetAddress != source.Address)
+            {
+                sb.CallContract("token", "SendTokens", targetChain.Address, source.Address, source.Address, token.Symbol, fee);
+            }
+
+            var script = 
+                sb.CallContract("token", "SendTokens", targetChain.Address, source.Address, targetAddress, token.Symbol, amount).
                 SpendGas(source.Address).
                 EndScript();
 
@@ -302,6 +318,17 @@ namespace Phantasma.Tests
             var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);
+            return tx;
+        }
+
+        public Transaction GenerateChain(KeyPair source, Chain parentchain, string name)
+        {
+            var script = ScriptUtils.BeginScript().
+                AllowGas(source.Address, 1, 9999).
+                CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name).
+                SpendGas(source.Address).
+                EndScript();
+            var tx = MakeTransaction(source, Nexus.RootChain, script);
             return tx;
         }
 
@@ -414,7 +441,7 @@ namespace Phantasma.Tests
                             var total = balance / 10;
                             if (total > 0)
                             {
-                                GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total);
+                                GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, balance / 100);
                             }
                             break;
                         }
