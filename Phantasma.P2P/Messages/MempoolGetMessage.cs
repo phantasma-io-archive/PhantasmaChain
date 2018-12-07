@@ -14,5 +14,10 @@ namespace Phantasma.Network.P2P.Messages
         {
             return new MempoolGetMessage(nexus, pubKey);
         }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

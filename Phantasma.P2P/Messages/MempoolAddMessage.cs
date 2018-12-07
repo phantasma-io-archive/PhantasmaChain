@@ -18,5 +18,10 @@ namespace Phantasma.Network.P2P.Messages
             var tx = Transaction.Unserialize(reader);
             return new MempoolAddMessage(nexus, address, tx);
         }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

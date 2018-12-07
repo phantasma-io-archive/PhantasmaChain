@@ -3,8 +3,7 @@
     public enum Opcode
     {
         ERROR,
-        PEER_Join,
-        PEER_Leave,
+        PEER_Identity,
         PEER_List,
         MEMPOOL_List,
         MEMPOOL_Add,

@@ -29,5 +29,10 @@ namespace Phantasma.Network.P2P.Messages
             return new EpochSubmitMessage(nexus, address, shardID, txs);
             */
         }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
