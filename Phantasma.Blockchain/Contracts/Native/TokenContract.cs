@@ -221,25 +221,63 @@ namespace Phantasma.Blockchain.Contracts.Native
             _settledTransactions.Set(hash, true);
         }
 
-        public void SettleBlock(Address sourceChain, Hash hash)
+        private void DoSettlement(Chain sourceChain, Address targetAddress, TokenEventData data)
         {
-            Runtime.Expect(IsParentChain(sourceChain) || IsChildChain(sourceChain), "source must be parent or child chain");
+            var symbol = data.symbol;
+            var value = data.value;
+
+            Runtime.Expect(value > 0, "value must be greater than zero");
+            Runtime.Expect(targetAddress != Address.Null, "target must not be null");
+
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Runtime.Expect(token != null, "invalid token");
+
+            if (token.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                if (token.IsCapped)
+                {
+                    var sourceSupplies = sourceChain.GetTokenSupplies(token);
+                    var targetSupplies = this.Runtime.Chain.GetTokenSupplies(token);
+
+                    if (IsParentChain(sourceChain.Address))
+                    {
+                        Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
+                        Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
+                    }
+                    else // child chain
+                    {
+                        Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
+                        Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
+                    }
+                }
+
+                var balances = this.Runtime.Chain.GetTokenBalances(token);
+                Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
+            }
+            else
+            {
+                var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
+                Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
+            }
+
+            Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = sourceChain.Address });
+        }
+
+        public void SettleBlock(Address sourceChainAddress, Hash hash)
+        {
+            Runtime.Expect(IsParentChain(sourceChainAddress) || IsChildChain(sourceChainAddress), "source must be parent or child chain");
 
             Runtime.Expect(!IsSettled(hash), "hash already settled");
 
-            var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
+            var sourceChain = this.Runtime.Nexus.FindChainByAddress(sourceChainAddress);
 
-            var block = otherChain.FindBlockByHash(hash);
+            var block = sourceChain.FindBlockByHash(hash);
             Runtime.Expect(block != null, "invalid block");
 
             int settlements = 0;
 
             foreach (var txHash in block.TransactionHashes)
             {
-                string symbol = null;
-                BigInteger value = 0;
-                Address targetAddress = Address.Null;
-
                 var evts = block.GetEventsForTransaction(txHash);
 
                 foreach (var evt in evts)
@@ -249,52 +287,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                         var data = Serialization.Unserialize<TokenEventData>(evt.Data);
                         if (data.chainAddress == this.Runtime.Chain.Address)
                         {
-                            symbol = data.symbol;
-                            value = data.value;
-                            targetAddress = evt.Address;
-                            // TODO what about multiple escrow events in the same tx, seems not supported yet?
+                            DoSettlement(sourceChain, evt.Address, data);
+                            settlements++;
                         }
                     }
-                }
-
-                if (symbol != null)
-                {
-                    settlements++;
-                    Runtime.Expect(value > 0, "value must be greater than zero");
-                    Runtime.Expect(targetAddress != Address.Null, "target must not be null");
-
-                    var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-                    Runtime.Expect(token != null, "invalid token");
-
-                    if (token.Flags.HasFlag(TokenFlags.Fungible))
-                    {
-                        if (token.IsCapped)
-                        {
-                            var sourceSupplies = otherChain.GetTokenSupplies(token);
-                            var targetSupplies = this.Runtime.Chain.GetTokenSupplies(token);
-
-                            if (IsParentChain(sourceChain))
-                            {
-                                Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
-                                Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
-                            }
-                            else // child chain
-                            {
-                                Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
-                                Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
-                            }
-                        }
-
-                        var balances = this.Runtime.Chain.GetTokenBalances(token);
-                        Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
-                    }
-                    else
-                    {
-                        var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-                        Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
-                    }
-
-                    Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = otherChain.Address });
                 }
             }
 
