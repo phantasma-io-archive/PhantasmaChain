@@ -245,8 +245,9 @@ namespace Phantasma.VM
                             {
 #if DEBUG
                                 throw new VMDebugException(frame.VM, "VM extcall failed: " + method);
-#endif
+#else                            
                                 return;
+#endif
                             }
 
                             break;
@@ -712,9 +713,10 @@ namespace Phantasma.VM
                             {
 #if DEBUG
                                 throw new VMDebugException(frame.VM, $"VM ctx instruction failed: could not find context with name '{contextName}'");
-#endif
+#else
                                 SetState(ExecutionState.Fault);
                                 return;
+#endif
                             }
 
                             frame.Registers[dst].SetValue(context);
