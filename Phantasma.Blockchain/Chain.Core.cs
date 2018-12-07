@@ -8,20 +8,11 @@ using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
-using System;
-using Phantasma.VM.Utils;
 using Phantasma.VM;
-using Phantasma.IO;
 using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
-    public struct ChainDiffEntry
-    {
-        public Block block;
-        public StorageChangeSetContext changeSet;
-    }
-    
     public partial class Chain
     {
         #region PRIVATE
@@ -489,40 +480,6 @@ namespace Phantasma.Blockchain
             return result.ToObject();
         }
 
-        public void MergeBlocks(IEnumerable<ChainDiffEntry> entries)
-        {
-            Throw.IfNot(entries.Any(), "empty entries");
-
-            var firstBlockHeight = entries.First().block.Height;
-
-            var expectedLastHeight = firstBlockHeight + entries.Count();
-            Throw.If(expectedLastHeight <= this.BlockHeight, "short chain");
-
-            var currentBlockHeight = firstBlockHeight;
-
-            foreach (var entry in entries)
-            {
-                if (currentBlockHeight <= this.BlockHeight)
-                {
-                    var localBlock = FindBlockByHeight(currentBlockHeight);
-
-                    if (entry.block.Hash != localBlock.Hash)
-                    {
-                        DeleteBlocks(localBlock.Hash);
-                        var diffHeight = currentBlockHeight - firstBlockHeight;
-                        MergeBlocks(entries.Skip((int)diffHeight));
-                        return;
-                    }
-                }
-                else
-                {
-                    this.AddBlock(entry.block, null); // TODO fixme
-                }
-
-                currentBlockHeight++;
-            }
-        }
-
         #region FEES 
         public BigInteger GetBlockReward(Block block)
         {
@@ -588,8 +545,12 @@ namespace Phantasma.Blockchain
         {
             Address nextValidator;
 
+            uint epochIndex;
+
             if (CurrentEpoch != null)
             {
+                epochIndex = CurrentEpoch.Index + 1;
+
                 var currentIndex = Nexus.GetIndexOfValidator(CurrentEpoch.ValidatorAddress);
                 currentIndex++;
 
@@ -604,10 +565,11 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                epochIndex = 0;
                 nextValidator = Nexus.GetValidatorByIndex(0);
             }
 
-            var epoch = new Epoch(Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
+            var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
 
             CurrentEpoch = epoch;
         }
