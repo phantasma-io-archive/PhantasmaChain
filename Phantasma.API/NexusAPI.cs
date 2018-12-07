@@ -280,8 +280,11 @@ namespace Phantasma.API
                 var bytes = Base16.Decode(txData);
                 var tx = Transaction.Unserialize(bytes);
 
-                Mempool.Submit(tx);
-
+                bool submited = Mempool.Submit(tx);
+                if (!submited)
+                {
+                    result.AddField("error", "Not submited to mempool");
+                }
                 result.AddField("hash", tx.Hash);
             }
             else
