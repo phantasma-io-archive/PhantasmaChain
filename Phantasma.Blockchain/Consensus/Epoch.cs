@@ -1,35 +1,47 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Cryptography.Ring;
+using Phantasma.Cryptography.EdDSA;
 using Phantasma.IO;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Consensus
 {
+    public struct EpochSigner
+    {
+        public readonly Address address;
+        public readonly Ed25519Signature signature;
+
+        public EpochSigner(Address address, Ed25519Signature signature)
+        {
+            this.address = address;
+            this.signature = signature;
+        }
+    }
+
     public class Epoch
     {
         public static readonly uint DurationInSeconds = 60;
         public static readonly uint SlashLimitInSeconds = 5;
 
+        public readonly uint Index;
         public readonly Hash PreviousHash;
         public readonly Timestamp StartTime;
         public readonly Timestamp EndTime;
         public readonly Address ValidatorAddress;
-        public IEnumerable<Signature> Signatures => _signatures;
+        public IEnumerable<Address> Signers => _signatures.Keys;
         public IEnumerable<Hash> BlockHashes => _blockHashes;
 
         public Hash Hash { get; private set; }
 
-        private List<RingSignature> _signatures = new List<RingSignature>();
+        private Dictionary<Address, Ed25519Signature> _signatures = new Dictionary<Address, Ed25519Signature>();
         private HashSet<Hash> _blockHashes = new HashSet<Hash>();
 
         public bool WasSlashed => IsSlashed(EndTime);
 
-        public Epoch(Timestamp time, Address validator, Hash previousHash)
+        public Epoch(uint index, Timestamp time, Address validator, Hash previousHash)
         {
+            this.Index = index;
             this.ValidatorAddress = validator;
             this.StartTime = time;
             this.EndTime = StartTime;
@@ -41,9 +53,9 @@ namespace Phantasma.Blockchain
             return $"{Hash}";
         }
 
-        public void AddSignature(RingSignature signature)
+        public void AddSigner(Address address, Ed25519Signature signature)
         {
-            _signatures.Add(signature);
+            _signatures[address] = signature;
         }
 
         public void AddBlockHash(Hash hash)
@@ -78,29 +90,11 @@ namespace Phantasma.Blockchain
 
             var msg = this.ToByteArray(false);
 
-            foreach (var sig in _signatures)
+            foreach (var signer in _signatures)
             {
-                if (!sig.Verify(msg, validatorSet))
+                if (!signer.Value.Verify(msg, signer.Key))
                 {
                     return false;
-                }
-            }
-
-            // TODO currently O(N^2), optimize this or we will have to make sure that number of validators per epoch is always a small number... 
-            var validatorArray = knownValidators.ToArray();
-            for (int i = 0; i < validatorArray.Length; i++)
-            {
-                for (int j = 0; j < validatorArray.Length; j++)
-                {
-                    if (i == j)
-                    {
-                        continue;
-                    }
-
-                    if (_signatures[j].IsLinked(_signatures[i]))
-                    {
-                        return false;
-                    }
                 }
             }
 
@@ -122,6 +116,7 @@ namespace Phantasma.Blockchain
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
+            writer.Write(Index);
             writer.WriteAddress(ValidatorAddress);
             writer.WriteHash(PreviousHash);
             writer.Write(StartTime.Value);
@@ -140,19 +135,21 @@ namespace Phantasma.Blockchain
 
             int sigCount = _signatures.Count;
             writer.WriteVarInt(sigCount);
-            foreach (var sig in _signatures)
+            foreach (var entry in _signatures)
             {
-                writer.WriteSignature(sig);
+                writer.WriteAddress(entry.Key);
+                writer.WriteSignature(entry.Value);
             }
         }
 
         public static Epoch Unserialize(BinaryReader reader)
         {
+            var index = reader.ReadUInt32();
             var validator = reader.ReadAddress();
             var prevHash = reader.ReadHash();
             var startTime = (Timestamp)reader.ReadUInt32();
 
-            var epoch = new Epoch(startTime, validator, prevHash);
+            var epoch = new Epoch(index, startTime, validator, prevHash);
 
             var blockCount = reader.ReadVarInt();
             while (blockCount > 0)
@@ -167,10 +164,11 @@ namespace Phantasma.Blockchain
                 var signatureCount = (int)reader.ReadVarInt();
                 for (int i = 0; i < signatureCount; i++)
                 {
+                    var address = reader.ReadAddress();
                     // TODO sig should always be not-null in most cases, but add error handling later
-                    if (reader.ReadSignature() is RingSignature sig)
+                    if (reader.ReadSignature() is Ed25519Signature sig)
                     {
-                        epoch.AddSignature(sig);
+                        epoch.AddSigner(address, sig);
                     }
                 }
             }

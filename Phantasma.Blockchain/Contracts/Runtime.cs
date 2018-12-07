@@ -81,8 +81,9 @@ namespace Phantasma.Blockchain.Contracts
                     {
 #if DEBUG
                         throw new VMDebugException(this, "VM changeset modified in read-only mode");
-#endif
+#else
                         result = ExecutionState.Fault;
+#endif
                     }
                 }
                 else
@@ -90,8 +91,9 @@ namespace Phantasma.Blockchain.Contracts
                 {
 #if DEBUG
                     throw new VMDebugException(this, "VM unpaid gas");
+#else
+                                        result = ExecutionState.Fault;
 #endif
-                    result = ExecutionState.Fault;
                 }
             }
 
@@ -171,8 +173,9 @@ namespace Phantasma.Blockchain.Contracts
             {
 #if DEBUG
                 throw new VMDebugException(this, "VM gas limit exceeded");
+#else
+                                return ExecutionState.Fault;
 #endif
-                return ExecutionState.Fault;
             }
 
             return ExecutionState.Running;

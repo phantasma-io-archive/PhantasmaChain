@@ -2,25 +2,32 @@
 using System.IO;
 using System.Linq;
 using Phantasma.Blockchain;
+using Phantasma.Blockchain.Consensus;
 using Phantasma.Cryptography;
 
 namespace Phantasma.Network.P2P.Messages
 {
-    internal class ShardSubmitMessage : Message
+    internal class EpochProposeMessage : Message
     {
-        public readonly uint ShardID;
+        public readonly uint Index;
         public IEnumerable<Transaction> Transactions => _transactions;
+        public IEnumerable<Block> Blocks  => _blocks;
 
+        public readonly Epoch Epoch;
+
+        private Block[] _blocks;
         private Transaction[] _transactions;
 
-        public ShardSubmitMessage(Nexus nexus, Address address, uint shardID, IEnumerable<Transaction> transactions) : base(nexus, Opcode.SHARD_Submit, address)
+        public EpochProposeMessage(Nexus nexus, Address address, Epoch epoch, IEnumerable<Block> blocks, IEnumerable<Transaction> transactions) : base(nexus, Opcode.EPOCH_Propose, address)
         {
-            this.ShardID = shardID;
+            this.Epoch = epoch;
             this._transactions = transactions.ToArray();
+            this._blocks = blocks.ToArray();
         }
 
         internal static Message FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
+            /*
             var shardID = reader.ReadUInt32();
             var txCount = reader.ReadUInt16();
             var txs = new Transaction[txCount];
@@ -29,7 +36,9 @@ namespace Phantasma.Network.P2P.Messages
                 var tx = Transaction.Unserialize(reader);
             }
 
-            return new ShardSubmitMessage(nexus, address, shardID, txs);
+            return new EpochProposeMessage(nexus, address, shardID, txs);
+            */
+            throw new System.NotImplementedException();
         }
     }
 }
