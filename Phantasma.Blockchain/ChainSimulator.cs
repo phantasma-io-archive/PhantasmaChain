@@ -46,7 +46,12 @@ namespace Phantasma.Tests
         public ChainSimulator(KeyPair ownerKey, int seed)
         {
             _owner = ownerKey;
-            this.Nexus = new Nexus("simnet", _owner);
+            this.Nexus = new Nexus("simnet");
+
+            if (!Nexus.CreateGenesisBlock(_owner))
+            {
+                throw new ChainException("Genesis block failure");
+            }
 
             this.bankChain = Nexus.FindChainByName("bank");
             

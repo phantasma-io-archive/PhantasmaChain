@@ -9,7 +9,6 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Cryptography.Ring;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
@@ -38,7 +37,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, KeyPair owner, Logger logger = null)
+        public Nexus(string name, Logger logger = null)
         {
             this._logger = logger;
             this.Name = name;
@@ -57,11 +56,6 @@ namespace Phantasma.Blockchain
 
             this.RootChain = new Chain(this, "main", contracts, logger, null);
             _chains[RootChain.Name] = RootChain;
-
-            if (!CreateGenesisBlock(owner))
-            {
-                throw new ChainException("Genesis block failure");
-            }
         }
 
         #region PLUGINS
@@ -393,7 +387,7 @@ namespace Phantasma.Blockchain
 
         public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(91136374, NativeTokenDecimals);
 
-        private bool CreateGenesisBlock(KeyPair owner)
+        public bool CreateGenesisBlock(KeyPair owner)
         {
             if (this.NativeToken != null)
             {
