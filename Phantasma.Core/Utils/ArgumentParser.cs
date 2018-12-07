@@ -28,7 +28,7 @@ namespace Phantasma.Core.Utils
                     }
                 }
 
-                var temp = arg.Substring(2).Split(new char[] { '=' }, 2);
+                var temp = arg.Substring(prefix.Length).Split(new char[] { '=' }, 2);
                 var key = temp[0];
                 var val = temp.Length > 1 ? temp[1] : null;
 
