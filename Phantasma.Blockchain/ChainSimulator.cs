@@ -441,7 +441,7 @@ namespace Phantasma.Tests
                             var total = balance / 10;
                             if (total > 0)
                             {
-                                GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, balance / 100);
+                                GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, 0);
                             }
                             break;
                         }
