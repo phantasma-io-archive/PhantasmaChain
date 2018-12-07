@@ -58,27 +58,9 @@ namespace Phantasma.Network.P2P
                         break;
                     }
 
-                case Opcode.MEMPOOL_Get:
+                case Opcode.MEMPOOL_List:
                     {
                         msg = MempoolGetMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.BLOCKS_Request:
-                    {
-                        msg = ChainRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.BLOCKS_List:
-                    {
-                        msg = ChainRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.CHAIN_Request:
-                    {
-                        msg = BlockRequestMessage.FromReader(nexus, address, reader);
                         break;
                     }
 

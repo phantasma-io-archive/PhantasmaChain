@@ -6,7 +6,7 @@ namespace Phantasma.Network.P2P.Messages
 {
     internal class MempoolGetMessage : Message
     {
-        public MempoolGetMessage(Nexus nexus, Address address) :base(nexus, Opcode.MEMPOOL_Get, address)
+        public MempoolGetMessage(Nexus nexus, Address address) :base(nexus, Opcode.MEMPOOL_List, address)
         {
         }
 

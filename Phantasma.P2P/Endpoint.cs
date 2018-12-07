@@ -41,6 +41,7 @@ namespace Phantasma.Network.P2P
         public Endpoint(string hostStr, int port)
         {
             IPAddress ipAddress;
+
             if (!IPAddress.TryParse(hostStr, out ipAddress))
             {
                 if (Socket.OSSupportsIPv6)
@@ -59,10 +60,12 @@ namespace Phantasma.Network.P2P
                     ipAddress = ResolveAddress(hostStr, AddressFamily.InterNetwork);
                 }
             }
+
             if (ipAddress == null)
             {
                 throw new Exception("Invalid address: " + hostStr);
             }
+
             EndPoint = new IPEndPoint(ipAddress, port);
         }
 
