@@ -67,7 +67,7 @@ namespace Phantasma.Blockchain.Contracts
                 catch (ArgumentException ex)
                 {
 #if DEBUG
-                    throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, "+ex.ToString());
+                    throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
 #endif
                 }
                 return result;
@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
 #else
-                                return ExecutionState.Fault;
+                return ExecutionState.Fault;
 #endif
             }
 

@@ -10,6 +10,7 @@ using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
 using Phantasma.VM;
 using Phantasma.Core.Types;
+using Phantasma.Blockchain.Consensus;
 
 namespace Phantasma.Blockchain
 {

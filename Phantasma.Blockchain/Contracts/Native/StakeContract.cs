@@ -1,4 +1,5 @@
 ﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;

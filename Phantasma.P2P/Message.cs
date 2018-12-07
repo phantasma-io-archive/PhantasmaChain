@@ -52,48 +52,6 @@ namespace Phantasma.Network.P2P
                         break;
                     }
 
-                case Opcode.RAFT_Request:
-                    {
-                        msg = RaftRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Vote:
-                    {
-                        msg = RaftVoteMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Lead:
-                    {
-                        msg = RaftLeadMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Replicate:
-                    {
-                        msg = RaftReplicateMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Confirm:
-                    {
-                        msg = RaftConfirmMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Commit:
-                    {
-                        msg = RaftCommitMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Beat:
-                    {
-                        msg = RaftBeatMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
                 case Opcode.MEMPOOL_Add:
                     {
                         msg = MempoolAddMessage.FromReader(nexus, address, reader);

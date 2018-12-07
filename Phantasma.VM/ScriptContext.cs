@@ -7,7 +7,7 @@ using Phantasma.Numerics;
 
 namespace Phantasma.VM
 {
-    public class ScriptContext: ExecutionContext
+    public class ScriptContext : ExecutionContext
     {
         public byte[] Script { get; private set; }
 

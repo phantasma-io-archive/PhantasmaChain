@@ -4,9 +4,8 @@ using Phantasma.Cryptography.EdDSA;
 using Phantasma.IO;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Consensus
 {
     public struct EpochSigner
     {
