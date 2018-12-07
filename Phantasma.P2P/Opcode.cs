@@ -11,10 +11,11 @@
         BLOCKS_Request,
         BLOCKS_List,
         CHAIN_Request,
-        CHAIN_Values,
-        CHAIN_Notify,
-        SHARD_Submit,
-        DHT_GET,
-        DHT_SET,
+        CHAIN_List,
+        EPOCH_Request,
+        EPOCH_List,
+        EPOCH_Propose,
+        EPOCH_Submit,
+        EPOCH_Vote,
     }
 }

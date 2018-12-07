@@ -82,15 +82,9 @@ namespace Phantasma.Network.P2P
                         break;
                     }
 
-                case Opcode.CHAIN_Values:
+                case Opcode.CHAIN_List:
                     {
-                        msg = ChainValuesMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.SHARD_Submit:
-                    {
-                        msg = ShardSubmitMessage.FromReader(nexus, address, reader);
+                        msg = ChainListMessage.FromReader(nexus, address, reader);
                         break;
                     }
 
