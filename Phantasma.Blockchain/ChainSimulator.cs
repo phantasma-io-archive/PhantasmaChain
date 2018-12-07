@@ -1,12 +1,9 @@
 ﻿using Phantasma.Blockchain;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
-using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,12 +22,11 @@ namespace Phantasma.Tests
     public class ChainSimulator
     {
         public Nexus Nexus { get; private set; }
+        public DateTime CurrentTime;
 
         private System.Random _rnd;
         private List<KeyPair> _keys = new List<KeyPair>();
         private KeyPair _owner;
-
-        private DateTime _currentTime;
 
         private Chain bankChain;
 
@@ -57,7 +53,7 @@ namespace Phantasma.Tests
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
 
-            _currentTime = new DateTime(2018, 8, 26);
+            CurrentTime = new DateTime(2018, 8, 26);
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
@@ -151,7 +147,7 @@ namespace Phantasma.Tests
                         uint nextHeight = chain.LastBlock != null ? chain.LastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
 
-                        var block = new Block(nextHeight, chain.Address, _owner.Address, _currentTime, hashes, prevHash);
+                        var block = new Block(nextHeight, chain.Address, _owner.Address, CurrentTime, hashes, prevHash);
 
                         bool submitted;
 
@@ -172,7 +168,7 @@ namespace Phantasma.Tests
                         {
                             blocks.Add(block);
 
-                            _currentTime += TimeSpan.FromMinutes(45);
+                            CurrentTime += TimeSpan.FromMinutes(45);
 
                             // add the finished block hash to each pending side chain tx
                             if (_pendingEntries.Count > 0)
@@ -212,7 +208,7 @@ namespace Phantasma.Tests
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
-            var tx = new Transaction(Nexus.Name, chain.Name, script, _currentTime + TimeSpan.FromDays(10), 0);
+            var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2), 0);
 
             if (source != null)
             {
@@ -311,7 +307,11 @@ namespace Phantasma.Tests
 
         public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "TransferTokens", source.Address, dest, token.Symbol, amount).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().
+                AllowGas(source.Address, 1, 9999).
+                CallContract("token", "TransferTokens", source.Address, dest, token.Symbol, amount).
+                SpendGas(source.Address).
+                EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }

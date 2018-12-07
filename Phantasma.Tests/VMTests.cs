@@ -11,7 +11,6 @@ namespace Phantasma.Tests
 {
     public class TestVM : VirtualMachine
     {
-        private BigInteger _gasLimit;
         private Dictionary<string, Func<ExecutionFrame, ExecutionState>> _interops = new Dictionary<string, Func<ExecutionFrame, ExecutionState>>();
         private Func<string, ExecutionContext> _contextLoader;
 
@@ -40,7 +39,7 @@ namespace Phantasma.Tests
         {
             if (_interops.ContainsKey(method))
             {
-                return _interops[method](this.currentFrame);
+                return _interops[method](this.CurrentFrame);
             }
 
             throw new NotImplementedException();

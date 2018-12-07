@@ -16,7 +16,6 @@ namespace Phantasma.Blockchain
         public static readonly float BlockTimeFlutuation = 0.2f;
 
         public Address ChainAddress { get; private set; }
-        public Address MinerAddress { get; private set; }
 
         public uint Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
@@ -38,7 +37,6 @@ namespace Phantasma.Blockchain
         public Block(uint height, Address chainAddress, Address minerAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
         {
             this.ChainAddress = chainAddress;
-            this.MinerAddress = minerAddress;
             this.Timestamp = timestamp;
             this.Payload = data;
 
@@ -134,7 +132,6 @@ namespace Phantasma.Blockchain
             writer.Write((uint)Height);
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
-            writer.WriteAddress(MinerAddress);
             writer.WriteAddress(ChainAddress);
             writer.WriteByteArray(Payload);
 

@@ -107,7 +107,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var cost = runtime.usedGas;
+            var cost = runtime.UsedGas;
 
             // fee distribution TODO
 //            if (chain.NativeTokenAddress != null && cost > 0)

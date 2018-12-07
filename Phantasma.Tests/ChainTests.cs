@@ -43,6 +43,11 @@ namespace Phantasma.Tests
             Assert.IsTrue(rootChain.BlockHeight > 0);
             Assert.IsTrue(rootChain.ChildChains.Any());
 
+            Assert.IsTrue(nexus.IsValidator(owner.Address));
+
+            var randomKey = KeyPair.Generate();
+            Assert.IsFalse(nexus.IsValidator(randomKey.Address));
+
             var txCount = nexus.GetTotalTransactionCount();
             Assert.IsTrue(txCount > 0);
         }

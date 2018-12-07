@@ -69,7 +69,7 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("previousHash", block.PreviousHash);
             result.AddField("nonce", block.Nonce);
-            result.AddField("minerAddress", block.MinerAddress.Text);
+            // result.AddField("minerAddress", block.MinerAddress.Text); TODO fixme
 
             return result;
         }
