@@ -1,12 +1,15 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
 using System.Linq;
+using System.Text;
 
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
+using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
+using SHA256 = Phantasma.Cryptography.Hashing.SHA256;
 
 namespace Phantasma.Tests
 {
@@ -365,7 +368,7 @@ namespace Phantasma.Tests
                 "And why is this NFT different than expected? Not the same data");
         }
 
-        
+
         [TestMethod]
         public void NftBurn()
         {
@@ -422,7 +425,7 @@ namespace Phantasma.Tests
             ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the user still have it post-burn?");
         }
-        
+
         [TestMethod]
         public void NftTransfer()
         {
@@ -466,7 +469,7 @@ namespace Phantasma.Tests
             // verify nft presence on the sender post-mint
             ownedTokenList = chain.GetTokenOwnerships(token).Get(sender.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
-            
+
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
             var nft = chain.GetNFT(token, tokenId);
@@ -580,5 +583,264 @@ namespace Phantasma.Tests
                 "And why is this NFT different than expected? Not the same data");
         }
 
+        [TestMethod]
+        public void TestNoGasSameChainTransfer()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var accountChain = nexus.FindChainByName("account");
+            var token = nexus.NativeToken;
+
+            var sender = KeyPair.Generate();
+            var receiver = KeyPair.Generate();
+
+            var amount = TokenUtils.ToBigInteger(400, token.Decimals);
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, amount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var transferBalance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            Assert.IsTrue(transferBalance == amount);
+
+            var newBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+            var gasFee = nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
+
+            //Try to send the entire balance without affording fees from sender to receiver
+            try
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, token, transferBalance);
+                simulator.EndBlock();
+            }
+            catch (Exception e)
+            {
+                Assert.IsNotNull(e);
+            }
+
+            // verify balances, receiver should have 0 balance
+            transferBalance = nexus.RootChain.GetTokenBalance(token, receiver.Address);
+            Assert.IsTrue(transferBalance == 0, "Transaction failed completely as expected");
+        }
+
+        [TestMethod]
+        public void NoGasTestSideChainTransfer()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var sourceChain = nexus.RootChain;
+            var targetChain = nexus.FindChainByName("privacy");
+
+            var token = nexus.NativeToken;
+
+            var sender = KeyPair.Generate();
+            var receiver = KeyPair.Generate();
+
+            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var sideAmount = originalAmount / 2;
+
+            Assert.IsTrue(sideAmount > 0);
+
+            // Send from Genesis address to "sender" user
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            Assert.IsTrue(balance == originalAmount);
+
+            Transaction txA = null, txB = null;
+
+            try
+            {
+                // do a side chain send using test user balance from root to account chain
+                simulator.BeginBlock();
+                txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain,
+                    originalAmount, 1);
+                simulator.EndBlock();
+            }
+            catch (Exception e)
+            {
+                Assert.IsNotNull(e);
+            }
+
+            try
+            {
+                var blockA = nexus.RootChain.LastBlock;
+
+                // finish the chain transfer
+                simulator.BeginBlock();
+                txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, targetChain, blockA.Hash);
+                Assert.IsTrue(simulator.EndBlock().Any());
+            }
+            catch (Exception e)
+            {
+                Assert.IsNotNull(e);
+            }
+
+
+            // verify balances, receiver should have 0 balance
+            balance = targetChain.GetTokenBalance(token, receiver.Address);
+            Assert.IsTrue(balance == 0);
+        }
+
+        [TestMethod]
+        public void TestSha256Repeatability()
+        {
+            byte[] source = Encoding.ASCII.GetBytes(
+                "asjdhweiurhwiuthedkgsdkfjh4otuiheriughdfjkgnsdçfjherslighjsghnoçiljhoçitujgpe8rotu89pearthkjdf.");
+
+            SHA256 sharedTest = new SHA256();
+
+            int testFails = 0; //differences in reused and fresh custom sha256 hashes
+
+            for (int i = 0; i < 10000; i++)
+            {
+                SHA256 freshTest = new SHA256();
+
+                var sharedTestHash = sharedTest.ComputeHash(source);
+                var freshTestHash = freshTest.ComputeHash(source);
+
+                testFails += sharedTestHash.SequenceEqual(freshTestHash) ? 0 : 1;
+            }
+
+            Assert.IsTrue(testFails == 0);
+        }
+
+        [TestMethod]
+        public void TestSha512Repeatability()
+        {
+            byte[] source = Encoding.ASCII.GetBytes(
+                "asjdhweiurhwiuthedkgsdkfjh4otuiheriughdfjkgnsdçfjherslighjsghnoçiljhoçitujgpe8rotu89pearthkjdf.");
+
+            SHA512 sharedTest = new SHA512();
+
+            int testFails = 0; //differences in reused and fresh custom sha256 hashes
+
+            for (int i = 0; i < 10000; i++)
+            {
+                SHA512 freshTest = new SHA512();
+
+                sharedTest.Update(source, 0, source.Length);
+                freshTest.Update(source, 0, source.Length);
+
+                var sharedTestHash = sharedTest.Finish();
+                var freshTestHash = freshTest.Finish();
+
+                testFails += sharedTestHash.SequenceEqual(freshTestHash) ? 0 : 1;
+
+                sharedTest.Init();
+            }
+
+            Assert.IsTrue(testFails == 0);
+        }
+
+        [TestMethod]
+        public void TestAdler()
+        {
+            string source =
+                "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh";
+
+            var adler32Test = source.Adler32();
+            var adler32Target = 0xa1036a10; //https://hash.online-convert.com/adler32-generator
+
+            Assert.IsTrue(adler32Target == adler32Test);
+
+            //TODO: find a working Adler16 generator
+        }
+
+        [TestMethod]
+        public void TestKeccak()
+        {
+            byte[] source = Encoding.ASCII.GetBytes(
+                "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh");
+
+            var keccak128Test = new KeccakDigest(128);
+            var keccak224Test = new KeccakDigest(224);
+            var keccak256Test = new KeccakDigest(256);
+            var keccak288Test = new KeccakDigest(288);
+            var keccak384Test = new KeccakDigest(384);
+            var keccak512Test = new KeccakDigest(512);
+
+            for (int i = 0; i < 1000; i++)
+            {
+
+                //can't find any ground truth for this one, https://8gwifi.org/MessageDigest.jsp is the only one but when comparing to other site's results for other keccaks it doesnt match up with them
+                /*
+                var output1 = new byte[keccak128Test.GetDigestSize()];
+                keccak128Test.BlockUpdate(source, 0, source.Length);
+                keccak128Test.DoFinal(output1, 0);
+                var target1 = System.Convert.FromBase64String("cXEBKLlccaQPZrENUMkOeXzMxtvivIZFgemIYg==");
+                */
+                
+                var output2 = new byte[keccak224Test.GetDigestSize()];
+                keccak224Test.BlockUpdate(source, 0, source.Length);
+                keccak224Test.DoFinal(output2, 0);
+                var target2 = StringToByteArray("3c8aa5706aabc26dee19b466e77f8947f801762ca64316fdf3a2434a"); //https://emn178.github.io/online-tools/keccak_224.html
+
+                var output3 = new byte[keccak256Test.GetDigestSize()];
+                keccak256Test.BlockUpdate(source, 0, source.Length);
+                keccak256Test.DoFinal(output3, 0);
+                var target3 = StringToByteArray("b460986ee0e1c540e5c591661e16aec8bff34197efd647d1b44f4d9531d4bdaf"); //https://emn178.github.io/online-tools/keccak_256.html
+
+                //can't find any ground truth for this one, https://8gwifi.org/MessageDigest.jsp is the only one but when comparing to other site's results for other keccaks it doesnt match up with them
+                /*var output4 = new byte[keccak288Test.GetDigestSize()];
+                keccak288Test.BlockUpdate(source, 0, source.Length);
+                keccak288Test.DoFinal(output4, 0);
+                var target4 = System.Convert.FromBase64String("");*/
+
+                var output5 = new byte[keccak384Test.GetDigestSize()];
+                keccak384Test.BlockUpdate(source, 0, source.Length);
+                keccak384Test.DoFinal(output5, 0);
+                var target5 = System.Convert.FromBase64String("7ff5de963d255dc13a8a3a769db237fa2a0795101dde74499e56c8727dc1dfad8a37c1486b5769c0c73cc0ac5b54109d"); //https://emn178.github.io/online-tools/keccak_384.html
+
+                var output6 = new byte[keccak512Test.GetDigestSize()];
+                keccak512Test.BlockUpdate(source, 0, source.Length);
+                keccak512Test.DoFinal(output6, 0);
+                var target6 = System.Convert.FromBase64String("fd60f4b374c0d824086461bf33786ea397149cdc7888cf745e0175f5b3b79f17121e1d062b1dabbecd64050c6d452aade6c9f7d227dc0939377f6c60f0b5a011"); //https://emn178.github.io/online-tools/keccak_512.html
+
+                //Assert.IsTrue(output1.SequenceEqual(target1));
+                Assert.IsTrue(output2.SequenceEqual(target2));
+                Assert.IsTrue(output3.SequenceEqual(target3));
+                //Assert.IsTrue(output4.SequenceEqual(target4));
+                Assert.IsTrue(output5.SequenceEqual(target5));
+                Assert.IsTrue(output6.SequenceEqual(target6));
+            }
+
+
+        }
+
+        [TestMethod]
+        public void TestMurmur32()
+        {
+            byte[] source = Encoding.ASCII.GetBytes(
+                "asdçflkjasçfjaçrlgjaçorigjkljbçladkfjgsaºperouiwa89tuhyjkvsldkfjçaoigfjsadfjkhsdkgjhdlkgjhdkfjbnsdflçkgsriaugfukasyfgskaruyfgsaekufygvsanfbvsdj,fhgwukaygsja,fvkusayfguwayfgsnvfuksaygfkuybhsngfukayeghsmafbsjkfgwlauifgjkshfbilçehrkluayh");
+
+            var murmurTest = Murmur32.Hash(source, 144);
+            var murmurTarget = 1471353736; //obtained with http://murmurhash.shorelabs.com, MurmurHash3 32bit x86
+
+            Assert.IsTrue(murmurTest == murmurTarget);
+        }
+
+        public static byte[] StringToByteArray(String hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
+        }
     }
 }

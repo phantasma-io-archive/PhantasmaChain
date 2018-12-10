@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2010 Yuri K. Schlesner
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -94,10 +94,13 @@ namespace Phantasma.Cryptography.Hashing
 
         private bool closed;
 
-        private void Reset()
+        public void Reset()
         {
             pending_block_off = 0;
             bits_processed = 0;
+            H = new UInt32[8] {
+                0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
+            };
             closed = false;
         }
 
