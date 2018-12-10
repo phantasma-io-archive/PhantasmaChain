@@ -14,7 +14,7 @@ namespace Phantasma.Network.P2P
     {
         public Opcode Opcode { get; private set; }
         public Address Address { get; private set; }
-        public byte[] Signature { get; private set; }
+        public Signature Signature { get; private set; }
 
         public Nexus Nexus { get; private set; }
 
@@ -24,6 +24,15 @@ namespace Phantasma.Network.P2P
             this.Nexus = nexus;
             this.Opcode = opcode;
             this.Address = address;
+        }
+
+        public void Sign(KeyPair keyPair)
+        {
+            Throw.If(keyPair.Address != this.Address, "unexpected keypair");
+
+            var msg = this.ToByteArray(false);
+
+            this.Signature = keyPair.Sign(msg);
         }
 
         public static Message Unserialize(Nexus nexus, BinaryReader reader)
@@ -76,7 +85,7 @@ namespace Phantasma.Network.P2P
 
             if (address != null)
             {
-                msg.Signature = reader.ReadByteArray();
+                msg.Signature = reader.ReadSignature();
             }
 
             return msg;
@@ -106,7 +115,7 @@ namespace Phantasma.Network.P2P
             {
                 Throw.IfNull(Signature, nameof(Signature));
 
-                writer.WriteByteArray(Signature);
+                writer.WriteSignature(Signature);
             }
         }
 
