@@ -580,5 +580,117 @@ namespace Phantasma.Tests
                 "And why is this NFT different than expected? Not the same data");
         }
 
+        [TestMethod]
+        public void TestNoGasSameChainTransfer()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var accountChain = nexus.FindChainByName("account");
+            var token = nexus.NativeToken;
+
+            var sender = KeyPair.Generate();
+            var receiver = KeyPair.Generate();
+
+            var amount = TokenUtils.ToBigInteger(400, token.Decimals);
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, amount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var transferBalance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            Assert.IsTrue(transferBalance == amount);
+
+            var newBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+            var gasFee = nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
+
+            //Try to send the entire balance without affording fees from sender to receiver
+            try
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, token, transferBalance);
+                simulator.EndBlock();
+            }
+            catch (Exception e)
+            {
+                Assert.IsNotNull(e);
+            }
+
+            // verify balances, receiver should have 0 balance
+            transferBalance = nexus.RootChain.GetTokenBalance(token, receiver.Address);
+            Assert.IsTrue(transferBalance == 0, "Transaction failed completely as expected");
+        }
+
+        [TestMethod]
+        public void NoGasTestSideChainTransfer()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var sourceChain = nexus.RootChain;
+            var targetChain = nexus.FindChainByName("privacy");
+
+            var token = nexus.NativeToken;
+
+            var sender = KeyPair.Generate();
+            var receiver = KeyPair.Generate();
+
+            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var sideAmount = originalAmount / 2;
+
+            Assert.IsTrue(sideAmount > 0);
+
+            // Send from Genesis address to "sender" user
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            Assert.IsTrue(balance == originalAmount);
+
+            Transaction txA = null, txB = null;
+
+            try
+            {
+                // do a side chain send using test user balance from root to account chain
+                simulator.BeginBlock();
+                txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain,
+                    originalAmount, 1);
+                simulator.EndBlock();
+            }
+            catch (Exception e)
+            {
+                Assert.IsNotNull(e);
+            }
+
+            try
+            {
+                var blockA = nexus.RootChain.LastBlock;
+
+                // finish the chain transfer
+                simulator.BeginBlock();
+                txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, targetChain, blockA.Hash);
+                Assert.IsTrue(simulator.EndBlock().Any());
+            }
+            catch (Exception e)
+            {
+                Assert.IsNotNull(e);
+            }
+            
+
+            // verify balances, receiver should have 0 balance
+            balance = targetChain.GetTokenBalance(token, receiver.Address);
+            Assert.IsTrue(balance == 0);
+        }
     }
 }
