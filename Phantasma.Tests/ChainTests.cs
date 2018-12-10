@@ -1,12 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
 using System.Linq;
+using System.Text;
 
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using SHA256 = Phantasma.Cryptography.Hashing.SHA256;
 
 namespace Phantasma.Tests
 {
@@ -692,5 +694,28 @@ namespace Phantasma.Tests
             balance = targetChain.GetTokenBalance(token, receiver.Address);
             Assert.IsTrue(balance == 0);
         }
+
+        [TestMethod]
+        public void TestSha256Repeatability()
+        {
+            byte[] source = Encoding.ASCII.GetBytes("asjdhweiurhwiuthedkgsdkfjh4otuiheriughdfjkgnsdçfjherslighjsghnoçiljhoçitujgpe8rotu89pearthkjdf.");
+
+            SHA256 sharedTest = new SHA256();
+
+            int testFails = 0;      //differences in reused and fresh custom sha256 hashes
+
+            for (int i = 0; i < 10000; i++)
+            {
+                SHA256 freshTest = new SHA256();
+
+                var sharedTestHash = sharedTest.ComputeHash(source);
+                var freshTestHash = freshTest.ComputeHash(source);
+
+                testFails += sharedTestHash.SequenceEqual(freshTestHash) ? 0 : 1;
+            }
+
+            Assert.IsTrue(testFails == 0);
+        }
     }
+
 }
