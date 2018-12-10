@@ -17,11 +17,13 @@ namespace Phantasma.Network.P2P
         public Peer(Nexus nexus)
         {
             this.Nexus = nexus;
+            this.Status = Status.Disconnected;
         }
 
         public void SetAddress(Address address)
         {
             this.Address = address;
+            this.Status = address != Address.Null ? Status.Identified : Status.Anonymous;
         }
     }
 }

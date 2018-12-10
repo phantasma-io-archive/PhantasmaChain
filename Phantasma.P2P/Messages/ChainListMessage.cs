@@ -6,13 +6,13 @@ namespace Phantasma.Network.P2P.Messages
 {
     internal sealed class ChainListMessage : Message
     {
-        public ChainListMessage(Nexus nexus, Address address) :base(nexus, Opcode.CHAIN_List, address)
+        public ChainListMessage(Address address) :base(Opcode.CHAIN_List, address)
         {
         }
 
-        internal static ChainListMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
+        internal static ChainListMessage FromReader(Address address, BinaryReader reader)
         {
-            return new ChainListMessage(nexus, address);
+            return new ChainListMessage(address);
         }
 
         protected override void OnSerialize(BinaryWriter writer)

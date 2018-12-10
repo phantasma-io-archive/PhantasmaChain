@@ -18,14 +18,14 @@ namespace Phantasma.Network.P2P.Messages
         private Block[] _blocks;
         private Transaction[] _transactions;
 
-        public EpochProposeMessage(Nexus nexus, Address address, Epoch epoch, IEnumerable<Block> blocks, IEnumerable<Transaction> transactions) : base(nexus, Opcode.EPOCH_Propose, address)
+        public EpochProposeMessage(Address address, Epoch epoch, IEnumerable<Block> blocks, IEnumerable<Transaction> transactions) : base(Opcode.EPOCH_Propose, address)
         {
             this.Epoch = epoch;
             this._transactions = transactions.ToArray();
             this._blocks = blocks.ToArray();
         }
 
-        internal static Message FromReader(Nexus nexus, Address address, BinaryReader reader)
+        internal static Message FromReader(Address address, BinaryReader reader)
         {
             /*
             var shardID = reader.ReadUInt32();

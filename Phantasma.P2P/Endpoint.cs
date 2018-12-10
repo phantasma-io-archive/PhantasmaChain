@@ -6,16 +6,23 @@ using Phantasma.IO;
 
 namespace Phantasma.Network.P2P
 {
+    public enum PeerProtocol
+    {
+        Unknown,
+        TCP,        
+    }
+
     public struct Endpoint
     {
-        public string Host { get { return EndPoint.Address.ToString(); } }
-        public int Port { get { return EndPoint.Port; } }
+        public readonly PeerProtocol Protocol;
+        public readonly string Host;
+        public readonly int Port;
 
-        internal readonly IPEndPoint EndPoint;
-
-        internal Endpoint(IPEndPoint ipEndPoint)
+        public Endpoint(PeerProtocol protocol, string host, int port)
         {
-            EndPoint = ipEndPoint;
+            this.Protocol = protocol;
+            this.Host = host;
+            this.Port = port;
         }
 
         public override bool Equals(object obj)
@@ -24,64 +31,38 @@ namespace Phantasma.Network.P2P
             {
                 return false;
             }
-            return EndPoint.Equals(((Endpoint)obj).EndPoint);
+
+            var other = (Endpoint)obj;
+            return this.Host == other.Host && this.Protocol == other.Protocol && this.Port == other.Port ;
         }
 
         public override string ToString()
         {
-            return EndPoint.ToString();
+            return $"{Protocol}://{Host}:{Port}";
         }
 
+        // TODO use all fields for hashcode
         public override int GetHashCode()
         {
-            return EndPoint.GetHashCode();
-        }
-
-        public Endpoint(string hostStr, int port)
-        {
-            IPAddress ipAddress;
-
-            if (!IPAddress.TryParse(hostStr, out ipAddress))
-            {
-                if (Socket.OSSupportsIPv6)
-                {
-                    if (hostStr == "localhost")
-                    {
-                        ipAddress = IPAddress.IPv6Loopback;
-                    }
-                    else
-                    {
-                        ipAddress = ResolveAddress(hostStr, AddressFamily.InterNetworkV6);
-                    }
-                }
-                if (ipAddress == null)
-                {
-                    ipAddress = ResolveAddress(hostStr, AddressFamily.InterNetwork);
-                }
-            }
-
-            if (ipAddress == null)
-            {
-                throw new Exception("Invalid address: " + hostStr);
-            }
-
-            EndPoint = new IPEndPoint(ipAddress, port);
+            return Host.GetHashCode();
         }
 
         public void Serialize(BinaryWriter writer)
         {
+            writer.Write((byte)this.Protocol);
             writer.WriteShortString(this.Host);
             writer.Write(Port);
         }
 
         public static Endpoint Unserialize(BinaryReader reader)
         {
+            var protocol = (PeerProtocol)reader.ReadByte();
             var host = reader.ReadShortString();
             var port = reader.ReadInt32();
-            return new Endpoint(host, port);
+            return new Endpoint(protocol, host, port);
         }
 
-        private static IPAddress ResolveAddress(string hostStr, AddressFamily addressFamily)
+        public static IPAddress ResolveAddress(string hostStr, AddressFamily addressFamily)
         {
 #if NETCORE
             var hostTask = Dns.GetHostEntryAsync(Dns.GetHostName());

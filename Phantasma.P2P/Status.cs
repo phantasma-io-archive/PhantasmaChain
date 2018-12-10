@@ -2,8 +2,8 @@
 {
     public enum Status
     {
-        Connecting,
-        Active,
-        Disconnected
+        Disconnected,
+        Anonymous,
+        Identified, 
     }
 }

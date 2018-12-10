@@ -1,36 +1,40 @@
-﻿using Phantasma.Blockchain;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace Phantasma.Network.P2P.Messages
 {
-    internal class PeerListMessage : Message
+    public class PeerListMessage : Message
     {
-        private PeerInfo[] _peers;
-        public IEnumerable<PeerInfo> Peers => _peers;
+        private Endpoint[] _peers;
+        public IEnumerable<Endpoint> Peers => _peers;
 
-        public PeerListMessage(Nexus nexus, Address address, IEnumerable<PeerInfo> peers) : base(nexus, Opcode.PEER_List, address)
+        public PeerListMessage(Address address, IEnumerable<Endpoint> peers) : base(Opcode.PEER_List, address)
         {
             this._peers = peers.ToArray();
         }
 
-        internal static PeerListMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
+        internal static PeerListMessage FromReader(Address address, BinaryReader reader)
         {
             var peerCount = reader.ReadUInt32();
-            var peers = new PeerInfo[peerCount];
+            var peers = new Endpoint[peerCount];
             for (int i = 0; i < peerCount; i++ )
             {
-                peers[i] = PeerInfo.Unserialize(reader);
+                peers[i] = Endpoint.Unserialize(reader);
             }
 
-            return new PeerListMessage(nexus, address, peers);
+            return new PeerListMessage(address, peers);
         }
 
         protected override void OnSerialize(BinaryWriter writer)
         {
             throw new System.NotImplementedException();
+        }
+
+        public override IEnumerable<string> GetDescription()
+        {
+            return Peers.Select(x => x.ToString());
         }
     }
 }

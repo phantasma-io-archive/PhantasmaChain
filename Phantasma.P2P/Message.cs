@@ -1,5 +1,6 @@
-﻿using System.IO;
-using Phantasma.Blockchain;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.IO;
@@ -16,12 +17,9 @@ namespace Phantasma.Network.P2P
         public Address Address { get; private set; }
         public Signature Signature { get; private set; }
 
-        public Nexus Nexus { get; private set; }
-
         public bool IsSigned => Address != Address.Null && Signature != null;
 
-        public Message(Nexus nexus, Opcode opcode, Address address) {
-            this.Nexus = nexus;
+        public Message(Opcode opcode, Address address) {
             this.Opcode = opcode;
             this.Address = address;
         }
@@ -35,7 +33,7 @@ namespace Phantasma.Network.P2P
             this.Signature = keyPair.Sign(msg);
         }
 
-        public static Message Unserialize(Nexus nexus, BinaryReader reader)
+        public static Message Unserialize(BinaryReader reader)
         {
             var opcode = (Opcode)reader.ReadByte();
             var address = reader.ReadAddress();
@@ -46,37 +44,37 @@ namespace Phantasma.Network.P2P
             {
                 case Opcode.PEER_Identity:
                     {
-                        msg = PeerIdentityMessage.FromReader(nexus, address, reader);
+                        msg = PeerIdentityMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.PEER_List:
                     {
-                        msg = PeerListMessage.FromReader(nexus, address, reader);
+                        msg = PeerListMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        msg = MempoolAddMessage.FromReader(nexus, address, reader);
+                        msg = MempoolAddMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_List:
                     {
-                        msg = MempoolGetMessage.FromReader(nexus, address, reader);
+                        msg = MempoolGetMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.CHAIN_List:
                     {
-                        msg = ChainListMessage.FromReader(nexus, address, reader);
+                        msg = ChainListMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.ERROR:
                     {
-                        msg = ErrorMessage.FromReader(nexus, address, reader);
+                        msg = ErrorMessage.FromReader(address, reader);
                         break;
                     }
 
@@ -120,5 +118,10 @@ namespace Phantasma.Network.P2P
         }
 
         protected abstract void OnSerialize(BinaryWriter writer);
+
+        public virtual IEnumerable<string> GetDescription()
+        {
+            return Enumerable.Empty<string>();
+        }
     }
 }

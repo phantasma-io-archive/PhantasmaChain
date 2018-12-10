@@ -12,6 +12,7 @@ namespace Phantasma.Network.P2P
         public TCPPeer(Nexus nexus, Socket socket) : base(nexus)
         {
             this._socket = socket;
+            this.Status = Status.Anonymous;
         }
 
         public override Message Receive()
@@ -22,7 +23,7 @@ namespace Phantasma.Network.P2P
                 {
                     using (var reader = new BinaryReader(stream))
                     {
-                        var msg = Message.Unserialize(this.Nexus, reader);
+                        var msg = Message.Unserialize(reader);
                         return msg;
                     }
                 }
