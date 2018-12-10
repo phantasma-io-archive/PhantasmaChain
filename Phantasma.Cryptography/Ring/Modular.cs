@@ -235,7 +235,7 @@ namespace Phantasma.Cryptography.Ring
             BigInteger tmp = (number << (32 * modulusMagnitude.Length)) % modulus;
             var zVal = GetData(tmp);
             if (zVal.Length > modulusMagnitude.Length)
-                return number.ModPow(exponent, modulus);
+                return BigInteger.ModPow(number, exponent, modulus);
 
             var yAccum = new int[modulusMagnitude.Length + 1];
             if (zVal.Length < modulusMagnitude.Length)

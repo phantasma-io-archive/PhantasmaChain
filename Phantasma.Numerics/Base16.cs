@@ -21,7 +21,7 @@ namespace Phantasma.Numerics
 
             for (int i = 0; i < result.Length; i++)
             {
-                var str = input.Substring(i * 2, 2);
+                var str = input.Substring(i * 2, 2).ToUpper();
                 int A = hexAlphabet.IndexOf(str[0]);
                 int B = hexAlphabet.IndexOf(str[1]);
 
