@@ -19,14 +19,14 @@ namespace Phantasma.Network.P2P.Messages
         internal static ErrorMessage FromReader(Address address, BinaryReader reader)
         {
             var code = (P2PError)reader.ReadByte();
-            var text = reader.ReadShortString();
+            var text = reader.ReadVarString();
             return new ErrorMessage(address, code, text);
         }
 
         protected override void OnSerialize(BinaryWriter writer)
         {
             writer.Write((byte)Code);
-            writer.WriteShortString(Text);
+            writer.WriteVarString(Text);
         }
     }
 }

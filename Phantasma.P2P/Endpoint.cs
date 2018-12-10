@@ -50,14 +50,14 @@ namespace Phantasma.Network.P2P
         public void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)this.Protocol);
-            writer.WriteShortString(this.Host);
+            writer.WriteVarString(this.Host);
             writer.Write(Port);
         }
 
         public static Endpoint Unserialize(BinaryReader reader)
         {
             var protocol = (PeerProtocol)reader.ReadByte();
-            var host = reader.ReadShortString();
+            var host = reader.ReadVarString();
             var port = reader.ReadInt32();
             return new Endpoint(protocol, host, port);
         }

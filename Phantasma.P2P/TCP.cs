@@ -1,5 +1,6 @@
 ﻿using Phantasma.Blockchain;
 using Phantasma.Core;
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -35,8 +36,9 @@ namespace Phantasma.Network.P2P
                     }
                 }
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e);
                 return null;
             }
         }

@@ -42,15 +42,15 @@ namespace Phantasma.Network.P2P
 
             switch (opcode)
             {
-                case Opcode.PEER_Identity:
+                case Opcode.REQUEST:
                     {
-                        msg = PeerIdentityMessage.FromReader(address, reader);
+                        msg = RequestMessage.FromReader(address, reader);
                         break;
                     }
 
-                case Opcode.PEER_List:
+                case Opcode.LIST:
                     {
-                        msg = PeerListMessage.FromReader(address, reader);
+                        msg = ListMessage.FromReader(address, reader);
                         break;
                     }
 
@@ -60,17 +60,18 @@ namespace Phantasma.Network.P2P
                         break;
                     }
 
-                case Opcode.MEMPOOL_List:
-                    {
-                        msg = MempoolGetMessage.FromReader(address, reader);
-                        break;
-                    }
+                /*                case Opcode.MEMPOOL_List:
+                                    {
+                                        msg = MempoolGetMessage.FromReader(address, reader);
+                                        break;
+                                    }
 
-                case Opcode.CHAIN_List:
-                    {
-                        msg = ChainListMessage.FromReader(address, reader);
-                        break;
-                    }
+                                case Opcode.CHAIN_List:
+                                    {
+                                        msg = ChainListMessage.FromReader(address, reader);
+                                        break;
+                                    }
+                                    */
 
                 case Opcode.ERROR:
                     {

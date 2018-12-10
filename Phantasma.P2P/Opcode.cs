@@ -3,12 +3,10 @@
     public enum Opcode
     {
         ERROR,
-        PEER_Identity,
-        PEER_List,
-        MEMPOOL_List,
+        REQUEST,
+        LIST,
         MEMPOOL_Add,
         BLOCKS_List,
-        CHAIN_List,
         EPOCH_List,
         EPOCH_Propose,
         EPOCH_Submit,
