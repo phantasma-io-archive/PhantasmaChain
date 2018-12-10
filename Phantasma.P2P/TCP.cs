@@ -1,6 +1,7 @@
 ﻿using Phantasma.Blockchain;
 using Phantasma.Core;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 
 namespace Phantasma.Network.P2P
@@ -9,10 +10,16 @@ namespace Phantasma.Network.P2P
     {
         private readonly Socket _socket;
 
-        public TCPPeer(Nexus nexus, Socket socket) : base(nexus)
+        public TCPPeer(Nexus nexus, Socket socket) : base(nexus, MakeEndpoint(socket))
         {
             this._socket = socket;
             this.Status = Status.Anonymous;
+        }
+
+        private static Endpoint MakeEndpoint(Socket socket)
+        {
+            var remoteIpEndPoint = socket.RemoteEndPoint as IPEndPoint;
+            return new Endpoint(PeerProtocol.TCP, remoteIpEndPoint.Address.ToString(), remoteIpEndPoint.Port);
         }
 
         public override Message Receive()
