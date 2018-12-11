@@ -46,6 +46,27 @@ namespace Phantasma.Numerics
         {
         }
 
+        public LargeInteger(byte[] bytes, int sign = 1)
+        {
+            _sign = sign;
+            _data = null;
+
+            uint[] uintArray = new uint[(bytes.Length / 4) + (bytes.Length % 4 > 0 ? 1 : 0)];
+
+            int bytePosition = 0;
+            for (int i = 0, j = -1; i < bytes.Length; i++)
+            {
+                bytePosition = i % 4;
+
+                if (bytePosition == 0)
+                    j++;
+
+                uintArray[j] |= (uint)(bytes[i] << (bytePosition * 8));
+            }
+
+            InitFromArray(uintArray);
+        }
+
         public LargeInteger(long val)
         {
             if (val == 0)
@@ -126,6 +147,11 @@ namespace Phantasma.Numerics
 
             _data = null;
             InitFromArray(bigInteger._data);
+        }
+
+        public static LargeInteger FromHex(string p0)
+        {
+            return new LargeInteger(p0, 16);
         }
 
         public int Sign()
@@ -226,8 +252,10 @@ namespace Phantasma.Numerics
 
             foreach (var digit in _data)
             {
-                result += digit.ToString("X8");
+                result += digit.ToString("x8");
             }
+
+            result = result.TrimStart('0');
 
             return result;
         }
@@ -896,8 +924,8 @@ namespace Phantasma.Numerics
 
         public uint GetBitLength()
         {
-            if (this == 0)
-                return 1;
+            if (this == 0 || _data.Length == 0)
+                return 0;
 
             uint result = (uint) (_data.Length - 1) * 32;
 
@@ -909,6 +937,28 @@ namespace Phantasma.Numerics
         public uint[] ToUintArray()
         {
             return (uint[])_data.Clone();
+        }
+
+        public byte[] ToByteArray()
+        {
+            var bitLength = GetBitLength();
+            var byteArraySize = (bitLength / 8) + (uint)((bitLength % 8 > 0) ? 1 : 0);
+            byte[] result = new byte[byteArraySize];
+
+            for (int i = 0, j = 0; i < _data.Length; i++, j += 4)
+            {
+                byte[] bytes = BitConverter.GetBytes(_data[i]);
+                for (int k = 0; k < 4; k++)
+                {
+                    if (bytes[k] == 0)
+                        continue;
+
+                    result[j + k] = bytes[k];
+                }
+                //bytes.CopyTo(result, j );
+            }
+
+            return result;
         }
 
         //TODO: this probably needs looking into..
