@@ -37,8 +37,6 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("blockHeight", block.Height);
-            result.AddField("gasLimit", tx.GasLimit.ToString());
-            result.AddField("gasPrice", tx.GasPrice.ToString());
             result.AddField("script", Base16.Encode(tx.Script));
 
             var eventsNode = DataNode.CreateArray("events");
@@ -71,7 +69,7 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("previousHash", block.PreviousHash);
             result.AddField("nonce", block.Nonce);
-            result.AddField("minerAddress", block.MinerAddress.Text);
+            // result.AddField("minerAddress", block.MinerAddress.Text); TODO fixme
 
             return result;
         }
@@ -235,10 +233,41 @@ namespace Phantasma.API
         {
             var result = DataNode.CreateObject();
 
-            int confirmations = Nexus.GetConfirmationsOfHash(hash);
+            int confirmations = -1;
 
-            result.AddField("confirmations", confirmations);
-            result.AddField("hash", hash.ToString());
+            var block = Nexus.FindBlockForHash(hash);
+            if (block != null)
+            {
+                confirmations = Nexus.GetConfirmationsOfBlock(block);
+            }
+            else
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
+                if (tx != null)
+                {
+                    block = Nexus.FindBlockForTransaction(tx);
+                    if (block != null)
+                    {
+                        confirmations = Nexus.GetConfirmationsOfBlock(block);
+                    }
+                }
+            }
+
+            Chain chain = (block != null) ? Nexus.FindChainForBlock(block) : null;
+
+            if (confirmations == -1 || block == null || chain == null)
+            {
+                result.AddField("confirmations", (int)0);
+                result.AddField("error", "unknown hash");
+            }
+            else
+            {
+                result.AddField("confirmations", confirmations);
+                result.AddField("hash", block.Hash.ToString());
+                result.AddField("height", block.Height);
+                result.AddField("chain", chain.Address);
+            }
+
             return result;
         }
 
@@ -251,8 +280,11 @@ namespace Phantasma.API
                 var bytes = Base16.Decode(txData);
                 var tx = Transaction.Unserialize(bytes);
 
-                Mempool.Submit(tx);
-
+                bool submited = Mempool.Submit(tx);
+                if (!submited)
+                {
+                    result.AddField("error", "Not submited to mempool");
+                }
                 result.AddField("hash", tx.Hash);
             }
             else
@@ -276,7 +308,22 @@ namespace Phantasma.API
                 single.AddField("address", chain.Address.Text);
                 if (chain.ParentChain != null)
                 {
-                    single.AddField("parent", chain.ParentChain.Name);
+                    single.AddField("parentName", chain.ParentChain.Name);
+                    single.AddField("parentAddress", chain.ParentChain.Name);
+                }
+
+                if (chain.ChildChains != null && chain.ChildChains.Any())
+                {
+                    var children = DataNode.CreateArray("children");
+                    foreach (var childChain in chain.ChildChains)
+                    {
+                        var child = DataNode.CreateObject();
+                        child.AddField("name", childChain.Name);
+                        child.AddField("address", childChain.Address.Text);
+                        children.AddNode(child);
+                    }
+
+                    single.AddNode(children);
                 }
                 arrayNode.AddNode(single);
             }

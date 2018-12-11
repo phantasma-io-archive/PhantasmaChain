@@ -392,8 +392,10 @@ namespace Phantasma.Numerics
 
         public static LargeInteger operator *(LargeInteger a, LargeInteger b)
         {
-            var result = new LargeInteger(Multiply(a._data, b._data));
-            result._sign = a._sign * b._sign;
+            var result = new LargeInteger(Multiply(a._data, b._data))
+            {
+                _sign = a._sign * b._sign
+            };
             return result;
         }
 
@@ -925,10 +927,9 @@ namespace Phantasma.Numerics
 
         public override bool Equals(object obj)
         {
-            if (obj is LargeInteger)
+            if (obj is LargeInteger temp)
             {
-                var temp = (LargeInteger)obj;
-                return temp._sign == _sign && temp._data.SequenceEqual(_data);
+                return temp._sign == _sign && temp._data.SequenceEqual(this._data);
             }
 
             return false;

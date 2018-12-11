@@ -5,7 +5,7 @@ using Phantasma.IO;
 
 namespace Phantasma.VM.Contracts
 {
-    public struct ContractMethod
+    public class ContractMethod
     {
         public readonly string name;
         public readonly VMType returnType;

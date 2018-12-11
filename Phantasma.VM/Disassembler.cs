@@ -29,11 +29,12 @@ namespace Phantasma.VM
                 temp.Offset = _instructionPointer;
                 temp.Opcode = (Opcode)Read8();
 
-                System.Console.WriteLine("disasm => " + temp.Opcode);
+                //System.Console.WriteLine("disasm => " + temp.Opcode);
 
                 switch (temp.Opcode)
                 {
                     // args: byte src_reg, byte dest_reg
+                    case Opcode.CTX:
                     case Opcode.MOVE:
                     case Opcode.COPY:
                     case Opcode.SWAP:
@@ -182,15 +183,6 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
                             temp.Args = new object[] { srcA, srcB, dst };
-                            break;
-                        }
-
-                    // args: byte dest_reg, var key
-                    case Opcode.CTX:
-                        {
-                            var dst = Read8();
-                            var key = ReadBytes(Address.PublicKeyLength);
-                            temp.Args = new object[] { dst, key };
                             break;
                         }
 

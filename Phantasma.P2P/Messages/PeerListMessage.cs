@@ -27,5 +27,10 @@ namespace Phantasma.Network.P2P.Messages
 
             return new PeerListMessage(nexus, address, peers);
         }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

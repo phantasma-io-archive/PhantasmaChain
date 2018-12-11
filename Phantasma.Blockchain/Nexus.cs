@@ -10,7 +10,6 @@ using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Tests;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
@@ -33,23 +32,30 @@ namespace Phantasma.Blockchain
 
         private List<INexusPlugin> _plugins = new List<INexusPlugin>();
 
-        private Logger logger;
+        private readonly Logger _logger;
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, KeyPair owner, Logger logger = null)
+        public Nexus(string name, Logger logger = null)
         {
-            this.logger = logger;
+            this._logger = logger;
             this.Name = name;
 
-            this.RootChain = new Chain(this, owner.Address, "main", new NexusContract(), logger, null);
-            _chains[RootChain.Name] = RootChain;
-
-            if (!CreateGenesisBlock(owner))
+            // TODO this probably should be done using a normal transaction instead of here
+            var contracts = new List<SmartContract>
             {
-                throw new ChainException("Genesis block failure");
-            }
+                new NexusContract(),
+                new TokenContract(),
+                new StakeContract(),
+                new GovernanceContract(),
+                new AccountContract(),
+                new OracleContract(),
+                new GasContract()
+            };
+
+            this.RootChain = new Chain(this, "main", contracts, logger, null);
+            _chains[RootChain.Name] = RootChain;
         }
 
         #region PLUGINS
@@ -130,14 +136,14 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
-            var chain = FindChainByKind(ContractKind.Account); // TODO cache this
-            return (Address)chain.InvokeContract("LookUpName", name);
+            var chain = this.RootChain;
+            return (Address)chain.InvokeContract("account", "LookUpName", name);
         }
 
         public string LookUpAddress(Address address)
         {
-            var chain = FindChainByKind(ContractKind.Account); // TODO cache this
-            return (string)chain.InvokeContract("LookUpAddress", address);
+            var chain = this.RootChain;
+            return (string)chain.InvokeContract("account", "LookUpAddress", address);
         }
         #endregion
 
@@ -172,7 +178,7 @@ namespace Phantasma.Blockchain
 
             if (owner != this.GenesisAddress)
             {
-                if (parentChain.Contract.Kind != ContractKind.Apps && parentChain.Contract.Kind != ContractKind.Custom)
+                if (parentChain.Level < 2)
                 {
                     return null;
                 }
@@ -192,33 +198,26 @@ namespace Phantasma.Blockchain
 
             SmartContract contract;
 
-            ContractKind contractKind;
-            if (Enum.TryParse<ContractKind>(name, true, out contractKind))
+            switch (name)
             {
-                switch (contractKind)
-                {
-                    case ContractKind.Privacy: contract = new PrivacyContract(); break;
-                    case ContractKind.Distribution: contract = new DistributionContract(); break;
-                    case ContractKind.Exchange: contract = new ExchangeContract(); break;
-                    case ContractKind.Governance: contract = new GovernanceContract(); break;
-                    case ContractKind.Stake: contract = new StakeContract(); break;
-                    case ContractKind.Storage: contract = new StorageContract(); break;
-                    case ContractKind.Account: contract = new AccountContract(); break;
-                    case ContractKind.Vault: contract = new VaultContract(); break;
-                    case ContractKind.Bank: contract = new BankContract(); break;
-                    case ContractKind.Apps: contract = new AppsContract(); break;
-
-                    default:
-                        throw new ChainException("Could not create contract for: " + contractKind);
-                }
-            }
-            else
-            {
-                var sb = new ScriptBuilder();
-                contract = new CustomContract(sb.ToScript(), null); // TODO
+                case "privacy": contract = new PrivacyContract(); break;
+                case "exchange": contract = new ExchangeContract(); break;
+                case "storage": contract = new StorageContract(); break;
+                case "vault": contract = new VaultContract(); break;
+                case "bank": contract = new BankContract(); break;
+                case "apps": contract = new AppsContract(); break;
+                default:
+                    {
+                        var sb = new ScriptBuilder();
+                        contract = new CustomContract(sb.ToScript(), null); // TODO
+                        break;
+                    }
             }
 
-            var chain = new Chain(this, owner, name, contract, this.logger, parentChain, parentBlock);
+            var tokenContract = new TokenContract();
+            var gasContract = new GasContract();
+
+            var chain = new Chain(this, name, new SmartContract[] { tokenContract, gasContract, contract }, this._logger, parentChain, parentBlock);
 
             lock (_chains)
             {
@@ -263,11 +262,6 @@ namespace Phantasma.Blockchain
             }
 
             return null;
-        }
-
-        public Chain FindChainByKind(ContractKind kind)
-        {
-            return FindChainByName(kind.ToString().ToLower());
         }
 
         public Chain FindChainByName(string name)
@@ -331,27 +325,53 @@ namespace Phantasma.Blockchain
         #region GENESIS
         private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
-            var script = ScriptUtils.CallContractScript(chain.Address, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
-            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var sb = ScriptUtils.BeginScript();
+
+            if (symbol != NativeTokenSymbol)
+            {
+                sb.AllowGas(owner.Address, 1, 9999);
+            }
+
+            sb.CallContract(ScriptUtils.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
+
+            if (symbol == NativeTokenSymbol)
+            {
+                sb.CallContract(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
+                sb.AllowGas(owner.Address, 1, 9999);
+            }
+
+            var script = sb.SpendGas(owner.Address).EndScript();
+
+            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
             return tx;
         }
 
-        private Transaction TokenMintTx(Chain chain, KeyPair owner, string symbol, BigInteger amount)
+        private Transaction SideChainCreateTx(Chain chain, KeyPair owner, string name)
         {
-            var script = ScriptUtils.CallContractScript(chain.Address, "MintTokens", owner.Address, symbol, amount);
-            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, 1, 9999).
+                CallContract(ScriptUtils.NexusContract, "CreateChain", owner.Address, name, RootChain.Name).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
 
-        private Transaction SideChainCreateTx(Chain chain, KeyPair owner, ContractKind kind)
+        private Transaction StakeCreateTx(Chain chain, KeyPair owner)
         {
-            var name = kind.ToString();
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, 1, 9999).
+                CallContract("stake", "Stake", owner.Address).
+                SpendGas(owner.Address).
+                EndScript();
 
-            var script = ScriptUtils.CallContractScript(chain.Address, "CreateChain", owner.Address, name, RootChain.Name);
-            var tx = new Transaction(this.Name, chain.Name, script, 0, 0, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -367,7 +387,7 @@ namespace Phantasma.Blockchain
 
         public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(91136374, NativeTokenDecimals);
 
-        private bool CreateGenesisBlock(KeyPair owner)
+        public bool CreateGenesisBlock(KeyPair owner)
         {
             if (this.NativeToken != null)
             {
@@ -376,19 +396,18 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var transactions = new List<Transaction>();
+            var transactions = new List<Transaction>
+            {
+                TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible),
+                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible),
 
-            transactions.Add(TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible));
-            transactions.Add(TokenMintTx(RootChain, owner, NativeTokenSymbol, PlatformSupply));
-            transactions.Add(TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible));
+                SideChainCreateTx(RootChain, owner, "privacy"),
+                SideChainCreateTx(RootChain, owner, "vault"),
+                SideChainCreateTx(RootChain, owner, "bank"),
+                SideChainCreateTx(RootChain, owner, "apps"),
 
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Privacy));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Distribution));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Account));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Stake));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Vault));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Bank));
-            transactions.Add(SideChainCreateTx(RootChain, owner, ContractKind.Apps));
+                StakeCreateTx(RootChain, owner)
+            };
 
             var genesisMessage = Encoding.UTF8.GetBytes("SOUL genesis");
             var block = new Block(Chain.InitialHeight, RootChain.Address, owner.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
@@ -440,6 +459,49 @@ namespace Phantasma.Blockchain
             }
 
             return 0;
+        }
+        #endregion
+
+        #region VALIDATORS
+        public IEnumerable<Address> GetValidators()
+        {
+            var validators = (Address[])RootChain.InvokeContract("stake", "GetValidators");
+            return validators;
+        }
+
+        public int GetValidatorCount()
+        {
+            var count = (BigInteger)RootChain.InvokeContract("stake", "GetActiveValidatorss");
+            return (int)count;
+        }
+
+        public bool IsValidator(Address address)
+        {
+            return GetIndexOfValidator(address) >= 0;
+        }
+
+        public int GetIndexOfValidator(Address address)
+        {
+            if (address == Address.Null)
+            {
+                return -1;
+            }
+
+            var result = (int)(BigInteger)RootChain.InvokeContract("stake", "GetIndexOfValidator", address);
+            return result;
+        }
+
+        public Address GetValidatorByIndex(int index)
+        {
+            if (RootChain == null)
+            {
+                return Address.Null;
+            }
+
+            Throw.If(index < 0, "invalid validator index");
+
+            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (BigInteger) index);
+            return result;
         }
         #endregion
     }

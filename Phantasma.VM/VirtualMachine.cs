@@ -2,9 +2,84 @@
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Cryptography;
+#if DEBUG
+using System;
+using System.Linq;
+using System.IO;
+#endif
 
 namespace Phantasma.VM
 {
+#if DEBUG
+    public class VMDebugException : Exception
+    {
+        public VirtualMachine vm;
+
+        private string Header(string s)
+        {
+            return $"*********{s}*********";
+        }
+
+        public VMDebugException(VirtualMachine vm, string msg) : base(msg)
+        {
+            this.vm = vm;
+
+            var temp = new Disassembler(vm.entryScript);
+
+            var lines = new List<string>();
+
+            if (vm.CurrentContext is ScriptContext sc)
+            {
+                lines.Add(Header("CURRENT OFFSET"));
+                lines.Add(sc.InstructionPointer.ToString());
+                lines.Add("");
+            }
+
+            lines.Add(Header("STACK"));
+            var stack = vm.Stack.ToArray();
+            for (int i = 0; i < stack.Length; i++)
+            {
+                lines.Add(stack[i].ToString());
+            }
+            lines.Add("");
+
+            lines.Add(Header("FRAMES"));
+            int ct = 0;
+            var frames = vm.frames.ToArray();
+            foreach (var frame in frames)
+            {
+                if (ct > 0)
+                {
+                    lines.Add("");
+                }
+
+                lines.Add("Active = " + (frame == vm.CurrentFrame).ToString());
+                lines.Add("Entry Offset = " + frame.Offset.ToString());
+                lines.Add("Registers:");
+                int ri = 0;
+                foreach (var reg in frame.Registers)
+                {
+                    if (reg.Type != VMType.None)
+                    {
+                        lines.Add($"\tR{ri} = {reg}");
+                    }
+
+                    ri++;
+                }
+                ct++;
+            }
+            lines.Add("");
+
+            var disasm = temp.Instructions.Select(inst => inst.ToString());
+            lines.Add(Header("DISASM"));
+            lines.AddRange(disasm);
+            lines.Add("");
+
+            File.WriteAllLines("vm_dump.txt", lines.ToArray());
+        }
+    }
+#endif
+
     public abstract class VirtualMachine
     {
         public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
@@ -13,39 +88,36 @@ namespace Phantasma.VM
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
 
         public readonly byte[] entryScript;
-        public Address entryAddress { get; private set; }
+        public Address EntryAddress { get; private set; }
 
         public readonly ExecutionContext entryContext;
-        public ExecutionContext currentContext { get; private set; }
+        public ExecutionContext CurrentContext { get; private set; }
 
-        private Dictionary<Address, ExecutionContext> _contextList = new Dictionary<Address, ExecutionContext>();
+        private Dictionary<string, ExecutionContext> _contextList = new Dictionary<string, ExecutionContext>();
 
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
-        public ExecutionFrame currentFrame { get; private set; }
-
-        public BigInteger gas { get; private set; }
+        public ExecutionFrame CurrentFrame { get; private set; }
 
         public VirtualMachine(byte[] script)
         {
             Throw.IfNull(script, nameof(script));
 
-            this.entryAddress = Address.FromScript(script);
+            this.EntryAddress = Address.FromScript(script);
             this.entryContext = new ScriptContext(script);
-            RegisterContext(this.entryAddress, this.entryContext);
+            RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
-            this.gas = 0;
             this.entryScript = script;
         }
 
-        internal void RegisterContext(Address address, ExecutionContext context)
+        internal void RegisterContext(string contextName, ExecutionContext context)
         {
-            _contextList[address] = context;
+            _contextList[contextName] = context;
         }
 
         public abstract ExecutionState ExecuteInterop(string method);
-        public abstract ExecutionContext LoadContext(Address address);
+        public abstract ExecutionContext LoadContext(string contextName);
 
-        public ExecutionState Execute()
+        public virtual ExecutionState Execute()
         {
             return SwitchContext(entryContext);
         }
@@ -55,7 +127,7 @@ namespace Phantasma.VM
         {
             var frame = new ExecutionFrame(this, instructionPointer, context, registerCount);
             frames.Push(frame);
-            this.currentFrame = frame;
+            this.CurrentFrame = frame;
         }
 
         internal uint PopFrame()
@@ -63,35 +135,50 @@ namespace Phantasma.VM
             Throw.If(frames.Count < 2, "Not enough frames available");
 
             frames.Pop();
-            var instructionPointer = currentFrame.Offset;
+            var instructionPointer = CurrentFrame.Offset;
 
-            this.currentFrame = frames.Peek();
-            this.currentContext = currentFrame.Context;
+            this.CurrentFrame = frames.Peek();
+            this.CurrentContext = CurrentFrame.Context;
 
             return instructionPointer;
         }
 
-        internal ExecutionContext FindContext(Address address)
+        internal ExecutionContext FindContext(string contextName)
         {
-            if (_contextList.ContainsKey(address))
+            if (_contextList.ContainsKey(contextName))
             {
-                return _contextList[address];
+                return _contextList[contextName];
             }
 
-            var result = LoadContext(address);
-            _contextList[address] = result;
+            var result = LoadContext(contextName);
+            if (result == null)
+            {
+                return null;
+            }
+
+            _contextList[contextName] = result;
 
             return result;
         }
 
-        internal ExecutionState SwitchContext(ExecutionContext context)
+        public virtual ExecutionState ValidateOpcode(Opcode opcode)
         {
-            this.currentContext = context;
-            PushFrame(context, 0, DefaultRegisterCount);
-            return context.Execute(this.currentFrame, this.Stack);
+            return ExecutionState.Running;
         }
 
+        internal ExecutionState SwitchContext(ExecutionContext context)
+        {
+            this.CurrentContext = context;
+            PushFrame(context, 0, DefaultRegisterCount);
+            return context.Execute(this.CurrentFrame, this.Stack);
+        }
         #endregion
 
+#if DEBUG
+        public virtual ExecutionState HandleException(VMDebugException ex)
+        {
+            throw ex;
+        }
+#endif
     }
 }

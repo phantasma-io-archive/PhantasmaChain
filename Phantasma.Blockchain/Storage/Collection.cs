@@ -172,5 +172,11 @@ namespace Phantasma.Blockchain.Storage
             return items;
         }
 
+        public void Clear()
+        {
+            BigInteger count = 0;
+            Context.Put(CountKey(), count);
+        }
+
     }
 }

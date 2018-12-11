@@ -1,4 +1,5 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using System;
 
 namespace Phantasma.VM
@@ -15,7 +16,7 @@ namespace Phantasma.VM
             throw new NotImplementedException();
         }
 
-        public override ExecutionContext LoadContext(Address address)
+        public override ExecutionContext LoadContext(string contextName)
         {
             throw new NotImplementedException();
         }

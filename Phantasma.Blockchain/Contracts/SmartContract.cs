@@ -17,16 +17,15 @@ namespace Phantasma.Blockchain.Contracts
 {
     public abstract class SmartContract : IContract
     {
-        public BigInteger Order { get; internal set; }
-
         public ContractInterface ABI { get; private set; }
+        public abstract string Name { get; }
 
-        private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
+        public BigInteger Order { get; internal set; } // TODO remove this?
+
+        private readonly Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer()); // TODO remove this?
 
         public RuntimeVM Runtime { get; private set; }
         public StorageContext Storage => Runtime.ChangeSet;
-
-        public abstract ContractKind Kind { get; }
 
         private Dictionary<string, MethodInfo> _methodTable = new Dictionary<string, MethodInfo>();
 
@@ -40,11 +39,27 @@ namespace Phantasma.Blockchain.Contracts
         internal void SetRuntimeData(RuntimeVM VM)
         {
             this.Runtime = VM;
-        }
 
-        public int GetSize()
-        {
-            return 0; // TODO
+            var contractType = this.GetType();
+            FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+
+            var storageFields = fields.Where(x => x.FieldType.IsGenericType).ToList();
+
+            if (storageFields.Count > 0)
+            {
+                BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
+                
+                foreach (var field in storageFields)
+                {
+                    var fieldHash = field.Name.Sha256();
+                    var args = new object[] { (StorageContext)VM.ChangeSet, fieldHash, StorageContext.MakeContractPrefix(this) };
+
+                    // NOTE this is done this way due to the constructor being internal
+                    var obj = Activator.CreateInstance(field.FieldType, flags, null, args, null);
+
+                    field.SetValue(this, obj);
+                }
+            }
         }
 
         public bool IsWitness(Address address)
@@ -55,6 +70,11 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return Runtime.Transaction.IsSignedBy(address);
+        }
+
+        public bool IsValidator(Address address)
+        {
+            return Runtime.Nexus.IsValidator(address);
         }
 
         #region METHOD TABLE
@@ -151,18 +171,6 @@ namespace Phantasma.Blockchain.Contracts
         #endregion
 
         #region SIDE CHAINS
-        // NOTE we should later prevent contracts from manipulating those
-        private HashSet<Hash> knownTransactions = new HashSet<Hash>();
-        internal bool IsKnown(Hash hash)
-        {
-            return knownTransactions.Contains(hash);
-        }
-
-        protected void RegisterHashAsKnown(Hash hash)
-        {
-            knownTransactions.Add(hash);
-        }
-
         public bool IsChain(Address address)
         {
             return Runtime.Nexus.FindChainByAddress(address) != null;
@@ -209,297 +217,6 @@ namespace Phantasma.Blockchain.Contracts
 
             return chain.ParentChain == this.Runtime.Chain;
         }
-
-        public void SendTokens(Address targetChain, Address from, Address to, string symbol, BigInteger amount)
-        {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
-            Runtime.Expect(IsParentChain(targetChain) || IsChildChain(targetChain), "target must be parent or child chain");
-
-            var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
-            /*TODO
-            var otherConsensus = (ConsensusContract)otherChain.FindContract(ContractKind.Consensus);
-            Runtime.Expect(otherConsensus.IsValidReceiver(from));*/
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
-
-            if (token.IsCapped)
-            {
-                var sourceSupplies = this.Runtime.Chain.GetTokenSupplies(token);
-                var targetSupplies = otherChain.GetTokenSupplies(token);
-
-                if (IsParentChain(targetChain))
-                {
-                    Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
-                    Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, amount), "target supply check failed");
-                }
-                else // child chain
-                {
-                    Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, amount), "source supply check failed");
-                    Runtime.Expect(targetSupplies.MoveFromParent(amount), "target supply check failed");
-                }
-            }
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(balances, from, amount), "burn failed");
-
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
-        }
-
-        public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
-        {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
-            Runtime.Expect(IsParentChain(targetChain) || IsChildChain(targetChain), "source must be parent or child chain");
-
-            var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "must be non-fungible token");
-
-            var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
-
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
-        }
-
-        public void SettleBlock(Address sourceChain, Hash hash)
-        {
-            Runtime.Expect(IsParentChain(sourceChain) || IsChildChain(sourceChain), "source must be parent or child chain");
-
-            Runtime.Expect(!IsKnown(hash), "hash already settled");
-
-            var otherChain = this.Runtime.Nexus.FindChainByAddress(sourceChain);
-
-            var block = otherChain.FindBlockByHash(hash);
-            Runtime.Expect(block != null, "invalid block");
-
-            int settlements = 0;
-
-            foreach (var txHash in block.TransactionHashes)
-            {
-                string symbol = null;
-                BigInteger value = 0;
-                Address targetAddress = Address.Null;
-
-                var evts = block.GetEventsForTransaction(txHash);
-
-                foreach (var evt in evts)
-                {
-                    if (evt.Kind == EventKind.TokenSend)
-                    {
-                        var data = Serialization.Unserialize<TokenEventData>(evt.Data);
-                        if (data.chainAddress == this.Runtime.Chain.Address)
-                        {
-                            symbol = data.symbol;
-                            value = data.value;
-                            targetAddress = evt.Address;
-                            // TODO what about multiple send events in the same tx, seems not supported yet?
-                        }
-                    }
-                }
-
-                if (symbol != null)
-                {
-                    settlements++;
-                    Runtime.Expect(value > 0, "value must be greater than zero");
-                    Runtime.Expect(targetAddress != Address.Null, "target must not be null");
-
-                    var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-                    Runtime.Expect(token != null, "invalid token");
-
-                    if (token.Flags.HasFlag(TokenFlags.Fungible))
-                    {
-                        if (token.IsCapped)
-                        {
-                            var sourceSupplies = otherChain.GetTokenSupplies(token);
-                            var targetSupplies = this.Runtime.Chain.GetTokenSupplies(token);
-
-                            if (IsParentChain(sourceChain))
-                            {
-                                Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
-                                Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
-                            }
-                            else // child chain
-                            {
-                                Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
-                                Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
-                            }
-                        }
-
-                        var balances = this.Runtime.Chain.GetTokenBalances(token);
-                        Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
-                    }
-                    else
-                    {
-                        var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-                        Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
-                    }
-
-                    Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = otherChain.Address });
-                }
-            }
-
-            Runtime.Expect(settlements > 0, "no settlements in the block");
-            RegisterHashAsKnown(hash);
-        }
         #endregion
-
-        #region FUNGIBLE TOKENS
-        public void MintTokens(Address target, string symbol, BigInteger amount)
-        {
-            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-
-            Runtime.Expect(IsWitness(token.Owner), "invalid witness");
-
-            if (token.IsCapped)
-            {
-                var supplies = this.Runtime.Chain.GetTokenSupplies(token);
-                Runtime.Expect(supplies.Mint(amount), "minting failed");
-            }
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Mint(balances, target, amount), "minting failed");
-
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
-        }
-
-        public void BurnTokens(Address from, string symbol, BigInteger amount)
-        {
-            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-
-            if (token.IsCapped)
-            {
-                var supplies = this.Runtime.Chain.GetTokenSupplies(token);
-                Runtime.Expect(supplies.Burn(amount), "minting failed");
-            }
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(balances, from, amount), "burning failed");
-
-            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount });
-        }
-
-        public void TransferTokens(Address source, Address destination, string symbol, BigInteger amount)
-        {
-            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(source != destination, "source and destination must be different");
-            Runtime.Expect(IsWitness(source), "invalid witness");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, source, destination, amount), "transfer failed");
-
-            Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
-            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
-        }
-
-        public BigInteger GetBalance(Address address, string symbol)
-        {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            return balances.Get(address);
-        }
-        #endregion
-
-        #region NON FUNGIBLE TOKENS
-        public BigInteger[] GetTokens(Address address, string symbol)
-        {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            return ownerships.Get(address).ToArray();
-        }
-
-        public BigInteger MintToken(Address from, string symbol, byte[] data)
-        {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            var tokenID = this.Runtime.Chain.CreateNFT(token, data);
-            Runtime.Expect(tokenID > 0, "invalid tokenID");
-
-            var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Give(from, tokenID), "give token failed");
-
-            Runtime.Notify(EventKind.TokenMint, from, new TokenEventData() { symbol = symbol, value = tokenID });
-            return tokenID;
-        }
-
-        public void BurnToken(Address from, string symbol, BigInteger tokenID)
-        {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
-
-            Runtime.Expect(this.Runtime.Chain.DestroyNFT(token, tokenID), "destroy token failed");
-
-            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID });
-        }
-
-        public void TransferToken(Address source, Address destination, string symbol, BigInteger tokenID)
-        {
-            Runtime.Expect(IsWitness(source), "invalid witness");
-
-            Runtime.Expect(source != destination, "source and destination must be different");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Take(source, tokenID), "take token failed");
-            Runtime.Expect(ownerships.Give(destination, tokenID), "give token failed");
-
-            Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
-            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
-        }
-
-        public void SetTokenViewer(Address source, string symbol, string url)
-        {
-            Runtime.Expect(IsWitness(source), "invalid witness");
-
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            Runtime.Expect(token.Owner == source, "owner expected");
-
-            token.SetViewer(url);
-
-            Runtime.Notify(EventKind.TokenInfo, source, url);
-        }
-
-        #endregion
-
     }
 }

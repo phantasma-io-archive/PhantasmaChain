@@ -8,18 +8,12 @@ using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
-using System;
-using Phantasma.VM.Utils;
 using Phantasma.VM;
+using Phantasma.Core.Types;
+using Phantasma.Blockchain.Consensus;
 
 namespace Phantasma.Blockchain
 {
-    public struct ChainDiffEntry
-    {
-        public Block block;
-        public StorageChangeSetContext changeSet;
-    }
-    
     public partial class Chain
     {
         #region PRIVATE
@@ -29,6 +23,8 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
 
+        private Dictionary<Hash, Epoch> _epochMap = new Dictionary<Hash, Epoch>();
+
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
@@ -37,10 +33,17 @@ namespace Phantasma.Blockchain
         private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
 
         private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
+
+        private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
+        private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
+
+        private int _level;
         #endregion
 
         #region PUBLIC
         public static readonly uint InitialHeight = 1;
+
+        public int Level => _level;
 
         public Chain ParentChain { get; private set; }
         public Block ParentBlock { get; private set; }
@@ -48,7 +51,8 @@ namespace Phantasma.Blockchain
 
         public string Name { get; private set; }
         public Address Address { get; private set; }
-        public Address Owner { get; private set; }
+
+        public Epoch CurrentEpoch { get; private set; }
 
         public IEnumerable<Block> Blocks => _blockHashes.Values;
 
@@ -56,22 +60,18 @@ namespace Phantasma.Blockchain
        
         public Block LastBlock { get; private set; }
 
-        public SmartContract Contract { get; private set; }
-
         public readonly Logger Log;
 
-        public ExecutionContext ExecutionContext { get; private set; }
         public StorageContext Storage { get; private set; }
 
         public int TransactionCount => _blockHashes.Sum(entry => entry.Value.TransactionHashes.Count());  //todo move this?
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
-        public Chain(Nexus nexus, Address owner, string name, SmartContract contract, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
-            Throw.IfNull(owner, "owner required");
-            Throw.IfNull(contract, "contract required");
             Throw.IfNull(nexus, "nexus required");
+            Throw.If(contracts == null || !contracts.Any(), "contracts required");
 
             if (parentChain != null)
             {
@@ -85,15 +85,22 @@ namespace Phantasma.Blockchain
 
             this.Address = new Address(hash);
 
+            foreach (var contract in contracts)
+            {
+                if (this._contracts.ContainsKey(contract.Name))
+                {
+                    throw new ChainException("Duplicated contract name: " + contract.Name);
+                }
+
+                this._contracts[contract.Name] = contract;
+                this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
+            }
+
             this.Name = name;
-            this.Contract = contract;
-            this.Owner = owner;
             this.Nexus = nexus;
 
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
-
-            this.ExecutionContext = new NativeExecutionContext(contract);
 
             // TODO support persistence storage
             this.Storage = new MemoryStorageContext();
@@ -102,6 +109,11 @@ namespace Phantasma.Blockchain
             if (parentChain != null)
             {
                 parentChain._childChains[name] = this;
+                _level = ParentChain.Level + 1;
+            }
+            else
+            {
+                _level = 1;
             }
         }
 
@@ -127,6 +139,11 @@ namespace Phantasma.Blockchain
 
         public bool AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
+            /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
+            {
+                return false;
+            }*/
+
             if (LastBlock != null)
             {
                 if (LastBlock.Height != block.Height - 1)
@@ -185,6 +202,14 @@ namespace Phantasma.Blockchain
 
             changeSet.Execute();
 
+            if (CurrentEpoch == null)
+            {
+                GenerateEpoch();
+            }
+
+            CurrentEpoch.AddBlockHash(block.Hash);
+            CurrentEpoch.UpdateHash();
+
             LastBlock = block;
 
             foreach (Transaction tx in transactions)
@@ -196,17 +221,6 @@ namespace Phantasma.Blockchain
             Nexus.PluginTriggerBlock(this, block);
 
             return true;
-        }
-
-        public BigInteger GetBlockReward(Block block)
-        {
-            BigInteger result = 0;
-            var transactions = GetBlockTransactions(block);
-            foreach (Transaction tx in transactions)
-            {
-                result += tx.GasPrice * tx.GasLimit; // TODO fix this
-            }
-            return result;
         }
 
         private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();
@@ -422,53 +436,145 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public object InvokeContract(string methodName, params object[] args)
+        public T FindContract<T>(string contractName) where T: SmartContract
         {
-            var script = ScriptUtils.CallContractScript(this.Address, methodName, args);
-            var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null, null, changeSet);
-            Contract.SetRuntimeData(vm);
+            Throw.IfNullOrEmpty(contractName, nameof(contractName));
 
-            vm.Execute();
+            if (_contracts.ContainsKey(contractName))
+            {
+                return (T)_contracts[contractName];
+            }
+
+            return null;
+        }
+
+        internal ExecutionContext GetContractContext(SmartContract contract)
+        {
+            if (_contractContexts.ContainsKey(contract.Name))
+            {
+                return _contractContexts[contract.Name];
+            }
+
+            return null;
+        }
+
+        public object InvokeContract(string contractName, string methodName, params object[] args)
+        {
+            var contract = FindContract<SmartContract>(contractName);
+            Throw.IfNull(contract, nameof(contract));
+
+            var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
+            var changeSet = new StorageChangeSetContext(this.Storage);
+            var vm = new RuntimeVM(script, this, null, null, changeSet, true);
+
+            contract.SetRuntimeData(vm);
+
+            var state = vm.Execute();
+
+            if (state != ExecutionState.Halt)
+            {
+                throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed with state: " + state);
+            }
 
             var result = vm.Stack.Pop();
 
             return result.ToObject();
         }
 
-        public void MergeBlocks(IEnumerable<ChainDiffEntry> entries)
+        #region FEES 
+        public BigInteger GetBlockReward(Block block)
         {
-            Throw.IfNot(entries.Any(), "empty entries");
-
-            var firstBlockHeight = entries.First().block.Height;
-
-            var expectedLastHeight = firstBlockHeight + entries.Count();
-            Throw.If(expectedLastHeight <= this.BlockHeight, "short chain");
-
-            var currentBlockHeight = firstBlockHeight;
-
-            foreach (var entry in entries)
+            BigInteger total = 0;
+            foreach (var hash in block.TransactionHashes)
             {
-                if (currentBlockHeight <= this.BlockHeight)
+                var events = block.GetEventsForTransaction(hash);
+                foreach (var evt in events)
                 {
-                    var localBlock = FindBlockByHeight(currentBlockHeight);
-
-                    if (entry.block.Hash != localBlock.Hash)
+                    if (evt.Kind == EventKind.GasPayment)
                     {
-                        DeleteBlocks(localBlock.Hash);
-                        var diffHeight = currentBlockHeight - firstBlockHeight;
-                        MergeBlocks(entries.Skip((int)diffHeight));
-                        return;
+                        var gasInfo = evt.GetContent<GasEventData>();
+                        total += gasInfo.price * gasInfo.amount;
                     }
                 }
-                else
+            }
+
+            return total;
+        }
+
+        public BigInteger GetTransactionFee(Transaction tx)
+        {
+            Throw.IfNull(tx, nameof(tx));
+            return GetTransactionFee(tx.Hash);
+        }
+
+        public BigInteger GetTransactionFee(Hash hash)
+        {
+            Throw.IfNull(hash, nameof(hash));
+
+            BigInteger fee = 0;
+
+            var block = FindTransactionBlock(hash);
+            Throw.IfNull(block, nameof(block));
+
+            var events = block.GetEventsForTransaction(hash);
+            foreach (var evt in events)
+            {
+                if (evt.Kind == EventKind.GasPayment)
                 {
-                    this.AddBlock(entry.block, null); // TODO fixme
+                    var info = evt.GetContent<GasEventData>();
+                    fee += info.amount * info.price;
+                }
+            }
+
+            return fee;
+        }
+        #endregion
+
+        #region EPOCH
+        public bool IsCurrentValidator(Address address)
+        {
+            if (CurrentEpoch != null)
+            {
+                return CurrentEpoch.ValidatorAddress == address;
+            }
+
+            var firstValidator = Nexus.GetValidatorByIndex(0);
+            return address == firstValidator;
+        }
+
+        private void GenerateEpoch()
+        {
+            Address nextValidator;
+
+            uint epochIndex;
+
+            if (CurrentEpoch != null)
+            {
+                epochIndex = CurrentEpoch.Index + 1;
+
+                var currentIndex = Nexus.GetIndexOfValidator(CurrentEpoch.ValidatorAddress);
+                currentIndex++;
+
+                var validatorCount = Nexus.GetValidatorCount();
+
+                if (currentIndex >= validatorCount)
+                {
+                    currentIndex = 0;
                 }
 
-                currentBlockHeight++;
+                nextValidator = Nexus.GetValidatorByIndex(currentIndex);
             }
+            else
+            {
+                epochIndex = 0;
+                nextValidator = Nexus.GetValidatorByIndex(0);
+            }
+
+            var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
+
+            CurrentEpoch = epoch;
         }
+        #endregion
 
         #region NFT
         internal BigInteger CreateNFT(Token token, byte[] data)

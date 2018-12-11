@@ -12,11 +12,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Hash icon;
     }
 
-    public class AppsContract : NativeContract
+    public class AppsContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Apps;
+        public override string Name => "apps";
 
         private const string APP_LIST = "_apps";
+        private const string TOKEN_VIEWERS = "_viewers";
 
         public AppsContract() : base()
         {
@@ -36,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 icon = Hash.Null,
             };
             
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             list.Add(app);
         }
 
@@ -57,7 +58,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetAppTitle(string name, string title)
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             var index = FindAppIndex(name, list);
             Runtime.Expect(index >= 0, "app not found");
 
@@ -68,7 +69,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetAppUrl(string name, string url)
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             var index = FindAppIndex(name, list);
             Runtime.Expect(index >= 0, "app not found");
 
@@ -79,7 +80,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetAppDescription(string name, string description)
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             var index = FindAppIndex(name, list);
             Runtime.Expect(index >= 0, "app not found");
 
@@ -90,8 +91,30 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public AppInfo[] GetApps()
         {
-            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST);
+            var list = Storage.FindCollectionForContract<AppInfo>(APP_LIST, this);
             return list.All();
         }
+
+        public string GetTokenViewer(string symbol)
+        {
+            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS, this);
+            return map.Get(symbol);
+        }
+
+        public void SetTokenViewer(string symbol, string url)
+        {
+            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
+
+            Runtime.Expect(IsWitness(token.Owner), "owner expected");
+
+            var map = Storage.FindMapForContract<string, string>(TOKEN_VIEWERS, this);
+            map.Set(symbol, url);
+
+            //Runtime.Notify(EventKind.TokenInfo, source, url); TODO custom events
+        }
+
+
     }
 }

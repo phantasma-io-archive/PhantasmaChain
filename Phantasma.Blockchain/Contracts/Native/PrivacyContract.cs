@@ -14,9 +14,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public List<RingSignature> signatures;
     }
 
-    public sealed class PrivacyContract : NativeContract
+    public sealed class PrivacyContract : SmartContract
     {
-        public override ContractKind Kind => ContractKind.Privacy;
+        public override string Name => "privacy";
 
         public static readonly BigInteger TransferAmount = 10;
 

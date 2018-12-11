@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography.Hashing;
@@ -121,6 +122,12 @@ namespace Phantasma.Cryptography
         public static byte[] Sha256(this IEnumerable<byte> value)
         {
             return new SHA256().ComputeHash(value.ToArray());
+        }
+
+        public static byte[] Sha256(this string value)
+        {
+            var bytes = Encoding.UTF8.GetBytes(value);
+            return bytes.Sha256();
         }
 
         public static byte[] Sha256(this byte[] value, uint offset, uint count)

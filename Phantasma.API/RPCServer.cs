@@ -12,7 +12,6 @@ namespace Phantasma.API
         public int Port { get; private set; }
         public string EndPoint { get; private set; }
 
-        private Site _site;
         private HTTPServer _server;
 
         private NexusAPI _API;
@@ -28,13 +27,11 @@ namespace Phantasma.API
             this.EndPoint = endPoint;
             this._API = API;
 
-            var settings = new ServerSettings() { environment = ServerEnvironment.Prod, port = port };
+            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port };
 
-            _server = new HTTPServer(logger, settings);
+            _server = new HTTPServer(settings, logger);
 
-            _site = new Site(_server, null);
-
-            _site.Get("/" + EndPoint, (request) =>
+            _server.Get("/" + EndPoint, (request) =>
             {
                 var version = request.GetVariable("jsonrpc");
                 if (version != "2" && version != "2.0")
@@ -67,7 +64,7 @@ namespace Phantasma.API
 
             });
 
-            _site.Post("/" + EndPoint, (request) =>
+            _server.Post("/" + EndPoint, (request) =>
             {
                 if (string.IsNullOrEmpty(request.postBody))
                   {
@@ -275,6 +272,7 @@ namespace Phantasma.API
                         // ignore, it will be handled below
                     }
                     break;
+
                 case "getConfirmations":
                     if (paramNode == null)
                     {

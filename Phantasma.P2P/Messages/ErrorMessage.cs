@@ -5,12 +5,12 @@ using Phantasma.IO;
 
 namespace Phantasma.Network.P2P.Messages
 {
-    internal sealed class ErrorMessage : Message
+    public sealed class ErrorMessage : Message
     {
-        public readonly ushort Code;
+        public readonly P2PError Code;
         public readonly string Text;
 
-        public ErrorMessage(Nexus nexus, Address address, ushort code, string text = null) :base(nexus, Opcode.ERROR, address)
+        public ErrorMessage(Nexus nexus, Address address, P2PError code, string text = null) : base(nexus, Opcode.ERROR, address)
         {
             this.Code = code;
             this.Text = text;
@@ -18,9 +18,15 @@ namespace Phantasma.Network.P2P.Messages
 
         internal static ErrorMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
         {
-            var code = reader.ReadUInt16();
+            var code = (P2PError)reader.ReadByte();
             var text = reader.ReadShortString();
             return new ErrorMessage(nexus, address, code, text);
+        }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            writer.Write((byte)Code);
+            writer.WriteShortString(Text);
         }
     }
 }

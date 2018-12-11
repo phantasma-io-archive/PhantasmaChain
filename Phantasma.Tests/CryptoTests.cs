@@ -15,7 +15,7 @@ namespace Phantasma.Tests
     public class CryptoTests
     {
         [TestMethod]
-        public void TestHashing()
+        public void HashTests()
         {
             var bytes = new byte[32];
             var rnd = new Random();
@@ -48,7 +48,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestEdDSA()
+        public void EdDSA()
         {
             var keys = KeyPair.Generate();
             Assert.IsTrue(keys.PrivateKey.Length == KeyPair.PrivateKeyLength);
@@ -70,7 +70,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestRingSignatures()
+        public void RingSignatures()
         {
             var rand = new Random();
 
@@ -126,7 +126,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestSeedPhrases()
+        public void SeedPhrases()
         {
             string passphrase = "hello world";
             string seedPhrase;

@@ -1,6 +1,6 @@
 ﻿using Phantasma.Numerics;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Tokens
 {
     public static class TokenUtils
     {
