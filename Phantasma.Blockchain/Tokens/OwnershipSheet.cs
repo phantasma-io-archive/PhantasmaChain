@@ -9,10 +9,10 @@ namespace Phantasma.Blockchain.Tokens
 {
     public class OwnershipSheet
     {
-        private Dictionary<Address, HashSet<BigInteger>> _items = new Dictionary<Address, HashSet<BigInteger>>();
-        private Dictionary<BigInteger, Address> _ownerMap = new Dictionary<BigInteger, Address>();
+        private Dictionary<Address, HashSet<LargeInteger>> _items = new Dictionary<Address, HashSet<LargeInteger>>();
+        private Dictionary<LargeInteger, Address> _ownerMap = new Dictionary<LargeInteger, Address>();
 
-        public IEnumerable<BigInteger> Get(Address address)
+        public IEnumerable<LargeInteger> Get(Address address)
         {
             lock (_items)
             {
@@ -26,10 +26,10 @@ namespace Phantasma.Blockchain.Tokens
                 }
             }
 
-            return Enumerable.Empty<BigInteger>();
+            return Enumerable.Empty<LargeInteger>();
         }
 
-        public Address GetOwner(BigInteger tokenID)
+        public Address GetOwner(LargeInteger tokenID)
         {
             lock (_items)
             {
@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Tokens
             return Address.Null;
         }
 
-        internal bool Give(Address address, BigInteger tokenID)
+        internal bool Give(Address address, LargeInteger tokenID)
         {
             if (tokenID <= 0)
             {
@@ -56,7 +56,7 @@ namespace Phantasma.Blockchain.Tokens
 
             lock (_items)
             {
-                HashSet<BigInteger> items;
+                HashSet<LargeInteger> items;
 
                 if (_items.ContainsKey(address))
                 {
@@ -64,7 +64,7 @@ namespace Phantasma.Blockchain.Tokens
                 }
                 else
                 {
-                    items = new HashSet<BigInteger>();
+                    items = new HashSet<LargeInteger>();
                     _items[address] = items;
                 }
 
@@ -74,7 +74,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Take(Address address, BigInteger tokenID)
+        internal bool Take(Address address, LargeInteger tokenID)
         {
             if (tokenID <= 0)
             {
@@ -100,7 +100,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public void ForEach(Action<Address, IEnumerable<BigInteger>> visitor)
+        public void ForEach(Action<Address, IEnumerable<LargeInteger>> visitor)
         {
             Throw.IfNull(visitor, nameof(visitor));
 

@@ -24,8 +24,8 @@ namespace Phantasma.Cryptography
                 maxBytes[i] = 255;
             }
 
-            var n = new BigInteger(bytes);
-            var max = new BigInteger(maxBytes);
+            var n = new LargeInteger(bytes);
+            var max = new LargeInteger(maxBytes);
 
             var q = n % max;
 

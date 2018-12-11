@@ -7,6 +7,7 @@ using System.IO;
  * Based on the work of Bazzilic and Chan Keong TAN
  * https://github.com/bazzilic/BigInteger
  */
+
 namespace Phantasma.Numerics
 {
     public class BigInteger
@@ -95,7 +96,7 @@ namespace Phantasma.Numerics
         public BigInteger(string value, int radix)
         {
             var bi = new BigInteger(1L);
-            var bigInteger = new BigInteger();
+            var BigInteger = new BigInteger();
             value = value.ToUpper().Trim();
 
             int num = 0;
@@ -115,7 +116,7 @@ namespace Phantasma.Numerics
                     num3 = -num3;
                 }
 
-                bigInteger += bi * num3;
+                BigInteger += bi * num3;
 
                 if (num2 - 1 >= num)
                 {
@@ -125,19 +126,19 @@ namespace Phantasma.Numerics
 
             if (value[0] == '-')
             {
-                Throw.If(((int)bigInteger._data[bigInteger._data.Length - 1] & -2147483648) == 0, "Negative underflow in constructor.");
+                Throw.If(((int)BigInteger._data[BigInteger._data.Length - 1] & -2147483648) == 0, "Negative underflow in constructor.");
             }
             else
             {
-                Throw.If(((int)bigInteger._data[bigInteger._data.Length - 1] & -2147483648) != 0, "Positive overflow in constructor.");
+                Throw.If(((int)BigInteger._data[BigInteger._data.Length - 1] & -2147483648) != 0, "Positive overflow in constructor.");
             }
 
             _data = new uint[maxLength];
-            for (int i = 0; i < bigInteger.dataLength; i++)
+            for (int i = 0; i < BigInteger.dataLength; i++)
             {
-                _data[i] = bigInteger._data[i];
+                _data[i] = BigInteger._data[i];
             }
-            dataLength = bigInteger.dataLength;
+            dataLength = BigInteger.dataLength;
         }
 
         public BigInteger(byte[] input)
@@ -237,118 +238,118 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator +(BigInteger bi1, BigInteger bi2)
         {
-            var bigInteger = new BigInteger
+            var BigInteger = new BigInteger
             {
                 dataLength = ((bi1.dataLength > bi2.dataLength) ? bi1.dataLength : bi2.dataLength)
             };
 
             long num = 0L;
-            for (int i = 0; i < bigInteger.dataLength; i++)
+            for (int i = 0; i < BigInteger.dataLength; i++)
             {
                 long num2 = (long)bi1._data[i] + (long)bi2._data[i] + num;
                 num = num2 >> 32;
-                bigInteger._data[i] = (uint)(num2 & uint.MaxValue);
+                BigInteger._data[i] = (uint)(num2 & uint.MaxValue);
             }
 
-            if (num != 0L && bigInteger.dataLength < bigInteger._data.Length)
+            if (num != 0L && BigInteger.dataLength < BigInteger._data.Length)
             {
-                bigInteger._data[bigInteger.dataLength] = (uint)num;
-                bigInteger.dataLength++;
+                BigInteger._data[BigInteger.dataLength] = (uint)num;
+                BigInteger.dataLength++;
             }
 
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
 
             int num3 = maxLength - 1;
-            if (((int)bi1._data[num3] & -2147483648) == ((int)bi2._data[num3] & -2147483648) && ((int)bigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648))
+            if (((int)bi1._data[num3] & -2147483648) == ((int)bi2._data[num3] & -2147483648) && ((int)BigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648))
             {
                 throw new ArithmeticException();
             }
 
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator ++(BigInteger bi1)
         {
-            BigInteger bigInteger = new BigInteger(bi1);
+            BigInteger BigInteger = new BigInteger(bi1);
             long num = 1L;
             int num2 = 0;
             while (num != 0L && num2 < maxLength)
             {
-                long num3 = bigInteger._data[num2];
+                long num3 = BigInteger._data[num2];
                 num3++;
-                bigInteger._data[num2] = (uint)(num3 & uint.MaxValue);
+                BigInteger._data[num2] = (uint)(num3 & uint.MaxValue);
                 num = num3 >> 32;
                 num2++;
             }
-            if (num2 <= bigInteger.dataLength)
+            if (num2 <= BigInteger.dataLength)
             {
-                while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+                while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
                 {
-                    bigInteger.dataLength--;
+                    BigInteger.dataLength--;
                 }
             }
             else
             {
-                bigInteger.dataLength = num2;
+                BigInteger.dataLength = num2;
             }
             int num4 = maxLength - 1;
 
 
-            Throw.If(((int)bi1._data[num4] & -2147483648) == 0 && ((int)bigInteger._data[num4] & -2147483648) != ((int)bi1._data[num4] & -2147483648), "Overflow in increment.");
+            Throw.If(((int)bi1._data[num4] & -2147483648) == 0 && ((int)BigInteger._data[num4] & -2147483648) != ((int)bi1._data[num4] & -2147483648), "Overflow in increment.");
 
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator -(BigInteger bi1, BigInteger bi2)
         {
-            var bigInteger = new BigInteger
+            var BigInteger = new BigInteger
             {
                 dataLength = ((bi1.dataLength > bi2.dataLength) ? bi1.dataLength : bi2.dataLength)
             };
 
             long num = 0L;
 
-            for (int i = 0; i < bigInteger.dataLength; i++)
+            for (int i = 0; i < BigInteger.dataLength; i++)
             {
                 long num2 = (long)bi1._data[i] - (long)bi2._data[i] - num;
-                bigInteger._data[i] = (uint)(num2 & uint.MaxValue);
+                BigInteger._data[i] = (uint)(num2 & uint.MaxValue);
                 num = ((num2 >= 0) ? 0 : 1);
             }
 
             if (num != 0)
             {
-                for (int j = bigInteger.dataLength; j < bigInteger._data.Length; j++)
+                for (int j = BigInteger.dataLength; j < BigInteger._data.Length; j++)
                 {
-                    bigInteger._data[j] = uint.MaxValue;
+                    BigInteger._data[j] = uint.MaxValue;
                 }
-                bigInteger.dataLength = maxLength;
+                BigInteger.dataLength = maxLength;
             }
 
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
             int num3 = maxLength - 1;
 
-            Throw.If(((int)bi1._data[num3] & -2147483648) != ((int)bi2._data[num3] & -2147483648) && ((int)bigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648), "overflow in subtraction");
+            Throw.If(((int)bi1._data[num3] & -2147483648) != ((int)bi2._data[num3] & -2147483648) && ((int)BigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648), "overflow in subtraction");
 
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator --(BigInteger bi1)
         {
-            var bigInteger = new BigInteger(bi1);
+            var BigInteger = new BigInteger(bi1);
             bool flag = true;
             int num = 0;
 
             while (flag && num < maxLength)
             {
-                long num2 = bigInteger._data[num];
+                long num2 = BigInteger._data[num];
                 num2--;
-                bigInteger._data[num] = (uint)(num2 & uint.MaxValue);
+                BigInteger._data[num] = (uint)(num2 & uint.MaxValue);
                 if (num2 >= 0)
                 {
                     flag = false;
@@ -356,20 +357,20 @@ namespace Phantasma.Numerics
                 num++;
             }
 
-            if (num > bigInteger.dataLength)
+            if (num > BigInteger.dataLength)
             {
-                bigInteger.dataLength = num;
+                BigInteger.dataLength = num;
             }
 
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
 
             int num3 = maxLength - 1;
-            Throw.If(((int)bi1._data[num3] & -2147483648) != 0 && ((int)bigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648), "Underflow in decrement.");
+            Throw.If(((int)bi1._data[num3] & -2147483648) != 0 && ((int)BigInteger._data[num3] & -2147483648) != ((int)bi1._data[num3] & -2147483648), "Underflow in decrement.");
 
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator *(BigInteger bi1, BigInteger bi2)
@@ -394,7 +395,7 @@ namespace Phantasma.Numerics
             {
             }
 
-            var bigInteger = new BigInteger();
+            var BigInteger = new BigInteger();
             try
             {
                 for (int i = 0; i < bi1.dataLength; i++)
@@ -406,15 +407,15 @@ namespace Phantasma.Numerics
                         int num4 = i;
                         while (num3 < bi2.dataLength)
                         {
-                            ulong num5 = (ulong)((long)bi1._data[i] * (long)bi2._data[num3] + bigInteger._data[num4] + (long)num2);
-                            bigInteger._data[num4] = (uint)(num5 & uint.MaxValue);
+                            ulong num5 = (ulong)((long)bi1._data[i] * (long)bi2._data[num3] + BigInteger._data[num4] + (long)num2);
+                            BigInteger._data[num4] = (uint)(num5 & uint.MaxValue);
                             num2 = num5 >> 32;
                             num3++;
                             num4++;
                         }
                         if (num2 != 0)
                         {
-                            bigInteger._data[i + bi2.dataLength] = (uint)num2;
+                            BigInteger._data[i + bi2.dataLength] = (uint)num2;
                         }
                     }
                 }
@@ -424,40 +425,40 @@ namespace Phantasma.Numerics
                 throw new ArithmeticException("Multiplication overflow.");
             }
 
-            bigInteger.dataLength = bi1.dataLength + bi2.dataLength;
-            if (bigInteger.dataLength > maxLength)
+            BigInteger.dataLength = bi1.dataLength + bi2.dataLength;
+            if (BigInteger.dataLength > maxLength)
             {
-                bigInteger.dataLength = maxLength;
+                BigInteger.dataLength = maxLength;
             }
 
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
 
-            if (((int)bigInteger._data[num] & -2147483648) != 0)
+            if (((int)BigInteger._data[num] & -2147483648) != 0)
             {
-                if (flag != flag2 && bigInteger._data[num] == 2147483648u)
+                if (flag != flag2 && BigInteger._data[num] == 2147483648u)
                 {
-                    if (bigInteger.dataLength == 1)
+                    if (BigInteger.dataLength == 1)
                     {
-                        return bigInteger;
+                        return BigInteger;
                     }
                     bool flag3 = true;
-                    for (int j = 0; j < bigInteger.dataLength - 1; j++)
+                    for (int j = 0; j < BigInteger.dataLength - 1; j++)
                     {
                         if (!flag3)
                         {
                             break;
                         }
-                        if (bigInteger._data[j] != 0)
+                        if (BigInteger._data[j] != 0)
                         {
                             flag3 = false;
                         }
                     }
                     if (flag3)
                     {
-                        return bigInteger;
+                        return BigInteger;
                     }
                 }
 
@@ -466,16 +467,16 @@ namespace Phantasma.Numerics
 
             if (flag != flag2)
             {
-                return -bigInteger;
+                return -BigInteger;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator <<(BigInteger bi1, int shiftVal)
         {
-            var bigInteger = new BigInteger(bi1);
-            bigInteger.dataLength = ShiftLeft(bigInteger._data, shiftVal);
-            return bigInteger;
+            var BigInteger = new BigInteger(bi1);
+            BigInteger.dataLength = ShiftLeft(BigInteger._data, shiftVal);
+            return BigInteger;
         }
 
         private static int ShiftLeft(uint[] buffer, int shiftVal)
@@ -513,27 +514,27 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator >>(BigInteger bi1, int shiftVal)
         {
-            var bigInteger = new BigInteger(bi1);
-            bigInteger.dataLength = ShiftRight(bigInteger._data, shiftVal);
+            var BigInteger = new BigInteger(bi1);
+            BigInteger.dataLength = ShiftRight(BigInteger._data, shiftVal);
             if (((int)bi1._data[maxLength - 1] & -2147483648) != 0)
             {
-                for (int num = maxLength - 1; num >= bigInteger.dataLength; num--)
+                for (int num = maxLength - 1; num >= BigInteger.dataLength; num--)
                 {
-                    bigInteger._data[num] = uint.MaxValue;
+                    BigInteger._data[num] = uint.MaxValue;
                 }
                 uint num2 = 2147483648u;
                 for (int i = 0; i < 32; i++)
                 {
-                    if ((bigInteger._data[bigInteger.dataLength - 1] & num2) != 0)
+                    if ((BigInteger._data[BigInteger.dataLength - 1] & num2) != 0)
                     {
                         break;
                     }
-                    bigInteger._data[bigInteger.dataLength - 1] |= num2;
+                    BigInteger._data[BigInteger.dataLength - 1] |= num2;
                     num2 >>= 1;
                 }
-                bigInteger.dataLength = maxLength;
+                BigInteger.dataLength = maxLength;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         private static int ShiftRight(uint[] buffer, int shiftVal)
@@ -570,19 +571,19 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator ~(BigInteger bi1)
         {
-            var bigInteger = new BigInteger(bi1);
+            var BigInteger = new BigInteger(bi1);
             for (int i = 0; i < maxLength; i++)
             {
-                bigInteger._data[i] = ~bi1._data[i];
+                BigInteger._data[i] = ~bi1._data[i];
             }
 
-            bigInteger.dataLength = maxLength;
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            BigInteger.dataLength = maxLength;
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
 
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator -(BigInteger bi1)
@@ -592,32 +593,32 @@ namespace Phantasma.Numerics
                 return new BigInteger();
             }
 
-            BigInteger bigInteger = new BigInteger(bi1);
+            BigInteger BigInteger = new BigInteger(bi1);
             for (int i = 0; i < maxLength; i++)
             {
-                bigInteger._data[i] = ~bi1._data[i];
+                BigInteger._data[i] = ~bi1._data[i];
             }
 
             long num = 1L;
             int num2 = 0;
             while (num != 0L && num2 < maxLength)
             {
-                long num3 = bigInteger._data[num2];
+                long num3 = BigInteger._data[num2];
                 num3++;
-                bigInteger._data[num2] = (uint)(num3 & uint.MaxValue);
+                BigInteger._data[num2] = (uint)(num3 & uint.MaxValue);
                 num = num3 >> 32;
                 num2++;
             }
 
-            Throw.If(((int)bi1._data[maxLength - 1] & -2147483648) == ((int)bigInteger._data[maxLength - 1] & -2147483648), "Overflow in negation.");
+            Throw.If(((int)bi1._data[maxLength - 1] & -2147483648) == ((int)BigInteger._data[maxLength - 1] & -2147483648), "Overflow in negation.");
 
-            bigInteger.dataLength = maxLength;
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            BigInteger.dataLength = maxLength;
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
 
-            return bigInteger;
+            return BigInteger;
         }
 
         public static bool operator ==(BigInteger bi1, BigInteger bi2)
@@ -646,14 +647,14 @@ namespace Phantasma.Numerics
                 return false;
             }
 
-            var bigInteger = (BigInteger)o;
-            if (dataLength != bigInteger.dataLength)
+            var BigInteger = (BigInteger)o;
+            if (dataLength != BigInteger.dataLength)
             {
                 return false;
             }
             for (int i = 0; i < dataLength; i++)
             {
-                if (_data[i] != bigInteger._data[i])
+                if (_data[i] != BigInteger._data[i])
                 {
                     return false;
                 }
@@ -797,17 +798,17 @@ namespace Phantasma.Numerics
                     array3[j] = array2[num7 - j];
                 }
 
-                var bigInteger = new BigInteger(array3);
-                BigInteger bigInteger2 = bi2 * (long)num12;
-                while (bigInteger2 > bigInteger)
+                var BigInteger = new BigInteger(array3);
+                BigInteger BigInteger2 = bi2 * (long)num12;
+                while (BigInteger2 > BigInteger)
                 {
                     num12--;
-                    bigInteger2 -= bi2;
+                    BigInteger2 -= bi2;
                 }
-                BigInteger bigInteger3 = bigInteger - bigInteger2;
+                BigInteger BigInteger3 = BigInteger - BigInteger2;
                 for (int k = 0; k < num10; k++)
                 {
-                    array2[num7 - k] = bigInteger3._data[bi2.dataLength - k];
+                    array2[num7 - k] = BigInteger3._data[bi2.dataLength - k];
                 }
                 array[num5++] = (uint)num12;
                 num7--;
@@ -905,7 +906,7 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator /(BigInteger bi1, BigInteger bi2)
         {
-            BigInteger bigInteger = new BigInteger();
+            BigInteger BigInteger = new BigInteger();
             BigInteger outRemainder = new BigInteger();
             int num = maxLength - 1;
             bool flag = false;
@@ -922,27 +923,27 @@ namespace Phantasma.Numerics
             }
             if (bi1 < bi2)
             {
-                return bigInteger;
+                return BigInteger;
             }
             if (bi2.dataLength == 1)
             {
-                SingleByteDivide(bi1, bi2, bigInteger, outRemainder);
+                SingleByteDivide(bi1, bi2, BigInteger, outRemainder);
             }
             else
             {
-                MultiByteDivide(bi1, bi2, bigInteger, outRemainder);
+                MultiByteDivide(bi1, bi2, BigInteger, outRemainder);
             }
             if (flag2 != flag)
             {
-                return -bigInteger;
+                return -BigInteger;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator %(BigInteger bi1, BigInteger bi2)
         {
             BigInteger outQuotient = new BigInteger();
-            BigInteger bigInteger = new BigInteger(bi1);
+            BigInteger BigInteger = new BigInteger(bi1);
             int num = maxLength - 1;
             bool flag = false;
             if (((int)bi1._data[num] & -2147483648) != 0)
@@ -956,72 +957,72 @@ namespace Phantasma.Numerics
             }
             if (bi1 < bi2)
             {
-                return bigInteger;
+                return BigInteger;
             }
             if (bi2.dataLength == 1)
             {
-                SingleByteDivide(bi1, bi2, outQuotient, bigInteger);
+                SingleByteDivide(bi1, bi2, outQuotient, BigInteger);
             }
             else
             {
-                MultiByteDivide(bi1, bi2, outQuotient, bigInteger);
+                MultiByteDivide(bi1, bi2, outQuotient, BigInteger);
             }
             if (flag)
             {
-                return -bigInteger;
+                return -BigInteger;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator &(BigInteger bi1, BigInteger bi2)
         {
-            BigInteger bigInteger = new BigInteger();
+            BigInteger BigInteger = new BigInteger();
             int num = (bi1.dataLength > bi2.dataLength) ? bi1.dataLength : bi2.dataLength;
             for (int i = 0; i < num; i++)
             {
                 uint num2 = bi1._data[i] & bi2._data[i];
-                bigInteger._data[i] = num2;
+                BigInteger._data[i] = num2;
             }
-            bigInteger.dataLength = maxLength;
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            BigInteger.dataLength = maxLength;
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator |(BigInteger bi1, BigInteger bi2)
         {
-            BigInteger bigInteger = new BigInteger();
+            BigInteger BigInteger = new BigInteger();
             int num = (bi1.dataLength > bi2.dataLength) ? bi1.dataLength : bi2.dataLength;
             for (int i = 0; i < num; i++)
             {
                 uint num2 = bi1._data[i] | bi2._data[i];
-                bigInteger._data[i] = num2;
+                BigInteger._data[i] = num2;
             }
-            bigInteger.dataLength = maxLength;
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            BigInteger.dataLength = maxLength;
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger operator ^(BigInteger bi1, BigInteger bi2)
         {
-            BigInteger bigInteger = new BigInteger();
+            BigInteger BigInteger = new BigInteger();
             int num = (bi1.dataLength > bi2.dataLength) ? bi1.dataLength : bi2.dataLength;
             for (int i = 0; i < num; i++)
             {
                 uint num2 = bi1._data[i] ^ bi2._data[i];
-                bigInteger._data[i] = num2;
+                BigInteger._data[i] = num2;
             }
-            bigInteger.dataLength = maxLength;
-            while (bigInteger.dataLength > 1 && bigInteger._data[bigInteger.dataLength - 1] == 0)
+            BigInteger.dataLength = maxLength;
+            while (BigInteger.dataLength > 1 && BigInteger._data[BigInteger.dataLength - 1] == 0)
             {
-                bigInteger.dataLength--;
+                BigInteger.dataLength--;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public BigInteger Max(BigInteger bi)
@@ -1078,35 +1079,35 @@ namespace Phantasma.Numerics
 
             string text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             string text2 = "";
-            BigInteger bigInteger = this;
+            BigInteger BigInteger = this;
             bool flag = false;
 
-            if (((int)bigInteger._data[maxLength - 1] & -2147483648) != 0)
+            if (((int)BigInteger._data[maxLength - 1] & -2147483648) != 0)
             {
                 flag = true;
                 try
                 {
-                    bigInteger = -bigInteger;
+                    BigInteger = -BigInteger;
                 }
                 catch (Exception)
                 {
                 }
             }
 
-            var bigInteger2 = new BigInteger();
-            var bigInteger3 = new BigInteger();
+            var BigInteger2 = new BigInteger();
+            var BigInteger3 = new BigInteger();
             var bi = new BigInteger(radix);
-            if (bigInteger.dataLength == 1 && bigInteger._data[0] == 0)
+            if (BigInteger.dataLength == 1 && BigInteger._data[0] == 0)
             {
                 text2 = "0";
             }
             else
             {
-                while (bigInteger.dataLength > 1 || (bigInteger.dataLength == 1 && bigInteger._data[0] != 0))
+                while (BigInteger.dataLength > 1 || (BigInteger.dataLength == 1 && BigInteger._data[0] != 0))
                 {
-                    SingleByteDivide(bigInteger, bi, bigInteger2, bigInteger3);
-                    text2 = ((bigInteger3._data[0] >= 10) ? (text[(int)(bigInteger3._data[0] - 10)].ToString() + text2) : (bigInteger3._data[0] + text2));
-                    bigInteger = bigInteger2;
+                    SingleByteDivide(BigInteger, bi, BigInteger2, BigInteger3);
+                    text2 = ((BigInteger3._data[0] >= 10) ? (text[(int)(BigInteger3._data[0] - 10)].ToString() + text2) : (BigInteger3._data[0] + text2));
+                    BigInteger = BigInteger2;
                 }
                 if (flag)
                 {
@@ -1129,16 +1130,16 @@ namespace Phantasma.Numerics
 
         public BigInteger GCD(BigInteger bi)
         {
-            BigInteger bigInteger = (((int)_data[maxLength - 1] & -2147483648) == 0) ? this : (-this);
-            BigInteger bigInteger2 = (((int)bi._data[maxLength - 1] & -2147483648) == 0) ? bi : (-bi);
-            BigInteger bigInteger3 = bigInteger2;
-            while (bigInteger.dataLength > 1 || (bigInteger.dataLength == 1 && bigInteger._data[0] != 0))
+            BigInteger BigInteger = (((int)_data[maxLength - 1] & -2147483648) == 0) ? this : (-this);
+            BigInteger BigInteger2 = (((int)bi._data[maxLength - 1] & -2147483648) == 0) ? bi : (-bi);
+            BigInteger BigInteger3 = BigInteger2;
+            while (BigInteger.dataLength > 1 || (BigInteger.dataLength == 1 && BigInteger._data[0] != 0))
             {
-                bigInteger3 = bigInteger;
-                bigInteger = bigInteger2 % bigInteger;
-                bigInteger2 = bigInteger3;
+                BigInteger3 = BigInteger;
+                BigInteger = BigInteger2 % BigInteger;
+                BigInteger2 = BigInteger3;
             }
-            return bigInteger3;
+            return BigInteger3;
         }
 
         public bool TestBit(int index)
@@ -1370,42 +1371,42 @@ namespace Phantasma.Numerics
             };
             int num = 0;
             BigInteger bi = modulus;
-            BigInteger bigInteger = this;
-            while (bigInteger.dataLength > 1 || (bigInteger.dataLength == 1 && bigInteger._data[0] != 0))
+            BigInteger BigInteger = this;
+            while (BigInteger.dataLength > 1 || (BigInteger.dataLength == 1 && BigInteger._data[0] != 0))
             {
-                BigInteger bigInteger2 = new BigInteger();
-                BigInteger bigInteger3 = new BigInteger();
+                BigInteger BigInteger2 = new BigInteger();
+                BigInteger BigInteger3 = new BigInteger();
                 if (num > 1)
                 {
-                    BigInteger bigInteger4 = (array[0] - array[1] * array2[0]) % modulus;
+                    BigInteger BigInteger4 = (array[0] - array[1] * array2[0]) % modulus;
                     array[0] = array[1];
-                    array[1] = bigInteger4;
+                    array[1] = BigInteger4;
                 }
-                if (bigInteger.dataLength == 1)
+                if (BigInteger.dataLength == 1)
                 {
-                    SingleByteDivide(bi, bigInteger, bigInteger2, bigInteger3);
+                    SingleByteDivide(bi, BigInteger, BigInteger2, BigInteger3);
                 }
                 else
                 {
-                    MultiByteDivide(bi, bigInteger, bigInteger2, bigInteger3);
+                    MultiByteDivide(bi, BigInteger, BigInteger2, BigInteger3);
                 }
                 array2[0] = array2[1];
                 array3[0] = array3[1];
-                array2[1] = bigInteger2;
-                array3[1] = bigInteger3;
-                bi = bigInteger;
-                bigInteger = bigInteger3;
+                array2[1] = BigInteger2;
+                array3[1] = BigInteger3;
+                bi = BigInteger;
+                BigInteger = BigInteger3;
                 num++;
             }
 
             Throw.If(array3[0].dataLength > 1 || (array3[0].dataLength == 1 && array3[0]._data[0] != 1), "No inverse!");
 
-            BigInteger bigInteger5 = (array[0] - array[1] * array2[0]) % modulus;
-            if (((int)bigInteger5._data[maxLength - 1] & -2147483648) != 0)
+            BigInteger BigInteger5 = (array[0] - array[1] * array2[0]) % modulus;
+            if (((int)BigInteger5._data[maxLength - 1] & -2147483648) != 0)
             {
-                bigInteger5 += modulus;
+                BigInteger5 += modulus;
             }
-            return bigInteger5;
+            return BigInteger5;
         }
 
         public byte[] ToByteArray()
@@ -1512,7 +1513,7 @@ namespace Phantasma.Numerics
             num = (((num & 1) == 0) ? (num >> 1) : ((num >> 1) + 1));
             uint num2 = num >> 5;
             byte b = (byte)(num & 0x1F);
-            var bigInteger = new BigInteger();
+            var BigInteger = new BigInteger();
             uint num3;
 
             if (b == 0)
@@ -1524,31 +1525,31 @@ namespace Phantasma.Numerics
                 num3 = (uint)(1 << (int)b);
                 num2++;
             }
-            bigInteger.dataLength = (int)num2;
+            BigInteger.dataLength = (int)num2;
             for (int num4 = (int)(num2 - 1); num4 >= 0; num4--)
             {
                 while (num3 != 0)
                 {
-                    bigInteger._data[num4] ^= num3;
-                    if (bigInteger * bigInteger > this)
+                    BigInteger._data[num4] ^= num3;
+                    if (BigInteger * BigInteger > this)
                     {
-                        bigInteger._data[num4] ^= num3;
+                        BigInteger._data[num4] ^= num3;
                     }
                     num3 >>= 1;
                 }
                 num3 = 2147483648u;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger Pow(BigInteger a, BigInteger b)
         {
-            BigInteger bigInteger = 1;
+            BigInteger BigInteger = 1;
             for (int i = 0; i < b; i++)
             {
-                bigInteger *= a;
+                BigInteger *= a;
             }
-            return bigInteger;
+            return BigInteger;
         }
 
         public static BigInteger Parse(string input, int radix = 10)

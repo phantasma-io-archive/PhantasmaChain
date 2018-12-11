@@ -8,20 +8,20 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "bank";
 
-        public BigInteger GetRate(string symbol)
+        public LargeInteger GetRate(string symbol)
         {           
             //Runtime.Expect(symbol == Nexus.NativeTokenSymbol, "invalid token");
 
             if (symbol == Nexus.NativeTokenSymbol)
             {
-                return TokenUtils.ToBigInteger(0.08m, Nexus.NativeTokenDecimals);
+                return TokenUtils.ToLargeInteger(0.08m, Nexus.NativeTokenDecimals);
             }
 
             return 0;
         }
 
         // SOUL => stable
-        public void Claim(Address target, BigInteger amount)
+        public void Claim(Address target, LargeInteger amount)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // stable => SOUL
-        public void Redeem(Address target, BigInteger amount)
+        public void Redeem(Address target, LargeInteger amount)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 

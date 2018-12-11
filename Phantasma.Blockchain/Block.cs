@@ -11,7 +11,7 @@ namespace Phantasma.Blockchain
 {
     public sealed class Block
     {
-        public static readonly BigInteger InitialDifficulty = 127;
+        public static readonly LargeInteger InitialDifficulty = 127;
         public static readonly float IdealBlockTime = 5;
         public static readonly float BlockTimeFlutuation = 0.2f;
 

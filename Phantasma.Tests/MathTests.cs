@@ -118,7 +118,7 @@ namespace Phantasma.Tests
             var target = new LargeInteger(z, 16);
 
             var c = a * b;
-            var tmp = (new BigInteger(x, 16) * new BigInteger(y, 16)).ToString();
+            var tmp = (new LargeInteger(x, 16) * new LargeInteger(y, 16)).ToString();
             var tmp2 = target.ToDecimal();
             Assert.IsTrue(c == target);
         }
@@ -350,7 +350,7 @@ namespace Phantasma.Tests
         public void TestBitLength()
         {
             var n = new LargeInteger("0", 16);
-            Assert.IsTrue(n.GetBitLength() == 1);
+            Assert.IsTrue(n.GetBitLength() == 0);
 
             n++;
 

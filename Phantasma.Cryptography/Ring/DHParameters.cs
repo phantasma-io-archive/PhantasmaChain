@@ -5,7 +5,7 @@ namespace Phantasma.Cryptography.Ring
 {
     public static class KnownGroupParameters
     {
-        public static GroupParameters RFC5114_2_3_256 = new GroupParameters(BigInteger.FromHex(@"87A8E61D B4B6663C FFBBD19C 65195999 8CEEF608 660DD0F2
+        public static GroupParameters RFC5114_2_3_256 = new GroupParameters(LargeInteger.FromHex(@"87A8E61D B4B6663C FFBBD19C 65195999 8CEEF608 660DD0F2
                                                                         5D2CEED4 435E3B00 E00DF8F1 D61957D4 FAF7DF45 61B2AA30
                                                                         16C3D911 34096FAA 3BF4296D 830E9A7C 209E0C64 97517ABD
                                                                         5A8A9D30 6BCF67ED 91F9E672 5B4758C0 22E0B1EF 4275BF7B
@@ -17,7 +17,7 @@ namespace Phantasma.Cryptography.Ring
                                                                         75F26375 D7014103 A4B54330 C198AF12 6116D227 6E11715F
                                                                         693877FA D7EF09CA DB094AE9 1E1A1597"),
 
-                                                                         BigInteger.FromHex(@"3FB32C9B 73134D0B 2E775066 60EDBD48 4CA7B18F 21EF2054
+                                                                         LargeInteger.FromHex(@"3FB32C9B 73134D0B 2E775066 60EDBD48 4CA7B18F 21EF2054
                                                                         07F4793A 1A0BA125 10DBC150 77BE463F FF4FED4A AC0BB555
                                                                         BE3A6C1B 0C6B47B1 BC3773BF 7E8C6F62 901228F8 C28CBB18
                                                                         A55AE313 41000A65 0196F931 C77A57F2 DDF463E5 E9EC144B
@@ -29,10 +29,10 @@ namespace Phantasma.Cryptography.Ring
                                                                         184B523D 1DB246C3 2F630784 90F00EF8 D647D148 D4795451
                                                                         5E2327CF EF98C582 664B4C0F 6CC41659"),
 
-                                                                        BigInteger.FromHex(@"8CF83642 A709A097 B4479976 40129DA2 99B1A47D 1EB3750B
+                                                                        LargeInteger.FromHex(@"8CF83642 A709A097 B4479976 40129DA2 99B1A47D 1EB3750B
                                                                         A308B0FE 64F5FBD3"));
 
-        public static GroupParameters RFC5114_2_2_224 = new GroupParameters(BigInteger.FromHex(@"AD107E1E 9123A9D0 D660FAA7 9559C51F A20D64E5 683B9FD1
+        public static GroupParameters RFC5114_2_2_224 = new GroupParameters(LargeInteger.FromHex(@"AD107E1E 9123A9D0 D660FAA7 9559C51F A20D64E5 683B9FD1
                                                                           B54B1597 B61D0A75 E6FA141D F95A56DB AF9A3C40 7BA1DF15
                                                                           EB3D688A 309C180E 1DE6B85A 1274A0A6 6D3F8152 AD6AC212
                                                                           9037C9ED EFDA4DF8 D91E8FEF 55B7394B 7AD5B7D0 B6C12207
@@ -44,7 +44,7 @@ namespace Phantasma.Cryptography.Ring
                                                                           C9B53DCF 4BA80A29 E3FB73C1 6B8E75B9 7EF363E2 FFA31F71
                                                                           CF9DE538 4E71B81C 0AC4DFFE 0C10E64F"),
 
-                                                                          BigInteger.FromHex(@"AC4032EF 4F2D9AE3 9DF30B5C 8FFDAC50 6CDEBE7B 89998CAF
+                                                                          LargeInteger.FromHex(@"AC4032EF 4F2D9AE3 9DF30B5C 8FFDAC50 6CDEBE7B 89998CAF
                                                                           74866A08 CFE4FFE3 A6824A4E 10B9A6F0 DD921F01 A70C4AFA
                                                                           AB739D77 00C29F52 C57DB17C 620A8652 BE5E9001 A8D66AD7
                                                                           C1766910 1999024A F4D02727 5AC1348B B8A762D0 521BC98A
@@ -56,24 +56,24 @@ namespace Phantasma.Cryptography.Ring
                                                                           EDFE72FE 9B6AA4BD 7B5A0F1C 71CFFF4C 19C418E1 F6EC0179
                                                                           81BC087F 2A7065B3 84B890D3 191F2BFA"),
 
-                                                                          BigInteger.FromHex(@"801C0D34 C58D93FE 99717710 1F80535A 4738CEBC BF389A99
+                                                                          LargeInteger.FromHex(@"801C0D34 C58D93FE 99717710 1F80535A 4738CEBC BF389A99
                                                                           B36371EB"));
 
-        public static GroupParameters RFC5114_2_1_160 = new GroupParameters(BigInteger.FromHex(@"B10B8F96 A080E01D DE92DE5E AE5D54EC 52C99FBC FB06A3C6
+        public static GroupParameters RFC5114_2_1_160 = new GroupParameters(LargeInteger.FromHex(@"B10B8F96 A080E01D DE92DE5E AE5D54EC 52C99FBC FB06A3C6
                                                                           9A6A9DCA 52D23B61 6073E286 75A23D18 9838EF1E 2EE652C0
                                                                           13ECB4AE A9061123 24975C3C D49B83BF ACCBDD7D 90C4BD70
                                                                           98488E9C 219A7372 4EFFD6FA E5644738 FAA31A4F F55BCCC0
                                                                           A151AF5F 0DC8B4BD 45BF37DF 365C1A65 E68CFDA7 6D4DA708
                                                                           DF1FB2BC 2E4A4371"),
 
-                                                                           BigInteger.FromHex(@"A4D1CBD5 C3FD3412 6765A442 EFB99905 F8104DD2 58AC507F
+                                                                           LargeInteger.FromHex(@"A4D1CBD5 C3FD3412 6765A442 EFB99905 F8104DD2 58AC507F
                                                                           D6406CFF 14266D31 266FEA1E 5C41564B 777E690F 5504F213
                                                                           160217B4 B01B886A 5E91547F 9E2749F4 D7FBD7D3 B9A92EE1
                                                                           909D0D22 63F80A76 A6A24C08 7A091F53 1DBF0A01 69B6A28A
                                                                           D662A4D1 8E73AFA3 2D779D59 18D08BC8 858F4DCE F97C2A24
                                                                           855E6EEB 22B3B2E5"),
 
-                                                                           BigInteger.FromHex(@"F518AA87 81A8DF27 8ABA4E7D 64B7CB9D 49462353"));
+                                                                           LargeInteger.FromHex(@"F518AA87 81A8DF27 8ABA4E7D 64B7CB9D 49462353"));
 
     }
 }

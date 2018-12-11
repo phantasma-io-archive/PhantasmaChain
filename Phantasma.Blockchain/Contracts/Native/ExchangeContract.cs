@@ -18,11 +18,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly Timestamp Timestamp;
         public readonly Address Creator;
         public readonly Address Token;
-        public readonly BigInteger Quantity;
-        public readonly BigInteger Rate;
+        public readonly LargeInteger Quantity;
+        public readonly LargeInteger Rate;
         public readonly ExchangeOrderSide Side;
 
-        public ExchangeOrder(Timestamp timestamp, Address creator, Address token, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
+        public ExchangeOrder(Timestamp timestamp, Address creator, Address token, LargeInteger quantity, LargeInteger rate, ExchangeOrderSide side)
         {
             Timestamp = timestamp;
             Creator = creator;
@@ -38,13 +38,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         public override string Name => "exchange";
 
         private List<ExchangeOrder> orders = new List<ExchangeOrder>();
-        private Dictionary<Hash, BigInteger> fills = new Dictionary<Hash, BigInteger>();
+        private Dictionary<Hash, LargeInteger> fills = new Dictionary<Hash, LargeInteger>();
 
         public ExchangeContract() : base()
         {
         }
 
-        public void OpenOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger quantity, BigInteger rate, ExchangeOrderSide side)
+        public void OpenOrder(Address from, string baseSymbol, string quoteSymbol, LargeInteger quantity, LargeInteger rate, ExchangeOrderSide side)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -63,7 +63,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 case ExchangeOrderSide.Sell:
                     {
-                        var balance = tokenABI["BalanceOf"].Invoke<BigInteger>(baseTokenContract, from);
+                        var balance = tokenABI["BalanceOf"].Invoke<LargeInteger>(baseTokenContract, from);
                         Runtime.Expect(balance >= quantity);
 
                         tokenABI["Transfer"].Invoke(baseTokenContract, from, this.Address, quantity);
@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 case ExchangeOrderSide.Buy:
                     {
-                        var balance = tokenABI["BalanceOf"].Invoke<BigInteger>(quoteTokenContract, from);
+                        var balance = tokenABI["BalanceOf"].Invoke<LargeInteger>(quoteTokenContract, from);
                         var Runtime.ExpectedAmount = quantity / rate;
                         Runtime.Expect(Runtime.ExpectedAmount > 0);
                         Runtime.Expect(balance >= Runtime.ExpectedAmount);

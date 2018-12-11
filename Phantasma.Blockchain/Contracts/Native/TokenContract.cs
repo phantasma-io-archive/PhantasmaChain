@@ -13,7 +13,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public override string Name => "token";
 
         #region FUNGIBLE TOKENS
-        public void SendTokens(Address targetChain, Address from, Address to, string symbol, BigInteger amount)
+        public void SendTokens(Address targetChain, Address from, Address to, string symbol, LargeInteger amount)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -52,7 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
         }
 
-        public void MintTokens(Address to, string symbol, BigInteger amount)
+        public void MintTokens(Address to, string symbol, LargeInteger amount)
         {
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
@@ -74,7 +74,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
         }
 
-        public void BurnTokens(Address from, string symbol, BigInteger amount)
+        public void BurnTokens(Address from, string symbol, LargeInteger amount)
         {
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -95,7 +95,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount });
         }
 
-        public void TransferTokens(Address source, Address destination, string symbol, BigInteger amount)
+        public void TransferTokens(Address source, Address destination, string symbol, LargeInteger amount)
         {
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(source != destination, "source and destination must be different");
@@ -113,7 +113,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
         }
 
-        public BigInteger GetBalance(Address address, string symbol)
+        public LargeInteger GetBalance(Address address, string symbol)
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
@@ -125,7 +125,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region NON FUNGIBLE TOKENS
-        public BigInteger[] GetTokens(Address address, string symbol)
+        public LargeInteger[] GetTokens(Address address, string symbol)
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
@@ -135,7 +135,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return ownerships.Get(address).ToArray();
         }
 
-        public BigInteger MintToken(Address to, string symbol, byte[] data)
+        public LargeInteger MintToken(Address to, string symbol, byte[] data)
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
@@ -152,7 +152,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return tokenID;
         }
 
-        public void BurnToken(Address from, string symbol, BigInteger tokenID)
+        public void BurnToken(Address from, string symbol, LargeInteger tokenID)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -168,7 +168,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID });
         }
 
-        public void TransferToken(Address source, Address destination, string symbol, BigInteger tokenID)
+        public void TransferToken(Address source, Address destination, string symbol, LargeInteger tokenID)
         {
             Runtime.Expect(IsWitness(source), "invalid witness");
 
@@ -186,7 +186,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
         }
 
-        public void SendToken(Address targetChain, Address from, Address to, string symbol, BigInteger tokenID)
+        public void SendToken(Address targetChain, Address from, Address to, string symbol, LargeInteger tokenID)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 

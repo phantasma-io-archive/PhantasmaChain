@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "privacy";
 
-        public static readonly BigInteger TransferAmount = 10;
+        public static readonly LargeInteger TransferAmount = 10;
 
         private Dictionary<Token, List<PrivacyQueue>> _queues = new Dictionary<Token, List<PrivacyQueue>>();
 

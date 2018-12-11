@@ -12,11 +12,11 @@ namespace Phantasma.Cryptography.Ring
         private const long IMASK = 0xffffffffL;
         private const ulong UIMASK = (ulong)IMASK;
 
-        BigInteger modulus;
+        LargeInteger modulus;
         protected int[] modulusMagnitude;
         long mDash;
 
-        public Modular(BigInteger modulus)
+        public Modular(LargeInteger modulus)
         {
             Throw.If(modulus <= 2, "Modulus must be greater than 2");
 
@@ -29,9 +29,9 @@ namespace Phantasma.Cryptography.Ring
             mDash = GetMDash(modulusMagnitude);
         }
 
-        public BigInteger Modulus { get { return modulus; } }
+        public LargeInteger Modulus { get { return modulus; } }
 
-        protected int[] GetData(BigInteger number)
+        protected int[] GetData(LargeInteger number)
         {
             var bytes = number.ToByteArray();
             int nBytes = bytes.Length;
@@ -45,11 +45,11 @@ namespace Phantasma.Cryptography.Ring
             return res;
         }
 
-        protected BigInteger FromData(int[] data)
+        protected LargeInteger FromData(int[] data)
         {
             var bytes = new byte[data.Length * 4 + 1];
             Buffer.BlockCopy(data.Reverse().ToArray(), 0, bytes, 0, bytes.Length - 1);
-            return new BigInteger(bytes);
+            return new LargeInteger(bytes);
         }
 
         private long GetMDash(int[] magnitude)
@@ -101,13 +101,13 @@ namespace Phantasma.Cryptography.Ring
             return u3;
         }
 
-        public BigInteger Pow(BigInteger[] bases, BigInteger[] exponents)
+        public LargeInteger Pow(LargeInteger[] bases, LargeInteger[] exponents)
         {
             int[,][] cache = null;
             return Pow(bases, exponents, ref cache, 4);
         }
 
-        public BigInteger Pow(BigInteger[] bases, BigInteger[] exponents, ref int[,][] cache, int windowSize = 8)
+        public LargeInteger Pow(LargeInteger[] bases, LargeInteger[] exponents, ref int[,][] cache, int windowSize = 8)
         {
             if (bases.Length != exponents.Length)
                 throw new ArithmeticException("Same number of bases and exponents expected");
@@ -120,7 +120,7 @@ namespace Phantasma.Cryptography.Ring
             var gs = new int[exponents.Length][];
             for (int i = 0; i < exponents.Length; ++i)
             {
-                BigInteger g = (bases[i] << (32 * modulusMagnitude.Length)) % modulus;
+                LargeInteger g = (bases[i] << (32 * modulusMagnitude.Length)) % modulus;
                 gs[i] = GetData(g);
                 if (gs[i].Length < modulusMagnitude.Length)
                     gs[i] = Extend(gs[i], modulusMagnitude.Length);
@@ -204,11 +204,11 @@ namespace Phantasma.Cryptography.Ring
             gi[gi.Length - 1] = 1;
             MultiplyMonty(accum, a, gi);
 
-            BigInteger result = FromData(a);
+            LargeInteger result = FromData(a);
             return result;
         }
 
-        protected void ExtractAligned(BigInteger[] exponents, out int[][] exps, out int maxExpLen)
+        protected void ExtractAligned(LargeInteger[] exponents, out int[][] exps, out int maxExpLen)
         {
             exps = new int[exponents.Length][];
             maxExpLen = 0;
@@ -223,19 +223,19 @@ namespace Phantasma.Cryptography.Ring
                     exps[i] = Extend(exps[i], maxExpLen);
         }
 
-        public BigInteger Pow(BigInteger number, BigInteger exponent)
+        public LargeInteger Pow(LargeInteger number, LargeInteger exponent)
         {
             if (exponent.Sign() == 0)
-                return BigInteger.One;
+                return LargeInteger.One;
 
             if (number.Sign() == 0)
-                return BigInteger.Zero;
+                return LargeInteger.Zero;
 
             // zVal = number * R mod m
-            BigInteger tmp = (number << (32 * modulusMagnitude.Length)) % modulus;
+            LargeInteger tmp = (number << (32 * modulusMagnitude.Length)) % modulus;
             var zVal = GetData(tmp);
             if (zVal.Length > modulusMagnitude.Length)
-                return number.ModPow(exponent, modulus);
+                return LargeInteger.ModPow(number, exponent, modulus);
 
             var yAccum = new int[modulusMagnitude.Length + 1];
             if (zVal.Length < modulusMagnitude.Length)
@@ -293,15 +293,15 @@ namespace Phantasma.Cryptography.Ring
             zVal[zVal.Length - 1] = 1;
             MultiplyMonty(yAccum, yVal, zVal);
 
-            BigInteger result = FromData(yVal);
+            LargeInteger result = FromData(yVal);
 
             return exponent.Sign() > 0 ? result : Inverse(result);
         }
 
-        public BigInteger Inverse(BigInteger number)
+        public LargeInteger Inverse(LargeInteger number)
         {
-            BigInteger x, y = BigInteger.Zero;
-            BigInteger gcd = ExtEuclid((number % modulus), modulus, out x, ref y, false);
+            LargeInteger x, y = LargeInteger.Zero;
+            LargeInteger gcd = ExtEuclid((number % modulus), modulus, out x, ref y, false);
 
             if (gcd != 1)
                 throw new ArithmeticException("Numbers not relatively prime.");
@@ -338,19 +338,19 @@ namespace Phantasma.Cryptography.Ring
       * @param u2Out the return object for the u2 value
       * @return The greatest common divisor of a and b
       */
-        private static BigInteger ExtEuclid(BigInteger a, BigInteger b, out BigInteger u1, ref BigInteger u2, bool needU2)
+        private static LargeInteger ExtEuclid(LargeInteger a, LargeInteger b, out LargeInteger u1, ref LargeInteger u2, bool needU2)
         {
-            u1 = BigInteger.One;
-            BigInteger u3 = a;
-            BigInteger v1 = BigInteger.Zero;
-            BigInteger v3 = b;
+            u1 = LargeInteger.One;
+            LargeInteger u3 = a;
+            LargeInteger v1 = LargeInteger.Zero;
+            LargeInteger v3 = b;
 
             while (v3.Sign() > 0)
             {
-                BigInteger remainder = u3 % v3;
-                BigInteger quotient = u3/ v3;
+                LargeInteger remainder = u3 % v3;
+                LargeInteger quotient = u3/ v3;
 
-                BigInteger tn = u1 - v1 * quotient;
+                LargeInteger tn = u1 - v1 * quotient;
                 u1 = v1;
                 v1 = tn;
 
@@ -524,17 +524,17 @@ namespace Phantasma.Cryptography.Ring
             public int length = 0;
         }
 
-        BigInteger[] origBases;
+        LargeInteger[] origBases;
         int[][] bases;
         CacheNode rootNode = new CacheNode();
 
-        public MultiExponentiation(BigInteger modulus, BigInteger[] bases) : base(modulus)
+        public MultiExponentiation(LargeInteger modulus, LargeInteger[] bases) : base(modulus)
         {
             origBases = bases;
             this.bases = new int[bases.Length][];
             for (int i = 0; i < bases.Length; ++i)
             {
-                BigInteger g = (bases[i] << (32 * modulusMagnitude.Length)) % modulus;
+                LargeInteger g = (bases[i] << (32 * modulusMagnitude.Length)) % modulus;
                 this.bases[i] = GetData(g);
                 if (this.bases[i].Length < modulusMagnitude.Length)
                     this.bases[i] = Extend(this.bases[i], modulusMagnitude.Length);
@@ -543,7 +543,7 @@ namespace Phantasma.Cryptography.Ring
             }
         }
 
-        public BigInteger Pow(BigInteger[] exponents)
+        public LargeInteger Pow(LargeInteger[] exponents)
         {
             if (bases.Length != exponents.Length)
                 throw new ArithmeticException("Same number of bases and exponents expected");
@@ -621,10 +621,10 @@ namespace Phantasma.Cryptography.Ring
             gi[gi.Length - 1] = 1;
             MultiplyMonty(accum, a, gi);
 
-            BigInteger result = FromData(a);
+            LargeInteger result = FromData(a);
             return result;
         }
 
-        public BigInteger[] Bases { get { return origBases; } }
+        public LargeInteger[] Bases { get { return origBases; } }
     }
 }

@@ -21,13 +21,15 @@ namespace Phantasma.Tests
         {
             var places = 8;
             decimal d = 93000000;
-            BigInteger n = 9300000000000000;
+            LargeInteger n = 9300000000000000;
 
-            Assert.IsTrue(n == TokenUtils.ToBigInteger(TokenUtils.ToDecimal(n, places), places));
-            Assert.IsTrue(d == TokenUtils.ToDecimal(TokenUtils.ToBigInteger(d, places), places));
+            var tmp1 = TokenUtils.ToLargeInteger(TokenUtils.ToDecimal(n, places), places);
+
+            Assert.IsTrue(n == tmp1);
+            Assert.IsTrue(d == TokenUtils.ToDecimal(TokenUtils.ToLargeInteger(d, places), places));
 
             Assert.IsTrue(d == TokenUtils.ToDecimal(n, places));
-            Assert.IsTrue(n == TokenUtils.ToBigInteger(d, places));
+            Assert.IsTrue(n == TokenUtils.ToLargeInteger(d, places));
         }
 
         [TestMethod]
@@ -70,7 +72,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var amount = TokenUtils.ToBigInteger(400, token.Decimals);
+            var amount = TokenUtils.ToLargeInteger(400, token.Decimals);
 
             var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
 
@@ -126,7 +128,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var amount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var amount = TokenUtils.ToLargeInteger(10, token.Decimals);
 
             // Send from Genesis address to test user
             simulator.BeginBlock();
@@ -170,7 +172,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var originalAmount = TokenUtils.ToLargeInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
             Assert.IsTrue(sideAmount > 0);
@@ -184,7 +186,7 @@ namespace Phantasma.Tests
             var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
-            var crossFee = TokenUtils.ToBigInteger(0.001m, token.Decimals);
+            var crossFee = TokenUtils.ToLargeInteger(0.001m, token.Decimals);
 
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
@@ -225,7 +227,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = sender;
 
-            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var originalAmount = TokenUtils.ToLargeInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
             Assert.IsTrue(sideAmount > 0);
@@ -278,7 +280,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var originalAmount = TokenUtils.ToLargeInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
             Assert.IsTrue(sideAmount > 0);
@@ -310,7 +312,7 @@ namespace Phantasma.Tests
             // we cant transfer the full side amount due to fees
             // TODO  calculate the proper fee values instead of this
             sideAmount /= 2;
-            var extraFree = TokenUtils.ToBigInteger(0.01m, token.Decimals);
+            var extraFree = TokenUtils.ToLargeInteger(0.01m, token.Decimals);
 
             // do another side chain send using test user balance from apps to target chain
             simulator.BeginBlock();
@@ -390,7 +392,7 @@ namespace Phantasma.Tests
 
             // Send some SOUL to the test user (required for gas used in "burn" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, chain, simulator.Nexus.NativeToken, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals));
+            simulator.GenerateTransfer(owner, testUser.Address, chain, simulator.Nexus.NativeToken, TokenUtils.ToLargeInteger(1, Nexus.NativeTokenDecimals));
             simulator.EndBlock();
 
             var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
@@ -445,7 +447,7 @@ namespace Phantasma.Tests
 
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, chain, simulator.Nexus.NativeToken, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals));
+            simulator.GenerateTransfer(owner, sender.Address, chain, simulator.Nexus.NativeToken, TokenUtils.ToLargeInteger(1, Nexus.NativeTokenDecimals));
             simulator.EndBlock();
 
             // Create the token CoolToken as an NFT
@@ -512,7 +514,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var fullAmount = TokenUtils.ToBigInteger(10, Nexus.NativeTokenDecimals);
+            var fullAmount = TokenUtils.ToLargeInteger(10, Nexus.NativeTokenDecimals);
             var smallAmount = fullAmount / 2;
             Assert.IsTrue(smallAmount > 0);
 
@@ -553,7 +555,7 @@ namespace Phantasma.Tests
             ownedTokenList = targetChain.GetTokenOwnerships(token).Get(receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
 
-            var extraFee = TokenUtils.ToBigInteger(0.001m, nexus.NativeToken.Decimals);
+            var extraFee = TokenUtils.ToLargeInteger(0.001m, nexus.NativeToken.Decimals);
 
             // transfer that nft from sender to receiver
             simulator.BeginBlock();
@@ -596,7 +598,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var amount = TokenUtils.ToBigInteger(400, token.Decimals);
+            var amount = TokenUtils.ToLargeInteger(400, token.Decimals);
 
             var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
 
@@ -647,7 +649,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var originalAmount = TokenUtils.ToBigInteger(10, token.Decimals);
+            var originalAmount = TokenUtils.ToLargeInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
             Assert.IsTrue(sideAmount > 0);

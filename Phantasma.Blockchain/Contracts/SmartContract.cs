@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain.Contracts
         public ContractInterface ABI { get; private set; }
         public abstract string Name { get; }
 
-        public BigInteger Order { get; internal set; } // TODO remove this?
+        public LargeInteger Order { get; internal set; } // TODO remove this?
 
         private readonly Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer()); // TODO remove this?
 

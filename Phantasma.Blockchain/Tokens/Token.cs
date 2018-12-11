@@ -25,19 +25,20 @@ namespace Phantasma.Blockchain.Tokens
 
         public Chain Chain { get; private set; }
 
-        public BigInteger MaxSupply { get; private set; }
+        public LargeInteger MaxSupply { get; private set; }
 
         public bool IsFungible => Flags.HasFlag(TokenFlags.Fungible);
         public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
 
         public Address Owner { get; private set; }
 
-        internal BigInteger LastID { get; private set; }
+        private LargeInteger _lastId = new LargeInteger(0);
+        internal LargeInteger LastID { get ; private set; }
 
         private StorageContext _storage;
 
-        private BigInteger _supply = 0;
-        public BigInteger CurrentSupply => _supply;
+        private LargeInteger _supply = 0;
+        public LargeInteger CurrentSupply => _supply;
 
         public int Decimals { get; private set; }
 
@@ -46,7 +47,7 @@ namespace Phantasma.Blockchain.Tokens
             this._storage = storage;
         }
 
-        internal Token(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token(Chain chain, Address owner, string symbol, string name, LargeInteger maxSupply, int decimals, TokenFlags flags)
         {
             Throw.If(maxSupply < 0, "negative supply");
             Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
@@ -83,7 +84,7 @@ namespace Phantasma.Blockchain.Tokens
             return $"{Name} ({Symbol})";
         }
 
-        internal bool Mint(BalanceSheet balances, Address target, BigInteger amount)
+        internal bool Mint(BalanceSheet balances, Address target, LargeInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -109,7 +110,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Burn(BalanceSheet balances, Address target, BigInteger amount)
+        internal bool Burn(BalanceSheet balances, Address target, LargeInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -135,7 +136,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Transfer(BalanceSheet balances, Address source, Address destination, BigInteger amount)
+        internal bool Transfer(BalanceSheet balances, Address source, Address destination, LargeInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Transferable))
             {
@@ -165,15 +166,10 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal BigInteger GenerateID()
+        internal LargeInteger GenerateID()
         {
-            if (LastID == null)
-            {
-                LastID = new BigInteger(0);
-            }
-
-            LastID++;
-            return LastID;
+            _lastId++;
+            return _lastId;
         }
    }
 }

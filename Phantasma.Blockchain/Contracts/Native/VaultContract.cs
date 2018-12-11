@@ -8,7 +8,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     internal struct VaultEntry
     {
-        public BigInteger amount;
+        public LargeInteger amount;
         public uint unlockTime;
     }
 
@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void LockTokens(Address from, string symbol, BigInteger amount, uint duration)
+        public void LockTokens(Address from, string symbol, LargeInteger amount, uint duration)
         {
             Runtime.Expect(amount > 0, "amount must be greater than zero");
             Runtime.Expect(duration >= 86400, "minimum duration should be one day"); // minimum 1 day
@@ -67,7 +67,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var list = _entries[from];
 
-            BigInteger amount = 0;
+            LargeInteger amount = 0;
 
             foreach (var entry in list)
             {

@@ -629,7 +629,7 @@ namespace Phantasma.VM
                             var a = frame.Registers[srcA].AsNumber();
                             var b = frame.Registers[srcB].AsNumber();
 
-                            BigInteger result;
+                            LargeInteger result;
 
                             switch (opcode)
                             {

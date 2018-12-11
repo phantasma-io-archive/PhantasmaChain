@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using Phantasma.Core;
+using static Phantasma.Numerics.LargeInteger;
 
 /*
  * Implementation of LargeInteger class, written for Phantasma project
@@ -21,7 +23,6 @@ namespace Phantasma.Numerics
 
         public static readonly LargeInteger One = new LargeInteger(1L);
         private int dataLength => _data.Length;
-
 
         public LargeInteger(LargeInteger other)
         {
@@ -72,7 +73,7 @@ namespace Phantasma.Numerics
             if (val == 0)
             {
                 _sign = 0;
-                _data = new uint[1] { 0 };
+                _data = new uint[1];
                 return;
             }
 
@@ -111,15 +112,23 @@ namespace Phantasma.Numerics
                 }
             }
 
-            _data = new uint[n];
-            Array.Copy(digits, _data, n);
+            if (n <= 0)
+            {
+                _data = new uint[1];
+                _sign = 0;
+            }
+            else
+            {
+                _data = new uint[n];
+                Array.Copy(digits, _data, n);
+            }
         }
 
         public LargeInteger(string value, int radix)
         {
             value = value.ToUpper().Trim();
 
-            var bigInteger = new LargeInteger(0);
+            var LargeInteger = new LargeInteger(0);
             var bi = new LargeInteger(1L);
 
             if (value == "0")
@@ -139,14 +148,14 @@ namespace Phantasma.Numerics
                 val = ((val >= 48 && val <= 57) ? (val - 48) : ((val < 65 || val > 90) ? 9999999 : (val - 65 + 10)));
                 Throw.If(val >= radix, "Invalid string in constructor.");
 
-                bigInteger += bi * val;
+                LargeInteger += bi * val;
 
                 if (i - 1 >= limit)
                     bi *= radix;
             }
 
             _data = null;
-            InitFromArray(bigInteger._data);
+            InitFromArray(LargeInteger._data);
         }
 
         public static LargeInteger FromHex(string p0)
@@ -161,6 +170,9 @@ namespace Phantasma.Numerics
 
         public static explicit operator int(LargeInteger value)
         {
+            if (value._data.Length == 0)
+                return 0;
+
             int result = (int)value._data[0];
 
             if (value._sign < 0)
@@ -206,7 +218,7 @@ namespace Phantasma.Numerics
 
         public override string ToString()
         {
-            return ToHex();
+            return ToDecimal();
         }
 
         public string ToDecimal()
@@ -867,7 +879,7 @@ namespace Phantasma.Numerics
 
         /// <summary>
         /// Modulo Exponentiation
-        /// Ported from http://developer.classpath.org/doc/java/math/BigInteger-source.html
+        /// Ported from http://developer.classpath.org/doc/java/math/LargeInteger-source.html
         /// </summary>
         /// <param name="exp">Exponential</param>
         /// <param name="mod">Modulo</param>
@@ -897,7 +909,7 @@ namespace Phantasma.Numerics
             return s;
         }
 
-        //TODO: Port this from http://developer.classpath.org/doc/java/math/BigInteger-source.html
+        //TODO: Port this from http://developer.classpath.org/doc/java/math/LargeInteger-source.html
         private static LargeInteger modInverse(LargeInteger mod)
         {
             throw new NotImplementedException();
@@ -922,14 +934,14 @@ namespace Phantasma.Numerics
             }
         }
 
-        public uint GetBitLength()
+        public int GetBitLength()
         {
-            if (this == 0 || _data.Length == 0)
+            if (Object.Equals(this, null) || this == 0 || _data.Length == 0)
                 return 0;
 
-            uint result = (uint) (_data.Length - 1) * 32;
+            var result = (_data.Length - 1) * 32;
 
-            result += (uint) Math.Log(_data[_data.Length - 1], 2) + 1;
+            result += (int) Math.Log(_data[_data.Length - 1], 2) + 1;
 
             return result;
         }
@@ -983,6 +995,16 @@ namespace Phantasma.Numerics
             }
 
             return false;
+        }
+
+        public LargeInteger Mod(LargeInteger b)
+        {
+            return this % b;
+        }
+
+        public LargeInteger FlipBit(int bit)
+        {
+            return this ^ (One << bit);
         }
     }
 }

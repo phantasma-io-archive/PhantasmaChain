@@ -8,9 +8,9 @@ namespace Phantasma.Blockchain.Tokens
 {
     public class BalanceSheet
     {
-        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
+        private Dictionary<Address, LargeInteger> _balances = new Dictionary<Address, LargeInteger>();
 
-        public BigInteger Get(Address address)
+        public LargeInteger Get(Address address)
         {
             lock (_balances)
             {
@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain.Tokens
             return 0;
         }
 
-        internal bool Add(Address address, BigInteger amount)
+        internal bool Add(Address address, LargeInteger amount)
         {
             if (amount <= 0)
             {
@@ -41,7 +41,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Subtract(Address address, BigInteger amount)
+        internal bool Subtract(Address address, LargeInteger amount)
         {
             if (amount <= 0)
             {
@@ -72,7 +72,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public void ForEach(Action<Address, BigInteger> visitor)
+        public void ForEach(Action<Address, LargeInteger> visitor)
         {
             Throw.IfNull(visitor, nameof(visitor));
 

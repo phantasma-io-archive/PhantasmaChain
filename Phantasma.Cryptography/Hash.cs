@@ -175,7 +175,7 @@ namespace Phantasma.Cryptography
         }
 
         // If necessary pads the number to 32 bytes with zeros 
-        public static implicit operator Hash(BigInteger val)
+        public static implicit operator Hash(LargeInteger val)
         {
             var src = val.ToByteArray();
             Throw.If(src.Length > Length, "number is too large");
@@ -185,9 +185,9 @@ namespace Phantasma.Cryptography
             return new Hash(bytes);
         }
 
-        public static implicit operator BigInteger(Hash val)
+        public static implicit operator LargeInteger(Hash val)
         {
-            return new BigInteger(val.ToByteArray());
+            return new LargeInteger(val.ToByteArray());
         }
     }
 }

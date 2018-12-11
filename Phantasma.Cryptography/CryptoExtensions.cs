@@ -279,14 +279,14 @@ namespace Phantasma.Cryptography
         }
 
 /*
-        internal static int GetBitLength(this BigInteger i)
+        internal static int GetBitLength(this LargeInteger i)
         {
             byte[] b = i.ToByteArray();
             return (b.Length - 1) * 8 + BitLen(i.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
         }
 
         
-        internal static BigInteger Mod(this BigInteger x, BigInteger y)
+        internal static LargeInteger Mod(this LargeInteger x, LargeInteger y)
         {
             x %= y;
             if (x.Sign < 0)
@@ -294,12 +294,12 @@ namespace Phantasma.Cryptography
             return x;
         }
 
-        internal static BigInteger ModInverse(this BigInteger a, BigInteger n)
+        internal static LargeInteger ModInverse(this LargeInteger a, LargeInteger n)
         {
-            BigInteger i = n, v = 0, d = 1;
+            LargeInteger i = n, v = 0, d = 1;
             while (a > 0)
             {
-                BigInteger t = i / a, x = a;
+                LargeInteger t = i / a, x = a;
                 a = i % x;
                 i = x;
                 x = d;
@@ -312,7 +312,7 @@ namespace Phantasma.Cryptography
         }
         */
 
-        internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
+        internal static LargeInteger NextLargeInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
@@ -324,10 +324,10 @@ namespace Phantasma.Cryptography
                 b[b.Length - 1] = 0;
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new BigInteger(b);
+            return new LargeInteger(b);
         }
 
-        /*internal static BigInteger NextBigInteger(this RandomNumberGenerator rng, int sizeInBits)
+        /*internal static LargeInteger NextLargeInteger(this RandomNumberGenerator rng, int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
@@ -339,7 +339,7 @@ namespace Phantasma.Cryptography
                 b[b.Length - 1] = 0;
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new BigInteger(b);
+            return new LargeInteger(b);
         }
 
         public static Fixed8 Sum(this IEnumerable<Fixed8> source)
@@ -362,7 +362,7 @@ namespace Phantasma.Cryptography
         
         */
 
-        public static BigInteger GenerateInteger(this HMACDRBG rng, BigInteger max, int securityParameter = 64)
+        public static LargeInteger GenerateInteger(this HMACDRBG rng, LargeInteger max, int securityParameter = 64)
         {
             // The simple modular method from the NIST SP800-90A recommendation
             Throw.If(securityParameter < 64, "Given security parameter, " + securityParameter + ", is too low.");
@@ -371,7 +371,7 @@ namespace Phantasma.Cryptography
             var bytes = new byte[bytesToRepresent + securityParameter / 8 + 1];
             rng.GetBytes(bytes);
             bytes[bytes.Length - 1] = 0;
-            return new BigInteger(bytes) % max;
+            return new LargeInteger(bytes) % max;
         }
 
         public static byte[] Hash256(byte[] message)

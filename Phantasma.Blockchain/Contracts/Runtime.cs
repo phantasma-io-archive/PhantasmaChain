@@ -23,10 +23,10 @@ namespace Phantasma.Blockchain.Contracts
 
         public StorageChangeSetContext ChangeSet { get; private set; }
 
-        public BigInteger UsedGas { get; private set; }
-        public BigInteger PaidGas { get; private set; }
-        public BigInteger MaxGas { get; private set; }
-        public BigInteger GasPrice { get; private set; }
+        public LargeInteger UsedGas { get; private set; }
+        public LargeInteger PaidGas { get; private set; }
+        public LargeInteger MaxGas { get; private set; }
+        public LargeInteger GasPrice { get; private set; }
         public readonly bool readOnlyMode;
 
         public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode) : base(script)
@@ -181,7 +181,7 @@ namespace Phantasma.Blockchain.Contracts
             return ExecutionState.Running;
         }
 
-        public static BigInteger GetGasCostForOpcode(Opcode opcode)
+        public static LargeInteger GetGasCostForOpcode(Opcode opcode)
         {
             switch (opcode)
             {

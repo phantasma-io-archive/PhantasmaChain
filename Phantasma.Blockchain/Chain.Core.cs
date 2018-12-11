@@ -19,7 +19,7 @@ namespace Phantasma.Blockchain
         #region PRIVATE
         private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
         private Dictionary<Hash, Block> _blockHashes = new Dictionary<Hash, Block>();
-        private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
+        private Dictionary<LargeInteger, Block> _blockHeightMap = new Dictionary<LargeInteger, Block>();
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
 
@@ -30,7 +30,7 @@ namespace Phantasma.Blockchain
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
         private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
 
-        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
+        private Dictionary<Token, Dictionary<LargeInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<LargeInteger, TokenContent>>();
 
         private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
 
@@ -286,7 +286,7 @@ namespace Phantasma.Blockchain
             return _blockHashes.ContainsKey(hash) ? _blockHashes[hash] : null;
         }
 
-        public Block FindBlockByHeight(BigInteger height)
+        public Block FindBlockByHeight(LargeInteger height)
         {
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
@@ -305,7 +305,7 @@ namespace Phantasma.Blockchain
             return sheet;
         }
 
-        internal void InitSupplySheet(Token token, BigInteger maxSupply)
+        internal void InitSupplySheet(Token token, LargeInteger maxSupply)
         {
             Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
             Throw.If(!token.IsCapped, "should be capped");
@@ -348,7 +348,7 @@ namespace Phantasma.Blockchain
             return sheet;
         }
 
-        public BigInteger GetTokenBalance(Token token, Address address)
+        public LargeInteger GetTokenBalance(Token token, Address address)
         {
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -368,11 +368,11 @@ namespace Phantasma.Blockchain
                         var tokenABI = Chain.FindABI(NativeABI.Token);
                         Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
 
-                        var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
+                        var balance = (LargeInteger)tokenABI["BalanceOf"].Invoke(contract, account);
                         return balance;*/
         }
 
-        public IEnumerable<BigInteger> GetOwnedTokens(Token token, Address address)
+        public IEnumerable<LargeInteger> GetOwnedTokens(Token token, Address address)
         {
             var ownership = GetTokenOwnerships(token);
             return ownership.Get(address);
@@ -482,9 +482,9 @@ namespace Phantasma.Blockchain
         }
 
         #region FEES 
-        public BigInteger GetBlockReward(Block block)
+        public LargeInteger GetBlockReward(Block block)
         {
-            BigInteger total = 0;
+            LargeInteger total = 0;
             foreach (var hash in block.TransactionHashes)
             {
                 var events = block.GetEventsForTransaction(hash);
@@ -501,17 +501,17 @@ namespace Phantasma.Blockchain
             return total;
         }
 
-        public BigInteger GetTransactionFee(Transaction tx)
+        public LargeInteger GetTransactionFee(Transaction tx)
         {
             Throw.IfNull(tx, nameof(tx));
             return GetTransactionFee(tx.Hash);
         }
 
-        public BigInteger GetTransactionFee(Hash hash)
+        public LargeInteger GetTransactionFee(Hash hash)
         {
             Throw.IfNull(hash, nameof(hash));
 
-            BigInteger fee = 0;
+            LargeInteger fee = 0;
 
             var block = FindTransactionBlock(hash);
             Throw.IfNull(block, nameof(block));
@@ -577,11 +577,11 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region NFT
-        internal BigInteger CreateNFT(Token token, byte[] data)
+        internal LargeInteger CreateNFT(Token token, byte[] data)
         {
             lock (_tokenContents)
             {
-                Dictionary<BigInteger, TokenContent> contents;
+                Dictionary<LargeInteger, TokenContent> contents;
 
                 if (_tokenContents.ContainsKey(token))
                 {
@@ -589,7 +589,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    contents = new Dictionary<BigInteger, TokenContent>();
+                    contents = new Dictionary<LargeInteger, TokenContent>();
                     _tokenContents[token] = contents;
                 }
 
@@ -602,7 +602,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal bool DestroyNFT(Token token, BigInteger tokenID)
+        internal bool DestroyNFT(Token token, LargeInteger tokenID)
         {
             lock (_tokenContents)
             {
@@ -621,7 +621,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        public TokenContent GetNFT(Token token, BigInteger tokenID)
+        public TokenContent GetNFT(Token token, LargeInteger tokenID)
         {
             lock (_tokenContents)
             {

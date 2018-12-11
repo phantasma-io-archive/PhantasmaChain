@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "governance";
 
-        public BigInteger FeeMultiplier = 1;
+        public LargeInteger FeeMultiplier = 1;
 
         public GovernanceContract() : base()
         {
@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             throw new System.NotImplementedException();
         }
 
-        public bool InitVotingRound(GovernanceSubject subject, BigInteger value)
+        public bool InitVotingRound(GovernanceSubject subject, LargeInteger value)
         {
             return InitVotingRound(subject, value.ToByteArray());
         }
@@ -41,9 +41,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             throw new System.NotImplementedException();
         }
 
-        public BigInteger GetGovernanceValue(GovernanceSubject subject)
+        public LargeInteger GetGovernanceValue(GovernanceSubject subject)
         {
-            return new BigInteger(GetGovernanceBytes(subject));
+            return new LargeInteger(GetGovernanceBytes(subject));
         }
 
         public void Vote(GovernanceSubject subject, bool vote)

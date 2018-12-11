@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private Map<Address, string> _addressMap;
         private Map<string, Address> _nameMap;
 
-        public static readonly BigInteger RegistrationCost = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
+        public static readonly LargeInteger RegistrationCost = TokenUtils.ToLargeInteger(0.1m, Nexus.NativeTokenDecimals);
 
         public AccountContract() : base()
         {

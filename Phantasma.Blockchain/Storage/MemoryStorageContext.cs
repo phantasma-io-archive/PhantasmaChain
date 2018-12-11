@@ -59,7 +59,7 @@ namespace Phantasma.Blockchain.Storage
             if (key.StartsWith("[") && key.EndsWith("["))
             {
                 key = key.Substring(1, key.Length - 2);
-                var num = BigInteger.Parse(key);
+                var num = LargeInteger.Parse(key);
                 var result = num.ToByteArray();
                 result = ByteArrayUtils.ConcatBytes(new byte[] { (byte)'<' }, result);
                 result = ByteArrayUtils.ConcatBytes(result, new byte[] { (byte)'>' });

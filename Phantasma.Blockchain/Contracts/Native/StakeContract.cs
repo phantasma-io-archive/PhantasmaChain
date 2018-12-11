@@ -9,7 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct ValidatorInfo
     {
         public Address address;
-        public BigInteger stake;
+        public LargeInteger stake;
         public Timestamp timestamp;
         public int slashes;
     }
@@ -25,19 +25,19 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public BigInteger GetMaxValidators()
+        public LargeInteger GetMaxValidators()
         {
             return 3; // TODO this should be dynamic
         }
 
-        public BigInteger GetActiveValidators()
+        public LargeInteger GetActiveValidators()
         {
             return _entryList.Count();
         }
 
-        public BigInteger GetRequiredStake()
+        public LargeInteger GetRequiredStake()
         {
-            return TokenUtils.ToBigInteger(50000, Nexus.NativeTokenDecimals); // TODO this should be dynamic
+            return TokenUtils.ToLargeInteger(50000, Nexus.NativeTokenDecimals); // TODO this should be dynamic
         }
 
         public Address[] GetValidators()
@@ -105,14 +105,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             _entryList.Remove(address);
         }
 
-        public BigInteger GetStake(Address address)
+        public LargeInteger GetStake(Address address)
         {
             Runtime.Expect(_entryMap.ContainsKey(address), "not a validator address");
             var entry = _entryMap.Get(address);
             return entry.stake;
         }
 
-        public BigInteger GetIndexOfValidator(Address address)
+        public LargeInteger GetIndexOfValidator(Address address)
         {
             if (address == Address.Null)
             {
@@ -123,7 +123,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return index;
         }
 
-        public Address GetValidatorByIndex(BigInteger index)
+        public Address GetValidatorByIndex(LargeInteger index)
         {
             Runtime.Expect(index >= 0, "invalid validator index");
 
