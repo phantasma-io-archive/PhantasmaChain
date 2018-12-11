@@ -892,9 +892,16 @@ namespace Phantasma.Numerics
             }
         }
 
-        public int GetBitLength()
+        public uint GetBitLength()
         {
-            return _data.Length * _Base;
+            if (this == 0)
+                return 1;
+
+            uint result = (uint) (_data.Length - 1) * 32;
+
+            result += (uint) Math.Log(_data[_data.Length - 1], 2) + 1;
+
+            return result;
         }
 
         public uint[] ToUintArray()

@@ -345,6 +345,21 @@ namespace Phantasma.Tests
             Assert.IsTrue(result == target);
             */
         }
+
+        [TestMethod]
+        public void TestBitLength()
+        {
+            var n = new LargeInteger("0", 16);
+            Assert.IsTrue(n.GetBitLength() == 1);
+
+            n++;
+
+            for (int i = 2; i <= 2048; i++)
+            {
+                n <<= 1;
+                Assert.IsTrue(n.GetBitLength() == i);
+            }
+        }
         #endregion
     }
 }
