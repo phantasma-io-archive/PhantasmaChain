@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger Order { get; internal set; } // TODO remove this?
 
-        private Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer()); // TODO remove this?
+        private readonly Dictionary<byte[], byte[]> _storage = new Dictionary<byte[], byte[]>(new ByteArrayComparer()); // TODO remove this?
 
         public RuntimeVM Runtime { get; private set; }
         public StorageContext Storage => Runtime.ChangeSet;
@@ -70,6 +70,11 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return Runtime.Transaction.IsSignedBy(address);
+        }
+
+        public bool IsValidator(Address address)
+        {
+            return Runtime.Nexus.IsValidator(address);
         }
 
         #region METHOD TABLE

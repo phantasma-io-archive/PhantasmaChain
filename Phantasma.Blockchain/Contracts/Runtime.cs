@@ -23,10 +23,10 @@ namespace Phantasma.Blockchain.Contracts
 
         public StorageChangeSetContext ChangeSet { get; private set; }
 
-        public BigInteger usedGas { get; private set; }
-        public BigInteger paidGas { get; private set; }
-        public BigInteger maxGas { get; private set; }
-        public BigInteger gasPrice { get; private set; }
+        public BigInteger UsedGas { get; private set; }
+        public BigInteger PaidGas { get; private set; }
+        public BigInteger MaxGas { get; private set; }
+        public BigInteger GasPrice { get; private set; }
         public readonly bool readOnlyMode;
 
         public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode) : base(script)
@@ -38,10 +38,10 @@ namespace Phantasma.Blockchain.Contracts
             //Throw.IfNull(block, nameof(block));
             //Throw.IfNull(transaction, nameof(transaction));
 
-            this.gasPrice = 0;
-            this.usedGas = 0;
-            this.paidGas = 0;
-            this.maxGas = 100;  // a minimum amount required for allowing calls to Gas contract etc
+            this.GasPrice = 0;
+            this.UsedGas = 0;
+            this.PaidGas = 0;
+            this.MaxGas = 100;  // a minimum amount required for allowing calls to Gas contract etc
 
             this.Chain = chain;
             this.Block = block;
@@ -81,17 +81,19 @@ namespace Phantasma.Blockchain.Contracts
                     {
 #if DEBUG
                         throw new VMDebugException(this, "VM changeset modified in read-only mode");
-#endif
+#else
                         result = ExecutionState.Fault;
+#endif
                     }
                 }
                 else
-                if (paidGas < usedGas && Nexus.NativeToken != null)
+                if (PaidGas < UsedGas && Nexus.NativeToken != null)
                 {
 #if DEBUG
                     throw new VMDebugException(this, "VM unpaid gas");
+#else
+                                        result = ExecutionState.Fault;
 #endif
-                    result = ExecutionState.Fault;
                 }
             }
 
@@ -124,15 +126,15 @@ namespace Phantasma.Blockchain.Contracts
                 case EventKind.GasEscrow:
                     {
                         var gasInfo = (GasEventData)(object)content;
-                        this.maxGas = gasInfo.amount;
-                        this.gasPrice = gasInfo.price;
+                        this.MaxGas = gasInfo.amount;
+                        this.GasPrice = gasInfo.price;
                         break;
                     }
 
                 case EventKind.GasPayment:
                     {
                         var gasInfo = (GasEventData)(object)content;
-                        this.paidGas = gasInfo.amount;
+                        this.PaidGas = gasInfo.amount;
                         break;
                     }
             }
@@ -165,14 +167,15 @@ namespace Phantasma.Blockchain.Contracts
             var gasCost = GetGasCostForOpcode(opcode);
             Throw.If(gasCost < 0, "invalid gas amount");
 
-            usedGas += gasCost;
+            UsedGas += gasCost;
 
-            if (usedGas > maxGas)
+            if (UsedGas > MaxGas)
             {
 #if DEBUG
                 throw new VMDebugException(this, "VM gas limit exceeded");
+#else
+                                return ExecutionState.Fault;
 #endif
-                return ExecutionState.Fault;
             }
 
             return ExecutionState.Running;

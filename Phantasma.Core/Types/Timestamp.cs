@@ -11,6 +11,11 @@ namespace Phantasma.Core.Types
             this.Value = value;
         }
 
+        public override string ToString()
+        {
+            return ((DateTime)this).ToString();
+        }
+
         public static Timestamp Now => DateTime.UtcNow;
 
         public override bool Equals(object obj)

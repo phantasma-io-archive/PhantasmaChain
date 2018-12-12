@@ -6,13 +6,18 @@ namespace Phantasma.Network.P2P.Messages
 {
     internal class MempoolGetMessage : Message
     {
-        public MempoolGetMessage(Nexus nexus, Address address) :base(nexus, Opcode.MEMPOOL_Get, address)
+        public MempoolGetMessage(Address address) : base(Opcode.MEMPOOL_Add, address)
         {
         }
 
-        internal static MempoolGetMessage FromReader(Nexus nexus, Address pubKey, BinaryReader reader)
+        internal static MempoolGetMessage FromReader(Address pubKey, BinaryReader reader)
         {
-            return new MempoolGetMessage(nexus, pubKey);
+            return new MempoolGetMessage(pubKey);
+        }
+
+        protected override void OnSerialize(BinaryWriter writer)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

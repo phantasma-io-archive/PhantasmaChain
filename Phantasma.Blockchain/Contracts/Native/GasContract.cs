@@ -58,8 +58,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var availableAmount = _allowanceMap.Get(from);
 
-            var spentGas = Runtime.usedGas;
-            var requiredAmount = spentGas * Runtime.gasPrice;
+            var spentGas = Runtime.UsedGas;
+            var requiredAmount = spentGas * Runtime.GasPrice;
 
             Runtime.Expect(availableAmount >= requiredAmount, "gas allowance is not enough");
 
@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _allowanceMap.Remove(from);
 
-            Runtime.Notify(EventKind.GasPayment, from, new GasEventData() { price = Runtime.gasPrice, amount = spentGas});
+            Runtime.Notify(EventKind.GasPayment, from, new GasEventData() { price = Runtime.GasPrice, amount = spentGas});
         }
 
     }

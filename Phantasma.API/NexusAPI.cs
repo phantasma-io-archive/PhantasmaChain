@@ -69,7 +69,7 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("previousHash", block.PreviousHash);
             result.AddField("nonce", block.Nonce);
-            result.AddField("minerAddress", block.MinerAddress.Text);
+            // result.AddField("minerAddress", block.MinerAddress.Text); TODO fixme
 
             return result;
         }
@@ -280,8 +280,11 @@ namespace Phantasma.API
                 var bytes = Base16.Decode(txData);
                 var tx = Transaction.Unserialize(bytes);
 
-                Mempool.Submit(tx);
-
+                bool submited = Mempool.Submit(tx);
+                if (!submited)
+                {
+                    result.AddField("error", "Not submited to mempool");
+                }
                 result.AddField("hash", tx.Hash);
             }
             else

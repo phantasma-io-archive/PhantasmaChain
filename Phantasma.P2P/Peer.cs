@@ -1,12 +1,30 @@
-﻿namespace Phantasma.Network.P2P
+﻿using Phantasma.Blockchain;
+using Phantasma.Cryptography;
+
+namespace Phantasma.Network.P2P
 {
     public abstract class Peer
     {
-        public Endpoint Endpoint { get; protected set; }
+        public Address Address { get; private set; }
+        public readonly Nexus Nexus;
+        public readonly Endpoint Endpoint;
 
         public Status Status { get; protected set; }
 
         public abstract void Send(Message msg);
         public abstract Message Receive();
+
+        public Peer(Nexus nexus, Endpoint endpoint)
+        {
+            this.Nexus = nexus;
+            this.Endpoint = endpoint;
+            this.Status = Status.Disconnected;
+        }
+
+        public void SetAddress(Address address)
+        {
+            this.Address = address;
+            this.Status = address != Address.Null ? Status.Identified : Status.Anonymous;
+        }
     }
 }

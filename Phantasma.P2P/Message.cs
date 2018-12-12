@@ -1,5 +1,7 @@
-﻿using System.IO;
-using Phantasma.Blockchain;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Network.P2P.Messages;
@@ -13,19 +15,25 @@ namespace Phantasma.Network.P2P
     {
         public Opcode Opcode { get; private set; }
         public Address Address { get; private set; }
-        public byte[] Signature { get; private set; }
-
-        public Nexus Nexus { get; private set; }
+        public Signature Signature { get; private set; }
 
         public bool IsSigned => Address != Address.Null && Signature != null;
 
-        public Message(Nexus nexus, Opcode opcode, Address address) {
-            this.Nexus = nexus;
+        public Message(Opcode opcode, Address address) {
             this.Opcode = opcode;
             this.Address = address;
         }
 
-        public static Message Unserialize(Nexus nexus, BinaryReader reader)
+        public void Sign(KeyPair keyPair)
+        {
+            Throw.If(keyPair.Address != this.Address, "unexpected keypair");
+
+            var msg = this.ToByteArray(false);
+
+            this.Signature = keyPair.Sign(msg);
+        }
+
+        public static Message Unserialize(BinaryReader reader)
         {
             var opcode = (Opcode)reader.ReadByte();
             var address = reader.ReadAddress();
@@ -34,111 +42,40 @@ namespace Phantasma.Network.P2P
 
             switch (opcode)
             {
-                case Opcode.PEER_Join:
+                case Opcode.REQUEST:
                     {
-                        msg = PeerJoinMessage.FromReader(nexus, address, reader);
+                        msg = RequestMessage.FromReader(address, reader);
                         break;
                     }
 
-                case Opcode.PEER_Leave:
+                case Opcode.LIST:
                     {
-                        msg = PeerLeaveMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.PEER_List:
-                    {
-                        msg = PeerListMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Request:
-                    {
-                        msg = RaftRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Vote:
-                    {
-                        msg = RaftVoteMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Lead:
-                    {
-                        msg = RaftLeadMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Replicate:
-                    {
-                        msg = RaftReplicateMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Confirm:
-                    {
-                        msg = RaftConfirmMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Commit:
-                    {
-                        msg = RaftCommitMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.RAFT_Beat:
-                    {
-                        msg = RaftBeatMessage.FromReader(nexus, address, reader);
+                        msg = ListMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        msg = MempoolAddMessage.FromReader(nexus, address, reader);
+                        msg = MempoolAddMessage.FromReader(address, reader);
                         break;
                     }
 
-                case Opcode.MEMPOOL_Get:
-                    {
-                        msg = MempoolGetMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
+                /*                case Opcode.MEMPOOL_List:
+                                    {
+                                        msg = MempoolGetMessage.FromReader(address, reader);
+                                        break;
+                                    }
 
-                case Opcode.BLOCKS_Request:
-                    {
-                        msg = ChainRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.BLOCKS_List:
-                    {
-                        msg = ChainRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.CHAIN_Request:
-                    {
-                        msg = BlockRequestMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.CHAIN_Values:
-                    {
-                        msg = ChainValuesMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
-
-                case Opcode.SHARD_Submit:
-                    {
-                        msg = ShardSubmitMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
+                                case Opcode.CHAIN_List:
+                                    {
+                                        msg = ChainListMessage.FromReader(address, reader);
+                                        break;
+                                    }
+                                    */
 
                 case Opcode.ERROR:
                     {
-                        msg = ErrorMessage.FromReader(nexus, address, reader);
+                        msg = ErrorMessage.FromReader(address, reader);
                         break;
                     }
 
@@ -147,16 +84,45 @@ namespace Phantasma.Network.P2P
 
             if (address != null)
             {
-                msg.Signature = reader.ReadByteArray();
+                msg.Signature = reader.ReadSignature();
             }
 
             return msg;
         }
-    }
 
-    public struct DeliveredMessage
-    {
-        public Message message;
-        public Endpoint source;
+        public byte[] ToByteArray(bool withSignature)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    Serialize(writer, withSignature);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        public void Serialize(BinaryWriter writer, bool withSignature)
+        {
+            writer.Write((byte)Opcode);
+            writer.WriteAddress(Address);
+
+            OnSerialize(writer);
+
+            if (withSignature)
+            {
+                Throw.IfNull(Signature, nameof(Signature));
+
+                writer.WriteSignature(Signature);
+            }
+        }
+
+        protected abstract void OnSerialize(BinaryWriter writer);
+
+        public virtual IEnumerable<string> GetDescription()
+        {
+            return Enumerable.Empty<string>();
+        }
     }
 }

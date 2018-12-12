@@ -15,7 +15,7 @@ namespace Phantasma.Cryptography.Ring
             SubgroupSize = subgroupSize;
 
             Throw.If(Generator < 2 || Generator > Prime - BigInteger.One, "Generator out of range");
-            Throw.If(Generator.ModPow(SubgroupSize, Prime) != BigInteger.One, "Generator is wrong");
+            Throw.If(BigInteger.ModPow(Generator, SubgroupSize, Prime) != BigInteger.One, "Generator is wrong");
         }
     }
 

@@ -21,16 +21,18 @@ namespace Phantasma.Blockchain.Contracts
             {
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: ABI is missing for contract '{this.Contract.Name}'");
-#endif
+#else                            
                 return ExecutionState.Fault;
+#endif
             }
 
             if (stack.Count <= 0)
             {
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: method name not present in the VM stack");
+#else
+                                return ExecutionState.Fault;
 #endif
-                return ExecutionState.Fault;
             }
 
             var stackObj = stack.Pop();
@@ -41,16 +43,18 @@ namespace Phantasma.Blockchain.Contracts
             {
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
+#else
+                                return ExecutionState.Fault;
 #endif
-                return ExecutionState.Fault;
             }
 
             if (stack.Count < method.parameters.Length)
             {
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
+#else
+                                return ExecutionState.Fault;
 #endif
-                return ExecutionState.Fault;
             }
 
             if (this.Contract.HasInternalMethod(methodName))
@@ -63,20 +67,20 @@ namespace Phantasma.Blockchain.Contracts
                 catch (ArgumentException ex)
                 {
 #if DEBUG
-                    throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, "+ex.ToString());
+                    throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
 #endif
                 }
                 return result;
             }
 
-            var customContract = this.Contract as CustomContract;
 
-            if (customContract == null)
+            if (!(this.Contract is CustomContract customContract))
             {
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
-#endif
+#else
                 return ExecutionState.Fault;
+#endif
             }
 
             stack.Push(stackObj);

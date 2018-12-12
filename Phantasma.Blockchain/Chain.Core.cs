@@ -8,19 +8,12 @@ using Phantasma.Core.Log;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Storage;
-using System;
-using Phantasma.VM.Utils;
 using Phantasma.VM;
-using Phantasma.IO;
+using Phantasma.Core.Types;
+using Phantasma.Blockchain.Consensus;
 
 namespace Phantasma.Blockchain
 {
-    public struct ChainDiffEntry
-    {
-        public Block block;
-        public StorageChangeSetContext changeSet;
-    }
-    
     public partial class Chain
     {
         #region PRIVATE
@@ -29,6 +22,8 @@ namespace Phantasma.Blockchain
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
+
+        private Dictionary<Hash, Epoch> _epochMap = new Dictionary<Hash, Epoch>();
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
@@ -56,7 +51,8 @@ namespace Phantasma.Blockchain
 
         public string Name { get; private set; }
         public Address Address { get; private set; }
-        public Address Owner { get; private set; }
+
+        public Epoch CurrentEpoch { get; private set; }
 
         public IEnumerable<Block> Blocks => _blockHashes.Values;
 
@@ -72,9 +68,8 @@ namespace Phantasma.Blockchain
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
-        public Chain(Nexus nexus, Address owner, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
-            Throw.IfNull(owner, "owner required");
             Throw.IfNull(nexus, "nexus required");
             Throw.If(contracts == null || !contracts.Any(), "contracts required");
 
@@ -102,7 +97,6 @@ namespace Phantasma.Blockchain
             }
 
             this.Name = name;
-            this.Owner = owner;
             this.Nexus = nexus;
 
             this.ParentChain = parentChain;
@@ -145,6 +139,11 @@ namespace Phantasma.Blockchain
 
         public bool AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
+            /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
+            {
+                return false;
+            }*/
+
             if (LastBlock != null)
             {
                 if (LastBlock.Height != block.Height - 1)
@@ -202,6 +201,14 @@ namespace Phantasma.Blockchain
             _blockChangeSets[block.Hash] = changeSet;
 
             changeSet.Execute();
+
+            if (CurrentEpoch == null)
+            {
+                GenerateEpoch();
+            }
+
+            CurrentEpoch.AddBlockHash(block.Hash);
+            CurrentEpoch.UpdateHash();
 
             LastBlock = block;
 
@@ -474,40 +481,7 @@ namespace Phantasma.Blockchain
             return result.ToObject();
         }
 
-        public void MergeBlocks(IEnumerable<ChainDiffEntry> entries)
-        {
-            Throw.IfNot(entries.Any(), "empty entries");
-
-            var firstBlockHeight = entries.First().block.Height;
-
-            var expectedLastHeight = firstBlockHeight + entries.Count();
-            Throw.If(expectedLastHeight <= this.BlockHeight, "short chain");
-
-            var currentBlockHeight = firstBlockHeight;
-
-            foreach (var entry in entries)
-            {
-                if (currentBlockHeight <= this.BlockHeight)
-                {
-                    var localBlock = FindBlockByHeight(currentBlockHeight);
-
-                    if (entry.block.Hash != localBlock.Hash)
-                    {
-                        DeleteBlocks(localBlock.Hash);
-                        var diffHeight = currentBlockHeight - firstBlockHeight;
-                        MergeBlocks(entries.Skip((int)diffHeight));
-                        return;
-                    }
-                }
-                else
-                {
-                    this.AddBlock(entry.block, null); // TODO fixme
-                }
-
-                currentBlockHeight++;
-            }
-        }
-
+        #region FEES 
         public BigInteger GetBlockReward(Block block)
         {
             BigInteger total = 0;
@@ -554,7 +528,54 @@ namespace Phantasma.Blockchain
 
             return fee;
         }
-    
+        #endregion
+
+        #region EPOCH
+        public bool IsCurrentValidator(Address address)
+        {
+            if (CurrentEpoch != null)
+            {
+                return CurrentEpoch.ValidatorAddress == address;
+            }
+
+            var firstValidator = Nexus.GetValidatorByIndex(0);
+            return address == firstValidator;
+        }
+
+        private void GenerateEpoch()
+        {
+            Address nextValidator;
+
+            uint epochIndex;
+
+            if (CurrentEpoch != null)
+            {
+                epochIndex = CurrentEpoch.Index + 1;
+
+                var currentIndex = Nexus.GetIndexOfValidator(CurrentEpoch.ValidatorAddress);
+                currentIndex++;
+
+                var validatorCount = Nexus.GetValidatorCount();
+
+                if (currentIndex >= validatorCount)
+                {
+                    currentIndex = 0;
+                }
+
+                nextValidator = Nexus.GetValidatorByIndex(currentIndex);
+            }
+            else
+            {
+                epochIndex = 0;
+                nextValidator = Nexus.GetValidatorByIndex(0);
+            }
+
+            var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
+
+            CurrentEpoch = epoch;
+        }
+        #endregion
+
         #region NFT
         internal BigInteger CreateNFT(Token token, byte[] data)
         {

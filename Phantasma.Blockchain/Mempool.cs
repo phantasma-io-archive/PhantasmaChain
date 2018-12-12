@@ -18,22 +18,22 @@ namespace Phantasma.Blockchain
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
 
-        private KeyPair _minerKeys;
+        private KeyPair _validatorKeys;
 
         public Nexus Nexus { get; private set; }
-        public Address MinerAddress => _minerKeys.Address;
+        public Address ValidatorAddress => _validatorKeys.Address;
 
         public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
 
-        public Mempool(KeyPair minerKeys, Nexus nexus)
+        public Mempool(KeyPair validatorKeys, Nexus nexus)
         {
-            this._minerKeys = minerKeys;
+            this._validatorKeys = validatorKeys;
             this.Nexus = nexus;
         }
 
         public bool Submit(Transaction tx, Func<Transaction, bool> validator = null)
         {
-            Throw.IfNull(tx, nameof(tx));
+           Throw.IfNull(tx, nameof(tx));
 
             var chain = Nexus.FindChainByName(tx.ChainName);
             Throw.IfNull(chain, nameof(chain));
@@ -118,6 +118,17 @@ namespace Phantasma.Blockchain
             return Enumerable.Empty<Transaction>();
         }
 
+        public IEnumerable<Transaction> GetTransactions()
+        {
+            var result = new List<Transaction>();
+            foreach (var entry in _entries.Values)
+            {
+                result.AddRange( entry.Select(x => x.transaction));
+            }
+
+            return result;
+        }
+
         private IEnumerable<Transaction> GetNextTransactions(Chain chain)
         {
             var list = _entries[chain.Name];
@@ -143,11 +154,23 @@ namespace Phantasma.Blockchain
 
         protected override bool Run()
         {
+            // we must be a staked validator to do something...
+            if (!Nexus.IsValidator(this.ValidatorAddress))
+            {
+                return false;
+            }
+
             lock (_entries)
             {
                 foreach (var chainName in _entries.Keys)
                 {
                     var chain = Nexus.FindChainByName(chainName);
+
+                    // we must be the validator of the current epoch to do something with this chain...
+                    if (!chain.IsCurrentValidator(this.ValidatorAddress))
+                    {
+                        continue;
+                    }
 
                     var transactions = GetNextTransactions(chain);
                     if (transactions.Any())
@@ -155,7 +178,7 @@ namespace Phantasma.Blockchain
                         var hashes = transactions.Select(tx => tx.Hash);
 
                         var isFirstBlock = chain.LastBlock == null;
-                        var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, MinerAddress, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
+                        var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, ValidatorAddress, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
 
                         var success = chain.AddBlock(block, transactions);
                     }

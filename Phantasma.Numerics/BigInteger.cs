@@ -79,7 +79,15 @@ namespace Phantasma.Numerics
 
         public int CompareTo(BigInteger n)
         {
-            return (int)(this - n);
+            if (this < n)
+            {
+                return -1;
+            }
+            if (this > n)
+            {
+                return 1;
+            }
+            return 0;
         }
 
         public BigInteger(BigInteger bi)
@@ -1208,7 +1216,7 @@ namespace Phantasma.Numerics
         /// <remarks>
         /// Requires x &lt; b^(2k), where b is the base.  In this case, base is 2^32 (uint).
         /// </remarks>
-        private BigInteger BarrettReduction(BigInteger x, BigInteger n, BigInteger constant)
+        private static BigInteger BarrettReduction(BigInteger z, BigInteger x, BigInteger n, BigInteger constant)
         {
             int k = n.dataLength,
                 kPlusOne = k + 1,
@@ -1292,7 +1300,7 @@ namespace Phantasma.Numerics
         /// <param name="exp">Exponential</param>
         /// <param name="n">Modulo</param>
         /// <returns>BigInteger result of raising this to the power of exp and then modulo n </returns>
-        public BigInteger ModPow(BigInteger exp, BigInteger n)
+        public static BigInteger ModPow(BigInteger z, BigInteger exp, BigInteger n)
         {
             Throw.If((exp._data[maxLength - 1] & 0x80000000) != 0, "Positive exponents only.");
 
@@ -1300,13 +1308,13 @@ namespace Phantasma.Numerics
             BigInteger tempNum;
             bool thisNegative = false;
 
-            if ((this._data[maxLength - 1] & 0x80000000) != 0)   // negative this
+            if ((z._data[maxLength - 1] & 0x80000000) != 0)   // negative this
             {
-                tempNum = -this % n;
+                tempNum = -z% n;
                 thisNegative = true;
             }
             else
-                tempNum = this % n;  // ensures (tempNum * tempNum) < b^(2k)
+                tempNum = z % n;  // ensures (tempNum * tempNum) < b^(2k)
 
             if ((n._data[maxLength - 1] & 0x80000000) != 0)   // negative n
                 n = -n;
@@ -1330,11 +1338,11 @@ namespace Phantasma.Numerics
                 for (int index = 0; index < 32; index++)
                 {
                     if ((exp._data[pos] & mask) != 0)
-                        resultNum = BarrettReduction(resultNum * tempNum, n, constant);
+                        resultNum = BarrettReduction(z, resultNum * tempNum, n, constant);
 
                     mask <<= 1;
 
-                    tempNum = BarrettReduction(tempNum * tempNum, n, constant);
+                    tempNum = BarrettReduction(z, tempNum * tempNum, n, constant);
 
 
                     if (tempNum.dataLength == 1 && tempNum._data[0] == 1)

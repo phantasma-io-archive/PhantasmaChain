@@ -28,9 +28,8 @@ namespace Phantasma.VM
 
             var lines = new List<string>();
 
-            if (vm.currentContext is ScriptContext)
+            if (vm.CurrentContext is ScriptContext sc)
             {
-                var sc = (ScriptContext)vm.currentContext;
                 lines.Add(Header("CURRENT OFFSET"));
                 lines.Add(sc.InstructionPointer.ToString());
                 lines.Add("");
@@ -54,7 +53,7 @@ namespace Phantasma.VM
                     lines.Add("");
                 }
 
-                lines.Add("Active = " + (frame == vm.currentFrame).ToString());
+                lines.Add("Active = " + (frame == vm.CurrentFrame).ToString());
                 lines.Add("Entry Offset = " + frame.Offset.ToString());
                 lines.Add("Registers:");
                 int ri = 0;
@@ -89,21 +88,21 @@ namespace Phantasma.VM
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
 
         public readonly byte[] entryScript;
-        public Address entryAddress { get; private set; }
+        public Address EntryAddress { get; private set; }
 
         public readonly ExecutionContext entryContext;
-        public ExecutionContext currentContext { get; private set; }
+        public ExecutionContext CurrentContext { get; private set; }
 
         private Dictionary<string, ExecutionContext> _contextList = new Dictionary<string, ExecutionContext>();
 
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
-        public ExecutionFrame currentFrame { get; private set; }
+        public ExecutionFrame CurrentFrame { get; private set; }
 
         public VirtualMachine(byte[] script)
         {
             Throw.IfNull(script, nameof(script));
 
-            this.entryAddress = Address.FromScript(script);
+            this.EntryAddress = Address.FromScript(script);
             this.entryContext = new ScriptContext(script);
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
@@ -128,7 +127,7 @@ namespace Phantasma.VM
         {
             var frame = new ExecutionFrame(this, instructionPointer, context, registerCount);
             frames.Push(frame);
-            this.currentFrame = frame;
+            this.CurrentFrame = frame;
         }
 
         internal uint PopFrame()
@@ -136,10 +135,10 @@ namespace Phantasma.VM
             Throw.If(frames.Count < 2, "Not enough frames available");
 
             frames.Pop();
-            var instructionPointer = currentFrame.Offset;
+            var instructionPointer = CurrentFrame.Offset;
 
-            this.currentFrame = frames.Peek();
-            this.currentContext = currentFrame.Context;
+            this.CurrentFrame = frames.Peek();
+            this.CurrentContext = CurrentFrame.Context;
 
             return instructionPointer;
         }
@@ -169,9 +168,9 @@ namespace Phantasma.VM
 
         internal ExecutionState SwitchContext(ExecutionContext context)
         {
-            this.currentContext = context;
+            this.CurrentContext = context;
             PushFrame(context, 0, DefaultRegisterCount);
-            return context.Execute(this.currentFrame, this.Stack);
+            return context.Execute(this.CurrentFrame, this.Stack);
         }
         #endregion
 
