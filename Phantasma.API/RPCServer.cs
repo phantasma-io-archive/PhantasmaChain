@@ -1,5 +1,4 @@
 ﻿using LunarLabs.Parser;
-using LunarLabs.Parser.JSON;
 using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
 using LunarLabs.WebServer.Protocols;
@@ -34,7 +33,7 @@ namespace Phantasma.API
             this.EndPoint = endPoint;
             this._API = API;
 
-            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port };
+            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024*128 };
 
             _server = new HTTPServer(settings, logger);
 
