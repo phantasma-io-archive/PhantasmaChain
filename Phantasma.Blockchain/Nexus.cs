@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain
         public IEnumerable<Chain> Chains => _chains.Values;
         public IEnumerable<Token> Tokens => _tokens.Values;
 
-        public Address GenesisAddress { get; private set; }
+        public readonly Address GenesisAddress;
 
         private List<INexusPlugin> _plugins = new List<INexusPlugin>();
 
@@ -37,8 +37,9 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, Logger logger = null)
+        public Nexus(string name, Address genesisAddress, Logger logger = null)
         {
+            this.GenesisAddress = genesisAddress;
             this._logger = logger;
             this.Name = name;
 
@@ -393,8 +394,6 @@ namespace Phantasma.Blockchain
             {
                 return false;
             }
-
-            this.GenesisAddress = owner.Address;
 
             var transactions = new List<Transaction>
             {

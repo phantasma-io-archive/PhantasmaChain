@@ -194,8 +194,6 @@ namespace Phantasma.Blockchain
             }
 
             // from here on, the block is accepted
-            Log.Message($"{Name} height is now {block.Height}");
-
             _blockHeightMap[block.Height] = block;
             _blockHashes[block.Hash] = block;
             _blockChangeSets[block.Hash] = changeSet;
