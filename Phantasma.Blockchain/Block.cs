@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(uint height, Address chainAddress, Address minerAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
+        public Block(uint height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
@@ -77,19 +77,6 @@ namespace Phantasma.Blockchain
             this.UpdateHash(0);
         }
 
-        private byte[] ToArray()
-        {
-            using (var stream = new MemoryStream())
-            {
-                using (var writer = new BinaryWriter(stream))
-                {
-                    Serialize(writer);
-                }
-
-                return stream.ToArray();
-            }
-        }
-
         internal void Notify(Hash hash, Event evt)
         {
             List<Event> list;
@@ -111,7 +98,7 @@ namespace Phantasma.Blockchain
         internal void UpdateHash(uint nonce)
         {
             this.Nonce = nonce;
-            var data = ToArray();
+            var data = ToByteArray();
             var hashBytes = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hashBytes);
         }
@@ -127,6 +114,19 @@ namespace Phantasma.Blockchain
         }
 
         #region SERIALIZATION
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    Serialize(writer);
+                }
+
+                return stream.ToArray();
+            }
+        }
 
         internal void Serialize(BinaryWriter writer) {
             writer.Write((uint)Height);
@@ -149,11 +149,21 @@ namespace Phantasma.Blockchain
             writer.Write(Nonce);
         }
 
+        public static Block Unserialize(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    return Unserialize(reader);
+                }
+            }
+        }
+
         public static Block Unserialize(BinaryReader reader) {
             var height = reader.ReadUInt32();
             var timestamp = new Timestamp(reader.ReadUInt32());
             var prevHash = reader.ReadHash();
-            var minerAddress =  reader.ReadAddress();
             var chainAddress = reader.ReadAddress();
             var extraContent = reader.ReadByteArray();
 
@@ -178,7 +188,7 @@ namespace Phantasma.Blockchain
 
             var nonce = reader.ReadUInt32();
 
-            var block = new Block(height, chainAddress, minerAddress, timestamp, hashes, prevHash, extraContent); 
+            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, extraContent); 
             return block;
         }
         #endregion
