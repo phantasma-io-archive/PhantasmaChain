@@ -50,6 +50,7 @@ namespace Phantasma.API
             _rpc.RegisterHandler("getTokens", GetTokens);
             _rpc.RegisterHandler("getConfirmations", GetConfirmations);
             _rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
+            _rpc.RegisterHandler("getApps", GetApps);
 
         }
 
@@ -128,6 +129,11 @@ namespace Phantasma.API
         {
             var signedTx = paramNode.GetNodeByIndex(0).ToString();
             return _API.SendRawTransaction(signedTx);
+        }
+
+        private object GetApps(DataNode paramNode)
+        {
+            return _API.GetApps();
         }
 
         protected override void OnStop()
