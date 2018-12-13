@@ -48,7 +48,7 @@ namespace Phantasma.API
             rpc.RegisterHandler("getBlockTransactionCountByHash", GetBlockTransactionCountByHash);
             rpc.RegisterHandler("getChains", GetChains);
             rpc.RegisterHandler("getConfirmations", GetConfirmations);
-            rpc.RegisterHandler("getTransaction", GetTransactionByHash);
+            rpc.RegisterHandler("getTransactionByHash", GetTransactionByHash);
             rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
             rpc.RegisterHandler("getTokens", GetTokens);
             rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
