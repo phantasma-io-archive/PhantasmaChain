@@ -71,9 +71,8 @@ namespace Phantasma.Tests
             }
 
             var chainKeys = KeyPair.Generate();
-            var minerKeys = KeyPair.Generate();
             var hashes = txs.Select(x => x.Hash);
-            var block = new Block(1, chainKeys.Address, minerKeys.Address, Timestamp.Now, hashes, Hash.Null);
+            var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null);
 
             var bytes = block.ToByteArray();
 

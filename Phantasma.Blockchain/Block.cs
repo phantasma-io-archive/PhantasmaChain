@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(uint height, Address chainAddress, Address minerAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
+        public Block(uint height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
@@ -164,7 +164,6 @@ namespace Phantasma.Blockchain
             var height = reader.ReadUInt32();
             var timestamp = new Timestamp(reader.ReadUInt32());
             var prevHash = reader.ReadHash();
-            var minerAddress =  reader.ReadAddress();
             var chainAddress = reader.ReadAddress();
             var extraContent = reader.ReadByteArray();
 
@@ -189,7 +188,7 @@ namespace Phantasma.Blockchain
 
             var nonce = reader.ReadUInt32();
 
-            var block = new Block(height, chainAddress, minerAddress, timestamp, hashes, prevHash, extraContent); 
+            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, extraContent); 
             return block;
         }
         #endregion
