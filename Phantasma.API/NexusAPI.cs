@@ -7,22 +7,22 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using LunarLabs.Parser.JSON;
 using System;
-using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.API
 {
     public class NexusAPI
     {
-        public Nexus Nexus { get; private set; }
+        public Nexus Nexus { get; }
 
-        public Mempool Mempool { get; private set; }
+        public Mempool Mempool { get; }
 
         public NexusAPI(Nexus nexus, Mempool mempool = null)
         {
             Throw.IfNull(nexus, nameof(nexus));
 
-            this.Nexus = nexus;
-            this.Mempool = mempool;
+            Nexus = nexus;
+            Mempool = mempool;
         }
 
         #region UTILS
@@ -331,7 +331,7 @@ namespace Phantasma.API
             result.AddNode(arrayNode);
 
             var test = JSONWriter.WriteToString(result);
-            System.Console.WriteLine(test);
+            Console.WriteLine(test);
             return result;
         }
 
@@ -363,16 +363,24 @@ namespace Phantasma.API
             return result;
         }
 
-
-        /*
-               public DataNode GetTokens()
-               {
-
-               }
-
-               public DataNode GetApps()
-               {
-
-               }*/
+        public DataNode GetApps()
+        {
+            var result = DataNode.CreateObject();
+            var node = DataNode.CreateArray("apps");
+            var appChain = Nexus.FindChainByName("apps");
+            var apps = (AppInfo[])appChain.InvokeContract("apps", "GetApps", new string[] { });
+            foreach (var appInfo in apps)
+            {
+                var temp = DataNode.CreateObject();
+                temp.AddField("description", appInfo.description);
+                temp.AddField("icon", appInfo.icon);
+                temp.AddField("id", appInfo.id);
+                temp.AddField("title", appInfo.title);
+                temp.AddField("url", appInfo.url);
+                node.AddNode(temp);
+            }
+            result.AddNode(node);
+            return result;
+        }
     }
 }

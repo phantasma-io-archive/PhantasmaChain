@@ -41,14 +41,15 @@ namespace Phantasma.API
 
             // TODO do this automatically via reflection instead of doing it one by one manually
             _rpc.RegisterHandler("getAccount", GetAccount);
+            _rpc.RegisterHandler("getAddressTransactions", GetAddressTransactions);
+            _rpc.RegisterHandler("getApps", GetApps);
+            _rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
             _rpc.RegisterHandler("getBlockNumber", GetBlockNumber);
             _rpc.RegisterHandler("getBlockTransactionCountByHash", GetBlockTransactionCountByHash);
-            _rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
             _rpc.RegisterHandler("getChains", GetChains);
-            _rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
-            _rpc.RegisterHandler("getAddressTransactions", GetAddressTransactions);
-            _rpc.RegisterHandler("getTokens", GetTokens);
             _rpc.RegisterHandler("getConfirmations", GetConfirmations);
+            _rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
+            _rpc.RegisterHandler("getTokens", GetTokens);
             _rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
 
         }
@@ -128,6 +129,11 @@ namespace Phantasma.API
         {
             var signedTx = paramNode.GetNodeByIndex(0).ToString();
             return _API.SendRawTransaction(signedTx);
+        }
+
+        private object GetApps(DataNode paramNode)
+        {
+            return _API.GetApps();
         }
 
         protected override void OnStop()
