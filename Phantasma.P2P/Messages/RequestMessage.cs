@@ -22,6 +22,7 @@ namespace Phantasma.Network.P2P.Messages
         public readonly RequestKind Kind;
 
         private Dictionary<string, uint> _blockFetches;
+        public IEnumerable<KeyValuePair<string, uint>> Blocks => _blockFetches;
 
         public RequestMessage(RequestKind kind, Address address) :base(Opcode.REQUEST, address)
         {
@@ -47,6 +48,7 @@ namespace Phantasma.Network.P2P.Messages
                     var key = reader.ReadVarString();
                     var height = reader.ReadUInt32();
                     fetches[key] = height;
+                    count--;
                 }
 
                 msg.SetBlocks(fetches);
