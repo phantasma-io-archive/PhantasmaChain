@@ -77,19 +77,6 @@ namespace Phantasma.Blockchain
             this.UpdateHash(0);
         }
 
-        private byte[] ToArray()
-        {
-            using (var stream = new MemoryStream())
-            {
-                using (var writer = new BinaryWriter(stream))
-                {
-                    Serialize(writer);
-                }
-
-                return stream.ToArray();
-            }
-        }
-
         internal void Notify(Hash hash, Event evt)
         {
             List<Event> list;
@@ -111,7 +98,7 @@ namespace Phantasma.Blockchain
         internal void UpdateHash(uint nonce)
         {
             this.Nonce = nonce;
-            var data = ToArray();
+            var data = ToByteArray();
             var hashBytes = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hashBytes);
         }
@@ -127,6 +114,19 @@ namespace Phantasma.Blockchain
         }
 
         #region SERIALIZATION
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    Serialize(writer);
+                }
+
+                return stream.ToArray();
+            }
+        }
 
         internal void Serialize(BinaryWriter writer) {
             writer.Write((uint)Height);
@@ -147,6 +147,17 @@ namespace Phantasma.Blockchain
                 }
             }
             writer.Write(Nonce);
+        }
+
+        public static Block Unserialize(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    return Unserialize(reader);
+                }
+            }
         }
 
         public static Block Unserialize(BinaryReader reader) {
