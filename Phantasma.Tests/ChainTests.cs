@@ -30,7 +30,7 @@ namespace Phantasma.Tests
         public void GenesisBlock()
         {
             var owner = KeyPair.Generate();
-            var nexus = new Nexus("tests");
+            var nexus = new Nexus("tests", owner.Address);
 
             Assert.IsTrue(nexus.CreateGenesisBlock(owner));
 
