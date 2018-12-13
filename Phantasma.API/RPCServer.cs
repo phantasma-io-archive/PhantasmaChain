@@ -9,15 +9,14 @@ namespace Phantasma.API
 {
     public class RPCServer : Runnable
     {
-        public int Port { get; private set; }
-        public string EndPoint { get; private set; }
+        public int Port { get; }
+        public string EndPoint { get; }
 
-        private HTTPServer _server;
-        private RPCPlugin _rpc;
+        private readonly HTTPServer _server;
 
-        private NexusAPI _API;
+        private readonly NexusAPI _api;
 
-        public RPCServer(NexusAPI API, string endPoint, int port, Logger logger = null)
+        public RPCServer(NexusAPI api, string endPoint, int port, Logger logger = null)
         {
             if (logger == null)
             {
@@ -29,111 +28,114 @@ namespace Phantasma.API
                 endPoint = "/";
             }
 
-            this.Port = port;
-            this.EndPoint = endPoint;
-            this._API = API;
+            Port = port;
+            EndPoint = endPoint;
+            _api = api;
 
-            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024*128 };
+            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024 * 128 };
 
             _server = new HTTPServer(settings, logger);
 
-            _rpc = new RPCPlugin(_server, endPoint);
+            var rpc = new RPCPlugin(_server, endPoint);
 
             // TODO do this automatically via reflection instead of doing it one by one manually
-            _rpc.RegisterHandler("getAccount", GetAccount);
-            _rpc.RegisterHandler("getAddressTransactions", GetAddressTransactions);
-            _rpc.RegisterHandler("getApps", GetApps);
-            _rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
-            _rpc.RegisterHandler("getBlockNumber", GetBlockNumber);
-            _rpc.RegisterHandler("getBlockTransactionCountByHash", GetBlockTransactionCountByHash);
-            _rpc.RegisterHandler("getChains", GetChains);
-            _rpc.RegisterHandler("getConfirmations", GetConfirmations);
-            _rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
-            _rpc.RegisterHandler("getTokens", GetTokens);
-            _rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
+            rpc.RegisterHandler("getAccount", GetAccount);
+            rpc.RegisterHandler("getAddressTransactions", GetAddressTransactions);
+            rpc.RegisterHandler("getApps", GetApps);
+            rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
+            rpc.RegisterHandler("getBlockByHeight", GetBlockByHeight);
+            rpc.RegisterHandler("getBlockHeight", GetBlockHeight);
+            rpc.RegisterHandler("getBlockTransactionCountByHash", GetBlockTransactionCountByHash);
+            rpc.RegisterHandler("getChains", GetChains);
+            rpc.RegisterHandler("getConfirmations", GetConfirmations);
+            rpc.RegisterHandler("getTransaction", GetTransactionByHash);
+            rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
+            rpc.RegisterHandler("getTokens", GetTokens);
+            rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
 
         }
 
         private object GetAccount(DataNode paramNode)
         {
             var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
-            return _API.GetAccount(address);
+            return _api.GetAccount(address);
         }
 
         #region Blocks
-        private object GetBlockNumber(DataNode paramNode)
+        private object GetBlockHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
-            return _API.GetBlockNumber(chain) ?? _API.GetBlockNumber(Address.FromText(chain));
+            return _api.GetBlockNumber(chain) ?? _api.GetBlockNumber(Address.FromText(chain));
         }
 
         private object GetBlockTransactionCountByHash(DataNode paramNode)
         {
             var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _API.GetBlockTransactionCountByHash(blockHash);
+            return _api.GetBlockTransactionCountByHash(blockHash);
         }
 
         private object GetBlockByHash(DataNode paramNode)
         {
             var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _API.GetBlockByHash(blockHash);
+            return _api.GetBlockByHash(blockHash);
         }
 
-        private object GetBlockByNumber(DataNode paramNode)
+        private object GetBlockByHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
             var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
-            return _API.GetBlockByHeight(chain, height) ?? _API.GetBlockByHeight(Address.FromText(chain), height);
+            return _api.GetBlockByHeight(chain, height) ?? _api.GetBlockByHeight(Address.FromText(chain), height);
         }
         #endregion
 
-        private object GetChains(DataNode paramNode){
-            return _API.GetChains();
+        private object GetChains(DataNode paramNode)
+        {
+            return _api.GetChains();
         }
 
         #region Transactions
         private object GetTransactionByHash(DataNode paramNode)
         {
             var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _API.GetTransaction(hash);
+            return _api.GetTransaction(hash);
         }
 
         private object GetTransactionByBlockHashAndIndex(DataNode paramNode)
         {
             var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
             int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _API.GetTransactionByBlockHashAndIndex(blockHash, index);
+            return _api.GetTransactionByBlockHashAndIndex(blockHash, index);
         }
 
         private object GetAddressTransactions(DataNode paramNode)
         {
             var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
             var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
-            return _API.GetAddressTransactions(address, amountTx);
+            return _api.GetAddressTransactions(address, amountTx);
         }
 
         #endregion
 
         private object GetTokens(DataNode paramNode)
         {
-            return _API.GetTokens();
+            return _api.GetTokens();
         }
 
         private object GetConfirmations(DataNode paramNode)
         {
             var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _API.GetConfirmations(hash);
+            return _api.GetConfirmations(hash);
         }
 
         private object SendRawTransaction(DataNode paramNode)
         {
             var signedTx = paramNode.GetNodeByIndex(0).ToString();
-            return _API.SendRawTransaction(signedTx);
+            return _api.SendRawTransaction(signedTx);
         }
 
         private object GetApps(DataNode paramNode)
         {
-            return _API.GetApps();
+            return _api.GetApps();
         }
 
         protected override void OnStop()
