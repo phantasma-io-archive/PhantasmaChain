@@ -152,7 +152,7 @@ namespace Phantasma.Tests
                         uint nextHeight = chain.LastBlock != null ? chain.LastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
 
-                        var block = new Block(nextHeight, chain.Address, _owner.Address, CurrentTime, hashes, prevHash);
+                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash);
 
                         bool submitted;
 

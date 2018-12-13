@@ -178,7 +178,7 @@ namespace Phantasma.Blockchain
                         var hashes = transactions.Select(tx => tx.Hash);
 
                         var isFirstBlock = chain.LastBlock == null;
-                        var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, ValidatorAddress, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
+                        var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
 
                         var success = chain.AddBlock(block, transactions);
                     }

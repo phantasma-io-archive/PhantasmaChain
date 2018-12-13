@@ -36,6 +36,10 @@ namespace Phantasma.Network.P2P
                     }
                 }
             }
+            catch (IOException)
+            {
+                return null;
+            }
             catch (Exception e)
             {
                 Console.WriteLine(e);

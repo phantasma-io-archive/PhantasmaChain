@@ -46,8 +46,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Serialize(BinaryWriter writer)
         {
-            var n = (byte)(object)this.Kind;
-            writer.Write(n);
+            var n = (int)(object)this.Kind; // TODO is this the most clean way to do this?
+            writer.Write((byte)n);
             writer.WriteAddress(this.Address);
             writer.WriteByteArray(this.Data);
         }
