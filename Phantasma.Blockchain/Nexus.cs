@@ -16,21 +16,31 @@ namespace Phantasma.Blockchain
 {
     public class Nexus
     {
-        public string Name { get; private set; }
+        public string Name { get; }
 
-        public Chain RootChain { get; private set; }
+        public Chain RootChain { get; }
         public Token NativeToken { get; private set; }
         public Token StableToken { get; private set; }
 
-        private Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
-        private Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
+        private readonly Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
+        private readonly Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
 
-        public IEnumerable<Chain> Chains => _chains.Values;
+        public IEnumerable<Chain> Chains
+        {
+            get
+            {
+                lock (_chains)
+                {
+                    return _chains.Values;
+                }
+            }
+        }
+
         public IEnumerable<Token> Tokens => _tokens.Values;
 
         public readonly Address GenesisAddress;
 
-        private List<INexusPlugin> _plugins = new List<INexusPlugin>();
+        private readonly List<INexusPlugin> _plugins = new List<INexusPlugin>();
 
         private readonly Logger _logger;
 
@@ -39,9 +49,9 @@ namespace Phantasma.Blockchain
         /// </summary>
         public Nexus(string name, Address genesisAddress, Logger logger = null)
         {
-            this.GenesisAddress = genesisAddress;
-            this._logger = logger;
-            this.Name = name;
+            GenesisAddress = genesisAddress;
+            _logger = logger;
+            Name = name;
 
             // TODO this probably should be done using a normal transaction instead of here
             var contracts = new List<SmartContract>
@@ -55,7 +65,7 @@ namespace Phantasma.Blockchain
                 new GasContract()
             };
 
-            this.RootChain = new Chain(this, "main", contracts, logger, null);
+            RootChain = new Chain(this, "main", contracts, logger);
             _chains[RootChain.Name] = RootChain;
         }
 
@@ -74,7 +84,7 @@ namespace Phantasma.Blockchain
                 var txs = chain.GetBlockTransactions(block);
                 foreach (var tx in txs)
                 {
-                    plugin.OnNewTransaction(chain, block, (Transaction) tx);
+                    plugin.OnNewTransaction(chain, block, tx);
                 }
             }
         }
@@ -86,11 +96,14 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainForBlock(Hash hash)
         {
-            foreach (var chain in _chains.Values)
+            lock (_chains)
             {
-                if (chain.ContainsBlock(hash))
+                foreach (var chain in _chains.Values)
                 {
-                    return chain;
+                    if (chain.ContainsBlock(hash))
+                    {
+                        return chain;
+                    }
                 }
             }
 
@@ -104,11 +117,30 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockForHash(Hash hash)
         {
-            foreach (var chain in _chains.Values)
+            lock (_chains)
             {
-                if (chain.ContainsTransaction(hash))
+                foreach (var chain in _chains.Values)
                 {
-                    return chain.FindTransactionBlock(hash);
+                    if (chain.ContainsTransaction(hash))
+                    {
+                        return chain.FindTransactionBlock(hash);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public Block FindBlockByHash(Hash hash)
+        {
+            lock (_chains) //todo ask for locks and rpc return datanode as null? or error
+            {
+                foreach (var chain in _chains.Values)
+                {
+                    if (chain.ContainsBlock(hash))
+                    {
+                        return chain.FindBlockByHash(hash);
+                    }
                 }
             }
 
@@ -119,9 +151,9 @@ namespace Phantasma.Blockchain
         {
             foreach (var plugin in _plugins)
             {
-                if (plugin is T)
+                if (plugin is T variable)
                 {
-                    return (T)plugin;
+                    return variable;
                 }
             }
 
@@ -137,13 +169,13 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
-            var chain = this.RootChain;
+            var chain = RootChain;
             return (Address)chain.InvokeContract("account", "LookUpName", name);
         }
 
         public string LookUpAddress(Address address)
         {
-            var chain = this.RootChain;
+            var chain = RootChain;
             return (string)chain.InvokeContract("account", "LookUpAddress", address);
         }
         #endregion
@@ -177,7 +209,7 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
-            if (owner != this.GenesisAddress)
+            if (owner != GenesisAddress)
             {
                 if (parentChain.Level < 2)
                 {
@@ -218,7 +250,7 @@ namespace Phantasma.Blockchain
             var tokenContract = new TokenContract();
             var gasContract = new GasContract();
 
-            var chain = new Chain(this, name, new SmartContract[] { tokenContract, gasContract, contract }, this._logger, parentChain, parentBlock);
+            var chain = new Chain(this, name, new[] { tokenContract, gasContract, contract }, _logger, parentChain, parentBlock);
 
             lock (_chains)
             {
@@ -343,7 +375,7 @@ namespace Phantasma.Blockchain
 
             var script = sb.SpendGas(owner.Address).EndScript();
 
-            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
 
             return tx;
@@ -358,7 +390,7 @@ namespace Phantasma.Blockchain
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -372,7 +404,7 @@ namespace Phantasma.Blockchain
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(this.Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
             tx.Sign(owner);
             return tx;
         }
@@ -386,11 +418,11 @@ namespace Phantasma.Blockchain
         public const int NativeTokenDecimals = 8;
         public const int StableTokenDecimals = 8;
 
-        public readonly static BigInteger PlatformSupply = TokenUtils.ToBigInteger(91136374, NativeTokenDecimals);
+        public static readonly BigInteger PlatformSupply = TokenUtils.ToBigInteger(91136374, NativeTokenDecimals);
 
         public bool CreateGenesisBlock(KeyPair owner)
         {
-            if (this.NativeToken != null)
+            if (NativeToken != null)
             {
                 return false;
             }

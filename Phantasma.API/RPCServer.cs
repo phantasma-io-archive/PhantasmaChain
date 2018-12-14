@@ -52,39 +52,44 @@ namespace Phantasma.API
             rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
             rpc.RegisterHandler("getTokens", GetTokens);
             rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
-
         }
 
         private object GetAccount(DataNode paramNode)
         {
-            var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
-            return _api.GetAccount(address);
+            return _api.GetAccount(paramNode.GetNodeByIndex(0).ToString());
         }
 
         #region Blocks
         private object GetBlockHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
-            return _api.GetBlockNumber(chain) ?? _api.GetBlockNumber(Address.FromText(chain));
+            return _api.GetBlockHeightFromName(chain) ?? _api.GetBlockHeightFromAddress(chain);
         }
 
         private object GetBlockTransactionCountByHash(DataNode paramNode)
         {
-            var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _api.GetBlockTransactionCountByHash(blockHash);
+            return _api.GetBlockTransactionCountByHash(paramNode.GetNodeByIndex(0).ToString());
         }
 
         private object GetBlockByHash(DataNode paramNode)
         {
-            var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _api.GetBlockByHash(blockHash);
+            return _api.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString());
         }
 
         private object GetBlockByHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
             var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
-            return _api.GetBlockByHeight(chain, height) ?? _api.GetBlockByHeight(Address.FromText(chain), height);
+
+            var result = _api.GetBlockByHeight(chain, height);
+            if (result == null)
+            {
+                if (Address.IsValidAddress(chain))
+                {
+                    result = _api.GetBlockByHeight(Address.FromText(chain), height);
+                }
+            }
+            return result;
         }
         #endregion
 
@@ -102,16 +107,14 @@ namespace Phantasma.API
 
         private object GetTransactionByBlockHashAndIndex(DataNode paramNode)
         {
-            var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
             int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _api.GetTransactionByBlockHashAndIndex(blockHash, index);
+            return _api.GetTransactionByBlockHashAndIndex(paramNode.GetNodeByIndex(0).ToString(), index);
         }
 
         private object GetAddressTransactions(DataNode paramNode)
         {
-            var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
             var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
-            return _api.GetAddressTransactions(address, amountTx);
+            return _api.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amountTx);
         }
 
         #endregion
@@ -123,8 +126,7 @@ namespace Phantasma.API
 
         private object GetConfirmations(DataNode paramNode)
         {
-            var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            return _api.GetConfirmations(hash);
+            return _api.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
         }
 
         private object SendRawTransaction(DataNode paramNode)
