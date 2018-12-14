@@ -350,6 +350,7 @@ namespace Phantasma.API
                 if (!submited)
                 {
                     result.AddField("error", "Not submited to mempool");
+                    return result;
                 }
                 result.AddField("hash", tx.Hash);
             }
