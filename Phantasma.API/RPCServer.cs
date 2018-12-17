@@ -1,7 +1,7 @@
 ﻿using LunarLabs.Parser;
-using LunarLabs.Parser.JSON;
 using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
+using LunarLabs.WebServer.Protocols;
 using Phantasma.Core;
 using Phantasma.Cryptography;
 
@@ -9,330 +9,165 @@ namespace Phantasma.API
 {
     public class RPCServer : Runnable
     {
-        public int Port { get; private set; }
-        public string EndPoint { get; private set; }
+        public int Port { get; }
+        public string EndPoint { get; }
 
-        private HTTPServer _server;
+        private readonly HTTPServer _server;
 
-        private NexusAPI _API;
+        private readonly NexusAPI _api;
 
-        public RPCServer(NexusAPI API, string endPoint, int port, Logger logger = null)
+        public RPCServer(NexusAPI api, string endPoint, int port, Logger logger = null)
         {
             if (logger == null)
             {
                 logger = new NullLogger();
             }
 
-            this.Port = port;
-            this.EndPoint = endPoint;
-            this._API = API;
+            if (string.IsNullOrEmpty(endPoint))
+            {
+                endPoint = "/";
+            }
 
-            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port };
+            Port = port;
+            EndPoint = endPoint;
+            _api = api;
+
+            var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024 * 128 };
 
             _server = new HTTPServer(settings, logger);
 
-            _server.Get("/" + EndPoint, (request) =>
-            {
-                var version = request.GetVariable("jsonrpc");
-                if (version != "2" && version != "2.0")
-                {
-                    return GenerateRPCError("Invalid jsonrpc version", -32602);
-                }
+            var rpc = new RPCPlugin(_server, endPoint);
 
-                var method = request.GetVariable("method");
-                var id = request.GetVariable("id");
-                if (string.IsNullOrEmpty(id))
-                {
-                    id = "0";
-                }
-
-                var encodedParams = request.GetVariable("params");
-
-                var decodedParams = encodedParams.UrlDecode();
-
-                DataNode paramNode;
-                try
-                {
-                    paramNode = JSONReader.ReadFromString(decodedParams);
-                }
-                catch
-                {
-                    return GenerateRPCError("Parsing error", -32700);
-                }
-
-                return HandleRPCRequest(id, method, paramNode);
-
-            });
-
-            _server.Post("/" + EndPoint, (request) =>
-            {
-                if (string.IsNullOrEmpty(request.postBody))
-                  {
-                      return GenerateRPCError("Invalid request", -32600);
-                  }
-                  else
-                  {
-                      DataNode root;
-                      try
-                      {
-                          root = JSONReader.ReadFromString(request.postBody);
-                      }
-                      catch
-                      {
-                          return GenerateRPCError("Parsing error", -32700);
-                      }
-
-                      var version = root.GetString("jsonrpc");
-                      if (version != "2" && version != "2.0")
-                      {
-                          return GenerateRPCError("Invalid jsonrpc version", -32602);
-                      }
-
-                      var method = root.GetString("method");
-                      var id = root.GetString("id", "0");
-
-                      var paramNode = root.GetNode("params");
-
-                      return HandleRPCRequest(id, method, paramNode);
-                  }
-
-              });
+            // TODO do this automatically via reflection instead of doing it one by one manually
+            rpc.RegisterHandler("getAccount", GetAccount);
+            rpc.RegisterHandler("getAddressTransactions", GetAddressTransactions);
+            rpc.RegisterHandler("getApps", GetApps);
+            rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
+            rpc.RegisterHandler("getBlockByHeight", GetBlockByHeight);
+            rpc.RegisterHandler("getBlockHeight", GetBlockHeight);
+            rpc.RegisterHandler("getBlockTransactionCountByHash", GetBlockTransactionCountByHash);
+            rpc.RegisterHandler("getChains", GetChains);
+            rpc.RegisterHandler("getConfirmations", GetConfirmations);
+            rpc.RegisterHandler("getTransactionByHash", GetTransactionByHash);
+            rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
+            rpc.RegisterHandler("getTokens", GetTokens);
+            rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
         }
 
-        private object HandleRPCRequest(string id, string method, DataNode paramNode)
+        private object GetAccount(DataNode paramNode)
         {
-            object result = null;
-            switch (method)
-            {
-                case "getAccount":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
+            var result = _api.GetAccount(paramNode.GetNodeByIndex(0).ToString());
+            CheckForError(result);
+            return result;
+        }
 
-                    try
-                    {
-                        var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
-                        result = _API.GetAccount(address);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
+        #region Blocks
+        private object GetBlockHeight(DataNode paramNode)
+        {
+            var chain = paramNode.GetNodeByIndex(0).ToString();
+            var result = _api.GetBlockHeightFromChainName(chain) ?? _api.GetBlockHeightFromChainAddress(chain);
+            CheckForError(result);
+            return result;
+        }
 
-                    break;
+        private object GetBlockTransactionCountByHash(DataNode paramNode)
+        {
+            var result = _api.GetBlockTransactionCountByHash(paramNode.GetNodeByIndex(0).ToString());
+            CheckForError(result);
+            return result;
+        }
 
-                #region BLOCKS
+        private object GetBlockByHash(DataNode paramNode)
+        {
+            var result = _api.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString());
+            CheckForError(result);
+            return result;
+        }
 
-                case "getBlockNumber":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
+        private object GetBlockByHeight(DataNode paramNode)
+        {
+            var chain = paramNode.GetNodeByIndex(0).ToString();
+            var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
+            //optional, defaults to 0
+            var serialized = paramNode.GetNodeByIndex(2) != null
+                ? int.Parse(paramNode.GetNodeByIndex(2).ToString())
+                : 0;
 
-                    try
-                    {
-                        var chain = paramNode.GetNodeByIndex(0).ToString();
-                        result = _API.GetBlockNumber(chain) ?? _API.GetBlockNumber(Address.FromText(chain));
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "getBlockTransactionCountByHash":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-
-                    try
-                    {
-                        var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-                        result = _API.GetBlockTransactionCountByHash(blockHash);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "getBlockByHash":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-
-                    try
-                    {
-                        var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-                        result = _API.GetBlockByHash(blockHash);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "getBlockByNumber":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-
-                    try
-                    {
-                        var chain = paramNode.GetNodeByIndex(0).ToString();
-                        var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
-                        result = _API.GetBlockByHeight(chain, height) ?? _API.GetBlockByHeight(Address.FromText(chain), height);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                #endregion
-
-                case "getChains":
-                    try
-                    {
-                        result = _API.GetChains();
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-
-                    break;
-
-                #region Transactions
-                case "getTransactionByHash":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-
-                    try
-                    {
-                        var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-                        result = _API.GetTransaction(hash);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "getTransactionByBlockHashAndIndex":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-                    try
-                    {
-                        var blockHash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-                        int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
-                        result = _API.GetTransactionByBlockHashAndIndex(blockHash, index);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "getAddressTransactions":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-
-                    try
-                    {
-                        var address = Address.FromText(paramNode.GetNodeByIndex(0).ToString());
-                        var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
-                        result = _API.GetAddressTransactions(address, amountTx);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                #endregion
-
-                case "getTokens":
-                    try
-                    {
-                        result = _API.GetTokens();
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "getConfirmations":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-
-                    try
-                    {
-                        var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-                        result = _API.GetConfirmations(hash);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-                    break;
-
-                case "sendRawTransaction":
-                    if (paramNode == null)
-                    {
-                        return GenerateRPCError("Invalid params", -32602);
-                    }
-                    try //todo validation
-                    {
-                        var signedTx = paramNode.GetNodeByIndex(0).ToString();
-                        result = _API.SendRawTransaction(signedTx);
-                    }
-                    catch
-                    {
-                        // ignore, it will be handled below
-                    }
-
-                    break;
-
-                default:
-                    return GenerateRPCError("Method not found", -32601);
-            }
-
+            var result = _api.GetBlockByHeight(chain, height, serialized);
             if (result == null)
             {
-                return GenerateRPCError("Missing result", -32603);
+                if (Address.IsValidAddress(chain))
+                {
+                    result = _api.GetBlockByHeight(Address.FromText(chain), height, serialized);
+                }
             }
 
-            string content;
+            CheckForError(result);
+            return result;
+        }
+        #endregion
 
-            if (result is DataNode)
-            {
-                content = JSONWriter.WriteToString((DataNode)result);
-            }
-            else
-            {
-                return GenerateRPCError("Not implemented", -32603);
-            }
-
-            return "{\"jsonrpc\": \"2.0\", \"result\": " + content + ", \"id\": \"" + id + "\"}";
+        private object GetChains(DataNode paramNode)
+        {
+            var result = _api.GetChains();
+            CheckForError(result);
+            return result;
         }
 
-        private string GenerateRPCError(string msg, int code = -32000, int id = 0)
+        #region Transactions
+        private object GetTransactionByHash(DataNode paramNode)
         {
-            return "{\"jsonrpc\": \"2.0\", \"error\": {\"code\": " + code + ", \"message\": \"" + msg + "\"}, \"id\": \"" + id + "\"}";
+            var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
+            var result = _api.GetTransaction(hash);
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetTransactionByBlockHashAndIndex(DataNode paramNode)
+        {
+            int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
+            var result = _api.GetTransactionByBlockHashAndIndex(paramNode.GetNodeByIndex(0).ToString(), index);
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetAddressTransactions(DataNode paramNode)
+        {
+            var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
+            var result = _api.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amountTx);
+            CheckForError(result);
+            return result;
+        }
+
+        #endregion
+
+        private object GetTokens(DataNode paramNode)
+        {
+            var result = _api.GetTokens();
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetConfirmations(DataNode paramNode)
+        {
+            var result = _api.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
+            CheckForError(result);
+            return result;
+        }
+
+        private object SendRawTransaction(DataNode paramNode)
+        {
+            var signedTx = paramNode.GetNodeByIndex(0).ToString();
+            var result = _api.SendRawTransaction(signedTx);
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetApps(DataNode paramNode)
+        {
+            var result = _api.GetApps();
+            CheckForError(result);
+            return result;
         }
 
         protected override void OnStop()
@@ -344,6 +179,17 @@ namespace Phantasma.API
         {
             _server.Run();
             return true;
+        }
+
+        private static void CheckForError(DataNode response)
+        {
+            if (response.GetNodeByIndex(0) != null)
+            {
+                if (response.GetNodeByIndex(0).Name == "error")
+                {
+                    throw new RPCException(response.GetNodeByIndex(0).Value);
+                }
+            }
         }
     }
 }

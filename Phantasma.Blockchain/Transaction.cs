@@ -39,8 +39,8 @@ namespace Phantasma.Blockchain
 
         public static Transaction Unserialize(BinaryReader reader)
         {
-            var nexusName = reader.ReadShortString();
-            var chainName = reader.ReadShortString();
+            var nexusName = reader.ReadVarString();
+            var chainName = reader.ReadVarString();
             var script = reader.ReadByteArray();
             var nonce = reader.ReadUInt32();
             var expiration = reader.ReadUInt32();
@@ -67,8 +67,8 @@ namespace Phantasma.Blockchain
 
         private void Serialize(BinaryWriter writer, bool withSignature)
         {
-            writer.WriteShortString(this.NexusName);
-            writer.WriteShortString(this.ChainName);
+            writer.WriteVarString(this.NexusName);
+            writer.WriteVarString(this.ChainName);
             writer.WriteByteArray(this.Script);
             writer.Write(this.Nonce);
             writer.Write(this.Expiration.Value);

@@ -12,7 +12,7 @@ namespace Phantasma.Network.P2P.Messages
 
         private Dictionary<Address, Signature> _signatures;
 
-        public EpochSubmitMessage(Nexus nexus, Address address, Epoch epoch, IEnumerable<Block> blocks, IEnumerable<Transaction> transactions) : base(nexus, Opcode.EPOCH_Submit, address)
+        public EpochSubmitMessage(Address address, Epoch epoch, IEnumerable<Block> blocks, IEnumerable<Transaction> transactions) : base(Opcode.EPOCH_Submit, address)
         {
         }
 

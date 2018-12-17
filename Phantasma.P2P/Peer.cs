@@ -14,14 +14,17 @@ namespace Phantasma.Network.P2P
         public abstract void Send(Message msg);
         public abstract Message Receive();
 
-        public Peer(Nexus nexus)
+        public Peer(Nexus nexus, Endpoint endpoint)
         {
             this.Nexus = nexus;
+            this.Endpoint = endpoint;
+            this.Status = Status.Disconnected;
         }
 
         public void SetAddress(Address address)
         {
             this.Address = address;
+            this.Status = address != Address.Null ? Status.Identified : Status.Anonymous;
         }
     }
 }

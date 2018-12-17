@@ -1,5 +1,6 @@
-﻿using System.IO;
-using Phantasma.Blockchain;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.IO;
@@ -14,19 +15,25 @@ namespace Phantasma.Network.P2P
     {
         public Opcode Opcode { get; private set; }
         public Address Address { get; private set; }
-        public byte[] Signature { get; private set; }
-
-        public Nexus Nexus { get; private set; }
+        public Signature Signature { get; private set; }
 
         public bool IsSigned => Address != Address.Null && Signature != null;
 
-        public Message(Nexus nexus, Opcode opcode, Address address) {
-            this.Nexus = nexus;
+        public Message(Opcode opcode, Address address) {
             this.Opcode = opcode;
             this.Address = address;
         }
 
-        public static Message Unserialize(Nexus nexus, BinaryReader reader)
+        public void Sign(KeyPair keyPair)
+        {
+            Throw.If(keyPair.Address != this.Address, "unexpected keypair");
+
+            var msg = this.ToByteArray(false);
+
+            this.Signature = keyPair.Sign(msg);
+        }
+
+        public static Message Unserialize(BinaryReader reader)
         {
             var opcode = (Opcode)reader.ReadByte();
             var address = reader.ReadAddress();
@@ -35,39 +42,40 @@ namespace Phantasma.Network.P2P
 
             switch (opcode)
             {
-                case Opcode.PEER_Identity:
+                case Opcode.REQUEST:
                     {
-                        msg = PeerIdentityMessage.FromReader(nexus, address, reader);
+                        msg = RequestMessage.FromReader(address, reader);
                         break;
                     }
 
-                case Opcode.PEER_List:
+                case Opcode.LIST:
                     {
-                        msg = PeerListMessage.FromReader(nexus, address, reader);
+                        msg = ListMessage.FromReader(address, reader);
                         break;
                     }
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        msg = MempoolAddMessage.FromReader(nexus, address, reader);
+                        msg = MempoolAddMessage.FromReader(address, reader);
                         break;
                     }
 
-                case Opcode.MEMPOOL_List:
-                    {
-                        msg = MempoolGetMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
+                /*                case Opcode.MEMPOOL_List:
+                                    {
+                                        msg = MempoolGetMessage.FromReader(address, reader);
+                                        break;
+                                    }
 
-                case Opcode.CHAIN_List:
-                    {
-                        msg = ChainListMessage.FromReader(nexus, address, reader);
-                        break;
-                    }
+                                case Opcode.CHAIN_List:
+                                    {
+                                        msg = ChainListMessage.FromReader(address, reader);
+                                        break;
+                                    }
+                                    */
 
                 case Opcode.ERROR:
                     {
-                        msg = ErrorMessage.FromReader(nexus, address, reader);
+                        msg = ErrorMessage.FromReader(address, reader);
                         break;
                     }
 
@@ -76,7 +84,7 @@ namespace Phantasma.Network.P2P
 
             if (address != null)
             {
-                msg.Signature = reader.ReadByteArray();
+                msg.Signature = reader.ReadSignature();
             }
 
             return msg;
@@ -106,10 +114,15 @@ namespace Phantasma.Network.P2P
             {
                 Throw.IfNull(Signature, nameof(Signature));
 
-                writer.WriteByteArray(Signature);
+                writer.WriteSignature(Signature);
             }
         }
 
         protected abstract void OnSerialize(BinaryWriter writer);
+
+        public virtual IEnumerable<string> GetDescription()
+        {
+            return Enumerable.Empty<string>();
+        }
     }
 }

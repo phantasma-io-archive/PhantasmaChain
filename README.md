@@ -1,6 +1,6 @@
 <p align="center">
   <img
-    src="https://phantasma.io/img/phantasma_color.png"
+    src="/logo.png"
     width="125px"
   >
 </p>

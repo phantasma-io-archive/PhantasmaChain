@@ -25,7 +25,7 @@ namespace Phantasma.VM.Contracts
 
         public static ContractMethod Unserialize(BinaryReader reader)
         {
-            var name = reader.ReadShortString();
+            var name = reader.ReadVarString();
             var returnType = (VMType)reader.ReadByte();
             var len = reader.ReadByte();
             var parameters = new VMType[len];
@@ -39,7 +39,7 @@ namespace Phantasma.VM.Contracts
 
         public void Serialize(BinaryWriter writer)
         {
-            writer.WriteShortString(name);
+            writer.WriteVarString(name);
             writer.Write((byte)returnType);
             writer.Write((byte)parameters.Length);
             foreach (var entry in parameters)

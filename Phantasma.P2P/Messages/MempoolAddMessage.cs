@@ -8,15 +8,15 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly Transaction transaction;
 
-        public MempoolAddMessage(Nexus nexus, Address pubKey, Transaction tx) : base(nexus, Opcode.MEMPOOL_Add, pubKey)
+        public MempoolAddMessage(Address pubKey, Transaction tx) : base(Opcode.MEMPOOL_Add, pubKey)
         {
             this.transaction = tx;
         }
 
-        internal static MempoolAddMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
+        internal static MempoolAddMessage FromReader(Address address, BinaryReader reader)
         {
             var tx = Transaction.Unserialize(reader);
-            return new MempoolAddMessage(nexus, address, tx);
+            return new MempoolAddMessage(address, tx);
         }
 
         protected override void OnSerialize(BinaryWriter writer)

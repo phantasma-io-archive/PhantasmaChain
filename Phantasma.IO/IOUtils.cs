@@ -71,7 +71,7 @@ namespace Phantasma.IO
             writer.Write(bytes);
         }
 
-        public static void WriteShortString(this BinaryWriter writer, string text)
+        public static void WriteVarString(this BinaryWriter writer, string text)
         {
             if (string.IsNullOrEmpty(text))
             {
@@ -80,7 +80,7 @@ namespace Phantasma.IO
             }
 
             var bytes = Encoding.UTF8.GetBytes(text);
-            writer.Write((byte)bytes.Length);
+            writer.WriteVarInt(bytes.Length);
             writer.Write(bytes);
         }
 
@@ -155,9 +155,9 @@ namespace Phantasma.IO
             return bytes;
         }
 
-        public static string ReadShortString(this BinaryReader reader)
+        public static string ReadVarString(this BinaryReader reader)
         {
-            var length = reader.ReadByte();
+            var length = (int)reader.ReadVarInt();
             if (length == 0)
                 return null;
             var bytes = reader.ReadBytes(length);
@@ -195,7 +195,7 @@ namespace Phantasma.IO
                         return new RingSignature(Y0, S, C);
                     }
 
-                default: throw new NotImplementedException();
+                default: throw new Exception("Unknown signature type: " + kind.ToString());
             }
         }
 

@@ -10,23 +10,23 @@ namespace Phantasma.Network.P2P.Messages
         public readonly P2PError Code;
         public readonly string Text;
 
-        public ErrorMessage(Nexus nexus, Address address, P2PError code, string text = null) : base(nexus, Opcode.ERROR, address)
+        public ErrorMessage(Address address, P2PError code, string text = null) : base(Opcode.ERROR, address)
         {
             this.Code = code;
             this.Text = text;
         }
 
-        internal static ErrorMessage FromReader(Nexus nexus, Address address, BinaryReader reader)
+        internal static ErrorMessage FromReader(Address address, BinaryReader reader)
         {
             var code = (P2PError)reader.ReadByte();
-            var text = reader.ReadShortString();
-            return new ErrorMessage(nexus, address, code, text);
+            var text = reader.ReadVarString();
+            return new ErrorMessage(address, code, text);
         }
 
         protected override void OnSerialize(BinaryWriter writer)
         {
             writer.Write((byte)Code);
-            writer.WriteShortString(Text);
+            writer.WriteVarString(Text);
         }
     }
 }
