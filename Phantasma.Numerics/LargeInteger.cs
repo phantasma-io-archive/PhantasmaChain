@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection;
 using Phantasma.Core;
@@ -126,7 +126,7 @@ namespace Phantasma.Numerics
 
         public LargeInteger(string value, int radix)
         {
-            value = value.ToUpper().Trim();
+            value = value.ToUpper().Trim().Replace("\r","").Replace(" ","").Replace("\n","");
 
             var LargeInteger = new LargeInteger(0);
             var bi = new LargeInteger(1L);
@@ -185,15 +185,10 @@ namespace Phantasma.Numerics
         {
             long result = 0;
 
-            int max = value._data.Length;
+            result = value._data[0];
 
-            if (max > 2) max = 2;
-
-            for (int i = 0; i < max; i++)
-            {
-                var bits = i * 32;
-                result += ((value._data[i]) * (1 << bits));
-            }
+            if(value.dataLength > 1)
+                result |= (long)((ulong)value._data[1] << 32);
 
             if (value._sign < 0)
                 result *= -1;
@@ -228,7 +223,10 @@ namespace Phantasma.Numerics
 
             string text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             string text2 = "";
-            LargeInteger largeInteger = this;
+
+            LargeInteger largeInteger = new LargeInteger(this);
+            largeInteger._sign = 1;
+
             bool flag = false;
 
             var largeInteger2 = new LargeInteger();
@@ -475,10 +473,10 @@ namespace Phantasma.Numerics
             else
                 MultiDigitDivMod(a, b, out quot, out rem);
 
-            if (rem < 0)    //using the convention that 0 <= rem <= denominator. So if rem < 0, add the denominator to it
-                rem += b;
-
             quot._sign = a._sign * b._sign;
+            rem._sign = a._sign;
+
+            rem = a >= 0 ? rem : b + rem;
 
         }
 
