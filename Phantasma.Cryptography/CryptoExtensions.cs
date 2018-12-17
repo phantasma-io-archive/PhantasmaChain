@@ -312,7 +312,7 @@ namespace Phantasma.Cryptography
         }
         */
 
-        internal static LargeInteger NextLargeInteger(this Random rand, int sizeInBits)
+        internal static BigInteger NextLargeInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
@@ -324,7 +324,7 @@ namespace Phantasma.Cryptography
                 b[b.Length - 1] = 0;
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new LargeInteger(b);
+            return new BigInteger(b);
         }
 
         /*internal static LargeInteger NextLargeInteger(this RandomNumberGenerator rng, int sizeInBits)
@@ -362,7 +362,7 @@ namespace Phantasma.Cryptography
         
         */
 
-        public static LargeInteger GenerateInteger(this HMACDRBG rng, LargeInteger max, int securityParameter = 64)
+        public static BigInteger GenerateInteger(this HMACDRBG rng, BigInteger max, int securityParameter = 64)
         {
             // The simple modular method from the NIST SP800-90A recommendation
             Throw.If(securityParameter < 64, "Given security parameter, " + securityParameter + ", is too low.");
@@ -371,7 +371,7 @@ namespace Phantasma.Cryptography
             var bytes = new byte[bytesToRepresent + securityParameter / 8 + 1];
             rng.GetBytes(bytes);
             bytes[bytes.Length - 1] = 0;
-            return new LargeInteger(bytes) % max;
+            return new BigInteger(bytes) % max;
         }
 
         public static byte[] Hash256(byte[] message)

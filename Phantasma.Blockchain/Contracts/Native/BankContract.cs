@@ -8,7 +8,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "bank";
 
-        public LargeInteger GetRate(string symbol)
+        public BigInteger GetRate(string symbol)
         {           
             //Runtime.Expect(symbol == Nexus.NativeTokenSymbol, "invalid token");
 
@@ -21,7 +21,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // SOUL => stable
-        public void Claim(Address target, LargeInteger amount)
+        public void Claim(Address target, BigInteger amount)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // stable => SOUL
-        public void Redeem(Address target, LargeInteger amount)
+        public void Redeem(Address target, BigInteger amount)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 

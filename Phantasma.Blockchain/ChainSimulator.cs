@@ -227,7 +227,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateToken(KeyPair owner, string symbol, string name, LargeInteger totalSupply, int decimals, TokenFlags flags)
+        public Transaction GenerateToken(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
             var chain = Nexus.RootChain;
 
@@ -244,7 +244,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Address targetAddress, Chain targetChain, LargeInteger amount, LargeInteger fee)
+        public Transaction GenerateSideChainSend(KeyPair source, Token token, Chain sourceChain, Address targetAddress, Chain targetChain, BigInteger amount, BigInteger fee)
         {
             Throw.IfNull(source, nameof(source));
             Throw.IfNull(token, nameof(token));
@@ -301,7 +301,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateStableClaim(KeyPair source, Chain sourceChain, LargeInteger amount)
+        public Transaction GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("bank", "Claim", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
@@ -309,7 +309,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateStableRedeem(KeyPair source, Chain sourceChain, LargeInteger amount)
+        public Transaction GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("bank", "Redeem", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
@@ -337,7 +337,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, LargeInteger amount)
+        public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, 1, 9999).
@@ -348,7 +348,7 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, Token token, LargeInteger tokenId)
+        public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "TransferToken", source.Address, dest, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
@@ -356,14 +356,14 @@ namespace Phantasma.Tests
         }
 
         public Transaction GenerateNftSidechainTransfer(KeyPair source, Address destAddress, Chain sourceChain,
-            Chain destChain, Token token, LargeInteger tokenId)
+            Chain destChain, Token token, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "SendToken", destChain.Address, source.Address, destAddress, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
 
-        public Transaction GenerateNftBurn(KeyPair source, Chain chain, Token token, LargeInteger tokenId)
+        public Transaction GenerateNftBurn(KeyPair source, Chain chain, Token token, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "BurnToken", source.Address, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);

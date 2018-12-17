@@ -4,10 +4,10 @@ namespace Phantasma.Cryptography.Ring
 {
     public struct RingKeyPair
     {
-        public readonly LargeInteger PrivateKey;
-        public readonly LargeInteger PublicKey;
+        public readonly BigInteger PrivateKey;
+        public readonly BigInteger PublicKey;
 
-        public RingKeyPair(LargeInteger privateKey, LargeInteger publicKey)
+        public RingKeyPair(BigInteger privateKey, BigInteger publicKey)
         {
             this.PrivateKey = privateKey;
             this.PublicKey = publicKey;

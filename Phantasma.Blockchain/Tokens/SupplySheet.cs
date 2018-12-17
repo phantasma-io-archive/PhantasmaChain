@@ -7,21 +7,21 @@ namespace Phantasma.Blockchain.Tokens
 {
     public class SupplySheet
     {
-        public LargeInteger ParentBalance { get; private set; }
-        public LargeInteger LocalBalance { get; private set; }
+        public BigInteger ParentBalance { get; private set; }
+        public BigInteger LocalBalance { get; private set; }
 
-        private LargeInteger _maxBalance;
+        private BigInteger _maxBalance;
 
-        private Dictionary<Address, LargeInteger> _childBalances = new Dictionary<Address, LargeInteger>();
+        private Dictionary<Address, BigInteger> _childBalances = new Dictionary<Address, BigInteger>();
 
-        public SupplySheet(LargeInteger parentBalance, LargeInteger localBalance, LargeInteger maxBalance)
+        public SupplySheet(BigInteger parentBalance, BigInteger localBalance, BigInteger maxBalance)
         {
             this.ParentBalance = parentBalance;
             this.LocalBalance = localBalance;
             this._maxBalance = maxBalance;
         }
 
-        public LargeInteger GetChildBalance(Chain chain)
+        public BigInteger GetChildBalance(Chain chain)
         {
             Throw.IfNull(chain, nameof(chain));
 
@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Tokens
             return 0;
         }
 
-        public bool MoveToParent(LargeInteger amount)
+        public bool MoveToParent(BigInteger amount)
         {
             if (LocalBalance < amount)
             {
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool MoveFromParent(LargeInteger amount)
+        public bool MoveFromParent(BigInteger amount)
         {
             if (ParentBalance < amount)
             {
@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool MoveToChild(Chain child, LargeInteger amount)
+        public bool MoveToChild(Chain child, BigInteger amount)
         {
             Throw.IfNull(child, nameof(child));
 
@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool MoveFromChild(Chain child, LargeInteger amount)
+        public bool MoveFromChild(Chain child, BigInteger amount)
         {
             Throw.IfNull(child, nameof(child));
 
@@ -94,7 +94,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool Burn(LargeInteger amount)
+        public bool Burn(BigInteger amount)
         {
             if (LocalBalance < amount)
             {
@@ -105,9 +105,9 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool Mint(LargeInteger amount)
+        public bool Mint(BigInteger amount)
         {
-            LargeInteger existingSupply = ParentBalance + LocalBalance;
+            BigInteger existingSupply = ParentBalance + LocalBalance;
 
             foreach (var childBalance in _childBalances.Values)
             {

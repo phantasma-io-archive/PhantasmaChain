@@ -7,17 +7,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public struct GasEventData
     {
-        public LargeInteger price;
-        public LargeInteger amount;
+        public BigInteger price;
+        public BigInteger amount;
     }
 
     public class GasContract : SmartContract
     {
         public override string Name => "gas";
 
-        private Map<Address, LargeInteger> _allowanceMap;
+        private Map<Address, BigInteger> _allowanceMap;
 
-        public void AllowGas(Address from, LargeInteger price, LargeInteger limit)
+        public void AllowGas(Address from, BigInteger price, BigInteger limit)
         {
             if (Runtime.readOnlyMode)
             {

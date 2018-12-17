@@ -16,7 +16,7 @@ namespace Phantasma.Blockchain.Tokens
             return unitMultiplier;
         }
 
-        public static decimal ToDecimal(LargeInteger value, int units)
+        public static decimal ToDecimal(BigInteger value, int units)
         {
             if (value == null || value == 0)
             {
@@ -29,11 +29,11 @@ namespace Phantasma.Blockchain.Tokens
             return n / multiplier;
         }
 
-        public static LargeInteger ToLargeInteger(decimal n, int units)
+        public static BigInteger ToLargeInteger(decimal n, int units)
         {
             var multiplier = GetMultiplier(units);
             var l = (long)(n * multiplier);
-            return new LargeInteger(l);
+            return new BigInteger(l);
         }
     }
 }

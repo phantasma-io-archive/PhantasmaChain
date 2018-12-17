@@ -65,17 +65,17 @@ namespace Phantasma.VM.Contracts
 
     public interface IFiniteToken : IToken
     {
-        LargeInteger MaxSupply { get; }
+        BigInteger MaxSupply { get; }
     }
 
     public interface IFungibleToken : IToken
     {
-        LargeInteger CirculatingSupply { get; }
+        BigInteger CirculatingSupply { get; }
 
-        LargeInteger BalanceOf(Address address);
+        BigInteger BalanceOf(Address address);
 
         [ContractEvent]
-        bool Send(Address from, Address to, LargeInteger amount);
+        bool Send(Address from, Address to, BigInteger amount);
     }
 
     public interface ILockable : IFungibleToken
@@ -87,36 +87,36 @@ namespace Phantasma.VM.Contracts
     public interface IMintable : IFungibleToken
     {
         [ContractEvent]
-        bool Mint(Address address, LargeInteger amount);
+        bool Mint(Address address, BigInteger amount);
     }
 
     public interface IBurnable : IFungibleToken
     {
         [ContractEvent]
-        bool Burn(Address address, LargeInteger amount);
+        bool Burn(Address address, BigInteger amount);
     }
 
     public interface IDivisibleToken : IFungibleToken
     {
-        LargeInteger Decimals { get; }
+        BigInteger Decimals { get; }
     }
 
     public interface INonFungibleToken : IToken
     {
         [ContractEvent]
-        bool Send(Address from, Address to, LargeInteger ID);
+        bool Send(Address from, Address to, BigInteger ID);
 
         //LargeInteger Mint(Address address, byte[] data);
 
-        bool IsOwner(Address address, LargeInteger ID);
-        IEnumerable<LargeInteger> AssetsOf(Address address);
-        byte[] DataOf(LargeInteger ID);
+        bool IsOwner(Address address, BigInteger ID);
+        IEnumerable<BigInteger> AssetsOf(Address address);
+        byte[] DataOf(BigInteger ID);
     }
 
     public interface IPerishable : INonFungibleToken
     {
         [ContractEvent]
-        bool Perish(LargeInteger ID);
+        bool Perish(BigInteger ID);
     }
     #endregion
 
@@ -134,7 +134,7 @@ namespace Phantasma.VM.Contracts
         IToken Token { get; }
         SaleState State { get; }
 
-        LargeInteger GetRate(Timestamp time);
+        BigInteger GetRate(Timestamp time);
 
         [ContractEvent]
         bool Contribute();
@@ -142,12 +142,12 @@ namespace Phantasma.VM.Contracts
 
     public interface ISoftCapped : ISale
     {
-        LargeInteger SoftCap { get; }
+        BigInteger SoftCap { get; }
     }
 
     public interface IHardCapped : ISale
     {
-        LargeInteger HardCap { get; }
+        BigInteger HardCap { get; }
     }
     #endregion
 
@@ -155,10 +155,10 @@ namespace Phantasma.VM.Contracts
     public interface IVotable: IContract
     {
         [ContractEvent]
-        bool BeginPool(LargeInteger subject, IEnumerable<byte[]> options, Timestamp duration);
+        bool BeginPool(BigInteger subject, IEnumerable<byte[]> options, Timestamp duration);
 
         [ContractEvent]
-        bool Vote(LargeInteger subject, byte[] secret);
+        bool Vote(BigInteger subject, byte[] secret);
     }
     #endregion
 
@@ -169,21 +169,21 @@ namespace Phantasma.VM.Contracts
         IEnumerable<IFungibleToken> Tokens { get; }
 
         // total amount of all tokens
-        LargeInteger TotalAmount { get; }
+        BigInteger TotalAmount { get; }
 
         // get the amount of a certain token in the fund
-        LargeInteger AmountOf(IFungibleToken token);
+        BigInteger AmountOf(IFungibleToken token);
 
         // get the amount of shares than an specific address owns in this fund
-        LargeInteger SharesOf(Address address);
+        BigInteger SharesOf(Address address);
 
         // deposits tokens into the fund and gets back a certain amount of shares 
         [ContractEvent]
-        bool GetShares(LargeInteger amount);
+        bool GetShares(BigInteger amount);
 
         // redeems shares of this fund into a specific token
         [ContractEvent]
-        bool ReedemShares(LargeInteger amount, IFungibleToken token);
+        bool ReedemShares(BigInteger amount, IFungibleToken token);
 
         // deposit a token and get other token back
         [ContractEvent]

@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain
             return sb.ToScript();
         }
 
-        public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address address, LargeInteger gasPrice, LargeInteger gasLimit)
+        public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address address, BigInteger gasPrice, BigInteger gasLimit)
         {
             CallContract(sb, "gas", "AllowGas", address, gasPrice, gasLimit);
             return sb;
@@ -54,13 +54,13 @@ namespace Phantasma.Blockchain
                 else
                 if (arg is int)
                 {
-                    sb.EmitLoad(temp_reg, new LargeInteger((int)arg));
+                    sb.EmitLoad(temp_reg, new BigInteger((int)arg));
                     sb.EmitPush(temp_reg);
                 }
                 else
-                if (arg is LargeInteger)
+                if (arg is BigInteger)
                 {
-                    sb.EmitLoad(temp_reg, (LargeInteger)arg);
+                    sb.EmitLoad(temp_reg, (BigInteger)arg);
                     sb.EmitPush(temp_reg);
                 }
                 else
@@ -130,27 +130,27 @@ namespace Phantasma.Blockchain
             return sb;
         }
 
-        public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, LargeInteger amount)
+        public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, BigInteger amount)
         {
             return CallContract(sb, TokenContract, "MintTokens", tokenSymbol, target, amount);
         }
 
-        public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, LargeInteger amount)
+        public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
             return CallContract(sb, TokenContract, "TransferTokens", from, to, tokenSymbol, amount);
         }
 
-        public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, LargeInteger tokenId)//todo check if this is valid
+        public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
         {
             return CallContract(sb, TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
         }
 
-        public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, LargeInteger amount)
+        public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
             return CallContract(sb, TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
-        public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, LargeInteger tokenId)
+        public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
         {
             return CallContract(sb, TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }

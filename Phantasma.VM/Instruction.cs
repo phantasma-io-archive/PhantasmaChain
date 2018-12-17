@@ -91,7 +91,7 @@ namespace Phantasma.VM
                                 break;
 
                             case VMType.Number:
-                                sb.Append(new LargeInteger(bytes));
+                                sb.Append(new BigInteger(bytes));
                                 break;
 
                             default:

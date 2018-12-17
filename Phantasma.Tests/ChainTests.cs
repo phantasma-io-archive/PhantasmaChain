@@ -21,7 +21,7 @@ namespace Phantasma.Tests
         {
             var places = 8;
             decimal d = 93000000;
-            LargeInteger n = 9300000000000000;
+            BigInteger n = 9300000000000000;
 
             var tmp1 = TokenUtils.ToLargeInteger(TokenUtils.ToDecimal(n, places), places);
 

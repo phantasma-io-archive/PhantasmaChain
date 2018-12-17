@@ -21,12 +21,12 @@ namespace Phantasma.Cryptography.Ring
         private static HMACDRBG drbg = new HMACDRBG();
         private static Modular mod = new Modular(GroupParameters.Prime);
 
-        public readonly LargeInteger Y0, S;
-        public readonly LargeInteger[] C;
+        public readonly BigInteger Y0, S;
+        public readonly BigInteger[] C;
 
         public override SignatureKind Kind => SignatureKind.Ring;
 
-        public RingSignature(LargeInteger Y0, LargeInteger S, LargeInteger[] C) 
+        public RingSignature(BigInteger Y0, BigInteger S, BigInteger[] C) 
         {
             this.Y0 = Y0;
             this.S = S;
@@ -40,27 +40,27 @@ namespace Phantasma.Cryptography.Ring
 
         public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
-            var publicKeys = addresses.Select(x => new LargeInteger(x.PublicKey)).ToArray();
+            var publicKeys = addresses.Select(x => new BigInteger(x.PublicKey)).ToArray();
             return this.VerifySignature(message, publicKeys);
         }
 
         /// <summary>
         /// I'm not 100% sure that this is the best way to get this hash
         /// </summary>
-        private static LargeInteger Hash2(byte[] data)
+        private static BigInteger Hash2(byte[] data)
         {
             drbg.Reseed(data, hash2String);
             var x = drbg.GenerateInteger(GroupParameters.SubgroupSize);
             return mod.Pow(GroupParameters.Generator, x);
         }
 
-        private static LargeInteger Hash1(byte[] data)
+        private static BigInteger Hash1(byte[] data)
         {
             drbg.Reseed(data, hash1String);
             return drbg.GenerateInteger(GroupParameters.SubgroupSize);
         }
 
-        private static byte[] ConcatInts(byte[] prefix = null, params LargeInteger[] ints)
+        private static byte[] ConcatInts(byte[] prefix = null, params BigInteger[] ints)
         {
             var L = new List<byte>();
             if (prefix != null)
@@ -72,12 +72,12 @@ namespace Phantasma.Cryptography.Ring
             return L.ToArray();
         }
 
-        public static RingSignature GenerateSignature(byte[] message, LargeInteger[] publicKeys, LargeInteger privateKey, int identity)
+        public static RingSignature GenerateSignature(byte[] message, BigInteger[] publicKeys, BigInteger privateKey, int identity)
         {
             var r = rng.GenerateInteger(GroupParameters.SubgroupSize);
-            var c = new LargeInteger[publicKeys.Length];
+            var c = new BigInteger[publicKeys.Length];
 
-            var b = LargeInteger.Zero;
+            var b = BigInteger.Zero;
 
             for (int i = 0; i < publicKeys.Length; ++i)
                 if (i != identity)
@@ -86,7 +86,7 @@ namespace Phantasma.Cryptography.Ring
                     b = (b + c[i]).Mod(GroupParameters.SubgroupSize);
                 }
 
-            var x = (LargeInteger[])publicKeys.Clone();
+            var x = (BigInteger[])publicKeys.Clone();
             x[identity] = GroupParameters.Generator;
             c[identity] = r;
 
@@ -108,12 +108,12 @@ namespace Phantasma.Cryptography.Ring
         public static RingKeyPair GenerateKeyPair(KeyPair keyPair)
         {
             var mod = new Modular(GroupParameters.Prime);
-            var privateKey = new LargeInteger(keyPair.PrivateKey);
+            var privateKey = new BigInteger(keyPair.PrivateKey);
             var publicKey = mod.Pow(GroupParameters.Generator, privateKey);
             return new RingKeyPair(privateKey, publicKey);
         }
 
-        public bool VerifySignature(byte[] message, LargeInteger[] publicKeys)
+        public bool VerifySignature(byte[] message, BigInteger[] publicKeys)
         {
             int[,][] cache = null;
             var a = (mod.Pow(publicKeys, this.C, ref cache) * mod.Pow(GroupParameters.Generator, this.S)).Mod(GroupParameters.Prime);
@@ -137,9 +137,9 @@ namespace Phantasma.Cryptography.Ring
             return VerifyA(message, keyCache.Bases, a);
         }
 
-        private bool VerifyA(byte[] message, LargeInteger[] publicKeys, LargeInteger a)
+        private bool VerifyA(byte[] message, BigInteger[] publicKeys, BigInteger a)
         {
-            var b = LargeInteger.Zero;
+            var b = BigInteger.Zero;
             for (int i = 0; i < this.C.Length; ++i)
                 b = (b + this.C[i]).Mod(GroupParameters.SubgroupSize);
 

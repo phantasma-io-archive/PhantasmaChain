@@ -6,9 +6,9 @@ namespace Phantasma.VM.Utils
 {
     public static class VMUtils
     {
-        public static LargeInteger AsLargeInteger(this byte[] source) { return (source == null || source.Length == 0) ? new LargeInteger(0) : new LargeInteger(source); }
+        public static BigInteger AsLargeInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
 
-        public static byte[] AsByteArray(this LargeInteger source) { return source.ToByteArray(); }
+        public static byte[] AsByteArray(this BigInteger source) { return source.ToByteArray(); }
 
         public static byte[] AsByteArray(this string source) { return Encoding.UTF8.GetBytes(source); }
 
@@ -35,9 +35,9 @@ namespace Phantasma.VM.Utils
                 return new VMObject();
             }
 
-            if (obj is LargeInteger)
+            if (obj is BigInteger)
             {
-                return new VMObject().SetValue((LargeInteger)obj);
+                return new VMObject().SetValue((BigInteger)obj);
             }
 
             if (obj is string)

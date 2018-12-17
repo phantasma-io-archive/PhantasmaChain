@@ -280,7 +280,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal Token CreateToken(Chain chain, Address owner, string symbol, string name, LargeInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token CreateToken(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -323,7 +323,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, LargeInteger totalSupply, int decimals, TokenFlags flags)
+        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
         {
             var sb = ScriptUtils.BeginScript();
 
@@ -385,7 +385,7 @@ namespace Phantasma.Blockchain
         public const int NativeTokenDecimals = 8;
         public const int StableTokenDecimals = 8;
 
-        public readonly static LargeInteger PlatformSupply = TokenUtils.ToLargeInteger(91136374, NativeTokenDecimals);
+        public readonly static BigInteger PlatformSupply = TokenUtils.ToLargeInteger(91136374, NativeTokenDecimals);
 
         public bool CreateGenesisBlock(KeyPair owner)
         {
@@ -471,7 +471,7 @@ namespace Phantasma.Blockchain
 
         public int GetValidatorCount()
         {
-            var count = (LargeInteger)RootChain.InvokeContract("stake", "GetActiveValidatorss");
+            var count = (BigInteger)RootChain.InvokeContract("stake", "GetActiveValidatorss");
             return (int)count;
         }
 
@@ -487,7 +487,7 @@ namespace Phantasma.Blockchain
                 return -1;
             }
 
-            var result = (int)(LargeInteger)RootChain.InvokeContract("stake", "GetIndexOfValidator", address);
+            var result = (int)(BigInteger)RootChain.InvokeContract("stake", "GetIndexOfValidator", address);
             return result;
         }
 
@@ -500,7 +500,7 @@ namespace Phantasma.Blockchain
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (LargeInteger) index);
+            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (BigInteger) index);
             return result;
         }
         #endregion

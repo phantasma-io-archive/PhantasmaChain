@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Storage
             return Get(Encoding.UTF8.GetBytes(key));
         }
 
-        public void Put(byte[] key, LargeInteger value) { Put(key, value.ToByteArray()); }
+        public void Put(byte[] key, BigInteger value) { Put(key, value.ToByteArray()); }
 
         public void Put<T>(byte[] key, T obj) where T : struct
         {
@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain.Storage
 
         public void Put(string key, byte[] value) { Put(Encoding.UTF8.GetBytes(key), value); }
 
-        public void Put(string key, LargeInteger value) { Put(Encoding.UTF8.GetBytes(key), value.ToByteArray()); }
+        public void Put(string key, BigInteger value) { Put(Encoding.UTF8.GetBytes(key), value.ToByteArray()); }
 
         public void Put(string key, string value) { Put(Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(value)); }
 

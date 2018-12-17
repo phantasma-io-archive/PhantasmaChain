@@ -89,7 +89,7 @@ namespace Phantasma.Blockchain
         }
 
         // TODO should run the script and return true if sucess or false if exception
-        private bool Validate(Chain chain, out LargeInteger fee)
+        private bool Validate(Chain chain, out BigInteger fee)
         {
             fee = 0;
             return true;
@@ -214,7 +214,7 @@ namespace Phantasma.Blockchain
                  return false;
              }*/
 
-            LargeInteger cost;
+            BigInteger cost;
             var validation = Validate(chain, out cost);
             if (!validation)
             {

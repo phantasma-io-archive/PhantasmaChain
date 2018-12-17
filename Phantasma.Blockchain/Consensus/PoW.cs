@@ -18,17 +18,17 @@ namespace Phantasma.Blockchain.Consensus
 
             var blockDifficulty = Block.InitialDifficulty; // TODO change this later
 
-            LargeInteger target = 0;
+            BigInteger target = 0;
             for (int i = 0; i <= blockDifficulty; i++)
             {
-                LargeInteger k = 1;
+                BigInteger k = 1;
                 k <<= i;
                 target += k;
             }
 
             do
             {
-                LargeInteger n = new LargeInteger(block.Hash.ToByteArray());
+                BigInteger n = new BigInteger(block.Hash.ToByteArray());
                 if (n < target)
                 {
                     break;

@@ -9,7 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct TokenEventData
     {
         public string symbol;
-        public LargeInteger value;
+        public BigInteger value;
         public Address chainAddress;
     }
 
@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public Token CreateToken(Address owner, string symbol, string name, LargeInteger maxSupply, LargeInteger decimals, TokenFlags flags)
+        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags)
         {
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "symbol required");
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");

@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Storage
             return ByteArrayUtils.ConcatBytes(BaseKey, count_prefix);
         }
 
-        private byte[] ElementKey(LargeInteger index)
+        private byte[] ElementKey(BigInteger index)
         {
             byte[] right;
 
@@ -43,7 +43,7 @@ namespace Phantasma.Blockchain.Storage
             return ByteArrayUtils.ConcatBytes(BaseKey, right);
         }
 
-        public LargeInteger Count()
+        public BigInteger Count()
         {
             var result = Context.Get(CountKey()).AsLargeInteger();
             return result;
@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain.Storage
             Replace(count, element);
         }
 
-        public void Replace(LargeInteger index, T element)
+        public void Replace(BigInteger index, T element)
         {
             var size = Count();
             if (index < 0 || index >= size)
@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain.Storage
             Context.Put(key, bytes);
         }
 
-        public T Get(LargeInteger index)
+        public T Get(BigInteger index)
         {
             var size = Count();
             if (index < 0 || index >= size)
@@ -83,7 +83,7 @@ namespace Phantasma.Blockchain.Storage
             return Serialization.Unserialize<T>(bytes);
         }
 
-        public void Delete(LargeInteger index)
+        public void Delete(BigInteger index)
         {
             var size = Count();
             if (index < 0 || index >= size)
@@ -107,7 +107,7 @@ namespace Phantasma.Blockchain.Storage
             Context.Put(CountKey(), size);
         }
 
-        public T[] Range(LargeInteger minIndex, LargeInteger maxIndex)
+        public T[] Range(BigInteger minIndex, BigInteger maxIndex)
         {
             if (minIndex > maxIndex)
             {
@@ -119,7 +119,7 @@ namespace Phantasma.Blockchain.Storage
             var result = new T[total];
 
             int offset = 0;
-            LargeInteger index = minIndex;
+            BigInteger index = minIndex;
             while (offset < total)
             {
                 result[offset] = Get(index);
@@ -144,9 +144,9 @@ namespace Phantasma.Blockchain.Storage
             }
         }
 
-        public LargeInteger IndexOf(T obj)
+        public BigInteger IndexOf(T obj)
         {
-            LargeInteger index = 0;
+            BigInteger index = 0;
             var size = Count();
             while (index < size)
             {
@@ -174,7 +174,7 @@ namespace Phantasma.Blockchain.Storage
 
         public void Clear()
         {
-            LargeInteger count = 0;
+            BigInteger count = 0;
             Context.Put(CountKey(), count);
         }
 

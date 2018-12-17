@@ -53,7 +53,7 @@ namespace Phantasma.IO
             writer.Write(bytes);
         }
 
-        public static void WriteLargeInteger(this BinaryWriter writer, LargeInteger n)
+        public static void WriteLargeInteger(this BinaryWriter writer, BigInteger n)
         {
             var bytes = n.ToByteArray();
             writer.Write((byte)bytes.Length);
@@ -138,11 +138,11 @@ namespace Phantasma.IO
             return result == Hash.Null ? Hash.Null : result;
         }
 
-        public static LargeInteger ReadLargeInteger(this BinaryReader reader)
+        public static BigInteger ReadLargeInteger(this BinaryReader reader)
         {
             var length = reader.ReadByte();
             var bytes = reader.ReadBytes(length);
-            return new LargeInteger(bytes);
+            return new BigInteger(bytes);
         }
 
         public static byte[] ReadByteArray(this BinaryReader reader)
@@ -186,7 +186,7 @@ namespace Phantasma.IO
                         var Y0 = reader.ReadLargeInteger();
                         var S = reader.ReadLargeInteger();
                         var len = (int)reader.ReadVarInt(1024);
-                        var C = new LargeInteger[len];
+                        var C = new BigInteger[len];
                         for (int i = 0; i < len; i++)
                         {
                             C[i] = reader.ReadLargeInteger();

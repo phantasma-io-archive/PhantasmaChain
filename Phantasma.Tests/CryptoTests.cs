@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
 using System.Linq;
@@ -27,18 +27,18 @@ namespace Phantasma.Tests
             Assert.IsTrue(hash.ToByteArray().SequenceEqual(bytes));
 
             bytes = new byte[10];
-            LargeInteger number;
+            BigInteger number;
 
             do
             {
                 rnd.NextBytes(bytes);
-                number = new LargeInteger(bytes);
+                number = new BigInteger(bytes);
             } while (number <= 0);
 
             hash = number;
             Assert.IsTrue(hash.ToByteArray().Length == 32);
 
-            LargeInteger other = hash;
+            BigInteger other = hash;
             Assert.IsTrue(number == other);
 
             Assert.IsTrue(Hash.TryParse("FFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBBFFFFAAAAFFFFBBBB", out hash));
@@ -79,7 +79,7 @@ namespace Phantasma.Tests
             var keys = Enumerable.Range(0, participants).Select(i => RingSignature.GenerateKeyPair(KeyPair.Generate())).ToArray();
             foreach (var key in keys)
             {
-                Assert.IsTrue(LargeInteger.ModPow(RingSignature.GroupParameters.Generator, key.PrivateKey, RingSignature.GroupParameters.Prime) == key.PublicKey);
+                Assert.IsTrue(BigInteger.ModPow(RingSignature.GroupParameters.Generator, key.PrivateKey, RingSignature.GroupParameters.Prime) == key.PublicKey);
             }
 
             var publicKeys = keys.Select(k => k.PublicKey).ToArray();
@@ -104,7 +104,7 @@ namespace Phantasma.Tests
                     tampered = new RingSignature(orig.Y0.FlipBit(rand.Next(orig.Y0.GetBitLength())), orig.S, orig.C);
                     Assert.IsFalse(tampered.VerifySignature(messages[j], publicKeys));
 
-                    var s = (LargeInteger[])orig.C.Clone();
+                    var s = (BigInteger[])orig.C.Clone();
                     var t = rand.Next(s.Length);
                     s[t] = s[t].FlipBit(rand.Next(s[t].GetBitLength()));
                     tampered = new RingSignature(orig.Y0, orig.S, s);

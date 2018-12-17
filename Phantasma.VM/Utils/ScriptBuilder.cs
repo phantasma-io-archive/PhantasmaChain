@@ -61,7 +61,7 @@ namespace Phantasma.VM.Utils
             EmitLoad(reg, bytes, VMType.String);
         }
 
-        public void EmitLoad(byte reg, LargeInteger val)
+        public void EmitLoad(byte reg, BigInteger val)
         {
             var bytes = val.ToByteArray();
             EmitLoad(reg, bytes, VMType.Number);

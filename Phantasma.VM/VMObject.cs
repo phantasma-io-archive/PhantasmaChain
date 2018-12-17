@@ -59,14 +59,14 @@ namespace Phantasma.VM
             this.Type = VMType.None;
         }
 
-        public LargeInteger AsNumber()
+        public BigInteger AsNumber()
         {
             if (this.Type != VMType.Number)
             {
                 throw new Exception("Invalid cast");
             }
 
-            return (LargeInteger)Data;
+            return (BigInteger)Data;
         }
 
         public T AsEnum<T>() where T: struct, IConvertible
@@ -92,7 +92,7 @@ namespace Phantasma.VM
                         return (string)Data;
 
                 case VMType.Number:
-                    return ((LargeInteger)Data).ToString();
+                    return ((BigInteger)Data).ToString();
 
                 case VMType.Bytes:
                     return Base16.Encode((byte[])Data);
@@ -197,7 +197,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = new LargeInteger(val);
+                        this.Data = new BigInteger(val);
                         break;
                     }
 
@@ -222,7 +222,7 @@ namespace Phantasma.VM
             return this;
         }
 
-        public VMObject SetValue(LargeInteger val)
+        public VMObject SetValue(BigInteger val)
         {
             this.Type = VMType.Number;
             this.Data = val;
@@ -302,7 +302,7 @@ namespace Phantasma.VM
             return new VMObject();
         }
 
-        public void SetKey(LargeInteger key, VMObject obj)
+        public void SetKey(BigInteger key, VMObject obj)
         {
             SetKey(key.ToString(), obj);
         }
@@ -409,7 +409,7 @@ namespace Phantasma.VM
                 case VMType.None:return "Null";
                 case VMType.Struct: return "[Struct]";
                 case VMType.Bytes: return $"[Bytes] => {Base16.Encode(((byte[])Data))}";
-                case VMType.Number: return $"[Number] => {((LargeInteger)Data)}";
+                case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
                 case VMType.Enum: return $"[Enum] => {((uint)Data)}";
@@ -440,7 +440,7 @@ namespace Phantasma.VM
                 return VMType.Bytes;
             }
 
-            if (type == typeof(LargeInteger))
+            if (type == typeof(BigInteger))
             {
                 return VMType.Number;
             }
@@ -476,7 +476,7 @@ namespace Phantasma.VM
                 case VMType.Bool: result.SetValue((bool)obj); break;
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
                 case VMType.String: result.SetValue((string)obj); break;
-                case VMType.Number: result.SetValue((LargeInteger)obj); break;
+                case VMType.Number: result.SetValue((BigInteger)obj); break;
                 case VMType.Enum: result.SetValue((Enum)obj); break;
                 case VMType.Object: result.SetValue(obj); break;
                 default: return null;

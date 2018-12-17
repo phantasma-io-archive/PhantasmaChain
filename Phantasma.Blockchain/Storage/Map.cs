@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Storage
             return ByteArrayUtils.ConcatBytes(BaseKey, bytes);
         }
 
-        public LargeInteger Count()
+        public BigInteger Count()
         {
             return Context.Get(CountKey()).AsLargeInteger();
         }

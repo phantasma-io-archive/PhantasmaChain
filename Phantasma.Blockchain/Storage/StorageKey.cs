@@ -125,7 +125,7 @@ namespace Phantasma.Blockchain.Storage
                     int index = i + 1;
                     var first = key.Take(index - 1).Skip(1).ToArray();
 
-                    var num = new LargeInteger(first);
+                    var num = new BigInteger(first);
 
                     var name = $"[{num}]";
 

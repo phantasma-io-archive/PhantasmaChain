@@ -12,13 +12,13 @@ namespace Phantasma.Numerics
         {
             Throw.If(input == null || input.Length == 0, "string cant be empty");
 
-            var bi = LargeInteger.Zero;
+            var bi = BigInteger.Zero;
             for (int i = input.Length - 1; i >= 0; i--)
             {
                 int index = Alphabet.IndexOf(input[i]);
                 Throw.If(index < 0, "invalid character");
 
-                bi += index * LargeInteger.Pow(58, input.Length - 1 - i);
+                bi += index * BigInteger.Pow(58, input.Length - 1 - i);
             }
 
             byte[] bytes = bi.ToByteArray();
@@ -44,7 +44,7 @@ namespace Phantasma.Numerics
             }
             temp[input.Length] = 0;
 
-            var value = new LargeInteger(temp);
+            var value = new BigInteger(temp);
             var sb = new StringBuilder();
             while (value >= 58)
             {
