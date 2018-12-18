@@ -5,7 +5,7 @@ using Phantasma.Core;
 using static Phantasma.Numerics.BigInteger;
 
 /*
- * Implementation of LargeInteger class, written for Phantasma project
+ * Implementation of BigInteger class, written for Phantasma project
  * Author: Simão Pavlovich
  */
 
@@ -128,7 +128,7 @@ namespace Phantasma.Numerics
         {
             value = value.ToUpper().Trim().Replace("\r","").Replace(" ","").Replace("\n","");
 
-            var LargeInteger = new BigInteger(0);
+            var BigInteger = new BigInteger(0);
             var bi = new BigInteger(1L);
 
             if (value == "0")
@@ -148,14 +148,14 @@ namespace Phantasma.Numerics
                 val = ((val >= 48 && val <= 57) ? (val - 48) : ((val < 65 || val > 90) ? 9999999 : (val - 65 + 10)));
                 Throw.If(val >= radix, "Invalid string in constructor.");
 
-                LargeInteger += bi * val;
+                BigInteger += bi * val;
 
                 if (i - 1 >= limit)
                     bi *= radix;
             }
 
             _data = null;
-            InitFromArray(LargeInteger._data);
+            InitFromArray(BigInteger._data);
         }
 
         public static BigInteger FromHex(string p0)
@@ -473,11 +473,12 @@ namespace Phantasma.Numerics
             else
                 MultiDigitDivMod(a, b, out quot, out rem);
 
-            quot._sign = a._sign * b._sign;
+            
             rem._sign = a._sign;
-
             rem = a >= 0 ? rem : b + rem;
 
+            quot._sign = quot.GetBitLength() == 0 ? 0 : a._sign * b._sign;
+            rem._sign = rem.GetBitLength() == 0 ? 0 : rem._sign;
         }
 
         //do not access this function directly under any circumstances, always go through DivideAndModulus
@@ -854,7 +855,7 @@ namespace Phantasma.Numerics
                 return 0;
             }
 
-            if (other < this)
+            if (this < other)
             {
                 return -1;
             }
@@ -875,157 +876,41 @@ namespace Phantasma.Numerics
             return val;
         }
 
-/// <summary>
-        /// Fast calculation of modular reduction using Barrett's reduction
-        /// </summary>
-        /// <remarks>
-        /// Requires x &lt; b^(2k), where b is the base.  In this case, base is 2^32 (uint).
-        /// </remarks>
-        private static BigInteger BarrettReduction(BigInteger z, BigInteger x, BigInteger n, BigInteger constant)
+        public static BigInteger ModPow(BigInteger b, BigInteger exp, BigInteger mod)
         {
-            int k = n.dataLength,
-                kPlusOne = k + 1,
-                kMinusOne = k - 1;
-
-            BigInteger q1 = new BigInteger();
-
-            // q1 = x / b^(k-1)
-            for (int i = kMinusOne, j = 0; i < x.dataLength; i++, j++)
-                q1._data[j] = x._data[i];
-
-            q1.dataLength = x.dataLength - kMinusOne;
-            if (q1.dataLength <= 0)
-                q1.dataLength = 1;
-
-            BigInteger q2 = q1 * constant;
-            BigInteger q3 = new BigInteger();
-
-            // q3 = q2 / b^(k+1)
-            for (int i = kPlusOne, j = 0; i < q2.dataLength; i++, j++)
-                q3._data[j] = q2._data[i];
-            q3.dataLength = q2.dataLength - kPlusOne;
-            if (q3.dataLength <= 0)
-                q3.dataLength = 1;
-
-
-            // r1 = x mod b^(k+1)
-            // i.e. keep the lowest (k+1) words
-            var r1 = new BigInteger();
-            int lengthToCopy = (x.dataLength > kPlusOne) ? kPlusOne : x.dataLength;
-            for (int i = 0; i < lengthToCopy; i++)
-                r1._data[i] = x._data[i];
-            r1.dataLength = lengthToCopy;
-
-
-            // r2 = (q3 * n) mod b^(k+1)
-            // partial multiplication of q3 and n
-
-            var r2 = new BigInteger();
-            for (int i = 0; i < q3.dataLength; i++)
-            {
-                if (q3._data[i] == 0) continue;
-
-                ulong mcarry = 0;
-                int t = i;
-                for (int j = 0; j < n.dataLength && t < kPlusOne; j++, t++)
-                {
-                    // t = i + j
-                    ulong val = ((ulong)q3._data[i] * (ulong)n._data[j]) +
-                                 (ulong)r2._data[t] + mcarry;
-
-                    r2._data[t] = (uint)(val & 0xFFFFFFFF);
-                    mcarry = (val >> 32);
-                }
-
-                if (t < kPlusOne)
-                    r2._data[t] = (uint)mcarry;
-            }
-            r2.dataLength = kPlusOne;
-            while (r2.dataLength > 1 && r2._data[r2.dataLength - 1] == 0)
-                r2.dataLength--;
-
-            r1 -= r2;
-            if ((r1._data[maxLength - 1] & 0x80000000) != 0)        // negative
-            {
-                BigInteger val = new BigInteger();
-                val._data[kPlusOne] = 0x00000001;
-                val.dataLength = kPlusOne + 1;
-                r1 += val;
-            }
-
-            while (r1 >= n)
-                r1 -= n;
-
-            return r1;
+            return b.ModPow(exp, mod);
         }
 
         /// <summary>
         /// Modulo Exponentiation
+        /// Ported from http://developer.classpath.org/doc/java/math/BigInteger-source.html
         /// </summary>
         /// <param name="exp">Exponential</param>
-        /// <param name="n">Modulo</param>
+        /// <param name="mod">Modulo</param>
         /// <returns>BigInteger result of raising this to the power of exp and then modulo n </returns>
-        public static BigInteger ModPow(BigInteger z, BigInteger exp, BigInteger n)
+        public BigInteger ModPow(BigInteger exp, BigInteger mod)
         {
-            Throw.If((exp._data[maxLength - 1] & 0x80000000) != 0, "Positive exponents only.");
+            Throw.If(mod._sign == -1 || mod == 0, "Non-positive modulo");
 
-            BigInteger resultNum = 1;
-            BigInteger tempNum;
-            bool thisNegative = false;
+            if (exp._sign < 0)
+                return ModInverse(mod).ModPow(-exp, mod);
 
-            if ((z._data[maxLength - 1] & 0x80000000) != 0)   // negative this
+            if (exp == 1)
+                return this % mod;
+
+            BigInteger s = new BigInteger(1);
+            BigInteger t = new BigInteger(this);
+
+            while (exp != Zero)
             {
-                tempNum = -z% n;
-                thisNegative = true;
-            }
-            else
-                tempNum = z % n;  // ensures (tempNum * tempNum) < b^(2k)
+                if ((exp & One) == One)
+                    s = (s * t) % mod;
 
-            if ((n._data[maxLength - 1] & 0x80000000) != 0)   // negative n
-                n = -n;
-
-            // calculate constant = b^(2k) / m
-            var constant = new BigInteger();
-
-            int i = n.dataLength << 1;
-            constant._data[i] = 0x00000001;
-            constant.dataLength = i + 1;
-
-            constant = constant / n;
-            int totalBits = exp.GetBitLength();
-            int count = 0;
-
-            // perform squaring and multiply exponentiation
-            for (int pos = 0; pos < exp.dataLength; pos++)
-            {
-                uint mask = 0x01;
-
-                for (int index = 0; index < 32; index++)
-                {
-                    if ((exp._data[pos] & mask) != 0)
-                        resultNum = BarrettReduction(z, resultNum * tempNum, n, constant);
-
-                    mask <<= 1;
-
-                    tempNum = BarrettReduction(z, tempNum * tempNum, n, constant);
-
-
-                    if (tempNum.dataLength == 1 && tempNum._data[0] == 1)
-                    {
-                        if (thisNegative && (exp._data[0] & 0x1) != 0)    //odd exp
-                            return -resultNum;
-                        return resultNum;
-                    }
-                    count++;
-                    if (count == totalBits)
-                        break;
-                }
+                exp = exp >> 1;
+                t = (t * t) % mod;
             }
 
-            if (thisNegative && (exp._data[0] & 0x1) != 0)    //odd exp
-                return -resultNum;
-
-            return resultNum;
+            return s;
         }
 
         public BigInteger ModInverse(BigInteger modulus)
@@ -1054,14 +939,10 @@ namespace Phantasma.Numerics
                     array[0] = array[1];
                     array[1] = bigInteger4;
                 }
-                if (bigInteger.dataLength == 1)
-                {
-                    SingleByteDivide(bi, bigInteger, bigInteger2, bigInteger3);
-                }
-                else
-                {
-                    MultiByteDivide(bi, bigInteger, bigInteger2, bigInteger3);
-                }
+                
+                DivideAndModulus(bi, bigInteger, out bigInteger2, out bigInteger3);
+                
+                
                 array2[0] = array2[1];
                 array3[0] = array3[1];
                 array2[1] = bigInteger2;
@@ -1074,11 +955,31 @@ namespace Phantasma.Numerics
             Throw.If(array3[0].dataLength > 1 || (array3[0].dataLength == 1 && array3[0]._data[0] != 1), "No inverse!");
 
             BigInteger bigInteger5 = (array[0] - array[1] * array2[0]) % modulus;
-            if (((int)bigInteger5._data[maxLength - 1] & -2147483648) != 0)
+            if (bigInteger5._sign < 0)
             {
                 bigInteger5 += modulus;
             }
             return bigInteger5;
+        }
+
+        public bool TestBit(int index)
+        {
+            return (this & (One << index)) > Zero;
+        }
+
+        public int GetLowestSetBit()
+        {
+            if (this.Sign() == 0)
+                return -1;
+
+            byte[] b = this.ToByteArray();
+            int w = 0;
+            while (b[w] == 0)
+                w++;
+            for (int x = 0; x < 8; x++)
+                if ((b[w] & 1 << x) > 0)
+                    return x + w * 8;
+            throw new Exception();
         }
 
         public static BigInteger Parse(string input, int radix = 10)
@@ -1102,7 +1003,7 @@ namespace Phantasma.Numerics
 
         public int GetBitLength()
         {
-            if (Object.Equals(this, null) || this == 0 || _data.Length == 0)
+            if (Object.Equals(this, null) || (_data.Length == 1 && _data[0] == 0) || _data.Length == 0)
                 return 0;
 
             var result = (_data.Length - 1) * 32;
@@ -1118,7 +1019,7 @@ namespace Phantasma.Numerics
         }
 
 
-
+        /*
 public void SetBit(uint bitNum)
         {
             uint num = bitNum >> 5;
@@ -1146,8 +1047,18 @@ public void SetBit(uint bitNum)
                 }
             }
         }
+        */
 
-public BigInteger Sqrt()
+        public bool IsEven => CalcIsEven();
+
+        public bool CalcIsEven()
+        {
+            var tmp = this % 2;
+            var tmp2 = tmp == 0;
+            return tmp2;
+        }
+
+        public BigInteger Sqrt()
         {
             Throw.If(this < 0, "cannot be negative");
 
@@ -1156,12 +1067,12 @@ public BigInteger Sqrt()
                 return 0;
             }
 
-            uint num = (uint)GetBitLength();
+            uint bitLength = (uint)GetBitLength();
 
-            num = (((num & 1) == 0) ? (num >> 1) : ((num >> 1) + 1));
-            uint num2 = num >> 5;
-            byte b = (byte)(num & 0x1F);
-            var bigInteger = new BigInteger();
+            bitLength = (((bitLength & 1) == 0) ? (bitLength >> 1) : ((bitLength >> 1) + 1));
+            uint num2 = bitLength >> 5;
+            byte b = (byte)(bitLength & 0x1F);
+            
             uint num3;
 
             if (b == 0)
@@ -1173,21 +1084,23 @@ public BigInteger Sqrt()
                 num3 = (uint)(1 << (int)b);
                 num2++;
             }
-            bigInteger.dataLength = (int)num2;
+
+            var sqrtArray = new uint[(int) num2];
             for (int num4 = (int)(num2 - 1); num4 >= 0; num4--)
             {
                 while (num3 != 0)
                 {
-                    bigInteger._data[num4] ^= num3;
-                    if (bigInteger * bigInteger > this)
+                    sqrtArray[num4] ^= num3;
+                    var tmp = new BigInteger(sqrtArray);
+                    if (tmp * tmp > this)
                     {
-                        bigInteger._data[num4] ^= num3;
+                        sqrtArray[num4] ^= num3;
                     }
                     num3 >>= 1;
                 }
                 num3 = 2147483648u;
             }
-            return bigInteger;
+            return new BigInteger(sqrtArray);
         }
 
 

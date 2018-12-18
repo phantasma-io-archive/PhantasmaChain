@@ -29,7 +29,7 @@ namespace Phantasma.Blockchain.Tokens
             return n / multiplier;
         }
 
-        public static BigInteger ToLargeInteger(decimal n, int units)
+        public static BigInteger ToBigInteger(decimal n, int units)
         {
             var multiplier = GetMultiplier(units);
             var l = (long)(n * multiplier);

@@ -62,7 +62,7 @@ namespace Phantasma.Tests
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToLargeInteger(1, Nexus.NativeTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();

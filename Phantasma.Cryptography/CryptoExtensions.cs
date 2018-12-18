@@ -312,7 +312,7 @@ namespace Phantasma.Cryptography
         }
         */
 
-        internal static BigInteger NextLargeInteger(this Random rand, int sizeInBits)
+        internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
