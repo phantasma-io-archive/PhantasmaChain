@@ -52,6 +52,9 @@ namespace Phantasma.API
             rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
             rpc.RegisterHandler("getTokens", GetTokens);
             rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
+
+            //todo new
+            rpc.RegisterHandler("getRootChain",GetRootChain);
         }
 
         private object GetAccount(DataNode paramNode)
@@ -191,5 +194,13 @@ namespace Phantasma.API
                 }
             }
         }
+
+
+        // new 
+        private object GetRootChain(DataNode paramNode)
+        {
+            return _api.GetRootChain();
+        }
+
     }
 }

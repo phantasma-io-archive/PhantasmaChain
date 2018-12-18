@@ -11,6 +11,7 @@
         getBlockTransactionCountByHash,
         getChains,
         getConfirmations,
+        getRootChain,
         getTransactionByHash,
         getTransactionByBlockHashAndIndex,
         getTokens,

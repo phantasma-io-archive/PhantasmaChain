@@ -13,6 +13,7 @@ namespace Phantasma.RpcClient.Interfaces
         PhantasmaGetBlockTxCountByHash GetBlockTxCountByHash { get; }
         PhantasmaGetChains GetChains { get; }
         PhantasmaGetTokens GetTokens { get; }
+        PhantasmaGetRootChain GetRootChain { get; }
         PhantasmaGetTxByBlockHashAndIndex GetTxByBlockHashAndIndex { get; }
         PhantasmaGetTxByHash GetTxByHash { get; }
         PhantasmaGetTxConfirmations GetTxConfirmations { get; }

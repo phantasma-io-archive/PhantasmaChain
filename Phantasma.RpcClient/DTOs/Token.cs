@@ -24,7 +24,7 @@ namespace Phantasma.RpcClient.DTOs
         public string MaxSupply { get; set; }
 
         [JsonProperty("chains")]
-        public List<BalanceChain> Chains { get; set; }
+        public List<BalanceChain> Chains { get; set; } //todo remove from DTO
     }
 
     public class TokenList

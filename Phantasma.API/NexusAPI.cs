@@ -507,5 +507,14 @@ namespace Phantasma.API
             result.AddField("error", "invalid block hash");
             return result;
         }
+
+        public DataNode GetRootChain()
+        {
+            var result = DataNode.CreateObject();
+            result.AddField("name", Nexus.RootChain.Name);
+            result.AddField("address", Nexus.RootChain.Address.ToString());
+            result.AddField("height", Nexus.RootChain.BlockHeight.ToString());
+            return result;
+        }
     }
 }
