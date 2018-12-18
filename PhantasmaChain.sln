@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Blockchain", "Pha
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.IO", "Phantasma.IO\Phantasma.IO.csproj", "{10618242-A4A0-4900-B51C-C2A6DF2E5A80}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phantasma.RpcClient", "Phantasma.RpcClient\Phantasma.RpcClient.csproj", "{84E5B785-1602-4DCA-9011-E21692B53A7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{10618242-A4A0-4900-B51C-C2A6DF2E5A80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10618242-A4A0-4900-B51C-C2A6DF2E5A80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10618242-A4A0-4900-B51C-C2A6DF2E5A80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84E5B785-1602-4DCA-9011-E21692B53A7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84E5B785-1602-4DCA-9011-E21692B53A7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84E5B785-1602-4DCA-9011-E21692B53A7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84E5B785-1602-4DCA-9011-E21692B53A7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
