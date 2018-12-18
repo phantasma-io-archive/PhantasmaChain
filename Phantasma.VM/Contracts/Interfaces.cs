@@ -37,14 +37,14 @@ namespace Phantasma.VM.Contracts
     {
         IFungibleToken Token { get; }
         Address Destination { get; }
-        BigInteger Amount { get; }
+        LargeInteger Amount { get; }
     }
 
     public interface NonFungibleTransferTransaction : ITransaction
     {
         INonFungibleToken Token { get; }
         Address Destination { get; }
-        BigInteger ID { get; }
+        LargeInteger ID { get; }
     }*/
 
     public interface IToken: IContract
@@ -106,7 +106,7 @@ namespace Phantasma.VM.Contracts
         [ContractEvent]
         bool Send(Address from, Address to, BigInteger ID);
 
-        //BigInteger Mint(Address address, byte[] data);
+        //LargeInteger Mint(Address address, byte[] data);
 
         bool IsOwner(Address address, BigInteger ID);
         IEnumerable<BigInteger> AssetsOf(Address address);

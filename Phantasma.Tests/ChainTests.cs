@@ -19,7 +19,9 @@ namespace Phantasma.Tests
             decimal d = 93000000;
             BigInteger n = 9300000000000000;
 
-            Assert.IsTrue(n == TokenUtils.ToBigInteger(TokenUtils.ToDecimal(n, places), places));
+            var tmp1 = TokenUtils.ToBigInteger(TokenUtils.ToDecimal(n, places), places);
+
+            Assert.IsTrue(n == tmp1);
             Assert.IsTrue(d == TokenUtils.ToDecimal(TokenUtils.ToBigInteger(d, places), places));
 
             Assert.IsTrue(d == TokenUtils.ToDecimal(n, places));
