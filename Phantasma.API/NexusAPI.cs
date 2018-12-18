@@ -5,8 +5,6 @@ using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
-using LunarLabs.Parser.JSON;
-using System;
 using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.API
@@ -177,11 +175,10 @@ namespace Phantasma.API
 
         private DataNode GetBlockHeight(Chain chain)
         {
-            var result = DataNode.CreateObject();
+            var result = DataNode.CreateValue("");
             if (chain != null)
             {
-                result.AddField("chain", chain.Address.Text);
-                result.AddField("height", chain.BlockHeight);
+                result.Value = chain.BlockHeight.ToString();
             }
             else
             {
@@ -237,18 +234,6 @@ namespace Phantasma.API
             var chain = Nexus.FindChainByAddress(chainAddress);
             return GetBlockByHeight(chain, height, serialized);
         }
-
-        //private DataNode GetBlockByHeight(Chain chain, uint height)
-        //{
-        //    var block = chain?.FindBlockByHeight(height);
-        //    if (block != null)
-        //    {
-        //        return FillBlock(block);
-        //    }
-        //    var result = DataNode.CreateObject();
-        //    result.AddField("error", "block not found");
-        //    return result;
-        //}
 
         private DataNode GetBlockByHeight(Chain chain, uint height, int serialized)
         {
@@ -399,24 +384,15 @@ namespace Phantasma.API
 
         public DataNode GetChains()
         {
-            var result = DataNode.CreateObject();
-
-            var arrayNode = DataNode.CreateArray("chains");
-
+            var result = DataNode.CreateArray();
             foreach (var chain in Nexus.Chains)
             {
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
-                if (chain.ParentChain != null)
-                {
-                    single.AddField("parentName", chain.ParentChain.Name);
-                    single.AddField("parentAddress", chain.ParentChain.Name);
-                }
-
+                var children = DataNode.CreateArray("children");
                 if (chain.ChildChains != null && chain.ChildChains.Any())
                 {
-                    var children = DataNode.CreateArray("children");
                     foreach (var childChain in chain.ChildChains)
                     {
                         var child = DataNode.CreateObject();
@@ -427,13 +403,9 @@ namespace Phantasma.API
 
                     single.AddNode(children);
                 }
-                arrayNode.AddNode(single);
+                result.AddNode(single);
             }
 
-            result.AddNode(arrayNode);
-
-            var test = JSONWriter.WriteToString(result);
-            Console.WriteLine(test);
             return result;
         }
 

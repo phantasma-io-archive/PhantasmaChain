@@ -9,6 +9,7 @@ namespace Phantasma.RpcClient.Interfaces
         PhantasmaGetApplications GetApplications { get; }
         PhantasmaGetBlockByHash GetBlockByHash { get; }
         PhantasmaGetBlockByHeight GetBlockByHeight { get; }
+        PhantasmaGetBlockByHeightSerialized GetBlockByHeightSerialized { get; }
         PhantasmaGetBlockHeight GetBlockHeight { get; }
         PhantasmaGetBlockTxCountByHash GetBlockTxCountByHash { get; }
         PhantasmaGetChains GetChains { get; }
