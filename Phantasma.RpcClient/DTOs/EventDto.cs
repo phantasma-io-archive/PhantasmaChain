@@ -3,7 +3,7 @@ using Newtonsoft.Json.Converters;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class Event
+    public class EventDto
     {
         [JsonProperty("address")]
         public string EventAddress { get; set; }

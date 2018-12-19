@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class AccountTransactions
+    public class AccountTransactionsDto
     {
         [JsonProperty("address")]
         public string Address { get; set; }
@@ -12,9 +12,9 @@ namespace Phantasma.RpcClient.DTOs
         public long Amount { get; set; }
 
         [JsonProperty("txs")]
-        public List<Transaction> Txs { get; set; } = new List<Transaction>();
+        public List<TransactionDto> Txs { get; set; } = new List<TransactionDto>();
 
-        public static AccountTransactions FromJson(string json) => JsonConvert.DeserializeObject<AccountTransactions>(json, JsonUtils.Settings);
+        public static AccountTransactionsDto FromJson(string json) => JsonConvert.DeserializeObject<AccountTransactionsDto>(json, JsonUtils.Settings);
         public string ToJson() => JsonConvert.SerializeObject(this, JsonUtils.Settings);
     }
 }

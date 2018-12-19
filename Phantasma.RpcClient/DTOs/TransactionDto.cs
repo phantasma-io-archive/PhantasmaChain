@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class Transaction
+    public class TransactionDto
     {
         [JsonProperty("txid")]
         public string Txid { get; set; }
@@ -26,7 +26,10 @@ namespace Phantasma.RpcClient.DTOs
         [JsonProperty("gasPrice")]
         public decimal GasPrice { get; set; }
 
+        [JsonProperty("script")]
+        public string Script { get; set; }
+
         [JsonProperty("events")]
-        public List<Event> Events { get; set; }
+        public List<EventDto> Events { get; set; }
     }
 }

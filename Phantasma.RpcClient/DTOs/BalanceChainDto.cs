@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class BalanceChain
+    public class BalanceChainDto
     {
         [JsonProperty("chain")]
         public string ChainName { get; set; }

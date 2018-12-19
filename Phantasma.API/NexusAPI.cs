@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
@@ -35,7 +36,7 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("blockHeight", block.Height);
-            result.AddField("script", Base16.Encode(tx.Script));
+            result.AddField("script", tx.Script.Encode());
 
             var eventsNode = DataNode.CreateArray("events");
 
@@ -44,7 +45,7 @@ namespace Phantasma.API
             {
                 var eventNode = DataNode.CreateObject();
                 eventNode.AddField("address", evt.Address);
-                eventNode.AddField("data", Base16.Encode(evt.Data));
+                eventNode.AddField("data", evt.Data.Encode());
                 eventNode.AddField("kind", evt.Kind);
                 eventsNode.AddNode(eventNode);
             }
@@ -54,7 +55,7 @@ namespace Phantasma.API
             return result;
         }
 
-        private DataNode FillBlock(Block block)
+        private DataNode FillBlock(Block block, Chain chain)
         {
             //var chain = Nexus.FindChainForBlock(block.Hash);
             var result = DataNode.CreateObject();
@@ -65,7 +66,7 @@ namespace Phantasma.API
             result.AddField("height", block.Height);
             result.AddField("chainAddress", block.ChainAddress.ToString());
             result.AddField("nonce", block.Nonce);
-
+            result.AddField("reward", TokenUtils.ToDecimal(chain.GetBlockReward(block), Nexus.NativeTokenDecimals));
             var payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode();
             result.AddField("payload", payload);//todo make sure this is ok
 
@@ -213,7 +214,7 @@ namespace Phantasma.API
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
-                        return FillBlock(block);
+                        return FillBlock(block, chain);
                     }
                 }
             }
@@ -242,7 +243,7 @@ namespace Phantasma.API
             {
                 if (serialized == 0)
                 {
-                    return FillBlock(block);
+                    return FillBlock(block,chain);
                 }
                 else
                 {
@@ -390,6 +391,11 @@ namespace Phantasma.API
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
+                single.AddField("height", chain.BlockHeight);
+                if (chain.ParentChain != null)
+                {
+                    single.AddField("parentAddress", chain.ParentChain.Name);
+                }
                 var children = DataNode.CreateArray("children");
                 if (chain.ChildChains != null && chain.ChildChains.Any())
                 {
@@ -423,14 +429,15 @@ namespace Phantasma.API
             var node = DataNode.CreateArray("tokens");
             foreach (var token in Nexus.Tokens)
             {
-                var temp = DataNode.CreateObject();
-                temp.AddField("symbol", token.Symbol);
-                temp.AddField("name", token.Name);
-                temp.AddField("currentSupply", token.CurrentSupply);
-                temp.AddField("maxSupply", token.MaxSupply);
-                temp.AddField("decimals", token.Decimals);
-                temp.AddField("isFungible", token.IsFungible);
-                node.AddNode(temp);
+                var tokenNode = DataNode.CreateObject();
+                tokenNode.AddField("symbol", token.Symbol);
+                tokenNode.AddField("name", token.Name);
+                tokenNode.AddField("currentSupply", token.CurrentSupply);
+                tokenNode.AddField("maxSupply", token.MaxSupply);
+                tokenNode.AddField("decimals", token.Decimals);
+                tokenNode.AddField("isFungible", token.IsFungible);
+                tokenNode.AddField("owner", token.Owner.ToString());
+                node.AddNode(tokenNode);
                 //todo add flags
             }
             result.AddNode(node);

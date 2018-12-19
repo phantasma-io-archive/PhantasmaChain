@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class App
+    public class AppDto
     {
         [JsonProperty("description")]
         public string Description { get; set; }
@@ -21,10 +21,10 @@ namespace Phantasma.RpcClient.DTOs
         public string Url { get; set; }
     }
 
-    public class AppList
+    public class AppList 
     {
         [JsonProperty("apps")]
-        public List<App> Tokens { get; set; }
+        public List<AppDto> Apps { get; set; }
     }
 }
 

@@ -2,7 +2,7 @@
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class TxConfirmation
+    public class TxConfirmationDto
     {
         [JsonProperty("hash")]
         public string Hash { get; set; }

@@ -133,7 +133,7 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByHash(Hash hash)
         {
-            lock (_chains) //todo ask for locks and rpc return datanode as null? or error
+            lock (_chains)
             {
                 foreach (var chain in _chains.Values)
                 {

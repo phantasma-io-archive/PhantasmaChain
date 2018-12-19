@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class Token
+    public class TokenDto
     {
         [JsonProperty("symbol")]
         public string Symbol { get; set; }
@@ -23,14 +23,17 @@ namespace Phantasma.RpcClient.DTOs
         [JsonProperty("maxSupply")]
         public string MaxSupply { get; set; }
 
+        [JsonProperty("owner")]
+        public string Owner { get; set; }
+
         [JsonProperty("chains")]
-        public List<BalanceChain> Chains { get; set; } //todo remove from DTO
+        public List<BalanceChainDto> Chains { get; set; } //todo remove from DTO
     }
 
     public class TokenList
     {
         [JsonProperty("tokens")]
-        public List<Token> Tokens { get; set; }
+        public List<TokenDto> Tokens { get; set; }
     }
     
 }

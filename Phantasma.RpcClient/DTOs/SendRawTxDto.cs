@@ -2,7 +2,7 @@
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class SendRawTx
+    public class SendRawTxDto
     {
         [JsonProperty("hash")]
         public string Hash { get; set; }
@@ -12,6 +12,6 @@ namespace Phantasma.RpcClient.DTOs
 
         public bool HasError => string.IsNullOrEmpty(Hash) && !string.IsNullOrEmpty(Error);
 
-        public static SendRawTx FromJson(string json) => JsonConvert.DeserializeObject<SendRawTx>(json, JsonUtils.Settings);
+        public static SendRawTxDto FromJson(string json) => JsonConvert.DeserializeObject<SendRawTxDto>(json, JsonUtils.Settings);
     }
 }

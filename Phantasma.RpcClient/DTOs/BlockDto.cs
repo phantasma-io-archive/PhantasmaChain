@@ -1,11 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
 {
-    public class Block
+    public class BlockDto
     {
         [JsonProperty("hash")]
         public string Hash { get; set; }
+
+        [JsonProperty("previousHash")]
+        public string PreviousHash { get; set; }
 
         [JsonProperty("timestamp")]
         public string Timestamp { get; set; }
@@ -16,20 +20,23 @@ namespace Phantasma.RpcClient.DTOs
         [JsonProperty("chainAddress")]
         public string ChainAddress { get; set; }
 
-        [JsonProperty("chainName")]
-        public string ChainName { get; set; }
-
-        [JsonProperty("previousHash")]
-        public string PreviousHash { get; set; }
-
         [JsonProperty("nonce")]
         public long Nonce { get; set; }
+
+        [JsonProperty("payload")]
+        public string Payload { get; set; }
+
+        [JsonProperty("txs")]
+        public List<TransactionDto> Txs { get; set; }
 
         [JsonProperty("minerAddress")]
         public string MinerAddress { get; set; }
 
+        [JsonProperty("reward")]
+        public decimal Reward { get; set; }
 
-        public static Block FromJson(string json) => JsonConvert.DeserializeObject<Block>(json, JsonUtils.Settings);
+
+        public static BlockDto FromJson(string json) => JsonConvert.DeserializeObject<BlockDto>(json, JsonUtils.Settings);
 
         public string ToJson() => JsonConvert.SerializeObject(this, JsonUtils.Settings);
     }

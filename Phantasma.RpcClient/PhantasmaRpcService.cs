@@ -14,6 +14,7 @@ namespace Phantasma.RpcClient
             GetApplications = new PhantasmaGetApplications(client);
 
             GetBlockByHash = new PhantasmaGetBlockByHash(client);
+            GetBlockByHashSerialized = new PhantasmaGetBlockByHashSerialized(client);
             GetBlockByHeight = new PhantasmaGetBlockByHeight(client);
             GetBlockHeight = new PhantasmaGetBlockHeight(client);
             GetBlockByHeightSerialized = new PhantasmaGetBlockByHeightSerialized(client);
@@ -35,6 +36,7 @@ namespace Phantasma.RpcClient
         public PhantasmaGetAccountTxs GetAccountTxs { get; }
         public PhantasmaGetApplications GetApplications { get; }
         public PhantasmaGetBlockByHash GetBlockByHash { get; }
+        public PhantasmaGetBlockByHashSerialized GetBlockByHashSerialized { get; }
         public PhantasmaGetBlockByHeight GetBlockByHeight { get; }
         public PhantasmaGetBlockByHeightSerialized GetBlockByHeightSerialized { get; }
         public PhantasmaGetBlockHeight GetBlockHeight { get; }

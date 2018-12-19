@@ -5,17 +5,17 @@ using Phantasma.RpcClient.DTOs;
 
 namespace Phantasma.RpcClient.Api
 {
-    public class PhantasmaGetBlockByHeight : RpcRequestResponseHandler<Block>
+    public class PhantasmaGetBlockByHeight : RpcRequestResponseHandler<BlockDto>
     {
         public PhantasmaGetBlockByHeight(IClient client) : base(client, ApiMethods.getBlockByHeight.ToString()) { }
 
-        public Task<Block> SendRequestAsync(string chain, uint height, object id = null)
+        public Task<BlockDto> SendRequestAsync(string chain, int height, object id = null)
         {
             if (chain == null) throw new ArgumentNullException(nameof(chain));
             return SendRequestAsync(id, chain, height);
         }
 
-        public RpcRequest BuildRequest(string chain, uint height, object id = null)
+        public RpcRequest BuildRequest(string chain, int height, object id = null)
         {
             if (chain == null) throw new ArgumentNullException(nameof(chain));
             return BuildRequest(id, chain, height);

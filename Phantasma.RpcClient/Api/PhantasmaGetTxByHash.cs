@@ -5,11 +5,11 @@ using Phantasma.RpcClient.DTOs;
 
 namespace Phantasma.RpcClient.Api
 {
-    public class PhantasmaGetTxByHash : RpcRequestResponseHandler<Transaction>
+    public class PhantasmaGetTxByHash : RpcRequestResponseHandler<TransactionDto>
     {
         public PhantasmaGetTxByHash(IClient client) : base(client, ApiMethods.getTransactionByHash.ToString()) { }
 
-        public Task<Transaction> SendRequestAsync(string txHash, object id = null)
+        public Task<TransactionDto> SendRequestAsync(string txHash, object id = null)
         {
             if (txHash == null) throw new ArgumentNullException(nameof(txHash));
             return SendRequestAsync(id, txHash);
