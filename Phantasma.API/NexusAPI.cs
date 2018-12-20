@@ -58,18 +58,32 @@ namespace Phantasma.API
 
         private DataNode FillBlock(Block block)
         {
-            var chain = Nexus.FindChainForBlock(block.Hash);
-
+            //var chain = Nexus.FindChainForBlock(block.Hash);
             var result = DataNode.CreateObject();
 
             result.AddField("hash", block.Hash.ToString());
+            result.AddField("previousHash", block.PreviousHash.ToString());
             result.AddField("timestamp", block.Timestamp);
             result.AddField("height", block.Height);
-            result.AddField("chainAddress", chain.Address);
-            result.AddField("chainName", chain.Name);
-            result.AddField("previousHash", block.PreviousHash);
+            result.AddField("chainAddress", block.ChainAddress.ToString());
             result.AddField("nonce", block.Nonce);
+
+            var payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode();
+            result.AddField("payload", payload);//todo make sure this is ok
+
+            var txsNode = DataNode.CreateArray("txs");
+            result.AddNode(txsNode);
+            if (block.TransactionHashes != null && block.TransactionHashes.Any())
+            {
+                foreach (var transactionHash in block.TransactionHashes)
+                {
+                    var tx = Nexus.FindTransactionByHash(transactionHash);
+                    var entryNode = FillTransaction(tx);
+                    txsNode.AddNode(entryNode);
+                }
+            }
             // todo add block size, gas, txs
+            //result.AddField("chainName", chain.Name); //todo necessary?
             // result.AddField("minerAddress", block.MinerAddress.Text); TODO fixme
 
             return result;
@@ -141,11 +155,11 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetBlockHeightFromAddress(string address)
+        public DataNode GetBlockHeightFromChainAddress(string chainAddress)
         {
-            if (Address.IsValidAddress(address))
+            if (Address.IsValidAddress(chainAddress))
             {
-                var chain = Nexus.FindChainByAddress(Address.FromText(address));
+                var chain = Nexus.FindChainByAddress(Address.FromText(chainAddress));
                 return GetBlockHeight(chain);
             }
 
@@ -154,7 +168,7 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetBlockHeightFromName(string chainName)
+        public DataNode GetBlockHeightFromChainName(string chainName)
         {
             var chain = Nexus.FindChainByName(chainName);
             if (chain == null) return null;
@@ -180,7 +194,7 @@ namespace Phantasma.API
         public DataNode GetBlockTransactionCountByHash(string blockHash)
         {
             var result = DataNode.CreateObject();
-            if(Hash.TryParse(blockHash, out var hash))
+            if (Hash.TryParse(blockHash, out var hash))
             {
                 var count = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
                 if (count != null)
@@ -211,25 +225,46 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetBlockByHeight(string chainName, uint height)
+        public DataNode GetBlockByHeight(string chainName, uint height, int serialized = 0)
         {
             var chain = Nexus.FindChainByName(chainName);
             if (chain == null) return null;
-            return GetBlockByHeight(chain, height);
+            return GetBlockByHeight(chain, height, serialized);
         }
 
-        public DataNode GetBlockByHeight(Address chainAddress, uint height)
+        public DataNode GetBlockByHeight(Address chainAddress, uint height, int serialized = 0)
         {
             var chain = Nexus.FindChainByAddress(chainAddress);
-            return GetBlockByHeight(chain, height);
+            return GetBlockByHeight(chain, height, serialized);
         }
 
-        private DataNode GetBlockByHeight(Chain chain, uint height)
+        //private DataNode GetBlockByHeight(Chain chain, uint height)
+        //{
+        //    var block = chain?.FindBlockByHeight(height);
+        //    if (block != null)
+        //    {
+        //        return FillBlock(block);
+        //    }
+        //    var result = DataNode.CreateObject();
+        //    result.AddField("error", "block not found");
+        //    return result;
+        //}
+
+        private DataNode GetBlockByHeight(Chain chain, uint height, int serialized)
         {
             var block = chain?.FindBlockByHeight(height);
             if (block != null)
             {
-                return FillBlock(block);
+                if (serialized == 0)
+                {
+                    return FillBlock(block);
+                }
+                else
+                {
+                    var serializedBlock = DataNode.CreateValue("");
+                    serializedBlock.Value = (block.ToByteArray().Encode());
+                    return serializedBlock;
+                }
             }
             var result = DataNode.CreateObject();
             result.AddField("error", "block not found");
@@ -272,7 +307,10 @@ namespace Phantasma.API
                 result.AddField("address", address.Text);
                 result.AddField("amount", amountTx);
                 result.AddNode(txsNode);
-                var txs = plugin?.GetAddressTransactions(address).OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).Take(amountTx);
+                var txs = plugin?.GetAddressTransactions(address).
+                    Select(hash => Nexus.FindTransactionByHash(hash)).
+                    OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
+                    Take(amountTx);
                 if (txs != null)
                 {
                     foreach (var transaction in txs)
@@ -447,6 +485,29 @@ namespace Phantasma.API
                 node.AddNode(temp);
             }
             result.AddNode(node);
+            return result;
+        }
+
+
+
+        //todo merge this with existing getblocks
+        private DataNode GetSerializedBlock(string blockHash)
+        {
+            if (Hash.TryParse(blockHash, out var hash))
+            {
+                foreach (var chain in Nexus.Chains)
+                {
+                    var block = chain.FindBlockByHash(hash);
+                    if (block != null)
+                    {
+                        var serializedBlock = DataNode.CreateObject();
+                        serializedBlock.AddValue(block.ToByteArray().Encode());
+                        return serializedBlock;
+                    }
+                }
+            }
+            var result = DataNode.CreateObject();
+            result.AddField("error", "invalid block hash");
             return result;
         }
     }

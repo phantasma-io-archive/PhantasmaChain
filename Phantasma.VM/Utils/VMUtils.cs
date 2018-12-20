@@ -6,7 +6,7 @@ namespace Phantasma.VM.Utils
 {
     public static class VMUtils
     {
-        public static BigInteger AsBigInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
+        public static BigInteger AsLargeInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
 
         public static byte[] AsByteArray(this BigInteger source) { return source.ToByteArray(); }
 

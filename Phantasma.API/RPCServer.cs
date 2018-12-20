@@ -65,7 +65,7 @@ namespace Phantasma.API
         private object GetBlockHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
-            var result = _api.GetBlockHeightFromName(chain) ?? _api.GetBlockHeightFromAddress(chain);
+            var result = _api.GetBlockHeightFromChainName(chain) ?? _api.GetBlockHeightFromChainAddress(chain);
             CheckForError(result);
             return result;
         }
@@ -88,13 +88,17 @@ namespace Phantasma.API
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
             var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
+            //optional, defaults to 0
+            var serialized = paramNode.GetNodeByIndex(2) != null
+                ? int.Parse(paramNode.GetNodeByIndex(2).ToString())
+                : 0;
 
-            var result = _api.GetBlockByHeight(chain, height);
+            var result = _api.GetBlockByHeight(chain, height, serialized);
             if (result == null)
             {
                 if (Address.IsValidAddress(chain))
                 {
-                    result = _api.GetBlockByHeight(Address.FromText(chain), height);
+                    result = _api.GetBlockByHeight(Address.FromText(chain), height, serialized);
                 }
             }
 
@@ -179,9 +183,12 @@ namespace Phantasma.API
 
         private static void CheckForError(DataNode response)
         {
-            if (response.GetNodeByIndex(0).Name == "error")
+            if (response.GetNodeByIndex(0) != null)
             {
-                throw new RPCException(response.GetNodeByIndex(0).Value);
+                if (response.GetNodeByIndex(0).Name == "error")
+                {
+                    throw new RPCException(response.GetNodeByIndex(0).Value);
+                }
             }
         }
     }

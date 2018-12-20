@@ -40,7 +40,7 @@ namespace Phantasma.Blockchain
 
         public readonly Address GenesisAddress;
 
-        private readonly List<INexusPlugin> _plugins = new List<INexusPlugin>();
+        private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
         private readonly Logger _logger;
 
@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain
         }
 
         #region PLUGINS
-        public void AddPlugin(INexusPlugin plugin)
+        public void AddPlugin(IChainPlugin plugin)
         {
             _plugins.Add(plugin);
         }
@@ -79,12 +79,10 @@ namespace Phantasma.Blockchain
         {
             foreach (var plugin in _plugins)
             {
-                plugin.OnNewBlock(chain, block);
-
                 var txs = chain.GetBlockTransactions(block);
                 foreach (var tx in txs)
                 {
-                    plugin.OnNewTransaction(chain, block, tx);
+                    plugin.OnTransaction(chain, block, tx);
                 }
             }
         }
@@ -147,7 +145,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public T GetPlugin<T>() where T: INexusPlugin
+        public T GetPlugin<T>() where T: IChainPlugin
         {
             foreach (var plugin in _plugins)
             {
@@ -255,11 +253,6 @@ namespace Phantasma.Blockchain
             lock (_chains)
             {
                 _chains[name] = chain;
-
-                foreach (var plugin in _plugins)
-                {
-                    plugin.OnNewChain(chain);
-                }
             }
 
             return chain;
