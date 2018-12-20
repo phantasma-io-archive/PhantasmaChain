@@ -82,8 +82,8 @@ namespace Phantasma.API
                 }
             }
             // todo add block size, gas, txs
-            //result.AddField("chainName", chain.Name); //todo necessary?
-            // result.AddField("minerAddress", block.MinerAddress.Text); TODO fixme
+            var minerAddress = Nexus.FindValidatorForBlock(block);
+            result.AddField("minerAddress", minerAddress.Text);
 
             return result;
         }
@@ -291,7 +291,10 @@ namespace Phantasma.API
                 result.AddField("address", address.Text);
                 result.AddField("amount", amountTx);
                 result.AddNode(txsNode);
-                var txs = plugin?.GetAddressTransactions(address).OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).Take(amountTx);
+                var txs = plugin?.GetAddressTransactions(address).
+                    Select(hash => Nexus.FindTransactionByHash(hash)).
+                    OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
+                    Take(amountTx);
                 if (txs != null)
                 {
                     foreach (var transaction in txs)

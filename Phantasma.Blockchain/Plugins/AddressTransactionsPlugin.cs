@@ -4,26 +4,15 @@ using System.Linq;
 
 namespace Phantasma.Blockchain.Plugins
 {
-    public class AddressTransactionsPlugin : INexusPlugin
+    public class AddressTransactionsPlugin : IChainPlugin
     {
-        public Nexus Nexus { get; private set; }
-
         private Dictionary<Address, HashSet<Hash>> _transactions = new Dictionary<Address, HashSet<Hash>>();
 
-        public AddressTransactionsPlugin(Nexus nexus)
-        {
-            this.Nexus = nexus;
-        }
-
-        public void OnNewBlock(Chain chain, Block block)
+        public AddressTransactionsPlugin()
         {
         }
 
-        public void OnNewChain(Chain chain)
-        {
-        }
-
-        public void OnNewTransaction(Chain chain, Block block, Transaction transaction)
+        public override void OnTransaction(Chain chain, Block block, Transaction transaction)
         {
             var evts = block.GetEventsForTransaction(transaction.Hash);
 
@@ -49,15 +38,15 @@ namespace Phantasma.Blockchain.Plugins
             set.Add(tx.Hash);
         }
 
-        public IEnumerable<Transaction> GetAddressTransactions(Address address)
+        public IEnumerable<Hash> GetAddressTransactions(Address address)
         {
             if (_transactions.ContainsKey(address))
             {
-                return _transactions[address].Select( hash => Nexus.FindTransactionByHash(hash));
+                return _transactions[address];
             }
             else
             {
-                return Enumerable.Empty<Transaction>();
+                return Enumerable.Empty<Hash>();
             }
 
         }
