@@ -4,26 +4,15 @@ using System.Linq;
 
 namespace Phantasma.Blockchain.Plugins
 {
-    public class ChainAddressesPlugin : INexusPlugin
+    public class ChainAddressesPlugin : IChainPlugin
     {
-        public Nexus Nexus { get; private set; }
-
         private Dictionary<Address, HashSet<Address>> _transactions = new Dictionary<Address, HashSet<Address>>();
 
-        public ChainAddressesPlugin(Nexus nexus)
-        {
-            this.Nexus = nexus;
-        }
-
-        public void OnNewBlock(Chain chain, Block block)
+        public ChainAddressesPlugin()
         {
         }
 
-        public void OnNewChain(Chain chain)
-        {
-        }
-
-        public void OnNewTransaction(Chain chain, Block block, Transaction transaction)
+        public override void OnTransaction(Chain chain, Block block, Transaction transaction)
         {
             var evts = block.GetEventsForTransaction(transaction.Hash);
 

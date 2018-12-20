@@ -307,7 +307,10 @@ namespace Phantasma.API
                 result.AddField("address", address.Text);
                 result.AddField("amount", amountTx);
                 result.AddNode(txsNode);
-                var txs = plugin?.GetAddressTransactions(address).OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).Take(amountTx);
+                var txs = plugin?.GetAddressTransactions(address).
+                    Select(hash => Nexus.FindTransactionByHash(hash)).
+                    OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
+                    Take(amountTx);
                 if (txs != null)
                 {
                     foreach (var transaction in txs)

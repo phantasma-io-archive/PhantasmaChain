@@ -1,31 +1,19 @@
 ﻿using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Phantasma.Blockchain.Plugins
 {
-    public class TokenTransactionsPlugin : INexusPlugin
+    public class TokenTransactionsPlugin : IChainPlugin
     {
-        public Nexus Nexus { get; private set; }
+        private Dictionary<string, HashSet<Hash>> _transactions = new Dictionary<string, HashSet<Hash>>();
 
-        private Dictionary<Token, HashSet<Hash>> _transactions = new Dictionary<Token, HashSet<Hash>>();
-
-        public TokenTransactionsPlugin(Nexus nexus)
-        {
-            this.Nexus = nexus;
-        }
-
-        public void OnNewBlock(Chain chain, Block block)
+        public TokenTransactionsPlugin()
         {
         }
 
-        public void OnNewChain(Chain chain)
-        {
-        }
-
-        public void OnNewTransaction(Chain chain, Block block, Transaction transaction)
+        public override void OnTransaction(Chain chain, Block block, Transaction transaction)
         {
             var evts = block.GetEventsForTransaction(transaction.Hash);
 
@@ -34,40 +22,36 @@ namespace Phantasma.Blockchain.Plugins
                 if (evt.Kind == Contracts.EventKind.TokenReceive || evt.Kind == Contracts.EventKind.TokenSend)
                 {
                     var info = evt.GetContent<TokenEventData>();
-                    var token = Nexus.FindTokenBySymbol(info.symbol);
-                    if (token != null)
-                    {
-                        RegisterTransaction(token, transaction);
-                    }
+                    RegisterTransaction(info.symbol, transaction);
                 }
             }
         }
 
-        private void RegisterTransaction(Token token, Transaction tx)
+        private void RegisterTransaction(string symbol, Transaction tx)
         {
             HashSet<Hash> set;
-            if (_transactions.ContainsKey(token))
+            if (_transactions.ContainsKey(symbol))
             {
-                set = _transactions[token];
+                set = _transactions[symbol];
             }
             else
             {
                 set = new HashSet<Hash>();
-                _transactions[token] = set;
+                _transactions[symbol] = set;
             }
 
             set.Add(tx.Hash);
         }
 
-        public IEnumerable<Transaction> GetTokenTransactions(Token token)
+        public IEnumerable<Hash> GetTokenTransactions(string symbol)
         {
-            if (_transactions.ContainsKey(token))
+            if (_transactions.ContainsKey(symbol))
             {
-                return _transactions[token].Select( hash => Nexus.FindTransactionByHash(hash));
+                return _transactions[symbol];
             }
             else
             {
-                return Enumerable.Empty<Transaction>();
+                return Enumerable.Empty<Hash>();
             }
 
         }
