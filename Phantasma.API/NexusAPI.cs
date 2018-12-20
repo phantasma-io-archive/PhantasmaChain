@@ -65,6 +65,8 @@ namespace Phantasma.API
             result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("height", block.Height);
             result.AddField("chainAddress", block.ChainAddress.ToString());
+            var minerAddress = Nexus.FindValidatorForBlock(block);
+            result.AddField("minerAddress", minerAddress.Text);
             result.AddField("nonce", block.Nonce);
             result.AddField("reward", TokenUtils.ToDecimal(chain.GetBlockReward(block), Nexus.NativeTokenDecimals));
             var payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode();
@@ -82,8 +84,7 @@ namespace Phantasma.API
                 }
             }
             // todo add block size, gas, txs
-            var minerAddress = Nexus.FindValidatorForBlock(block);
-            result.AddField("minerAddress", minerAddress.Text);
+           
 
             return result;
         }

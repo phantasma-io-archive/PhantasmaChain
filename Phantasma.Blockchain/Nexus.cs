@@ -118,7 +118,7 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
-            var epoch = chain.FindEpochForBlockHash(block.Hash);
+            var epoch = chain.CurrentEpoch;//todo was chain.FindEpochForBlockHash(block.Hash);
             if (epoch == null)
             {
                 return Address.Null;
@@ -164,7 +164,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public T GetPlugin<T>() where T: IChainPlugin
+        public T GetPlugin<T>() where T : IChainPlugin
         {
             foreach (var plugin in _plugins)
             {
@@ -543,7 +543,7 @@ namespace Phantasma.Blockchain
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (BigInteger) index);
+            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (BigInteger)index);
             return result;
         }
         #endregion

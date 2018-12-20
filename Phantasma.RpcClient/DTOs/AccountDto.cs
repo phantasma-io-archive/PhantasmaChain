@@ -12,7 +12,7 @@ namespace Phantasma.RpcClient.DTOs
         public string Name { get; set; }
 
         [JsonProperty("balances")]
-        public List<BalanceSheetDto> Tokens { get; set; } = new List<BalanceSheetDto>();
+        public List<BalanceSheetDto> Tokens { get; set; } = new List<BalanceSheetDto>(); //todo this is wrong
 
 
         public static AccountDto FromJson(string json) => JsonConvert.DeserializeObject<AccountDto>(json, JsonUtils.Settings);

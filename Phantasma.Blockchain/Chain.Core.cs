@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
 
-        private Dictionary<Hash, Epoch> _epochBlockMap = new Dictionary<Hash, Epoch>();
+        private Dictionary<Hash, Epoch> _epochMap = new Dictionary<Hash, Epoch>();
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
@@ -208,8 +208,6 @@ namespace Phantasma.Blockchain
             CurrentEpoch.AddBlockHash(block.Hash);
             CurrentEpoch.UpdateHash();
 
-            _epochBlockMap[block.Hash] = CurrentEpoch;
-
             LastBlock = block;
 
             foreach (Transaction tx in transactions)
@@ -368,7 +366,7 @@ namespace Phantasma.Blockchain
                         var tokenABI = Chain.FindABI(NativeABI.Token);
                         Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
 
-                        var balance = (LargeInteger)tokenABI["BalanceOf"].Invoke(contract, account);
+                        var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
                         return balance;*/
         }
 
@@ -573,16 +571,6 @@ namespace Phantasma.Blockchain
             var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
 
             CurrentEpoch = epoch;
-        }
-
-        public Epoch FindEpochForBlockHash(Hash hash)
-        {
-            if (_epochBlockMap.ContainsKey(hash))
-            {
-                return _epochBlockMap[hash];
-            }
-
-            return null;
         }
         #endregion
 
