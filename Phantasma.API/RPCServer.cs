@@ -201,6 +201,5 @@ namespace Phantasma.API
         {
             return _api.GetRootChain();
         }
-
     }
 }

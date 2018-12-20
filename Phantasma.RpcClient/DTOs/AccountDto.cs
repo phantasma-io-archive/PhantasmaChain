@@ -11,8 +11,8 @@ namespace Phantasma.RpcClient.DTOs
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("tokens")]
-        public List<TokenDto> Tokens { get; set; } = new List<TokenDto>();
+        [JsonProperty("balances")]
+        public List<BalanceSheetDto> Tokens { get; set; } = new List<BalanceSheetDto>();
 
 
         public static AccountDto FromJson(string json) => JsonConvert.DeserializeObject<AccountDto>(json, JsonUtils.Settings);

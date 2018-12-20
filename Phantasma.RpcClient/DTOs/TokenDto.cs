@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Phantasma.RpcClient.DTOs
@@ -26,8 +27,18 @@ namespace Phantasma.RpcClient.DTOs
         [JsonProperty("owner")]
         public string Owner { get; set; }
 
-        [JsonProperty("chains")]
-        public List<BalanceChainDto> Chains { get; set; } //todo remove from DTO
+        [JsonProperty("flags")]
+        public TokenFlags Flags { get; set; }
+    }
+
+    [Flags]
+    public enum TokenFlags
+    {
+        None = 0,
+        Transferable = 1 << 0,
+        Fungible = 1 << 1,
+        Finite = 1 << 2,
+        Divisible = 1 << 3,
     }
 
     public class TokenList

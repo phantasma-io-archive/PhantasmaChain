@@ -62,7 +62,7 @@ namespace Phantasma.API
 
             result.AddField("hash", block.Hash.ToString());
             result.AddField("previousHash", block.PreviousHash.ToString());
-            result.AddField("timestamp", block.Timestamp);
+            result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("height", block.Height);
             result.AddField("chainAddress", block.ChainAddress.ToString());
             result.AddField("nonce", block.Nonce);
@@ -99,8 +99,8 @@ namespace Phantasma.API
                 var name = Nexus.LookUpAddress(address);
                 result.AddField("name", name);
 
-                var tokenNode = DataNode.CreateArray("tokens");
-                result.AddNode(tokenNode);
+                var balancesNode = DataNode.CreateArray("balances");
+                result.AddNode(balancesNode);
 
                 foreach (var token in Nexus.Tokens)
                 {
@@ -116,11 +116,11 @@ namespace Phantasma.API
                                 chainNode = DataNode.CreateArray("chains");
                             }
 
-                            var balanceNode = DataNode.CreateObject();
+                            var balanceNode = DataNode.CreateObject();//todo remove this balance node
                             chainNode.AddNode(balanceNode);
 
                             balanceNode.AddField("chain", chain.Name);
-                            balanceNode.AddField("balance", balance);
+                            balanceNode.AddField("amount", balance);
                             if (!token.IsFungible)
                             {
                                 var idList = chain.GetTokenOwnerships(token).Get(address);
@@ -137,7 +137,7 @@ namespace Phantasma.API
                     if (chainNode != null)
                     {
                         var entryNode = DataNode.CreateObject();
-                        tokenNode.AddNode(entryNode);
+                        balancesNode.AddNode(entryNode);
                         entryNode.AddField("symbol", token.Symbol);
                         entryNode.AddField("name", token.Name);
                         entryNode.AddField("decimals", token.Decimals);
@@ -243,14 +243,12 @@ namespace Phantasma.API
             {
                 if (serialized == 0)
                 {
-                    return FillBlock(block,chain);
+                    return FillBlock(block, chain);
                 }
-                else
-                {
-                    var serializedBlock = DataNode.CreateValue("");
-                    serializedBlock.Value = (block.ToByteArray().Encode());
-                    return serializedBlock;
-                }
+
+                var serializedBlock = DataNode.CreateValue("");
+                serializedBlock.Value = (block.ToByteArray().Encode());
+                return serializedBlock;
             }
             var result = DataNode.CreateObject();
             result.AddField("error", "block not found");
@@ -436,6 +434,7 @@ namespace Phantasma.API
                 tokenNode.AddField("maxSupply", token.MaxSupply);
                 tokenNode.AddField("decimals", token.Decimals);
                 tokenNode.AddField("isFungible", token.IsFungible);
+                tokenNode.AddField("flags", token.Flags); //todo test
                 tokenNode.AddField("owner", token.Owner.ToString());
                 node.AddNode(tokenNode);
                 //todo add flags
@@ -464,35 +463,45 @@ namespace Phantasma.API
             return result;
         }
 
-
-
-        //todo merge this with existing getblocks
-        private DataNode GetSerializedBlock(string blockHash)
-        {
-            if (Hash.TryParse(blockHash, out var hash))
-            {
-                foreach (var chain in Nexus.Chains)
-                {
-                    var block = chain.FindBlockByHash(hash);
-                    if (block != null)
-                    {
-                        var serializedBlock = DataNode.CreateObject();
-                        serializedBlock.AddValue(block.ToByteArray().Encode());
-                        return serializedBlock;
-                    }
-                }
-            }
-            var result = DataNode.CreateObject();
-            result.AddField("error", "invalid block hash");
-            return result;
-        }
-
         public DataNode GetRootChain()
         {
             var result = DataNode.CreateObject();
             result.AddField("name", Nexus.RootChain.Name);
             result.AddField("address", Nexus.RootChain.Address.ToString());
             result.AddField("height", Nexus.RootChain.BlockHeight.ToString());
+            return result;
+        }
+
+        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainAddress) //todo rpc,rest and add chain name too
+        {
+            if (Address.IsValidAddress(addressText) && Address.IsValidAddress(chainAddress) && !string.IsNullOrEmpty(tokenSymbol))
+            {
+                var chain = Nexus.FindChainByAddress(Address.FromText(chainAddress));
+                var token = Nexus.FindTokenBySymbol(tokenSymbol);
+                var address = Address.FromText(addressText);
+
+                var balance = chain.GetTokenBalance(token, address);
+                var balanceNode = DataNode.CreateObject();
+                if (balance > 0)
+                {
+                    balanceNode.AddField("balance", balance);
+                    if (!token.IsFungible)
+                    {
+                        var idList = chain.GetTokenOwnerships(token).Get(address);
+                        if (idList != null && idList.Any())
+                        {
+                            var nodeId = DataNode.CreateArray("ids");
+                            idList.ForEach(p => nodeId.AddValue(p.ToString()));
+                            balanceNode.AddNode(nodeId);
+                        }
+                    }
+                }
+
+                return balanceNode;
+            }
+
+            var result = DataNode.CreateObject();
+            result.AddField("error", "invalid address");
             return result;
         }
     }
