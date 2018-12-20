@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain.Consensus
 
             do
             {
-                BigInteger n = block.Hash;
+                BigInteger n = new BigInteger(block.Hash.ToByteArray());
                 if (n < target)
                 {
                     break;

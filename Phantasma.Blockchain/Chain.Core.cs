@@ -366,7 +366,7 @@ namespace Phantasma.Blockchain
                         var tokenABI = Chain.FindABI(NativeABI.Token);
                         Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
 
-                        var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
+                        var balance = (LargeInteger)tokenABI["BalanceOf"].Invoke(contract, account);
                         return balance;*/
         }
 
