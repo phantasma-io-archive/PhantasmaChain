@@ -83,8 +83,8 @@ namespace Phantasma.API
                 }
             }
             // todo add block size, gas, txs
-            //result.AddField("chainName", chain.Name); //todo necessary?
-            // result.AddField("minerAddress", block.MinerAddress.Text); TODO fixme
+            var minerAddress = Nexus.FindValidatorForBlock(block);
+            result.AddField("minerAddress", minerAddress.Text);
 
             return result;
         }

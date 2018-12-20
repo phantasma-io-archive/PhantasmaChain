@@ -108,6 +108,25 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        public Address FindValidatorForBlock(Block block)
+        {
+            Throw.IfNull(block, nameof(block));
+
+            var chain = FindChainForBlock(block);
+            if (chain == null)
+            {
+                return Address.Null;
+            }
+
+            var epoch = chain.FindEpochForBlockHash(block.Hash);
+            if (epoch == null)
+            {
+                return Address.Null;
+            }
+
+            return epoch.ValidatorAddress;
+        }
+
         public Block FindBlockForTransaction(Transaction tx)
         {
             return FindBlockForHash(tx.Hash);
