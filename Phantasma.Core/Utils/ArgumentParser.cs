@@ -46,7 +46,7 @@ namespace Phantasma.Core.Utils
             throw new Exception("Not default argument found");
         }
 
-        public string GetValue(string key, string defaultVal = null)
+        public string GetString(string key, string defaultVal = null)
         {
             if (entries.ContainsKey(key))
             {
@@ -60,7 +60,23 @@ namespace Phantasma.Core.Utils
 
             throw new Exception("Missing non-optional argument: " + key);
         }
-		
+
+        public int GetInt(string key, int defaultVal = 0)
+        {
+            var temp = GetString(key, defaultVal.ToString());
+            int result;
+            if (int.TryParse(temp, out result)) { return result; }
+            return defaultVal;
+        }
+
+        public bool GetBool(string key, bool defaultVal = false)
+        {
+            var temp = GetString(key, defaultVal.ToString());
+            bool result;
+            if (bool.TryParse(temp, out result)) { return result; }
+            return defaultVal;
+        }
+
         public bool HasValue(string key)
         {
             return entries.ContainsKey(key);
