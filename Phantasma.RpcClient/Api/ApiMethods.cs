@@ -5,6 +5,7 @@
         getAccount,
         getApps,
         getAddressTransactions,
+        getAddressTxCount,
         getBlockByHash,
         getBlockByHeight,
         getBlockHeight,
@@ -15,6 +16,8 @@
         getTransactionByHash,
         getTransactionByBlockHashAndIndex,
         getTokens,
+        getTokenTransfers,
+        getTokenTransferCount,
         sendRawTransaction,
     }
 }

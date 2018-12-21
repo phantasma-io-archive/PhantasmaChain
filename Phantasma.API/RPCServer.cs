@@ -41,6 +41,7 @@ namespace Phantasma.API
             // TODO do this automatically via reflection instead of doing it one by one manually
             rpc.RegisterHandler("getAccount", GetAccount);
             rpc.RegisterHandler("getAddressTransactions", GetAddressTransactions);
+            rpc.RegisterHandler("getAddressTxCount", GetAddressTxCount);
             rpc.RegisterHandler("getApps", GetApps);
             rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
             rpc.RegisterHandler("getBlockByHeight", GetBlockByHeight);
@@ -51,15 +52,27 @@ namespace Phantasma.API
             rpc.RegisterHandler("getTransactionByHash", GetTransactionByHash);
             rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
             rpc.RegisterHandler("getTokens", GetTokens);
+            rpc.RegisterHandler("getTokenTransfers", GetTokenTransfers);
+            rpc.RegisterHandler("getTokenTransferCount", GetTokenTransferCount);
             rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
 
             //todo new
-            rpc.RegisterHandler("getRootChain",GetRootChain);
+            // todo add limits to amounts
+            rpc.RegisterHandler("getRootChain", GetRootChain);
         }
 
         private object GetAccount(DataNode paramNode)
         {
             var result = _api.GetAccount(paramNode.GetNodeByIndex(0).ToString());
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetAddressTxCount(DataNode paramNode)
+        {
+            var address = paramNode.GetNodeByIndex(0).ToString();
+            var chain = paramNode.GetNodeByIndex(1) != null ? paramNode.GetNodeByIndex(1).ToString() : "";
+            var result = _api.GetAddressTransactionCount(address, chain);
             CheckForError(result);
             return result;
         }
@@ -151,6 +164,23 @@ namespace Phantasma.API
             return result;
         }
 
+        private object GetTokenTransfers(DataNode paramNode)
+        {
+            var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
+            int amount = int.Parse(paramNode.GetNodeByIndex(1).ToString());
+            var result = _api.GetTokenTransfers(tokenSymbol, amount);
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetTokenTransferCount(DataNode paramNode)
+        {
+            var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
+            var result = _api.GetTokenTransferCount(tokenSymbol);
+            CheckForError(result);
+            return result;
+        }
+
         private object GetConfirmations(DataNode paramNode)
         {
             var result = _api.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
@@ -199,7 +229,9 @@ namespace Phantasma.API
         // new 
         private object GetRootChain(DataNode paramNode)
         {
-            return _api.GetRootChain();
+            var result = _api.GetRootChain();
+            CheckForError(result);
+            return result;
         }
     }
 }

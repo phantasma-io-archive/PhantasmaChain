@@ -5,9 +5,9 @@ using Phantasma.RpcClient.DTOs;
 
 namespace Phantasma.RpcClient.Api
 {
-    public class PhantasmaGetAccountTxs : RpcRequestResponseHandler<AccountTransactionsDto>
+    public class PhantasmaGetAddressTxs : RpcRequestResponseHandler<AccountTransactionsDto>
     {
-        public PhantasmaGetAccountTxs(IClient client) : base(client, ApiMethods.getAddressTransactions.ToString()) { }
+        public PhantasmaGetAddressTxs(IClient client) : base(client, ApiMethods.getAddressTransactions.ToString()) { }
 
         public Task<AccountTransactionsDto> SendRequestAsync(string address, int amount, object id = null)
         {

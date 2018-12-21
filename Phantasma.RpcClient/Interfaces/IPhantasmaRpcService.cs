@@ -5,7 +5,8 @@ namespace Phantasma.RpcClient.Interfaces
     public interface IPhantasmaRpcService
     {
         PhantasmaGetAccount GetAccount { get; }
-        PhantasmaGetAccountTxs GetAccountTxs { get; }
+        PhantasmaGetAddressTxs GetAddressTxs { get; }
+        PhantasmaGetAddressTxCount GetAddressTxCount { get; }
         PhantasmaGetApplications GetApplications { get; }
         PhantasmaGetBlockByHash GetBlockByHash { get; }
         PhantasmaGetBlockByHashSerialized GetBlockByHashSerialized { get; }
@@ -15,6 +16,8 @@ namespace Phantasma.RpcClient.Interfaces
         PhantasmaGetBlockTxCountByHash GetBlockTxCountByHash { get; }
         PhantasmaGetChains GetChains { get; }
         PhantasmaGetTokens GetTokens { get; }
+        PhantasmaGetTokenTransfers GetTokenTransfers { get; }
+        PhantasmaGetTokenTransferCount GetTokenTransferCount { get; set; }
         PhantasmaGetRootChain GetRootChain { get; }
         PhantasmaGetTxByBlockHashAndIndex GetTxByBlockHashAndIndex { get; }
         PhantasmaGetTxByHash GetTxByHash { get; }

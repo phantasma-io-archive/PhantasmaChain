@@ -84,7 +84,7 @@ namespace Phantasma.API
                 }
             }
             // todo add block size, gas, txs
-           
+
 
             return result;
         }
@@ -313,6 +313,40 @@ namespace Phantasma.API
             return result;
         }
 
+        public DataNode GetAddressTransactionCount(string addressText, string chainText)
+        {
+            if (Address.IsValidAddress(addressText))
+            {
+                var address = Address.FromText(addressText);
+                var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
+                int count = 0;
+                if (!string.IsNullOrEmpty(chainText))
+                {
+                    var chain = Nexus.Chains.SingleOrDefault(p =>
+                        p.Name.Equals(chainText) || p.Address.ToString().Equals(chainText));
+                    if (chain != null)
+                    {
+                        count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                    }
+                }
+                else
+                {
+                    foreach (var chain in Nexus.Chains)
+                    {
+                        count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                    }
+                }
+
+                var result = DataNode.CreateValue("");
+                result.Value = count.ToString();
+                return result;
+            }
+
+            var error = DataNode.CreateObject();
+            error.AddField("error", "invalid address");
+            return error;
+        }
+
         public DataNode GetConfirmations(string hashText)
         {
             var result = DataNode.CreateObject();
@@ -476,6 +510,33 @@ namespace Phantasma.API
             return result;
         }
 
+        public DataNode GetTokenTransfers(string tokenSymbol, int amount)
+        {
+            var result = DataNode.CreateArray();
+            var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
+            var txsHash = plugin.GetTokenTransactions(tokenSymbol);
+            foreach (var hash in txsHash)
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
+                if (tx != null)
+                {
+                    result.AddNode(FillTransaction(tx));
+                }
+            }
+
+            return result;
+        }
+
+        public DataNode GetTokenTransferCount(string tokenSymbol)
+        {
+            var result = DataNode.CreateValue("");
+            var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
+            var txCount = plugin.GetTokenTransactions(tokenSymbol).Count();
+            result.Value = txCount.ToString();
+
+            return result;
+        }
+
         public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainAddress) //todo rpc,rest and add chain name too
         {
             if (Address.IsValidAddress(addressText) && Address.IsValidAddress(chainAddress) && !string.IsNullOrEmpty(tokenSymbol))
@@ -505,7 +566,7 @@ namespace Phantasma.API
             }
 
             var result = DataNode.CreateObject();
-            result.AddField("error", "invalid address");
+            result.AddField("error", "invalid address or token");
             return result;
         }
     }

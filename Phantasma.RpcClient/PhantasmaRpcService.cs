@@ -9,7 +9,8 @@ namespace Phantasma.RpcClient
         public PhantasmaRpcService(IClient client) : base(client)
         {
             GetAccount = new PhantasmaGetAccount(client);
-            GetAccountTxs = new PhantasmaGetAccountTxs(client);
+            GetAddressTxs = new PhantasmaGetAddressTxs(client);
+            GetAddressTxCount = new PhantasmaGetAddressTxCount(client);
 
             GetApplications = new PhantasmaGetApplications(client);
 
@@ -24,6 +25,8 @@ namespace Phantasma.RpcClient
             GetRootChain = new PhantasmaGetRootChain(client);
 
             GetTokens = new PhantasmaGetTokens(client);
+            GetTokenTransfers = new PhantasmaGetTokenTransfers(client);
+            GetTokenTransferCount = new PhantasmaGetTokenTransferCount(client);
 
             GetTxByBlockHashAndIndex = new PhantasmaGetTxByBlockHashAndIndex(client);
             GetTxByHash = new PhantasmaGetTxByHash(client);
@@ -33,7 +36,8 @@ namespace Phantasma.RpcClient
         }
 
         public PhantasmaGetAccount GetAccount { get; }
-        public PhantasmaGetAccountTxs GetAccountTxs { get; }
+        public PhantasmaGetAddressTxs GetAddressTxs { get; }
+        public PhantasmaGetAddressTxCount GetAddressTxCount { get; }
         public PhantasmaGetApplications GetApplications { get; }
         public PhantasmaGetBlockByHash GetBlockByHash { get; }
         public PhantasmaGetBlockByHashSerialized GetBlockByHashSerialized { get; }
@@ -43,6 +47,8 @@ namespace Phantasma.RpcClient
         public PhantasmaGetBlockTxCountByHash GetBlockTxCountByHash { get; }
         public PhantasmaGetChains GetChains { get; }
         public PhantasmaGetTokens GetTokens { get; }
+        public PhantasmaGetTokenTransfers GetTokenTransfers { get; }
+        public PhantasmaGetTokenTransferCount GetTokenTransferCount { get; set; }
         public PhantasmaGetRootChain GetRootChain { get; }
         public PhantasmaGetTxByBlockHashAndIndex GetTxByBlockHashAndIndex { get; }
         public PhantasmaGetTxByHash GetTxByHash { get; }
