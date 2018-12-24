@@ -9,12 +9,12 @@ namespace Phantasma.Blockchain.Consensus
 {
     public class ProofOfWork
     {
-        public static Block MineBlock(Chain chain, Address minerAddress, IEnumerable<Transaction> txs, byte[] extraContent = null)
+        public static Block MineBlock(Chain chain, IEnumerable<Transaction> txs, byte[] extraContent = null)
         {
             var timestamp = Timestamp.Now;
 
             var hashes = txs.Select(tx => tx.Hash);
-            var block = new Block(chain.LastBlock.Height + 1, chain.Address, minerAddress, timestamp, hashes, chain.LastBlock.Hash, extraContent);
+            var block = new Block(chain.LastBlock.Height + 1, chain.Address, timestamp, hashes, chain.LastBlock.Hash, extraContent);
 
             var blockDifficulty = Block.InitialDifficulty; // TODO change this later
 
@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain.Consensus
 
             do
             {
-                BigInteger n = block.Hash;
+                BigInteger n = new BigInteger(block.Hash.ToByteArray());
                 if (n < target)
                 {
                     break;

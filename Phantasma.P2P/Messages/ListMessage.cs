@@ -36,6 +36,12 @@ namespace Phantasma.Network.P2P.Messages
         }
     }
 
+    public struct BlockRange
+    {
+        public uint startHeight;
+        public string[] rawBlocks;
+    }
+
     public class ListMessage : Message
     {
         public readonly RequestKind Kind;
@@ -48,6 +54,9 @@ namespace Phantasma.Network.P2P.Messages
 
         private ChainInfo[] _chains = null;
         public IEnumerable<ChainInfo> Chains => _chains;
+
+        private Dictionary<string, BlockRange> _blockRanges;
+        public IEnumerable<KeyValuePair<string, BlockRange>> Blocks => _blockRanges;
 
         public ListMessage(Address address, RequestKind kind) : base(Opcode.LIST, address)
         {
@@ -114,6 +123,27 @@ namespace Phantasma.Network.P2P.Messages
                 result.SetMempool(txs);
             }
 
+            if (kind.HasFlag(RequestKind.Blocks))
+            {
+                var chainCount = reader.ReadUInt16();
+                while (chainCount > 0)
+                {
+                    var chainName = reader.ReadVarString();
+                    var blockHeight = reader.ReadUInt32();
+                    var blockCount = reader.ReadUInt16();
+
+                    var rawBlocks = new string[blockCount];
+                    for (int i=0; i<blockCount; i++)
+                    {
+                        rawBlocks[i] = reader.ReadVarString();
+                    }
+
+                    result.AddBlockRange(chainName, blockHeight, rawBlocks);
+
+                    chainCount--;
+                }
+            }
+
             return result;
         }
 
@@ -147,6 +177,21 @@ namespace Phantasma.Network.P2P.Messages
                     writer.WriteVarString(tx);
                 }
             }
+
+            if (Kind.HasFlag(RequestKind.Blocks))
+            {
+                writer.Write((ushort)_blockRanges.Count);
+                foreach (var entry in _blockRanges)
+                {
+                    writer.WriteVarString(entry.Key);
+                    writer.Write((uint)entry.Value.startHeight);
+                    writer.Write((ushort)entry.Value.rawBlocks.Length);
+                    foreach (var rawBlock in entry.Value.rawBlocks)
+                    {
+                        writer.WriteVarString(rawBlock);
+                    }
+                }
+            }
         }
 
         public override IEnumerable<string> GetDescription()
@@ -177,7 +222,25 @@ namespace Phantasma.Network.P2P.Messages
                 }
             }
 
+            if (Kind.HasFlag(RequestKind.Blocks))
+            {
+                foreach (var entry in _blockRanges)
+                {
+                    yield return $"{entry.Key} blocks #{entry.Value.startHeight} to #{entry.Value.startHeight + (entry.Value.rawBlocks.Length-1)}";
+                }
+            }
+
             yield break;
+        }
+
+        public void AddBlockRange(string chainName, uint startHeight, IEnumerable<string> rawBlocks)
+        {
+            if (_blockRanges == null)
+            {
+                _blockRanges = new Dictionary<string, BlockRange>();
+            }
+
+            _blockRanges[chainName] = new BlockRange() { startHeight = startHeight, rawBlocks = rawBlocks.ToArray() };
         }
     }
 }

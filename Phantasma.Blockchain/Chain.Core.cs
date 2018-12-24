@@ -194,8 +194,6 @@ namespace Phantasma.Blockchain
             }
 
             // from here on, the block is accepted
-            Log.Message($"{Name} height is now {block.Height}");
-
             _blockHeightMap[block.Height] = block;
             _blockHashes[block.Hash] = block;
             _blockChangeSets[block.Hash] = changeSet;
@@ -368,7 +366,7 @@ namespace Phantasma.Blockchain
                         var tokenABI = Chain.FindABI(NativeABI.Token);
                         Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
 
-                        var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
+                        var balance = (LargeInteger)tokenABI["BalanceOf"].Invoke(contract, account);
                         return balance;*/
         }
 

@@ -20,12 +20,15 @@ namespace Phantasma.Network.P2P.Messages
     public sealed class RequestMessage : Message
     {
         public readonly RequestKind Kind;
+        public readonly string NexusName;
 
         private Dictionary<string, uint> _blockFetches;
+        public IEnumerable<KeyValuePair<string, uint>> Blocks => _blockFetches;
 
-        public RequestMessage(RequestKind kind, Address address) :base(Opcode.REQUEST, address)
+        public RequestMessage(RequestKind kind, string nexusName, Address address) :base(Opcode.REQUEST, address)
         {
             Kind = kind;
+            NexusName = nexusName;
         }
 
         public void SetBlocks(Dictionary<string, uint> blockFetches)
@@ -36,7 +39,8 @@ namespace Phantasma.Network.P2P.Messages
         internal static RequestMessage FromReader(Address address, BinaryReader reader)
         {
             var kind = (RequestKind)reader.ReadByte();
-            var msg = new RequestMessage(kind, address);
+            var nexusName = reader.ReadVarString();
+            var msg = new RequestMessage(kind, nexusName, address);
 
             if (kind.HasFlag(RequestKind.Blocks))
             {
@@ -47,6 +51,7 @@ namespace Phantasma.Network.P2P.Messages
                     var key = reader.ReadVarString();
                     var height = reader.ReadUInt32();
                     fetches[key] = height;
+                    count--;
                 }
 
                 msg.SetBlocks(fetches);
@@ -58,6 +63,7 @@ namespace Phantasma.Network.P2P.Messages
         protected override void OnSerialize(BinaryWriter writer)
         {
             writer.Write((byte)Kind);
+            writer.WriteVarString(NexusName);
 
             if (Kind.HasFlag(RequestKind.Blocks))
             {

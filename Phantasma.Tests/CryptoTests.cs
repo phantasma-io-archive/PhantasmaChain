@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
 using System.Linq;
@@ -16,7 +16,7 @@ namespace Phantasma.Tests
     public class CryptoTests
     {
         [TestMethod]
-        public void HashTests()
+        public void HashClass()
         {
             var bytes = new byte[32];
             var rnd = new Random();

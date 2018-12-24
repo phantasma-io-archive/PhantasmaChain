@@ -32,7 +32,8 @@ namespace Phantasma.Blockchain.Tokens
 
         public Address Owner { get; private set; }
 
-        internal BigInteger LastID { get; private set; }
+        private BigInteger _lastId = new BigInteger(0);
+        internal BigInteger LastID { get ; private set; }
 
         private StorageContext _storage;
 
@@ -167,13 +168,8 @@ namespace Phantasma.Blockchain.Tokens
 
         internal BigInteger GenerateID()
         {
-            if (LastID == null)
-            {
-                LastID = new BigInteger(0);
-            }
-
-            LastID++;
-            return LastID;
+            _lastId++;
+            return _lastId;
         }
    }
 }

@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Storage
 
         public BigInteger Count()
         {
-            var result = Context.Get(CountKey()).AsBigInteger();
+            var result = Context.Get(CountKey()).AsLargeInteger();
             return result;
         }
 
