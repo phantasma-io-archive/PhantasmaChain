@@ -5,9 +5,8 @@ using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
-using LunarLabs.Parser.JSON;
-using System;
 using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
@@ -37,7 +36,7 @@ namespace Phantasma.API
             result.AddField("chainName", chain.Name);
             result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("blockHeight", block.Height);
-            result.AddField("script", Base16.Encode(tx.Script));
+            result.AddField("script", tx.Script.Encode());
 
             var eventsNode = DataNode.CreateArray("events");
 
@@ -46,7 +45,7 @@ namespace Phantasma.API
             {
                 var eventNode = DataNode.CreateObject();
                 eventNode.AddField("address", evt.Address);
-                eventNode.AddField("data", Base16.Encode(evt.Data));
+                eventNode.AddField("data", evt.Data.Encode());
                 eventNode.AddField("kind", evt.Kind);
                 eventsNode.AddNode(eventNode);
             }
@@ -56,7 +55,7 @@ namespace Phantasma.API
             return result;
         }
 
-        private DataNode FillBlock(Block block)
+        private DataNode FillBlock(Block block, Chain chain)
         {
             //var chain = Nexus.FindChainForBlock(block.Hash);
             var result = DataNode.CreateObject();
@@ -68,6 +67,10 @@ namespace Phantasma.API
             result.AddField("chainAddress", block.ChainAddress.ToString());
             result.AddField("nonce", block.Nonce);
 
+            var minerAddress = Nexus.FindValidatorForBlock(block);
+            result.AddField("minerAddress", minerAddress.Text);
+            result.AddField("nonce", block.Nonce);
+            result.AddField("reward", TokenUtils.ToDecimal(chain.GetBlockReward(block), Nexus.NativeTokenDecimals));
             var payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode();
             result.AddField("payload", payload);//todo make sure this is ok
 
@@ -83,8 +86,7 @@ namespace Phantasma.API
                 }
             }
             // todo add block size, gas, txs
-            var minerAddress = Nexus.FindValidatorForBlock(block);
-            result.AddField("minerAddress", minerAddress.Text);
+
 
             return result;
         }
@@ -100,28 +102,21 @@ namespace Phantasma.API
                 var name = Nexus.LookUpAddress(address);
                 result.AddField("name", name);
 
-                var tokenNode = DataNode.CreateArray("tokens");
-                result.AddNode(tokenNode);
+                var balancesNode = DataNode.CreateArray("balances");
+                result.AddNode(balancesNode);
 
                 foreach (var token in Nexus.Tokens)
                 {
-                    DataNode chainNode = null;
-
                     foreach (var chain in Nexus.Chains)
                     {
                         var balance = chain.GetTokenBalance(token, address);
                         if (balance > 0)
                         {
-                            if (chainNode == null)
-                            {
-                                chainNode = DataNode.CreateArray("chains");
-                            }
-
                             var balanceNode = DataNode.CreateObject();
-                            chainNode.AddNode(balanceNode);
 
                             balanceNode.AddField("chain", chain.Name);
-                            balanceNode.AddField("balance", balance);
+                            balanceNode.AddField("amount", balance);
+                            balanceNode.AddField("symbol", token.Symbol);
                             if (!token.IsFungible)
                             {
                                 var idList = chain.GetTokenOwnerships(token).Get(address);
@@ -132,18 +127,8 @@ namespace Phantasma.API
                                     balanceNode.AddNode(nodeId);
                                 }
                             }
+                            balancesNode.AddNode(balanceNode);
                         }
-                    }
-
-                    if (chainNode != null)
-                    {
-                        var entryNode = DataNode.CreateObject();
-                        tokenNode.AddNode(entryNode);
-                        entryNode.AddField("symbol", token.Symbol);
-                        entryNode.AddField("name", token.Name);
-                        entryNode.AddField("decimals", token.Decimals);
-                        entryNode.AddField("isFungible", token.IsFungible);
-                        entryNode.AddNode(chainNode);
                     }
                 }
             }
@@ -177,11 +162,10 @@ namespace Phantasma.API
 
         private DataNode GetBlockHeight(Chain chain)
         {
-            var result = DataNode.CreateObject();
+            var result = DataNode.CreateValue("");
             if (chain != null)
             {
-                result.AddField("chain", chain.Address.Text);
-                result.AddField("height", chain.BlockHeight);
+                result.Value = chain.BlockHeight.ToString();
             }
             else
             {
@@ -209,6 +193,7 @@ namespace Phantasma.API
 
         public DataNode GetBlockByHash(string blockHash)
         {
+
             if (Hash.TryParse(blockHash, out var hash))
             {
                 foreach (var chain in Nexus.Chains)
@@ -216,7 +201,7 @@ namespace Phantasma.API
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
-                        return FillBlock(block);
+                        return FillBlock(block, chain);
                     }
                 }
             }
@@ -238,18 +223,6 @@ namespace Phantasma.API
             return GetBlockByHeight(chain, height, serialized);
         }
 
-        //private DataNode GetBlockByHeight(Chain chain, uint height)
-        //{
-        //    var block = chain?.FindBlockByHeight(height);
-        //    if (block != null)
-        //    {
-        //        return FillBlock(block);
-        //    }
-        //    var result = DataNode.CreateObject();
-        //    result.AddField("error", "block not found");
-        //    return result;
-        //}
-
         private DataNode GetBlockByHeight(Chain chain, uint height, int serialized)
         {
             var block = chain?.FindBlockByHeight(height);
@@ -257,14 +230,12 @@ namespace Phantasma.API
             {
                 if (serialized == 0)
                 {
-                    return FillBlock(block);
+                    return FillBlock(block, chain);
                 }
-                else
-                {
-                    var serializedBlock = DataNode.CreateValue("");
-                    serializedBlock.Value = (block.ToByteArray().Encode());
-                    return serializedBlock;
-                }
+
+                var serializedBlock = DataNode.CreateValue("");
+                serializedBlock.Value = (block.ToByteArray().Encode());
+                return serializedBlock;
             }
             var result = DataNode.CreateObject();
             result.AddField("error", "block not found");
@@ -326,6 +297,40 @@ namespace Phantasma.API
             }
 
             return result;
+        }
+
+        public DataNode GetAddressTransactionCount(string addressText, string chainText)
+        {
+            if (Address.IsValidAddress(addressText))
+            {
+                var address = Address.FromText(addressText);
+                var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
+                int count = 0;
+                if (!string.IsNullOrEmpty(chainText))
+                {
+                    var chain = Nexus.Chains.SingleOrDefault(p =>
+                        p.Name.Equals(chainText) || p.Address.ToString().Equals(chainText));
+                    if (chain != null)
+                    {
+                        count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                    }
+                }
+                else
+                {
+                    foreach (var chain in Nexus.Chains)
+                    {
+                        count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                    }
+                }
+
+                var result = DataNode.CreateValue("");
+                result.Value = count.ToString();
+                return result;
+            }
+
+            var error = DataNode.CreateObject();
+            error.AddField("error", "invalid address");
+            return error;
         }
 
         public DataNode GetConfirmations(string hashText)
@@ -402,24 +407,20 @@ namespace Phantasma.API
 
         public DataNode GetChains()
         {
-            var result = DataNode.CreateObject();
-
-            var arrayNode = DataNode.CreateArray("chains");
-
+            var result = DataNode.CreateArray();
             foreach (var chain in Nexus.Chains)
             {
                 var single = DataNode.CreateObject();
                 single.AddField("name", chain.Name);
                 single.AddField("address", chain.Address.Text);
+                single.AddField("height", chain.BlockHeight);
                 if (chain.ParentChain != null)
                 {
-                    single.AddField("parentName", chain.ParentChain.Name);
                     single.AddField("parentAddress", chain.ParentChain.Name);
                 }
-
+                var children = DataNode.CreateArray("children");
                 if (chain.ChildChains != null && chain.ChildChains.Any())
                 {
-                    var children = DataNode.CreateArray("children");
                     foreach (var childChain in chain.ChildChains)
                     {
                         var child = DataNode.CreateObject();
@@ -430,13 +431,9 @@ namespace Phantasma.API
 
                     single.AddNode(children);
                 }
-                arrayNode.AddNode(single);
+                result.AddNode(single);
             }
 
-            result.AddNode(arrayNode);
-
-            var test = JSONWriter.WriteToString(result);
-            Console.WriteLine(test);
             return result;
         }
 
@@ -454,19 +451,21 @@ namespace Phantasma.API
             var node = DataNode.CreateArray("tokens");
             foreach (var token in Nexus.Tokens)
             {
-                var temp = DataNode.CreateObject();
-                temp.AddField("symbol", token.Symbol);
-                temp.AddField("name", token.Name);
-                temp.AddField("currentSupply", token.CurrentSupply);
-                temp.AddField("maxSupply", token.MaxSupply);
-                temp.AddField("decimals", token.Decimals);
-                temp.AddField("isFungible", token.IsFungible);
-                node.AddNode(temp);
-                //todo add flags
+                var tokenNode = DataNode.CreateObject();
+                tokenNode.AddField("symbol", token.Symbol);
+                tokenNode.AddField("name", token.Name);
+                tokenNode.AddField("currentSupply", token.CurrentSupply);
+                tokenNode.AddField("maxSupply", token.MaxSupply);
+                tokenNode.AddField("decimals", token.Decimals);
+                tokenNode.AddField("isFungible", token.IsFungible);
+                tokenNode.AddField("flags", token.Flags);
+                tokenNode.AddField("owner", token.Owner.ToString());
+                node.AddNode(tokenNode);
             }
             result.AddNode(node);
             return result;
         }
+
 
         public DataNode GetApps()
         {
@@ -488,26 +487,71 @@ namespace Phantasma.API
             return result;
         }
 
-
-
-        //todo merge this with existing getblocks
-        private DataNode GetSerializedBlock(string blockHash)
+        public DataNode GetRootChain()
         {
-            if (Hash.TryParse(blockHash, out var hash))
+            var result = DataNode.CreateObject();
+            result.AddField("name", Nexus.RootChain.Name);
+            result.AddField("address", Nexus.RootChain.Address.ToString());
+            result.AddField("height", Nexus.RootChain.BlockHeight.ToString());
+            return result;
+        }
+
+        public DataNode GetTokenTransfers(string tokenSymbol, int amount)
+        {
+            var result = DataNode.CreateArray();
+            var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
+            var txsHash = plugin.GetTokenTransactions(tokenSymbol);
+            foreach (var hash in txsHash)
             {
-                foreach (var chain in Nexus.Chains)
+                var tx = Nexus.FindTransactionByHash(hash);
+                if (tx != null)
                 {
-                    var block = chain.FindBlockByHash(hash);
-                    if (block != null)
-                    {
-                        var serializedBlock = DataNode.CreateObject();
-                        serializedBlock.AddValue(block.ToByteArray().Encode());
-                        return serializedBlock;
-                    }
+                    result.AddNode(FillTransaction(tx));
                 }
             }
+
+            return result;
+        }
+        public DataNode GetTokenTransferCount(string tokenSymbol)
+        {
+            var result = DataNode.CreateValue("");
+            var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
+            var txCount = plugin.GetTokenTransactions(tokenSymbol).Count();
+            result.Value = txCount.ToString();
+
+            return result;
+        }
+
+        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainAddress) //todo rpc,rest and add chain name too
+        {
+            if (Address.IsValidAddress(addressText) && Address.IsValidAddress(chainAddress) && !string.IsNullOrEmpty(tokenSymbol))
+            {
+                var chain = Nexus.FindChainByAddress(Address.FromText(chainAddress));
+                var token = Nexus.FindTokenBySymbol(tokenSymbol);
+                var address = Address.FromText(addressText);
+
+                var balance = chain.GetTokenBalance(token, address);
+                var balanceNode = DataNode.CreateObject();
+                if (balance > 0)
+                {
+                    balanceNode.AddField("balance", balance);
+                    if (!token.IsFungible)
+                    {
+                        var idList = chain.GetTokenOwnerships(token).Get(address);
+                        if (idList != null && idList.Any())
+                        {
+                            var nodeId = DataNode.CreateArray("ids");
+                            idList.ForEach(p => nodeId.AddValue(p.ToString()));
+                            balanceNode.AddNode(nodeId);
+                        }
+                    }
+                }
+
+                return balanceNode;
+            }
+
             var result = DataNode.CreateObject();
-            result.AddField("error", "invalid block hash");
+            result.AddField("error", "invalid address or token");
             return result;
         }
     }
