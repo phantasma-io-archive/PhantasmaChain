@@ -62,10 +62,9 @@ namespace Phantasma.API
 
             result.AddField("hash", block.Hash.ToString());
             result.AddField("previousHash", block.PreviousHash.ToString());
-            result.AddField("timestamp", block.Timestamp);
+            result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("height", block.Height);
             result.AddField("chainAddress", block.ChainAddress.ToString());
-            result.AddField("nonce", block.Nonce);
 
             var minerAddress = Nexus.FindValidatorForBlock(block);
             result.AddField("minerAddress", minerAddress.Text);
@@ -177,13 +176,13 @@ namespace Phantasma.API
 
         public DataNode GetBlockTransactionCountByHash(string blockHash)
         {
-            var result = DataNode.CreateObject();
+            var result = DataNode.CreateValue("");
             if (Hash.TryParse(blockHash, out var hash))
             {
                 var count = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
                 if (count != null)
                 {
-                    result.AddField("txs", count);
+                    result.Value = count.ToString();
                     return result;
                 }
             }
@@ -501,12 +500,15 @@ namespace Phantasma.API
             var result = DataNode.CreateArray();
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txsHash = plugin.GetTokenTransactions(tokenSymbol);
+            int count = 0;
             foreach (var hash in txsHash)
             {
                 var tx = Nexus.FindTransactionByHash(hash);
                 if (tx != null)
                 {
                     result.AddNode(FillTransaction(tx));
+                    count++;
+                    if (count == amount) return result;
                 }
             }
 
