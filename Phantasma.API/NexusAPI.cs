@@ -190,9 +190,8 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetBlockByHash(string blockHash)
+        public DataNode GetBlockByHash(string blockHash, int serialized = 0)
         {
-
             if (Hash.TryParse(blockHash, out var hash))
             {
                 foreach (var chain in Nexus.Chains)
@@ -200,7 +199,12 @@ namespace Phantasma.API
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
-                        return FillBlock(block, chain);
+                        if (serialized == 0)
+                        {
+                            return FillBlock(block, chain);
+                        }
+
+                        return SerializedBlock(block);
                     }
                 }
             }
@@ -232,9 +236,7 @@ namespace Phantasma.API
                     return FillBlock(block, chain);
                 }
 
-                var serializedBlock = DataNode.CreateValue("");
-                serializedBlock.Value = (block.ToByteArray().Encode());
-                return serializedBlock;
+                return SerializedBlock(block);
             }
             var result = DataNode.CreateObject();
             result.AddField("error", "block not found");
@@ -524,37 +526,67 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainAddress) //todo rpc,rest and add chain name too
+        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainInput) //todo rest
         {
-            if (Address.IsValidAddress(addressText) && Address.IsValidAddress(chainAddress) && !string.IsNullOrEmpty(tokenSymbol))
+            var result = DataNode.CreateObject();
+            if (!Address.IsValidAddress(addressText))
             {
-                var chain = Nexus.FindChainByAddress(Address.FromText(chainAddress));
-                var token = Nexus.FindTokenBySymbol(tokenSymbol);
-                var address = Address.FromText(addressText);
-
-                var balance = chain.GetTokenBalance(token, address);
-                var balanceNode = DataNode.CreateObject();
-                if (balance > 0)
-                {
-                    balanceNode.AddField("balance", balance);
-                    if (!token.IsFungible)
-                    {
-                        var idList = chain.GetTokenOwnerships(token).Get(address);
-                        if (idList != null && idList.Any())
-                        {
-                            var nodeId = DataNode.CreateArray("ids");
-                            idList.ForEach(p => nodeId.AddValue(p.ToString()));
-                            balanceNode.AddNode(nodeId);
-                        }
-                    }
-                }
-
-                return balanceNode;
+                result.AddField("error", "invalid address");
+                return result;
             }
 
-            var result = DataNode.CreateObject();
-            result.AddField("error", "invalid address or token");
-            return result;
+            Token token = Nexus.FindTokenBySymbol(tokenSymbol);
+
+            if (token == null)
+            {
+                result.AddField("error", "invalid token");
+                return result;
+            }
+
+            var chain = Nexus.FindChainByName(chainInput);
+
+            if (chain == null)
+            {
+                if (!Address.IsValidAddress(chainInput))
+                {
+                    result.AddField("error", "invalid address");
+                    return result;
+                }
+
+                chain = Nexus.FindChainByAddress(Address.FromText(chainInput));
+                if (chain == null)
+                {
+                    result.AddField("error", "invalid chain");
+                    return result;
+                }
+            }
+
+            var address = Address.FromText(addressText);
+            var balance = chain.GetTokenBalance(token, address);
+            var balanceNode = DataNode.CreateObject();
+
+            if (balance > 0)
+            {
+                balanceNode.AddField("balance", balance);
+                if (!token.IsFungible)
+                {
+                    var idList = chain.GetTokenOwnerships(token).Get(address);
+                    if (idList != null && idList.Any())
+                    {
+                        var nodeId = DataNode.CreateArray("ids");
+                        idList.ForEach(p => nodeId.AddValue(p.ToString()));
+                        balanceNode.AddNode(nodeId);
+                    }
+                }
+            }
+            return balanceNode;
+        }
+
+        private DataNode SerializedBlock(Block block)
+        {
+            var serializedBlock = DataNode.CreateValue("");
+            serializedBlock.Value = (block.ToByteArray().Encode());
+            return serializedBlock;
         }
     }
 }
