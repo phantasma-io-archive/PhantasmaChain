@@ -5,7 +5,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Consensus;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.CLI;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -107,8 +106,6 @@ namespace Phantasma.Tests
             var node = new Node(nexus, node_keys, port, seeds, log);
             log.Message("Phantasma Node address: " + node_keys.Address.Text);
             node.Start();
-
-            nexus.AddPlugin(new TPSPlugin(log, 10));
         }
 
         private Hash SendTransfer(Logger log, string host, KeyPair from, Address to, BigInteger amount)

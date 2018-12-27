@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\PhantasmaNode\PhantasmaCLI\Phantasma.CLI.csproj" />
+    <ProjectReference Include="..\..\PhantasmaNode\PhantasmaNode\Phantasma.Node.csproj" />
     <ProjectReference Include="..\Phantasma.API\Phantasma.API.csproj" />
     <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
