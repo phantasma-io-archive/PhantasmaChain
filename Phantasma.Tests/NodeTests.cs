@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Consensus;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 
 namespace Phantasma.Tests
