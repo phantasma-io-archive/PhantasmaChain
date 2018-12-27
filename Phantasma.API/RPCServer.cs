@@ -52,6 +52,7 @@ namespace Phantasma.API
             rpc.RegisterHandler("getTransactionByHash", GetTransactionByHash);
             rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
             rpc.RegisterHandler("getTokens", GetTokens);
+            rpc.RegisterHandler("getTokenBalance", GetTokenBalance);
             rpc.RegisterHandler("getTokenTransfers", GetTokenTransfers);
             rpc.RegisterHandler("getTokenTransferCount", GetTokenTransferCount);
             rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
@@ -95,7 +96,10 @@ namespace Phantasma.API
 
         private object GetBlockByHash(DataNode paramNode)
         {
-            var result = _api.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString());
+            var serialized = paramNode.GetNodeByIndex(1) != null
+                ? int.Parse(paramNode.GetNodeByIndex(1).ToString())
+                : 0;
+            var result = _api.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString(), serialized);
             CheckForError(result);
             return result;
         }
@@ -160,6 +164,16 @@ namespace Phantasma.API
         private object GetTokens(DataNode paramNode)
         {
             var result = _api.GetTokens();
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetTokenBalance(DataNode paramNode)
+        {
+            var address = paramNode.GetNodeByIndex(0).ToString();
+            var tokenSymbol = paramNode.GetNodeByIndex(1).ToString();
+            var chain = paramNode.GetNodeByIndex(2).ToString();
+            var result = _api.GetTokenBalance(address, tokenSymbol, chain);
             CheckForError(result);
             return result;
         }

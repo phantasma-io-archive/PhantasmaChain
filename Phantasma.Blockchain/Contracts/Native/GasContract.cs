@@ -40,6 +40,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Add(Runtime.Chain.Address, maxAmount), "gas escrow deposit failed");
 
             var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get(from) : 0;
+            Runtime.Expect(allowance == 0, "unexpected pending allowance");
+
             allowance += maxAmount;
             _allowanceMap.Set(from, allowance);
 
