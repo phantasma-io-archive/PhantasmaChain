@@ -2,6 +2,7 @@
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
+using Phantasma.Core.Log;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System;
@@ -43,8 +44,12 @@ namespace Phantasma.Tests
         private Dictionary<Chain, SideChainPendingBlock> _pendingEntries = new Dictionary<Chain, SideChainPendingBlock>();
         private List<SideChainPendingBlock> _pendingBlocks = new List<SideChainPendingBlock>();
 
-        public ChainSimulator(KeyPair ownerKey, int seed)
+        public readonly Logger Logger;
+
+        public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null)
         {
+            this.Logger = logger != null ? logger : new DummyLogger();
+
             _owner = ownerKey;
             this.Nexus = new Nexus("simnet", ownerKey.Address);
 
@@ -120,7 +125,7 @@ namespace Phantasma.Tests
             blockOpen = true;
 
             step++;
-            Console.WriteLine($"Begin block #{step}");
+            Logger.Message($"Begin block #{step}");
         }
 
         public IEnumerable<Block> EndBlock(Mempool mempool = null)
@@ -191,11 +196,11 @@ namespace Phantasma.Tests
                                     };
 
                                     _pendingBlocks.Add(pendingBlock);
-                                    Console.WriteLine($"...Sending {entry.sourceChain.Name}=>{entry.destChain.Name}: {block.Hash}");
+                                    Logger.Message($"...Sending {entry.sourceChain.Name}=>{entry.destChain.Name}: {block.Hash}");
                                 }
                             }
 
-                            Console.WriteLine($"End block #{step}: {block.Hash}");
+                            Logger.Message($"End block #{step}: {block.Hash}");
                         }
                         else
                         {
@@ -464,7 +469,7 @@ namespace Phantasma.Tests
                                     var balance = pendingBlock.destChain.GetTokenBalance(pendingBlock.token, source.Address);
                                     if (balance > 0)
                                     {
-                                        Console.WriteLine($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
+                                        Logger.Message($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
                                         GenerateSideChainSettlement(source, pendingBlock.sourceChain, pendingBlock.destChain, pendingBlock.hash);
                                     }
                                 }
