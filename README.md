@@ -96,6 +96,7 @@ Project	| Description	| Status	| Percentage
 :---------------------- | :------------ | :------------  | :------------ 
 [Phantasma Wallet](https://github.com/phantasma-io/PhantasmaWallet) 		| Cross platform Phantasma wallet | In development | 60%
 [Phantasma Explorer](https://github.com/phantasma-io/PhantasmaExplorer) | Block explorer for visualizing Phantasma chain data | In development | 70%
+[Phantasma Node](https://github.com/phantasma-io/PhantasmaNode) | Phantasma node deployment | In development | 60%
 [Phantasma SDK](https://github.com/phantasma-io/PhantasmaSDK) 		| Software development kit | In development | 30%
 [Phantasma Link](https://github.com/phantasma-io/PhantasmaLink) 		| Browser extensions for interacting with Phantasma dApps | In development | 20%
 [Phantasma Compiler](https://github.com/phantasma-io/PhantasmaCompiler) | Phantasma smart contract compiler for high-level languages | In development | 10%
