@@ -137,8 +137,7 @@ namespace Phantasma.API
         #region Transactions
         private object GetTransactionByHash(DataNode paramNode)
         {
-            var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            var result = _api.GetTransaction(hash);
+            var result = _api.GetTransaction(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
             return result;
         }

@@ -438,11 +438,23 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetTransaction(Hash hash)
+        public DataNode GetTransaction(string hashText)
         {
-            var tx = Nexus.FindTransactionByHash(hash);
+            Hash hash;
+            DataNode result;
+            
+            if (Hash.TryParse(hashText, out hash))
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
 
-            var result = FillTransaction(tx);
+                result = FillTransaction(tx);
+            }
+            else
+            {
+                result = DataNode.CreateObject();
+                result.AddField("error", "Invalid hash");
+            }
+
             return result;
         }
 
