@@ -55,11 +55,10 @@ namespace Phantasma.Tests
             int totalTxs = 0;
             int okTxs = 0;
 
-            int listIterator = 0;
-
             BigInteger currentKeyBalance = GetBalance(currentKey.Value.Address);
 
-            while (currentKeyBalance > 9999)
+            //while (currentKeyBalance > 9999)
+            while (totalTxs < 100)
             {
                 var destKey = currentKey.Next != null ? currentKey.Next : addressList.First;
 
@@ -71,7 +70,10 @@ namespace Phantasma.Tests
                     SendTransfer(log, host, masterKeys, currentKey.Value.Address, amount);
                 }
 
-                Thread.Sleep(100);
+                do
+                {
+                    Thread.Sleep(100);
+                } while (mempool.Size > 0);
 
                 var confirmation = ConfirmTransaction(log, host, hash);
 
@@ -80,11 +82,6 @@ namespace Phantasma.Tests
                 totalTxs++;
                 currentKey = destKey;
                 currentKeyBalance = GetBalance(currentKey.Value.Address);
-
-                if (totalTxs % 10 == 0)
-                {
-                    log.Message($"Sent {totalTxs} transactions");
-                }
 
                 Trace.WriteLine(currentKeyBalance);
             }

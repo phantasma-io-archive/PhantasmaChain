@@ -93,7 +93,7 @@ namespace Phantasma.Blockchain
             }
 
             Interlocked.Increment(ref _size);
-            OnTransactionAdded.Invoke(tx);
+            OnTransactionAdded?.Invoke(tx);
 
             return true;
         }
@@ -115,7 +115,7 @@ namespace Phantasma.Blockchain
                 }
 
                 Interlocked.Decrement(ref _size);
-                OnTransactionRemoved.Invoke(tx);
+                OnTransactionRemoved?.Invoke(tx);
                 return true;
             }
 
@@ -199,7 +199,7 @@ namespace Phantasma.Blockchain
                         foreach (var tx in transactions)
                         {
                             Interlocked.Decrement(ref _size);
-                            OnTransactionRemoved.Invoke(tx);
+                            OnTransactionRemoved?.Invoke(tx);
                         }
                     }
                 }
