@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -13,6 +14,8 @@ namespace Phantasma.Blockchain
         public Timestamp timestamp;
     }
 
+    public delegate void MempoolEventHandler(Transaction tx);
+
     public class Mempool: Runnable
     {
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
@@ -24,6 +27,12 @@ namespace Phantasma.Blockchain
         public Address ValidatorAddress => _validatorKeys.Address;
 
         public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
+
+        public event MempoolEventHandler OnTransactionAdded;
+        public event MempoolEventHandler OnTransactionRemoved;
+
+        private int _size = 0;
+        public int Size => _size;
 
         public Mempool(KeyPair validatorKeys, Nexus nexus)
         {
@@ -83,6 +92,9 @@ namespace Phantasma.Blockchain
                 _hashMap[tx.Hash] = chain.Name;
             }
 
+            Interlocked.Increment(ref _size);
+            OnTransactionAdded.Invoke(tx);
+
             return true;
         }
 
@@ -102,6 +114,8 @@ namespace Phantasma.Blockchain
                     }
                 }
 
+                Interlocked.Decrement(ref _size);
+                OnTransactionRemoved.Invoke(tx);
                 return true;
             }
 
@@ -181,6 +195,12 @@ namespace Phantasma.Blockchain
                         var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
 
                         var success = chain.AddBlock(block, transactions);
+
+                        foreach (var tx in transactions)
+                        {
+                            Interlocked.Decrement(ref _size);
+                            OnTransactionRemoved.Invoke(tx);
+                        }
                     }
                 }
 
