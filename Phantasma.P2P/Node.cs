@@ -44,7 +44,7 @@ namespace Phantasma.Network.P2P
         public Address Address => keys.Address;
 
         public readonly KeyPair keys;
-        public readonly Logger Log;
+        public readonly Logger Logger;
 
         public IEnumerable<Peer> Peers => _peers;
 
@@ -67,7 +67,7 @@ namespace Phantasma.Network.P2P
             this.Port = port;
             this.keys = keys;
 
-            this.Log = Logger.Init(log);
+            this.Logger = Logger.Init(log);
 
             this._mempool = new Mempool(keys, nexus);
 
@@ -163,7 +163,7 @@ namespace Phantasma.Network.P2P
 
         protected override void OnStart()
         {
-            Log.Message($"Starting TCP listener on {Port}...");
+            Logger.Message($"Phantasma node listening on port {Port}, with address {Address}...");
 
             listener.Start();
         }
@@ -236,13 +236,13 @@ namespace Phantasma.Network.P2P
 
                     if (!success)
                     {
-                        Log.Message("Could not reach peer: " + target.endpoint);
+                        Logger.Message("Could not reach peer: " + target.endpoint);
                         target.status = EndpointStatus.Disabled;
                         return;
                     }
                     else
                     {
-                        Log.Message("Connected to peer: " + target.endpoint);
+                        Logger.Message("Connected to peer: " + target.endpoint);
                         client.EndConnect(result);
                         target.status = EndpointStatus.Connected;
 
@@ -290,7 +290,7 @@ namespace Phantasma.Network.P2P
                 return;
             }
 
-            Log.Message("New connection accepted from " + socket.RemoteEndPoint.ToString());
+            Logger.Message("New connection accepted from " + socket.RemoteEndPoint.ToString());
             Task.Run(() => { HandleConnection(socket); });
         }
 
@@ -299,7 +299,7 @@ namespace Phantasma.Network.P2P
             Throw.IfNull(peer, nameof(peer));
             Throw.IfNull(msg, nameof(msg));
 
-            Log.Message("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
+            Logger.Message("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
 
             msg.Sign(this.keys);
             peer.Send(msg);
@@ -340,7 +340,7 @@ namespace Phantasma.Network.P2P
 
             }
 
-            Log.Message("Disconnected from peer: " + peer.Endpoint);
+            Logger.Message("Disconnected from peer: " + peer.Endpoint);
 
             socket.Close();
 
@@ -447,7 +447,7 @@ namespace Phantasma.Network.P2P
                             var newPeers = listMsg.Peers.Where(x => !IsKnown(x));
                             foreach (var entry in listMsg.Peers)
                             {
-                                Log.Message("New peer: " + entry.ToString());
+                                Logger.Message("New peer: " + entry.ToString());
                             }
                             QueueEndpoints(newPeers);
                         }
@@ -478,7 +478,7 @@ namespace Phantasma.Network.P2P
                                     submittedCount++;
                                 }
 
-                                Log.Message(submittedCount + " new transactions");
+                                Logger.Message(submittedCount + " new transactions");
                             }
                         }
 
@@ -515,7 +515,7 @@ namespace Phantasma.Network.P2P
                                         throw new Exception("block add failed");
                                     }
 
-                                    Log.Message($"Added block #{currentBlock} to {chain.Name}");
+                                    Logger.Message($"Added block #{currentBlock} to {chain.Name}");
                                     addedBlocks = true;
                                     currentBlock++;
                                 }
@@ -562,17 +562,17 @@ namespace Phantasma.Network.P2P
                         var errorMsg = (ErrorMessage)msg;
                         if (string.IsNullOrEmpty(errorMsg.Text))
                         {
-                            Log.Error($"ERROR: {errorMsg.Code}");
+                            Logger.Error($"ERROR: {errorMsg.Code}");
                         }
                         else
                         {
-                            Log.Error($"ERROR: {errorMsg.Code} ({errorMsg.Text})");
+                            Logger.Error($"ERROR: {errorMsg.Code} ({errorMsg.Text})");
                         }
                         break;
                     }
             }
 
-            Log.Message("No answer sent.");
+            Logger.Message("No answer sent.");
             return null;
         }
 
