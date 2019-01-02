@@ -1,8 +1,10 @@
-﻿using LunarLabs.Parser;
+﻿using System;
+using LunarLabs.Parser;
 using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
 using LunarLabs.WebServer.Protocols;
 using Phantasma.Core;
+using Phantasma.Core.Log;
 using Phantasma.Cryptography;
 
 namespace Phantasma.API
@@ -11,18 +13,12 @@ namespace Phantasma.API
     {
         public int Port { get; }
         public string EndPoint { get; }
+        public readonly NexusAPI API;
 
         private readonly HTTPServer _server;
 
-        private readonly NexusAPI _api;
-
-        public RPCServer(NexusAPI api, string endPoint, int port, Logger logger = null)
+        public RPCServer(NexusAPI api, string endPoint, int port, LoggerCallback logger = null)
         {
-            if (logger == null)
-            {
-                logger = new NullLogger();
-            }
-
             if (string.IsNullOrEmpty(endPoint))
             {
                 endPoint = "/";
@@ -30,7 +26,7 @@ namespace Phantasma.API
 
             Port = port;
             EndPoint = endPoint;
-            _api = api;
+            API = api;
 
             var settings = new ServerSettings() { Environment = ServerEnvironment.Prod, Port = port, MaxPostSizeInBytes = 1024 * 128 };
 
@@ -52,6 +48,7 @@ namespace Phantasma.API
             rpc.RegisterHandler("getTransactionByHash", GetTransactionByHash);
             rpc.RegisterHandler("getTransactionByBlockHashAndIndex", GetTransactionByBlockHashAndIndex);
             rpc.RegisterHandler("getTokens", GetTokens);
+            rpc.RegisterHandler("getTokenBalance", GetTokenBalance);
             rpc.RegisterHandler("getTokenTransfers", GetTokenTransfers);
             rpc.RegisterHandler("getTokenTransferCount", GetTokenTransferCount);
             rpc.RegisterHandler("sendRawTransaction", SendRawTransaction);
@@ -63,7 +60,7 @@ namespace Phantasma.API
 
         private object GetAccount(DataNode paramNode)
         {
-            var result = _api.GetAccount(paramNode.GetNodeByIndex(0).ToString());
+            var result = API.GetAccount(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
             return result;
         }
@@ -72,7 +69,7 @@ namespace Phantasma.API
         {
             var address = paramNode.GetNodeByIndex(0).ToString();
             var chain = paramNode.GetNodeByIndex(1) != null ? paramNode.GetNodeByIndex(1).ToString() : "";
-            var result = _api.GetAddressTransactionCount(address, chain);
+            var result = API.GetAddressTransactionCount(address, chain);
             CheckForError(result);
             return result;
         }
@@ -81,21 +78,24 @@ namespace Phantasma.API
         private object GetBlockHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
-            var result = _api.GetBlockHeightFromChainName(chain) ?? _api.GetBlockHeightFromChainAddress(chain);
+            var result = API.GetBlockHeightFromChainName(chain) ?? API.GetBlockHeightFromChainAddress(chain);
             CheckForError(result);
             return result;
         }
 
         private object GetBlockTransactionCountByHash(DataNode paramNode)
         {
-            var result = _api.GetBlockTransactionCountByHash(paramNode.GetNodeByIndex(0).ToString());
+            var result = API.GetBlockTransactionCountByHash(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
             return result;
         }
 
         private object GetBlockByHash(DataNode paramNode)
         {
-            var result = _api.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString());
+            var serialized = paramNode.GetNodeByIndex(1) != null
+                ? int.Parse(paramNode.GetNodeByIndex(1).ToString())
+                : 0;
+            var result = API.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString(), serialized);
             CheckForError(result);
             return result;
         }
@@ -109,12 +109,12 @@ namespace Phantasma.API
                 ? int.Parse(paramNode.GetNodeByIndex(2).ToString())
                 : 0;
 
-            var result = _api.GetBlockByHeight(chain, height, serialized);
+            var result = API.GetBlockByHeight(chain, height, serialized);
             if (result == null)
             {
                 if (Address.IsValidAddress(chain))
                 {
-                    result = _api.GetBlockByHeight(Address.FromText(chain), height, serialized);
+                    result = API.GetBlockByHeight(Address.FromText(chain), height, serialized);
                 }
             }
 
@@ -125,7 +125,7 @@ namespace Phantasma.API
 
         private object GetChains(DataNode paramNode)
         {
-            var result = _api.GetChains();
+            var result = API.GetChains();
             CheckForError(result);
             return result;
         }
@@ -133,8 +133,7 @@ namespace Phantasma.API
         #region Transactions
         private object GetTransactionByHash(DataNode paramNode)
         {
-            var hash = Hash.Parse(paramNode.GetNodeByIndex(0).ToString());
-            var result = _api.GetTransaction(hash);
+            var result = API.GetTransaction(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
             return result;
         }
@@ -142,7 +141,7 @@ namespace Phantasma.API
         private object GetTransactionByBlockHashAndIndex(DataNode paramNode)
         {
             int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
-            var result = _api.GetTransactionByBlockHashAndIndex(paramNode.GetNodeByIndex(0).ToString(), index);
+            var result = API.GetTransactionByBlockHashAndIndex(paramNode.GetNodeByIndex(0).ToString(), index);
             CheckForError(result);
             return result;
         }
@@ -150,7 +149,7 @@ namespace Phantasma.API
         private object GetAddressTransactions(DataNode paramNode)
         {
             var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
-            var result = _api.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amountTx);
+            var result = API.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amountTx);
             CheckForError(result);
             return result;
         }
@@ -159,7 +158,34 @@ namespace Phantasma.API
 
         private object GetTokens(DataNode paramNode)
         {
-            var result = _api.GetTokens();
+            var result = API.GetTokens();
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetTokenBalance(DataNode paramNode)
+        {
+            var address = paramNode.GetNodeByIndex(0).ToString();
+            var tokenSymbol = paramNode.GetNodeByIndex(1).ToString();
+            var chain = paramNode.GetNodeByIndex(2).ToString();
+            var result = API.GetTokenBalance(address, tokenSymbol, chain);
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetTokenTransfers(DataNode paramNode)
+        {
+            var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
+            int amount = int.Parse(paramNode.GetNodeByIndex(1).ToString());
+            var result = API.GetTokenTransfers(tokenSymbol, amount);
+            CheckForError(result);
+            return result;
+        }
+
+        private object GetTokenTransferCount(DataNode paramNode)
+        {
+            var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
+            var result = API.GetTokenTransferCount(tokenSymbol);
             CheckForError(result);
             return result;
         }
@@ -183,7 +209,7 @@ namespace Phantasma.API
 
         private object GetConfirmations(DataNode paramNode)
         {
-            var result = _api.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
+            var result = API.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
             return result;
         }
@@ -191,14 +217,14 @@ namespace Phantasma.API
         private object SendRawTransaction(DataNode paramNode)
         {
             var signedTx = paramNode.GetNodeByIndex(0).ToString();
-            var result = _api.SendRawTransaction(signedTx);
+            var result = API.SendRawTransaction(signedTx);
             CheckForError(result);
             return result;
         }
 
         private object GetApps(DataNode paramNode)
         {
-            var result = _api.GetApps();
+            var result = API.GetApps();
             CheckForError(result);
             return result;
         }
@@ -229,9 +255,19 @@ namespace Phantasma.API
         // new 
         private object GetRootChain(DataNode paramNode)
         {
+            var result = API.GetRootChain();
+            CheckForError(result);
+            return result;
+        }
+
+
+        // new 
+        private object GetRootChain(DataNode paramNode)
+        {
             var result = _api.GetRootChain();
             CheckForError(result);
             return result;
         }
     }
 }
+

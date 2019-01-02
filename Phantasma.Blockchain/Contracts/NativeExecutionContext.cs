@@ -44,7 +44,7 @@ namespace Phantasma.Blockchain.Contracts
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
 #else
-                                return ExecutionState.Fault;
+                return ExecutionState.Fault;
 #endif
             }
 
@@ -53,7 +53,7 @@ namespace Phantasma.Blockchain.Contracts
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
 #else
-                                return ExecutionState.Fault;
+                return ExecutionState.Fault;
 #endif
             }
 
@@ -68,6 +68,8 @@ namespace Phantasma.Blockchain.Contracts
                 {
 #if DEBUG
                     throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
+#else
+                    result = ExecutionState.Fault;
 #endif
                 }
                 return result;

@@ -1,6 +1,9 @@
+using System;
 using System.Linq;
-using Phantasma.Blockchain;
+using System.Reflection;
+using System.Collections.Generic;
 using LunarLabs.Parser;
+using Phantasma.Blockchain;
 using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -10,11 +13,62 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
+    public struct APIEntry
+    {
+        public readonly string Name;
+        public readonly Type[] Parameters;
+
+        private readonly NexusAPI API;
+        private readonly MethodInfo Info;
+
+        public APIEntry(NexusAPI api, MethodInfo info)
+        {
+            API = api;
+            Info = info;
+            Name = info.Name;
+            Parameters = info.GetParameters().Select(x => x.ParameterType).ToArray();
+        }
+
+        public DataNode Execute(params string[] input)
+        {
+            if (input.Length != Parameters.Length)
+            {
+                throw new Exception("Unexpected number of arguments");
+            }
+
+            var args = new object[input.Length];
+            for (int i =0; i< args.Length; i++)
+            {
+                if (Parameters[i] == typeof(string))
+                {
+                    args[i] = input[i];
+                }
+                else
+                if (Parameters[i] == typeof(uint))
+                {
+                    args[i] = uint.Parse(input[i]); // TODO error handling
+                }
+                else
+                if (Parameters[i] == typeof(int))
+                {
+                    args[i] = int.Parse(input[i]); // TODO error handling
+                }
+                else
+                {
+                    throw new Exception("API invalid parameter type: " + Parameters[i].FullName);
+                }
+            }
+            return (DataNode) Info.Invoke(API, args);
+        }
+    }
+
     public class NexusAPI
     {
-        public Nexus Nexus { get; }
+        public readonly Nexus Nexus;
+        public readonly Mempool Mempool;
+        public IEnumerable<APIEntry> Methods => _methods.Values;
 
-        public Mempool Mempool { get; }
+        private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
         public NexusAPI(Nexus nexus, Mempool mempool = null)
         {
@@ -22,6 +76,29 @@ namespace Phantasma.API
 
             Nexus = nexus;
             Mempool = mempool;
+
+            var methodInfo = this.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var entry in methodInfo)
+            {
+                if (entry.ReturnType == typeof(DataNode))
+                {
+                    _methods[entry.Name.ToLower()] = new APIEntry(this, entry);
+                }
+            }
+        }
+
+        public DataNode Execute(string methodName, string[] args)
+        {
+            methodName = methodName.ToLower();
+            if (_methods.ContainsKey(methodName))
+            {
+                return _methods[methodName].Execute(args);
+            }
+            else
+            {
+                throw new Exception("Unknown method: " + methodName);
+            }
         }
 
         #region UTILS
@@ -65,10 +142,11 @@ namespace Phantasma.API
             result.AddField("timestamp", block.Timestamp.Value);
             result.AddField("height", block.Height);
             result.AddField("chainAddress", block.ChainAddress.ToString());
+
             var minerAddress = Nexus.FindValidatorForBlock(block);
             result.AddField("minerAddress", minerAddress.Text);
             result.AddField("nonce", block.Nonce);
-            result.AddField("reward", TokenUtils.ToDecimal(chain.GetBlockReward(block), Nexus.NativeTokenDecimals));
+
             var payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode();
             result.AddField("payload", payload);//todo make sure this is ok
 
@@ -84,6 +162,7 @@ namespace Phantasma.API
                 }
             }
             // todo add block size, gas, txs
+
 
 
             return result;
@@ -105,23 +184,16 @@ namespace Phantasma.API
 
                 foreach (var token in Nexus.Tokens)
                 {
-                    DataNode chainNode = null;
-
                     foreach (var chain in Nexus.Chains)
                     {
                         var balance = chain.GetTokenBalance(token, address);
                         if (balance > 0)
                         {
-                            if (chainNode == null)
-                            {
-                                chainNode = DataNode.CreateArray("chains");
-                            }
-
-                            var balanceNode = DataNode.CreateObject();//todo remove this balance node
-                            chainNode.AddNode(balanceNode);
+                            var balanceNode = DataNode.CreateObject();
 
                             balanceNode.AddField("chain", chain.Name);
                             balanceNode.AddField("amount", balance);
+                            balanceNode.AddField("symbol", token.Symbol);
                             if (!token.IsFungible)
                             {
                                 var idList = chain.GetTokenOwnerships(token).Get(address);
@@ -132,18 +204,8 @@ namespace Phantasma.API
                                     balanceNode.AddNode(nodeId);
                                 }
                             }
+                            balancesNode.AddNode(balanceNode);
                         }
-                    }
-
-                    if (chainNode != null)
-                    {
-                        var entryNode = DataNode.CreateObject();
-                        balancesNode.AddNode(entryNode);
-                        entryNode.AddField("symbol", token.Symbol);
-                        entryNode.AddField("name", token.Name);
-                        entryNode.AddField("decimals", token.Decimals);
-                        entryNode.AddField("isFungible", token.IsFungible);
-                        entryNode.AddNode(chainNode);
                     }
                 }
             }
@@ -192,13 +254,13 @@ namespace Phantasma.API
 
         public DataNode GetBlockTransactionCountByHash(string blockHash)
         {
-            var result = DataNode.CreateObject();
+            var result = DataNode.CreateValue("");
             if (Hash.TryParse(blockHash, out var hash))
             {
                 var count = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
                 if (count != null)
                 {
-                    result.AddField("txs", count);
+                    result.Value = count.ToString();
                     return result;
                 }
             }
@@ -206,7 +268,7 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetBlockByHash(string blockHash)
+        public DataNode GetBlockByHash(string blockHash, int serialized = 0)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -215,7 +277,12 @@ namespace Phantasma.API
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
-                        return FillBlock(block, chain);
+                        if (serialized == 0)
+                        {
+                            return FillBlock(block, chain);
+                        }
+
+                        return SerializedBlock(block);
                     }
                 }
             }
@@ -247,9 +314,7 @@ namespace Phantasma.API
                     return FillBlock(block, chain);
                 }
 
-                var serializedBlock = DataNode.CreateValue("");
-                serializedBlock.Value = (block.ToByteArray().Encode());
-                return serializedBlock;
+                return SerializedBlock(block);
             }
             var result = DataNode.CreateObject();
             result.AddField("error", "block not found");
@@ -451,11 +516,23 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetTransaction(Hash hash)
+        public DataNode GetTransaction(string hashText)
         {
-            var tx = Nexus.FindTransactionByHash(hash);
+            Hash hash;
+            DataNode result;
+            
+            if (Hash.TryParse(hashText, out hash))
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
 
-            var result = FillTransaction(tx);
+                result = FillTransaction(tx);
+            }
+            else
+            {
+                result = DataNode.CreateObject();
+                result.AddField("error", "Invalid hash");
+            }
+
             return result;
         }
 
@@ -472,14 +549,14 @@ namespace Phantasma.API
                 tokenNode.AddField("maxSupply", token.MaxSupply);
                 tokenNode.AddField("decimals", token.Decimals);
                 tokenNode.AddField("isFungible", token.IsFungible);
-                tokenNode.AddField("flags", token.Flags); //todo test
+                tokenNode.AddField("flags", token.Flags);
                 tokenNode.AddField("owner", token.Owner.ToString());
                 node.AddNode(tokenNode);
-                //todo add flags
             }
             result.AddNode(node);
             return result;
         }
+
 
         public DataNode GetApps()
         {
@@ -515,18 +592,20 @@ namespace Phantasma.API
             var result = DataNode.CreateArray();
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txsHash = plugin.GetTokenTransactions(tokenSymbol);
+            int count = 0;
             foreach (var hash in txsHash)
             {
                 var tx = Nexus.FindTransactionByHash(hash);
                 if (tx != null)
                 {
                     result.AddNode(FillTransaction(tx));
+                    count++;
+                    if (count == amount) return result;
                 }
             }
 
             return result;
         }
-
         public DataNode GetTokenTransferCount(string tokenSymbol)
         {
             var result = DataNode.CreateValue("");
@@ -537,37 +616,67 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainAddress) //todo rpc,rest and add chain name too
+        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainInput) //todo rest
         {
-            if (Address.IsValidAddress(addressText) && Address.IsValidAddress(chainAddress) && !string.IsNullOrEmpty(tokenSymbol))
+            var result = DataNode.CreateObject();
+            if (!Address.IsValidAddress(addressText))
             {
-                var chain = Nexus.FindChainByAddress(Address.FromText(chainAddress));
-                var token = Nexus.FindTokenBySymbol(tokenSymbol);
-                var address = Address.FromText(addressText);
-
-                var balance = chain.GetTokenBalance(token, address);
-                var balanceNode = DataNode.CreateObject();
-                if (balance > 0)
-                {
-                    balanceNode.AddField("balance", balance);
-                    if (!token.IsFungible)
-                    {
-                        var idList = chain.GetTokenOwnerships(token).Get(address);
-                        if (idList != null && idList.Any())
-                        {
-                            var nodeId = DataNode.CreateArray("ids");
-                            idList.ForEach(p => nodeId.AddValue(p.ToString()));
-                            balanceNode.AddNode(nodeId);
-                        }
-                    }
-                }
-
-                return balanceNode;
+                result.AddField("error", "invalid address");
+                return result;
             }
 
-            var result = DataNode.CreateObject();
-            result.AddField("error", "invalid address or token");
-            return result;
+            Token token = Nexus.FindTokenBySymbol(tokenSymbol);
+
+            if (token == null)
+            {
+                result.AddField("error", "invalid token");
+                return result;
+            }
+
+            var chain = Nexus.FindChainByName(chainInput);
+
+            if (chain == null)
+            {
+                if (!Address.IsValidAddress(chainInput))
+                {
+                    result.AddField("error", "invalid address");
+                    return result;
+                }
+
+                chain = Nexus.FindChainByAddress(Address.FromText(chainInput));
+                if (chain == null)
+                {
+                    result.AddField("error", "invalid chain");
+                    return result;
+                }
+            }
+
+            var address = Address.FromText(addressText);
+            var balance = chain.GetTokenBalance(token, address);
+            var balanceNode = DataNode.CreateObject();
+
+            if (balance > 0)
+            {
+                balanceNode.AddField("balance", balance);
+                if (!token.IsFungible)
+                {
+                    var idList = chain.GetTokenOwnerships(token).Get(address);
+                    if (idList != null && idList.Any())
+                    {
+                        var nodeId = DataNode.CreateArray("ids");
+                        idList.ForEach(p => nodeId.AddValue(p.ToString()));
+                        balanceNode.AddNode(nodeId);
+                    }
+                }
+            }
+            return balanceNode;
+        }
+
+        private DataNode SerializedBlock(Block block)
+        {
+            var serializedBlock = DataNode.CreateValue("");
+            serializedBlock.Value = (block.ToByteArray().Encode());
+            return serializedBlock;
         }
     }
 }

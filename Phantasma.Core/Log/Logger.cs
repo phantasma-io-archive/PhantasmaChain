@@ -59,6 +59,16 @@ namespace Phantasma.Core.Log
         }
 
 
+        public void Success(string msg)
+        {
+            if (this.Level < LogEntryKind.Sucess)
+            {
+                return;
+            }
+
+            Write(LogEntryKind.Sucess, msg);
+        }
+
         public void Exception(Exception ex)
         {
             Error(ex.ToString());
