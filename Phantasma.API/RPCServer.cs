@@ -190,23 +190,6 @@ namespace Phantasma.API
             return result;
         }
 
-        private object GetTokenTransfers(DataNode paramNode)
-        {
-            var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
-            int amount = int.Parse(paramNode.GetNodeByIndex(1).ToString());
-            var result = _api.GetTokenTransfers(tokenSymbol, amount);
-            CheckForError(result);
-            return result;
-        }
-
-        private object GetTokenTransferCount(DataNode paramNode)
-        {
-            var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
-            var result = _api.GetTokenTransferCount(tokenSymbol);
-            CheckForError(result);
-            return result;
-        }
-
         private object GetConfirmations(DataNode paramNode)
         {
             var result = API.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
@@ -256,15 +239,6 @@ namespace Phantasma.API
         private object GetRootChain(DataNode paramNode)
         {
             var result = API.GetRootChain();
-            CheckForError(result);
-            return result;
-        }
-
-
-        // new 
-        private object GetRootChain(DataNode paramNode)
-        {
-            var result = _api.GetRootChain();
             CheckForError(result);
             return result;
         }
