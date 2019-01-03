@@ -3,9 +3,9 @@ using System;
 
 namespace Phantasma.API
 {
-    internal static class APIUtils
+    public static class APIUtils
     {
-        internal static DataNode FromAPIResult(IAPIResult input)
+        public static DataNode FromAPIResult(IAPIResult input)
         {
             DataNode result;
 
@@ -67,6 +67,8 @@ namespace Phantasma.API
 
                                 entry.AddNode(itemNode);
                             }
+
+                            result.AddNode(entry);
                         }
                     }
                     else
