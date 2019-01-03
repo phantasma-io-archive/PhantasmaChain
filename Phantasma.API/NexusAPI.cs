@@ -1,6 +1,9 @@
+using System;
 using System.Linq;
-using Phantasma.Blockchain;
+using System.Reflection;
+using System.Collections.Generic;
 using LunarLabs.Parser;
+using Phantasma.Blockchain;
 using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -10,11 +13,62 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
+    public struct APIEntry
+    {
+        public readonly string Name;
+        public readonly Type[] Parameters;
+
+        private readonly NexusAPI API;
+        private readonly MethodInfo Info;
+
+        public APIEntry(NexusAPI api, MethodInfo info)
+        {
+            API = api;
+            Info = info;
+            Name = info.Name;
+            Parameters = info.GetParameters().Select(x => x.ParameterType).ToArray();
+        }
+
+        public DataNode Execute(params string[] input)
+        {
+            if (input.Length != Parameters.Length)
+            {
+                throw new Exception("Unexpected number of arguments");
+            }
+
+            var args = new object[input.Length];
+            for (int i =0; i< args.Length; i++)
+            {
+                if (Parameters[i] == typeof(string))
+                {
+                    args[i] = input[i];
+                }
+                else
+                if (Parameters[i] == typeof(uint))
+                {
+                    args[i] = uint.Parse(input[i]); // TODO error handling
+                }
+                else
+                if (Parameters[i] == typeof(int))
+                {
+                    args[i] = int.Parse(input[i]); // TODO error handling
+                }
+                else
+                {
+                    throw new Exception("API invalid parameter type: " + Parameters[i].FullName);
+                }
+            }
+            return (DataNode) Info.Invoke(API, args);
+        }
+    }
+
     public class NexusAPI
     {
-        public Nexus Nexus { get; }
+        public readonly Nexus Nexus;
+        public readonly Mempool Mempool;
+        public IEnumerable<APIEntry> Methods => _methods.Values;
 
-        public Mempool Mempool { get; }
+        private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
         public NexusAPI(Nexus nexus, Mempool mempool = null)
         {
@@ -22,6 +76,29 @@ namespace Phantasma.API
 
             Nexus = nexus;
             Mempool = mempool;
+
+            var methodInfo = this.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var entry in methodInfo)
+            {
+                if (entry.ReturnType == typeof(DataNode))
+                {
+                    _methods[entry.Name.ToLower()] = new APIEntry(this, entry);
+                }
+            }
+        }
+
+        public DataNode Execute(string methodName, string[] args)
+        {
+            methodName = methodName.ToLower();
+            if (_methods.ContainsKey(methodName))
+            {
+                return _methods[methodName].Execute(args);
+            }
+            else
+            {
+                throw new Exception("Unknown method: " + methodName);
+            }
         }
 
         #region UTILS
@@ -438,11 +515,23 @@ namespace Phantasma.API
             return result;
         }
 
-        public DataNode GetTransaction(Hash hash)
+        public DataNode GetTransaction(string hashText)
         {
-            var tx = Nexus.FindTransactionByHash(hash);
+            Hash hash;
+            DataNode result;
+            
+            if (Hash.TryParse(hashText, out hash))
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
 
-            var result = FillTransaction(tx);
+                result = FillTransaction(tx);
+            }
+            else
+            {
+                result = DataNode.CreateObject();
+                result.AddField("error", "Invalid hash");
+            }
+
             return result;
         }
 

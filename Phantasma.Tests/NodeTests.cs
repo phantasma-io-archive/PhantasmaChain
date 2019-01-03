@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Consensus;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 
 namespace Phantasma.Tests
@@ -26,13 +27,24 @@ namespace Phantasma.Tests
         {
             InitMainNode();
 
-            var currentKey = KeyPair.Generate();
+            int addressCount = 20;
+            LinkedList<KeyPair> addressList = new LinkedList<KeyPair>();
+
+            for (int i = 0; i < addressCount; i++)
+            {
+                var key = KeyPair.Generate();
+
+                if (addressList.Contains(key) == false)
+                    addressList.AddLast(key);
+            }
+
+            var currentKey = addressList.First;
 
             var masterKeys = KeyPair.FromWIF(nexusWif);
             log.Message($"Connecting to host: {host} with address {masterKeys.Address.Text}");
 
             var amount = TokenUtils.ToBigInteger(1000000, Nexus.NativeTokenDecimals);
-            var hash = SendTransfer(log, host, masterKeys, currentKey.Address, amount);
+            var hash = SendTransfer(log, host, masterKeys, currentKey.Value.Address, amount);
             if (hash == Hash.Null)
             {
                 return;
@@ -43,24 +55,25 @@ namespace Phantasma.Tests
             int totalTxs = 0;
             int okTxs = 0;
 
+            BigInteger currentKeyBalance = GetBalance(currentKey.Value.Address);
+
+            //while (currentKeyBalance > 9999)
             while (totalTxs < 100)
             {
-                KeyPair destKey;
+                var destKey = currentKey.Next != null ? currentKey.Next : addressList.First;
+
+                var txHash = SendTransfer(null, host, currentKey.Value, destKey.Value.Address, currentKeyBalance - 9999);
+                if (txHash == Hash.Null)
+                {
+                    log.Error($"Error sending {amount} SOUL from {currentKey.Value.Address} to {destKey.Value.Address}...");
+                    amount = TokenUtils.ToBigInteger(1000000, Nexus.NativeTokenDecimals);
+                    SendTransfer(log, host, masterKeys, currentKey.Value.Address, amount);
+                }
 
                 do
                 {
-                    destKey = KeyPair.Generate();
-                } while (destKey == currentKey);
-
-                amount = 1;
-
-                var txHash = SendTransfer(null, host, currentKey, destKey.Address, amount);
-                if (txHash == Hash.Null)
-                {
-                    log.Error($"Error sending {amount} SOUL from {currentKey.Address} to {destKey.Address}...");
-                    amount = TokenUtils.ToBigInteger(1000000, Nexus.NativeTokenDecimals);
-                    SendTransfer(log, host, masterKeys, currentKey.Address, amount);
-                }
+                    Thread.Sleep(100);
+                } while (mempool.Size > 0);
 
                 var confirmation = ConfirmTransaction(log, host, hash);
 
@@ -68,13 +81,16 @@ namespace Phantasma.Tests
 
                 totalTxs++;
                 currentKey = destKey;
+                currentKeyBalance = GetBalance(currentKey.Value.Address);
 
-                if (totalTxs % 10 == 0)
-                {
-                    log.Message($"Sent {totalTxs} transactions");
-                }
+                Trace.WriteLine(currentKeyBalance);
             }
             Assert.IsTrue(okTxs == totalTxs);
+        }
+
+        private BigInteger GetBalance(Address address)
+        {
+            return nexus.RootChain.GetTokenBalance(nexus.NativeToken, address);
         }
 
         private void InitMainNode()
@@ -92,12 +108,12 @@ namespace Phantasma.Tests
 
             var simulator = new ChainSimulator(node_keys, 1234);
             nexus = simulator.Nexus;
-
+            /*
             for (int i = 0; i < 100; i++)
             {
                 simulator.GenerateRandomBlock();
             }
-
+            */
             // mempool setup
             mempool = new Mempool(node_keys, nexus);
             mempool.Start();
