@@ -12,10 +12,25 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
+    public class APIInfoAttribute : Attribute
+    {
+        public Type returnType;
+        public string description;
+
+        public APIInfoAttribute(Type returnType, string description)
+        {
+            this.returnType = returnType;
+            this.description = description;
+        }
+    }
+
     public struct APIEntry
     {
         public readonly string Name;
         public readonly Type[] Parameters;
+
+        public readonly Type ReturnType;
+        public readonly string Description;
 
         private readonly NexusAPI API;
         private readonly MethodInfo Info;
@@ -26,6 +41,23 @@ namespace Phantasma.API
             Info = info;
             Name = info.Name;
             Parameters = info.GetParameters().Select(x => x.ParameterType).ToArray();
+
+            try
+            {
+                var attr = info.GetCustomAttribute<APIInfoAttribute>();
+                ReturnType = attr.returnType;
+                Description = attr.description;
+            }
+            catch
+            {
+                ReturnType = null;
+                Description = "not available";
+            }
+        }
+
+        public override string ToString()
+        {
+            return this.Name;
         }
 
         public IAPIResult Execute(params string[] input)
@@ -86,7 +118,11 @@ namespace Phantasma.API
                     continue;
                 }
 
-                _methods[entry.Name.ToLower()] = new APIEntry(this, entry);
+                var temp = new APIEntry(this, entry);
+                if (temp.ReturnType != null)
+                {
+                    _methods[entry.Name.ToLower()] = temp;
+                }
             }
         }
 
@@ -193,6 +229,7 @@ namespace Phantasma.API
         }
         #endregion
 
+        [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.")]
         public IAPIResult GetAccount(string addressText)
         {
             if (!Address.IsValidAddress(addressText))
@@ -253,11 +290,12 @@ namespace Phantasma.API
             return GetBlockHeight(chain);
         }
 
+        [APIInfo(typeof(uint), "Returns the height of most recent block of given chain.")]
         private IAPIResult GetBlockHeight(Chain chain)
         {
             if (chain != null)
             {
-                return new SingleResult() { value = chain.BlockHeight.ToString() };
+                return new SingleResult() { value = chain.BlockHeight };
             }
             else
             {
@@ -265,12 +303,13 @@ namespace Phantasma.API
             }
         }
 
+        [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.")]
         public IAPIResult GetBlockTransactionCountByHash(string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
                 var temp = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
-                var count = (temp != null) ? temp.ToString() : "0";
+                int count = (temp != null) ? temp.Value: 0;
                 return new SingleResult() { value = count };
             }
             else
@@ -279,6 +318,8 @@ namespace Phantasma.API
             }
         }
 
+        // TODO serialized should not be an option but a instead a separate getRawBlock
+        [APIInfo(typeof(BlockResult), "Returns information about a block by hash.")]
         public IAPIResult GetBlockByHash(string blockHash, int serialized = 0)
         {
             if (Hash.TryParse(blockHash, out var hash))
@@ -293,7 +334,7 @@ namespace Phantasma.API
                             return FillBlock(block, chain);
                         }
 
-                        return new SingleResult() { value = SerializedBlock(block) };
+                        return new SingleResult() { value = block.ToByteArray().Encode() };
                     }
                 }
             }
@@ -301,6 +342,7 @@ namespace Phantasma.API
             return new ErrorResult() { error = "invalid block hash" };
         }
 
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
         public IAPIResult GetBlockByHeight(string chainName, uint height, int serialized = 0)
         {
             var chain = Nexus.FindChainByName(chainName);
@@ -308,12 +350,15 @@ namespace Phantasma.API
             return GetBlockByHeight(chain, height, serialized);
         }
 
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
         public IAPIResult GetBlockByHeight(Address chainAddress, uint height, int serialized = 0)
         {
             var chain = Nexus.FindChainByAddress(chainAddress);
             return GetBlockByHeight(chain, height, serialized);
         }
 
+        // TODO why are there 3 api methods with same name ?
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
         private IAPIResult GetBlockByHeight(Chain chain, uint height, int serialized)
         {
             var block = chain?.FindBlockByHeight(height);
@@ -324,12 +369,13 @@ namespace Phantasma.API
                     return FillBlock(block, chain);
                 }
 
-                return new SingleResult() { value = SerializedBlock(block) };
+                return new SingleResult() { value = block.ToByteArray().Encode()};
             }
 
             return new ErrorResult() { error = "block not found" };
         }
 
+        [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.")]
         public IAPIResult GetTransactionByBlockHashAndIndex(string blockHash, int index)
         {
             if (Hash.TryParse(blockHash, out var hash))
@@ -352,6 +398,7 @@ namespace Phantasma.API
             return new ErrorResult() { error = "invalid block hash" };
         }
 
+        [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
         public IAPIResult GetAddressTransactions(string addressText, int amountTx)
         {
             var result = new AccountTransactionsResult();
@@ -380,6 +427,7 @@ namespace Phantasma.API
             }
         }
 
+        [APIInfo(typeof(int), "TODO document me")]
         public IAPIResult GetAddressTransactionCount(string addressText, string chainText)
         {
             if (Address.IsValidAddress(addressText))
@@ -404,12 +452,13 @@ namespace Phantasma.API
                     }
                 }
 
-                return new SingleResult() { value = count.ToString() };
+                return new SingleResult() { value = count };
             }
 
             return new ErrorResult() { error = "invalid address" };
         }
 
+        [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
         public IAPIResult GetConfirmations(string hashText)
         {
             var result = new TxConfirmationResult();
@@ -455,6 +504,7 @@ namespace Phantasma.API
             return new ErrorResult() { error = "invalid hash" };
         }
 
+        [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
         public IAPIResult SendRawTransaction(string txData)
         {
             if (Mempool == null)
@@ -474,6 +524,23 @@ namespace Phantasma.API
             return new SingleResult() { value = tx.Hash.ToString() };
         }
 
+        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
+        public IAPIResult GetTransaction(string hashText)
+        {
+            Hash hash;
+            
+            if (Hash.TryParse(hashText, out hash))
+            {
+                var tx = Nexus.FindTransactionByHash(hash);
+                return FillTransaction(tx);
+            }
+            else
+            {
+                return new ErrorResult() { error = "Invalid hash" };
+            }
+        }
+
+        [APIInfo(typeof(ChainResult[]), "Returns an array of chains with useful information.")]
         public IAPIResult GetChains()
         {
             var result = new ArrayResult();
@@ -490,21 +557,7 @@ namespace Phantasma.API
             return result;
         }
 
-        public IAPIResult GetTransaction(string hashText)
-        {
-            Hash hash;
-            
-            if (Hash.TryParse(hashText, out hash))
-            {
-                var tx = Nexus.FindTransactionByHash(hash);
-                return FillTransaction(tx);
-            }
-            else
-            {
-                return new ErrorResult() { error = "Invalid hash" };
-            }
-        }
-
+        [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.")]
         public IAPIResult GetTokens()
         {
             var tokenList = new List<object>();
@@ -527,6 +580,7 @@ namespace Phantasma.API
         }
 
 
+        [APIInfo(typeof(AppResult[]), "Returns an array of apps deployed in Phantasma.")]
         public IAPIResult GetApps()
         {
             var appList = new List<object>();
@@ -548,6 +602,7 @@ namespace Phantasma.API
             return new ArrayResult() { values = appList.ToArray() };
         }
 
+        [APIInfo(typeof(RootChainResult), "Returns information about the root chain.")]
         public IAPIResult GetRootChain()
         {
             var result = new RootChainResult();
@@ -557,6 +612,7 @@ namespace Phantasma.API
             return result;
         }
 
+        [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.")]
         public IAPIResult GetTokenTransfers(string tokenSymbol, int amount)
         {
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
@@ -579,6 +635,7 @@ namespace Phantasma.API
             return new ArrayResult() { values = txList.ToArray() };
         }
 
+        [APIInfo(typeof(int), "Returns the number of transaction of a given token.")]
         public IAPIResult GetTokenTransferCount(string tokenSymbol)
         {
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
@@ -586,6 +643,7 @@ namespace Phantasma.API
             return new SingleResult() { value = txCount };
         }
 
+        [APIInfo(typeof(BalanceSheetResult), "Returns the balance for a specific token and chain, given an address.")]
         public IAPIResult GetTokenBalance(string addressText, string tokenSymbol, string chainInput) //todo rest
         {
             if (!Address.IsValidAddress(addressText))
@@ -636,11 +694,6 @@ namespace Phantasma.API
             }
 
             return result;
-        }
-
-        private string SerializedBlock(Block block)
-        {
-            return block.ToByteArray().Encode();
         }
     }
 }
