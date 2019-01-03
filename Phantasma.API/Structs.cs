@@ -1,134 +1,153 @@
-﻿using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Tokens;
-using System.Collections.Generic;
-
+﻿// notes: Keep the structs here simple only using primitive C# types or arrays
 namespace Phantasma.API
 {
-    public struct AccountResult
+    public interface IAPIResult
     {
-        public string Address { get; set; }
-        public string Name { get; set; }
-        public List<BalanceSheetResult> Tokens { get; set; };
     }
 
-    public struct BalanceSheetResult
+    public struct ErrorResult : IAPIResult
     {
-        public string ChainName { get; set; }
-        public string Amount { get; set; }
-        public string Symbol { get; set; }
-        public List<string> Ids { get; set; }
+        public string error;
     }
 
-    public struct AppResult
+    public struct SingleResult : IAPIResult
     {
-        public string Description { get; set; }
-        public string Icon { get; set; }
-        public string Id { get; set; }
-        public string Title { get; set; }
-        public string Url { get; set; }
+        public object value;
     }
 
-    public struct AppListResult
+    public struct ArrayResult : IAPIResult
     {
-        public List<AppResult> Apps { get; set; }
+        public object[] values;
     }
 
-    public struct AccountTransactionsResult
+    public struct AccountResult : IAPIResult
     {
-        public string Address { get; set; }
-        public long Amount { get; set; }
-        public List<TransactionDto> Txs { get; set; };
+        public string Address;
+        public string Name;
+        public BalanceSheetResult[] Balances;
     }
 
-    public class BlockDto
+    public struct BalanceSheetResult : IAPIResult
     {
-        public string Hash { get; set; }
-        public string PreviousHash { get; set; }
-        public long Timestamp { get; set; }
-        public long Height { get; set; }
-        public string ChainAddress { get; set; }
-        public long Nonce { get; set; }
-        public string Payload { get; set; }
-        public List<TransactionResult> Txs { get; set; }
-        public string MinerAddress { get; set; }
-        public decimal Reward { get; set; }
+        public string Chain;
+        public string Amount;
+        public string Symbol;
+        public string[] Ids;
     }
 
-    public class EventResult
+    public struct ChainResult
     {
-        public string EventAddress { get; set; }
-        public string Data { get; set; }
-        public EventKind Kind { get; set; }
+        public string Name;
+        public string Address;
+        public string ParentAddress;
+        public uint Height;
+        public ChainResult[] Children;
     }
 
-    public class RootChainResult
+    public struct AppResult : IAPIResult
     {
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public int Height { get; set; }
+        public string Description;
+        public string Icon;
+        public string Id;
+        public string Title;
+        public string Url;
     }
 
-    public class SendRawTxResult
+    public struct AppListResult : IAPIResult
     {
-        public string Hash { get; set; }
-        public string Error { get; set; }
+        public AppResult[] Apps;
     }
 
-    public class TokenResult
+    public struct AccountTransactionsResult : IAPIResult
     {
-        public string Symbol { get; set; }
-
-        public string Name { get; set; }
-
-        public int Decimals { get; set; }
-
-        public bool IsFungible { get; set; }
-
-        public string CurrentSupply { get; set; }
-
-        public string MaxSupply { get; set; }
-
-        public string Owner { get; set; }
-
-        public TokenFlags Flags { get; set; }
+        public string Address;
+        public long Amount;
+        public TransactionResult[] Txs;
     }
 
-    public class TokenListResult
+    public class BlockResult : IAPIResult
     {
-        public List<TokenResult> Tokens { get; set; }
+        public string Hash;
+        public string PreviousHash;
+        public long Timestamp;
+        public long Height;
+        public string ChainAddress;
+        public long Nonce;
+        public string Payload;
+        public TransactionResult[] Txs;
+        public string MinerAddress;
+        public decimal Reward;
     }
 
-    public class TxConfirmationResult
+    public class EventResult : IAPIResult
     {
-        public string Hash { get; set; }
+        public string Address;
+        public string Data;
+        public string Kind;
+    }
 
-        public int Confirmations { get; set; }
+    public class RootChainResult : IAPIResult
+    {
+        public string Name;
+        public string Address;
+        public uint Height;
+    }
 
-        public int Height { get; set; }
+    public class TokenResult : IAPIResult
+    {
+        public string Symbol;
 
-        public string Error { get; set; }
+        public string Name;
+
+        public int Decimals;
+
+        public bool IsFungible;
+
+        public string CurrentSupply;
+
+        public string MaxSupply;
+
+        public string Owner;
+
+        //public string[] Flags; TODO
+    }
+
+    public class TokenListResult : IAPIResult
+    {
+        public TokenResult[] Tokens;
+    }
+
+    public class TxConfirmationResult : IAPIResult
+    {
+        public string Hash;
+
+        public string Chain;
+
+        public int Confirmations;
+
+        public uint Height;
 
         public bool IsConfirmed => Confirmations >= 1;
     }
 
-    public class TransactionResult
+    public class TransactionResult : IAPIResult
     {
-        public string Txid { get; set; }
+        public string Txid;
 
-        public string ChainAddress { get; set; }
+        public string ChainAddress;
 
-        public string ChainName { get; set; }
+        public string ChainName;
 
-        public uint Timestamp { get; set; }
+        public uint Timestamp;
 
-        public uint BlockHeight { get; set; }
+        public uint BlockHeight;
 
-        public decimal GasLimit { get; set; }
+        public decimal GasLimit;
 
-        public decimal GasPrice { get; set; }
+        public decimal GasPrice;
 
-        public string Script { get; set; }
+        public string Script;
 
-        public List<EventResult> Events { get; set; }
+        public EventResult[] Events;
     }
 }

@@ -223,17 +223,14 @@ namespace Phantasma.API
             return true;
         }
 
-        private static void CheckForError(DataNode response)
+        private static void CheckForError(IAPIResult response)
         {
-            if (response.GetNodeByIndex(0) != null)
+            if (response is ErrorResult)
             {
-                if (response.GetNodeByIndex(0).Name == "error")
-                {
-                    throw new RPCException(response.GetNodeByIndex(0).Value);
-                }
+                var temp = (ErrorResult)response;
+                throw new RPCException(temp.error);
             }
         }
-
 
         // new 
         private object GetRootChain(DataNode paramNode)
