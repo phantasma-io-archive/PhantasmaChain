@@ -119,6 +119,11 @@ namespace Phantasma.Cryptography
             return Base58.Encode(buffer);
         }
 
+        public static byte[] RIPEMD160(this IEnumerable<byte> value)
+        {
+            return new RIPEMD160().ComputeHash(value.ToArray());
+        }
+
         public static byte[] Sha256(this IEnumerable<byte> value)
         {
             return new SHA256().ComputeHash(value.ToArray());
