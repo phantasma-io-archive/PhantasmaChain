@@ -22,15 +22,15 @@ namespace Phantasma.Cryptography.ECC
             this.G = ECPoint.DecodePoint(G, this);
         }
 
-  /*      public static readonly ECCurve Secp256k1 = new ECCurve
+        public static readonly ECCurve Secp256k1 = new ECCurve
         (
-            new BigInteger(Base16.Decode("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F")),
+            new BigInteger(Base16.Decode("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F").Reverse().ToArray()),
             BigInteger.Zero,
             7,
-            new BigInteger(Base16.Decode("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")),
+            new BigInteger(Base16.Decode("00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141").Reverse().ToArray()),
             Base16.Decode("0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798" + "483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8")
         );
-*/
+
         public static readonly ECCurve Secp256r1 = new ECCurve
         (
             new BigInteger(Base16.Decode("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF").Reverse().ToArray()),
