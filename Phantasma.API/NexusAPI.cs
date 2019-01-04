@@ -27,7 +27,7 @@ namespace Phantasma.API
     public struct APIEntry
     {
         public readonly string Name;
-        public readonly Type[] Parameters;
+        public readonly KeyValuePair<Type, string>[] Parameters;
 
         public readonly Type ReturnType;
         public readonly string Description;
@@ -40,7 +40,7 @@ namespace Phantasma.API
             API = api;
             Info = info;
             Name = info.Name;
-            Parameters = info.GetParameters().Select(x => x.ParameterType).ToArray();
+            Parameters = info.GetParameters().Select(x => new KeyValuePair<Type,string>(x.ParameterType, x.Name)).ToArray();
 
             try
             {
@@ -70,23 +70,23 @@ namespace Phantasma.API
             var args = new object[input.Length];
             for (int i =0; i< args.Length; i++)
             {
-                if (Parameters[i] == typeof(string))
+                if (Parameters[i].Key == typeof(string))
                 {
                     args[i] = input[i];
                 }
                 else
-                if (Parameters[i] == typeof(uint))
+                if (Parameters[i].Key == typeof(uint))
                 {
                     args[i] = uint.Parse(input[i]); // TODO error handling
                 }
                 else
-                if (Parameters[i] == typeof(int))
+                if (Parameters[i].Key == typeof(int))
                 {
                     args[i] = int.Parse(input[i]); // TODO error handling
                 }
                 else
                 {
-                    throw new Exception("API invalid parameter type: " + Parameters[i].FullName);
+                    throw new Exception("API invalid parameter type: " + Parameters[i].Key.FullName);
                 }
             }
 
