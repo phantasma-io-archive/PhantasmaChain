@@ -1,10 +1,8 @@
-﻿using System;
-using LunarLabs.Parser;
+﻿using LunarLabs.Parser;
 using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
 using LunarLabs.WebServer.Protocols;
 using Phantasma.Core;
-using Phantasma.Core.Log;
 using Phantasma.Cryptography;
 
 namespace Phantasma.API
@@ -62,7 +60,7 @@ namespace Phantasma.API
         {
             var result = API.GetAccount(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetAddressTxCount(DataNode paramNode)
@@ -71,7 +69,7 @@ namespace Phantasma.API
             var chain = paramNode.GetNodeByIndex(1) != null ? paramNode.GetNodeByIndex(1).ToString() : "";
             var result = API.GetAddressTransactionCount(address, chain);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         #region Blocks
@@ -80,14 +78,14 @@ namespace Phantasma.API
             var chain = paramNode.GetNodeByIndex(0).ToString();
             var result = API.GetBlockHeightFromChainName(chain) ?? API.GetBlockHeightFromChainAddress(chain);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetBlockTransactionCountByHash(DataNode paramNode)
         {
             var result = API.GetBlockTransactionCountByHash(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetBlockByHash(DataNode paramNode)
@@ -97,7 +95,7 @@ namespace Phantasma.API
                 : 0;
             var result = API.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString(), serialized);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetBlockByHeight(DataNode paramNode)
@@ -119,7 +117,7 @@ namespace Phantasma.API
             }
 
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
         #endregion
 
@@ -127,7 +125,7 @@ namespace Phantasma.API
         {
             var result = API.GetChains();
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         #region Transactions
@@ -135,7 +133,7 @@ namespace Phantasma.API
         {
             var result = API.GetTransaction(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetTransactionByBlockHashAndIndex(DataNode paramNode)
@@ -143,7 +141,7 @@ namespace Phantasma.API
             int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
             var result = API.GetTransactionByBlockHashAndIndex(paramNode.GetNodeByIndex(0).ToString(), index);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetAddressTransactions(DataNode paramNode)
@@ -151,7 +149,7 @@ namespace Phantasma.API
             var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
             var result = API.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amountTx);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         #endregion
@@ -160,7 +158,7 @@ namespace Phantasma.API
         {
             var result = API.GetTokens();
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetTokenBalance(DataNode paramNode)
@@ -170,7 +168,7 @@ namespace Phantasma.API
             var chain = paramNode.GetNodeByIndex(2).ToString();
             var result = API.GetTokenBalance(address, tokenSymbol, chain);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetTokenTransfers(DataNode paramNode)
@@ -179,7 +177,7 @@ namespace Phantasma.API
             int amount = int.Parse(paramNode.GetNodeByIndex(1).ToString());
             var result = API.GetTokenTransfers(tokenSymbol, amount);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetTokenTransferCount(DataNode paramNode)
@@ -187,14 +185,14 @@ namespace Phantasma.API
             var tokenSymbol = paramNode.GetNodeByIndex(0).ToString();
             var result = API.GetTokenTransferCount(tokenSymbol);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetConfirmations(DataNode paramNode)
         {
             var result = API.GetConfirmations(paramNode.GetNodeByIndex(0).ToString());
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object SendRawTransaction(DataNode paramNode)
@@ -202,14 +200,14 @@ namespace Phantasma.API
             var signedTx = paramNode.GetNodeByIndex(0).ToString();
             var result = API.SendRawTransaction(signedTx);
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         private object GetApps(DataNode paramNode)
         {
             var result = API.GetApps();
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
 
         protected override void OnStop()
@@ -237,7 +235,7 @@ namespace Phantasma.API
         {
             var result = API.GetRootChain();
             CheckForError(result);
-            return result;
+            return APIUtils.FromAPIResult(result);
         }
     }
 }

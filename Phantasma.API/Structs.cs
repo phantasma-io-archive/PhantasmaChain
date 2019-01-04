@@ -35,7 +35,7 @@ namespace Phantasma.API
         public string[] Ids;
     }
 
-    public struct ChainResult
+    public struct ChainResult : IAPIResult
     {
         public string Name;
         public string Address;

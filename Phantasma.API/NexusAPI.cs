@@ -203,7 +203,7 @@ namespace Phantasma.API
             return result;
         }
 
-        private ChainResult FillChain(Chain chain)
+        private ChainResult FillChain(Chain chain, bool fillChildren)
         {
             var result = new ChainResult();
 
@@ -213,16 +213,19 @@ namespace Phantasma.API
 
             result.ParentAddress = (chain.ParentChain != null) ? chain.ParentChain.Name : null;
             
-            var children = new List<ChainResult>();
-            if (chain.ChildChains != null && chain.ChildChains.Any())
+            if (fillChildren)
             {
-                foreach (var childChain in chain.ChildChains)
+                var children = new List<ChainResult>();
+                if (chain.ChildChains != null && chain.ChildChains.Any())
                 {
-                    var child = FillChain(chain);
-                    children.Add(child);
-                }
+                    foreach (var childChain in chain.ChildChains)
+                    {
+                        var child = FillChain(chain, true);
+                        children.Add(child);
+                    }
 
-                result.Children = children.ToArray();
+                    result.Children = children.ToArray();
+                }
             }
 
             return result;
@@ -549,7 +552,7 @@ namespace Phantasma.API
 
             foreach (var chain in Nexus.Chains)
             {
-                var single = FillChain(chain);
+                var single = FillChain(chain, false);
                 objs.Add(single);
             }
 
