@@ -100,19 +100,33 @@ namespace Phantasma.API
 
         private object GetBlockByHeight(DataNode paramNode)
         {
-            var chain = paramNode.GetNodeByIndex(0).ToString();
+            var chainAddress = paramNode.GetNodeByIndex(0).ToString();
             var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
-            //optional, defaults to 0
-            var serialized = paramNode.GetNodeByIndex(2) != null
-                ? int.Parse(paramNode.GetNodeByIndex(2).ToString())
-                : 0;
 
-            var result = API.GetBlockByHeight(chain, height, serialized);
+            var result = API.GetBlockByHeight(chainAddress, height);
             if (result == null)
             {
-                if (Address.IsValidAddress(chain))
+                if (Address.IsValidAddress(chainAddress))
                 {
-                    result = API.GetBlockByHeight(Address.FromText(chain), height, serialized);
+                    result = API.GetBlockByHeight(chainAddress, height);
+                }
+            }
+
+            CheckForError(result);
+            return APIUtils.FromAPIResult(result);
+        }
+
+        private object GetRawBlockByHeight(DataNode paramNode)
+        {
+            var chainAddress = paramNode.GetNodeByIndex(0).ToString();
+            var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
+
+            var result = API.GetRawBlockByHeight(chainAddress, height);
+            if (result == null)
+            {
+                if (Address.IsValidAddress(chainAddress))
+                {
+                    result = API.GetRawBlockByHeight(chainAddress, height);
                 }
             }
 
