@@ -40,7 +40,7 @@ namespace Phantasma.API
             API = api;
             Info = info;
             Name = info.Name;
-            Parameters = info.GetParameters().Select(x => new KeyValuePair<Type,string>(x.ParameterType, x.Name)).ToArray();
+            Parameters = info.GetParameters().Select(x => new KeyValuePair<Type, string>(x.ParameterType, x.Name)).ToArray();
 
             try
             {
@@ -68,7 +68,7 @@ namespace Phantasma.API
             }
 
             var args = new object[input.Length];
-            for (int i =0; i< args.Length; i++)
+            for (int i = 0; i < args.Length; i++)
             {
                 if (Parameters[i].Key == typeof(string))
                 {
@@ -90,7 +90,7 @@ namespace Phantasma.API
                 }
             }
 
-            return (IAPIResult) Info.Invoke(API, args);
+            return (IAPIResult)Info.Invoke(API, args);
         }
     }
 
@@ -153,7 +153,7 @@ namespace Phantasma.API
             result.BlockHeight = block.Height;
             result.Script = tx.Script.Encode();
 
-            var eventList =new List<EventResult>();
+            var eventList = new List<EventResult>();
 
             var evts = block.GetEventsForTransaction(tx.Hash);
             foreach (var evt in evts)
@@ -213,7 +213,7 @@ namespace Phantasma.API
             result.Height = chain.BlockHeight;
 
             result.ParentAddress = (chain.ParentChain != null) ? chain.ParentChain.Name : null;
-            
+
             if (fillChildren)
             {
                 var children = new List<ChainResult>();
@@ -291,6 +291,7 @@ namespace Phantasma.API
         public IAPIResult GetBlockHeightFromChainName(string chainName)
         {
             var chain = Nexus.FindChainByName(chainName);
+            if (chain == null) return null;
             return GetBlockHeight(chain);
         }
 
@@ -313,7 +314,7 @@ namespace Phantasma.API
             if (Hash.TryParse(blockHash, out var hash))
             {
                 var temp = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
-                int count = (temp != null) ? temp.Value: 0;
+                int count = (temp != null) ? temp.Value : 0;
                 return new SingleResult() { value = count };
             }
             else
@@ -373,7 +374,7 @@ namespace Phantasma.API
                     return FillBlock(block, chain);
                 }
 
-                return new SingleResult() { value = block.ToByteArray().Encode()};
+                return new SingleResult() { value = block.ToByteArray().Encode() };
             }
 
             return new ErrorResult() { error = "block not found" };
@@ -532,7 +533,7 @@ namespace Phantasma.API
         public IAPIResult GetTransaction(string hashText)
         {
             Hash hash;
-            
+
             if (Hash.TryParse(hashText, out hash))
             {
                 var tx = Nexus.FindTransactionByHash(hash);
@@ -681,7 +682,7 @@ namespace Phantasma.API
             var address = Address.FromText(addressText);
             var balance = chain.GetTokenBalance(token, address);
 
-            var result =  new BalanceSheetResult()
+            var result = new BalanceSheetResult()
             {
                 Amount = balance.ToString(),
                 Symbol = tokenSymbol,
