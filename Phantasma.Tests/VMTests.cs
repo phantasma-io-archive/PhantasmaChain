@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Blockchain;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {
@@ -86,6 +87,6 @@ namespace Phantasma.Tests
 
             var result = vm.Stack.Pop().AsString();
             Assert.IsTrue(result == "HELLO");
-        }
+        }    
     }
 }

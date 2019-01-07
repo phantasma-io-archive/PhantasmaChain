@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Phantasma.Cryptography;
@@ -210,6 +210,12 @@ namespace Phantasma.VM
                 case VMType.Enum:
                     {
                         this.Data = BitConverter.ToUInt32(val, 0);
+                        break;
+                    }
+
+                case VMType.Bool:
+                    {
+                        this.Data = BitConverter.ToBoolean(val, 0);
                         break;
                     }
 

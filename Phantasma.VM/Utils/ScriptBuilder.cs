@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -63,7 +63,7 @@ namespace Phantasma.VM.Utils
 
         public void EmitLoad(byte reg, BigInteger val)
         {
-            var bytes = val.ToByteArray();
+            var bytes = val.ToByteArray(includeSignInArray: true);
             EmitLoad(reg, bytes, VMType.Number);
         }
 
