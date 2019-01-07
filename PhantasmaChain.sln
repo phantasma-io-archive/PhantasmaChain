@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Pay", "Phantasma.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.API", "Phantasma.API\Phantasma.API.csproj", "{8E66209A-9A5B-4D82-B5B9-D7455981A68B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.CodeGen", "Phantasma.CodeGen\Phantasma.CodeGen.csproj", "{42651585-A6E5-4199-B37C-F3DC7D452C36}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{8E66209A-9A5B-4D82-B5B9-D7455981A68B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E66209A-9A5B-4D82-B5B9-D7455981A68B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E66209A-9A5B-4D82-B5B9-D7455981A68B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42651585-A6E5-4199-B37C-F3DC7D452C36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42651585-A6E5-4199-B37C-F3DC7D452C36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42651585-A6E5-4199-B37C-F3DC7D452C36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42651585-A6E5-4199-B37C-F3DC7D452C36}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
