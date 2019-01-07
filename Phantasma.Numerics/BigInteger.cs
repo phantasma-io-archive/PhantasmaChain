@@ -47,6 +47,26 @@ namespace Phantasma.Numerics
         {
         }
 
+        public BigInteger(byte[] bytes, bool twosComplementFormatFlag)
+        {
+            int sign = 1;
+            if (twosComplementFormatFlag)
+            {
+                sign = bytes[bytes.Length - 1] == 0 ? 1 : -1;
+
+                if (sign == -1)
+                {
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        bytes[i] = (byte) (bytes[i] ^ 1);
+                    }
+                }
+                
+            }
+
+            this = new BigInteger(bytes);
+        }
+
         public BigInteger(byte[] bytes, int sign = 1)
         {
             _sign = sign;

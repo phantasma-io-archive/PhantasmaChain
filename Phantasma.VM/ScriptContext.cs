@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Phantasma.Core;
 using Phantasma.Numerics;
 
@@ -348,8 +349,11 @@ namespace Phantasma.VM
                                     var result = new byte[bytesA.Length + bytesB.Length];
                                     Array.Copy(bytesA, result, bytesA.Length);
                                     Array.Copy(bytesB, 0, result, bytesA.Length, bytesB.Length);
+                                    
+                                    Expect(A.Type == B.Type);
 
-                                    frame.Registers[dst].SetValue(result, VMType.Bytes);
+                                    VMType type = A.Type;
+                                    frame.Registers[dst].SetValue(result, type);
                                 }
                             }
                             else
@@ -757,8 +761,11 @@ namespace Phantasma.VM
 #endif
             catch (Exception ex)
             {
-                System.Console.WriteLine(ex.ToString());
+                Trace.WriteLine(ex.ToString());
                 SetState(ExecutionState.Fault);
+#if DEBUG
+                throw new Exception();
+#endif
             }
         }
 
