@@ -20,19 +20,19 @@ namespace Phantasma.API
         public object[] values;
     }
 
-    public struct AccountResult : IAPIResult
-    {
-        public string Address;
-        public string Name;
-        public BalanceSheetResult[] Balances;
-    }
-
-    public struct BalanceSheetResult : IAPIResult
+    public struct BalanceResult : IAPIResult
     {
         public string Chain;
         public string Amount;
         public string Symbol;
         public string[] Ids;
+    }
+
+    public struct AccountResult : IAPIResult
+    {
+        public string Address;
+        public string Name;
+        public BalanceResult[] Balances;
     }
 
     public struct ChainResult : IAPIResult
@@ -58,10 +58,34 @@ namespace Phantasma.API
         public AppResult[] Apps;
     }
 
+    public class EventResult : IAPIResult
+    {
+        public string Address;
+        public string Data;
+        public string Kind;
+    }
+
+    public class TransactionResult : IAPIResult
+    {
+        public string Txid;
+
+        public string ChainAddress;
+
+        public string ChainName;
+
+        public uint Timestamp;
+
+        public uint BlockHeight;
+
+        public string Script;
+
+        public EventResult[] Events;
+    }
+
     public struct AccountTransactionsResult : IAPIResult
     {
         public string Address;
-        public long Amount;
+        public uint Amount;
         public TransactionResult[] Txs;
     }
 
@@ -69,21 +93,14 @@ namespace Phantasma.API
     {
         public string Hash;
         public string PreviousHash;
-        public long Timestamp;
-        public long Height;
+        public uint Timestamp;
+        public uint Height;
         public string ChainAddress;
-        public long Nonce;
+        public uint Nonce;
         public string Payload;
         public TransactionResult[] Txs;
         public string MinerAddress;
-        public decimal Reward;
-    }
-
-    public class EventResult : IAPIResult
-    {
-        public string Address;
-        public string Data;
-        public string Kind;
+        public string Reward;
     }
 
     public class RootChainResult : IAPIResult
@@ -128,26 +145,5 @@ namespace Phantasma.API
         public uint Height;
 
         public bool IsConfirmed => Confirmations >= 1;
-    }
-
-    public class TransactionResult : IAPIResult
-    {
-        public string Txid;
-
-        public string ChainAddress;
-
-        public string ChainName;
-
-        public uint Timestamp;
-
-        public uint BlockHeight;
-
-        public decimal GasLimit;
-
-        public decimal GasPrice;
-
-        public string Script;
-
-        public EventResult[] Events;
     }
 }
