@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security;
 using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
@@ -117,6 +115,11 @@ namespace Phantasma.Cryptography
             Array.Copy(data, 0, buffer, 0, data.Length);
             ByteArrayUtils.CopyBytes(checksum, 0, buffer, data.Length, 4); 
             return Base58.Encode(buffer);
+        }
+
+        public static byte[] RIPEMD160(this IEnumerable<byte> value)
+        {
+            return new RIPEMD160().ComputeHash(value.ToArray());
         }
 
         public static byte[] Sha256(this IEnumerable<byte> value)

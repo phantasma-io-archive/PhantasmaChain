@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
-using LunarLabs.Parser;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
@@ -13,10 +12,25 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
+    public class APIInfoAttribute : Attribute
+    {
+        public Type returnType;
+        public string description;
+
+        public APIInfoAttribute(Type returnType, string description)
+        {
+            this.returnType = returnType;
+            this.description = description;
+        }
+    }
+
     public struct APIEntry
     {
         public readonly string Name;
-        public readonly Type[] Parameters;
+        public readonly KeyValuePair<Type, string>[] Parameters;
+
+        public readonly Type ReturnType;
+        public readonly string Description;
 
         private readonly NexusAPI API;
         private readonly MethodInfo Info;
@@ -26,10 +40,27 @@ namespace Phantasma.API
             API = api;
             Info = info;
             Name = info.Name;
-            Parameters = info.GetParameters().Select(x => x.ParameterType).ToArray();
+            Parameters = info.GetParameters().Select(x => new KeyValuePair<Type,string>(x.ParameterType, x.Name)).ToArray();
+
+            try
+            {
+                var attr = info.GetCustomAttribute<APIInfoAttribute>();
+                ReturnType = attr.returnType;
+                Description = attr.description;
+            }
+            catch
+            {
+                ReturnType = null;
+                Description = "not available";
+            }
         }
 
-        public DataNode Execute(params string[] input)
+        public override string ToString()
+        {
+            return this.Name;
+        }
+
+        public IAPIResult Execute(params string[] input)
         {
             if (input.Length != Parameters.Length)
             {
@@ -39,26 +70,27 @@ namespace Phantasma.API
             var args = new object[input.Length];
             for (int i =0; i< args.Length; i++)
             {
-                if (Parameters[i] == typeof(string))
+                if (Parameters[i].Key == typeof(string))
                 {
                     args[i] = input[i];
                 }
                 else
-                if (Parameters[i] == typeof(uint))
+                if (Parameters[i].Key == typeof(uint))
                 {
                     args[i] = uint.Parse(input[i]); // TODO error handling
                 }
                 else
-                if (Parameters[i] == typeof(int))
+                if (Parameters[i].Key == typeof(int))
                 {
                     args[i] = int.Parse(input[i]); // TODO error handling
                 }
                 else
                 {
-                    throw new Exception("API invalid parameter type: " + Parameters[i].FullName);
+                    throw new Exception("API invalid parameter type: " + Parameters[i].Key.FullName);
                 }
             }
-            return (DataNode) Info.Invoke(API, args);
+
+            return (IAPIResult) Info.Invoke(API, args);
         }
     }
 
@@ -81,14 +113,20 @@ namespace Phantasma.API
 
             foreach (var entry in methodInfo)
             {
-                if (entry.ReturnType == typeof(DataNode))
+                if (entry.ReturnType != typeof(IAPIResult))
                 {
-                    _methods[entry.Name.ToLower()] = new APIEntry(this, entry);
+                    continue;
+                }
+
+                var temp = new APIEntry(this, entry);
+                if (temp.ReturnType != null)
+                {
+                    _methods[entry.Name.ToLower()] = temp;
                 }
             }
         }
 
-        public DataNode Execute(string methodName, string[] args)
+        public IAPIResult Execute(string methodName, string[] args)
         {
             methodName = methodName.ToLower();
             if (_methods.ContainsKey(methodName))
@@ -102,122 +140,144 @@ namespace Phantasma.API
         }
 
         #region UTILS
-        private DataNode FillTransaction(Transaction tx)
+        private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockForTransaction(tx);
             var chain = Nexus.FindChainForBlock(block.Hash);
 
-            var result = DataNode.CreateObject();
-            result.AddField("txid", tx.Hash.ToString());
-            result.AddField("chainAddress", chain.Address);
-            result.AddField("chainName", chain.Name);
-            result.AddField("timestamp", block.Timestamp.Value);
-            result.AddField("blockHeight", block.Height);
-            result.AddField("script", tx.Script.Encode());
+            var result = new TransactionResult();
+            result.Txid = tx.Hash.ToString();
+            result.ChainAddress = chain.Address.Text;
+            result.ChainName = chain.Name;
+            result.Timestamp = block.Timestamp.Value;
+            result.BlockHeight = block.Height;
+            result.Script = tx.Script.Encode();
 
-            var eventsNode = DataNode.CreateArray("events");
+            var eventList =new List<EventResult>();
 
             var evts = block.GetEventsForTransaction(tx.Hash);
             foreach (var evt in evts)
             {
-                var eventNode = DataNode.CreateObject();
-                eventNode.AddField("address", evt.Address);
-                eventNode.AddField("data", evt.Data.Encode());
-                eventNode.AddField("kind", evt.Kind);
-                eventsNode.AddNode(eventNode);
+                var eventEntry = new EventResult();
+                eventEntry.Address = evt.Address.Text;
+                eventEntry.Data = evt.Data.Encode();
+                eventEntry.Kind = evt.Kind.ToString();
+                eventList.Add(eventEntry);
             }
-
-            result.AddNode(eventsNode);
+            result.Events = eventList.ToArray();
 
             return result;
         }
 
-        private DataNode FillBlock(Block block, Chain chain)
+        private BlockResult FillBlock(Block block, Chain chain)
         {
             //var chain = Nexus.FindChainForBlock(block.Hash);
-            var result = DataNode.CreateObject();
+            var result = new BlockResult();
 
-            result.AddField("hash", block.Hash.ToString());
-            result.AddField("previousHash", block.PreviousHash.ToString());
-            result.AddField("timestamp", block.Timestamp.Value);
-            result.AddField("height", block.Height);
-            result.AddField("chainAddress", block.ChainAddress.ToString());
+            result.Hash = block.Hash.ToString();
+            result.PreviousHash = block.PreviousHash.ToString();
+            result.Timestamp = block.Timestamp.Value;
+            result.Height = block.Height;
+            result.ChainAddress = block.ChainAddress.ToString();
 
             var minerAddress = Nexus.FindValidatorForBlock(block);
-            result.AddField("minerAddress", minerAddress.Text);
-            result.AddField("nonce", block.Nonce);
+            result.MinerAddress = minerAddress.Text;
+            result.Nonce = block.Nonce;
+            result.Reward = TokenUtils.ToDecimal(chain.GetBlockReward(block), Nexus.NativeTokenDecimals);
+            result.Payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(); //todo make sure this is ok
 
-            var payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode();
-            result.AddField("payload", payload);//todo make sure this is ok
-
-            var txsNode = DataNode.CreateArray("txs");
-            result.AddNode(txsNode);
+            var txs = new List<TransactionResult>();
             if (block.TransactionHashes != null && block.TransactionHashes.Any())
             {
                 foreach (var transactionHash in block.TransactionHashes)
                 {
                     var tx = Nexus.FindTransactionByHash(transactionHash);
-                    var entryNode = FillTransaction(tx);
-                    txsNode.AddNode(entryNode);
+                    var txEntry = FillTransaction(tx);
+                    txs.Add(txEntry);
                 }
             }
-            // todo add block size, gas, txs
+            result.Txs = txs.ToArray();
+
+            // todo add other block info, eg: size, gas, txs
 
 
+            return result;
+        }
+
+        private ChainResult FillChain(Chain chain, bool fillChildren)
+        {
+            var result = new ChainResult();
+
+            result.Name = chain.Name;
+            result.Address = chain.Address.Text;
+            result.Height = chain.BlockHeight;
+
+            result.ParentAddress = (chain.ParentChain != null) ? chain.ParentChain.Name : null;
+            
+            if (fillChildren)
+            {
+                var children = new List<ChainResult>();
+                if (chain.ChildChains != null && chain.ChildChains.Any())
+                {
+                    foreach (var childChain in chain.ChildChains)
+                    {
+                        var child = FillChain(chain, true);
+                        children.Add(child);
+                    }
+
+                    result.Children = children.ToArray();
+                }
+            }
 
             return result;
         }
         #endregion
 
-        public DataNode GetAccount(string addressText)
+        [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.")]
+        public IAPIResult GetAccount(string addressText)
         {
-            var result = DataNode.CreateObject();
-            if (Address.IsValidAddress(addressText))
+            if (!Address.IsValidAddress(addressText))
             {
-                var address = Address.FromText(addressText);
-                result.AddField("address", address.Text);
-                var name = Nexus.LookUpAddress(address);
-                result.AddField("name", name);
+                return new ErrorResult() { error = "invalid address" };
+            }
 
-                var balancesNode = DataNode.CreateArray("balances");
-                result.AddNode(balancesNode);
+            var result = new AccountResult();
+            var address = Address.FromText(addressText);
+            result.Address = address.Text;
+            result.Name = Nexus.LookUpAddress(address);
 
-                foreach (var token in Nexus.Tokens)
+            var balanceList = new List<BalanceSheetResult>();
+            foreach (var token in Nexus.Tokens)
+            {
+                foreach (var chain in Nexus.Chains)
                 {
-                    foreach (var chain in Nexus.Chains)
+                    var balance = chain.GetTokenBalance(token, address);
+                    if (balance > 0)
                     {
-                        var balance = chain.GetTokenBalance(token, address);
-                        if (balance > 0)
-                        {
-                            var balanceNode = DataNode.CreateObject();
+                        var balanceEntry = new BalanceSheetResult();
 
-                            balanceNode.AddField("chain", chain.Name);
-                            balanceNode.AddField("amount", balance);
-                            balanceNode.AddField("symbol", token.Symbol);
-                            if (!token.IsFungible)
+                        balanceEntry.Chain = chain.Name;
+                        balanceEntry.Amount = balance.ToString();
+                        balanceEntry.Symbol = token.Symbol;
+                        balanceEntry.Ids = null;
+                        if (!token.IsFungible)
+                        {
+                            var idList = chain.GetTokenOwnerships(token).Get(address);
+                            if (idList != null && idList.Any())
                             {
-                                var idList = chain.GetTokenOwnerships(token).Get(address);
-                                if (idList != null && idList.Any())
-                                {
-                                    var nodeId = DataNode.CreateArray("ids");
-                                    idList.ForEach(p => nodeId.AddValue(p.ToString()));
-                                    balanceNode.AddNode(nodeId);
-                                }
+                                balanceEntry.Ids = idList.Select(x => x.ToString()).ToArray();
                             }
-                            balancesNode.AddNode(balanceNode);
                         }
+                        balanceList.Add(balanceEntry);
                     }
                 }
             }
-            else
-            {
-                result.AddField("error", "invalid address");
-            }
+            result.Balances = balanceList.ToArray();
 
             return result;
         }
 
-        public DataNode GetBlockHeightFromChainAddress(string chainAddress)
+        public IAPIResult GetBlockHeightFromChainAddress(string chainAddress)
         {
             if (Address.IsValidAddress(chainAddress))
             {
@@ -225,50 +285,46 @@ namespace Phantasma.API
                 return GetBlockHeight(chain);
             }
 
-            var result = DataNode.CreateObject();
-            result.AddField("error", "invalid address");
-            return result;
+            return new ErrorResult() { error = "invalid address" };
         }
 
-        public DataNode GetBlockHeightFromChainName(string chainName)
+        public IAPIResult GetBlockHeightFromChainName(string chainName)
         {
             var chain = Nexus.FindChainByName(chainName);
-            if (chain == null) return null;
             return GetBlockHeight(chain);
         }
 
-        private DataNode GetBlockHeight(Chain chain)
+        [APIInfo(typeof(uint), "Returns the height of most recent block of given chain.")]
+        private IAPIResult GetBlockHeight(Chain chain)
         {
-            var result = DataNode.CreateValue("");
             if (chain != null)
             {
-                result.Value = chain.BlockHeight.ToString();
+                return new SingleResult() { value = chain.BlockHeight };
             }
             else
             {
-                result.AddField("error", "chain not found");
+                return new ErrorResult() { error = "chain not found" };
             }
-
-            return result;
         }
 
-        public DataNode GetBlockTransactionCountByHash(string blockHash)
+        [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.")]
+        public IAPIResult GetBlockTransactionCountByHash(string blockHash)
         {
-            var result = DataNode.CreateValue("");
             if (Hash.TryParse(blockHash, out var hash))
             {
-                var count = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
-                if (count != null)
-                {
-                    result.Value = count.ToString();
-                    return result;
-                }
+                var temp = Nexus.FindBlockByHash(hash)?.TransactionHashes.Count();
+                int count = (temp != null) ? temp.Value: 0;
+                return new SingleResult() { value = count };
             }
-            result.AddField("error", "invalid block hash");
-            return result;
+            else
+            {
+                return new ErrorResult() { error = "invalid block hash" };
+            }
         }
 
-        public DataNode GetBlockByHash(string blockHash, int serialized = 0)
+        // TODO serialized should not be an option but a instead a separate getRawBlock
+        [APIInfo(typeof(BlockResult), "Returns information about a block by hash.")]
+        public IAPIResult GetBlockByHash(string blockHash, int serialized = 0)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -277,34 +333,37 @@ namespace Phantasma.API
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
-                        if (serialized == 0)
+                        if (serialized == 0) // TODO why is this not a bool?
                         {
                             return FillBlock(block, chain);
                         }
 
-                        return SerializedBlock(block);
+                        return new SingleResult() { value = block.ToByteArray().Encode() };
                     }
                 }
             }
-            var result = DataNode.CreateObject();
-            result.AddField("error", "invalid block hash");
-            return result;
+
+            return new ErrorResult() { error = "invalid block hash" };
         }
 
-        public DataNode GetBlockByHeight(string chainName, uint height, int serialized = 0)
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
+        public IAPIResult GetBlockByHeight(string chainName, uint height, int serialized = 0)
         {
             var chain = Nexus.FindChainByName(chainName);
             if (chain == null) return null;
             return GetBlockByHeight(chain, height, serialized);
         }
 
-        public DataNode GetBlockByHeight(Address chainAddress, uint height, int serialized = 0)
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
+        public IAPIResult GetBlockByHeight(Address chainAddress, uint height, int serialized = 0)
         {
             var chain = Nexus.FindChainByAddress(chainAddress);
             return GetBlockByHeight(chain, height, serialized);
         }
 
-        private DataNode GetBlockByHeight(Chain chain, uint height, int serialized)
+        // TODO why are there 3 api methods with same name ?
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
+        private IAPIResult GetBlockByHeight(Chain chain, uint height, int serialized)
         {
             var block = chain?.FindBlockByHeight(height);
             if (block != null)
@@ -314,71 +373,66 @@ namespace Phantasma.API
                     return FillBlock(block, chain);
                 }
 
-                return SerializedBlock(block);
+                return new SingleResult() { value = block.ToByteArray().Encode()};
             }
-            var result = DataNode.CreateObject();
-            result.AddField("error", "block not found");
-            return result;
+
+            return new ErrorResult() { error = "block not found" };
         }
 
-        public DataNode GetTransactionByBlockHashAndIndex(string blockHash, int index)
+        [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.")]
+        public IAPIResult GetTransactionByBlockHashAndIndex(string blockHash, int index)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
                 var block = Nexus.FindBlockByHash(hash);
                 if (block == null)
                 {
-                    var error = DataNode.CreateObject();
-                    error.AddField("error", "unknown block hash");
-                    return error;
+                    return new ErrorResult() { error = "unknown block hash" };
                 }
+
                 var txHash = block.TransactionHashes.ElementAt(index);
                 if (txHash == null)
                 {
-                    var error = DataNode.CreateObject();
-                    error.AddField("error", "unknown tx index");
+                    return new ErrorResult() { error = "unknown tx index" };
                 }
+
                 return FillTransaction(Nexus.FindTransactionByHash(txHash));
             }
-            var result = DataNode.CreateObject();
-            result.AddField("error", "invalid block hash");
-            return result;
+
+            return new ErrorResult() { error = "invalid block hash" };
         }
 
-        public DataNode GetAddressTransactions(string addressText, int amountTx)
+        [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
+        public IAPIResult GetAddressTransactions(string addressText, int amountTx)
         {
-            var result = DataNode.CreateObject();
+            var result = new AccountTransactionsResult();
             if (Address.IsValidAddress(addressText))
             {
                 var address = Address.FromText(addressText);
                 var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
-                var txsNode = DataNode.CreateArray("txs");
 
-                result.AddField("address", address.Text);
-                result.AddField("amount", amountTx);
-                result.AddNode(txsNode);
+                result.Address = address.Text;
+                result.Amount = amountTx;
                 var txs = plugin?.GetAddressTransactions(address).
                     Select(hash => Nexus.FindTransactionByHash(hash)).
                     OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
                     Take(amountTx);
+
                 if (txs != null)
                 {
-                    foreach (var transaction in txs)
-                    {
-                        var entryNode = FillTransaction(transaction);
-                        txsNode.AddNode(entryNode);
-                    }
+                    result.Txs = txs.Select(tx => FillTransaction(tx)).ToArray();
                 }
+
+                return result;
             }
             else
             {
-                result.AddField("error", "invalid address");
+                return new ErrorResult() { error = "invalid address" };
             }
-
-            return result;
         }
 
-        public DataNode GetAddressTransactionCount(string addressText, string chainText)
+        [APIInfo(typeof(int), "TODO document me")]
+        public IAPIResult GetAddressTransactionCount(string addressText, string chainText)
         {
             if (Address.IsValidAddress(addressText))
             {
@@ -402,19 +456,16 @@ namespace Phantasma.API
                     }
                 }
 
-                var result = DataNode.CreateValue("");
-                result.Value = count.ToString();
-                return result;
+                return new SingleResult() { value = count };
             }
 
-            var error = DataNode.CreateObject();
-            error.AddField("error", "invalid address");
-            return error;
+            return new ErrorResult() { error = "invalid address" };
         }
 
-        public DataNode GetConfirmations(string hashText)
+        [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
+        public IAPIResult GetConfirmations(string hashText)
         {
-            var result = DataNode.CreateObject();
+            var result = new TxConfirmationResult();
             if (Hash.TryParse(hashText, out var hash))
             {
                 int confirmations = -1;
@@ -441,196 +492,174 @@ namespace Phantasma.API
 
                 if (confirmations == -1 || block == null || chain == null)
                 {
-                    result.AddField("confirmations", 0);
-                    result.AddField("error", "unknown hash");
+                    return new ErrorResult() { error = "unknown hash" };
                 }
                 else
                 {
-                    result.AddField("confirmations", confirmations);
-                    result.AddField("hash", block.Hash.ToString());
-                    result.AddField("height", block.Height);
-                    result.AddField("chain", chain.Address);
+                    result.Confirmations = confirmations;
+                    result.Hash = block.Hash.ToString();
+                    result.Height = block.Height;
+                    result.Chain = chain.Address.Text;
                 }
 
                 return result;
             }
 
-            result.AddField("error", "invalid hash");
-            return result;
+            return new ErrorResult() { error = "invalid hash" };
         }
 
-        public DataNode SendRawTransaction(string txData)
+        [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
+        public IAPIResult SendRawTransaction(string txData)
         {
-            var result = DataNode.CreateObject();
-
-            if (Mempool != null)
+            if (Mempool == null)
             {
-                var bytes = Base16.Decode(txData);
-                var tx = Transaction.Unserialize(bytes);
-
-                bool submited = Mempool.Submit(tx);
-                if (!submited)
-                {
-                    result.AddField("error", "Not submited to mempool");
-                    return result;
-                }
-                result.AddField("hash", tx.Hash);
-            }
-            else
-            {
-                result.AddField("error", "No mempool");
+                return new ErrorResult() { error = "No mempool" };
             }
 
-            return result;
+            var bytes = Base16.Decode(txData);
+            var tx = Transaction.Unserialize(bytes);
+
+            bool submited = Mempool.Submit(tx);
+            if (!submited)
+            {
+                return new ErrorResult() { error = "Mempool submission rejected" };
+            }
+
+            return new SingleResult() { value = tx.Hash.ToString() };
         }
 
-        public DataNode GetChains()
-        {
-            var result = DataNode.CreateArray();
-            foreach (var chain in Nexus.Chains)
-            {
-                var single = DataNode.CreateObject();
-                single.AddField("name", chain.Name);
-                single.AddField("address", chain.Address.Text);
-                single.AddField("height", chain.BlockHeight);
-                if (chain.ParentChain != null)
-                {
-                    single.AddField("parentAddress", chain.ParentChain.Name);
-                }
-                var children = DataNode.CreateArray("children");
-                if (chain.ChildChains != null && chain.ChildChains.Any())
-                {
-                    foreach (var childChain in chain.ChildChains)
-                    {
-                        var child = DataNode.CreateObject();
-                        child.AddField("name", childChain.Name);
-                        child.AddField("address", childChain.Address.Text);
-                        children.AddNode(child);
-                    }
-
-                    single.AddNode(children);
-                }
-                result.AddNode(single);
-            }
-
-            return result;
-        }
-
-        public DataNode GetTransaction(string hashText)
+        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
+        public IAPIResult GetTransaction(string hashText)
         {
             Hash hash;
-            DataNode result;
             
             if (Hash.TryParse(hashText, out hash))
             {
                 var tx = Nexus.FindTransactionByHash(hash);
-
-                result = FillTransaction(tx);
+                return FillTransaction(tx);
             }
             else
             {
-                result = DataNode.CreateObject();
-                result.AddField("error", "Invalid hash");
+                return new ErrorResult() { error = "Invalid hash" };
+            }
+        }
+
+        [APIInfo(typeof(ChainResult[]), "Returns an array of chains with useful information.")]
+        public IAPIResult GetChains()
+        {
+            var result = new ArrayResult();
+
+            var objs = new List<object>();
+
+            foreach (var chain in Nexus.Chains)
+            {
+                var single = FillChain(chain, false);
+                objs.Add(single);
             }
 
+            result.values = objs.ToArray();
             return result;
         }
 
-        public DataNode GetTokens()
+        [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.")]
+        public IAPIResult GetTokens()
         {
-            var result = DataNode.CreateObject();
-            var node = DataNode.CreateArray("tokens");
+            var tokenList = new List<object>();
+
             foreach (var token in Nexus.Tokens)
             {
-                var tokenNode = DataNode.CreateObject();
-                tokenNode.AddField("symbol", token.Symbol);
-                tokenNode.AddField("name", token.Name);
-                tokenNode.AddField("currentSupply", token.CurrentSupply);
-                tokenNode.AddField("maxSupply", token.MaxSupply);
-                tokenNode.AddField("decimals", token.Decimals);
-                tokenNode.AddField("isFungible", token.IsFungible);
-                tokenNode.AddField("flags", token.Flags);
-                tokenNode.AddField("owner", token.Owner.ToString());
-                node.AddNode(tokenNode);
+                var entry = new TokenResult();
+                entry.Symbol = token.Symbol;
+                entry.Name = token.Name;
+                entry.CurrentSupply = token.CurrentSupply.ToString();
+                entry.MaxSupply = token.MaxSupply.ToString();
+                entry.Decimals = token.Decimals;
+                entry.IsFungible = token.IsFungible;
+                //tokenNode.AddField("flags", token.Flags);
+                entry.Owner = token.Owner.Text;
+                tokenList.Add(entry);
             }
-            result.AddNode(node);
-            return result;
+
+            return new ArrayResult() { values = tokenList.ToArray() };
         }
 
 
-        public DataNode GetApps()
+        [APIInfo(typeof(AppResult[]), "Returns an array of apps deployed in Phantasma.")]
+        public IAPIResult GetApps()
         {
-            var result = DataNode.CreateObject();
-            var node = DataNode.CreateArray("apps");
+            var appList = new List<object>();
+
             var appChain = Nexus.FindChainByName("apps");
             var apps = (AppInfo[])appChain.InvokeContract("apps", "GetApps", new string[] { });
+
             foreach (var appInfo in apps)
             {
-                var temp = DataNode.CreateObject();
-                temp.AddField("description", appInfo.description);
-                temp.AddField("icon", appInfo.icon);
-                temp.AddField("id", appInfo.id);
-                temp.AddField("title", appInfo.title);
-                temp.AddField("url", appInfo.url);
-                node.AddNode(temp);
+                var entry = new AppResult();
+                entry.Description = appInfo.description;
+                entry.Icon = appInfo.icon.ToString();
+                entry.Id = appInfo.id;
+                entry.Title = appInfo.title;
+                entry.Url = appInfo.url;
+                appList.Add(entry);
             }
-            result.AddNode(node);
+
+            return new ArrayResult() { values = appList.ToArray() };
+        }
+
+        [APIInfo(typeof(RootChainResult), "Returns information about the root chain.")]
+        public IAPIResult GetRootChain()
+        {
+            var result = new RootChainResult();
+            result.Name = Nexus.RootChain.Name;
+            result.Address = Nexus.RootChain.Address.ToString();
+            result.Height = Nexus.RootChain.BlockHeight;
             return result;
         }
 
-        public DataNode GetRootChain()
+        [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.")]
+        public IAPIResult GetTokenTransfers(string tokenSymbol, int amount)
         {
-            var result = DataNode.CreateObject();
-            result.AddField("name", Nexus.RootChain.Name);
-            result.AddField("address", Nexus.RootChain.Address.ToString());
-            result.AddField("height", Nexus.RootChain.BlockHeight.ToString());
-            return result;
-        }
-
-        public DataNode GetTokenTransfers(string tokenSymbol, int amount)
-        {
-            var result = DataNode.CreateArray();
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txsHash = plugin.GetTokenTransactions(tokenSymbol);
             int count = 0;
+
+            var txList = new List<object>();
             foreach (var hash in txsHash)
             {
                 var tx = Nexus.FindTransactionByHash(hash);
                 if (tx != null)
                 {
-                    result.AddNode(FillTransaction(tx));
+                    txList.Add(FillTransaction(tx));
                     count++;
-                    if (count == amount) return result;
+
+                    if (count == amount) break;
                 }
             }
 
-            return result;
+            return new ArrayResult() { values = txList.ToArray() };
         }
-        public DataNode GetTokenTransferCount(string tokenSymbol)
+
+        [APIInfo(typeof(int), "Returns the number of transaction of a given token.")]
+        public IAPIResult GetTokenTransferCount(string tokenSymbol)
         {
-            var result = DataNode.CreateValue("");
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txCount = plugin.GetTokenTransactions(tokenSymbol).Count();
-            result.Value = txCount.ToString();
-
-            return result;
+            return new SingleResult() { value = txCount };
         }
 
-        public DataNode GetTokenBalance(string addressText, string tokenSymbol, string chainInput) //todo rest
+        [APIInfo(typeof(BalanceSheetResult), "Returns the balance for a specific token and chain, given an address.")]
+        public IAPIResult GetTokenBalance(string addressText, string tokenSymbol, string chainInput) //todo rest
         {
-            var result = DataNode.CreateObject();
             if (!Address.IsValidAddress(addressText))
             {
-                result.AddField("error", "invalid address");
-                return result;
+                return new ErrorResult() { error = "invalid address" };
             }
 
             Token token = Nexus.FindTokenBySymbol(tokenSymbol);
 
             if (token == null)
             {
-                result.AddField("error", "invalid token");
-                return result;
+                return new ErrorResult() { error = "invalid token" };
             }
 
             var chain = Nexus.FindChainByName(chainInput);
@@ -639,44 +668,36 @@ namespace Phantasma.API
             {
                 if (!Address.IsValidAddress(chainInput))
                 {
-                    result.AddField("error", "invalid address");
-                    return result;
+                    return new ErrorResult() { error = "invalid address" };
                 }
 
                 chain = Nexus.FindChainByAddress(Address.FromText(chainInput));
                 if (chain == null)
                 {
-                    result.AddField("error", "invalid chain");
-                    return result;
+                    return new ErrorResult() { error = "invalid chain" };
                 }
             }
 
             var address = Address.FromText(addressText);
             var balance = chain.GetTokenBalance(token, address);
-            var balanceNode = DataNode.CreateObject();
 
-            if (balance > 0)
+            var result =  new BalanceSheetResult()
             {
-                balanceNode.AddField("balance", balance);
-                if (!token.IsFungible)
+                Amount = balance.ToString(),
+                Symbol = tokenSymbol,
+                Chain = chain.Address.Text
+            };
+
+            if (!token.IsFungible)
+            {
+                var idList = chain.GetTokenOwnerships(token).Get(address);
+                if (idList != null && idList.Any())
                 {
-                    var idList = chain.GetTokenOwnerships(token).Get(address);
-                    if (idList != null && idList.Any())
-                    {
-                        var nodeId = DataNode.CreateArray("ids");
-                        idList.ForEach(p => nodeId.AddValue(p.ToString()));
-                        balanceNode.AddNode(nodeId);
-                    }
+                    result.Ids = idList.Select(x => x.ToString()).ToArray();
                 }
             }
-            return balanceNode;
-        }
 
-        private DataNode SerializedBlock(Block block)
-        {
-            var serializedBlock = DataNode.CreateValue("");
-            serializedBlock.Value = (block.ToByteArray().Encode());
-            return serializedBlock;
+            return result;
         }
     }
 }
