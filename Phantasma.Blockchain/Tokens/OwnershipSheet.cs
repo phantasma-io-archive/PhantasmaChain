@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Tokens
             return Address.Null;
         }
 
-        internal bool Give(Address address, BigInteger tokenID)
+        public bool Give(Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
@@ -74,7 +74,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Take(Address address, BigInteger tokenID)
+        public bool Take(Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
