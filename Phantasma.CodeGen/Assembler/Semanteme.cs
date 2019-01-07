@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Phantasma.CodeGen
+namespace Phantasma.CodeGen.Assembler
 {
     public abstract class Semanteme
     {

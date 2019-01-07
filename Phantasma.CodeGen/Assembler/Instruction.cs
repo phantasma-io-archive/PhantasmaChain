@@ -1,12 +1,10 @@
 ﻿using System.Linq;
 using Phantasma.Numerics;
-using Phantasma.Core.Utils;
 using Phantasma.VM.Utils;
-using Phantasma.Blockchain;
 using Phantasma.VM;
 using Phantasma.Cryptography;
 
-namespace Phantasma.CodeGen
+namespace Phantasma.CodeGen.Assembler
 {
     internal class Instruction : Semanteme
     {

@@ -1,6 +1,6 @@
 ﻿using Phantasma.VM.Utils;
 
-namespace Phantasma.CodeGen
+namespace Phantasma.CodeGen.Assembler
 {
     internal class Label : Semanteme
     {

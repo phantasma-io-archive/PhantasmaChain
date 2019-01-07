@@ -1,7 +1,7 @@
 ﻿using System;
 using Phantasma.Numerics;
 
-namespace Phantasma.CodeGen
+namespace Phantasma.CodeGen.Assembler
 {
     public static class ArgumentUtils
     {
