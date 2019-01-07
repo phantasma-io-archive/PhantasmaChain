@@ -9,17 +9,16 @@ namespace Phantasma.API
         {
             DataNode result;
 
-            if (input is SingleResult)
+            if (input is SingleResult singleResult)
             {
-                result = DataNode.CreateObject();
-                result.AddValue(((SingleResult)input).value);
+                result = DataNode.CreateValue("");
+                result.Value = (singleResult.value.ToString());
             }
             else
-            if (input is ArrayResult)
+            if (input is ArrayResult arrayResult)
             {
                 result = DataNode.CreateArray();
-                var array = (ArrayResult)input;
-                foreach (var item in array.values)
+                foreach (var item in arrayResult.values)
                 {
                     DataNode itemNode;
 
