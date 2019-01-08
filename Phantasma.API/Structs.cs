@@ -22,128 +22,122 @@ namespace Phantasma.API
 
     public struct BalanceResult : IAPIResult
     {
-        public string Chain;
-        public string Amount;
-        public string Symbol;
-        public string[] Ids;
+        public string chain;
+        public string amount;
+        public string symbol;
+        public string[] ids;
     }
 
     public struct AccountResult : IAPIResult
     {
-        public string Address;
-        public string Name;
-        public BalanceResult[] Balances;
+        public string address;
+        public string name;
+        public BalanceResult[] balances;
     }
 
     public struct ChainResult : IAPIResult
     {
-        public string Name;
-        public string Address;
-        public string ParentAddress;
-        public uint Height;
-        public ChainResult[] Children;
+        public string name;
+        public string address;
+        public string parentAddress;
+        public uint height;
     }
 
     public struct AppResult : IAPIResult
     {
-        public string Description;
-        public string Icon;
-        public string Id;
-        public string Title;
-        public string Url;
-    }
-
-    public struct AppListResult : IAPIResult
-    {
-        public AppResult[] Apps;
+        public string description;
+        public string icon;
+        public string id;
+        public string title;
+        public string url;
     }
 
     public class EventResult : IAPIResult
     {
-        public string Address;
-        public string Data;
-        public string Kind;
+        public string address;
+        public string data;
+        public string kind;
     }
 
     public class TransactionResult : IAPIResult
     {
-        public string Txid;
+        public string txid;
 
-        public string ChainAddress;
+        public string chainAddress;
 
-        public string ChainName;
+        public string chainName;
 
-        public uint Timestamp;
+        public uint timestamp;
 
-        public uint BlockHeight;
+        public uint blockHeight;
 
-        public string Script;
+        public string script;
 
-        public EventResult[] Events;
+        public EventResult[] events;
     }
 
     public struct AccountTransactionsResult : IAPIResult
     {
-        public string Address;
-        public uint Amount;
-        public TransactionResult[] Txs;
+        public string address;
+        public uint amount;
+        public TransactionResult[] txs;
     }
 
     public class BlockResult : IAPIResult
     {
-        public string Hash;
-        public string PreviousHash;
-        public uint Timestamp;
-        public uint Height;
-        public string ChainAddress;
-        public uint Nonce;
-        public string Payload;
-        public TransactionResult[] Txs;
-        public string MinerAddress;
-        public string Reward;
+        public string hash;
+        public string previousHash;
+        public uint timestamp;
+        public uint height;
+        public string chainAddress;
+        public uint nonce;
+        public string payload;
+        public TransactionResult[] txs;
+        public string minerAddress;
+        public string reward;
     }
 
     public class RootChainResult : IAPIResult
     {
-        public string Name;
-        public string Address;
-        public uint Height;
+        public string name;
+        public string address;
+        public uint height;
     }
 
     public class TokenResult : IAPIResult
     {
-        public string Symbol;
+        public string symbol;
 
-        public string Name;
+        public string name;
 
-        public int Decimals;
+        public int decimals;
 
-        public bool IsFungible;
+        public bool isFungible;
 
-        public string CurrentSupply;
+        public string currentSupply;
 
-        public string MaxSupply;
+        public string maxSupply;
 
-        public string Owner;
+        public string owner;
 
         //public string[] Flags; TODO
     }
 
     public class TokenListResult : IAPIResult
     {
-        public TokenResult[] Tokens;
+        public TokenResult[] tokens;
     }
 
     public class TxConfirmationResult : IAPIResult
     {
-        public string Hash;
+        public string hash;
 
-        public string Chain;
+        public string chain;
 
-        public int Confirmations;
+        public int confirmations;
 
-        public uint Height;
+        public uint height;
 
-        public bool IsConfirmed => Confirmations >= 1;
+        public bool isConfirmed => confirmations >= 1;
     }
 }
