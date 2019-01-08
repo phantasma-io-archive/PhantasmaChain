@@ -38,7 +38,9 @@ namespace Phantasma.API
             rpc.RegisterHandler("getAddressTxCount", GetAddressTxCount);
             rpc.RegisterHandler("getApps", GetApps);
             rpc.RegisterHandler("getBlockByHash", GetBlockByHash);
+            rpc.RegisterHandler("getRawBlockByHash", GetRawBlockByHash);
             rpc.RegisterHandler("getBlockByHeight", GetBlockByHeight);
+            rpc.RegisterHandler("getRawBlockByHeight", GetRawBlockByHeight);
             rpc.RegisterHandler("getBlockHeight", GetBlockHeight);
             rpc.RegisterHandler("getBlockTransactionCountByHash", GetBlockTransactionCountByHash);
             rpc.RegisterHandler("getChains", GetChains);
@@ -59,6 +61,7 @@ namespace Phantasma.API
         private object GetAccount(DataNode paramNode)
         {
             var result = API.GetAccount(paramNode.GetNodeByIndex(0).ToString());
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
@@ -68,6 +71,7 @@ namespace Phantasma.API
             var address = paramNode.GetNodeByIndex(0).ToString();
             var chain = paramNode.GetNodeByIndex(1) != null ? paramNode.GetNodeByIndex(1).ToString() : "";
             var result = API.GetAddressTransactionCount(address, chain);
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
@@ -76,7 +80,13 @@ namespace Phantasma.API
         private object GetBlockHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
-            var result = API.GetBlockHeightFromChainName(chain) ?? API.GetBlockHeightFromChainAddress(chain);
+            var result = API.GetBlockHeightFromChainName(chain);
+
+            if (result is ErrorResult)
+            {
+                result = API.GetBlockHeightFromChainAddress(chain);
+            }
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
@@ -84,16 +94,23 @@ namespace Phantasma.API
         private object GetBlockTransactionCountByHash(DataNode paramNode)
         {
             var result = API.GetBlockTransactionCountByHash(paramNode.GetNodeByIndex(0).ToString());
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
 
         private object GetBlockByHash(DataNode paramNode)
         {
-            var serialized = paramNode.GetNodeByIndex(1) != null
-                ? int.Parse(paramNode.GetNodeByIndex(1).ToString())
-                : 0;
-            var result = API.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString(), serialized);
+            var result = API.GetBlockByHash(paramNode.GetNodeByIndex(0).ToString());
+
+            CheckForError(result);
+            return APIUtils.FromAPIResult(result);
+        }
+
+        private object GetRawBlockByHash(DataNode paramNode)
+        {
+            var result = API.GetRawBlockByHash(paramNode.GetNodeByIndex(0).ToString());
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
@@ -104,13 +121,6 @@ namespace Phantasma.API
             var height = ushort.Parse(paramNode.GetNodeByIndex(1).ToString());
 
             var result = API.GetBlockByHeight(chainAddress, height);
-            if (result == null)
-            {
-                if (Address.IsValidAddress(chainAddress))
-                {
-                    result = API.GetBlockByHeight(chainAddress, height);
-                }
-            }
 
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
@@ -138,6 +148,7 @@ namespace Phantasma.API
         private object GetChains(DataNode paramNode)
         {
             var result = API.GetChains();
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
@@ -146,22 +157,29 @@ namespace Phantasma.API
         private object GetTransactionByHash(DataNode paramNode)
         {
             var result = API.GetTransaction(paramNode.GetNodeByIndex(0).ToString());
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
 
         private object GetTransactionByBlockHashAndIndex(DataNode paramNode)
         {
-            int index = int.Parse(paramNode.GetNodeByIndex(0).ToString());
+            int index = int.Parse(paramNode.GetNodeByIndex(1).ToString());
             var result = API.GetTransactionByBlockHashAndIndex(paramNode.GetNodeByIndex(0).ToString(), index);
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
 
         private object GetAddressTransactions(DataNode paramNode)
         {
-            var amountTx = int.Parse(paramNode.GetNodeByIndex(1).ToString());
-            var result = API.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amountTx);
+            int amount = 20; //default while we don't have pagination
+            if (paramNode.GetNodeByIndex(1) != null)
+            {
+                amount = int.Parse(paramNode.GetNodeByIndex(1).ToString());
+            }
+            var result = API.GetAddressTransactions(paramNode.GetNodeByIndex(0).ToString(), amount);
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
