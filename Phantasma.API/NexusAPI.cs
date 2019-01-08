@@ -12,13 +12,35 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
-    public class APIDescriptionAttribute: Attribute
+    public class APIDescriptionAttribute : Attribute
     {
         public readonly string Description;
 
         public APIDescriptionAttribute(string description)
         {
             Description = description;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class APIFailCaseAttribute : APIDescriptionAttribute
+    {
+        public readonly string Value;
+
+        public APIFailCaseAttribute(string description, string value) : base(description)
+        {
+            Value = value;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = true)]
+    public class APIParameterAttribute : APIDescriptionAttribute
+    {
+        public readonly string Value;
+
+        public APIParameterAttribute(string description, string value) : base(description)
+        {
+            Value = value;
         }
     }
 
@@ -37,12 +59,14 @@ namespace Phantasma.API
         public readonly Type Type;
         public readonly string Name;
         public readonly string Description;
+        public readonly string Value; // example value
 
-        public APIValue(Type type, string name, string description)
+        public APIValue(Type type, string name, string description, string value)
         {
             Type = type;
             Name = name;
             Description = description;
+            Value = value;
         }
     }
 
@@ -53,6 +77,8 @@ namespace Phantasma.API
 
         public readonly Type ReturnType;
         public readonly string Description;
+
+        public readonly APIFailCaseAttribute[] FailCases;
 
         private readonly NexusAPI _api;
         private readonly MethodInfo _info;
@@ -68,17 +94,29 @@ namespace Phantasma.API
             foreach (var entry in parameters)
             {
                 string description;
+                string value;
                 try
                 {
-                    var descAttr = entry.GetCustomAttribute<APIDescriptionAttribute>();
+                    var descAttr = entry.GetCustomAttribute<APIParameterAttribute>();
                     description = descAttr.Description;
+                    value = descAttr.Value;
                 }
                 catch
                 {
                     description = "TODO document me";
+                    value = "TODO document me";
                 }
 
-                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description));
+                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description, value));
+            }
+
+            try
+            {
+                FailCases = info.GetCustomAttributes<APIFailCaseAttribute>().ToArray();
+            }
+            catch
+            {
+                FailCases = new APIFailCaseAttribute[0];
             }
 
             try
@@ -284,7 +322,8 @@ namespace Phantasma.API
         #endregion
 
         [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.")]
-        public IAPIResult GetAccount([APIDescription("Address of account")] string addressText)
+        [APIFailCaseAttribute("address is invalid", "ABCD123")]
+        public IAPIResult GetAccount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText)
         {
             if (!Address.IsValidAddress(addressText))
             {
@@ -329,7 +368,9 @@ namespace Phantasma.API
             return result;
         }
 
-        public IAPIResult GetBlockHeightFromChain([APIDescription("Address or name of chain")] string chainInput)
+        [APIInfo(typeof(int), "Returns the height of a chain.")]
+        [APIFailCaseAttribute("chain is invalid", "4533")]
+        public IAPIResult GetBlockHeightFromChain([APIParameter("Address or name of chain", "root")] string chainInput)
         {
             var chain = FindChainByInput(chainInput);
 
@@ -339,7 +380,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.")]
-        public IAPIResult GetBlockTransactionCountByHash([APIDescription("Hash of block")] string blockHash)
+        [APIFailCaseAttribute("block hash is invalid", "asdfsa")]
+        public IAPIResult GetBlockTransactionCountByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -357,7 +399,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block by hash.")]
-        public IAPIResult GetBlockByHash([APIDescription("Hash of block")] string blockHash)
+        [APIFailCaseAttribute("block hash is invalid", "asdfsa")]
+        public IAPIResult GetBlockByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -375,7 +418,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block (encoded) by hash.")]
-        public IAPIResult GetRawBlockByHash([APIDescription("Hash of block")] string blockHash)
+        [APIFailCaseAttribute("block hash is invalid", "asdfsa")]
+        public IAPIResult GetRawBlockByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -393,7 +437,9 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
-        public IAPIResult GetBlockByHeight([APIDescription("Address or name of chain")] string chainInput, [APIDescription("Height of block")] uint height)
+        [APIFailCaseAttribute("block hash is invalid", "asdfsa")]
+        [APIFailCaseAttribute("chain is invalid", "453dsa")]
+        public IAPIResult GetBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
         {
             var chain = FindChainByInput(chainInput);
 
@@ -413,7 +459,9 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
-        public IAPIResult GetRawBlockByHeight([APIDescription("Address or name of chain")] string chainInput, [APIDescription("Height of block")] uint height)
+        [APIFailCaseAttribute("block hash is invalid", "asdfsa")]
+        [APIFailCaseAttribute("chain is invalid", "453dsa")]
+        public IAPIResult GetRawBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
         {
             var chain = Nexus.FindChainByName(chainInput);
 
@@ -442,7 +490,9 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.")]
-        public IAPIResult GetTransactionByBlockHashAndIndex([APIDescription("Hash of block")] string blockHash, [APIDescription("Index of transaction")] int index)
+        [APIFailCaseAttribute("block hash is invalid", "asdfsa")]
+        [APIFailCaseAttribute("index transaction is invalid", "-1")]
+        public IAPIResult GetTransactionByBlockHashAndIndex([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash, [APIParameter("Index of transaction", "0")] int index)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -451,6 +501,11 @@ namespace Phantasma.API
                 if (block == null)
                 {
                     return new ErrorResult { error = "unknown block hash" };
+                }
+
+                if (index < 0 || index >= block.TransactionCount)
+                {
+                    return new ErrorResult { error = "invalid transaction index" };
                 }
 
                 var txHash = block.TransactionHashes.ElementAtOrDefault(index);
@@ -467,7 +522,9 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
-        public IAPIResult GetAddressTransactions([APIDescription("Address of account")] string addressText, [APIDescription("Amount of transactions to return")] int amountTx)
+        [APIFailCaseAttribute("address is invalid", "543533")]
+        [APIFailCaseAttribute("amount to return is invalid", "-1")]
+        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] int amountTx)
         {
             if (amountTx < 1)
             {
@@ -499,7 +556,9 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Get number of transactions in a specific address and chain")]
-        public IAPIResult GetAddressTransactionCount([APIDescription("Address of account")] string addressText, [APIDescription("Name or address of chain, optional")] string chainInput)
+        [APIFailCaseAttribute("address is invalid", "43242342")]
+        [APIFailCaseAttribute("chain is invalid", "-1")]
+        public IAPIResult GetAddressTransactionCount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Name or address of chain, optional", "root")] string chainInput)
         {
             if (Address.IsValidAddress(addressText))
             {
@@ -532,7 +591,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
-        public IAPIResult GetConfirmations([APIDescription("Hash of transaction")] string hashText)
+        [APIFailCaseAttribute("hash is invalid", "asdfsa")]
+        public IAPIResult GetConfirmations([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             var result = new TxConfirmationResult();
             if (Hash.TryParse(hashText, out var hash))
@@ -578,7 +638,10 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
-        public IAPIResult SendRawTransaction([APIDescription("Serialized transaction bytes, in hexadecimal format")] string txData)
+        [APIFailCaseAttribute("rejected by mempool", "0000")] // TODO not correct
+        [APIFailCaseAttribute("script is invalid", "")]
+        [APIFailCaseAttribute("failed to decoded transaction", "0000")]
+        public IAPIResult SendRawTransaction([APIParameter("Serialized transaction bytes, in hexadecimal format", "0000000000")] string txData)
         {
             if (Mempool == null)
             {
@@ -586,7 +649,16 @@ namespace Phantasma.API
             }
 
             var bytes = Base16.Decode(txData);
+            if (bytes.Length == 0)
+            {
+                return new ErrorResult { error = "Invalid transaction script" };
+            }
+
             var tx = Transaction.Unserialize(bytes);
+            if (tx == null)
+            {
+                return new ErrorResult { error = "Failed to decode transaction" };
+            }
 
             bool submited = Mempool.Submit(tx);
             if (!submited)
@@ -598,7 +670,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
-        public IAPIResult GetTransaction([APIDescription("Hash of transaction")] string hashText)
+        [APIFailCaseAttribute("hash is invalid", "43242342")]
+        public IAPIResult GetTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (Hash.TryParse(hashText, out var hash))
             {
@@ -693,8 +766,21 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.")]
-        public IAPIResult GetTokenTransfers([APIDescription("Token symbol")] string tokenSymbol, [APIDescription("Amount of transactions to return")] int amount)
+        [APIFailCaseAttribute("token symbol is invalid", "43242342")]
+        [APIFailCaseAttribute("amount is invalid", "-1")]
+        public IAPIResult GetTokenTransfers([APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Amount of transactions to return", "5")] int amount)
         {
+            if (amount < 0)
+            {
+                return new ErrorResult { error = "Invalid amount" };
+            }
+
+            var token = Nexus.FindTokenBySymbol(tokenSymbol);
+            if (token == null)
+            {
+                return new ErrorResult { error = "Invalid token" };
+            }
+
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txsHash = plugin.GetTokenTransactions(tokenSymbol);
             int count = 0;
@@ -716,7 +802,8 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Returns the number of transaction of a given token.")]
-        public IAPIResult GetTokenTransferCount([APIDescription("Token symbol")] string tokenSymbol)
+        [APIFailCaseAttribute("token symbol is invalid", "43242342")]
+        public IAPIResult GetTokenTransferCount([APIParameter("Token symbol", "SOUL")] string tokenSymbol)
         {
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txCount = plugin.GetTokenTransactions(tokenSymbol).Count();
@@ -725,7 +812,10 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BalanceResult), "Returns the balance for a specific token and chain, given an address.")]
-        public IAPIResult GetTokenBalance([APIDescription("Address of account")] string addressText, [APIDescription("Token symbol")] string tokenSymbol, [APIDescription("Address or name of chain")] string chainInput) //todo rest
+        [APIFailCaseAttribute("address is invalid", "43242342")]
+        [APIFailCaseAttribute("token is invalid", "-1")]
+        [APIFailCaseAttribute("chain is invalid", "-1re")]
+        public IAPIResult GetTokenBalance([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Address or name of chain", "root")] string chainInput) //todo rest
         {
             if (!Address.IsValidAddress(addressText))
             {

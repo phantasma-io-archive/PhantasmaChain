@@ -26,6 +26,7 @@ namespace Phantasma.Blockchain
 
         private List<Hash> _transactionHashes;
         public IEnumerable<Hash> TransactionHashes => _transactionHashes;
+        public int TransactionCount => _transactionHashes.Count;
 
         // stores the events for each included transaction
         private Dictionary<Hash, List<Event>> _eventMap = new Dictionary<Hash, List<Event>>();
