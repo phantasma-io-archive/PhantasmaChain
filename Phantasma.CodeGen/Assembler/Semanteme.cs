@@ -3,6 +3,8 @@ using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using Phantasma.CodeGen.Core;
 
 namespace Phantasma.CodeGen.Assembler
 {
@@ -60,7 +62,8 @@ namespace Phantasma.CodeGen.Assembler
                 }
                 if (!string.IsNullOrEmpty(pline))
                 {
-                    string[] words = pline.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    //string[] words = pline.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] words = SplitWords(pline);
                     if (!Enum.TryParse(words[0], true, out Opcode name))
                         throw new CompilerException(lineNumber, "syntax error");
                     yield return new Instruction
@@ -71,6 +74,85 @@ namespace Phantasma.CodeGen.Assembler
                     };
                 }
             }
+        }
+
+        private static string[] SplitWords(string line)
+        {
+            bool insideQuotes = false;
+            List<string> words = new List<string>();
+            StringBuilder currentWord = new StringBuilder();
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+
+                switch (c)
+                {
+                    case ',':
+                    case ' ':
+                        if (insideQuotes)
+                            goto default;
+
+                        if (currentWord.Length > 0)
+                        {
+                            words.Add(currentWord.ToString());
+                            currentWord.Clear();
+                        }
+                            
+                        break;
+
+                    case '\\':
+                        if (i + 1 >= line.Length)
+                            throw new Exception("Escaping character not followed by an escapee");
+
+                        i++;
+                        var c2 = line[i];
+
+                        switch (c2)
+                        {
+                            case '\"':
+                                currentWord.Append(c2);
+
+                                if (!insideQuotes)
+                                    insideQuotes = true;
+                                else
+                                {
+                                    
+                                    words.Add(currentWord.ToString());
+                                    currentWord.Clear();
+                                    insideQuotes = false;
+                                }
+                                break;
+
+                            default:
+                                if (!insideQuotes)
+                                    goto default;
+                                break;
+                        }
+                        
+                        break;
+
+                    case '\"':
+                        if (!insideQuotes)
+                        {
+                            throw new Exception(
+                                $"Badly escaped string argument delimiters on:\n{line}\nStrings should be delimited with \\\"");
+                            break;
+                        }
+                            
+                        else
+                            goto default;
+
+                    default:
+                        currentWord.Append(c);
+                        break;
+                }
+            }
+
+            if(currentWord.Length > 0)
+                words.Add(currentWord.ToString());
+
+            return words.ToArray();
         }
     }
 }

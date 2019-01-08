@@ -764,7 +764,7 @@ namespace Phantasma.VM
                 Trace.WriteLine(ex.ToString());
                 SetState(ExecutionState.Fault);
 #if DEBUG
-                throw new Exception();
+                throw;
 #endif
             }
         }

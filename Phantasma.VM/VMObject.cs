@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Phantasma.Cryptography;
@@ -197,7 +197,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = new BigInteger(val);
+                        this.Data = new BigInteger(val, twosComplementFormatFlag: true);
                         break;
                     }
 
