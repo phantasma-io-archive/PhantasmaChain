@@ -14,14 +14,25 @@ namespace Phantasma.API
 {
     public class APIInfoAttribute : Attribute
     {
-        public Type ReturnType;
-        public string Description;
+        public readonly Type ReturnType;
+        public readonly string Description;
 
         public APIInfoAttribute(Type returnType, string description)
         {
             ReturnType = returnType;
             Description = description;
         }
+    }
+
+    public class APIResultFieldAttribute: Attribute
+    {
+        public readonly string Description;
+
+        public APIResultFieldAttribute(string description)
+        {
+            Description = description;
+        }
+
     }
 
     public struct APIEntry
@@ -147,9 +158,8 @@ namespace Phantasma.API
 
             var result = new TransactionResult
             {
-                txid = tx.Hash.ToString(),
+                hash = tx.Hash.ToString(),
                 chainAddress = chain.Address.Text,
-                chainName = chain.Name,
                 timestamp = block.Timestamp.Value,
                 blockHeight = block.Height,
                 script = tx.Script.Encode()
@@ -183,7 +193,6 @@ namespace Phantasma.API
                 height = block.Height,
                 chainAddress = chain.Address.ToString(),
                 payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(),
-                nonce = block.Nonce,
                 reward = chain.GetBlockReward(block).ToString(),
                 minerAddress = Nexus.FindValidatorForBlock(block).ToString(),
             };

@@ -32,6 +32,8 @@ namespace Phantasma.API
     {
         public string address;
         public string name;
+
+        [APIResultField("List of token balances")]
         public BalanceResult[] balances;
     }
 
@@ -39,40 +41,51 @@ namespace Phantasma.API
     {
         public string name;
         public string address;
+
+        [APIResultField("Address of parent chain")]
         public string parentAddress;
+
+        [APIResultField("Current chain height")]
         public uint height;
     }
 
     public struct AppResult : IAPIResult
     {
-        public string description;
-        public string icon;
         public string id;
         public string title;
         public string url;
+
+        [APIResultField("Description of app")]
+        public string description;
+
+        [APIResultField("Storage hash of the app icon")]
+        public string icon;
     }
 
     public class EventResult : IAPIResult
     {
         public string address;
-        public string data;
         public string kind;
+
+        [APIResultField("Data in hexadecimal format, content depends on the event kind")]
+        public string data;
     }
 
     public class TransactionResult : IAPIResult
     {
-        public string txid;
+        public string hash;
 
+        [APIResultField("Transaction chain address")]
         public string chainAddress;
-
-        public string chainName;
 
         public uint timestamp;
 
         public uint blockHeight;
 
+        [APIResultField("Script content of the transaction, in hexadecimal format")]
         public string script;
 
+        [APIResultField("List of events that triggered in the transaction")]
         public EventResult[] events;
     }
 
@@ -80,18 +93,27 @@ namespace Phantasma.API
     {
         public string address;
         public uint amount;
+
+        [APIResultField("List of transactions")]
         public TransactionResult[] txs;
     }
 
     public class BlockResult : IAPIResult
     {
         public string hash;
+
+        [APIResultField("Hash of previous block")]
         public string previousHash;
+
         public uint timestamp;
         public uint height;
+
+        [APIResultField("Address of chain where the block belongs")]
         public string chainAddress;
-        public uint nonce;
+
+        [APIResultField("Custom data choosen by the block miner, in hexadecimal format")]
         public string payload;
+
         public TransactionResult[] txs;
         public string minerAddress;
         public string reward;
