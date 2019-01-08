@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -38,7 +38,7 @@ namespace Phantasma.Tests
         {
             var scriptString = new string[]
             {
-                $@"load r1, """""
+                $"load r1, \\\"\\\""
             };
         }
 
@@ -81,7 +81,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 @"not r1, r2",
                 @"push r2",
                 @"ret"
@@ -91,12 +91,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -143,7 +140,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, false",
                 @"and r1, r2, r3",
                 @"push r3",
@@ -154,12 +151,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -206,7 +200,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, false",
                 @"or r1, r2, r3",
                 @"push r3",
@@ -217,12 +211,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -269,7 +260,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, false",
                 @"xor r1, r2, r3",
                 @"push r3",
@@ -280,12 +271,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -305,8 +293,8 @@ namespace Phantasma.Tests
                 new List<string>() {"true", "false", "false"},
                 new List<string>() {"1", "1", "true"},
                 new List<string>() {"1", "2", "false"},
-                new List<string>() {@"""hello""", @"""hello""", "true"},
-                new List<string>() {@"""hello""", @"""world""", "false"},
+                new List<string>() { "\\\"hello\\\"", "\\\"hello\\\"", "true"},
+                new List<string>() { "\\\"hello\\\"", "\\\"world\\\"", "false"},
                 
                 //TODO: add lines for bytes, structs, enums and structs
             };
@@ -376,7 +364,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, 2",
                 @"lt r1, r2, r3",
                 @"push r3",
@@ -387,12 +375,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -438,7 +423,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, 2",
                 @"gt r1, r2, r3",
                 @"push r3",
@@ -449,12 +434,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -500,7 +482,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, 2",
                 @"lte r1, r2, r3",
                 @"push r3",
@@ -511,12 +493,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -562,7 +541,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, 2",
                 @"gte r1, r2, r3",
                 @"push r3",
@@ -573,12 +552,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -624,7 +600,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, 2",
                 @"min r1, r2, r3",
                 @"push r3",
@@ -635,12 +611,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -686,7 +659,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, 2",
                 @"max r1, r2, r3",
                 @"push r3",
@@ -697,12 +670,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -746,7 +716,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""hello""",
+                $"load r1, \\\"hello\\\"",
                 @"inc r1",
                 @"push r1",
                 @"ret"
@@ -756,12 +726,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -803,7 +770,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""hello""",
+                $"load r1, \\\"hello\\\"",
                 @"dec r1",
                 @"push r1",
                 @"ret"
@@ -813,12 +780,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -862,7 +826,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $@"load r1, ""abc""",
+                $"load r1, \\\"abc\\\"",
                 $@"load r2, false",
                 @"and r1, r2, r3",
                 @"push r3",
@@ -873,12 +837,9 @@ namespace Phantasma.Tests
             {
                 vm = ExecuteScript(scriptString);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 
@@ -900,8 +861,8 @@ namespace Phantasma.Tests
             for (int i = 0; i < args.Count; i++)
             {
                 var argsLine = args[i];
-                string r1 = argsLine[0] == null ? null : $@"""{argsLine[0]}""";
-                string r2 = argsLine[1] == null ? null : $@"""{argsLine[1]}""";
+                string r1 = argsLine[0] == null ? null : $"\\\"{argsLine[0]}\\\"";
+                string r2 = argsLine[1] == null ? null : $"\\\"{argsLine[1]}\\\"";
 
                 var scriptString = new string[1];
 
@@ -928,6 +889,8 @@ namespace Phantasma.Tests
                     case 2:
                         scriptString = new string[]
                         {
+                            $@"load r1, {r1}",
+                            $@"load r2, {r2}",
                             @"cat r1, r2, r3",
                             @"push r3",
                             @"ret"
@@ -955,7 +918,7 @@ namespace Phantasma.Tests
 
             var scriptString2 = new string[]
             {
-                $@"load r1, ""Hello""",
+                $"load r1, \\\"Hello\\\"",
                 $@"load r2, 1",
                 @"cat r1, r2, r3",
                 @"push r3",
@@ -966,12 +929,9 @@ namespace Phantasma.Tests
             {
                 var vm2 = ExecuteScript(scriptString2);
             }
-            catch (InternalTestFailureException ie)
-            {
-                throw ie;
-            }
             catch (Exception e)
             {
+                Assert.IsTrue(e.Message == "Invalid cast");
                 return;
             }
 

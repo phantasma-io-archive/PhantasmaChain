@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.API\Phantasma.API.csproj" />
     <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
+    <ProjectReference Include="..\Phantasma.CodeGen\Phantasma.CodeGen.csproj" />
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
     <ProjectReference Include="..\Phantasma.IO\Phantasma.IO.csproj" />
