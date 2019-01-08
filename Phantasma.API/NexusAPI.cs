@@ -147,12 +147,12 @@ namespace Phantasma.API
 
             var result = new TransactionResult
             {
-                Txid = tx.Hash.ToString(),
-                ChainAddress = chain.Address.Text,
-                ChainName = chain.Name,
-                Timestamp = block.Timestamp.Value,
-                BlockHeight = block.Height,
-                Script = tx.Script.Encode()
+                txid = tx.Hash.ToString(),
+                chainAddress = chain.Address.Text,
+                chainName = chain.Name,
+                timestamp = block.Timestamp.Value,
+                blockHeight = block.Height,
+                script = tx.Script.Encode()
             };
 
             var eventList = new List<EventResult>();
@@ -162,13 +162,13 @@ namespace Phantasma.API
             {
                 var eventEntry = new EventResult
                 {
-                    Address = evt.Address.Text,
-                    Data = evt.Data.Encode(),
-                    Kind = evt.Kind.ToString()
+                    address = evt.Address.Text,
+                    data = evt.Data.Encode(),
+                    kind = evt.Kind.ToString()
                 };
                 eventList.Add(eventEntry);
             }
-            result.Events = eventList.ToArray();
+            result.events = eventList.ToArray();
 
             return result;
         }
@@ -177,18 +177,16 @@ namespace Phantasma.API
         {
             var result = new BlockResult
             {
-                Hash = block.Hash.ToString(),
-                PreviousHash = block.PreviousHash.ToString(),
-                Timestamp = block.Timestamp.Value,
-                Height = block.Height,
-                ChainAddress = block.ChainAddress.ToString()
+                hash = block.Hash.ToString(),
+                previousHash = block.PreviousHash.ToString(),
+                timestamp = block.Timestamp.Value,
+                height = block.Height,
+                chainAddress = chain.Address.ToString(),
+                payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(),
+                nonce = block.Nonce,
+                reward = chain.GetBlockReward(block).ToString(),
+                minerAddress = Nexus.FindValidatorForBlock(block).ToString(),
             };
-
-            var minerAddress = Nexus.FindValidatorForBlock(block);
-            result.MinerAddress = minerAddress.Text;
-            result.Nonce = block.Nonce;
-            result.Reward = chain.GetBlockReward(block).ToString();
-            result.Payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(); //todo make sure this is ok
 
             var txs = new List<TransactionResult>();
             if (block.TransactionHashes != null && block.TransactionHashes.Any())
@@ -200,38 +198,21 @@ namespace Phantasma.API
                     txs.Add(txEntry);
                 }
             }
-            result.Txs = txs.ToArray();
+            result.txs = txs.ToArray();
 
             // todo add other block info, eg: size, gas, txs
-
-
             return result;
         }
 
-        private ChainResult FillChain(Chain chain, bool fillChildren)
+        private ChainResult FillChain(Chain chain)
         {
             var result = new ChainResult
             {
-                Name = chain.Name,
-                Address = chain.Address.Text,
-                Height = chain.BlockHeight,
-                ParentAddress = chain.ParentChain?.Name
+                name = chain.Name,
+                address = chain.Address.Text,
+                height = chain.BlockHeight,
+                parentAddress = chain.ParentChain != null ? chain.ParentChain.Address.ToString() : ""
             };
-
-            if (fillChildren)
-            {
-                var children = new List<ChainResult>();
-                if (chain.ChildChains != null && chain.ChildChains.Any())
-                {
-                    foreach (var childChain in chain.ChildChains)
-                    {
-                        var child = FillChain(chain, true);
-                        children.Add(child);
-                    }
-
-                    result.Children = children.ToArray();
-                }
-            }
 
             return result;
         }
@@ -242,13 +223,13 @@ namespace Phantasma.API
         {
             if (!Address.IsValidAddress(addressText))
             {
-                return new ErrorResult() { error = "invalid address" };
+                return new ErrorResult { error = "invalid address" };
             }
 
             var result = new AccountResult();
             var address = Address.FromText(addressText);
-            result.Address = address.Text;
-            result.Name = Nexus.LookUpAddress(address);
+            result.address = address.Text;
+            result.name = Nexus.LookUpAddress(address);
 
             var balanceList = new List<BalanceResult>();
             foreach (var token in Nexus.Tokens)
@@ -260,10 +241,10 @@ namespace Phantasma.API
                     {
                         var balanceEntry = new BalanceResult
                         {
-                            Chain = chain.Name,
-                            Amount = balance.ToString(),
-                            Symbol = token.Symbol,
-                            Ids = null
+                            chain = chain.Name,
+                            amount = balance.ToString(),
+                            symbol = token.Symbol,
+                            ids = null
                         };
 
                         if (!token.IsFungible)
@@ -271,14 +252,14 @@ namespace Phantasma.API
                             var idList = chain.GetTokenOwnerships(token).Get(address);
                             if (idList != null && idList.Any())
                             {
-                                balanceEntry.Ids = idList.Select(x => x.ToString()).ToArray();
+                                balanceEntry.ids = idList.Select(x => x.ToString()).ToArray();
                             }
                         }
                         balanceList.Add(balanceEntry);
                     }
                 }
             }
-            result.Balances = balanceList.ToArray();
+            result.balances = balanceList.ToArray();
 
             return result;
         }
@@ -465,15 +446,15 @@ namespace Phantasma.API
                 var address = Address.FromText(addressText);
                 var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
 
-                result.Address = address.Text;
+                result.address = address.Text;
 
                 var txs = plugin?.GetAddressTransactions(address).
                     Select(hash => Nexus.FindTransactionByHash(hash)).
                     OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
                     Take(amountTx);
 
-                result.Amount = (uint)txs.Count();
-                result.Txs = txs.Select(FillTransaction).ToArray();
+                result.amount = (uint)txs.Count();
+                result.txs = txs.Select(FillTransaction).ToArray();
 
                 return result;
             }
@@ -548,10 +529,10 @@ namespace Phantasma.API
                 }
                 else
                 {
-                    result.Confirmations = confirmations;
-                    result.Hash = block.Hash.ToString();
-                    result.Height = block.Height;
-                    result.Chain = chain.Address.Text;
+                    result.confirmations = confirmations;
+                    result.hash = block.Hash.ToString();
+                    result.height = block.Height;
+                    result.chain = chain.Address.Text;
                 }
 
                 return result;
@@ -605,7 +586,7 @@ namespace Phantasma.API
 
             foreach (var chain in Nexus.Chains)
             {
-                var single = FillChain(chain, false);
+                var single = FillChain(chain);
                 objs.Add(single);
             }
 
@@ -622,13 +603,13 @@ namespace Phantasma.API
             {
                 var entry = new TokenResult
                 {
-                    Symbol = token.Symbol,
-                    Name = token.Name,
-                    CurrentSupply = token.CurrentSupply.ToString(),
-                    MaxSupply = token.MaxSupply.ToString(),
-                    Decimals = token.Decimals,
-                    IsFungible = token.IsFungible,
-                    Owner = token.Owner.Text
+                    symbol = token.Symbol,
+                    name = token.Name,
+                    currentSupply = token.CurrentSupply.ToString(),
+                    maxSupply = token.MaxSupply.ToString(),
+                    decimals = token.Decimals,
+                    isFungible = token.IsFungible,
+                    owner = token.Owner.Text
                 };
                 //tokenNode.AddField("flags", token.Flags);
                 tokenList.Add(entry);
@@ -650,11 +631,11 @@ namespace Phantasma.API
             {
                 var entry = new AppResult
                 {
-                    Description = appInfo.description,
-                    Icon = appInfo.icon.ToString(),
-                    Id = appInfo.id,
-                    Title = appInfo.title,
-                    Url = appInfo.url
+                    description = appInfo.description,
+                    icon = appInfo.icon.ToString(),
+                    id = appInfo.id,
+                    title = appInfo.title,
+                    url = appInfo.url
                 };
                 appList.Add(entry);
             }
@@ -667,9 +648,9 @@ namespace Phantasma.API
         {
             var result = new RootChainResult
             {
-                Name = Nexus.RootChain.Name,
-                Address = Nexus.RootChain.Address.ToString(),
-                Height = Nexus.RootChain.BlockHeight
+                name = Nexus.RootChain.Name,
+                address = Nexus.RootChain.Address.ToString(),
+                height = Nexus.RootChain.BlockHeight
             };
 
             return result;
@@ -743,9 +724,9 @@ namespace Phantasma.API
 
             var result = new BalanceResult()
             {
-                Amount = balance.ToString(),
-                Symbol = tokenSymbol,
-                Chain = chain.Address.Text
+                amount = balance.ToString(),
+                symbol = tokenSymbol,
+                chain = chain.Address.Text
             };
 
             if (!token.IsFungible)
@@ -753,7 +734,7 @@ namespace Phantasma.API
                 var idList = chain.GetTokenOwnerships(token).Get(address);
                 if (idList != null && idList.Any())
                 {
-                    result.Ids = idList.Select(x => x.ToString()).ToArray();
+                    result.ids = idList.Select(x => x.ToString()).ToArray();
                 }
             }
 
