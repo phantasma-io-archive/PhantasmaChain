@@ -32,6 +32,8 @@ namespace Phantasma.API
     {
         public string address;
         public string name;
+
+        [APIDescription("List of token balances")]
         public BalanceResult[] balances;
     }
 
@@ -39,40 +41,51 @@ namespace Phantasma.API
     {
         public string name;
         public string address;
+
+        [APIDescription("Address of parent chain")]
         public string parentAddress;
+
+        [APIDescription("Current chain height")]
         public uint height;
     }
 
     public struct AppResult : IAPIResult
     {
-        public string description;
-        public string icon;
         public string id;
         public string title;
         public string url;
+
+        [APIDescription("Description of app")]
+        public string description;
+
+        [APIDescription("Storage hash of the app icon")]
+        public string icon;
     }
 
     public class EventResult : IAPIResult
     {
         public string address;
-        public string data;
         public string kind;
+
+        [APIDescription("Data in hexadecimal format, content depends on the event kind")]
+        public string data;
     }
 
     public class TransactionResult : IAPIResult
     {
-        public string txid;
+        public string hash;
 
+        [APIDescription("Transaction chain address")]
         public string chainAddress;
-
-        public string chainName;
 
         public uint timestamp;
 
         public uint blockHeight;
 
+        [APIDescription("Script content of the transaction, in hexadecimal format")]
         public string script;
 
+        [APIDescription("List of events that triggered in the transaction")]
         public EventResult[] events;
     }
 
@@ -80,20 +93,34 @@ namespace Phantasma.API
     {
         public string address;
         public uint amount;
+
+        [APIDescription("List of transactions")]
         public TransactionResult[] txs;
     }
 
     public class BlockResult : IAPIResult
     {
         public string hash;
+
+        [APIDescription("Hash of previous block")]
         public string previousHash;
+
         public uint timestamp;
         public uint height;
+
+        [APIDescription("Address of chain where the block belongs")]
         public string chainAddress;
-        public uint nonce;
+
+        [APIDescription("Custom data choosen by the block miner, in hexadecimal format")]
         public string payload;
+
+        [APIDescription("List of transactions in block")]
         public TransactionResult[] txs;
-        public string minerAddress;
+
+        [APIDescription("Address of validator who minted the block")]
+        public string validatorAddress;
+
+        [APIDescription("Amount of SOUL rewarded by this fees in this block")]
         public string reward;
     }
 
@@ -106,38 +133,41 @@ namespace Phantasma.API
 
     public class TokenResult : IAPIResult
     {
+        [APIDescription("Ticker symbol for the token")]
         public string symbol;
 
         public string name;
 
+        [APIDescription("Amount of decimals when converting from fixed point format to decimal format")]
         public int decimals;
 
-        public bool isFungible;
-
+        [APIDescription("Amount of minted tokens")]
         public string currentSupply;
 
+        [APIDescription("Max amount of tokens that can be minted")]
         public string maxSupply;
 
-        public string owner;
+        [APIDescription("Address that controls minting of tokens")]
+        public string ownerAddress;
+
+        // TODO should be removed later, redundant once Flags field is added
+        public bool isFungible;
 
         //public string[] Flags; TODO
     }
 
-    public class TokenListResult : IAPIResult
-    {
-        public TokenResult[] tokens;
-    }
-
     public class TxConfirmationResult : IAPIResult
     {
+        [APIDescription("Hash of transaction")]
         public string hash;
 
-        public string chain;
+        [APIDescription("Address that controls minting of tokens")]
+        public string chainAddress;
 
+        [APIDescription("Number of confirmations for the transaction")]
         public int confirmations;
 
+        [APIDescription("Block height at which the transaction was accepted")]
         public uint height;
-
-        public bool isConfirmed => confirmations >= 1;
     }
 }

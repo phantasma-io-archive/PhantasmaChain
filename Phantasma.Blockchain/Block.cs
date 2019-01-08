@@ -19,7 +19,6 @@ namespace Phantasma.Blockchain
 
         public uint Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
-        public uint Nonce { get; private set; }
         public Hash Hash { get; private set; }
         public Hash PreviousHash { get; private set; }
 
@@ -74,7 +73,7 @@ namespace Phantasma.Blockchain
                 this.difficulty = InitialDifficulty;
             }*/
 
-            this.UpdateHash(0);
+            this.UpdateHash(new byte[0]);
         }
 
         internal void Notify(Hash hash, Event evt)
@@ -95,9 +94,9 @@ namespace Phantasma.Blockchain
         }
 
         // TODO - Optimize this to avoid recalculating the arrays if only the nonce changed
-        internal void UpdateHash(uint nonce)
+        internal void UpdateHash(byte[] payload)
         {
-            this.Nonce = nonce;
+            this.Payload = payload;
             var data = ToByteArray();
             var hashBytes = CryptoExtensions.Sha256(data);
             this.Hash = new Hash(hashBytes);
@@ -133,7 +132,6 @@ namespace Phantasma.Blockchain
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
             writer.WriteAddress(ChainAddress);
-            writer.WriteByteArray(Payload);
 
             writer.Write((ushort)_transactionHashes.Count);
             foreach (var hash in _transactionHashes)
@@ -146,7 +144,7 @@ namespace Phantasma.Blockchain
                     evt.Serialize(writer);
                 }
             }
-            writer.Write(Nonce);
+            writer.WriteByteArray(Payload);
         }
 
         public static Block Unserialize(byte[] bytes)

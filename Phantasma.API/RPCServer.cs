@@ -80,12 +80,7 @@ namespace Phantasma.API
         private object GetBlockHeight(DataNode paramNode)
         {
             var chain = paramNode.GetNodeByIndex(0).ToString();
-            var result = API.GetBlockHeightFromChainName(chain);
-
-            if (result is ErrorResult)
-            {
-                result = API.GetBlockHeightFromChainAddress(chain);
-            }
+            var result = API.GetBlockHeightFromChain(chain);
 
             CheckForError(result);
             return APIUtils.FromAPIResult(result);

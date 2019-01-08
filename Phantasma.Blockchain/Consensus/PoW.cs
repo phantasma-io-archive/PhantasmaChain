@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
-using Phantasma.Blockchain.Tokens;
 using System.Linq;
+using System;
 
 namespace Phantasma.Blockchain.Consensus
 {
@@ -26,6 +25,7 @@ namespace Phantasma.Blockchain.Consensus
                 target += k;
             }
 
+            uint nonce = 0;
             do
             {
                 BigInteger n = new BigInteger(block.Hash.ToByteArray());
@@ -34,7 +34,9 @@ namespace Phantasma.Blockchain.Consensus
                     break;
                 }
 
-                block.UpdateHash(block.Nonce + 1);
+                nonce++;
+                var payload = BitConverter.GetBytes(nonce);
+                block.UpdateHash(payload);
             } while (true);
 
             return block;
