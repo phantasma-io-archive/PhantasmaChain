@@ -49,22 +49,25 @@ namespace Phantasma.Numerics
 
         public BigInteger(byte[] bytes, bool twosComplementFormatFlag)
         {
-            int sign = 1;
+            int sign;
+
             if (twosComplementFormatFlag)
             {
-                sign = bytes[bytes.Length - 1] == 0 ? 1 : -1;
+                var msb = bytes[bytes.Length - 1] >> 7;
 
-                if (sign == -1)
-                {
-                    for (int i = 0; i < bytes.Length; i++)
-                    {
-                        bytes[i] = (byte) (bytes[i] ^ 1);
-                    }
-                }
-                
+                sign = msb == 0 ? 1 : -1;
             }
+            else
+                sign = 1;
 
-            this = new BigInteger(bytes);
+            byte[] buffer;
+
+            if (sign == -1)
+                buffer = ApplyTwosComplement(bytes);
+            else
+                buffer = bytes;
+
+            this = new BigInteger(buffer, sign);
         }
 
         public BigInteger(byte[] bytes, int sign = 1)
@@ -842,6 +845,18 @@ namespace Phantasma.Numerics
             return new BigInteger(temp);
         }
 
+        public static BigInteger operator ~(BigInteger a)
+        {
+            var buffer = new uint[a._data.Length];
+
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = ~a._data[i];
+            }
+
+            return new BigInteger(buffer);
+        }
+
         public static BigInteger operator &(BigInteger a, BigInteger b)
         {
             var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
@@ -1139,30 +1154,46 @@ public void SetBit(uint bitNum)
                 {
                     if (!applyTwosComplement && bytes[k] == 0)
                         continue;
-                    else if (applyTwosComplement && j + k >= byteArraySize)
+                    if (applyTwosComplement && j + k >= byteArraySize)
                         continue;
 
                     if(applyTwosComplement)
-                        result[j + k] = (byte) (bytes[k] ^ 1);
+                        result[j + k] = (byte) (bytes[k] ^ 0xFF);
                     else
                         result[j + k] = bytes[k];
                 }
-                //bytes.CopyTo(result, j );
             }
 
             //this could be optimized if needed, but likely not worth it for now
             if (applyTwosComplement)
             {
                 
-                var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
+                var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1.
 
-                result = tmp.ToByteArray(true);     //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
+                result = tmp.ToByteArray(true);     //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to keep sign information while in byte[] format
                                                     //but the twos complement logic won't get applied again given the bigint has positive sign.
 
-                result[result.Length - 1] = 1;      //force the MSB to 1, as this array represents a negative number.
+                result[result.Length - 1] = 0xFF;      //force the MSB to 1's, as this array represents a negative number.
             }
 
             return result;
+        }
+
+        public static byte[] ApplyTwosComplement(byte[] bytes)
+        {
+            var buffer = new byte[bytes.Length];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                buffer[i] = (byte)~bytes[i];
+            }
+
+            var tmp = (new BigInteger(buffer, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
+            
+            buffer = tmp.ToByteArray(true); //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
+            //but the twos complement logic won't get applied again given the bigint has positive sign.
+
+            return buffer;
         }
 
         //TODO: this probably needs looking into..

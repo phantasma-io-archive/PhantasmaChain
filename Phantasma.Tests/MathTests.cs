@@ -360,6 +360,23 @@ namespace Phantasma.Tests
                 Assert.IsTrue(n.GetBitLength() == i);
             }
         }
+
+        [TestMethod]
+        public void TestTwosComplement()
+        {
+            var posNum =
+                "12039895083450981409812309823049859076560924380198409183409284534987689509850239801948203948935795867389523019480192384290859346789038012983402587938457";
+
+            var posBigint = new BigInteger(posNum, 16);
+
+            var negArray = (-posBigint).ToByteArray(includeSignInArray: true);
+
+            var negBigInt = new BigInteger(negArray, twosComplementFormatFlag: true);
+
+            Assert.IsTrue(posBigint.Sign() == 1);
+            Assert.IsTrue(negBigInt.Sign() == -1);
+            Assert.IsTrue(negBigInt.ToByteArray(includeSignInArray: false).SequenceEqual(posBigint.ToByteArray(includeSignInArray: false)));
+        }
         #endregion
     }
 }
