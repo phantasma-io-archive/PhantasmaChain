@@ -12,33 +12,44 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
-    public class APIInfoAttribute : Attribute
+    public class APIDescriptionAttribute: Attribute
     {
-        public readonly Type ReturnType;
         public readonly string Description;
 
-        public APIInfoAttribute(Type returnType, string description)
+        public APIDescriptionAttribute(string description)
         {
-            ReturnType = returnType;
             Description = description;
         }
     }
 
-    public class APIResultFieldAttribute: Attribute
+    public class APIInfoAttribute : APIDescriptionAttribute
     {
+        public readonly Type ReturnType;
+
+        public APIInfoAttribute(Type returnType, string description): base(description)
+        {
+            ReturnType = returnType;
+        }
+    }
+
+    public struct APIValue
+    {
+        public readonly Type Type;
+        public readonly string Name;
         public readonly string Description;
 
-        public APIResultFieldAttribute(string description)
+        public APIValue(Type type, string name, string description)
         {
+            Type = type;
+            Name = name;
             Description = description;
         }
-
     }
 
     public struct APIEntry
     {
         public readonly string Name;
-        public readonly KeyValuePair<Type, string>[] Parameters;
+        public readonly List<APIValue> Parameters;
 
         public readonly Type ReturnType;
         public readonly string Description;
@@ -51,7 +62,24 @@ namespace Phantasma.API
             _api = api;
             _info = info;
             Name = info.Name;
-            Parameters = info.GetParameters().Select(x => new KeyValuePair<Type, string>(x.ParameterType, x.Name)).ToArray();
+
+            var parameters = info.GetParameters();
+            Parameters = new List<APIValue>();
+            foreach (var entry in parameters)
+            {
+                string description;
+                try
+                {
+                    var descAttr = entry.GetCustomAttribute<APIDescriptionAttribute>();
+                    description = descAttr.Description;
+                }
+                catch
+                {
+                    description = entry.Name;
+                }
+
+                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description));
+            }
 
             try
             {
@@ -73,7 +101,7 @@ namespace Phantasma.API
 
         public IAPIResult Execute(params string[] input)
         {
-            if (input.Length != Parameters.Length)
+            if (input.Length != Parameters.Count)
             {
                 throw new Exception("Unexpected number of arguments");
             }
@@ -81,23 +109,23 @@ namespace Phantasma.API
             var args = new object[input.Length];
             for (int i = 0; i < args.Length; i++)
             {
-                if (Parameters[i].Key == typeof(string))
+                if (Parameters[i].Type == typeof(string))
                 {
                     args[i] = input[i];
                 }
                 else
-                if (Parameters[i].Key == typeof(uint))
+                if (Parameters[i].Type == typeof(uint))
                 {
                     args[i] = uint.Parse(input[i]); // TODO error handling
                 }
                 else
-                if (Parameters[i].Key == typeof(int))
+                if (Parameters[i].Type == typeof(int))
                 {
                     args[i] = int.Parse(input[i]); // TODO error handling
                 }
                 else
                 {
-                    throw new Exception("API invalid parameter type: " + Parameters[i].Key.FullName);
+                    throw new Exception("API invalid parameter type: " + Parameters[i].Type.FullName);
                 }
             }
 
@@ -194,7 +222,7 @@ namespace Phantasma.API
                 chainAddress = chain.Address.ToString(),
                 payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(),
                 reward = chain.GetBlockReward(block).ToString(),
-                minerAddress = Nexus.FindValidatorForBlock(block).ToString(),
+                validatorAddress = Nexus.FindValidatorForBlock(block).ToString(),
             };
 
             var txs = new List<TransactionResult>();
@@ -541,7 +569,7 @@ namespace Phantasma.API
                     result.confirmations = confirmations;
                     result.hash = block.Hash.ToString();
                     result.height = block.Height;
-                    result.chain = chain.Address.Text;
+                    result.chainAddress = chain.Address.Text;
                 }
 
                 return result;
@@ -618,7 +646,7 @@ namespace Phantasma.API
                     maxSupply = token.MaxSupply.ToString(),
                     decimals = token.Decimals,
                     isFungible = token.IsFungible,
-                    owner = token.Owner.Text
+                    ownerAddress = token.Owner.Text
                 };
                 //tokenNode.AddField("flags", token.Flags);
                 tokenList.Add(entry);
