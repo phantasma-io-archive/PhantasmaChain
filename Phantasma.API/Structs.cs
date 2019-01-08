@@ -123,11 +123,6 @@ namespace Phantasma.API
         //public string[] Flags; TODO
     }
 
-    public class TokenListResult : IAPIResult
-    {
-        public TokenResult[] tokens;
-    }
-
     public class TxConfirmationResult : IAPIResult
     {
         public string hash;
