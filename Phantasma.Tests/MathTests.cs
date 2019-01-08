@@ -339,11 +339,11 @@ namespace Phantasma.Tests
             Assert.IsTrue(result == target);
 
             //TODO: we cant test negative exponentials yet because we need to implement the modInverse operation first!
-            /*
-            result = LargeInteger.ModPow(b, -exp, mod);
-            target = new LargeInteger("? dont know, need to find out first");
-            Assert.IsTrue(result == target);
-            */
+            
+            //result = b.ModPow(-256, mod);
+            //target = new BigInteger("");
+            //Assert.IsTrue(result == target);
+            
         }
 
         [TestMethod]

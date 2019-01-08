@@ -1124,23 +1124,42 @@ public void SetBit(uint bitNum)
         }
 
 
-        public byte[] ToByteArray()
+        public byte[] ToByteArray(bool includeSignInArray = false)
         {
             var bitLength = GetBitLength();
-            var byteArraySize = (bitLength / 8) + (uint)((bitLength % 8 > 0) ? 1 : 0);
+            var byteArraySize = (bitLength / 8) + (uint)((bitLength % 8 > 0) ? 1 : 0) + (includeSignInArray ? 1 : 0);
             byte[] result = new byte[byteArraySize];
+
+            bool applyTwosComplement = includeSignInArray && (_sign == -1);    //only apply two's complement if this number is negative
 
             for (int i = 0, j = 0; i < _data.Length; i++, j += 4)
             {
                 byte[] bytes = BitConverter.GetBytes(_data[i]);
                 for (int k = 0; k < 4; k++)
                 {
-                    if (bytes[k] == 0)
+                    if (!applyTwosComplement && bytes[k] == 0)
+                        continue;
+                    else if (applyTwosComplement && j + k >= byteArraySize)
                         continue;
 
-                    result[j + k] = bytes[k];
+                    if(applyTwosComplement)
+                        result[j + k] = (byte) (bytes[k] ^ 1);
+                    else
+                        result[j + k] = bytes[k];
                 }
                 //bytes.CopyTo(result, j );
+            }
+
+            //this could be optimized if needed, but likely not worth it for now
+            if (applyTwosComplement)
+            {
+                
+                var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
+
+                result = tmp.ToByteArray(true);     //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
+                                                    //but the twos complement logic won't get applied again given the bigint has positive sign.
+
+                result[result.Length - 1] = 1;      //force the MSB to 1, as this array represents a negative number.
             }
 
             return result;
