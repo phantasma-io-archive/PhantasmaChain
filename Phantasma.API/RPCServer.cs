@@ -189,6 +189,7 @@ namespace Phantasma.API
         private object GetTokens(DataNode paramNode)
         {
             var result = API.GetTokens();
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
@@ -197,8 +198,15 @@ namespace Phantasma.API
         {
             var address = paramNode.GetNodeByIndex(0).ToString();
             var tokenSymbol = paramNode.GetNodeByIndex(1).ToString();
-            var chain = paramNode.GetNodeByIndex(2).ToString();
+            string chain = string.Empty;
+
+            if (paramNode.GetNodeByIndex(2) != null)
+            {
+                chain = paramNode.GetNodeByIndex(2).ToString();
+            }
+
             var result = API.GetTokenBalance(address, tokenSymbol, chain);
+
             CheckForError(result);
             return APIUtils.FromAPIResult(result);
         }
