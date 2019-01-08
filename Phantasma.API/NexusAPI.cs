@@ -75,7 +75,7 @@ namespace Phantasma.API
                 }
                 catch
                 {
-                    description = entry.Name;
+                    description = "TODO document me";
                 }
 
                 Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description));
@@ -90,7 +90,7 @@ namespace Phantasma.API
             catch
             {
                 ReturnType = null;
-                Description = "not available";
+                Description = "TODO document me";
             }
         }
 
@@ -253,10 +253,38 @@ namespace Phantasma.API
 
             return result;
         }
+
+        private IAPIResult GetBlockHeight(Chain chain)
+        {
+            if (chain != null)
+            {
+                return new SingleResult { value = chain.BlockHeight };
+            }
+
+            return new ErrorResult { error = "chain not found" };
+        }
+
+        private Chain FindChainByInput(string chainInput)
+        {
+            var chain = Nexus.FindChainByName(chainInput);
+
+            if (chain != null)
+            {
+                return chain;
+            }
+
+            if (Address.IsValidAddress(chainInput))
+            {
+                return Nexus.FindChainByAddress(Address.FromText(chainInput));
+            }
+
+            return null;
+        }
+
         #endregion
 
         [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.")]
-        public IAPIResult GetAccount(string addressText)
+        public IAPIResult GetAccount([APIDescription("Address of account")] string addressText)
         {
             if (!Address.IsValidAddress(addressText))
             {
@@ -301,39 +329,17 @@ namespace Phantasma.API
             return result;
         }
 
-        public IAPIResult GetBlockHeightFromChainAddress(string chainAddress)
+        public IAPIResult GetBlockHeightFromChain([APIDescription("Address or name of chain")] string chainInput)
         {
-            if (Address.IsValidAddress(chainAddress))
-            {
-                var chain = Nexus.FindChainByAddress(Address.FromText(chainAddress));
-                return GetBlockHeight(chain);
-            }
-
-            return new ErrorResult { error = "invalid address" };
-        }
-
-        public IAPIResult GetBlockHeightFromChainName(string chainName)
-        {
-            var chain = Nexus.FindChainByName(chainName);
+            var chain = FindChainByInput(chainInput);
 
             if (chain == null) return new ErrorResult { error = "invalid name" };
 
             return GetBlockHeight(chain);
         }
 
-        [APIInfo(typeof(uint), "Returns the height of most recent block of given chain.")]
-        private IAPIResult GetBlockHeight(Chain chain)
-        {
-            if (chain != null)
-            {
-                return new SingleResult { value = chain.BlockHeight };
-            }
-
-            return new ErrorResult { error = "chain not found" };
-        }
-
         [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.")]
-        public IAPIResult GetBlockTransactionCountByHash(string blockHash)
+        public IAPIResult GetBlockTransactionCountByHash([APIDescription("Hash of block")] string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -351,7 +357,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block by hash.")]
-        public IAPIResult GetBlockByHash(string blockHash)
+        public IAPIResult GetBlockByHash([APIDescription("Hash of block")] string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -369,7 +375,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block (encoded) by hash.")]
-        public IAPIResult GetRawBlockByHash(string blockHash)
+        public IAPIResult GetRawBlockByHash([APIDescription("Hash of block")] string blockHash)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -387,18 +393,9 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
-        public IAPIResult GetBlockByHeight(string chainInput, uint height)
+        public IAPIResult GetBlockByHeight([APIDescription("Address or name of chain")] string chainInput, [APIDescription("Height of block")] uint height)
         {
-            var chain = Nexus.FindChainByName(chainInput);
-
-            if (chain == null)
-            {
-                if (!Address.IsValidAddress(chainInput))
-                {
-                    return new ErrorResult { error = "chain not found" };
-                }
-                chain = Nexus.FindChainByAddress(Address.FromText(chainInput));
-            }
+            var chain = FindChainByInput(chainInput);
 
             if (chain == null)
             {
@@ -416,7 +413,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
-        public IAPIResult GetRawBlockByHeight(string chainInput, uint height)
+        public IAPIResult GetRawBlockByHeight([APIDescription("Address or name of chain")] string chainInput, [APIDescription("Height of block")] uint height)
         {
             var chain = Nexus.FindChainByName(chainInput);
 
@@ -445,7 +442,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.")]
-        public IAPIResult GetTransactionByBlockHashAndIndex(string blockHash, int index)
+        public IAPIResult GetTransactionByBlockHashAndIndex([APIDescription("Hash of block")] string blockHash, [APIDescription("Index of transaction")] int index)
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
@@ -470,7 +467,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
-        public IAPIResult GetAddressTransactions(string addressText, int amountTx)
+        public IAPIResult GetAddressTransactions([APIDescription("Address of account")] string addressText, [APIDescription("Amount of transactions to return")] int amountTx)
         {
             if (amountTx < 1)
             {
@@ -501,22 +498,24 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(int), "TODO document me")]
-        public IAPIResult GetAddressTransactionCount(string addressText, string chainText)
+        [APIInfo(typeof(int), "Get number of transactions in a specific address and chain")]
+        public IAPIResult GetAddressTransactionCount([APIDescription("Address of account")] string addressText, [APIDescription("Name or address of chain, optional")] string chainInput)
         {
             if (Address.IsValidAddress(addressText))
             {
                 var address = Address.FromText(addressText);
                 var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
                 int count = 0;
-                if (!string.IsNullOrEmpty(chainText))
+
+                if (!string.IsNullOrEmpty(chainInput))
                 {
-                    var chain = Nexus.Chains.SingleOrDefault(p =>
-                        p.Name.Equals(chainText) || p.Address.ToString().Equals(chainText));
-                    if (chain != null)
+                    var chain = FindChainByInput(chainInput);
+                    if (chain == null)
                     {
-                        count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                        return new ErrorResult() { error = "invalid chain" };
                     }
+
+                    count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
                 }
                 else
                 {
@@ -533,7 +532,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
-        public IAPIResult GetConfirmations(string hashText)
+        public IAPIResult GetConfirmations([APIDescription("Hash of transaction")] string hashText)
         {
             var result = new TxConfirmationResult();
             if (Hash.TryParse(hashText, out var hash))
@@ -579,7 +578,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
-        public IAPIResult SendRawTransaction(string txData)
+        public IAPIResult SendRawTransaction([APIDescription("Serialized transaction bytes, in hexadecimal format")] string txData)
         {
             if (Mempool == null)
             {
@@ -599,7 +598,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
-        public IAPIResult GetTransaction(string hashText)
+        public IAPIResult GetTransaction([APIDescription("Hash of transaction")] string hashText)
         {
             if (Hash.TryParse(hashText, out var hash))
             {
@@ -614,7 +613,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "Invalid hash" };
         }
 
-        [APIInfo(typeof(ChainResult[]), "Returns an array of chains with useful information.")]
+        [APIInfo(typeof(ChainResult[]), "Returns an array of all chains deployed in Phantasma.")]
         public IAPIResult GetChains()
         {
             var result = new ArrayResult();
@@ -694,7 +693,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.")]
-        public IAPIResult GetTokenTransfers(string tokenSymbol, int amount)
+        public IAPIResult GetTokenTransfers([APIDescription("Token symbol")] string tokenSymbol, [APIDescription("Amount of transactions to return")] int amount)
         {
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txsHash = plugin.GetTokenTransactions(tokenSymbol);
@@ -717,7 +716,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Returns the number of transaction of a given token.")]
-        public IAPIResult GetTokenTransferCount(string tokenSymbol)
+        public IAPIResult GetTokenTransferCount([APIDescription("Token symbol")] string tokenSymbol)
         {
             var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
             var txCount = plugin.GetTokenTransactions(tokenSymbol).Count();
@@ -726,7 +725,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(BalanceResult), "Returns the balance for a specific token and chain, given an address.")]
-        public IAPIResult GetTokenBalance(string addressText, string tokenSymbol, string chainInput) //todo rest
+        public IAPIResult GetTokenBalance([APIDescription("Address of account")] string addressText, [APIDescription("Token symbol")] string tokenSymbol, [APIDescription("Address or name of chain")] string chainInput) //todo rest
         {
             if (!Address.IsValidAddress(addressText))
             {
@@ -740,20 +739,11 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid token" };
             }
 
-            var chain = Nexus.FindChainByName(chainInput);
+            var chain = FindChainByInput(chainInput);
 
             if (chain == null)
             {
-                if (!Address.IsValidAddress(chainInput))
-                {
-                    return new ErrorResult { error = "invalid chain address" };
-                }
-
-                chain = Nexus.FindChainByAddress(Address.FromText(chainInput));
-                if (chain == null)
-                {
-                    return new ErrorResult { error = "invalid chain" };
-                }
+                return new ErrorResult { error = "invalid chain" };
             }
 
             var address = Address.FromText(addressText);
