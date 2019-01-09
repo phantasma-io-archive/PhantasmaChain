@@ -10,6 +10,7 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Tests
 {
+    [TestClass]
     public class ChainTests
     {
         [TestMethod]
