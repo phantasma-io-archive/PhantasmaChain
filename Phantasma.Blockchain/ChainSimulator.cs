@@ -5,6 +5,7 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;

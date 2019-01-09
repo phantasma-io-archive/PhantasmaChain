@@ -377,11 +377,11 @@ namespace Phantasma.Blockchain
                 sb.AllowGas(owner.Address, 1, 9999);
             }
 
-            sb.CallContract(ScriptUtils.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
+            sb.CallContract(ScriptBuilderExtensions.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
 
             if (symbol == NativeTokenSymbol)
             {
-                sb.CallContract(ScriptUtils.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
+                sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
                 sb.AllowGas(owner.Address, 1, 9999);
             }
 
@@ -398,7 +398,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, 1, 9999).
-                CallContract(ScriptUtils.NexusContract, "CreateChain", owner.Address, name, RootChain.Name).
+                CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name).
                 SpendGas(owner.Address).
                 EndScript();
 

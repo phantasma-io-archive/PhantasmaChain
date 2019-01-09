@@ -5,11 +5,13 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Network.P2P;
 using Phantasma.Numerics;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {

@@ -1,18 +1,11 @@
 ﻿using System;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
-using Phantasma.VM;
-using Phantasma.VM.Utils;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.VM.Utils
 {
     public static class ScriptUtils
     {
-        // TODO should this be here?
-        public static readonly string NexusContract = "nexus";
-        public static readonly string TokenContract = "token";
-
-
         public static ScriptBuilder BeginScript()
         {
             var sb = new ScriptBuilder();
@@ -128,31 +121,6 @@ namespace Phantasma.Blockchain
 
             sb.Emit(VM.Opcode.SWITCH, new byte[] { dest_reg });
             return sb;
-        }
-
-        public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, BigInteger amount)
-        {
-            return CallContract(sb, TokenContract, "MintTokens", tokenSymbol, target, amount);
-        }
-
-        public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger amount)
-        {
-            return CallContract(sb, TokenContract, "TransferTokens", from, to, tokenSymbol, amount);
-        }
-
-        public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
-        {
-            return CallContract(sb, TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
-        }
-
-        public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
-        {
-            return CallContract(sb, TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
-        }
-
-        public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
-        {
-            return CallContract(sb, TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
     }
 }
