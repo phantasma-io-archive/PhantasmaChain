@@ -11,10 +11,7 @@ namespace Phantasma.API
 
             if (input is SingleResult singleResult)
             {
-                result = DataNode.CreateValue("");
-                result.Value = singleResult.value.ToString();
-                //result = DataNode.CreateObject();
-                //result.AddValue(singleResult);
+                result = DataNode.CreateValue(singleResult.value);
             }
             else
             if (input is ArrayResult arrayResult)
@@ -62,8 +59,7 @@ namespace Phantasma.API
                                 }
                                 else
                                 {
-                                    itemNode = DataNode.CreateObject();
-                                    itemNode.AddValue(item);
+                                    itemNode = DataNode.CreateValue(item);
                                 }
 
                                 entry.AddNode(itemNode);
