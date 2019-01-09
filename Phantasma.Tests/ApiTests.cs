@@ -1,12 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using System.Linq;
-using System.Text;
-
 using Phantasma.API;
 using Phantasma.Blockchain;
 using Phantasma.Cryptography;
-using LunarLabs.Parser.JSON;
 
 namespace Phantasma.Tests
 {

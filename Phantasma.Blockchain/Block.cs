@@ -164,7 +164,6 @@ namespace Phantasma.Blockchain
             var timestamp = new Timestamp(reader.ReadUInt32());
             var prevHash = reader.ReadHash();
             var chainAddress = reader.ReadAddress();
-            var extraContent = reader.ReadByteArray();
 
             var hashCount = reader.ReadUInt16();
             var hashes = new List<Hash>();
@@ -185,9 +184,9 @@ namespace Phantasma.Blockchain
                 eventMap[hash] = evts;
             }
 
-            var nonce = reader.ReadUInt32();
+            var payLoad = reader.ReadByteArray();
 
-            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, extraContent); 
+            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, payLoad); 
             return block;
         }
         #endregion
