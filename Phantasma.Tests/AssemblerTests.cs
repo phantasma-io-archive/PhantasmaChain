@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
@@ -560,124 +561,6 @@ namespace Phantasma.Tests
 
             throw new Exception("Didn't throw an exception after trying to compare non-integer variables.");
         }
-
-        [TestMethod]
-        public void Min()
-        {
-            string[] scriptString;
-            RuntimeVM vm;
-
-            var args = new List<List<string>>()
-            {
-                new List<string>() {"1", "0", "0"},
-                new List<string>() {"1", "1", "1"},
-                new List<string>() {"1", "2", "1"},
-            };
-
-            for (int i = 0; i < args.Count; i++)
-            {
-                var argsLine = args[i];
-                string r1 = argsLine[0];
-                string r2 = argsLine[1];
-                string target = argsLine[2];
-
-                scriptString = new string[]
-                {
-                    $@"load r1, {r1}",
-                    $@"load r2, {r2}",
-                    @"min r1, r2, r3",
-                    @"push r3",
-                    @"ret"
-                };
-
-                vm = ExecuteScript(scriptString);
-
-                Assert.IsTrue(vm.Stack.Count == 1);
-
-                var result = vm.Stack.Pop().AsString();
-                Assert.IsTrue(result == target);
-            }
-
-            scriptString = new string[]
-            {
-                $"load r1, \\\"abc\\\"",
-                $@"load r2, 2",
-                @"min r1, r2, r3",
-                @"push r3",
-                @"ret"
-            };
-
-            try
-            {
-                vm = ExecuteScript(scriptString);
-            }
-            catch (Exception e)
-            {
-                Assert.IsTrue(e.Message == "Invalid cast");
-                return;
-            }
-
-            throw new Exception("Didn't throw an exception after trying to compare non-integer variables.");
-        }
-
-        [TestMethod]
-        public void Max()
-        {
-            string[] scriptString;
-            RuntimeVM vm;
-
-            var args = new List<List<string>>()
-            {
-                new List<string>() {"1", "0", "1"},
-                new List<string>() {"1", "1", "1"},
-                new List<string>() {"1", "2", "2"},
-            };
-
-            for (int i = 0; i < args.Count; i++)
-            {
-                var argsLine = args[i];
-                string r1 = argsLine[0];
-                string r2 = argsLine[1];
-                string target = argsLine[2];
-
-                scriptString = new string[]
-                {
-                    $@"load r1, {r1}",
-                    $@"load r2, {r2}",
-                    @"max r1, r2, r3",
-                    @"push r3",
-                    @"ret"
-                };
-
-                vm = ExecuteScript(scriptString);
-
-                Assert.IsTrue(vm.Stack.Count == 1);
-
-                var result = vm.Stack.Pop().AsString();
-                Assert.IsTrue(result == target);
-            }
-
-            scriptString = new string[]
-            {
-                $"load r1, \\\"abc\\\"",
-                $@"load r2, 2",
-                @"max r1, r2, r3",
-                @"push r3",
-                @"ret"
-            };
-
-            try
-            {
-                vm = ExecuteScript(scriptString);
-            }
-            catch (Exception e)
-            {
-                Assert.IsTrue(e.Message == "Invalid cast");
-                return;
-            }
-
-            throw new Exception("Didn't throw an exception after trying to compare non-integer variables.");
-        }
         #endregion
 
         #region NumericOps
@@ -827,9 +710,8 @@ namespace Phantasma.Tests
             scriptString = new string[]
             {
                 $"load r1, \\\"abc\\\"",
-                $@"load r2, false",
-                @"and r1, r2, r3",
-                @"push r3",
+                @"sign r1, r2",
+                @"push r2",
                 @"ret"
             };
 
@@ -846,7 +728,646 @@ namespace Phantasma.Tests
             throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
         }
 
+        [TestMethod]
+        public void Negate()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"-1123124", "1123124"},
+                new List<string>() {"0", "0"},
+                new List<string>() {"14564535", "-14564535" }
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    @"negate r1, r2",
+                    @"push r2",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $"load r1, \\\"abc\\\"",
+                @"negate r1, r2",
+                @"push r2",
+                @"ret"
+            };
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void Abs()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"-1123124", "1123124"},
+                new List<string>() {"0", "0"},
+                new List<string>() {"14564535", "14564535" }
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    @"abs r1, r2",
+                    @"push r2",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $"load r1, \\\"abc\\\"",
+                @"abs r1, r2",
+                @"push r2",
+                @"ret"
+            };
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void Add()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "123098123049830982903580234959875213840923849203758942357834091", "246196246099661965807160469919750427681847698407517884715668182"}
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"add r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"add r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void Sub()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "123098123049830982903580234959875213840923849203758942357834091", "0"}
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"sub r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"sub r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void Mul()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "123098123049830982903580234959875213840923849203758942357834091", "15153147898391329927834760664056143940222558862285292671240041298552647375412113910342337827528430805055673715428680681796281"}
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"mul r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"mul r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void Div()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "123098123049830982903580234959875213840923849203758942357834091", "1"}
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"div r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"div r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void Mod()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "123098123049830982903580234959875213840923849203758942357834091", "0"}
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"mod r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"mod r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void ShiftLeft()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "100", "156045409571086686325343677668972466714151959338084738385422346983957734263469303184507273216"}
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"shl r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"shl r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+        [TestMethod]
+        public void ShiftRight()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"123098123049830982903580234959875213840923849203758942357834091", "100", "97107296780097167688396095959314" }
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"shr r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $@"load r1, true",
+                $"load r2, \\\"stuff\\\"",
+                @"shr r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to AND a non-bool variable.");
+        }
+
+
+        [TestMethod]
+        public void Min()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"1", "0", "0"},
+                new List<string>() {"1", "1", "1"},
+                new List<string>() {"1", "2", "1"},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"min r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $"load r1, \\\"abc\\\"",
+                $@"load r2, 2",
+                @"min r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to compare non-integer variables.");
+        }
+
+        [TestMethod]
+        public void Max()
+        {
+            string[] scriptString;
+            RuntimeVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"1", "0", "1"},
+                new List<string>() {"1", "1", "1"},
+                new List<string>() {"1", "2", "2"},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string r2 = argsLine[1];
+                string target = argsLine[2];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    $@"load r2, {r2}",
+                    @"max r1, r2, r3",
+                    @"push r3",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+
+            scriptString = new string[]
+            {
+                $"load r1, \\\"abc\\\"",
+                $@"load r2, 2",
+                @"max r1, r2, r3",
+                @"push r3",
+                @"ret"
+            };
+
+            try
+            {
+                vm = ExecuteScript(scriptString);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("Didn't throw an exception after trying to compare non-integer variables.");
+        }
         #endregion
+
+
+        #region Data
         [TestMethod]
         public void Cat()
         {
@@ -938,6 +1459,180 @@ namespace Phantasma.Tests
             throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
         }
 
+        [TestMethod]
+        public void Left()
+        {
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"Hello world", "5", "Hello"},
+                //TODO: missing tests with byte data
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string len = argsLine[1];
+                string target = argsLine[2];
+
+                var scriptString = new string[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, \\\"{r1}\\\"",
+                    $"left r1, r2, {len}",
+                    @"push r2",
+                    @"ret"
+                };
+        
+
+                var vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var resultBytes = vm.Stack.Pop().AsByteArray();
+                var result = Encoding.UTF8.GetString(resultBytes);
+                
+                Assert.IsTrue(result == target);
+            }
+
+            var scriptString2 = new string[]
+            {
+                $"load r1, 100",
+                @"left r1, r2, 1",
+                @"push r2",
+                @"ret"
+            };
+
+            try
+            {
+                var vm2 = ExecuteScript(scriptString2);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
+        }
+
+        [TestMethod]
+        public void Right()
+        {
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"Hello world", "5", "world"},
+                //TODO: missing tests with byte data
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string len = argsLine[1];
+                string target = argsLine[2];
+
+                var scriptString = new string[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, \\\"{r1}\\\"",
+                    $"right r1, r2, {len}",
+                    @"push r2",
+                    @"ret"
+                };
+
+
+                var vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var resultBytes = vm.Stack.Pop().AsByteArray();
+                var result = Encoding.UTF8.GetString(resultBytes);
+
+                Assert.IsTrue(result == target);
+            }
+
+            var scriptString2 = new string[]
+            {
+                $"load r1, 100",
+                @"right r1, r2, 1",
+                @"push r2",
+                @"ret"
+            };
+
+            try
+            {
+                var vm2 = ExecuteScript(scriptString2);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
+        }
+
+        [TestMethod]
+        public void Size()
+        {
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"Hello world"},
+                //TODO: missing tests with byte data
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                string r1 = argsLine[0];
+                string target = Encoding.UTF8.GetBytes(argsLine[0]).Length.ToString();
+
+                var scriptString = new string[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, \\\"{r1}\\\"",
+                    $"size r1, r2",
+                    @"push r2",
+                    @"ret"
+                };
+
+
+                var vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+
+                Assert.IsTrue(result == target);
+            }
+
+            var scriptString2 = new string[]
+            {
+                $"load r1, 100",
+                @"size r1, r2",
+                @"push r2",
+                @"ret"
+            };
+
+            try
+            {
+                var vm2 = ExecuteScript(scriptString2);
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e.Message == "Invalid cast");
+                return;
+            }
+
+            throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
+        }
+        #endregion
+
+        #region AuxFunctions
         private RuntimeVM ExecuteScript(string[] scriptString)
         {
             var script = BuildScript(scriptString);
@@ -986,6 +1681,7 @@ namespace Phantasma.Tests
 
             return script;
         }
+        #endregion
 
     }
 }
