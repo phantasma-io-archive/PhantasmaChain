@@ -170,4 +170,13 @@ namespace Phantasma.API
         [APIDescription("Block height at which the transaction was accepted")]
         public uint height;
     }
+
+    public class SendRawTxResult : IAPIResult
+    {
+        [APIDescription("Transaction hash")]
+        public string hash;
+
+        [APIDescription("Error message if transaction did not succeed")]
+        public string error;
+    }
 }
