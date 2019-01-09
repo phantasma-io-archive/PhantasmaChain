@@ -53,9 +53,9 @@ namespace Phantasma.API
                             {
                                 DataNode itemNode;
 
-                                if (item is IAPIResult)
+                                if (item is IAPIResult apiResult)
                                 {
-                                    itemNode = FromAPIResult((IAPIResult)item);
+                                    itemNode = FromAPIResult(apiResult);
                                 }
                                 else
                                 {
