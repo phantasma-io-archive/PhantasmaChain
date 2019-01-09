@@ -38,9 +38,7 @@
         GT,
         LTE,
         GTE,
-        MIN,
-        MAX,
-
+        
         // numeric
         INC,
         DEC,
@@ -54,6 +52,8 @@
         MOD,
         SHL,
         SHR,
+        MIN,
+        MAX,
 
         // context
         THIS,
