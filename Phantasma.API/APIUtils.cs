@@ -12,7 +12,9 @@ namespace Phantasma.API
             if (input is SingleResult singleResult)
             {
                 result = DataNode.CreateValue("");
-                result.Value = (singleResult.value.ToString());
+                result.Value = singleResult.value.ToString();
+                //result = DataNode.CreateObject();
+                //result.AddValue(singleResult);
             }
             else
             if (input is ArrayResult arrayResult)

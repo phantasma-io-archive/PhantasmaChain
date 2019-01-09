@@ -348,7 +348,7 @@ namespace Phantasma.API
                             chain = chain.Name,
                             amount = balance.ToString(),
                             symbol = token.Symbol,
-                            ids = null
+                            ids = new string[0]
                         };
 
                         if (!token.IsFungible)
@@ -645,28 +645,28 @@ namespace Phantasma.API
         {
             if (Mempool == null)
             {
-                return new SendRawTxResult { error = "No mempool" };
+                return new ErrorResult { error = "No mempool" };
             }
 
             var bytes = Base16.Decode(txData);
             if (bytes.Length == 0)
             {
-                return new SendRawTxResult { error = "Invalid transaction script" };
+                return new ErrorResult { error = "Invalid transaction script" };
             }
 
             var tx = Transaction.Unserialize(bytes);
             if (tx == null)
             {
-                return new SendRawTxResult { error = "Failed to decode transaction" };
+                return new ErrorResult { error = "Failed to decode transaction" };
             }
 
             bool submited = Mempool.Submit(tx);
             if (!submited)
             {
-                return new SendRawTxResult { error = "Mempool submission rejected" };
+                return new ErrorResult { error = "Mempool submission rejected" };
             }
 
-            return new SendRawTxResult { hash = tx.Hash.ToString() };
+            return new SingleResult { value = tx.Hash.ToString() };
         }
 
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
