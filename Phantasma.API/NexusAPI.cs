@@ -815,7 +815,7 @@ namespace Phantasma.API
         [APIFailCase("address is invalid", "43242342")]
         [APIFailCase("token is invalid", "-1")]
         [APIFailCase("chain is invalid", "-1re")]
-        public IAPIResult GetTokenBalance([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Address or name of chain", "root")] string chainInput) //todo rest
+        public IAPIResult GetTokenBalance([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Address or name of chain", "root")] string chainInput)
         {
             if (!Address.IsValidAddress(addressText))
             {

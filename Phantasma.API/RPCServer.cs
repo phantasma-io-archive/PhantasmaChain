@@ -193,12 +193,7 @@ namespace Phantasma.API
         {
             var address = paramNode.GetNodeByIndex(0).ToString();
             var tokenSymbol = paramNode.GetNodeByIndex(1).ToString();
-            string chain = string.Empty;
-
-            if (paramNode.GetNodeByIndex(2) != null)
-            {
-                chain = paramNode.GetNodeByIndex(2).ToString();
-            }
+            var chain = paramNode.GetNodeByIndex(2).ToString();
 
             var result = API.GetTokenBalance(address, tokenSymbol, chain);
 
