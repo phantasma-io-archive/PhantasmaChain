@@ -76,13 +76,16 @@ namespace Phantasma.Blockchain.Utils
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(10, Nexus.NativeTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
             GenerateSideChainSettlement(_owner, Nexus.RootChain, appsChain, blockTx.Hash);
+            GenerateChain(_owner, Nexus.RootChain, "dex");
+            GenerateChain(_owner, Nexus.RootChain, "market");
             GenerateAppRegistration(_owner, "nachomen", "https://nacho.men", "Collect, train and battle against other players in Nacho Men!");
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
+            GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
 
             GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
             EndBlock();

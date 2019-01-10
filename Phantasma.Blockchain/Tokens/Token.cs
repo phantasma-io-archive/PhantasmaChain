@@ -166,6 +166,36 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
+        internal bool Transfer(OwnershipSheet ownerships, Address source, Address destination, BigInteger ID)
+        {
+            if (!Flags.HasFlag(TokenFlags.Transferable))
+            {
+                return false;
+            }
+
+            if (Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            if (ID <= 0)
+            {
+                return false;
+            }
+
+            if (!ownerships.Take(source, ID))
+            {
+                return false;
+            }
+
+            if (!ownerships.Give(destination, ID))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         internal BigInteger GenerateID()
         {
             _lastId++;

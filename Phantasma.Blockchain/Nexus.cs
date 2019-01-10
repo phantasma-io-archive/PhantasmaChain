@@ -253,11 +253,12 @@ namespace Phantasma.Blockchain
             switch (name)
             {
                 case "privacy": contract = new PrivacyContract(); break;
-                case "exchange": contract = new ExchangeContract(); break;
                 case "storage": contract = new StorageContract(); break;
                 case "vault": contract = new VaultContract(); break;
                 case "bank": contract = new BankContract(); break;
                 case "apps": contract = new AppsContract(); break;
+                case "dex": contract = new ExchangeContract(); break;
+                case "market": contract = new MarketContract(); break;
                 default:
                     {
                         var sb = new ScriptBuilder();

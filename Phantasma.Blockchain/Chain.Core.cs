@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
-
+        
         private int _level;
         #endregion
 
