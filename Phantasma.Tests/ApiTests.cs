@@ -4,6 +4,7 @@ using Phantasma.API;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Utils;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 
 namespace Phantasma.Tests
 {
@@ -91,6 +92,11 @@ namespace Phantasma.Tests
             var balance = account.balances[0];
             Assert.IsTrue(balance.symbol == nftSymbol);
             Assert.IsTrue(balance.ids.Length == 1);
+
+            var info = (TokenDataResult)test.api.GetTokenData(nftSymbol, balance.ids[0]);
+            Assert.IsTrue(info.ID == balance.ids[0]);
+            var tokenStr = Base16.Encode(tokenData);
+            Assert.IsTrue(info.rom == tokenStr);
         }
     }
 }
