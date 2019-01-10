@@ -362,8 +362,8 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = chain.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ReadOnlyData.SequenceEqual(tokenData) || nft.DynamicData.SequenceEqual(tokenData),
+            var nft = nexus.GetNFT(token, tokenId);
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
 
@@ -411,8 +411,8 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = chain.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ReadOnlyData.SequenceEqual(tokenData) || nft.DynamicData.SequenceEqual(tokenData),
+            var nft = nexus.GetNFT(token, tokenId);
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
 
             // burn the token
@@ -471,8 +471,8 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = chain.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ReadOnlyData.SequenceEqual(tokenData) || nft.DynamicData.SequenceEqual(tokenData),
+            var nft = nexus.GetNFT(token, tokenId);
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
 
             // verify nft presence on the receiver pre-transfer
@@ -490,8 +490,8 @@ namespace Phantasma.Tests
 
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
-            nft = chain.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ReadOnlyData.SequenceEqual(tokenData) || nft.DynamicData.SequenceEqual(tokenData),
+            nft = nexus.GetNFT(token, tokenId);
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
 
@@ -544,8 +544,8 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = sourceChain.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ReadOnlyData.SequenceEqual(tokenData) || nft.DynamicData.SequenceEqual(tokenData),
+            var nft = nexus.GetNFT(token, tokenId);
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
 
             // verify nft presence on the receiver pre-transfer
@@ -577,8 +577,8 @@ namespace Phantasma.Tests
 
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
-            nft = sourceChain.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ReadOnlyData.SequenceEqual(tokenData) || nft.DynamicData.SequenceEqual(tokenData),
+            nft = nexus.GetNFT(token, tokenId);
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
 

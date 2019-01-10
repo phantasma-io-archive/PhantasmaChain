@@ -135,14 +135,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             return ownerships.Get(address).ToArray();
         }
 
-        public BigInteger MintToken(Address to, string symbol, byte[] data)
+        public BigInteger MintToken(Address to, string symbol, byte[] ram, byte[] rom)
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
             Runtime.Expect(IsWitness(token.Owner), "invalid witness");
 
-            var tokenID = this.Runtime.Chain.CreateNFT(token, data);
+            var tokenID = this.Runtime.Nexus.CreateNFT(token, ram, rom);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
@@ -163,7 +163,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
 
-            Runtime.Expect(this.Runtime.Chain.DestroyNFT(token, tokenID), "destroy token failed");
+            Runtime.Expect(this.Runtime.Nexus.DestroyNFT(token, tokenID), "destroy token failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID });
         }

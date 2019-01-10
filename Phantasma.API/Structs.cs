@@ -62,7 +62,7 @@ namespace Phantasma.API
         public string icon;
     }
 
-    public class EventResult : IAPIResult
+    public struct EventResult : IAPIResult
     {
         public string address;
         public string kind;
@@ -71,7 +71,7 @@ namespace Phantasma.API
         public string data;
     }
 
-    public class TransactionResult : IAPIResult
+    public struct TransactionResult : IAPIResult
     {
         public string hash;
 
@@ -98,7 +98,7 @@ namespace Phantasma.API
         public TransactionResult[] txs;
     }
 
-    public class BlockResult : IAPIResult
+    public struct BlockResult : IAPIResult
     {
         public string hash;
 
@@ -124,14 +124,14 @@ namespace Phantasma.API
         public string reward;
     }
 
-    public class RootChainResult : IAPIResult
+    public struct RootChainResult : IAPIResult
     {
         public string name;
         public string address;
         public uint height;
     }
 
-    public class TokenResult : IAPIResult
+    public struct TokenResult : IAPIResult
     {
         [APIDescription("Ticker symbol for the token")]
         public string symbol;
@@ -156,7 +156,22 @@ namespace Phantasma.API
         //public string[] Flags; TODO
     }
 
-    public class TxConfirmationResult : IAPIResult
+    public struct TokenDataResult : IAPIResult
+    {
+        [APIDescription("ID of token")]
+        public string ID;
+
+        [APIDescription("Address where currently is stored")]
+        public string chainAddress;
+
+        [APIDescription("Writable data of token")]
+        public string ram;
+
+        [APIDescription("Read-only data of token")]
+        public string rom;
+    }
+
+    public struct TxConfirmationResult : IAPIResult
     {
         [APIDescription("Hash of transaction")]
         public string hash;
@@ -169,5 +184,14 @@ namespace Phantasma.API
 
         [APIDescription("Block height at which the transaction was accepted")]
         public uint height;
+    }
+
+    public struct SendRawTxResult : IAPIResult
+    {
+        [APIDescription("Transaction hash")]
+        public string hash;
+
+        [APIDescription("Error message if transaction did not succeed")]
+        public string error;
     }
 }

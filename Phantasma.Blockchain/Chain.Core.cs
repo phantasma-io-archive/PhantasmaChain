@@ -31,8 +31,6 @@ namespace Phantasma.Blockchain
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
         private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
 
-        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
-
         private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
 
         private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
@@ -572,70 +570,6 @@ namespace Phantasma.Blockchain
             var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
 
             CurrentEpoch = epoch;
-        }
-        #endregion
-
-        #region NFT
-        internal BigInteger CreateNFT(Token token, byte[] data)
-        {
-            lock (_tokenContents)
-            {
-                Dictionary<BigInteger, TokenContent> contents;
-
-                if (_tokenContents.ContainsKey(token))
-                {
-                    contents = _tokenContents[token];
-                }
-                else
-                {
-                    contents = new Dictionary<BigInteger, TokenContent>();
-                    _tokenContents[token] = contents;
-                }
-
-                var tokenID = token.GenerateID();
-
-                var content = new TokenContent(data);
-                contents[tokenID] = content;
-
-                return tokenID;
-            }
-        }
-
-        internal bool DestroyNFT(Token token, BigInteger tokenID)
-        {
-            lock (_tokenContents)
-            {
-                if (_tokenContents.ContainsKey(token))
-                {
-                    var contents = _tokenContents[token];
-
-                    if (contents.ContainsKey(tokenID))
-                    {
-                        contents.Remove(tokenID);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        public TokenContent GetNFT(Token token, BigInteger tokenID)
-        {
-            lock (_tokenContents)
-            {
-                if (_tokenContents.ContainsKey(token))
-                {
-                    var contents = _tokenContents[token];
-
-                    if (contents.ContainsKey(tokenID))
-                    {
-                        return contents[tokenID];
-                    }
-                }
-            }
-
-            return null;
         }
         #endregion
     }

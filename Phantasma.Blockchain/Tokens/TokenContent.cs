@@ -1,22 +1,26 @@
 ﻿using Phantasma.Core;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain.Tokens
 {
     public class TokenContent
     {
-        public byte[] ReadOnlyData { get; private set; }
-        public byte[] DynamicData { get; private set; }
+        public Address CurrentChain { get; internal set; }
+        public byte[] ROM { get; private set; }
+        public byte[] RAM { get; private set; }
 
-        public TokenContent(byte[] data)
+        public TokenContent(byte[] rom, byte[] ram)
         {
-            Throw.IfNull(data, "readonly data");
-            this.ReadOnlyData = data;
+            Throw.IfNull(rom, nameof(rom));
+            Throw.IfNull(ram, nameof(ram));
+            this.ROM = rom;
+            this.RAM= ram;
         }
 
-        public void SetDynamicData(byte[] data)
+        public void WriteData(byte[] data)
         {
-            Throw.IfNull(data, "data");
-            this.DynamicData = data;
+            Throw.IfNull(data, nameof(data));
+            this.RAM = data;
         }
     }
 }

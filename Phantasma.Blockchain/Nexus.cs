@@ -25,6 +25,8 @@ namespace Phantasma.Blockchain
         private readonly Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
         private readonly Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
 
+        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
+
         public IEnumerable<Chain> Chains
         {
             get
@@ -361,6 +363,70 @@ namespace Phantasma.Blockchain
             if (_tokens.ContainsKey(symbol))
             {
                 return _tokens[symbol];
+            }
+
+            return null;
+        }
+        #endregion
+
+        #region NFT
+        internal BigInteger CreateNFT(Token token, byte[] rom, byte[] ram)
+        {
+            lock (_tokenContents)
+            {
+                Dictionary<BigInteger, TokenContent> contents;
+
+                if (_tokenContents.ContainsKey(token))
+                {
+                    contents = _tokenContents[token];
+                }
+                else
+                {
+                    contents = new Dictionary<BigInteger, TokenContent>();
+                    _tokenContents[token] = contents;
+                }
+
+                var tokenID = token.GenerateID();
+
+                var content = new TokenContent(rom, ram);
+                contents[tokenID] = content;
+
+                return tokenID;
+            }
+        }
+
+        internal bool DestroyNFT(Token token, BigInteger tokenID)
+        {
+            lock (_tokenContents)
+            {
+                if (_tokenContents.ContainsKey(token))
+                {
+                    var contents = _tokenContents[token];
+
+                    if (contents.ContainsKey(tokenID))
+                    {
+                        contents.Remove(tokenID);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public TokenContent GetNFT(Token token, BigInteger tokenID)
+        {
+            lock (_tokenContents)
+            {
+                if (_tokenContents.ContainsKey(token))
+                {
+                    var contents = _tokenContents[token];
+
+                    if (contents.ContainsKey(tokenID))
+                    {
+                        return contents[tokenID];
+                    }
+                }
             }
 
             return null;

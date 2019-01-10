@@ -727,6 +727,24 @@ namespace Phantasma.API
             return new ArrayResult() { values = tokenList.ToArray() };
         }
 
+        [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.")]
+        public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
+        {
+            var token = Nexus.FindTokenBySymbol(symbol);
+            if (token == null)
+            {
+                return new ErrorResult() { error = "invalid token" };
+            }
+
+            BigInteger ID;
+            if (!BigInteger.TryParse(IDtext, out ID))
+            {
+                return new ErrorResult() { error = "invalid ID" };
+            }
+
+            var info = Nexus.GetNFT(token, ID);
+            return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM)};
+        }
 
         [APIInfo(typeof(AppResult[]), "Returns an array of apps deployed in Phantasma.")]
         public IAPIResult GetApps()
