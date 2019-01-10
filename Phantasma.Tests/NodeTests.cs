@@ -12,6 +12,7 @@ using Phantasma.Cryptography;
 using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
+using Phantasma.Blockchain.Utils;
 
 namespace Phantasma.Tests
 {

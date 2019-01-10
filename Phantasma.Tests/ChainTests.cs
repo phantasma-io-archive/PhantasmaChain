@@ -7,6 +7,7 @@ using Phantasma.Blockchain;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Blockchain.Utils;
 
 namespace Phantasma.Tests
 {
@@ -344,16 +345,18 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
-            var tokenData = new byte[] { 0x1, 0x3, 0x3, 0x7 };
             Assert.IsTrue(token != null, "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
             var ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
+            var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
+            var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
+
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenData, new byte[0]);
+            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenROM, tokenRAM);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
@@ -363,7 +366,7 @@ namespace Phantasma.Tests
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
             var nft = nexus.GetNFT(token, tokenId);
-            Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
+            Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) && nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
         }
 

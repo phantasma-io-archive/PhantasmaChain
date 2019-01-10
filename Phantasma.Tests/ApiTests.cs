@@ -2,6 +2,7 @@
 
 using Phantasma.API;
 using Phantasma.Blockchain;
+using Phantasma.Blockchain.Utils;
 using Phantasma.Cryptography;
 
 namespace Phantasma.Tests

@@ -4,13 +4,14 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Phantasma.Tests
+namespace Phantasma.Blockchain.Utils
 {
     public class SideChainPendingBlock
     {
@@ -18,6 +19,13 @@ namespace Phantasma.Tests
         public Chain sourceChain;
         public Chain destChain;
         public Token token;
+    }
+
+    public struct SimNFTData
+    {
+        public byte A;
+        public byte B;
+        public byte C;
     }
 
     // TODO this should be moved to a better place, refactored or even just deleted if no longer useful
@@ -82,14 +90,14 @@ namespace Phantasma.Tests
             BeginBlock();
 
             var nacho = Nexus.FindTokenBySymbol("NACHO"); 
-            RandomSpreadNFC(nacho);
+            RandomSpreadNFT(nacho);
 
             GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
 
             EndBlock();
         }
 
-        private void RandomSpreadNFC(Token token)
+        private void RandomSpreadNFT(Token token)
         {
             Throw.IfNull(token, nameof(token));
             Throw.If(token.IsFungible, "expected NFT");
@@ -97,7 +105,8 @@ namespace Phantasma.Tests
             for (int i = 1; i < 5; i++)
             {
                 var nftKey = KeyPair.Generate();
-                GenerateNft(_owner, nftKey.Address, Nexus.RootChain, token, new byte[0], new byte[0]);
+                var data = new SimNFTData() { A = (byte)(Environment.TickCount % 255), B = (byte)(DateTime.UtcNow.Ticks % 255), C = (byte)( (DateTime.UtcNow.Ticks + Environment.TickCount) % 255) };
+                GenerateNft(_owner, nftKey.Address, Nexus.RootChain, token, Serialization.Serialize(data), new byte[0]);
             }
         }
 
