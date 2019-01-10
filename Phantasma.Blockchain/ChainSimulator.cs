@@ -97,7 +97,7 @@ namespace Phantasma.Tests
             for (int i = 1; i < 5; i++)
             {
                 var nftKey = KeyPair.Generate();
-                GenerateNft(_owner, nftKey.Address, Nexus.RootChain, token, new byte[0]);
+                GenerateNft(_owner, nftKey.Address, Nexus.RootChain, token, new byte[0], new byte[0]);
             }
         }
 
@@ -376,12 +376,12 @@ namespace Phantasma.Tests
             return tx;
         }
 
-        public Transaction GenerateNft(KeyPair source, Address destAddress, Chain chain, Token token, byte[] data)
+        public Transaction GenerateNft(KeyPair source, Address destAddress, Chain chain, Token token, byte[] rom, byte[] ram)
         {
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(source.Address, 1, 9999).
-                CallContract("token", "MintToken", destAddress, token.Symbol, data).
+                CallContract("token", "MintToken", destAddress, token.Symbol, rom, ram).
                 SpendGas(source.Address).
                 EndScript();
 

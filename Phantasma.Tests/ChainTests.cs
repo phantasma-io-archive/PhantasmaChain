@@ -353,7 +353,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenData);
+            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
@@ -402,7 +402,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenData);
+            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
@@ -462,7 +462,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the sender
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, sender.Address, chain, token, tokenData);
+            simulator.GenerateNft(owner, sender.Address, chain, token, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
@@ -535,7 +535,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the sender
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, sender.Address, sourceChain, token, tokenData);
+            simulator.GenerateNft(owner, sender.Address, sourceChain, token, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
