@@ -29,7 +29,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "exchange";
 
-        private Map<string, Collection<MarketAuction>> auctions;
+        private StorageMap _auctions; //<string, Collection<MarketAuction>>
 
         public MarketContract() : base()
         {
@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Transfer(ownerships, from, Runtime.Chain.Address, ID), "transfer failed");
 
             var auction = new MarketAuction(from, Timestamp.Now, Timestamp.Now + TimeSpan.FromDays(5), ID, price);
-            var list = auctions.Get(symbol);
+            var list = _auctions.Get<string, StorageList>(symbol);
             list.Add(auction);
         }
     }

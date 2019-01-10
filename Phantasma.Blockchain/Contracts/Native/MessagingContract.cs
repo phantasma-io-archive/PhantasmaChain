@@ -19,8 +19,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int MIN_MESSAGE_LENGTH = 1024 * 64;
         public const int MAX_MESSAGE_LENGTH = 16;
 
-        private static readonly string MESSAGE_ID = "_msg";
-        private static readonly string FRIEND_ID = "_frd";
+        private StorageList _messages;
+        private StorageList _friends;
 
         public MessagingContract() : base()
         {
@@ -40,14 +40,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 content = content
             };
 
-            var list = Storage.FindCollectionForAddress<AddressMessage>(MESSAGE_ID, from);
-            list.Add(msg);
+            _messages.Add<AddressMessage>(msg);
         }
 
         public AddressMessage[] GetMessages(Address target)
         {
-            var list = Storage.FindCollectionForAddress<AddressMessage>(MESSAGE_ID, target);
-            return list.All();
+            return _messages.All<AddressMessage>();
         }
 
         #region FRIENDLIST
@@ -58,8 +56,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(friend != Address.Null, "friend address must not be null");
             Runtime.Expect(friend != target, "friend must be different from target address");
 
-            var list = Storage.FindCollectionForAddress<Address>(FRIEND_ID, target);
-            list.Add(friend);
+            _friends.Add(friend);
 
             Runtime.Notify(EventKind.FriendAdd, target, friend);
         }
@@ -71,17 +68,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(friend != Address.Null, "friend address must not be null");
             Runtime.Expect(friend != target, "friend must be different from target address");
 
-            var list = Storage.FindCollectionForAddress<Address>(FRIEND_ID, target);
-            Runtime.Expect(list.Contains(friend), "friend not found");
-            list.Remove(friend);
+            Runtime.Expect(_friends.Contains(friend), "friend not found");
+            _friends.Remove(friend);
 
             Runtime.Notify(EventKind.FriendRemove, target, friend);
         }
 
         public Address[] GetFriends(Address target)
         {
-            var list = Storage.FindCollectionForAddress<Address>(FRIEND_ID, target);
-            return list.All();
+            return _friends.All<Address>();
         }
         #endregion
 

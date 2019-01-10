@@ -12,6 +12,8 @@ using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.IO;
 using Phantasma.VM;
 using System.Linq;
+using Phantasma.Cryptography.Hashing;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -43,19 +45,16 @@ namespace Phantasma.Blockchain.Contracts
             var contractType = this.GetType();
             FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 
-            var storageFields = fields.Where(x => x.FieldType.IsGenericType).ToList();
+            var storageFields = fields.Where(x => typeof(IStorageCollection).IsAssignableFrom(x.FieldType)).ToList();
 
             if (storageFields.Count > 0)
             {
-                BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
-                
                 foreach (var field in storageFields)
                 {
-                    var fieldHash = field.Name.Sha256();
-                    var args = new object[] { (StorageContext)VM.ChangeSet, fieldHash, StorageContext.MakeContractPrefix(this) };
+                    var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
+                    var args = new object[] { baseKey, (StorageContext)VM.ChangeSet};
 
-                    // NOTE this is done this way due to the constructor being internal
-                    var obj = Activator.CreateInstance(field.FieldType, flags, null, args, null);
+                    var obj = Activator.CreateInstance(field.FieldType, args);
 
                     field.SetValue(this, obj);
                 }

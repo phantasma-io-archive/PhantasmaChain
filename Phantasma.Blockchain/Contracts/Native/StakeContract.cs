@@ -18,8 +18,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "stake";
 
-        private Collection<Address> _entryList;
-        private Map<Address, ValidatorInfo> _entryMap;
+        private StorageList _entryList; //<Address> 
+        private StorageMap _entryMap; // <Address, ValidatorInfo>
 
         public StakeContract() : base()
         {
@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public Address[] GetValidators()
         {
-            return _entryList.All();
+            return _entryList.All<Address>();
         }
 
         // here we reintroduce this method, as a faster way to check if an address is a validator
@@ -85,7 +85,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsValidator(address), "validator failed");
             Runtime.Expect(IsWitness(address), "witness failed");
 
-            var entry = _entryMap.Get(address);
+            var entry = _entryMap.Get<Address, ValidatorInfo>(address);
 
             var diff = Timestamp.Now - entry.timestamp;
             var days = diff / 86400; // convert seconds to days
@@ -108,7 +108,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger GetStake(Address address)
         {
             Runtime.Expect(_entryMap.ContainsKey(address), "not a validator address");
-            var entry = _entryMap.Get(address);
+            var entry = _entryMap.Get<Address, ValidatorInfo>(address);
             return entry.stake;
         }
 
@@ -130,7 +130,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var count = _entryList.Count();
             Runtime.Expect(index < count, "invalid validator index");
 
-            var address = _entryList.Get(index);
+            var address = _entryList.Get<Address>(index);
             return address;
         }
     }

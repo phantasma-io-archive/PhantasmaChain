@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "gas";
 
-        private Map<Address, BigInteger> _allowanceMap;
+        private StorageMap _allowanceMap; //<Address, BigInteger>
 
         public void AllowGas(Address from, BigInteger price, BigInteger limit)
         {
@@ -39,7 +39,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Subtract(from, maxAmount), "gas escrow withdraw failed");
             Runtime.Expect(balances.Add(Runtime.Chain.Address, maxAmount), "gas escrow deposit failed");
 
-            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get(from) : 0;
+            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
             Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
             allowance += maxAmount;
@@ -58,7 +58,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
 
-            var availableAmount = _allowanceMap.Get(from);
+            var availableAmount = _allowanceMap.Get<Address, BigInteger>(from);
 
             var spentGas = Runtime.UsedGas;
             var requiredAmount = spentGas * Runtime.GasPrice;

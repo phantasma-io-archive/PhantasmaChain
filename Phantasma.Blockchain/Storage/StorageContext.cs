@@ -63,50 +63,46 @@ namespace Phantasma.Blockchain.Storage
 
         public void Delete(string key) { Delete(Encoding.UTF8.GetBytes(key)); }
 
-        internal static byte[] MakeContractPrefix(SmartContract contract)
+        /*
+        public StorageList FindCollectionForAddress(string name, Address address)
         {
-            return $"[global.{contract.Name}]".AsByteArray();
+            return FindCollectionForAddress(Encoding.UTF8.GetBytes(name), address);
         }
 
-        public Collection<T> FindCollectionForAddress<T>(string name, Address address)
+        public StorageList FindCollectionForContract(string name, SmartContract contract)
         {
-            return FindCollectionForAddress<T>(Encoding.UTF8.GetBytes(name), address);
+            return FindCollectionForContract(Encoding.UTF8.GetBytes(name), contract);
         }
 
-        public Collection<T> FindCollectionForContract<T>(string name, SmartContract contract)
+        public StorageList FindCollectionForAddress(byte[] name, Address address)
         {
-            return FindCollectionForContract<T>(Encoding.UTF8.GetBytes(name), contract);
+            return new StorageList(this, name, address.PublicKey);
         }
 
-        public Collection<T> FindCollectionForAddress<T>(byte[] name, Address address)
+        public StorageList FindCollectionForContract(byte[] name, SmartContract contract)
         {
-            return new Collection<T>(this, name, address.PublicKey);
+            return new StorageList(this, name, MakeContractPrefix(contract));
         }
 
-        public Collection<T> FindCollectionForContract<T>(byte[] name, SmartContract contract)
-        {
-            return new Collection<T>(this, name, MakeContractPrefix(contract));
-        }
-
-        public Map<K, V> FindMapForAddress<K, V>(string name, Address address)
+        public StorageMap FindMapForAddress(string name, Address address)
         {
             return FindMapForAddress<K, V>(Encoding.UTF8.GetBytes(name), address);
 
         }
 
-        public Map<K, V> FindMapForContract<K, V>(string name, SmartContract contract)
+        public StorageMap<K, V> FindMapForContract<K, V>(string name, SmartContract contract)
         {
             return FindMapForContract<K, V>(Encoding.UTF8.GetBytes(name), contract);
         }
 
-        public Map<K, V> FindMapForAddress<K, V>(byte[] name, Address address)
+        public StorageMap<K, V> FindMapForAddress<K, V>(byte[] name, Address address)
         {
-            return new Map<K, V>(this, name, address.PublicKey);
+            return new StorageMap<K, V>(this, name, address.PublicKey);
         }
 
-        public Map<K, V> FindMapForContract<K, V>(byte[] name, SmartContract contract)
+        public StorageMap<K, V> FindMapForContract<K, V>(byte[] name, SmartContract contract)
         {
-            return new Map<K, V>(this, name, MakeContractPrefix(contract));
-        }
+            return new StorageMap<K, V>(this, name, MakeContractPrefix(contract));
+        }*/
     }
 }

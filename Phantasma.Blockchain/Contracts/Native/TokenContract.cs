@@ -209,7 +209,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #region SETTLEMENTS
         // NOTE we should later prevent contracts from manipulating those
-        private Map<Hash, bool> _settledTransactions;
+        private StorageMap _settledTransactions; //<Hash, bool>
 
         public bool IsSettled(Hash hash)
         {

@@ -12,8 +12,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string ANONYMOUS = "anonymous";
         public static readonly string GENESIS = "genesis";
 
-        private Map<Address, string> _addressMap;
-        private Map<string, Address> _nameMap;
+        private StorageMap _addressMap; //<Address, string> 
+        private StorageMap _nameMap; //<string, Address> 
 
         public static readonly BigInteger RegistrationCost = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
 
@@ -49,7 +49,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (_addressMap.ContainsKey(target))
             {
-                return _addressMap.Get(target);
+                return _addressMap.Get<Address, string>(target);
             }
 
             return ANONYMOUS;
@@ -69,7 +69,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (_nameMap.ContainsKey(name))
             {
-                return _nameMap.Get(name);
+                return _nameMap.Get<string, Address>(name);
             }
 
             return Address.Null;

@@ -34,8 +34,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "exchange";
 
-        private Map<string, Collection<ExchangeOrder>> orders;
-        private Map<Hash, BigInteger> fills;
+        private StorageMap _orders; //<string, Collection<ExchangeOrder>
+        private StorageMap fills; //<Hash, BigInteger>
 
         public ExchangeContract() : base()
         {
@@ -87,7 +87,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var order = new ExchangeOrder(Timestamp.Now, from, quantity, rate, side);
-            var list = orders.Get(pair);
+            var list = _orders.Get<string, StorageList>(pair);
             list.Add(order);
         }
     }
