@@ -344,16 +344,6 @@ namespace Phantasma.API
             return result;
         }
 
-        private IAPIResult GetBlockHeight(Chain chain)
-        {
-            if (chain != null)
-            {
-                return new SingleResult { value = chain.BlockHeight };
-            }
-
-            return new ErrorResult { error = "chain not found" };
-        }
-
         private Chain FindChainByInput(string chainInput)
         {
             var chain = Nexus.FindChainByName(chainInput);
@@ -422,13 +412,16 @@ namespace Phantasma.API
 
         [APIInfo(typeof(int), "Returns the height of a chain.")]
         [APIFailCase("chain is invalid", "4533")]
-        public IAPIResult GetBlockHeightFromChain([APIParameter("Address or name of chain", "root")] string chainInput)
+        public IAPIResult GetBlockHeight([APIParameter("Address or name of chain", "root")] string chainInput)
         {
             var chain = FindChainByInput(chainInput);
 
-            if (chain == null) return new ErrorResult { error = "invalid name" };
+            if (chain == null)
+            {
+                return new ErrorResult { error = "invalid chain" };
+            }
 
-            return GetBlockHeight(chain);
+            return new SingleResult { value = chain.BlockHeight };
         }
 
         [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.")]
