@@ -140,12 +140,12 @@ namespace Phantasma.Blockchain.Tokens
         {
             if (!Flags.HasFlag(TokenFlags.Transferable))
             {
-                return false;
+                throw new Exception("Not transferable");
             }
 
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
-                return false;
+                throw new Exception("Should be fungible");
             }
 
             if (amount <= 0)
@@ -170,12 +170,12 @@ namespace Phantasma.Blockchain.Tokens
         {
             if (!Flags.HasFlag(TokenFlags.Transferable))
             {
-                return false;
+                throw new Exception("Not transferable");
             }
 
             if (Flags.HasFlag(TokenFlags.Fungible))
             {
-                return false;
+                throw new Exception("Should be non-fungible");
             }
 
             if (ID <= 0)

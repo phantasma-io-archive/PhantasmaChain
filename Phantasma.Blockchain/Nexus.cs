@@ -64,6 +64,8 @@ namespace Phantasma.Blockchain
                 new GovernanceContract(),
                 new AccountContract(),
                 new OracleContract(),
+                new ExchangeContract(),
+                new MarketContract(),
                 new GasContract()
             };
 

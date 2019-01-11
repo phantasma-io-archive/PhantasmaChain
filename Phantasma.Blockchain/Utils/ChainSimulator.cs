@@ -229,7 +229,7 @@ namespace Phantasma.Blockchain.Utils
             return Enumerable.Empty<Block>();
         }
 
-        public Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
+        private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
             var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2), 0);
 
@@ -241,6 +241,18 @@ namespace Phantasma.Blockchain.Utils
             txChainMap[tx.Hash] = chain;
             txHashMap[tx.Hash] = tx;
             transactions.Add(tx);
+
+            return tx;
+        }
+
+        public Transaction GenerateCustomTransaction(KeyPair owner, Func<byte[]> scriptGenerator)
+        {
+            var chain = Nexus.RootChain;
+
+            var script = scriptGenerator();
+
+            var tx = MakeTransaction(owner, chain, script);
+            tx.Sign(owner);
 
             return tx;
         }

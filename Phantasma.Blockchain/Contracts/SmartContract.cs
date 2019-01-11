@@ -10,6 +10,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Blockchain.Storage;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -48,7 +49,7 @@ namespace Phantasma.Blockchain.Contracts
                 foreach (var field in storageFields)
                 {
                     var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
-                    var args = new object[] { baseKey, (StorageContext)VM.ChangeSet};
+                    var args = new object[] { baseKey, (StorageContext)VM.ChangeSet };
                     var obj = Activator.CreateInstance(field.FieldType, args);
 
                     field.SetValue(this, obj);

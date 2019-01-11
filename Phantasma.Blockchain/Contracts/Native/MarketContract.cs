@@ -31,11 +31,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class MarketContract : SmartContract
     {
-        public override string Name => "exchange";
+        public override string Name => "market";
 
         internal StorageMap _auctionMap; //<string, Collection<MarketAuction>>
         internal StorageList _auctionIDs;
-        internal StorageValue<BigInteger> _lastAuctionID;
+        internal StorageValue _lastAuctionID;
 
         public MarketContract() : base()
         {
@@ -53,8 +53,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             var owner = ownerships.GetOwner(tokenID);
             Runtime.Expect(owner == from, "invalid owner");
 
-            _lastAuctionID.Value++;
-            var auctionID = _lastAuctionID.Value;
+            BigInteger auctionID;
+
+            if (_lastAuctionID.HasValue())
+            {
+                auctionID = _lastAuctionID.Get<BigInteger>() + 1;
+            }
+            else
+            {
+                auctionID = 1;
+            }
+            _lastAuctionID.Set<BigInteger>(auctionID);
 
             Runtime.Expect(token.Transfer(ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
