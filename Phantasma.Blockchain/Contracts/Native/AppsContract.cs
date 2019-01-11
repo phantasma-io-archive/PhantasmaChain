@@ -18,8 +18,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private const string TOKEN_VIEWERS = "_viewers";
 
-        private StorageList _apps;
-        private StorageMap _viewers;
+        internal StorageList _apps;
+        internal StorageMap _viewers;
 
         public AppsContract() : base()
         {

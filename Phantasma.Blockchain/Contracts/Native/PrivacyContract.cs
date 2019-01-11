@@ -1,7 +1,9 @@
-﻿using Phantasma.Blockchain.Tokens;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Numerics;
+using Phantasma.VM.Utils;
 using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -10,8 +12,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public uint ID;
         public int size;
-        public List<Address> addresses;
-        public List<RingSignature> signatures;
+        public StorageList addresses; //<Address>
+        public StorageList signatures; //<RingSignature>
     }
 
     public sealed class PrivacyContract : SmartContract
@@ -20,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly BigInteger TransferAmount = 10;
 
-        private Dictionary<Token, List<PrivacyQueue>> _queues = new Dictionary<Token, List<PrivacyQueue>>();
+        internal StorageMap _queues; // = new Dictionary<Token, List<PrivacyQueue>>();
 
         public PrivacyContract() : base()
         {
@@ -30,8 +32,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (_queues.ContainsKey(token))
             {
-                var list = _queues[token];
-                foreach (var entry in list)
+                var list = _queues.Get<string, StorageList>(token.Symbol);
+                
+                var queues = list.All<PrivacyQueue>();
+                foreach (var entry in queues)
                 {
                     if (entry.ID == ID)
                     {
@@ -45,30 +49,32 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private PrivacyQueue FetchQueue(Token token)
         {
-            List<PrivacyQueue> list;
-
-            if (_queues.ContainsKey(token))
-            {
-                list = _queues[token];
-            }
-            else
-            {
-                list = new List<PrivacyQueue>();
-                _queues[token] = list;
-            }
+            StorageList list = _queues.Get<string, StorageList>(token.Symbol);
 
             PrivacyQueue queue;
 
-            if (list.Count > 0)
+            var count = list.Count();
+            if (count > 0)
             {
-                var last = list[list.Count - 1];
-                if (last.addresses.Count < last.size)
+                var last = list.Get<PrivacyQueue>(count - 1);
+                if (last.addresses.Count() < last.size)
                 {
                     return last;
                 }
             }
 
-            queue = new PrivacyQueue() { addresses = new List<Address>(), signatures = new List<RingSignature>(), ID = (uint)(list.Count + 1), size = 3 };
+            var id = (uint)(count + 1);
+            var baseKey = $"{token.Symbol}.{id}";
+
+            var addrKey = $"{baseKey}.addr".AsByteArray();
+            var addressList = new StorageList(addrKey, Runtime.ChangeSet);
+            addressList.Clear();
+
+            var ringKey = $"{baseKey}.ring".AsByteArray();
+            var ringList = new StorageList(addrKey, Runtime.ChangeSet);
+            ringList.Clear();
+
+            queue = new PrivacyQueue() { addresses = addressList, signatures = ringList, ID = id, size = 3 };
             list.Add(queue);
             return queue;
         }
@@ -86,9 +92,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balance >= TransferAmount, "not enough balance");
 
             var queue = FetchQueue(token);
-            Runtime.Expect(queue.addresses.Count < queue.size, "queue full");
+            Runtime.Expect(queue.addresses.Count() < queue.size, "queue full");
 
-            foreach (var address in queue.addresses)
+            var addresses = queue.addresses.All<Address>();
+            foreach (var address in addresses)
             {
                 Runtime.Expect(address != from, "address already in queue");
             }
@@ -109,17 +116,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(queue.ID > 0, "invalid queue");
 
             Runtime.Expect(queue.ID == queueID, "mismatching queue");
-            Runtime.Expect(queue.addresses.Count == queue.size, "queue not full yet");
+            Runtime.Expect(queue.addresses.Count() == queue.size, "queue not full yet");
 
-            foreach (var address in queue.addresses)
+            var addresses = queue.addresses.All<Address>();
+            foreach (var address in addresses)
             {
                 Runtime.Expect(address != to, "cant send to anyone already in the queue");
             }
 
             var msg = this.Runtime.Transaction.ToByteArray(false);
-            Runtime.Expect(signature.Verify(msg, queue.addresses), "ring signature failed");
+            Runtime.Expect(signature.Verify(msg, addresses), "ring signature failed");
 
-            foreach (var otherSignature in queue.signatures)
+            var signatures = queue.signatures.All<Signature>();
+            foreach (RingSignature otherSignature in signatures)
             {
                 Runtime.Expect(!signature.IsLinked(otherSignature), "ring signature already linked");
             }

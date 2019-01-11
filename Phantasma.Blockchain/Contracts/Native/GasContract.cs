@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "gas";
 
-        private StorageMap _allowanceMap; //<Address, BigInteger>
+        internal StorageMap _allowanceMap; //<Address, BigInteger>
 
         public void AllowGas(Address from, BigInteger price, BigInteger limit)
         {

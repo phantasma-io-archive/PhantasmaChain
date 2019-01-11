@@ -12,8 +12,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string ANONYMOUS = "anonymous";
         public static readonly string GENESIS = "genesis";
 
-        private StorageMap _addressMap; //<Address, string> 
-        private StorageMap _nameMap; //<string, Address> 
+        internal StorageMap _addressMap; //<Address, string> 
+        internal StorageMap _nameMap; //<string, Address> 
 
         public static readonly BigInteger RegistrationCost = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
 

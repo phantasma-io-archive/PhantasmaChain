@@ -1,7 +1,6 @@
 ﻿using Phantasma.Blockchain.Storage;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -19,8 +18,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int MIN_MESSAGE_LENGTH = 1024 * 64;
         public const int MAX_MESSAGE_LENGTH = 16;
 
-        private StorageList _messages;
-        private StorageList _friends;
+        internal StorageList _messages;
+        internal StorageList _friends;
 
         public MessagingContract() : base()
         {

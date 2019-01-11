@@ -3,7 +3,6 @@ using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
 using LunarLabs.WebServer.Protocols;
 using Phantasma.Core;
-using Phantasma.Cryptography;
 
 namespace Phantasma.API
 {
