@@ -217,6 +217,21 @@ namespace Phantasma.API
         }
 
         #region UTILS
+        private TokenResult FillToken(Token token)
+        {
+            return new TokenResult
+            {
+                symbol = token.Symbol,
+                name = token.Name,
+                currentSupply = token.CurrentSupply.ToString(),
+                maxSupply = token.MaxSupply.ToString(),
+                decimals = token.Decimals,
+                isFungible = token.IsFungible,
+                ownerAddress = token.Owner.Text
+            };
+            //tokenNode.AddField("flags", token.Flags);
+        }
+
         private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockForTransaction(tx);
@@ -710,21 +725,25 @@ namespace Phantasma.API
 
             foreach (var token in Nexus.Tokens)
             {
-                var entry = new TokenResult
-                {
-                    symbol = token.Symbol,
-                    name = token.Name,
-                    currentSupply = token.CurrentSupply.ToString(),
-                    maxSupply = token.MaxSupply.ToString(),
-                    decimals = token.Decimals,
-                    isFungible = token.IsFungible,
-                    ownerAddress = token.Owner.Text
-                };
-                //tokenNode.AddField("flags", token.Flags);
+                var entry = FillToken(token);
                 tokenList.Add(entry);
             }
 
             return new ArrayResult() { values = tokenList.ToArray() };
+        }
+
+        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.")]
+        public IAPIResult GetToken(string symbol)
+        {
+            var token = Nexus.FindTokenBySymbol(symbol);
+            if (token == null)
+            {
+                return new ErrorResult() { error = "invalid token" };
+            }
+
+            var result = FillToken(token);
+
+            return result;
         }
 
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.")]
