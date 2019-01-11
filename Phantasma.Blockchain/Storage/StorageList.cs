@@ -2,6 +2,7 @@
 using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
+using System;
 
 namespace Phantasma.Blockchain.Storage
 {
@@ -76,7 +77,18 @@ namespace Phantasma.Blockchain.Storage
             }
 
             var key = ElementKey(list.BaseKey, index);
-            var bytes = Serialization.Serialize(element);
+
+            byte[] bytes;
+            if (typeof(IStorageCollection).IsAssignableFrom(typeof(T)))
+            {
+                var collection = (IStorageCollection)element;
+                //bytes = MergeKey(map.BaseKey, key);
+                bytes = collection.BaseKey;
+            }
+            else
+            {
+                bytes = Serialization.Serialize(element);
+            }
             list.Context.Put(key, bytes);
         }
 
@@ -90,10 +102,20 @@ namespace Phantasma.Blockchain.Storage
 
             var key = ElementKey(list.BaseKey, index);
             var bytes = list.Context.Get(key);
-            return Serialization.Unserialize<T>(bytes);
+
+            if (typeof(IStorageCollection).IsAssignableFrom(typeof(T)))
+            {
+                var args = new object[] { bytes, list.Context };
+                var obj = (T)Activator.CreateInstance(typeof(T), args);
+                return obj;
+            }
+            else
+            {
+                return Serialization.Unserialize<T>(bytes);
+            }
         }
 
-        public static void Delete<T>(this StorageList list, BigInteger index)
+        public static void RemoveAt<T>(this StorageList list, BigInteger index)
         {
             var size = list.Count();
             if (index < 0 || index >= size)
@@ -151,7 +173,7 @@ namespace Phantasma.Blockchain.Storage
             var index = list.IndexOf(obj);
             if (index >= 0)
             {
-                list.Delete<T>(index);
+                list.RemoveAt<T>(index);
             }
         }
 

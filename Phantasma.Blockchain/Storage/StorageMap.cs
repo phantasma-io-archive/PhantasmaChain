@@ -2,6 +2,9 @@
 using Phantasma.Core.Utils;
 using Phantasma.VM.Utils;
 using Phantasma.IO;
+using Phantasma.Cryptography.Hashing;
+using System.Text;
+using System;
 
 namespace Phantasma.Blockchain.Storage
 {
@@ -42,6 +45,12 @@ namespace Phantasma.Blockchain.Storage
             return ByteArrayUtils.ConcatBytes(baseKey, bytes);
         }
 
+        private static byte[] MergeKey(byte[] parentKey, object childKey)
+        {
+            var bytes = Encoding.UTF8.GetBytes($".{childKey}");
+            return ByteArrayUtils.ConcatBytes(parentKey, bytes);
+        }
+
         public static BigInteger Count(this StorageMap map)
         {
             return map.Context.Get(CountKey(map.BaseKey)).AsLargeInteger();
@@ -55,7 +64,18 @@ namespace Phantasma.Blockchain.Storage
         public static void Set<K, V>(this StorageMap map, K key, V value)
         {
             bool exists = map.ContainsKey(key);
-            var bytes = Serialization.Serialize(value);
+
+            byte[] bytes;
+            if (typeof(IStorageCollection).IsAssignableFrom(typeof(V)))
+            {
+                var collection = (IStorageCollection)value;
+                //bytes = MergeKey(map.BaseKey, key);
+                bytes = collection.BaseKey;
+            }
+            else
+            {
+                bytes = Serialization.Serialize(value);
+            }
             map.Context.Put(ElementKey(map.BaseKey, key), bytes);
 
             if (!exists)
@@ -70,10 +90,28 @@ namespace Phantasma.Blockchain.Storage
             if (map.ContainsKey(key))
             {
                 var bytes = map.Context.Get(ElementKey(map.BaseKey, key));
-                return Serialization.Unserialize<V>(bytes);
+
+                if (typeof(IStorageCollection).IsAssignableFrom(typeof(V)))
+                {
+                    var args = new object[] { bytes, map.Context };
+                    var obj = (V)Activator.CreateInstance(typeof(V), args);
+                    return obj;
+                }
+                else
+                {
+                    return Serialization.Unserialize<V>(bytes);
+                }
             }
 
-            throw new ContractException("key not found");
+            if (typeof(IStorageCollection).IsAssignableFrom(typeof(V)))
+            {
+                var baseKey = MergeKey(map.BaseKey, key);
+                var args = new object[] { baseKey, map.Context };
+                var obj = (V)Activator.CreateInstance(typeof(V), args);
+                return obj;
+            }
+
+            return default(V);
         }
 
         public static void Remove<K>(this StorageMap map, K key)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using Phantasma.Cryptography;
@@ -7,12 +8,7 @@ using Phantasma.Core;
 using Phantasma.VM.Contracts;
 using Phantasma.Core.Utils;
 using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.IO;
 using Phantasma.VM;
-using System.Linq;
-using Phantasma.Cryptography.Hashing;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain.Contracts
@@ -53,7 +49,6 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
                     var args = new object[] { baseKey, (StorageContext)VM.ChangeSet};
-
                     var obj = Activator.CreateInstance(field.FieldType, args);
 
                     field.SetValue(this, obj);

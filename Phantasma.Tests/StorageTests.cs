@@ -66,22 +66,50 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestStorageMapList()
+        public void TestStorageListWithNestedMap()
         {
             var context = new MemoryStorageContext();
 
             var map = new StorageMap("map".AsByteArray(), context);
             Assert.IsTrue(map.Count() == 0);
 
+            map.Set(1, "hello");
+            map.Set(3, "world");
+            var count = map.Count();
+            Assert.IsTrue(count == 2);
+
             var list = new StorageList("list".AsByteArray(), context);
             Assert.IsTrue(list.Count() == 0);
 
-            list.Add("hello");
-            list.Add("world");
+            list.Add(map);
 
+            count = list.Count();
+            Assert.IsTrue(count == 1);
+
+            var another = list.Get<StorageMap>(0);
+            count = another.Count();
+            Assert.IsTrue(count == 2);
+        }
+
+        [TestMethod]
+        public void TestStorageMapWithNestedList()
+        {
+            var context = new MemoryStorageContext();
+
+            var list = new StorageList("list".AsByteArray(), context);
+            Assert.IsTrue(list.Count() == 0);
+
+            var map = new StorageMap("map".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
             int key = 123;
             map.Set(key, list);
-            var count = map.Count();
+
+            list.Add("hello");
+            list.Add("world");
+            var count = list.Count();
+            Assert.IsTrue(count == 2);
+
+            count = map.Count();
             Assert.IsTrue(count == 1);
 
             int otherKey = 21;
