@@ -2,6 +2,8 @@
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Cryptography.EdDSA;
+using Phantasma.IO;
 using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -30,12 +32,22 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
     }
 
+    public struct TokenSwap
+    {
+        public Address buyer;
+        public Address seller;
+        public string baseSymbol;
+        public string quoteSymbol;
+        public BigInteger value;
+        public BigInteger price;
+    }
+
     public sealed class ExchangeContract : SmartContract
     {
         public override string Name => "exchange";
 
-        private StorageMap _orders; //<string, Collection<ExchangeOrder>
-        private StorageMap fills; //<Hash, BigInteger>
+        internal StorageMap _orders; //<string, Collection<ExchangeOrder>
+        internal StorageMap _fills; //<Hash, BigInteger>
 
         public ExchangeContract() : base()
         {
@@ -90,5 +102,95 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = _orders.Get<string, StorageList>(pair);
             list.Add(order);
         }
+
+        #region OTC TRADES
+        public void SwapTokens(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger amount, BigInteger price, byte[] signature)
+        {
+            Runtime.Expect(IsWitness(buyer), "invalid witness");
+            Runtime.Expect(seller != buyer, "invalid seller");
+
+            var baseToken = Runtime.Nexus.FindTokenBySymbol(baseSymbol);
+            Runtime.Expect(baseToken != null, "invalid base token");
+            Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+
+            var baseBalances = Runtime.Chain.GetTokenBalances(baseToken);
+            var baseBalance = baseBalances.Get(seller);
+            Runtime.Expect(baseBalance >= amount, "invalid amount");
+
+            var swap = new TokenSwap()
+            {
+                baseSymbol = baseSymbol,
+                quoteSymbol = quoteSymbol,
+                buyer = buyer,
+                seller = seller,
+                price = price,
+                value = amount,
+            };
+
+            var msg = Serialization.Serialize(swap);
+            Runtime.Expect(Ed25519.Verify(signature, msg, seller.PublicKey), "invalid signature");
+
+            var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
+            Runtime.Expect(quoteToken != null, "invalid base token");
+            Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+
+            var quoteBalances = Runtime.Chain.GetTokenBalances(quoteToken);
+            var quoteBalance = quoteBalances.Get(buyer);
+            Runtime.Expect(quoteBalance >= price, "invalid balance");
+
+            Runtime.Expect(quoteToken.Transfer(quoteBalances, buyer, seller, price), "payment failed");
+            Runtime.Expect(baseToken.Transfer(baseBalances, seller, buyer, amount), "transfer failed");
+
+            Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = amount });
+            Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });
+
+            Runtime.Notify(EventKind.TokenReceive, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });
+            Runtime.Notify(EventKind.TokenReceive, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = amount });
+        }
+
+        public void SwapToken(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, byte[] signature)
+        {
+            Runtime.Expect(IsWitness(buyer), "invalid witness");
+            Runtime.Expect(seller != buyer, "invalid seller");
+
+            var baseToken = Runtime.Nexus.FindTokenBySymbol(baseSymbol);
+            Runtime.Expect(baseToken != null, "invalid base token");
+            Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
+
+            var ownerships = Runtime.Chain.GetTokenOwnerships(baseToken);
+            var owner = ownerships.GetOwner(tokenID);
+            Runtime.Expect(owner == seller, "invalid owner");
+
+            var swap = new TokenSwap()
+            {
+                baseSymbol = baseSymbol,
+                quoteSymbol = quoteSymbol,
+                buyer = buyer,
+                seller = seller,
+                price = price,
+                value = tokenID,
+            };
+
+            var msg = Serialization.Serialize(swap);
+            Runtime.Expect(Ed25519.Verify(signature, msg, seller.PublicKey), "invalid signature");
+
+            var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
+            Runtime.Expect(quoteToken != null, "invalid base token");
+            Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+
+            var balances = Runtime.Chain.GetTokenBalances(quoteToken);
+            var balance = balances.Get(buyer);
+            Runtime.Expect(balance >= price, "invalid balance");
+
+            Runtime.Expect(quoteToken.Transfer(balances, buyer, owner, price), "payment failed");
+            Runtime.Expect(baseToken.Transfer(ownerships, owner, buyer, tokenID), "transfer failed");
+
+            Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = tokenID });
+            Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });
+
+            Runtime.Notify(EventKind.TokenReceive, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });
+            Runtime.Notify(EventKind.TokenReceive, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = tokenID });
+        }
+        #endregion
     }
 }
