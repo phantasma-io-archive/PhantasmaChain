@@ -698,7 +698,16 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No mempool" };
             }
 
-            var bytes = Base16.Decode(txData);
+            byte[] bytes;
+            try
+            {
+                bytes = Base16.Decode(txData);
+            }
+            catch
+            {
+                return new ErrorResult { error = "Failed to decode script" };
+            }
+
             if (bytes.Length == 0)
             {
                 return new ErrorResult { error = "Invalid transaction script" };
@@ -707,7 +716,7 @@ namespace Phantasma.API
             var tx = Transaction.Unserialize(bytes);
             if (tx == null)
             {
-                return new ErrorResult { error = "Failed to decode transaction" };
+                return new ErrorResult { error = "Failed to deserialize transaction" };
             }
 
             bool submited = Mempool.Submit(tx);
