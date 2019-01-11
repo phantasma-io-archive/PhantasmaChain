@@ -12,6 +12,14 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
+    public class APIException: Exception
+    {
+        public APIException(string msg): base(msg)
+        {
+
+        }
+    }
+
     public class APIDescriptionAttribute : Attribute
     {
         public readonly string Description;
@@ -59,14 +67,16 @@ namespace Phantasma.API
         public readonly Type Type;
         public readonly string Name;
         public readonly string Description;
-        public readonly string Value; // example value
+        public readonly string ExampleValue; // example value
+        public readonly object DefaultValue;
 
-        public APIValue(Type type, string name, string description, string value)
+        public APIValue(Type type, string name, string description, string exampleValue, object defaultValue)
         {
             Type = type;
             Name = name;
             Description = description;
-            Value = value;
+            ExampleValue = exampleValue;
+            DefaultValue = defaultValue;
         }
     }
 
@@ -94,20 +104,31 @@ namespace Phantasma.API
             foreach (var entry in parameters)
             {
                 string description;
-                string value;
+                string exampleValue;
                 try
                 {
                     var descAttr = entry.GetCustomAttribute<APIParameterAttribute>();
                     description = descAttr.Description;
-                    value = descAttr.Value;
+                    exampleValue = descAttr.Value;
                 }
                 catch
                 {
                     description = "TODO document me";
-                    value = "TODO document me";
+                    exampleValue = "TODO document me";
                 }
 
-                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description, value));
+                object defaultValue;
+
+                if (entry.HasDefaultValue)
+                {
+                    defaultValue = entry.DefaultValue;
+                }
+                else
+                {
+                    defaultValue = null;
+                }
+
+                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description, exampleValue, defaultValue));
             }
 
             try
@@ -137,7 +158,7 @@ namespace Phantasma.API
             return Name;
         }
 
-        public IAPIResult Execute(params string[] input)
+        public IAPIResult Execute(params object[] input)
         {
             if (input.Length != Parameters.Count)
             {
@@ -149,22 +170,38 @@ namespace Phantasma.API
             {
                 if (Parameters[i].Type == typeof(string))
                 {
-                    args[i] = input[i];
+                    args[i] = input[i].ToString();
+                    continue;
                 }
-                else
+
                 if (Parameters[i].Type == typeof(uint))
                 {
-                    args[i] = uint.Parse(input[i]); // TODO error handling
+                    if (uint.TryParse(input[i].ToString(), out uint val))
+                    {
+                        args[i] = val;
+                        continue;
+                    }
                 }
-                else
+
                 if (Parameters[i].Type == typeof(int))
                 {
-                    args[i] = int.Parse(input[i]); // TODO error handling
+                    if (int.TryParse(input[i].ToString(), out int val))
+                    {
+                        args[i] = val;
+                        continue;
+                    }
                 }
-                else
+
+                if (Parameters[i].Type == typeof(bool))
                 {
-                    throw new Exception("API invalid parameter type: " + Parameters[i].Type.FullName);
+                    if (bool.TryParse(input[i].ToString(), out bool val))
+                    {
+                        args[i] = val;
+                        continue;
+                    }
                 }
+
+                throw new APIException("invalid parameter type: " + Parameters[i].Name);                
             }
 
             return (IAPIResult)_info.Invoke(_api, args);
@@ -203,7 +240,7 @@ namespace Phantasma.API
             }
         }
 
-        public IAPIResult Execute(string methodName, string[] args)
+        public IAPIResult Execute(string methodName, object[] args)
         {
             methodName = methodName.ToLower();
             if (_methods.ContainsKey(methodName))
@@ -539,7 +576,7 @@ namespace Phantasma.API
         [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
         [APIFailCase("address is invalid", "543533")]
         [APIFailCase("amount to return is invalid", "-1")]
-        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] int amountTx)
+        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] int amountTx = 20)
         {
             if (amountTx < 1)
             {
@@ -573,36 +610,41 @@ namespace Phantasma.API
         [APIInfo(typeof(int), "Get number of transactions in a specific address and chain")]
         [APIFailCase("address is invalid", "43242342")]
         [APIFailCase("chain is invalid", "-1")]
-        public IAPIResult GetAddressTransactionCount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Name or address of chain, optional", "root")] string chainInput)
+        public IAPIResult GetAddressTransactionCount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Name or address of chain, optional", "apps")] string chainInput = "main")
         {
-            if (Address.IsValidAddress(addressText))
+            if (!Address.IsValidAddress(addressText))
             {
-                var address = Address.FromText(addressText);
-                var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
-                int count = 0;
-
-                if (!string.IsNullOrEmpty(chainInput))
-                {
-                    var chain = FindChainByInput(chainInput);
-                    if (chain == null)
-                    {
-                        return new ErrorResult() { error = "invalid chain" };
-                    }
-
-                    count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
-                }
-                else
-                {
-                    foreach (var chain in Nexus.Chains)
-                    {
-                        count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
-                    }
-                }
-
-                return new SingleResult() { value = count };
+                return new ErrorResult() { error = "invalid address" };
             }
 
-            return new ErrorResult() { error = "invalid address" };
+            var address = Address.FromText(addressText);
+            var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
+            if (plugin == null)
+            {
+                return new ErrorResult() { error = "plugin not enabled" };
+            }
+
+            int count = 0;
+
+            if (!string.IsNullOrEmpty(chainInput))
+            {
+                var chain = FindChainByInput(chainInput);
+                if (chain == null)
+                {
+                    return new ErrorResult() { error = "invalid chain" };
+                }
+
+                count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+            }
+            else
+            {
+                foreach (var chain in Nexus.Chains)
+                {
+                    count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                }
+            }
+
+            return new SingleResult() { value = count };
         }
 
         [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
