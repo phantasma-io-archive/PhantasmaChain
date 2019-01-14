@@ -764,7 +764,7 @@ namespace Phantasma.VM
                 Trace.WriteLine(ex.ToString());
                 SetState(ExecutionState.Fault);
 #if DEBUG
-                throw;
+                //throw; // enable this line when debugging difficult stuff in the VM!
 #endif
             }
         }
