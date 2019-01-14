@@ -18,8 +18,8 @@ namespace Phantasma.Blockchain
 
     public class Mempool: Runnable
     {
-        public int MinimumBlockTime = 2; // in seconds
-        public int MaxTransactionsPerBlock = 1000;
+        public int MinimumBlockTime = 1; // in seconds
+        public int MaxTransactionsPerBlock = 20000;
 
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
@@ -147,12 +147,12 @@ namespace Phantasma.Blockchain
             return result;
         }
 
-        private IEnumerable<Transaction> GetNextTransactions(Chain chain)
+        private List<Transaction> GetNextTransactions(Chain chain)
         {
             var list = _entries[chain.Name];
             if (list.Count == 0)
             {
-                return Enumerable.Empty<Transaction>();
+                return null;
             }
 
             var currentTime = Timestamp.Now;
@@ -199,7 +199,7 @@ namespace Phantasma.Blockchain
                     }
 
                     var transactions = GetNextTransactions(chain);
-                    if (transactions.Any())
+                    if (transactions != null)
                     {
                         var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
 
