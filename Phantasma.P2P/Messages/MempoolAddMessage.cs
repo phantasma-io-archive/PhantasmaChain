@@ -6,7 +6,7 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.Network.P2P.Messages
 {
-    internal class MempoolAddMessage : Message
+    public class MempoolAddMessage : Message
     {
         public readonly Transaction[] Transactions;
 

@@ -46,7 +46,7 @@ namespace Phantasma.Blockchain
             Signature[] signatures;
 
             // check if we have some signatures attached
-            if (reader.BaseStream.Position < reader.BaseStream.Length)
+            try
             {
                 var signatureCount = (int)reader.ReadVarInt();
                 signatures = new Signature[signatureCount];
@@ -55,7 +55,7 @@ namespace Phantasma.Blockchain
                     signatures[i] = reader.ReadSignature();
                 }
             }
-            else
+            catch
             {
                 signatures = new Signature[0];
             }

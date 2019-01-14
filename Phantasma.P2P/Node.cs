@@ -307,7 +307,7 @@ namespace Phantasma.Network.P2P
 
         private void HandleConnection(Socket socket)
         {
-            var peer = new TCPPeer(Nexus, socket);
+            var peer = new TCPPeer(socket);
             lock (_peers)
             {
                 _peers.Add(peer);
