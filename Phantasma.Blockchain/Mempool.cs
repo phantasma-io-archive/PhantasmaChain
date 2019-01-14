@@ -30,6 +30,7 @@ namespace Phantasma.Blockchain
 
         public event MempoolEventHandler OnTransactionAdded;
         public event MempoolEventHandler OnTransactionRemoved;
+        public event MempoolEventHandler OnTransactionFailed;
 
         private int _size = 0;
         public int Size => _size;
@@ -189,17 +190,33 @@ namespace Phantasma.Blockchain
                     var transactions = GetNextTransactions(chain);
                     if (transactions.Any())
                     {
-                        var hashes = transactions.Select(tx => tx.Hash);
+                        var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
 
                         var isFirstBlock = chain.LastBlock == null;
-                        var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
 
-                        var success = chain.AddBlock(block, transactions);
-
-                        foreach (var tx in transactions)
+                        while (hashes.Count > 0)
                         {
-                            Interlocked.Decrement(ref _size);
-                            OnTransactionRemoved?.Invoke(tx);
+                            var block = new Block(isFirstBlock ? 1 : (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
+
+                            try
+                            {
+                                chain.AddBlock(block, transactions);
+                            }
+                            catch (InvalidTransactionException e)
+                            {
+                                var tx = transactions.First(x => x.Hash == e.Hash);
+                                Interlocked.Decrement(ref _size);
+                                hashes.Remove(e.Hash);
+                                OnTransactionFailed?.Invoke(tx);
+                                continue;
+                            }
+
+                            foreach (var tx in transactions)
+                            {
+                                Interlocked.Decrement(ref _size);
+                                OnTransactionRemoved?.Invoke(tx);
+                            }
+                            break;
                         }
                     }
                 }

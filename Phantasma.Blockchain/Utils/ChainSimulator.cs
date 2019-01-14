@@ -184,7 +184,15 @@ namespace Phantasma.Blockchain.Utils
                         }
                         else
                         {
-                            submitted = chain.AddBlock(block, txs);
+                            try
+                            {
+                                chain.AddBlock(block, txs);
+                                submitted = true;
+                            }
+                            catch (Exception e)
+                            {
+                                submitted = false;
+                            }
                         }
 
                         if (submitted)

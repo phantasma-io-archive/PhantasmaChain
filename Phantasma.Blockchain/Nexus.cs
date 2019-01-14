@@ -524,7 +524,16 @@ namespace Phantasma.Blockchain
             var genesisMessage = Encoding.UTF8.GetBytes("SOUL genesis");
             var block = new Block(Chain.InitialHeight, RootChain.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
-            return RootChain.AddBlock(block, transactions);
+            try
+            {
+                RootChain.AddBlock(block, transactions);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public int GetConfirmationsOfHash(Hash hash)

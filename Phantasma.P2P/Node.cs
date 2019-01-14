@@ -509,9 +509,12 @@ namespace Phantasma.Network.P2P
                                         transactions.Add(tx);
                                     }
 
-                                    if (!chain.AddBlock(block, transactions))
+                                    try
                                     {
                                         chain.AddBlock(block, transactions);
+                                    }
+                                    catch (Exception e)
+                                    {
                                         throw new Exception("block add failed");
                                     }
 
