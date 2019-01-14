@@ -18,6 +18,8 @@ namespace Phantasma.Blockchain
 
     public class Mempool: Runnable
     {
+        public int MinimumBlockTime = 5; // in seconds
+
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
 
@@ -189,7 +191,7 @@ namespace Phantasma.Blockchain
 
                     var lastBlockTime = chain.LastBlock != null ? chain.LastBlock.Timestamp : new Timestamp(0);
                     var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
-                    if (timeDiff < 3)
+                    if (timeDiff < MinimumBlockTime)
                     {
                         continue;
                     }

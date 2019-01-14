@@ -294,7 +294,7 @@ namespace Phantasma.Network.P2P
             Task.Run(() => { HandleConnection(socket); });
         }
 
-        private void SendMessage(Peer peer, Message msg)
+        private bool SendMessage(Peer peer, Message msg)
         {
             Throw.IfNull(peer, nameof(peer));
             Throw.IfNull(msg, nameof(msg));
@@ -302,7 +302,17 @@ namespace Phantasma.Network.P2P
             Logger.Message("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
 
             msg.Sign(this.keys);
-            peer.Send(msg);
+
+            try
+            {
+                peer.Send(msg);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void HandleConnection(Socket socket)
@@ -315,9 +325,9 @@ namespace Phantasma.Network.P2P
 
             // this initial message is not only used to fetch chains but also to verify identity of peers
             var request = new RequestMessage(RequestKind.Chains | RequestKind.Peers | RequestKind.Mempool, Nexus.Name, this.Address);
-            SendMessage(peer, request);
+            var active = SendMessage(peer, request);
 
-            while (true)
+            while (active)
             {
                 var msg = peer.Receive();
                 if (msg == null)
@@ -335,9 +345,11 @@ namespace Phantasma.Network.P2P
                 var answer = HandleMessage(peer, msg);
                 if (answer != null)
                 {
-                    SendMessage(peer, answer);
+                    if (!SendMessage(peer, answer))
+                    {
+                        break;
+                    }
                 }
-
             }
 
             Logger.Message("Disconnected from peer: " + peer.Endpoint);
@@ -553,10 +565,13 @@ namespace Phantasma.Network.P2P
                 case Opcode.MEMPOOL_Add:
                     {
                         var memtx = (MempoolAddMessage)msg;
+                        var prevSize = _mempool.Size;
                         foreach (var tx in memtx.Transactions)
                         {
                             _mempool.Submit(tx);
                         }
+                        var count = _mempool.Size - prevSize;
+                        Logger.Message($"Added {count} txs to the mempool");
                         break;
                     }
 
