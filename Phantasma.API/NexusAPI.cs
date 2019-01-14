@@ -732,17 +732,20 @@ namespace Phantasma.API
         [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult GetTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
-            if (Hash.TryParse(hashText, out var hash))
+            Hash hash;
+            if (!Hash.TryParse(hashText, out hash))
             {
-                var tx = Nexus.FindTransactionByHash(hash);
-
-                if (tx != null)
-                {
-                    return FillTransaction(tx);
-                }
+                return new ErrorResult { error = "Invalid hash" };
             }
 
-            return new ErrorResult { error = "Invalid hash" };
+            var tx = Nexus.FindTransactionByHash(hash);
+
+            if (tx == null)
+            {
+                return new ErrorResult { error = "Transaction not found" };
+            }
+
+            return FillTransaction(tx);
         }
 
         [APIInfo(typeof(ChainResult[]), "Returns an array of all chains deployed in Phantasma.")]
