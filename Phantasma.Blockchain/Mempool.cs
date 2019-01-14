@@ -169,12 +169,20 @@ namespace Phantasma.Blockchain
             return transactions;
         }
 
+        public bool Disabled = false;
+
         protected override bool Run()
         {
             // we must be a staked validator to do something...
             if (!Nexus.IsValidator(this.ValidatorAddress))
             {
-                return false;
+                Thread.Sleep(1000);
+                return true;
+            }
+
+            if (Disabled)
+            {
+                return true;
             }
 
             lock (_entries)

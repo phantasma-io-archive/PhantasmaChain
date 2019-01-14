@@ -122,7 +122,7 @@ namespace Phantasma.Tests
             mempool.Start();
 
             // node setup
-            var node = new Node(nexus, node_keys, port, seeds, log);
+            var node = new Node(nexus, mempool, node_keys, port, seeds, log);
             log.Message("Phantasma Node address: " + node_keys.Address.Text);
             node.Start();
         }

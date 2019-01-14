@@ -61,15 +61,18 @@ namespace Phantasma.Network.P2P
 
         public Nexus Nexus { get; private set; }
 
-        public Node(Nexus nexus, KeyPair keys, int port, IEnumerable<string> seeds, Logger log)
+        public Node(Nexus nexus, Mempool mempool, KeyPair keys, int port, IEnumerable<string> seeds, Logger log)
         {
+            Throw.IfNull(mempool, nameof(mempool));
+            Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
+
             this.Nexus = nexus;
             this.Port = port;
             this.keys = keys;
 
             this.Logger = Logger.Init(log);
 
-            this._mempool = new Mempool(keys, nexus);
+            this._mempool = mempool;
 
             QueueEndpoints(seeds.Select(seed => ParseEndpoint(seed)));
 
@@ -564,6 +567,8 @@ namespace Phantasma.Network.P2P
 
                 case Opcode.MEMPOOL_Add:
                     {
+                        _mempool.Disabled = true;
+
                         var memtx = (MempoolAddMessage)msg;
                         var prevSize = _mempool.Size;
                         foreach (var tx in memtx.Transactions)
