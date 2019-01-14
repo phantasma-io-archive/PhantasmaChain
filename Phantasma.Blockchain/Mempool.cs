@@ -18,7 +18,8 @@ namespace Phantasma.Blockchain
 
     public class Mempool: Runnable
     {
-        public int MinimumBlockTime = 5; // in seconds
+        public int MinimumBlockTime = 2; // in seconds
+        public int MaxTransactionsPerBlock = 1000;
 
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
@@ -159,7 +160,7 @@ namespace Phantasma.Blockchain
 
             var transactions = new List<Transaction>();
 
-            while (transactions.Count < 20 && list.Count > 0)
+            while (transactions.Count < MaxTransactionsPerBlock && list.Count > 0)
             {
                 var entry = list[0];
                 list.RemoveAt(0);
@@ -169,19 +170,12 @@ namespace Phantasma.Blockchain
             return transactions;
         }
 
-        public bool Disabled = false;
-
         protected override bool Run()
         {
             // we must be a staked validator to do something...
             if (!Nexus.IsValidator(this.ValidatorAddress))
             {
                 Thread.Sleep(1000);
-                return true;
-            }
-
-            if (Disabled)
-            {
                 return true;
             }
 
