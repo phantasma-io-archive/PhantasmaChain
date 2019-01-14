@@ -63,7 +63,7 @@ namespace Phantasma.Blockchain
             return new Transaction(nexusName, chainName, script, new Timestamp(expiration), signatures);
         }
 
-        private void Serialize(BinaryWriter writer, bool withSignature)
+        public void Serialize(BinaryWriter writer, bool withSignature)
         {
             writer.WriteVarString(this.NexusName);
             writer.WriteVarString(this.ChainName);

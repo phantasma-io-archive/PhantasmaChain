@@ -187,6 +187,13 @@ namespace Phantasma.Blockchain
                         continue;
                     }
 
+                    var lastBlockTime = chain.LastBlock != null ? chain.LastBlock.Timestamp : new Timestamp(0);
+                    var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
+                    if (timeDiff < 3)
+                    {
+                        continue;
+                    }
+
                     var transactions = GetNextTransactions(chain);
                     if (transactions.Any())
                     {

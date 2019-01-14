@@ -552,6 +552,11 @@ namespace Phantasma.Network.P2P
 
                 case Opcode.MEMPOOL_Add:
                     {
+                        var memtx = (MempoolAddMessage)msg;
+                        foreach (var tx in memtx.Transactions)
+                        {
+                            _mempool.Submit(tx);
+                        }
                         break;
                     }
 
