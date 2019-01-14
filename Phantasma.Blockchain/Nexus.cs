@@ -456,7 +456,7 @@ namespace Phantasma.Blockchain
 
             var script = sb.SpendGas(owner.Address).EndScript();
 
-            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
 
             return tx;
@@ -471,7 +471,7 @@ namespace Phantasma.Blockchain
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
             return tx;
         }
@@ -485,7 +485,7 @@ namespace Phantasma.Blockchain
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300), 0);
+            var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
             return tx;
         }

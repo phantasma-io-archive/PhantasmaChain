@@ -1639,11 +1639,12 @@ namespace Phantasma.Tests
 
             var keys = KeyPair.Generate();
             var nexus = new Nexus("vmnet", keys.Address, new ConsoleLogger());
-            var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0, 0);
+            var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
 
             var changeSet = new StorageChangeSetContext(new MemoryStorageContext());
 
             var vm = new RuntimeVM(tx.Script, nexus.RootChain, null, tx, changeSet, true);
+            vm.ThrowOnFault = true;
             vm.Execute();
 
             return vm;
