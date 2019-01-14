@@ -366,14 +366,14 @@ namespace Phantasma.Network.P2P
                     {
                         var request = (RequestMessage)msg;
 
-                        if (request.Kind == RequestKind.None)
-                        {
-                            return new ErrorMessage(Address, P2PError.InvalidRequest);
-                        }
-
                         if (request.NexusName != Nexus.Name)
                         {
                             return new ErrorMessage(Address, P2PError.InvalidNexus);
+                        }
+
+                        if (request.Kind == RequestKind.None)
+                        {
+                            return null;
                         }
 
                         var answer = new ListMessage(this.Address, request.Kind);
