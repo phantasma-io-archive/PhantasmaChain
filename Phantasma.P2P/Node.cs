@@ -239,13 +239,13 @@ namespace Phantasma.Network.P2P
 
                     if (!success)
                     {
-                        Logger.Message("Could not reach peer: " + target.endpoint);
+                        Logger.Debug("Could not reach peer: " + target.endpoint);
                         target.status = EndpointStatus.Disabled;
                         return;
                     }
                     else
                     {
-                        Logger.Message("Connected to peer: " + target.endpoint);
+                        Logger.Debug("Connected to peer: " + target.endpoint);
                         client.EndConnect(result);
                         target.status = EndpointStatus.Connected;
 
@@ -293,7 +293,7 @@ namespace Phantasma.Network.P2P
                 return;
             }
 
-            Logger.Message("New connection accepted from " + socket.RemoteEndPoint.ToString());
+            Logger.Debug("New connection accepted from " + socket.RemoteEndPoint.ToString());
             Task.Run(() => { HandleConnection(socket); });
         }
 
@@ -302,7 +302,7 @@ namespace Phantasma.Network.P2P
             Throw.IfNull(peer, nameof(peer));
             Throw.IfNull(msg, nameof(msg));
 
-            Logger.Message("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
+            Logger.Debug("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
 
             msg.Sign(this.keys);
 
@@ -338,11 +338,10 @@ namespace Phantasma.Network.P2P
                     break;
                 }
 
-                Console.WriteLine("Got: " + msg.GetType().Name);
-                Console.WriteLine("From: " + msg.Address.Text);
+                Logger.Debug($"Got {msg.GetType().Name} from: {msg.Address.Text}");
                 foreach (var line in msg.GetDescription())
                 {
-                    Console.WriteLine(line);
+                    Logger.Debug(line);
                 }
 
                 var answer = HandleMessage(peer, msg);
@@ -355,7 +354,7 @@ namespace Phantasma.Network.P2P
                 }
             }
 
-            Logger.Message("Disconnected from peer: " + peer.Endpoint);
+            Logger.Debug("Disconnected from peer: " + peer.Endpoint);
 
             socket.Close();
 
@@ -567,8 +566,6 @@ namespace Phantasma.Network.P2P
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        _mempool.Disabled = true;
-
                         var memtx = (MempoolAddMessage)msg;
                         var prevSize = _mempool.Size;
                         foreach (var tx in memtx.Transactions)
