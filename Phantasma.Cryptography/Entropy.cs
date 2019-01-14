@@ -1,7 +1,6 @@
 ﻿using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using System;
-using System.Linq;
 
 namespace Phantasma.Cryptography
 {
@@ -15,7 +14,11 @@ namespace Phantasma.Cryptography
         public static byte[] GetRandomBytes(int targetLength)
         {
             var bytes = new byte[targetLength + (securityParameter / 8) + 1];
-            rnd.NextBytes(bytes);
+            lock (rnd)
+            {
+                rnd.NextBytes(bytes);
+            }
+
             bytes[bytes.Length - 1] = 0;
 
             var maxBytes = new byte[targetLength];
@@ -36,7 +39,10 @@ namespace Phantasma.Cryptography
             if (diff > 0)
             {
                 var pad = new byte[diff];
-                rnd.NextBytes(pad);
+                lock (rnd)
+                {
+                    rnd.NextBytes(pad);
+                }
 
                 bytes = ByteArrayUtils.ConcatBytes(bytes, pad);
             }
