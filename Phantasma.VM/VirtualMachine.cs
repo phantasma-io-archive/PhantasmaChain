@@ -85,6 +85,8 @@ namespace Phantasma.VM
         public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
         public const int MaxRegisterCount = 32;
 
+        public bool ThrowOnFault = false;
+
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
 
         public readonly byte[] entryScript;

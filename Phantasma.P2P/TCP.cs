@@ -11,7 +11,7 @@ namespace Phantasma.Network.P2P
     {
         private readonly Socket _socket;
 
-        public TCPPeer(Nexus nexus, Socket socket) : base(nexus, MakeEndpoint(socket))
+        public TCPPeer(Socket socket) : base(MakeEndpoint(socket))
         {
             this._socket = socket;
             this.Status = Status.Anonymous;

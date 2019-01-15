@@ -14,10 +14,21 @@ namespace Phantasma.Blockchain
         public Timestamp timestamp;
     }
 
+    public class MempoolSubmissionException: Exception
+    {
+        public MempoolSubmissionException(string msg): base(msg)
+        {
+
+        }
+    }
+
     public delegate void MempoolEventHandler(Transaction tx);
 
     public class Mempool: Runnable
     {
+        public int MinimumBlockTime = 1; // in seconds
+        public int MaxTransactionsPerBlock = 20000;
+
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
 
@@ -30,6 +41,7 @@ namespace Phantasma.Blockchain
 
         public event MempoolEventHandler OnTransactionAdded;
         public event MempoolEventHandler OnTransactionRemoved;
+        public event MempoolEventHandler OnTransactionFailed;
 
         private int _size = 0;
         public int Size => _size;
@@ -40,7 +52,7 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
         }
 
-        public bool Submit(Transaction tx, Func<Transaction, bool> validator = null)
+        public void Submit(Transaction tx, Func<Transaction, bool> validator = null)
         {
            Throw.IfNull(tx, nameof(tx));
 
@@ -49,26 +61,26 @@ namespace Phantasma.Blockchain
 
             if (_hashMap.ContainsKey(tx.Hash))
             {
-                return false;
+                throw new MempoolSubmissionException("already in mempool");
             }
 
             var currentTime = Timestamp.Now;
             if (tx.Expiration <= currentTime)
             {
-                return false;
+                throw new MempoolSubmissionException("already expired");
             }
 
             var diff = tx.Expiration - currentTime;
             if (diff > MaxExpirationTimeDifferenceInSeconds)
             {
-                return false;
+                throw new MempoolSubmissionException("expire date too big");
             }
 
             if (validator != null)
             {
                 if (!validator(tx))
                 {
-                    return false;
+                    throw new MempoolSubmissionException("rejected by validator");
                 }
             }
 
@@ -94,8 +106,6 @@ namespace Phantasma.Blockchain
 
             Interlocked.Increment(ref _size);
             OnTransactionAdded?.Invoke(tx);
-
-            return true;
         }
 
         public bool Discard(Transaction tx)
@@ -143,12 +153,12 @@ namespace Phantasma.Blockchain
             return result;
         }
 
-        private IEnumerable<Transaction> GetNextTransactions(Chain chain)
+        private List<Transaction> GetNextTransactions(Chain chain)
         {
             var list = _entries[chain.Name];
             if (list.Count == 0)
             {
-                return Enumerable.Empty<Transaction>();
+                return null;
             }
 
             var currentTime = Timestamp.Now;
@@ -156,7 +166,7 @@ namespace Phantasma.Blockchain
 
             var transactions = new List<Transaction>();
 
-            while (transactions.Count < 20 && list.Count > 0)
+            while (transactions.Count < MaxTransactionsPerBlock && list.Count > 0)
             {
                 var entry = list[0];
                 list.RemoveAt(0);
@@ -171,7 +181,8 @@ namespace Phantasma.Blockchain
             // we must be a staked validator to do something...
             if (!Nexus.IsValidator(this.ValidatorAddress))
             {
-                return false;
+                Thread.Sleep(1000);
+                return true;
             }
 
             lock (_entries)
@@ -186,20 +197,43 @@ namespace Phantasma.Blockchain
                         continue;
                     }
 
-                    var transactions = GetNextTransactions(chain);
-                    if (transactions.Any())
+                    var lastBlockTime = chain.LastBlock != null ? chain.LastBlock.Timestamp : new Timestamp(0);
+                    var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
+                    if (timeDiff < MinimumBlockTime)
                     {
-                        var hashes = transactions.Select(tx => tx.Hash);
+                        continue;
+                    }
+
+                    var transactions = GetNextTransactions(chain);
+                    if (transactions != null)
+                    {
+                        var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
 
                         var isFirstBlock = chain.LastBlock == null;
-                        var block = new Block(isFirstBlock ? 1: (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
 
-                        var success = chain.AddBlock(block, transactions);
-
-                        foreach (var tx in transactions)
+                        while (hashes.Count > 0)
                         {
-                            Interlocked.Decrement(ref _size);
-                            OnTransactionRemoved?.Invoke(tx);
+                            var block = new Block(isFirstBlock ? 1 : (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
+
+                            try
+                            {
+                                chain.AddBlock(block, transactions);
+                            }
+                            catch (InvalidTransactionException e)
+                            {
+                                var tx = transactions.First(x => x.Hash == e.Hash);
+                                Interlocked.Decrement(ref _size);
+                                hashes.Remove(e.Hash);
+                                OnTransactionFailed?.Invoke(tx);
+                                continue;
+                            }
+
+                            foreach (var tx in transactions)
+                            {
+                                Interlocked.Decrement(ref _size);
+                                OnTransactionRemoved?.Invoke(tx);
+                            }
+                            break;
                         }
                     }
                 }

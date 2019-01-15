@@ -18,7 +18,6 @@ namespace Phantasma.Blockchain
     {
         public Timestamp Expiration { get; }
         public byte[] Script { get; }
-        public uint Nonce { get; }
 
         public string NexusName { get; }
         public string ChainName { get; }
@@ -42,13 +41,12 @@ namespace Phantasma.Blockchain
             var nexusName = reader.ReadVarString();
             var chainName = reader.ReadVarString();
             var script = reader.ReadByteArray();
-            var nonce = reader.ReadUInt32();
             var expiration = reader.ReadUInt32();
 
             Signature[] signatures;
 
             // check if we have some signatures attached
-            if (reader.BaseStream.Position < reader.BaseStream.Length)
+            try
             {
                 var signatureCount = (int)reader.ReadVarInt();
                 signatures = new Signature[signatureCount];
@@ -57,20 +55,19 @@ namespace Phantasma.Blockchain
                     signatures[i] = reader.ReadSignature();
                 }
             }
-            else
+            catch
             {
                 signatures = new Signature[0];
             }
 
-            return new Transaction(nexusName, chainName, script, new Timestamp(expiration), nonce, signatures);
+            return new Transaction(nexusName, chainName, script, new Timestamp(expiration), signatures);
         }
 
-        private void Serialize(BinaryWriter writer, bool withSignature)
+        public void Serialize(BinaryWriter writer, bool withSignature)
         {
             writer.WriteVarString(this.NexusName);
             writer.WriteVarString(this.ChainName);
             writer.WriteByteArray(this.Script);
-            writer.Write(this.Nonce);
             writer.Write(this.Expiration.Value);
 
             if (withSignature)
@@ -122,7 +119,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, uint nonce, IEnumerable<Signature> signatures = null)
+        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, IEnumerable<Signature> signatures = null)
         {
             Throw.IfNull(script, nameof(script));
 
@@ -130,7 +127,6 @@ namespace Phantasma.Blockchain
             this.ChainName = chainName;
             this.Script = script;
             this.Expiration = expiration;
-            this.Nonce = nonce;
 
             this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
 

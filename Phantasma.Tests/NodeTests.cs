@@ -122,7 +122,7 @@ namespace Phantasma.Tests
             mempool.Start();
 
             // node setup
-            var node = new Node(nexus, node_keys, port, seeds, log);
+            var node = new Node(nexus, mempool, node_keys, port, seeds, log);
             log.Message("Phantasma Node address: " + node_keys.Address.Text);
             node.Start();
         }
@@ -131,11 +131,14 @@ namespace Phantasma.Tests
         {
             var script = ScriptUtils.BeginScript().AllowGas(from.Address, 1, 9999).TransferTokens("SOUL", from.Address, to, amount).SpendGas(from.Address).EndScript();
 
-            var tx = new Transaction("simnet", "main", script, Timestamp.Now + TimeSpan.FromMinutes(30), 0);
+            var tx = new Transaction("simnet", "main", script, Timestamp.Now + TimeSpan.FromMinutes(30));
             tx.Sign(from);
 
-            var response = mempool.Submit(tx);
-            if (response == false)
+            try
+            {
+                mempool.Submit(tx);
+            }
+            catch (Exception)
             {
                 if (log != null)
                 {

@@ -61,15 +61,18 @@ namespace Phantasma.Network.P2P
 
         public Nexus Nexus { get; private set; }
 
-        public Node(Nexus nexus, KeyPair keys, int port, IEnumerable<string> seeds, Logger log)
+        public Node(Nexus nexus, Mempool mempool, KeyPair keys, int port, IEnumerable<string> seeds, Logger log)
         {
+            Throw.IfNull(mempool, nameof(mempool));
+            Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
+
             this.Nexus = nexus;
             this.Port = port;
             this.keys = keys;
 
             this.Logger = Logger.Init(log);
 
-            this._mempool = new Mempool(keys, nexus);
+            this._mempool = mempool;
 
             QueueEndpoints(seeds.Select(seed => ParseEndpoint(seed)));
 
@@ -236,13 +239,13 @@ namespace Phantasma.Network.P2P
 
                     if (!success)
                     {
-                        Logger.Message("Could not reach peer: " + target.endpoint);
+                        Logger.Debug("Could not reach peer: " + target.endpoint);
                         target.status = EndpointStatus.Disabled;
                         return;
                     }
                     else
                     {
-                        Logger.Message("Connected to peer: " + target.endpoint);
+                        Logger.Debug("Connected to peer: " + target.endpoint);
                         client.EndConnect(result);
                         target.status = EndpointStatus.Connected;
 
@@ -290,24 +293,34 @@ namespace Phantasma.Network.P2P
                 return;
             }
 
-            Logger.Message("New connection accepted from " + socket.RemoteEndPoint.ToString());
+            Logger.Debug("New connection accepted from " + socket.RemoteEndPoint.ToString());
             Task.Run(() => { HandleConnection(socket); });
         }
 
-        private void SendMessage(Peer peer, Message msg)
+        private bool SendMessage(Peer peer, Message msg)
         {
             Throw.IfNull(peer, nameof(peer));
             Throw.IfNull(msg, nameof(msg));
 
-            Logger.Message("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
+            Logger.Debug("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
 
             msg.Sign(this.keys);
-            peer.Send(msg);
+
+            try
+            {
+                peer.Send(msg);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void HandleConnection(Socket socket)
         {
-            var peer = new TCPPeer(Nexus, socket);
+            var peer = new TCPPeer(socket);
             lock (_peers)
             {
                 _peers.Add(peer);
@@ -315,9 +328,9 @@ namespace Phantasma.Network.P2P
 
             // this initial message is not only used to fetch chains but also to verify identity of peers
             var request = new RequestMessage(RequestKind.Chains | RequestKind.Peers | RequestKind.Mempool, Nexus.Name, this.Address);
-            SendMessage(peer, request);
+            var active = SendMessage(peer, request);
 
-            while (true)
+            while (active)
             {
                 var msg = peer.Receive();
                 if (msg == null)
@@ -325,22 +338,23 @@ namespace Phantasma.Network.P2P
                     break;
                 }
 
-                Console.WriteLine("Got: " + msg.GetType().Name);
-                Console.WriteLine("From: " + msg.Address.Text);
+                Logger.Debug($"Got {msg.GetType().Name} from: {msg.Address.Text}");
                 foreach (var line in msg.GetDescription())
                 {
-                    Console.WriteLine(line);
+                    Logger.Debug(line);
                 }
 
                 var answer = HandleMessage(peer, msg);
                 if (answer != null)
                 {
-                    SendMessage(peer, answer);
+                    if (!SendMessage(peer, answer))
+                    {
+                        break;
+                    }
                 }
-
             }
 
-            Logger.Message("Disconnected from peer: " + peer.Endpoint);
+            Logger.Debug("Disconnected from peer: " + peer.Endpoint);
 
             socket.Close();
 
@@ -366,14 +380,14 @@ namespace Phantasma.Network.P2P
                     {
                         var request = (RequestMessage)msg;
 
-                        if (request.Kind == RequestKind.None)
-                        {
-                            return new ErrorMessage(Address, P2PError.InvalidRequest);
-                        }
-
                         if (request.NexusName != Nexus.Name)
                         {
                             return new ErrorMessage(Address, P2PError.InvalidNexus);
+                        }
+
+                        if (request.Kind == RequestKind.None)
+                        {
+                            return null;
                         }
 
                         var answer = new ListMessage(this.Address, request.Kind);
@@ -473,9 +487,13 @@ namespace Phantasma.Network.P2P
                             {
                                 var bytes = Base16.Decode(txStr);
                                 var tx = Transaction.Unserialize(bytes);
-                                if (this._mempool.Submit(tx))
+                                try
                                 {
+                                    _mempool.Submit(tx);
                                     submittedCount++;
+                                }
+                                catch
+                                {
                                 }
 
                                 Logger.Message(submittedCount + " new transactions");
@@ -509,9 +527,12 @@ namespace Phantasma.Network.P2P
                                         transactions.Add(tx);
                                     }
 
-                                    if (!chain.AddBlock(block, transactions))
+                                    try
                                     {
                                         chain.AddBlock(block, transactions);
+                                    }
+                                    catch (Exception e)
+                                    {
                                         throw new Exception("block add failed");
                                     }
 
@@ -549,6 +570,14 @@ namespace Phantasma.Network.P2P
 
                 case Opcode.MEMPOOL_Add:
                     {
+                        var memtx = (MempoolAddMessage)msg;
+                        var prevSize = _mempool.Size;
+                        foreach (var tx in memtx.Transactions)
+                        {
+                            _mempool.Submit(tx);
+                        }
+                        var count = _mempool.Size - prevSize;
+                        Logger.Message($"Added {count} txs to the mempool");
                         break;
                     }
 

@@ -28,7 +28,7 @@ namespace Phantasma.Tests
                 SpendGas(keysA.Address).
                 EndScript();
 
-            var tx = new Transaction("simnet", "main", script, Timestamp.Now, 3421);
+            var tx = new Transaction("simnet", "main", script, Timestamp.Now);
 
             var bytesUnsigned = tx.ToByteArray(false);
             Assert.IsTrue(bytesUnsigned != null);
@@ -62,7 +62,7 @@ namespace Phantasma.Tests
                     SpendGas(keysA.Address).
                     EndScript();
 
-                var tx = new Transaction("simnet", "main", script, Timestamp.Now - TimeSpan.FromMinutes(i), 3421);
+                var tx = new Transaction("simnet", "main", script, Timestamp.Now - TimeSpan.FromMinutes(i));
 
                 txs.Add(tx);
             }

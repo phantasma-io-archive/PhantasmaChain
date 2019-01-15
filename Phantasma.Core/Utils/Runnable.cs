@@ -15,7 +15,7 @@ namespace Phantasma.Core
 
         protected abstract bool Run();
 
-        public void Start()
+        public void Start(ThreadPriority priority = ThreadPriority.Normal)
         {
             if (_state != State.Stopped)
             {

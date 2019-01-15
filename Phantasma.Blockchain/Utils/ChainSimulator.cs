@@ -179,12 +179,28 @@ namespace Phantasma.Blockchain.Utils
                             submitted = true;
                             foreach (var tx in txs)
                             {
-                                submitted |= mempool.Submit(tx);
+                                try
+                                {
+                                    mempool.Submit(tx);
+                                }
+                                catch
+                                {
+                                    submitted = false;
+                                    break;
+                                }
                             }
                         }
                         else
                         {
-                            submitted = chain.AddBlock(block, txs);
+                            try
+                            {
+                                chain.AddBlock(block, txs);
+                                submitted = true;
+                            }
+                            catch (Exception e)
+                            {
+                                submitted = false;
+                            }
                         }
 
                         if (submitted)
@@ -231,7 +247,7 @@ namespace Phantasma.Blockchain.Utils
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
-            var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2), 0);
+            var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             if (source != null)
             {

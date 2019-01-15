@@ -12,9 +12,28 @@ using Phantasma.VM;
 using Phantasma.VM.Utils;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Consensus;
+using System;
 
 namespace Phantasma.Blockchain
 {
+    public class BlockGenerationException : Exception
+    {
+        public BlockGenerationException(string msg) : base(msg)
+        {
+
+        }
+    }
+
+    public class InvalidTransactionException : Exception
+    {
+        public readonly Hash Hash;
+
+        public InvalidTransactionException(Hash hash, string msg) : base(msg)
+        {
+            this.Hash = hash;
+        }
+    }
+
     public partial class Chain
     {
         #region PRIVATE
@@ -136,7 +155,7 @@ namespace Phantasma.Blockchain
             return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
         }
 
-        public bool AddBlock(Block block, IEnumerable<Transaction> transactions)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
             /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
             {
@@ -147,12 +166,12 @@ namespace Phantasma.Blockchain
             {
                 if (LastBlock.Height != block.Height - 1)
                 {
-                    return false;
+                    throw new BlockGenerationException($"height of block should be {LastBlock.Height + 1}");
                 }
 
                 if (block.PreviousHash != LastBlock.Hash)
                 {
-                    return false;
+                    throw new BlockGenerationException($"previous hash should be {LastBlock.PreviousHash}");
                 }
             }
 
@@ -161,7 +180,7 @@ namespace Phantasma.Blockchain
             {
                 if (!inputHashes.Contains(hash))
                 {
-                    return false;
+                    throw new BlockGenerationException($"missing in inputs transaction with hash {hash}");
                 }
             }
 
@@ -170,7 +189,7 @@ namespace Phantasma.Blockchain
             {
                 if (!outputHashes.Contains(tx.Hash))
                 {
-                    return false;
+                    throw new BlockGenerationException($"missing in outputs transaction with hash {tx.Hash}");
                 }
             }
 
@@ -178,7 +197,7 @@ namespace Phantasma.Blockchain
             {
                 if (!tx.IsValid(this))
                 {
-                    return false;
+                    throw new InvalidTransactionException(tx.Hash, $"invalid transaction with hash {tx.Hash}");
                 }
             }
 
@@ -188,7 +207,7 @@ namespace Phantasma.Blockchain
             {
                 if (!tx.Execute(this, block, changeSet, block.Notify))
                 {
-                    return false;
+                    throw new InvalidTransactionException(tx.Hash, $"transaction execution failed with hash {tx.Hash}");
                 }
             }
 
@@ -216,8 +235,6 @@ namespace Phantasma.Blockchain
             }
 
             Nexus.PluginTriggerBlock(this, block);
-
-            return true;
         }
 
         private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();

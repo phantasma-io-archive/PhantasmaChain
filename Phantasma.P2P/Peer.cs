@@ -6,7 +6,6 @@ namespace Phantasma.Network.P2P
     public abstract class Peer
     {
         public Address Address { get; private set; }
-        public readonly Nexus Nexus;
         public readonly Endpoint Endpoint;
 
         public Status Status { get; protected set; }
@@ -14,9 +13,8 @@ namespace Phantasma.Network.P2P
         public abstract void Send(Message msg);
         public abstract Message Receive();
 
-        public Peer(Nexus nexus, Endpoint endpoint)
+        public Peer(Endpoint endpoint)
         {
-            this.Nexus = nexus;
             this.Endpoint = endpoint;
             this.Status = Status.Disconnected;
         }
