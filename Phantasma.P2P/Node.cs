@@ -487,9 +487,13 @@ namespace Phantasma.Network.P2P
                             {
                                 var bytes = Base16.Decode(txStr);
                                 var tx = Transaction.Unserialize(bytes);
-                                if (this._mempool.Submit(tx))
+                                try
                                 {
+                                    _mempool.Submit(tx);
                                     submittedCount++;
+                                }
+                                catch
+                                {
                                 }
 
                                 Logger.Message(submittedCount + " new transactions");

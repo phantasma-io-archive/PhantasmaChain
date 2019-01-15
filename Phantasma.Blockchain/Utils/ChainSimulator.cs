@@ -179,7 +179,15 @@ namespace Phantasma.Blockchain.Utils
                             submitted = true;
                             foreach (var tx in txs)
                             {
-                                submitted |= mempool.Submit(tx);
+                                try
+                                {
+                                    mempool.Submit(tx);
+                                }
+                                catch
+                                {
+                                    submitted = false;
+                                    break;
+                                }
                             }
                         }
                         else

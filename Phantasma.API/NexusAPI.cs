@@ -719,10 +719,17 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Failed to deserialize transaction" };
             }
 
-            bool submited = Mempool.Submit(tx);
-            if (!submited)
+            try
             {
-                return new ErrorResult { error = "Mempool submission rejected" };
+                Mempool.Submit(tx);
+            }
+            catch (MempoolSubmissionException e)
+            {
+                return new ErrorResult { error = "Mempool submission rejected: "+e.Message };
+            }
+            catch (Exception)
+            {
+                return new ErrorResult { error = "Mempool submission rejected: internal error" };
             }
 
             return new SingleResult { value = tx.Hash.ToString() };

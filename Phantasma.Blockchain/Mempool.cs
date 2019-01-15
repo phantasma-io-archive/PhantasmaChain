@@ -14,6 +14,14 @@ namespace Phantasma.Blockchain
         public Timestamp timestamp;
     }
 
+    public class MempoolSubmissionException: Exception
+    {
+        public MempoolSubmissionException(string msg): base(msg)
+        {
+
+        }
+    }
+
     public delegate void MempoolEventHandler(Transaction tx);
 
     public class Mempool: Runnable
@@ -44,7 +52,7 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
         }
 
-        public bool Submit(Transaction tx, Func<Transaction, bool> validator = null)
+        public void Submit(Transaction tx, Func<Transaction, bool> validator = null)
         {
            Throw.IfNull(tx, nameof(tx));
 
@@ -53,26 +61,26 @@ namespace Phantasma.Blockchain
 
             if (_hashMap.ContainsKey(tx.Hash))
             {
-                return false;
+                throw new MempoolSubmissionException("already in mempool");
             }
 
             var currentTime = Timestamp.Now;
             if (tx.Expiration <= currentTime)
             {
-                return false;
+                throw new MempoolSubmissionException("already expired");
             }
 
             var diff = tx.Expiration - currentTime;
             if (diff > MaxExpirationTimeDifferenceInSeconds)
             {
-                return false;
+                throw new MempoolSubmissionException("expire date too big");
             }
 
             if (validator != null)
             {
                 if (!validator(tx))
                 {
-                    return false;
+                    throw new MempoolSubmissionException("rejected by validator");
                 }
             }
 
@@ -98,8 +106,6 @@ namespace Phantasma.Blockchain
 
             Interlocked.Increment(ref _size);
             OnTransactionAdded?.Invoke(tx);
-
-            return true;
         }
 
         public bool Discard(Transaction tx)

@@ -134,8 +134,11 @@ namespace Phantasma.Tests
             var tx = new Transaction("simnet", "main", script, Timestamp.Now + TimeSpan.FromMinutes(30));
             tx.Sign(from);
 
-            var response = mempool.Submit(tx);
-            if (response == false)
+            try
+            {
+                mempool.Submit(tx);
+            }
+            catch (Exception)
             {
                 if (log != null)
                 {
