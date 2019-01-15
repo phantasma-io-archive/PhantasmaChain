@@ -29,6 +29,15 @@ namespace Phantasma.Blockchain.Tokens
             return n / multiplier;
         }
 
+        public static decimal ToDecimal(string value, int units)
+        {
+            if (string.IsNullOrEmpty(value)) return 0;
+
+            BigInteger big = BigInteger.Parse(value);
+
+            return ToDecimal(big, units);
+        }
+
         public static BigInteger ToBigInteger(decimal n, int units)
         {
             var multiplier = GetMultiplier(units);
