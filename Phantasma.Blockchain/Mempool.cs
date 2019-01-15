@@ -52,7 +52,7 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
         }
 
-        public void Submit(Transaction tx, Func<Transaction, bool> validator = null)
+        public void Submit(Transaction tx)
         {
            Throw.IfNull(tx, nameof(tx));
 
@@ -76,12 +76,9 @@ namespace Phantasma.Blockchain
                 throw new MempoolSubmissionException("expire date too big");
             }
 
-            if (validator != null)
+            if (tx.NexusName != this.Nexus.Name)
             {
-                if (!validator(tx))
-                {
-                    throw new MempoolSubmissionException("rejected by validator");
-                }
+                throw new MempoolSubmissionException("invalid nexus name");
             }
 
             var entry = new MempoolEntry() { transaction = tx, timestamp = Timestamp.Now };
