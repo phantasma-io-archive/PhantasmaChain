@@ -83,10 +83,12 @@ namespace Phantasma.Blockchain.Utils
             GenerateSideChainSettlement(_owner, Nexus.RootChain, appsChain, blockTx.Hash);
             GenerateChain(_owner, Nexus.RootChain, "dex");
             GenerateChain(_owner, Nexus.RootChain, "market");
+            EndBlock();
+
+            BeginBlock();
             GenerateAppRegistration(_owner, "nachomen", "https://nacho.men", "Collect, train and battle against other players in Nacho Men!");
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
-
             GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
             EndBlock();
 

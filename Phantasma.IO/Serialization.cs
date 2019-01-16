@@ -28,7 +28,11 @@ namespace Phantasma.IO
         public static void Serialize(BinaryWriter writer, object obj)
         {
             var type = obj.GetType();
+            Serialize(writer, obj, type);
+        }
 
+        public static void Serialize(BinaryWriter writer, object obj, Type type)
+        {
             if (type == typeof(void))
             {
                 return;
@@ -109,10 +113,11 @@ namespace Phantasma.IO
                 var array = (Array)obj;
                 writer.WriteVarInt(array.Length);
 
+                var elementType = type.GetElementType();
                 for (int i = 0; i < array.Length; i++)
                 {
                     var item = array.GetValue(i);
-                    Serialize(writer, item);
+                    Serialize(writer, item, elementType);
                 }
             }
             else
@@ -129,7 +134,7 @@ namespace Phantasma.IO
                 foreach (var field in fields)
                 {
                     var val = field.GetValue(obj);
-                    Serialize(writer, val);
+                    Serialize(writer, val, field.FieldType);
                 }
 
                 var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -137,7 +142,7 @@ namespace Phantasma.IO
                 foreach (var prop in props)
                 {
                     var val = prop.GetValue(obj);
-                    Serialize(writer, val);
+                    Serialize(writer, val, prop.PropertyType);
                 }
             }
             else
