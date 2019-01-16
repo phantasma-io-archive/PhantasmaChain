@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
 using Phantasma.IO;
-using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -19,6 +18,9 @@ namespace Phantasma.Blockchain.Contracts
         FriendRemove,
         GasEscrow,
         GasPayment,
+        AuctionCreated,
+        AuctionCancelled,
+        AuctionFilled,
     }
 
     public class Event

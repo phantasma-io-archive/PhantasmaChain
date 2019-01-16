@@ -2,13 +2,17 @@
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Cryptography.EdDSA;
-using Phantasma.IO;
 using Phantasma.Numerics;
 using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public struct MarketEventData
+    {
+        public BigInteger ID;
+        public BigInteger Price;
+    }
+
     public struct MarketAuction
     {
         public readonly Address Creator;
@@ -70,6 +74,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var auction = new MarketAuction(from, Timestamp.Now, Timestamp.Now + TimeSpan.FromDays(5), symbol, tokenID, price);
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
+
+            Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, Price = price });
         }
 
         public void BuyToken(Address from, BigInteger auctionID)
@@ -87,17 +93,30 @@ namespace Phantasma.Blockchain.Contracts.Native
             var owner = ownerships.GetOwner(auction.TokenID);
             Runtime.Expect(owner == Runtime.Chain.Address, "invalid owner");
 
-            var balances = Runtime.Chain.GetTokenBalances(Runtime.Nexus.NativeToken);
-            var balance = balances.Get(from);
-            Runtime.Expect(balance >= auction.Price, "not enough balance");
+            if (auction.Creator != from)
+            {
+                var balances = Runtime.Chain.GetTokenBalances(Runtime.Nexus.NativeToken);
+                var balance = balances.Get(from);
+                Runtime.Expect(balance >= auction.Price, "not enough balance");
 
-            Runtime.Expect(Runtime.Nexus.NativeToken.Transfer(balances, from, auction.Creator, auction.Price), "payment failed");
+                Runtime.Expect(Runtime.Nexus.NativeToken.Transfer(balances, from, auction.Creator, auction.Price), "payment failed");
+            }
+
             Runtime.Expect(token.Transfer(ownerships, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
 
             _auctionMap.Remove<BigInteger>(auctionID);
             _auctionIDs.Remove(auctionID);
+
+            if (auction.Creator == from)
+            {
+                Runtime.Notify(EventKind.AuctionCancelled, from, new MarketEventData() { ID = auction.TokenID, Price = 0 });
+            }
+            else
+            {
+                Runtime.Notify(EventKind.AuctionFilled, from, new MarketEventData() { ID = auction.TokenID, Price = auction.Price });
+            }
         }
-            
+
         public BigInteger[] GetAuctionIDs()
         {
             return _auctionIDs.All<BigInteger>();
