@@ -12,9 +12,9 @@ using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
-    public class APIException: Exception
+    public class APIException : Exception
     {
-        public APIException(string msg): base(msg)
+        public APIException(string msg) : base(msg)
         {
 
         }
@@ -201,7 +201,7 @@ namespace Phantasma.API
                     }
                 }
 
-                throw new APIException("invalid parameter type: " + Parameters[i].Name);                
+                throw new APIException("invalid parameter type: " + Parameters[i].Name);
             }
 
             return (IAPIResult)_info.Invoke(_api, args);
@@ -263,10 +263,9 @@ namespace Phantasma.API
                 currentSupply = token.CurrentSupply.ToString(),
                 maxSupply = token.MaxSupply.ToString(),
                 decimals = token.Decimals,
-                Flags = token.Flags.ToString().Split(',').Select(x => x.Trim()).ToArray(),
+                Flags = token.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 ownerAddress = token.Owner.Text
             };
-            //tokenNode.AddField("flags", token.Flags);
         }
 
         private TransactionResult FillTransaction(Transaction tx)
@@ -727,7 +726,7 @@ namespace Phantasma.API
             }
             catch (MempoolSubmissionException e)
             {
-                return new ErrorResult { error = "Mempool submission rejected: "+e.Message };
+                return new ErrorResult { error = "Mempool submission rejected: " + e.Message };
             }
             catch (Exception)
             {
@@ -818,7 +817,7 @@ namespace Phantasma.API
             }
 
             var info = Nexus.GetNFT(token, ID);
-            return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM)};
+            return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
 
         [APIInfo(typeof(AppResult[]), "Returns an array of apps deployed in Phantasma.")]

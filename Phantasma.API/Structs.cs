@@ -153,7 +153,7 @@ namespace Phantasma.API
         [APIDescription("Address that controls minting of tokens")]
         public string ownerAddress;
 
-        public string[] Flags;
+        public string Flags;
     }
 
     public struct TokenDataResult : IAPIResult

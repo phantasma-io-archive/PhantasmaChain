@@ -1,5 +1,4 @@
-﻿using LunarLabs.Parser;
-using LunarLabs.WebServer.Core;
+﻿using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
 using LunarLabs.WebServer.Protocols;
 using Phantasma.Core;
@@ -90,14 +89,6 @@ namespace Phantasma.API
                 var temp = (ErrorResult)response;
                 throw new RPCException(temp.error);
             }
-        }
-
-        // new 
-        private object GetRootChain(DataNode paramNode)
-        {
-            var result = API.GetRootChain();
-            CheckForError(result);
-            return APIUtils.FromAPIResult(result);
         }
     }
 }
