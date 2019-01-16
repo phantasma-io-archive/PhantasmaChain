@@ -81,7 +81,7 @@ namespace Phantasma.IO
             else
             if (type == typeof(string))
             {
-                writer.Write((string)obj);
+                writer.WriteVarString((string)obj);
             }
             else
             if (type == typeof(BigInteger))
@@ -216,7 +216,7 @@ namespace Phantasma.IO
 
             if (type == typeof(string))
             {
-                return reader.ReadString(); //TODO improve me
+                return reader.ReadVarString();
             }
 
             if (type == typeof(BigInteger))
