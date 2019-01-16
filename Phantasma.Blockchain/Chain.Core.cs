@@ -321,7 +321,6 @@ namespace Phantasma.Blockchain
 
         internal void InitSupplySheet(Token token, BigInteger maxSupply)
         {
-            Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
             Throw.If(!token.IsCapped, "should be capped");
             Throw.If(_tokenSupplies.ContainsKey(token), "supply sheet already created");
 
@@ -331,7 +330,6 @@ namespace Phantasma.Blockchain
 
         internal SupplySheet GetTokenSupplies(Token token)
         {
-            Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
             Throw.If(!token.IsCapped, "should be capped");
 
             if (_tokenSupplies.ContainsKey(token))

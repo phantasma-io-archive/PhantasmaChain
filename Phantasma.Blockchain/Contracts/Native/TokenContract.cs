@@ -3,7 +3,6 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -65,7 +64,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (token.IsCapped)
             {
                 var supplies = this.Runtime.Chain.GetTokenSupplies(token);
-                Runtime.Expect(supplies.Mint(amount), "minting failed");
+                Runtime.Expect(supplies.Mint(amount), "increasing supply failed");
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
@@ -86,7 +85,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (token.IsCapped)
             {
                 var supplies = this.Runtime.Chain.GetTokenSupplies(token);
-                Runtime.Expect(supplies.Burn(amount), "minting failed");
+                Runtime.Expect(supplies.Burn(amount), "decreasing supply failed");
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
@@ -145,6 +144,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenID = this.Runtime.Nexus.CreateNFT(token, ram, rom);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
+            if (token.IsCapped)
+            {
+                var supplies = this.Runtime.Chain.GetTokenSupplies(token);
+                Runtime.Expect(supplies.Mint(1), "increasing supply failed");
+            }
+
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Give(to, tokenID), "give token failed");
 
@@ -159,6 +164,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
+
+            if (token.IsCapped)
+            {
+                var supplies = this.Runtime.Chain.GetTokenSupplies(token);                
+                Runtime.Expect(supplies.Burn(1), "decreasing supply failed");
+            }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
@@ -197,6 +208,25 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "must be non-fungible token");
+
+            if (token.IsCapped)
+            {
+                var sourceSupplies = this.Runtime.Chain.GetTokenSupplies(token);
+                var targetSupplies = otherChain.GetTokenSupplies(token);
+
+                BigInteger amount = 1;
+
+                if (IsParentChain(targetChain))
+                {
+                    Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, amount), "target supply check failed");
+                }
+                else // child chain
+                {
+                    Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, amount), "source supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromParent(amount), "target supply check failed");
+                }
+            }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
