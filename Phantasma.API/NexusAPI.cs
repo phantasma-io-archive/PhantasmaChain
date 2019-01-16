@@ -263,7 +263,7 @@ namespace Phantasma.API
                 currentSupply = token.CurrentSupply.ToString(),
                 maxSupply = token.MaxSupply.ToString(),
                 decimals = token.Decimals,
-                isFungible = token.IsFungible,
+                Flags = token.Flags.ToString().Split(',').Select(x => x.Trim()).ToArray(),
                 ownerAddress = token.Owner.Text
             };
             //tokenNode.AddField("flags", token.Flags);

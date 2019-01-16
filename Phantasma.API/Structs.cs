@@ -150,10 +150,7 @@ namespace Phantasma.API
         [APIDescription("Address that controls minting of tokens")]
         public string ownerAddress;
 
-        // TODO should be removed later, redundant once Flags field is added
-        public bool isFungible;
-
-        //public string[] Flags; TODO
+        public string[] Flags;
     }
 
     public struct TokenDataResult : IAPIResult
