@@ -298,6 +298,8 @@ namespace Phantasma.API
             }
             result.events = eventList.ToArray();
 
+            result.result = block.GetResultForTransaction(tx.Hash);
+
             return result;
         }
 
