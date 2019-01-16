@@ -13,6 +13,11 @@ namespace Phantasma.IO
     {
         public static byte[] Serialize(this object obj)
         {
+            if (obj == null)
+            {
+                return new byte[0];
+            }
+
             using (var stream = new MemoryStream())
             {
                 using (var writer = new BinaryWriter(stream))
@@ -153,11 +158,21 @@ namespace Phantasma.IO
 
         public static T Unserialize<T>(byte[] bytes)
         {
+            if (bytes.Length == 0)
+            {
+                return default(T);
+            }
+
             return (T)Unserialize(bytes, typeof(T));
         }
 
         public static object Unserialize(byte[] bytes, Type type)
         {
+            if (bytes.Length == 0)
+            {
+                return null;
+            }
+
             using (var stream = new MemoryStream(bytes))
             {
                 using (var reader = new BinaryReader(stream))

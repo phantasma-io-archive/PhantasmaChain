@@ -92,8 +92,10 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify)
+        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, out byte[] result)
         {
+            result = null;
+
             var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet, false);
 
             var state = runtime.Execute();
@@ -116,6 +118,12 @@ namespace Phantasma.Blockchain
                 onNotify(this.Hash, evt);
             }
             
+            if (runtime.Stack.Count > 0)
+            {
+                var obj = runtime.Stack.Pop();
+                result = Serialization.Serialize(obj);
+            }
+
             return true;
         }
 
