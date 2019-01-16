@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags)
+        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags)
         {
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "symbol required");
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
@@ -44,11 +44,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
-
-            return token;
         }
 
-        public Chain CreateChain(Address owner, string name, string parentName)
+        public void CreateChain(Address owner, string name, string parentName)
         {
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
@@ -65,8 +63,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(chain != null, "chain creation failed");
 
             Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
-
-            return chain;
         }
     }
 }

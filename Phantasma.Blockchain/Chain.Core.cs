@@ -205,8 +205,16 @@ namespace Phantasma.Blockchain
 
             foreach (var  tx in transactions)
             {
-                if (!tx.Execute(this, block, changeSet, block.Notify))
+                byte[] result;
+                if (tx.Execute(this, block, changeSet, block.Notify, out result))
                 {
+                    if (result != null)
+                    {
+                        block.SetResultForHash(tx.Hash, result);
+                    }
+                }
+                else
+                { 
                     throw new InvalidTransactionException(tx.Hash, $"transaction execution failed with hash {tx.Hash}");
                 }
             }

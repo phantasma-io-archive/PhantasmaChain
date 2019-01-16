@@ -6,6 +6,8 @@ using Phantasma.Numerics;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.IO;
+using System;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain
 {
@@ -30,7 +32,10 @@ namespace Phantasma.Blockchain
 
         // stores the events for each included transaction
         private Dictionary<Hash, List<Event>> _eventMap = new Dictionary<Hash, List<Event>>();
-        
+
+        // stores the results of invocations
+        private Dictionary<Hash, byte[]> _resultMap = new Dictionary<Hash, byte[]>();
+
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
@@ -113,6 +118,16 @@ namespace Phantasma.Blockchain
             return Enumerable.Empty<Event>();
         }
 
+        public byte[] GetResultForTransaction(Hash hash)
+        {
+            if (_resultMap.ContainsKey(hash))
+            {
+                return _resultMap[hash];
+            }
+
+            return null;
+        }
+
         #region SERIALIZATION
 
         public byte[] ToByteArray()
@@ -144,6 +159,13 @@ namespace Phantasma.Blockchain
                 {
                     evt.Serialize(writer);
                 }
+                int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length: -1;
+                writer.Write((short)resultLen);
+                if (resultLen > 0)
+                {
+                    var result = _resultMap[hash];
+                    writer.WriteByteArray(result);
+                }
             }
             writer.WriteByteArray(Payload);
         }
@@ -168,26 +190,49 @@ namespace Phantasma.Blockchain
             var hashCount = reader.ReadUInt16();
             var hashes = new List<Hash>();
 
-            var eventMap = new Dictionary<Hash, Event[]>();
+            var eventMap = new Dictionary<Hash, List<Event>>();
+            var resultMap = new Dictionary<Hash, byte[]>();
             for (int j=0; j<hashCount; j++)
             {
                 var hash = reader.ReadHash();
                 hashes.Add(hash);
 
                 var evtCount = reader.ReadUInt16();
-                var evts = new Event[evtCount];
+                var evts = new List<Event>(evtCount);
                 for (int i = 0; i < evtCount; i++)
                 {
-                    evts[i] = Event.Unserialize(reader);
+                    evts.Add(Event.Unserialize(reader));
                 }
 
                 eventMap[hash] = evts;
+
+                var resultLen = reader.ReadInt16();
+                if (resultLen >= 0)
+                {
+                    if (resultLen == 0)
+                    {
+                        resultMap[hash] = new byte[0];
+                    }
+                    else
+                    {
+                        resultMap[hash] = reader.ReadByteArray();
+                    }
+                }
             }
 
             var payLoad = reader.ReadByteArray();
 
-            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, payLoad); 
+            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, payLoad);
+            block._eventMap = eventMap;
+            block._resultMap = resultMap;
             return block;
+        }
+
+        internal void SetResultForHash(Hash hash, byte[] result)
+        {
+            Throw.IfNull(result, nameof(result));
+            Throw.If(result.Length > 32 * 1024, "transaction result is too large");
+            _resultMap[hash] = result;
         }
         #endregion
     }
