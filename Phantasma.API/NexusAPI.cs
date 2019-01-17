@@ -310,7 +310,8 @@ namespace Phantasma.API
             }
             result.events = eventList.ToArray();
 
-            result.result = block.GetResultForTransaction(tx.Hash);
+            var txResult = block.GetResultForTransaction(tx.Hash);
+            result.result = txResult != null? Base16.Encode(txResult): "";
 
             return result;
         }

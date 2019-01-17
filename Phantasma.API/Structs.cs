@@ -89,7 +89,7 @@ namespace Phantasma.API
         public EventResult[] events;
 
         [APIDescription("Result of the transaction, if any. Serialized, in hexadecimal format")]
-        public byte[] result;
+        public string result;
     }
 
     public struct AccountTransactionsResult : IAPIResult

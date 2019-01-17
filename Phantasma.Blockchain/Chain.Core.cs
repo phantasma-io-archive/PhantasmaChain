@@ -504,6 +504,11 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed with state: " + state);
             }
 
+            if (vm.Stack.Count == 0)
+            {
+                throw new ChainException($"No result, vm stack is empty");
+            }
+
             var result = vm.Stack.Pop();
 
             return result.ToObject();
