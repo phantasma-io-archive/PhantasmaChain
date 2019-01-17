@@ -164,6 +164,9 @@ namespace Phantasma.API
         [APIDescription("Address where currently is stored")]
         public string chainAddress;
 
+        [APIDescription("Address who currently owns the token")]
+        public string ownerAddress;
+
         [APIDescription("Writable data of token, hex encoded")]
         public string ram;
 

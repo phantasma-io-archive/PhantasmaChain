@@ -427,7 +427,19 @@ namespace Phantasma.Blockchain
 
                     if (contents.ContainsKey(tokenID))
                     {
-                        return contents[tokenID];
+                        var result = contents[tokenID];
+
+                        var chain = FindChainByAddress(result.CurrentChain);
+                        if (chain != null)
+                        {
+                            result.CurrentOwner = chain.GetTokenOwner(token, tokenID);
+                        }
+                        else
+                        {
+                            result.CurrentOwner = Address.Null;
+                        }
+
+                        return result;
                     }
                 }
             }

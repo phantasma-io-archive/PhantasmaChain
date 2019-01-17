@@ -831,7 +831,8 @@ namespace Phantasma.API
             }
 
             var info = Nexus.GetNFT(token, ID);
-            return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
+
+            return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
 
         [APIInfo(typeof(AppResult[]), "Returns an array of apps deployed in Phantasma.")]

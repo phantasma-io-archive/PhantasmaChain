@@ -6,6 +6,7 @@ namespace Phantasma.Blockchain.Tokens
     public class TokenContent
     {
         public Address CurrentChain { get; internal set; }
+        public Address CurrentOwner { get; internal set; }
         public byte[] ROM { get; private set; }
         public byte[] RAM { get; private set; }
 
