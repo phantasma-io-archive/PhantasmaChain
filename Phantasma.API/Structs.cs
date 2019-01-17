@@ -164,10 +164,10 @@ namespace Phantasma.API
         [APIDescription("Address where currently is stored")]
         public string chainAddress;
 
-        [APIDescription("Writable data of token")]
+        [APIDescription("Writable data of token, hex encoded")]
         public string ram;
 
-        [APIDescription("Read-only data of token")]
+        [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
     }
 
