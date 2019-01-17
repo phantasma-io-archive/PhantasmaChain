@@ -368,6 +368,8 @@ namespace Phantasma.Tests
             var nft = nexus.GetNFT(token, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) && nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
+
+            Assert.IsTrue(token.CurrentSupply == 1, "why supply did not increase?");
         }
 
 

@@ -110,6 +110,25 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
+        // NFT version
+        internal bool Mint()
+        {
+            if (Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            BigInteger amount = 1;
+
+            if (IsCapped && this.CurrentSupply + amount > this.MaxSupply)
+            {
+                return false;
+            }
+
+            this._supply += amount;
+            return true;
+        }
+
         internal bool Burn(BalanceSheet balances, Address target, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
@@ -128,6 +147,25 @@ namespace Phantasma.Blockchain.Tokens
             }
 
             if (!balances.Subtract(target, amount))
+            {
+                return false;
+            }
+
+            this._supply -= amount;
+            return true;
+        }
+
+        // NFT version
+        internal bool Burn()
+        {
+            if (Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            BigInteger amount = 1;
+
+            if (this.CurrentSupply - amount < 0)
             {
                 return false;
             }

@@ -151,6 +151,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
+            Runtime.Expect(token.Mint(), "minting failed");
             Runtime.Expect(ownerships.Give(to, tokenID), "give token failed");
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = tokenID });
@@ -173,6 +174,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
+            Runtime.Expect(token.Burn(), "burn failed");
 
             Runtime.Expect(this.Runtime.Nexus.DestroyNFT(token, tokenID), "destroy token failed");
 
