@@ -392,6 +392,14 @@ namespace Phantasma.Blockchain
                         return balance;*/
         }
 
+        public Address GetTokenOwner(Token token, BigInteger tokenID)
+        {
+            Throw.If(token.IsFungible, "non fungible required");
+
+            var ownerships = GetTokenOwnerships(token);
+            return ownerships.GetOwner(tokenID);
+        }
+
         public IEnumerable<BigInteger> GetOwnedTokens(Token token, Address address)
         {
             var ownership = GetTokenOwnerships(token);

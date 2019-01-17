@@ -268,6 +268,19 @@ namespace Phantasma.API
             };
         }
 
+        private AuctionResult FillAuction(MarketAuction auction)
+        {
+            return new AuctionResult
+            {
+                Symbol = auction.Symbol,
+                TokenID = auction.TokenID.ToString(),
+                creatorAddress = auction.Creator.Text,
+                Price = auction.Price.ToString(),
+                startDate = auction.StartDate.Value,
+                endDate = auction.EndDate.Value
+            };
+        }
+
         private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockForTransaction(tx);
@@ -948,6 +961,19 @@ namespace Phantasma.API
             }
 
             return result;
+        }
+
+        [APIInfo(typeof(AuctionResult[]), "Returns the auctions available in the market.")]
+        public IAPIResult GetAuctions()
+        {
+            var marketChain = Nexus.FindChainByName("market");
+            if (marketChain == null)
+            {
+                return new ErrorResult { error = "Market not available" };
+            }
+
+            var entries = (MarketAuction[])marketChain.InvokeContract("market", "GetAuctionIDs");
+            return new ArrayResult() { values = entries.Select(x => (object)FillAuction(x)).ToArray() }; // TODO make this less ugly
         }
     }
 }

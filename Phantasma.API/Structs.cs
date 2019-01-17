@@ -194,4 +194,17 @@ namespace Phantasma.API
         [APIDescription("Error message if transaction did not succeed")]
         public string error;
     }
+
+    public struct AuctionResult: IAPIResult
+    {
+        [APIDescription("Address of auction creator")]
+        public string creatorAddress;
+
+        public uint startDate;
+        public uint endDate;
+
+        public string Symbol;
+        public string TokenID;
+        public string Price;
+    }
 }

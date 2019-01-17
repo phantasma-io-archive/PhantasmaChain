@@ -10,6 +10,7 @@ using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Phantasma.Blockchain.Utils
 {
@@ -92,25 +93,48 @@ namespace Phantasma.Blockchain.Utils
             GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
             EndBlock();
 
+            var market = Nexus.FindChainByName("market");
             BeginBlock();
 
             var nacho = Nexus.FindTokenBySymbol("NACHO"); 
-            RandomSpreadNFT(nacho);
+            RandomSpreadNFT(nacho, 10);
+
+            for (int i=3; i<7; i++)
+            {
+                BigInteger ID = i;
+                var info = Nexus.GetNFT(nacho, ID);
+                if (info == null)
+                {
+                    continue;
+                }
+
+                var chain = Nexus.FindChainByAddress(info.CurrentChain);
+                var owner = chain.GetTokenOwner(nacho, ID);
+                
+                foreach (var key in _keys)
+                {
+                    if (key.Address == owner)
+                    {
+                        GenerateNftSale(key, market, nacho, ID, 100 + 5 * _rnd.Next() % 50);
+                    }
+                }
+            }
 
             GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
 
             EndBlock();
         }
 
-        private void RandomSpreadNFT(Token token)
+        private void RandomSpreadNFT(Token token, int amount)
         {
             Throw.IfNull(token, nameof(token));
             Throw.If(token.IsFungible, "expected NFT");
 
-            for (int i = 1; i < 5; i++)
+            for (int i = 1; i < amount; i++)
             {
                 var nftKey = KeyPair.Generate();
-                var data = new SimNFTData() { A = (byte)(Environment.TickCount % 255), B = (byte)(DateTime.UtcNow.Ticks % 255), C = (byte)( (DateTime.UtcNow.Ticks + Environment.TickCount) % 255) };
+                _keys.Add(nftKey);
+                var data = new SimNFTData() { A = (byte)_rnd.Next(), B = (byte)_rnd.Next(), C = (byte)_rnd.Next() };
                 GenerateNft(_owner, nftKey.Address, Nexus.RootChain, token, Serialization.Serialize(data), new byte[0]);
             }
         }
@@ -417,6 +441,13 @@ namespace Phantasma.Blockchain.Utils
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
+
+        public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
+        {
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, tokenId, price).SpendGas(source.Address).EndScript();
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
+        }        
 
         public Transaction GenerateNft(KeyPair source, Address destAddress, Chain chain, Token token, byte[] rom, byte[] ram)
         {
