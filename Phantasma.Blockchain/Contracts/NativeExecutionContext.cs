@@ -124,15 +124,6 @@ namespace Phantasma.Blockchain.Contracts
                     }
                 }
                 
-                // when a string is passed instead of an address we do an automatic lookup and replace
-                if (method.parameters[i] == VMType.Object && temp is string)
-                {
-                    var name = (string)temp;
-                    var runtime = (RuntimeVM)frame.VM;
-                    var address = runtime.Nexus.LookUpName(name);
-                    temp = address;
-                }
-
                 args[i] = temp;
             }
 

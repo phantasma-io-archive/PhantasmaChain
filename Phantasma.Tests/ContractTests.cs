@@ -1,15 +1,12 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Linq;
-using System.Reflection;
-using System.Collections.Generic;
 using Phantasma.Blockchain.Storage;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Utils;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Tests
 {
@@ -58,12 +55,14 @@ namespace Phantasma.Tests
 
             var price = 1000;
 
+            Timestamp endDate = Timestamp.Now + TimeSpan.FromDays(2);
+
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
             ScriptUtils.
                   BeginScript().
                   AllowGas(testUser.Address, 1, 9999).
-                  CallContract("market", "SellToken", testUser.Address, token.Symbol, tokenID, price).
+                  CallContract("market", "SellToken", testUser.Address, token.Symbol, tokenID, price, endDate).
                   SpendGas(testUser.Address).
                   EndScript()
             );

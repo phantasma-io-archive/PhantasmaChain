@@ -5,6 +5,8 @@ using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
+using Phantasma.Core.Types;
+using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain
 {
@@ -16,16 +18,18 @@ namespace Phantasma.Blockchain
 
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
+            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
             vm.RegisterMethod("ABI()", Constructor_ABI);
         }
 
-        private static ExecutionState Constructor_Object<T>(RuntimeVM vm, Func<byte[], T> loader) 
+        private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
         {
-            var bytes = vm.Stack.Pop().AsByteArray();
+            var type = VMObject.GetVMType(typeof(IN));
+            var input = vm.Stack.Pop().AsType(type);
 
             try
             {
-                T obj = loader(bytes);
+                OUT obj = loader((IN)input);
                 var temp = new VMObject();
                 temp.SetValue(obj);
                 vm.Stack.Push(temp);
@@ -40,7 +44,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Constructor_Address(RuntimeVM vm)
         {
-            return Constructor_Object<Address>(vm, bytes =>
+            return Constructor_Object<byte[], Address>(vm, bytes =>
             {
                 Throw.If(bytes == null || bytes.Length != Address.PublicKeyLength, "invalid key");
                 return new Address(bytes);
@@ -49,16 +53,25 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Constructor_Hash(RuntimeVM vm)
         {
-            return Constructor_Object<Hash>(vm, bytes =>
+            return Constructor_Object<byte[], Hash>(vm, bytes =>
             {
                 Throw.If(bytes == null || bytes.Length != Hash.Length, "invalid hash");
                 return new Hash(bytes);
             });
         }
 
+        private static ExecutionState Constructor_Timestamp(RuntimeVM vm)
+        {
+            return Constructor_Object<BigInteger, Timestamp>(vm, val =>
+            {
+                Throw.If(val < 0, "invalid number");
+                return new Timestamp((uint)val);
+            });
+        }
+
         private static ExecutionState Constructor_ABI(RuntimeVM vm)
         {
-            return Constructor_Object<ContractInterface>(vm, bytes =>
+            return Constructor_Object<byte[], ContractInterface>(vm, bytes =>
             {
                 Throw.If(bytes == null, "invalid abi");
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
+using Phantasma.Core.Types;
 
 namespace Phantasma.VM.Utils
 {
@@ -80,6 +81,13 @@ namespace Phantasma.VM.Utils
                     sb.EmitLoad(temp_reg, ((Address)arg).PublicKey, VMType.Bytes);
                     sb.EmitPush(temp_reg);
                     sb.EmitExtCall("Address()", temp_reg);
+                }
+                else
+                if (arg is Timestamp)
+                {
+                    sb.EmitLoad(temp_reg, ((Timestamp)arg).Value);
+                    sb.EmitPush(temp_reg);
+                    sb.EmitExtCall("Timestamp()", temp_reg);
                 }
                 else
                 if (arg is Hash)

@@ -69,6 +69,18 @@ namespace Phantasma.VM
             return (BigInteger)Data;
         }
 
+        public object AsType(VMType type)
+        {
+            switch (type)
+            {
+                case VMType.Bool: return AsBool();
+                case VMType.String: return AsString();
+                case VMType.Bytes: return AsByteArray();
+                case VMType.Number: return AsNumber();
+                default: throw new ArgumentException("Unsupported VM cast");
+            }
+        }
+
         public T AsEnum<T>() where T: struct, IConvertible
         {
             if (this.Type != VMType.Enum)
