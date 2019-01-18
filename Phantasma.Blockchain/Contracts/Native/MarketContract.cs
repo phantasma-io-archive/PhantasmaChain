@@ -39,7 +39,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         internal StorageMap _auctionMap; //<string, Collection<MarketAuction>>
         internal StorageList _auctionIDs;
-        internal StorageValue _lastAuctionID;
 
         public MarketContract() : base()
         {
@@ -57,33 +56,24 @@ namespace Phantasma.Blockchain.Contracts.Native
             var owner = ownerships.GetOwner(tokenID);
             Runtime.Expect(owner == from, "invalid owner");
 
-            BigInteger auctionID;
-
-            if (_lastAuctionID.HasValue())
-            {
-                auctionID = _lastAuctionID.Get<BigInteger>() + 1;
-            }
-            else
-            {
-                auctionID = 1;
-            }
-            _lastAuctionID.Set<BigInteger>(auctionID);
-
             Runtime.Expect(token.Transfer(ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
             var auction = new MarketAuction(from, Timestamp.Now, Timestamp.Now + TimeSpan.FromDays(5), symbol, tokenID, price);
+            var auctionID = symbol + "." + tokenID;
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
 
             Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, Price = price });
         }
 
-        public void BuyToken(Address from, BigInteger auctionID)
+        public void BuyToken(Address from, string symbol, BigInteger tokenID)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(_auctionMap.ContainsKey<BigInteger>(auctionID), "invalid auction");
-            var auction = _auctionMap.Get<BigInteger, MarketAuction>(auctionID);
+            var auctionID = symbol + "." + tokenID;
+
+            Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
+            var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
 
             var token = Runtime.Nexus.FindTokenBySymbol(auction.Symbol);
             Runtime.Expect(token != null, "invalid base token");
@@ -104,7 +94,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(token.Transfer(ownerships, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
 
-            _auctionMap.Remove<BigInteger>(auctionID);
+            _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);
 
             if (auction.Creator == from)
@@ -117,9 +107,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
 
-        public BigInteger[] GetAuctionIDs()
+        public MarketAuction[] GetAuctions()
         {
-            return _auctionIDs.All<BigInteger>();
+            var ids = _auctionIDs.All<string>();
+            var auctions = new MarketAuction[ids.Length];
+            for (int i=0; i<auctions.Length; i++)
+            {
+                auctions[i] = _auctionMap.Get<string, MarketAuction>(ids[i]);
+            }
+            return auctions;
         }
 
         public MarketAuction GetAuctionInfo(BigInteger auctionID)
