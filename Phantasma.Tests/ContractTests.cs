@@ -69,22 +69,22 @@ namespace Phantasma.Tests
             );
             simulator.EndBlock();
 
-            var auctionIDs = (BigInteger[])simulator.Nexus.RootChain.InvokeContract("market", "GetAuctionIDs");
-            Assert.IsTrue(auctionIDs.Length == 1, "auction ids missing");
+            var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract("market", "GetAuctions");
+            Assert.IsTrue(auctions.Length == 1, "auction ids missing");
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(owner, () =>
             ScriptUtils.
                   BeginScript().
                   AllowGas(owner.Address, 1, 9999).
-                  CallContract("market", "BuyToken", owner.Address, auctionIDs[0]).
+                  CallContract("market", "BuyToken", owner.Address, token.Symbol, auctions[0].TokenID).
                   SpendGas(owner.Address).
                   EndScript()
             );
             simulator.EndBlock();
 
-            auctionIDs = (BigInteger[])simulator.Nexus.RootChain.InvokeContract("market", "GetAuctionIDs");
-            Assert.IsTrue(auctionIDs.Length == 0, "auction ids should be empty at this point");
+            auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract("market", "GetAuctions");
+            Assert.IsTrue(auctions.Length == 0, "auction ids should be empty at this point");
 
             // verify that the nft was really moved
             ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
