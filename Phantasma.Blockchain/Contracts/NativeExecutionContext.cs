@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
 using System;
@@ -100,6 +101,29 @@ namespace Phantasma.Blockchain.Contracts
 
                 var temp = arg.Data;
 
+                if (temp is string)
+                {
+                    switch (method.parameters[i])
+                    {
+                        // TODO this currently is casting any type of object, not just addresses!
+                        // when a string is passed instead of an address we do an automatic lookup and replace
+                        case VMType.Object:
+                            var name = (string)temp;
+                            var runtime = (RuntimeVM)frame.VM;
+                            var address = runtime.Nexus.LookUpName(name);
+                            temp = address;
+                            break;
+
+                        case VMType.Number:
+                            var value = (string)temp;
+                            if (BigInteger.TryParse(value, out BigInteger number))
+                            {
+                                temp = number;
+                            }
+                            break;
+                    }
+                }
+                
                 // when a string is passed instead of an address we do an automatic lookup and replace
                 if (method.parameters[i] == VMType.Object && temp is string)
                 {
