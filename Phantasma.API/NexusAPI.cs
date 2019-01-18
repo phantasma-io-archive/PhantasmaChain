@@ -272,10 +272,10 @@ namespace Phantasma.API
         {
             return new AuctionResult
             {
-                Symbol = auction.Symbol,
-                TokenID = auction.TokenID.ToString(),
+                symbol = auction.Symbol,
+                tokenId = auction.TokenID.ToString(),
                 creatorAddress = auction.Creator.Text,
-                Price = auction.Price.ToString(),
+                price = auction.Price.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value
             };
@@ -477,7 +477,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(BlockResult), "Returns information about a block (encoded) by hash.")]
+        [APIInfo(typeof(SingleResult), "Returns a serialized string, containing information about a block by hash.")]
         [APIFailCase("block hash is invalid", "asdfsa")]
         public IAPIResult GetRawBlockByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
@@ -518,7 +518,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "block not found" };
         }
 
-        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.")]
+        [APIInfo(typeof(SingleResult), "Returns a serialized string, containing information about a block by height and chain.")]
         [APIFailCase("block hash is invalid", "asdfsa")]
         [APIFailCase("chain is invalid", "453dsa")]
         public IAPIResult GetRawBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
@@ -857,19 +857,6 @@ namespace Phantasma.API
             }
 
             return new ArrayResult() { values = appList.ToArray() };
-        }
-
-        [APIInfo(typeof(RootChainResult), "Returns information about the root chain.")]
-        public IAPIResult GetRootChain()
-        {
-            var result = new RootChainResult
-            {
-                name = Nexus.RootChain.Name,
-                address = Nexus.RootChain.Address.ToString(),
-                height = Nexus.RootChain.BlockHeight
-            };
-
-            return result;
         }
 
         [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.")]

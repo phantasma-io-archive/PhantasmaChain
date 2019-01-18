@@ -127,13 +127,6 @@ namespace Phantasma.API
         public string reward;
     }
 
-    public struct RootChainResult : IAPIResult
-    {
-        public string name;
-        public string address;
-        public uint height;
-    }
-
     public struct TokenResult : IAPIResult
     {
         [APIDescription("Ticker symbol for the token")]
@@ -206,8 +199,8 @@ namespace Phantasma.API
         public uint startDate;
         public uint endDate;
 
-        public string Symbol;
-        public string TokenID;
-        public string Price;
+        public string symbol;
+        public string tokenId;
+        public string price;
     }
 }
