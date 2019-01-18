@@ -45,9 +45,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void SellToken(Address from, string symbol, BigInteger tokenID, BigInteger price)
+        public void SellToken(Address from, string symbol, BigInteger tokenID, BigInteger price, Timestamp endDate)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(endDate > Timestamp.Now, "invalid end date");
+
+            var maxAllowedDate = Timestamp.Now + TimeSpan.FromDays(30);
+            Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant");
 
             var token = Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid base token");
@@ -59,7 +63,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(token.Transfer(ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
-            var auction = new MarketAuction(from, Timestamp.Now, Timestamp.Now + TimeSpan.FromDays(5), symbol, tokenID, price);
+            var auction = new MarketAuction(from, Timestamp.Now, endDate, symbol, tokenID, price);
             var auctionID = symbol + "." + tokenID;
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
