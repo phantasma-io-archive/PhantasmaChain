@@ -95,10 +95,19 @@ namespace Phantasma.API
     public struct AccountTransactionsResult : IAPIResult
     {
         public string address;
-        public uint amount;
 
         [APIDescription("List of transactions")]
         public TransactionResult[] txs;
+    }
+
+    public struct PaginatedResult <T> : IAPIResult where T : IAPIResult
+    {
+        public uint page;
+        public uint pageSize;
+        public uint total;
+        public uint totalPages;
+
+        public T results;
     }
 
     public struct BlockResult : IAPIResult
@@ -191,7 +200,7 @@ namespace Phantasma.API
         public string error;
     }
 
-    public struct AuctionResult: IAPIResult
+    public struct AuctionResult : IAPIResult
     {
         [APIDescription("Address of auction creator")]
         public string creatorAddress;

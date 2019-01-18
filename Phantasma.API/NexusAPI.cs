@@ -311,7 +311,7 @@ namespace Phantasma.API
             result.events = eventList.ToArray();
 
             var txResult = block.GetResultForTransaction(tx.Hash);
-            result.result = txResult != null? Base16.Encode(txResult): "";
+            result.result = txResult != null ? Base16.Encode(txResult) : "";
 
             return result;
         }
@@ -581,33 +581,78 @@ namespace Phantasma.API
             return new ErrorResult { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
+        //[APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.")]
+        //[APIFailCase("address is invalid", "543533")]
+        //[APIFailCase("amount to return is invalid", "-1")]
+        //public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] int amountTx = 20)
+        //{
+        //    if (amountTx < 1)
+        //    {
+        //        return new ErrorResult { error = "invalid amount" };
+        //    }
+
+        //    var result = new AccountTransactionsResult();
+        //    if (Address.IsValidAddress(addressText))
+        //    {
+        //        var address = Address.FromText(addressText);
+        //        var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
+
+        //        result.address = address.Text;
+
+        //        var txs = plugin?.GetAddressTransactions(address).
+        //            Select(hash => Nexus.FindTransactionByHash(hash)).
+        //            OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
+        //            Take(amountTx);
+
+        //        result.amount = (uint)txs.Count();
+        //        result.txs = txs.Select(FillTransaction).ToArray();
+
+        //        return result;
+        //    }
+        //    else
+        //    {
+        //        return new ErrorResult() { error = "invalid address" };
+        //    }
+        //}
+
+        [APIInfo(typeof(PaginatedResult<AccountTransactionsResult>), "Returns last X transactions of given address.")]
         [APIFailCase("address is invalid", "543533")]
         [APIFailCase("amount to return is invalid", "-1")]
-        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] int amountTx = 20)
+        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] uint page, uint pageSize)
         {
-            if (amountTx < 1)
+            if (page < 1)
             {
                 return new ErrorResult { error = "invalid amount" };
             }
 
-            var result = new AccountTransactionsResult();
+            var paginatedResult = new PaginatedResult<AccountTransactionsResult>();
             if (Address.IsValidAddress(addressText))
             {
                 var address = Address.FromText(addressText);
                 var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
 
-                result.address = address.Text;
+                paginatedResult.results.address = address.Text;
 
-                var txs = plugin?.GetAddressTransactions(address).
-                    Select(hash => Nexus.FindTransactionByHash(hash)).
-                    OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value).
-                    Take(amountTx);
+                // pagination
+                uint currentPage = page;
+                uint numberRecords = (uint)plugin.GetAddressTransactions(address).Count();
+                uint totalPages = (uint)Math.Ceiling(numberRecords / (double)pageSize);
+                //
 
-                result.amount = (uint)txs.Count();
-                result.txs = txs.Select(FillTransaction).ToArray();
+                var txs = plugin.GetAddressTransactions(address)
+                    .Select(hash => Nexus.FindTransactionByHash(hash))
+                    .OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value)
+                    .Skip((int)((currentPage - 1) * pageSize))
+                    .Take((int)pageSize);
 
-                return result;
+                paginatedResult.pageSize = pageSize;
+                paginatedResult.totalPages = totalPages;
+                paginatedResult.total = numberRecords;
+                paginatedResult.page = page;
+
+                paginatedResult.results.txs = txs.Select(FillTransaction).ToArray();
+
+                return paginatedResult;
             }
             else
             {
