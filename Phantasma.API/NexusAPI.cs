@@ -520,7 +520,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "block not found" };
         }
 
-        [APIInfo(typeof(string), "Returns a serialized string, containing information about a block by height and chain.")]
+        [APIInfo(typeof(string), "Returns a serialized string, in hex format, containing information about a block by height and chain.")]
         [APIFailCase("block hash is invalid", "asdfsa")]
         [APIFailCase("chain is invalid", "453dsa")]
         public IAPIResult GetRawBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
