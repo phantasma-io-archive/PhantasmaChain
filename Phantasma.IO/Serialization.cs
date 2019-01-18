@@ -313,7 +313,12 @@ namespace Phantasma.IO
 
         public static bool IsStructOrClass(this Type type)
         {
-            return (type.IsValueType && !type.IsEnum) || type.IsClass;
+            if (type == typeof(string))
+            {
+                return false;
+            }
+
+            return (!type.IsPrimitive && type.IsValueType && !type.IsEnum) || type.IsClass || type.IsInterface;
         }
 
         // only works in structs and classes

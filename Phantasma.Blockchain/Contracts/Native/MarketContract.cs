@@ -9,6 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public struct MarketEventData
     {
+        public string Symbol;
         public BigInteger ID;
         public BigInteger Price;
     }
@@ -63,7 +64,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
 
-            Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, Price = price });
+            Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, Symbol = symbol, Price = price });
         }
 
         public void BuyToken(Address from, string symbol, BigInteger tokenID)
@@ -99,11 +100,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (auction.Creator == from)
             {
-                Runtime.Notify(EventKind.AuctionCancelled, from, new MarketEventData() { ID = auction.TokenID, Price = 0 });
+                Runtime.Notify(EventKind.AuctionCancelled, from, new MarketEventData() { ID = auction.TokenID, Symbol = auction.Symbol, Price = 0 });
             }
             else
             {
-                Runtime.Notify(EventKind.AuctionFilled, from, new MarketEventData() { ID = auction.TokenID, Price = auction.Price });
+                Runtime.Notify(EventKind.AuctionFilled, from, new MarketEventData() { ID = auction.TokenID, Symbol = auction.Symbol, Price = auction.Price });
             }
         }
 

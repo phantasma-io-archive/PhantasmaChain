@@ -100,14 +100,14 @@ namespace Phantasma.API
         public TransactionResult[] txs;
     }
 
-    public struct PaginatedResult <T> : IAPIResult where T : IAPIResult
+    public struct PaginatedResult : IAPIResult
     {
         public uint page;
         public uint pageSize;
         public uint total;
         public uint totalPages;
 
-        public T results;
+        public IAPIResult results;
     }
 
     public struct BlockResult : IAPIResult

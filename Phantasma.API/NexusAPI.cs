@@ -615,23 +615,25 @@ namespace Phantasma.API
         //    }
         //}
 
-        [APIInfo(typeof(PaginatedResult<AccountTransactionsResult>), "Returns last X transactions of given address.")]
+        [APIInfo(typeof(PaginatedResult), "Returns last X transactions of given address.")]
         [APIFailCase("address is invalid", "543533")]
         [APIFailCase("amount to return is invalid", "-1")]
-        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Amount of transactions to return", "5")] uint page, uint pageSize)
+        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Index of page to return", "5")] uint page, [APIParameter("Number of items to return per page", "5")] uint pageSize)
         {
             if (page < 1)
             {
-                return new ErrorResult { error = "invalid amount" };
+                return new ErrorResult { error = "invalid page" };
             }
 
-            var paginatedResult = new PaginatedResult<AccountTransactionsResult>();
+            var paginatedResult = new PaginatedResult();
             if (Address.IsValidAddress(addressText))
             {
                 var address = Address.FromText(addressText);
                 var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
 
-                paginatedResult.results.address = address.Text;
+                var results = new AccountTransactionsResult();
+
+                results.address = address.Text;
 
                 // pagination
                 uint currentPage = page;
@@ -645,12 +647,14 @@ namespace Phantasma.API
                     .Skip((int)((currentPage - 1) * pageSize))
                     .Take((int)pageSize);
 
+                results.txs = txs.Select(FillTransaction).ToArray();
+
                 paginatedResult.pageSize = pageSize;
                 paginatedResult.totalPages = totalPages;
                 paginatedResult.total = numberRecords;
                 paginatedResult.page = page;
 
-                paginatedResult.results.txs = txs.Select(FillTransaction).ToArray();
+                paginatedResult.results = results;
 
                 return paginatedResult;
             }

@@ -1,4 +1,5 @@
 ﻿using LunarLabs.Parser;
+using Phantasma.IO;
 using System;
 
 namespace Phantasma.API
@@ -6,6 +7,11 @@ namespace Phantasma.API
     public static class APIUtils
     {
         public static DataNode FromAPIResult(IAPIResult input)
+        {
+            return FromObject(input, null);
+        }
+
+        private static DataNode FromObject(object input, string name)
         {
             DataNode result;
 
@@ -16,7 +22,7 @@ namespace Phantasma.API
             else
             if (input is ArrayResult arrayResult)
             {
-                result = DataNode.CreateArray();
+                result = DataNode.CreateArray(name);
                 foreach (var item in arrayResult.values)
                 {
                     DataNode itemNode;
@@ -36,7 +42,7 @@ namespace Phantasma.API
             }
             else
             {
-                result = DataNode.CreateObject();
+                result = DataNode.CreateObject(name);
 
                 var type = input.GetType();
                 var fields = type.GetFields();
@@ -66,6 +72,16 @@ namespace Phantasma.API
                             }
 
                             result.AddNode(entry);
+                        }
+                    }
+                    else
+                    if (field.FieldType.IsStructOrClass())
+                    {
+                        var val = field.GetValue(input);
+                        if (val != null)
+                        {
+                            var node = FromObject(val, field.Name);
+                            result.AddNode(node);
                         }
                     }
                     else
