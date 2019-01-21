@@ -68,6 +68,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
 
+            var nft = this.Runtime.Nexus.GetNFT(token, tokenID);
+            nft.CurrentChain = Runtime.Chain.Address;
+            nft.CurrentOwner = Runtime.Chain.Address;
+
             Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, Symbol = symbol, Price = price });
         }
 
@@ -101,6 +105,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);
+
+            var nft = this.Runtime.Nexus.GetNFT(token, tokenID);
+            nft.CurrentChain = Runtime.Chain.Address;
+            nft.CurrentOwner = from;
 
             if (auction.Creator == from)
             {

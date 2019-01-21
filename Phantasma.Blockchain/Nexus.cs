@@ -373,7 +373,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region NFT
-        internal BigInteger CreateNFT(Token token, byte[] rom, byte[] ram)
+        internal BigInteger CreateNFT(Token token, Address chainAddress, Address ownerAddress, byte[] rom, byte[] ram)
         {
             lock (_tokenContents)
             {
@@ -392,6 +392,8 @@ namespace Phantasma.Blockchain
                 var tokenID = token.GenerateID();
 
                 var content = new TokenContent(rom, ram);
+                content.CurrentChain = chainAddress;
+                content.CurrentOwner = ownerAddress;
                 contents[tokenID] = content;
 
                 return tokenID;

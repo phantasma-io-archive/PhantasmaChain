@@ -141,7 +141,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
             Runtime.Expect(IsWitness(token.Owner), "invalid witness");
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(token, ram, rom);
+            var tokenID = this.Runtime.Nexus.CreateNFT(token, Runtime.Chain.Address, to, ram, rom);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             if (token.IsCapped)
@@ -194,6 +194,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(ownerships.Take(source, tokenID), "take token failed");
             Runtime.Expect(ownerships.Give(destination, tokenID), "give token failed");
+
+            var nft = this.Runtime.Nexus.GetNFT(token, tokenID);
+            nft.CurrentChain = Runtime.Chain.Address;
+            nft.CurrentOwner = destination;
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
@@ -264,25 +268,25 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
 
+            if (token.IsCapped)
+            {
+                var sourceSupplies = sourceChain.GetTokenSupplies(token);
+                var targetSupplies = this.Runtime.Chain.GetTokenSupplies(token);
+
+                if (IsParentChain(sourceChain.Address))
+                {
+                    Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
+                }
+                else // child chain
+                {
+                    Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
+                }
+            }
+
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
-                if (token.IsCapped)
-                {
-                    var sourceSupplies = sourceChain.GetTokenSupplies(token);
-                    var targetSupplies = this.Runtime.Chain.GetTokenSupplies(token);
-
-                    if (IsParentChain(sourceChain.Address))
-                    {
-                        Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
-                        Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
-                    }
-                    else // child chain
-                    {
-                        Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
-                        Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
-                    }
-                }
-
                 var balances = this.Runtime.Chain.GetTokenBalances(token);
                 Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
             }
@@ -290,6 +294,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
                 Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
+
+                var nft = this.Runtime.Nexus.GetNFT(token, value);
+                nft.CurrentChain = Runtime.Chain.Address;
+                nft.CurrentOwner = targetAddress;
             }
 
             Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = sourceChain.Address });

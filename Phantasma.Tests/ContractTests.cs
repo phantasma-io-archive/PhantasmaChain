@@ -79,7 +79,7 @@ namespace Phantasma.Tests
             ScriptUtils.
                   BeginScript().
                   AllowGas(owner.Address, 1, 9999).
-                  CallContract("market", "BuyToken", owner.Address, token.Symbol, auctions[0].TokenID).
+                  CallContract("market", "BuyToken", owner.Address, token.Symbol, auctions[previousAuctionCount].TokenID).
                   SpendGas(owner.Address).
                   EndScript()
             );

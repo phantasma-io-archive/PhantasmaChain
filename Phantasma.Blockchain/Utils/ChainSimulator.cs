@@ -3,6 +3,7 @@ using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
 using Phantasma.Core.Log;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
@@ -98,7 +99,11 @@ namespace Phantasma.Blockchain.Utils
 
             var nacho = Nexus.FindTokenBySymbol("NACHO"); 
             RandomSpreadNFT(nacho, 10);
+            GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
+            EndBlock();
 
+            var nftSales = new List<KeyValuePair<KeyPair, BigInteger>>();
+            BeginBlock();
             for (int i=3; i<7; i++)
             {
                 BigInteger ID = i;
@@ -109,19 +114,36 @@ namespace Phantasma.Blockchain.Utils
                 }
 
                 var chain = Nexus.FindChainByAddress(info.CurrentChain);
-                var owner = chain.GetTokenOwner(nacho, ID);
+                if (chain == null)
+                {
+                    continue;
+                }
+
+                var nftOwner = chain.GetTokenOwner(nacho, ID);
+
+                if (nftOwner == Address.Null)
+                {
+                    continue;
+                }
                 
                 foreach (var key in _keys)
                 {
-                    if (key.Address == owner)
+                    if (key.Address == nftOwner)
                     {
-                        GenerateNftSale(key, market, nacho, ID, 100 + 5 * _rnd.Next() % 50);
+                        nftSales.Add(new KeyValuePair<KeyPair, BigInteger>(key, ID));
+                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.NativeToken, TokenUtils.ToBigInteger(10, Nexus.NativeTokenDecimals));
                     }
                 }
             }
 
-            GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
+            EndBlock();
 
+            BeginBlock();
+            foreach (var sale in nftSales)
+            {
+                // TODO this later should be the market chain instead of root
+                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, 100 + 5 * _rnd.Next() % 50);
+            }
             EndBlock();
         }
 
@@ -444,7 +466,8 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, tokenId, price).SpendGas(source.Address).EndScript();
+            var endDate = new Timestamp(Timestamp.Now + TimeSpan.FromDays(5));
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }        
