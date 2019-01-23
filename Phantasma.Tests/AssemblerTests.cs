@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -1733,6 +1733,83 @@ namespace Phantasma.Tests
         }
         #endregion
 
+        #region ContextOps
+
+        [TestMethod]
+        public void This()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 2},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    //$"switch \\\"Test\\\"",
+                    $"ctx r1, \\\"token\\\"",
+                    @"ret",
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        #endregion
+
+        #region Array
+
+        [TestMethod]
+        public void PutGet()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 1},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    //$"switch \\\"Test\\\"",
+                    $"load r1 {r1}",
+                    $"load r2 \\\"key\\\"",
+                    $"put r1 r3 r2",
+                    $"get r3 r4 r2",
+                    $"push r4",
+                    @"ret",
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        #endregion
 
         #region Data
         [TestMethod]
