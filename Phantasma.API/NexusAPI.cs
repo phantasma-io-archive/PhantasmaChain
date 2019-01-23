@@ -786,6 +786,19 @@ namespace Phantasma.API
 
             if (tx == null)
             {
+                if (Mempool != null)
+                {
+                    var status = Mempool.GetTransactionStatus(hash, out string reason);
+                    switch (status)
+                    {
+                        case MempoolTransactionStatus.Pending:
+                            return new ErrorResult { error = "pending" };
+
+                        case MempoolTransactionStatus.Rejected:
+                            return new ErrorResult { error = "rejected: "+reason };
+                    }
+                }
+
                 return new ErrorResult { error = "Transaction not found" };
             }
 

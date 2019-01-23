@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -22,6 +23,13 @@ namespace Phantasma.Blockchain
         }
     }
 
+    public enum MempoolTransactionStatus
+    {
+        Unknown,
+        Pending,
+        Rejected,
+    }
+
     public delegate void MempoolEventHandler(Transaction tx);
 
     public class Mempool: Runnable
@@ -31,6 +39,9 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
+
+        // TODO this dictionary should not accumulate stuff forever, we need to have it cleaned once in a while
+        private Dictionary<Hash, string> _rejections = new Dictionary<Hash, string>();
 
         private KeyPair _validatorKeys;
 
@@ -167,7 +178,9 @@ namespace Phantasma.Blockchain
             {
                 var entry = list[0];
                 list.RemoveAt(0);
-                transactions.Add(entry.transaction);
+                var tx = entry.transaction;
+                transactions.Add(tx);
+                _hashMap.Remove(tx.Hash);
             }
 
             return transactions;
@@ -181,7 +194,7 @@ namespace Phantasma.Blockchain
                 Thread.Sleep(1000);
                 return true;
             }
-
+            
             lock (_entries)
             {
                 foreach (var chainName in _entries.Keys)
@@ -204,39 +217,63 @@ namespace Phantasma.Blockchain
                     var transactions = GetNextTransactions(chain);
                     if (transactions != null)
                     {
-                        var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
-
-                        var isFirstBlock = chain.LastBlock == null;
-
-                        while (hashes.Count > 0)
-                        {
-                            var block = new Block(isFirstBlock ? 1 : (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
-
-                            try
-                            {
-                                chain.AddBlock(block, transactions);
-                            }
-                            catch (InvalidTransactionException e)
-                            {
-                                var tx = transactions.First(x => x.Hash == e.Hash);
-                                Interlocked.Decrement(ref _size);
-                                hashes.Remove(e.Hash);
-                                OnTransactionFailed?.Invoke(tx);
-                                continue;
-                            }
-
-                            foreach (var tx in transactions)
-                            {
-                                Interlocked.Decrement(ref _size);
-                                OnTransactionRemoved?.Invoke(tx);
-                            }
-                            break;
-                        }
+                        Task.Run(() => { MintBlock(transactions, chain); });
                     }
                 }
 
                 return true;
             }
+        }
+
+        private void MintBlock(List<Transaction> transactions, Chain chain)
+        {
+            var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
+
+            var isFirstBlock = chain.LastBlock == null;
+
+            while (hashes.Count > 0)
+            {
+                var block = new Block(isFirstBlock ? 1 : (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash);
+
+                try
+                {
+                    chain.AddBlock(block, transactions);
+                }
+                catch (InvalidTransactionException e)
+                {
+                    var tx = transactions.First(x => x.Hash == e.Hash);
+                    Interlocked.Decrement(ref _size);
+                    hashes.Remove(e.Hash);
+                    _rejections[e.Hash] = e.Message;
+                    OnTransactionFailed?.Invoke(tx);
+                    continue;
+                }
+
+                foreach (var tx in transactions)
+                {
+                    Interlocked.Decrement(ref _size);
+                    OnTransactionRemoved?.Invoke(tx);
+                }
+                break;
+            }
+        }
+
+        public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason)
+        {
+            if (_rejections.ContainsKey(hash))
+            {
+                reason = _rejections[hash];
+                return MempoolTransactionStatus.Rejected;
+            }
+
+            if (_hashMap.ContainsKey(hash))
+            {
+                reason = null;
+                return MempoolTransactionStatus.Pending;
+            }
+
+            reason = null;
+            return MempoolTransactionStatus.Unknown;
         }
     }
 }
