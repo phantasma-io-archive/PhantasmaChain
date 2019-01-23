@@ -992,15 +992,22 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(AuctionResult[]), "Returns the auctions available in the market.")]
-        public IAPIResult GetAuctions()
+        public IAPIResult GetAuctions(string symbol = null)
         {
-            var marketChain = Nexus.FindChainByName("market");
-            if (marketChain == null)
+            //var chain = Nexus.FindChainByName("market");
+            var chain = Nexus.RootChain;
+            if (chain == null)
             {
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var entries = (MarketAuction[])marketChain.InvokeContract("market", "GetAuctions");
+            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions");
+
+            if (!string.IsNullOrEmpty(symbol))
+            {
+                entries = entries.Where(x => x.Symbol == symbol);
+            }
+
             return new ArrayResult() { values = entries.Select(x => (object)FillAuction(x)).ToArray() }; // TODO make this less ugly
         }
     }

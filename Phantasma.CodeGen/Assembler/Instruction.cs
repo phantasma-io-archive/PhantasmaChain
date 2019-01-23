@@ -245,7 +245,7 @@ namespace Phantasma.CodeGen.Assembler
             }
             else
             {
-                sb.EmitJump(Opcode.JMP, Arguments[0]);
+                sb.EmitJump(Opcode.JMP, Arguments[0].AsLabel());
             }
         }
 

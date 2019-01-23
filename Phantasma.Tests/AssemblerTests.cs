@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
@@ -16,50 +17,416 @@ using Phantasma.Blockchain.Storage;
 using Phantasma.Core;
 using Phantasma.CodeGen;
 using Phantasma.CodeGen.Assembler;
+using Phantasma.Numerics;
 
 namespace Phantasma.Tests
 {
     [TestClass]
     public class AssemblerTests
     {
+
+
+        #region RegisterOps
+
         [TestMethod]
         public void Move()
         {
+            string[] scriptString;
+            TestVM vm;
 
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 1},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                object r1 = argsLine[0];
+                object target = argsLine[0];    //index 0 is not a typo, we want to copy the reference, not the contents
+
+                scriptString = new string[]
+                {
+                    //put a DebugClass with x = {r1} on register 1
+                    $@"load r1, {r1}",
+                    $"push r1",
+                    $"extcall \\\"PushDebugClass\\\"", 
+                    $"pop r1",
+
+                    //move it to r2, change its value on the stack and see if it changes on both registers
+                    @"move r1, r2",
+                    @"push r2",
+                    $"push r1",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 2);
+
+                var r1obj = vm.Stack.Pop().AsInterop<TestVM.DebugClass>();
+                var r2obj = vm.Stack.Pop().AsInterop<TestVM.DebugClass>();
+
+                Assert.IsTrue(ReferenceEquals(r1obj, r2obj));
+            }
         }
 
         [TestMethod]
         public void Copy()
         {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {$"\\\"structKey\\\"", "put r1, r2, r1"},
+                new List<string>() {"1", "extcall \\\"PushDebugClass\\\""},
+                new List<string>() {"1", "extcall \\\"PushDebugEnum\\\""},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                object value = argsLine[0];
+                object customFunction = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    //put a DebugClass with x = {r1} on register 1
+                    $@"load r1, {value}",
+                    $"push r1",
+                    $"{customFunction}",
+                    $"pop r1",
+
+                    //move it to r2, change its value on the stack and see if it changes on both registers
+                    @"copy r1, r2",
+                    @"push r2",
+                    $"push r1",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 2);
+
+                var r1obj = vm.Stack.Pop().AsInterop<object>();
+                var r2obj = vm.Stack.Pop().AsInterop<object>();
+
+                Assert.IsFalse(ReferenceEquals(r1obj, r2obj));
+            }
 
         }
 
         [TestMethod]
         public void Load()
         {
-            var scriptString = new string[]
+            //TODO: test all VMTypes
+
+            string[] scriptString;
+            TestVM vm;
+
+            scriptString = new string[]
             {
-                $"load r1, \\\"\\\""
+                $"load r1, \\\"hello\\\"",
+                $"load r2, 123",
+                $"load r3, true",
+                //load struct
+                //load bytes
+                //load enum
+                //load object
+
+                $"push r3",
+                $"push r2",
+                $"push r1",
+                $"ret"
             };
+
+            vm = ExecuteScript(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 3);
+
+            var str = vm.Stack.Pop().AsString();
+            Assert.IsTrue(str.CompareTo("hello") == 0);
+
+            var num = vm.Stack.Pop().AsNumber();
+            Assert.IsTrue(num == new BigInteger(123));
+
+            var bo = vm.Stack.Pop().AsBool();
+            Assert.IsTrue(bo);
         }
 
         [TestMethod]
         public void Push()
         {
-
+            Load(); //it is effectively the same test
         }
 
         [TestMethod]
         public void Pop()
         {
+            //TODO: test all VMTypes
 
+            string[] scriptString;
+            TestVM vm;
+
+            scriptString = new string[]
+            {
+                $"load r1, \\\"hello\\\"",
+                $"load r2, 123",
+                $"load r3, true",
+                //load struct
+                //load bytes
+                //load enum
+                //load object
+
+                $"push r3",
+                $"push r2",
+                $"push r1",
+
+                $"pop r11",
+                $"pop r12",
+                $"pop r13",
+
+                $"push r13",
+                $"push r12",
+                $"push r11",
+                $"ret"
+            };
+
+            vm = ExecuteScript(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 3);
+
+            var str = vm.Stack.Pop().AsString();
+            Assert.IsTrue(str.CompareTo("hello") == 0);
+
+            var num = vm.Stack.Pop().AsNumber();
+            Assert.IsTrue(num == new BigInteger(123));
+
+            var bo = vm.Stack.Pop().AsBool();
+            Assert.IsTrue(bo);
         }
 
         [TestMethod]
         public void Swap()
         {
+            string[] scriptString;
+            TestVM vm;
 
+            scriptString = new string[]
+            {
+                $"load r1, \\\"hello\\\"",
+                $"load r2, 123",
+                $"swap r1, r2",
+                $"push r1",
+                $"push r2",
+                $"ret"
+            };
+
+            vm = ExecuteScript(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 2);
+
+            var str = vm.Stack.Pop().AsString();
+            Assert.IsTrue(str.CompareTo("hello") == 0);
+
+            var num = vm.Stack.Pop().AsNumber();
+            Assert.IsTrue(num == new BigInteger(123));
         }
+
+        #endregion
+
+        #region FlowOps
+
+        [TestMethod]
+        public void Call()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 2},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $@"load r1, {r1}",
+                    @"call @label",
+                    @"push r1",
+                    @"ret",
+                    $"@label: inc r1",
+                    $"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        [TestMethod]
+        public void ExtCall()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<string>>()
+            {
+                new List<string>() {"abc", "ABC"},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, \\\"{r1}\\\"",
+                    $"push r1",
+                    $"extcall \\\"Upper\\\"",
+                    @"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsString();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        [TestMethod]
+        public void Jmp()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 1},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, 1",
+                    $"jmp @label",
+                    $"inc r1",
+                    $"@label: push r1",
+                    $"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        [TestMethod]
+        public void JmpConditional()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 1},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, true",
+                    $"load r2, false",
+                    $"load r3, {r1}",
+                    $"load r4, {r1}",
+                    $"jmpif r1, @label",
+                    $"inc r3",
+                    $"@label: jmpnot r2, @label2",
+                    $"inc r4",
+                    $"@label2: push r3",
+                    $"push r4",
+                    $"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 2);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target, "Opcode JmpNot isn't working correctly");
+
+                result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target, "Opcode JmpIf isn't working correctly");
+            }
+        }
+
+        [TestMethod]
+        public void Throw()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<bool>>()
+            {
+                new List<bool>() {true, true},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    $"load r1, {r1}",
+                    $"push r1",
+                    $"throw",
+                    $"not r1, r1",
+                    $"pop r2",
+                    $"push r1",
+                    $"ret"
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsBool();
+                Assert.IsTrue(result == target, "Opcode JmpNot isn't working correctly");
+
+            }
+        }
+
+
+        #endregion
 
         #region LogicalOps
         [TestMethod]
@@ -105,7 +472,7 @@ namespace Phantasma.Tests
         public void And()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -165,7 +532,7 @@ namespace Phantasma.Tests
         public void Or()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -225,7 +592,7 @@ namespace Phantasma.Tests
         public void Xor()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -285,7 +652,7 @@ namespace Phantasma.Tests
         public void Equals()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
             string result;
 
             var args = new List<List<string>>()
@@ -330,7 +697,7 @@ namespace Phantasma.Tests
         public void LessThan()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -389,7 +756,7 @@ namespace Phantasma.Tests
         public void GreaterThan()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -448,7 +815,7 @@ namespace Phantasma.Tests
         public void LesserThanOrEquals()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -507,7 +874,7 @@ namespace Phantasma.Tests
         public void GreaterThanOrEquals()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -568,7 +935,7 @@ namespace Phantasma.Tests
         public void Increment()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -622,7 +989,7 @@ namespace Phantasma.Tests
         public void Decrement()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -676,7 +1043,7 @@ namespace Phantasma.Tests
         public void Sign()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -732,7 +1099,7 @@ namespace Phantasma.Tests
         public void Negate()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -788,7 +1155,7 @@ namespace Phantasma.Tests
         public void Abs()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -844,7 +1211,7 @@ namespace Phantasma.Tests
         public void Add()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -902,7 +1269,7 @@ namespace Phantasma.Tests
         public void Sub()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -960,7 +1327,7 @@ namespace Phantasma.Tests
         public void Mul()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1018,7 +1385,7 @@ namespace Phantasma.Tests
         public void Div()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1076,7 +1443,7 @@ namespace Phantasma.Tests
         public void Mod()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1134,7 +1501,7 @@ namespace Phantasma.Tests
         public void ShiftLeft()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1192,7 +1559,7 @@ namespace Phantasma.Tests
         public void ShiftRight()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1251,7 +1618,7 @@ namespace Phantasma.Tests
         public void Min()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1310,7 +1677,7 @@ namespace Phantasma.Tests
         public void Max()
         {
             string[] scriptString;
-            RuntimeVM vm;
+            TestVM vm;
 
             var args = new List<List<string>>()
             {
@@ -1366,6 +1733,83 @@ namespace Phantasma.Tests
         }
         #endregion
 
+        #region ContextOps
+
+        [TestMethod]
+        public void This()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 2},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    //$"switch \\\"Test\\\"",
+                    $"ctx r1, \\\"token\\\"",
+                    @"ret",
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        #endregion
+
+        #region Array
+
+        [TestMethod]
+        public void PutGet()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 1},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    //$"switch \\\"Test\\\"",
+                    $"load r1 {r1}",
+                    $"load r2 \\\"key\\\"",
+                    $"put r1 r3 r2",
+                    $"get r3 r4 r2",
+                    $"push r4",
+                    @"ret",
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == target);
+            }
+        }
+
+        #endregion
 
         #region Data
         [TestMethod]
@@ -1633,7 +2077,7 @@ namespace Phantasma.Tests
         #endregion
 
         #region AuxFunctions
-        private RuntimeVM ExecuteScript(string[] scriptString)
+        private TestVM ExecuteScript(string[] scriptString)
         {
             var script = BuildScript(scriptString);
 
@@ -1643,7 +2087,7 @@ namespace Phantasma.Tests
 
             var changeSet = new StorageChangeSetContext(new MemoryStorageContext());
 
-            var vm = new RuntimeVM(tx.Script, nexus.RootChain, null, tx, changeSet, true);
+            var vm = new TestVM(tx.Script);
             vm.ThrowOnFault = true;
             vm.Execute();
 
