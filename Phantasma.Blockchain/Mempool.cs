@@ -186,6 +186,8 @@ namespace Phantasma.Blockchain
             return transactions;
         }
 
+        private HashSet<Chain> _pendingBlocks = new HashSet<Chain>();
+
         protected override bool Run()
         {
             // we must be a staked validator to do something...
@@ -200,6 +202,11 @@ namespace Phantasma.Blockchain
                 foreach (var chainName in _entries.Keys)
                 {
                     var chain = Nexus.FindChainByName(chainName);
+
+                    if (_pendingBlocks.Contains(chain))
+                    {
+                        continue;
+                    }
 
                     // we must be the validator of the current epoch to do something with this chain...
                     if (!chain.IsCurrentValidator(this.ValidatorAddress))
@@ -217,6 +224,10 @@ namespace Phantasma.Blockchain
                     var transactions = GetNextTransactions(chain);
                     if (transactions != null)
                     {
+                        lock (_pendingBlocks)
+                        {
+                            _pendingBlocks.Add(chain);
+                        }
                         Task.Run(() => { MintBlock(transactions, chain); });
                     }
                 }
@@ -244,7 +255,12 @@ namespace Phantasma.Blockchain
                     var tx = transactions.First(x => x.Hash == e.Hash);
                     Interlocked.Decrement(ref _size);
                     hashes.Remove(e.Hash);
-                    _rejections[e.Hash] = e.Message;
+
+                    lock (_rejections)
+                    {
+                        _rejections[e.Hash] = e.Message;
+                    }
+
                     OnTransactionFailed?.Invoke(tx);
                     continue;
                 }
@@ -256,14 +272,22 @@ namespace Phantasma.Blockchain
                 }
                 break;
             }
+
+            lock (_pendingBlocks)
+            {
+                _pendingBlocks.Remove(chain);
+            }
         }
 
         public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason)
         {
-            if (_rejections.ContainsKey(hash))
+            lock (_rejections)
             {
-                reason = _rejections[hash];
-                return MempoolTransactionStatus.Rejected;
+                if (_rejections.ContainsKey(hash))
+                {
+                    reason = _rejections[hash];
+                    return MempoolTransactionStatus.Rejected;
+                }
             }
 
             if (_hashMap.ContainsKey(hash))

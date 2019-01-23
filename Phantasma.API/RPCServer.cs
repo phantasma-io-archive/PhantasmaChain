@@ -50,7 +50,7 @@ namespace Phantasma.API
                         }
                         else
                         {
-                            throw new RPCException("missing argument: " + apiMethod.Parameters[i]);
+                            throw new RPCException("missing argument: " + apiMethod.Parameters[i].Name);
                         }
                     }
 
