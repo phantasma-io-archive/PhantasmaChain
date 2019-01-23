@@ -103,8 +103,8 @@ namespace Phantasma.Cryptography
             byte[] expected_checksum = buffer.Sha256(0, (uint)(buffer.Length - 4)).Sha256();
             expected_checksum = expected_checksum.Take(4).ToArray();
             var src_checksum = buffer.Skip(buffer.Length - 4).ToArray();
-            if (!src_checksum.SequenceEqual(expected_checksum))
-                throw new FormatException();
+
+            Throw.If(!src_checksum.SequenceEqual(expected_checksum), "WIF checksum failed");
             return buffer.Take(buffer.Length - 4).ToArray();
         }
 
