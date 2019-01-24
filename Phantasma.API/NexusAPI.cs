@@ -795,7 +795,7 @@ namespace Phantasma.API
                             return new ErrorResult { error = "pending" };
 
                         case MempoolTransactionStatus.Rejected:
-                            return new ErrorResult { error = "rejected: "+reason };
+                            return new ErrorResult { error = "rejected: " + reason };
                     }
                 }
 
@@ -803,6 +803,40 @@ namespace Phantasma.API
             }
 
             return FillTransaction(tx);
+        }
+
+        [APIInfo(typeof(TransactionResult), "Removes a pending transaction from the mempool.")]
+        [APIFailCase("hash is invalid", "43242342")]
+        public IAPIResult CancelTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        {
+            if (Mempool == null)
+            {
+                return new ErrorResult { error = "mempool not available" };
+            }
+
+            Hash hash;
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult { error = "Invalid hash" };
+            }
+
+            var tx = Nexus.FindTransactionByHash(hash);
+
+            if (tx != null)
+            {
+                return new ErrorResult { error = "already in chain" };
+            }
+
+            var status = Mempool.GetTransactionStatus(hash, out string reason);
+            if (status == MempoolTransactionStatus.Pending)
+            {
+                if (Mempool.RejectTransaction(hash))
+                {
+                    return new SingleResult() { value = hash };
+                }
+            }
+
+            return new ErrorResult { error = "Transaction not found" };
         }
 
         [APIInfo(typeof(ChainResult[]), "Returns an array of all chains deployed in Phantasma.")]
