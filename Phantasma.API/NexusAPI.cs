@@ -105,13 +105,14 @@ namespace Phantasma.API
             {
                 string description;
                 string exampleValue;
-                try
+
+                var descAttr = entry.GetCustomAttribute<APIParameterAttribute>();
+                if (descAttr != null)
                 {
-                    var descAttr = entry.GetCustomAttribute<APIParameterAttribute>();
                     description = descAttr.Description;
                     exampleValue = descAttr.Value;
                 }
-                catch
+                else
                 {
                     description = "TODO document me";
                     exampleValue = "TODO document me";
@@ -230,6 +231,11 @@ namespace Phantasma.API
             foreach (var entry in methodInfo)
             {
                 if (entry.ReturnType != typeof(IAPIResult))
+                {
+                    continue;
+                }
+
+                if (entry.Name == nameof(Execute))
                 {
                     continue;
                 }
