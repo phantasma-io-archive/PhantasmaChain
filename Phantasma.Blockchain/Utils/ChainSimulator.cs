@@ -142,7 +142,7 @@ namespace Phantasma.Blockchain.Utils
             foreach (var sale in nftSales)
             {
                 // TODO this later should be the market chain instead of root
-                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, 100 + 5 * _rnd.Next() % 50);
+                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, TokenUtils.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.NativeTokenDecimals));
             }
             EndBlock();
         }
