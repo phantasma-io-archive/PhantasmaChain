@@ -299,5 +299,20 @@ namespace Phantasma.Blockchain
             reason = null;
             return MempoolTransactionStatus.Unknown;
         }
+
+        public bool RejectTransaction(Hash hash)
+        {
+            lock (_entries)
+            {
+                if (_hashMap.ContainsKey(hash))
+                {
+                    var chainName = _hashMap[hash];
+                    var list = _entries[chainName];
+                    return list.RemoveAll(x => x.transaction.Hash == hash) > 0;
+                }
+            }
+
+            return false;
+        }
     }
 }
