@@ -1768,6 +1768,41 @@ namespace Phantasma.Tests
             }
         }
 
+        [TestMethod]
+        public void ContextSwitching()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var args = new List<List<int>>()
+            {
+                new List<int>() {1, 2},
+            };
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                var argsLine = args[i];
+                var r1 = argsLine[0];
+                var target = argsLine[1];
+
+                scriptString = new string[]
+                {
+                    //$"switch \\\"Test\\\"",
+                    $"load r1, \\\"context\\\"",
+                    $"ctx r1, r2",
+                    $"switch r2",
+                    @"ret",
+                };
+
+                vm = ExecuteScript(scriptString);
+
+                Assert.IsTrue(vm.Stack.Count == 1);
+
+                var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == 1);
+            }
+        }
+
         #endregion
 
         #region Array
@@ -2084,8 +2119,6 @@ namespace Phantasma.Tests
             var keys = KeyPair.Generate();
             var nexus = new Nexus("vmnet", keys.Address, new ConsoleLogger());
             var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
-
-            var changeSet = new StorageChangeSetContext(new MemoryStorageContext());
 
             var vm = new TestVM(tx.Script);
             vm.ThrowOnFault = true;
