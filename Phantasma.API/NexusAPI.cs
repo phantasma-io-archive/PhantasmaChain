@@ -274,7 +274,7 @@ namespace Phantasma.API
         {
             return new AuctionResult
             {
-                symbol = auction.Symbol,
+                symbol = auction.BaseSymbol,
                 tokenId = auction.TokenID.ToString(),
                 creatorAddress = auction.Creator.Text,
                 price = auction.Price.ToString(),
@@ -1052,7 +1052,7 @@ namespace Phantasma.API
 
             if (!string.IsNullOrEmpty(symbol))
             {
-                entries = entries.Where(x => x.Symbol == symbol);
+                entries = entries.Where(x => x.BaseSymbol == symbol);
             }
 
             return new ArrayResult() { values = entries.Select(x => (object)FillAuction(x)).ToArray() }; // TODO make this less ugly
