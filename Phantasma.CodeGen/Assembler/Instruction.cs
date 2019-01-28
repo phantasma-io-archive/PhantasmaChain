@@ -147,46 +147,15 @@ namespace Phantasma.CodeGen.Assembler
             {
                 var dest_reg = Arguments[0].AsRegister();
 
-                byte[] bytes = null;
-                if (Arguments[1].IsBytes())
+                if (Arguments[1].IsRegister())
                 {
-                    bytes = Base16.Decode(Arguments[1]);
-                }
-                else
-                if (Arguments[1].IsString())
-                {
-                    var name = Arguments[1].AsString();
-                    // TODO FIXME!!!
-                    /*NativeContractKind kind;
-                    
-                    if (System.Enum.TryParse<NativeContractKind>(name, true, out kind))
-                    {
-                        var contract = Chain.GetNativeContract(kind);
-                        if (contract == null)
-                        {
-                            throw new CompilerException(LineNumber, ERR_INVALID_CONTRACT);
-                        }
-                        else
-                        {
-                            bytes = contract.Address.PublicKey;
-                        }
-                    }
-                    else*/
-                    {
-                        throw new CompilerException(LineNumber, ERR_UNKNOWN_CONTRACT);
-                    }
+                    var src_reg = Arguments[1].AsRegister();
+                    sb.Emit(this.Opcode, new byte[] { dest_reg, src_reg });
                 }
                 else
                 {
                     throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
                 }
-
-                if (bytes.Length != Address.PublicKeyLength)
-                {
-                    throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
-                }
-
-                sb.Emit(this.Opcode, new byte[] { dest_reg }.Concat(bytes).ToArray());
             }
             else
             {
