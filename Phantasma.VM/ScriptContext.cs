@@ -178,7 +178,7 @@ namespace Phantasma.VM
                         }
 
                     // args: byte src_reg
-                    case Opcode.PUSH:
+                    case Opcode.PUSH:   
                         {
                             var src = Read8();
                             Expect(src < frame.Registers.Length);

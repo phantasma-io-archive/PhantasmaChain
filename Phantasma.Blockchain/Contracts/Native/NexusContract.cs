@@ -31,6 +31,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(decimals >= 0, "decimals cant be negative");
             Runtime.Expect(decimals <= MAX_TOKEN_DECIMALS, $"decimals cant exceed {MAX_TOKEN_DECIMALS}");
 
+            if (flags.HasFlag(TokenFlags.External))
+            {
+                Runtime.Expect(owner == Runtime.Nexus.GenesisAddress, "external not permitted");
+            }
+
             Runtime.Expect(IsWitness(owner), "invalid witness");
 
             symbol = symbol.ToUpperInvariant();

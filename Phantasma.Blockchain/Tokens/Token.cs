@@ -14,6 +14,7 @@ namespace Phantasma.Blockchain.Tokens
         Fungible = 1 << 1,
         Finite = 1 << 2,
         Divisible = 1 << 3,
+        External = 1 << 4,
     }
 
     public class Token
