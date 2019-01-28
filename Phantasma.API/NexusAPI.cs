@@ -806,7 +806,7 @@ namespace Phantasma.API
             return FillTransaction(tx);
         }
 
-        [APIInfo(typeof(TransactionResult), "Removes a pending transaction from the mempool.")]
+        [APIInfo(typeof(string), "Removes a pending transaction from the mempool.")]
         [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult CancelTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
