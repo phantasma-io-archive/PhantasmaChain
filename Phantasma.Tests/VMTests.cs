@@ -5,8 +5,10 @@ using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.VM;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using Phantasma.Blockchain;
+using Phantasma.CodeGen.Assembler;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
@@ -15,6 +17,7 @@ namespace Phantasma.Tests
     {
         private Dictionary<string, Func<ExecutionFrame, ExecutionState>> _interops = new Dictionary<string, Func<ExecutionFrame, ExecutionState>>();
         private Func<string, ExecutionContext> _contextLoader;
+        private Dictionary<string, ScriptContext> contexts;
 
         public enum DebugEnum
         {
@@ -42,6 +45,59 @@ namespace Phantasma.Tests
         public TestVM(byte[] script) : base(script)
         {
             RegisterDefaultInterops();
+            RegisterContextLoader(ContextLoader);
+            contexts = new Dictionary<string, ScriptContext>();
+        }
+
+        private ExecutionContext ContextLoader(string contextName)
+        {
+            if (contexts.ContainsKey(contextName))
+                return contexts[contextName];
+
+            var scriptString = new string[]
+            {
+                $"load r10, 1",
+                $"push r10",
+                @"ret",
+            };
+
+            var byteScript = BuildScript(scriptString);
+
+            contexts.Add(contextName, new ScriptContext(byteScript));
+
+            return contexts[contextName];
+        }
+
+        public byte[] BuildScript(string[] lines)
+        {
+            IEnumerable<Semanteme> semantemes = null;
+            try
+            {
+                semantemes = Semanteme.ProcessLines(lines);
+            }
+            catch (Exception e)
+            {
+                throw new InternalTestFailureException("Error parsing the script");
+            }
+
+            var sb = new ScriptBuilder();
+            byte[] script = null;
+
+            try
+            {
+                foreach (var entry in semantemes)
+                {
+                    Trace.WriteLine($"{entry}");
+                    entry.Process(sb);
+                }
+                script = sb.ToScript();
+            }
+            catch (Exception e)
+            {
+                throw new InternalTestFailureException("Error assembling the script");
+            }
+
+            return script;
         }
 
 #if DEBUG
