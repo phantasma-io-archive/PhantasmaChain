@@ -54,20 +54,22 @@ namespace Phantasma.Blockchain.Tokens
             Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
             Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
 
-
             if (flags.HasFlag(TokenFlags.Fungible))
             {
                 Throw.If(!chain.IsRoot, "root chain required");
             }
             else
             {
-                Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible must be indivisible");
-                Throw.If(decimals != 0, "non-fungible must be indivisible");
+                Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
             }
 
             if (flags.HasFlag(TokenFlags.Divisible))
             {
-                Throw.If(decimals <= 0, "divisible must have decimals");
+                Throw.If(decimals <= 0, "divisible token must have decimals");
+            }
+            else
+            {
+                Throw.If(decimals > 0, "indivisible token can't have decimals");
             }
 
             this.Owner = owner;
