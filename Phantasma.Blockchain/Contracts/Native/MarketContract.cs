@@ -9,7 +9,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public struct MarketEventData
     {
-        public string Symbol;
+        public string BaseSymbol;
+        public string QuoteSymbol;
         public BigInteger ID;
         public BigInteger Price;
     }
@@ -78,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             nft.CurrentChain = Runtime.Chain.Address;
             nft.CurrentOwner = Runtime.Chain.Address;
 
-            Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, Symbol = baseSymbol, Price = price });
+            Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price });
         }
 
         public void BuyToken(Address from, string symbol, BigInteger tokenID)
@@ -122,11 +123,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (auction.Creator == from)
             {
-                Runtime.Notify(EventKind.AuctionCancelled, from, new MarketEventData() { ID = auction.TokenID, Symbol = auction.BaseSymbol, Price = 0 });
+                Runtime.Notify(EventKind.AuctionCancelled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = 0 });
             }
             else
             {
-                Runtime.Notify(EventKind.AuctionFilled, from, new MarketEventData() { ID = auction.TokenID, Symbol = auction.BaseSymbol, Price = auction.Price });
+                Runtime.Notify(EventKind.AuctionFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
             }
         }
 
