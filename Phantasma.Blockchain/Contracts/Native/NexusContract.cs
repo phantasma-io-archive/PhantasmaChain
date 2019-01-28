@@ -2,7 +2,6 @@
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System;
-using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -17,7 +16,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "nexus";
 
-        public const int MAX_TOKEN_DECIMALS = 12;
+        public const int MAX_TOKEN_DECIMALS = 20;
 
         public NexusContract() : base()
         {
@@ -25,15 +24,24 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags)
         {
-            Runtime.Expect(!string.IsNullOrEmpty(symbol), "symbol required");
-            Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
-            Runtime.Expect(maxSupply >= 0, "supply cant be negative");
-            Runtime.Expect(decimals >= 0, "decimals cant be negative");
-            Runtime.Expect(decimals <= MAX_TOKEN_DECIMALS, $"decimals cant exceed {MAX_TOKEN_DECIMALS}");
+            Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
+            Runtime.Expect(!string.IsNullOrEmpty(name), "token name required");
+            Runtime.Expect(maxSupply >= 0, "token supply cant be negative");
+            Runtime.Expect(decimals >= 0, "token decimals cant be negative");
+            Runtime.Expect(decimals <= MAX_TOKEN_DECIMALS, $"token decimals cant exceed {MAX_TOKEN_DECIMALS}");
+
+            if (symbol == Nexus.NativeTokenSymbol)
+            {
+                Runtime.Expect(flags.HasFlag(TokenFlags.Native), "token should be native");
+            }
+            else
+            {
+                Runtime.Expect(!flags.HasFlag(TokenFlags.Native), "token can't be native");
+            }
 
             if (flags.HasFlag(TokenFlags.External))
             {
-                Runtime.Expect(owner == Runtime.Nexus.GenesisAddress, "external not permitted");
+                Runtime.Expect(owner == Runtime.Nexus.GenesisAddress, "external token not permitted");
             }
 
             Runtime.Expect(IsWitness(owner), "invalid witness");

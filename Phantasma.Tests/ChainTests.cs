@@ -28,6 +28,9 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(d == TokenUtils.ToDecimal(n, places));
             Assert.IsTrue(n == TokenUtils.ToBigInteger(d, places));
+
+            var tmp2 = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
+            Assert.IsTrue(tmp2 > 0);
         }
 
         [TestMethod]

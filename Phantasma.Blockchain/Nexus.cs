@@ -504,16 +504,16 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public const string NativeTokenSymbol = "SOUL";
-        public const string PlatformName = "Phantasma";
+        public const string NativeTokenSymbol = "ALMA";
+        public const string PlatformName = "Phantasma Alma";
 
-        public const string StableTokenSymbol = "ALMA";
+        public const string StableTokenSymbol = "SUS";
         public const string StableTokenName = "Stable Coin";
 
-        public const int NativeTokenDecimals = 8;
+        public const int NativeTokenDecimals = 10;
         public const int StableTokenDecimals = 8;
 
-        public static readonly BigInteger PlatformSupply = TokenUtils.ToBigInteger(91136374, NativeTokenDecimals);
+        public static readonly BigInteger PlatformSupply = TokenUtils.ToBigInteger(100000000, NativeTokenDecimals);
 
         public bool CreateGenesisBlock(KeyPair owner)
         {
@@ -524,18 +524,25 @@ namespace Phantasma.Blockchain
 
             var transactions = new List<Transaction>
             {
-                TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible),
+                TokenCreateTx(RootChain, owner, NativeTokenSymbol, PlatformName, PlatformSupply, NativeTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Native),
                 TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible),
 
                 SideChainCreateTx(RootChain, owner, "privacy"),
                 SideChainCreateTx(RootChain, owner, "vault"),
                 SideChainCreateTx(RootChain, owner, "bank"),
+                SideChainCreateTx(RootChain, owner, "interop"),
+                // SideChainCreateTx(RootChain, owner, "market"), TODO
                 SideChainCreateTx(RootChain, owner, "apps"),
+                
+                TokenCreateTx(RootChain, owner, "SOUL", "Phantasma Soul", TokenUtils.ToBigInteger(91136374, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, "NEO", "NEO", TokenUtils.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, "ETH", "Ethereum", TokenUtils.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, "EOS", "EOS", TokenUtils.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External),
 
                 StakeCreateTx(RootChain, owner)
             };
 
-            var genesisMessage = Encoding.UTF8.GetBytes("SOUL genesis");
+            var genesisMessage = Encoding.UTF8.GetBytes("A Phantasma was born...");
             var block = new Block(Chain.InitialHeight, RootChain.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
             try
