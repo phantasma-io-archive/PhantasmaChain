@@ -36,6 +36,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             var maxAmount = price * limit;
 
+            var balance = balances.Get(from);
+            Runtime.Expect(balance >= maxAmount, "not enough gas in address");
+
             Runtime.Expect(balances.Subtract(from, maxAmount), "gas escrow withdraw failed");
             Runtime.Expect(balances.Add(Runtime.Chain.Address, maxAmount), "gas escrow deposit failed");
 

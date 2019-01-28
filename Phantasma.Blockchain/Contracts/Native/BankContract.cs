@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return 0;
         }
 
-        // SOUL => stable
+        // SOUL => native
         public void Claim(Address target, BigInteger amount)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
@@ -44,7 +44,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = stableAmount, symbol = Nexus.StableTokenSymbol });
         }
 
-        // stable => SOUL
+        // stable => native
         public void Redeem(Address target, BigInteger amount)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");

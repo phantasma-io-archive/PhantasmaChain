@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain.Utils
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(10, Nexus.NativeTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(100, Nexus.NativeTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -131,7 +131,8 @@ namespace Phantasma.Blockchain.Utils
                     if (key.Address == nftOwner)
                     {
                         nftSales.Add(new KeyValuePair<KeyPair, BigInteger>(key, ID));
-                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.NativeToken, TokenUtils.ToBigInteger(10, Nexus.NativeTokenDecimals));
+                        // send some gas to the sellers
+                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.NativeToken, TokenUtils.ToBigInteger(200, Nexus.NativeTokenDecimals));
                     }
                 }
             }
@@ -467,7 +468,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
         {
             var endDate = new Timestamp(Timestamp.Now + TimeSpan.FromDays(5));
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, "SOUL", tokenId, price, endDate).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }        
