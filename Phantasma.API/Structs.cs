@@ -208,7 +208,8 @@ namespace Phantasma.API
         public uint startDate;
         public uint endDate;
 
-        public string symbol;
+        public string baseSymbol;
+        public string quoteSymbol;
         public string tokenId;
         public string price;
     }

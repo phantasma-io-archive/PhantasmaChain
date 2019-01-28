@@ -274,7 +274,8 @@ namespace Phantasma.API
         {
             return new AuctionResult
             {
-                symbol = auction.BaseSymbol,
+                baseSymbol = auction.BaseSymbol,
+                quoteSymbol = auction.QuoteSymbol,
                 tokenId = auction.TokenID.ToString(),
                 creatorAddress = auction.Creator.Text,
                 price = auction.Price.ToString(),
