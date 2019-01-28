@@ -311,7 +311,7 @@ namespace Phantasma.VM
                             if (frame.VM.frames.Count > 1)
                             {
                                 InstructionPointer = frame.VM.PopFrame();
-                                Expect(frame.VM.CurrentContext == this);
+                                // Expect(frame.VM.CurrentContext == this); TODO check this later if necessary
                                 Expect(InstructionPointer < this.Script.Length);
                             }
                             else
