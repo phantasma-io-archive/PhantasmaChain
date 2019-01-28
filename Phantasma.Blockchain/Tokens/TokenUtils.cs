@@ -1,4 +1,5 @@
 ﻿using Phantasma.Numerics;
+using System;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -40,9 +41,20 @@ namespace Phantasma.Blockchain.Tokens
 
         public static BigInteger ToBigInteger(decimal n, int units)
         {
-            var multiplier = GetMultiplier(units);
-            var l = (long)(n * multiplier);
-            return new BigInteger(l);
+            var multiplier = GetMultiplier(units);            
+            var A = new BigInteger((long)n);
+            var B = new BigInteger((long)multiplier);
+
+            var fracPart = n - Math.Truncate(n);
+            BigInteger C = 0;
+
+            if (fracPart > 0)
+            {
+                var l = fracPart * multiplier;
+                C = new BigInteger((long)l);
+            }
+
+            return A * B + C;
         }
     }
 }
