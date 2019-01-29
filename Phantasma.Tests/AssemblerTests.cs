@@ -77,43 +77,31 @@ namespace Phantasma.Tests
             string[] scriptString;
             TestVM vm;
 
-            var args = new List<List<string>>()
+            scriptString = new string[]
             {
-                new List<string>() {$"\\\"structKey\\\"", "put r1, r2, r1"},
-                new List<string>() {"1", "extcall \\\"PushDebugClass\\\""},
-                new List<string>() {"1", "extcall \\\"PushDebugEnum\\\""},
+                //put a DebugClass with x = {r1} on register 1
+                //$@"load r1, {value}",
+                $"load r5, 1",
+                $"push r5",
+                $"extcall \\\"PushDebugStruct\\\"",
+                $"pop r1",
+                $"load r3, \\\"key\\\"",
+                $"put r1, r2, r3",
+
+                //move it to r2, change its value on the stack and see if it changes on both registers
+                @"copy r1, r2",
+                @"push r2",
+                $"extcall \\\"IncrementDebugStruct\\\"",
+                $"push r1",
+                @"ret"
             };
 
-            for (int i = 0; i < args.Count; i++)
-            {
-                var argsLine = args[i];
-                object value = argsLine[0];
-                object customFunction = argsLine[1];
+            vm = ExecuteScript(scriptString);
 
-                scriptString = new string[]
-                {
-                    //put a DebugClass with x = {r1} on register 1
-                    $@"load r1, {value}",
-                    $"push r1",
-                    $"{customFunction}",
-                    $"pop r1",
+            var r1struct = vm.Stack.Pop().AsInterop<TestVM.DebugStruct>();
+            var r2struct = vm.Stack.Pop().AsInterop<TestVM.DebugStruct>();
 
-                    //move it to r2, change its value on the stack and see if it changes on both registers
-                    @"copy r1, r2",
-                    @"push r2",
-                    $"push r1",
-                    @"ret"
-                };
-
-                vm = ExecuteScript(scriptString);
-
-                Assert.IsTrue(vm.Stack.Count == 2);
-
-                var r1obj = vm.Stack.Pop().AsInterop<object>();
-                var r2obj = vm.Stack.Pop().AsInterop<object>();
-
-                Assert.IsFalse(ReferenceEquals(r1obj, r2obj));
-            }
+            Assert.IsTrue(r1struct.x != r2struct.x);
 
         }
 
@@ -1796,10 +1784,12 @@ namespace Phantasma.Tests
 
                 vm = ExecuteScript(scriptString);
 
-                Assert.IsTrue(vm.Stack.Count == 1);
+                Assert.IsTrue(vm.Stack.Count == 2);
 
                 var result = vm.Stack.Pop().AsNumber();
+                var result2 = vm.Stack.Pop().AsNumber();
                 Assert.IsTrue(result == 1);
+                Assert.IsTrue(result == result2);
             }
         }
 

@@ -216,6 +216,17 @@ namespace Phantasma.Tests
                 frame.VM.Stack.Push(VMObject.FromObject(dbStruct));
                 return ExecutionState.Running;
             });
+
+            RegisterInterop("IncrementDebugStruct", (frame) =>
+            {
+                var obj = frame.VM.Stack.Pop();
+                var dbStruct = obj.AsInterop<DebugStruct>();
+
+                dbStruct.x++;
+
+                frame.VM.Stack.Push(VMObject.FromObject(dbStruct));
+                return ExecutionState.Running;
+            });
         } 
     }
 
