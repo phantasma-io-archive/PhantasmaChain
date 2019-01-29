@@ -56,8 +56,9 @@ namespace Phantasma.Tests
 
             var scriptString = new string[]
             {
-                $"load r10, 1",
-                $"push r10",
+                $"pop r1",
+                $"inc r1",
+                $"push r1",
                 @"ret",
             };
 
