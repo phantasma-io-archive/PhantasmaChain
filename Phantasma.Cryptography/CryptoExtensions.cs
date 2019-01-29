@@ -100,7 +100,7 @@ namespace Phantasma.Cryptography
         {
             byte[] buffer = Base58.Decode(input);
             if (buffer.Length < 4) throw new FormatException();
-            byte[] expected_checksum = buffer.Sha256(0, (uint)(buffer.Length - 4)).Sha256();
+            byte[] expected_checksum = buffer.Sha256(0, (uint)(buffer.Length - 4)).SHA256();
             expected_checksum = expected_checksum.Take(4).ToArray();
             var src_checksum = buffer.Skip(buffer.Length - 4).ToArray();
 
@@ -110,7 +110,7 @@ namespace Phantasma.Cryptography
 
         public static string Base58CheckEncode(this byte[] data)
         {
-            byte[] checksum = data.Sha256().Sha256();
+            byte[] checksum = data.SHA256().SHA256();
             byte[] buffer = new byte[data.Length + 4];
             Array.Copy(data, 0, buffer, 0, data.Length);
             ByteArrayUtils.CopyBytes(checksum, 0, buffer, data.Length, 4); 
@@ -122,7 +122,7 @@ namespace Phantasma.Cryptography
             return new RIPEMD160().ComputeHash(value.ToArray());
         }
 
-        public static byte[] Sha256(this IEnumerable<byte> value)
+        public static byte[] SHA256(this IEnumerable<byte> value)
         {
             return new SHA256().ComputeHash(value.ToArray());
         }
@@ -130,7 +130,7 @@ namespace Phantasma.Cryptography
         public static byte[] Sha256(this string value)
         {
             var bytes = Encoding.UTF8.GetBytes(value);
-            return bytes.Sha256();
+            return bytes.SHA256();
         }
 
         public static byte[] Sha256(this byte[] value, uint offset, uint count)
@@ -379,7 +379,7 @@ namespace Phantasma.Cryptography
 
         public static byte[] Hash256(byte[] message)
         {
-            return message.Sha256().Sha256();
+            return message.SHA256().SHA256();
         }
     }
 }

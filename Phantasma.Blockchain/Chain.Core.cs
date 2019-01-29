@@ -99,7 +99,7 @@ namespace Phantasma.Blockchain
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
-            var hash = CryptoExtensions.Sha256(bytes);
+            var hash = CryptoExtensions.SHA256(bytes);
 
             this.Address = new Address(hash);
 

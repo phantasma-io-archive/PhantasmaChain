@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Phantasma.API\Phantasma.API.csproj" />
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
   </ItemGroup>
 

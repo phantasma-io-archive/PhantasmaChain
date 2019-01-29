@@ -11,6 +11,7 @@ namespace Phantasma.Pay
         Bitcoin,
         Ethereum,
         Neo,
+        EOS,
     }
 
     public struct WalletBalance
@@ -45,6 +46,7 @@ namespace Phantasma.Pay
                 case WalletKind.Neo: wallet = new NeoWallet(keys); break;
                 case WalletKind.Bitcoin: wallet = new BitcoinWallet(keys); break;
                 case WalletKind.Ethereum: wallet = new EthereumWallet(keys); break;
+                case WalletKind.EOS: wallet = new EOSWallet(keys); break;
                 default: throw new Exception("Unsupported wallet kind: " + kind);
             }
 

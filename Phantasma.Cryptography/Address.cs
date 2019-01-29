@@ -128,7 +128,7 @@ namespace Phantasma.Cryptography
 
         public static Address FromScript(byte[] script)
         {
-            var hash = script.Sha256();
+            var hash = script.SHA256();
             return new Address(hash);
         }
 

@@ -2,6 +2,7 @@
 using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
+using System;
 using System.Linq;
 
 namespace Phantasma.Pay.Chains
@@ -13,6 +14,16 @@ namespace Phantasma.Pay.Chains
         }
 
         public override WalletKind Kind => WalletKind.Ethereum;
+
+        public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SyncBalances()
+        {
+            throw new NotImplementedException();
+        }
 
         protected override string DeriveAddress(KeyPair keys)
         {

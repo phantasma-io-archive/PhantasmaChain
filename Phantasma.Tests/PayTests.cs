@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Pay;
@@ -16,6 +17,21 @@ namespace Phantasma.Tests
             var wallet = new WalletManager(keys);
             var address = wallet.GetAddress(WalletKind.Ethereum);
             Assert.IsTrue(address.Equals("0xe57a6c074d1db5ed7c98228df71ce5fa35b6bc72", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [TestMethod]
+        public void TestEOSWallet()
+        {
+            var wif = "5KA2AqEoo7jqepqeEqK2FjjjgG5nxQN6vfuiSZqgJM79ej6eo4Q";
+            byte[] data = wif.Base58CheckDecode();
+
+            byte[] privateKey = new byte[32];
+            ByteArrayUtils.CopyBytes(data, 1, privateKey, 0, privateKey.Length);
+
+            var keys = new KeyPair(privateKey);
+            var wallet = new WalletManager(keys);
+            var address = wallet.GetAddress(WalletKind.EOS);
+            Assert.IsTrue(address.Equals("EOS8dBKtG9fbhC1wi1SscL32iFRsSi4PsZDT2EHJcYXwV5dAMiBcK", StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]

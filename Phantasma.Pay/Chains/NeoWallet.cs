@@ -13,6 +13,16 @@ namespace Phantasma.Pay.Chains
 
         public override WalletKind Kind => WalletKind.Neo;
 
+        public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SyncBalances()
+        {
+            throw new NotImplementedException();
+        }
+
         protected override string DeriveAddress(KeyPair keys)
         {
             ECPoint pKey = ECCurve.Secp256r1.G * keys.PrivateKey;
@@ -24,7 +34,7 @@ namespace Phantasma.Pay.Chains
             Array.Copy(bytes, 0, script, 1, bytes.Length);
             script[script.Length - 1] = 0xAC; // OpCode.CHECKSIG;
 
-            var scriptHash = script.Sha256().RIPEMD160();
+            var scriptHash = script.SHA256().RIPEMD160();
 
             //this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 

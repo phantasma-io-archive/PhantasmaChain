@@ -104,7 +104,7 @@ namespace Phantasma.Blockchain
         {
             this.Payload = payload;
             var data = ToByteArray();
-            var hashBytes = CryptoExtensions.Sha256(data);
+            var hashBytes = CryptoExtensions.SHA256(data);
             this.Hash = new Hash(hashBytes);
         }
 
