@@ -51,6 +51,7 @@ namespace Phantasma.API
                 var argMap = DataNode.CreateArray("args");
                 mapEntry.AddNode(argMap);
 
+                paths.Add(path);
                 foreach (var arg in apiMethod.Parameters)
                 {
                     var argEntry = DataNode.CreateObject();
@@ -60,12 +61,7 @@ namespace Phantasma.API
                     argEntry.AddField("description", arg.Description);
                     argMap.AddNode(argEntry);
 
-                    paths.Add(path);
                     path += "/{" + arg.Name + "}";
-                }
-
-                if (paths.Count == 0)
-                {
                     paths.Add(path);
                 }
 
