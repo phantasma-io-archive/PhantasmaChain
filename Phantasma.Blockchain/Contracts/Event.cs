@@ -21,6 +21,7 @@ namespace Phantasma.Blockchain.Contracts
         AuctionCreated,
         AuctionCancelled,
         AuctionFilled,
+        Metadata,
     }
 
     public class Event

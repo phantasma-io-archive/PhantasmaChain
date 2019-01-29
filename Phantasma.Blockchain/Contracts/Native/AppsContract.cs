@@ -19,7 +19,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         private const string TOKEN_VIEWERS = "_viewers";
 
         internal StorageList _apps;
-        internal StorageMap _viewers;
 
         public AppsContract() : base()
         {
@@ -90,24 +89,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public AppInfo[] GetApps()
         {
             return _apps.All<AppInfo>();
-        }
-
-        public string GetTokenViewer(string symbol)
-        {
-            return _viewers.Get<string, string>(symbol);
-        }
-
-        public void SetTokenViewer(string symbol, string url)
-        {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(!token.IsFungible, "token must be non-fungible");
-
-            Runtime.Expect(IsWitness(token.Owner), "owner expected");
-
-            _viewers.Set<string, string>(symbol, url);
-
-            //Runtime.Notify(EventKind.TokenInfo, source, url); TODO custom events
         }
     }
 }

@@ -99,7 +99,9 @@ namespace Phantasma.Blockchain.Utils
 
             var nacho = Nexus.FindTokenBySymbol("NACHO"); 
             RandomSpreadNFT(nacho, 10);
-            GenerateSetTokenViewer(_owner, nacho, "https://nacho.men/luchador/body/$ID");
+
+            GenerateSetTokenMetadata(_owner, nacho, "details", "https://nacho.men/luchador/*");
+            GenerateSetTokenMetadata(_owner, nacho, "viewer", "https://nacho.men/luchador/body/*");
             EndBlock();
 
             var nftSales = new List<KeyValuePair<KeyPair, BigInteger>>();
@@ -503,10 +505,16 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
-        public Transaction GenerateSetTokenViewer(KeyPair source, Token token, string url)
+        public Transaction GenerateSetTokenMetadata(KeyPair source, Token token, string key, string value)
         {
-            var chain = Nexus.FindChainByName("apps");
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("apps", "SetTokenViewer", token.Symbol, url).SpendGas(source.Address).EndScript();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(value);
+            return GenerateSetTokenMetadata(source, token, key, bytes);
+        }
+
+        public Transaction GenerateSetTokenMetadata(KeyPair source, Token token, string key, byte[] value)
+        {
+            var chain = Nexus.RootChain;
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("nexus", "SetTokenMetadata", token.Symbol, key, value).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             
             return tx;
