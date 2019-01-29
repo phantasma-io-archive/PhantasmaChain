@@ -19,6 +19,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte[] value;
     }
 
+    public struct MetadataEventData
+    {
+        public string symbol;
+        public TokenMetadata metadata;
+    }
+
     public sealed class NexusContract : SmartContract
     {
         public override string Name => "nexus";
@@ -109,17 +115,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            var data = new TokenMetadata() { key = key, value = value };
+            var metadata = new TokenMetadata() { key = key, value = value };
             if (index >= 0)
             {
-                metadataEntries.Replace<TokenMetadata>(index, data);
+                metadataEntries.Replace<TokenMetadata>(index, metadata);
             }
             else
             {
-                metadataEntries.Add<TokenMetadata>(data);
+                metadataEntries.Add<TokenMetadata>(metadata);
             }
 
-            Runtime.Notify(EventKind.Metadata, token.Owner, data);
+            Runtime.Notify(EventKind.Metadata, token.Owner, new MetadataEventData() { symbol = symbol, metadata = metadata });
         }
 
         public byte[] GetTokenMetadata(string symbol, string key)
