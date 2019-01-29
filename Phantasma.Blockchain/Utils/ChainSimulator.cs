@@ -64,7 +64,9 @@ namespace Phantasma.Blockchain.Utils
             _owner = ownerKey;
             this.Nexus = new Nexus("simnet", ownerKey.Address);
 
-            if (!Nexus.CreateGenesisBlock(_owner))
+            CurrentTime = new DateTime(2018, 8, 26);
+
+            if (!Nexus.CreateGenesisBlock(_owner, CurrentTime))
             {
                 throw new ChainException("Genesis block failure");
             }
@@ -73,8 +75,6 @@ namespace Phantasma.Blockchain.Utils
             
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
-
-            CurrentTime = new DateTime(2018, 8, 26);
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();

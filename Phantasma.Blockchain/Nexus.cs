@@ -515,7 +515,7 @@ namespace Phantasma.Blockchain
 
         public static readonly BigInteger PlatformSupply = TokenUtils.ToBigInteger(100000000, NativeTokenDecimals);
 
-        public bool CreateGenesisBlock(KeyPair owner)
+        public bool CreateGenesisBlock(KeyPair owner, Timestamp timestamp)
         {
             if (NativeToken != null)
             {
@@ -543,7 +543,7 @@ namespace Phantasma.Blockchain
             };
 
             var genesisMessage = Encoding.UTF8.GetBytes("A Phantasma was born...");
-            var block = new Block(Chain.InitialHeight, RootChain.Address, Timestamp.Now, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
+            var block = new Block(Chain.InitialHeight, RootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
             try
             {

@@ -39,7 +39,7 @@ namespace Phantasma.Tests
             var owner = KeyPair.Generate();
             var nexus = new Nexus("tests", owner.Address);
 
-            Assert.IsTrue(nexus.CreateGenesisBlock(owner));
+            Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
 
             var rootChain = nexus.RootChain;
             var token = nexus.NativeToken;
