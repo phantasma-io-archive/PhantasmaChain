@@ -878,7 +878,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.")]
-        public IAPIResult GetToken(string symbol)
+        public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol)
         {
             var token = Nexus.FindTokenBySymbol(symbol);
             if (token == null)
@@ -1046,7 +1046,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(AuctionResult[]), "Returns the auctions available in the market.")]
-        public IAPIResult GetAuctions(string symbol = null)
+        public IAPIResult GetAuctions([APIParameter("Token symbol used as filter", "NACHO")] string symbol = null)
         {
             //var chain = Nexus.FindChainByName("market");
             var chain = Nexus.RootChain;
