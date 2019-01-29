@@ -106,9 +106,9 @@ namespace Phantasma.Blockchain.Utils
 
             var nftSales = new List<KeyValuePair<KeyPair, BigInteger>>();
             BeginBlock();
-            for (int i=3; i<7; i++)
+            for (int i=1; i<7; i++)
             {
-                BigInteger ID = i;
+                BigInteger ID = i + 100;
                 var info = Nexus.GetNFT(nacho, ID);
                 if (info == null)
                 {
