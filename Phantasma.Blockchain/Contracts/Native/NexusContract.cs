@@ -109,16 +109,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
+            var data = new TokenMetadata() { key = key, value = value };
             if (index >= 0)
             {
-                metadataEntries.Replace<TokenMetadata>(index, new TokenMetadata() { key = key, value = value });
+                metadataEntries.Replace<TokenMetadata>(index, data);
             }
             else
             {
-                metadataEntries.Add<TokenMetadata>(new TokenMetadata() { key = key, value = value });
+                metadataEntries.Add<TokenMetadata>(data);
             }
 
-            Runtime.Notify(EventKind.Metadata, token.Owner, key);
+            Runtime.Notify(EventKind.Metadata, token.Owner, data);
         }
 
         public byte[] GetTokenMetadata(string symbol, string key)
