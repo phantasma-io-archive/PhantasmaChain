@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
@@ -20,9 +21,25 @@ namespace Phantasma.Pay.Chains
             throw new NotImplementedException();
         }
 
-        public override void SyncBalances()
+        public override void SyncBalances(Action<bool> callback)
         {
-            throw new NotImplementedException();
+            _balances.Clear();
+
+            var url = $"https://api.blockcypher.com/v1/eth/main/addrs/{this.Address}/balance";
+            JSONRequest(url, (root) =>
+            {
+                if (root == null)
+                {
+                    callback(false);
+                    return;
+                }
+
+                var temp = root.GetString("balance");
+                var n = BigInteger.Parse(temp);
+                var amount = TokenUtils.ToDecimal(n, 18);
+                _balances.Add(new WalletBalance("ETH", amount));
+                callback(true);
+            });
         }
 
         protected override string DeriveAddress(KeyPair keys)

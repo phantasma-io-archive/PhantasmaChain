@@ -18,9 +18,29 @@ namespace Phantasma.Pay.Chains
             throw new NotImplementedException();
         }
 
-        public override void SyncBalances()
+        public override void SyncBalances(Action<bool> callback)
         {
-            throw new NotImplementedException();
+            _balances.Clear();
+
+            var url = "https://api.neoscan.io/api/main_net/v1/get_balance/" + this.Address;
+            JSONRequest(url, (root) =>
+            {
+                if (root == null)
+                {
+                    callback(false);
+                    return;
+                }
+
+                root = root.GetNode("balance");
+                foreach (var child in root.Children)
+                {
+                    var symbol = child.GetString("asset_symbol");
+                    var amount = child.GetDecimal("amount");
+                    _balances.Add(new WalletBalance(symbol, amount));
+                }
+
+                callback(true);
+            });
         }
 
         protected override string DeriveAddress(KeyPair keys)

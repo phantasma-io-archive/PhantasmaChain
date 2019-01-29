@@ -18,6 +18,12 @@ namespace Phantasma.Pay
     {
         public readonly string Symbol;
         public readonly decimal Amount;
+
+        public WalletBalance(string symbol, decimal amount)
+        {
+            Symbol = symbol;
+            Amount = amount;
+        }
     }
 
     public class WalletManager
@@ -54,11 +60,12 @@ namespace Phantasma.Pay
             return wallet.Address;
         }
 
-        public void SyncBalances()
+        public void SyncBalances(Action<WalletKind, bool> callback)
         {
             foreach (var wallet in _wallets.Values)
             {
-                wallet.SyncBalances();
+                var kind = wallet.Kind;
+                wallet.SyncBalances((result) => callback(kind, result));
             }
         }
     }

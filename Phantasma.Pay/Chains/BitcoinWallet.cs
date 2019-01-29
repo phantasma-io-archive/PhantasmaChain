@@ -18,9 +18,23 @@ namespace Phantasma.Pay.Chains
             throw new NotImplementedException();
         }
 
-        public override void SyncBalances()
+        public override void SyncBalances(Action<bool> callback)
         {
-            throw new NotImplementedException();
+            _balances.Clear();
+
+            var url = "https://blockexplorer.com/api/addr/" + this.Address;
+            JSONRequest(url, (root) =>
+            {
+                if (root == null)
+                {
+                    callback(false);
+                    return;
+                }
+
+                var amount = root.GetDecimal("balance");
+                _balances.Add(new WalletBalance("BTC", amount));
+                callback(true);
+            });            
         }
 
         protected override string DeriveAddress(KeyPair keys)

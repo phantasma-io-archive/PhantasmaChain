@@ -21,9 +21,9 @@ namespace Phantasma.Pay.Chains
             throw new NotImplementedException();
         }
 
-        public override void SyncBalances()
+        public override void SyncBalances(Action<bool> callback)
         {
-            throw new NotImplementedException();
+            callback(false);
         }
 
         protected override string DeriveAddress(KeyPair keys)
