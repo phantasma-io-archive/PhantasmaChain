@@ -1724,39 +1724,6 @@ namespace Phantasma.Tests
         #region ContextOps
 
         [TestMethod]
-        public void This()
-        {
-            string[] scriptString;
-            TestVM vm;
-
-            var args = new List<List<int>>()
-            {
-                new List<int>() {1, 2},
-            };
-
-            for (int i = 0; i < args.Count; i++)
-            {
-                var argsLine = args[i];
-                var r1 = argsLine[0];
-                var target = argsLine[1];
-
-                scriptString = new string[]
-                {
-                    //$"switch \\\"Test\\\"",
-                    $"ctx r1, \\\"token\\\"",
-                    @"ret",
-                };
-
-                vm = ExecuteScript(scriptString);
-
-                Assert.IsTrue(vm.Stack.Count == 1);
-
-                var result = vm.Stack.Pop().AsNumber();
-                Assert.IsTrue(result == target);
-            }
-        }
-
-        [TestMethod]
         public void ContextSwitching()
         {
             string[] scriptString;
@@ -1777,6 +1744,8 @@ namespace Phantasma.Tests
                 {
                     //$"switch \\\"Test\\\"",
                     $"load r1, \\\"context\\\"",
+                    $"load r3, 1",
+                    $"push r3",
                     $"ctx r1, r2",
                     $"switch r2",
                     @"ret",
@@ -1784,12 +1753,10 @@ namespace Phantasma.Tests
 
                 vm = ExecuteScript(scriptString);
 
-                Assert.IsTrue(vm.Stack.Count == 2);
+                Assert.IsTrue(vm.Stack.Count == 1);
 
                 var result = vm.Stack.Pop().AsNumber();
-                var result2 = vm.Stack.Pop().AsNumber();
-                Assert.IsTrue(result == 1);
-                Assert.IsTrue(result == result2);
+                Assert.IsTrue(result == 2);
             }
         }
 
