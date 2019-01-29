@@ -414,6 +414,7 @@ namespace Phantasma.API
                             chain = chain.Name,
                             amount = balance.ToString(),
                             symbol = token.Symbol,
+                            decimals = (uint)token.Decimals,
                             ids = new string[0]
                         };
 
@@ -1030,6 +1031,7 @@ namespace Phantasma.API
             {
                 amount = balance.ToString(),
                 symbol = tokenSymbol,
+                decimals = (uint)token.Decimals,
                 chain = chain.Address.Text
             };
 
