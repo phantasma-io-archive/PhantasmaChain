@@ -57,10 +57,15 @@ namespace Phantasma.Blockchain
         private int _size = 0;
         public int Size => _size;
 
-        public Mempool(KeyPair validatorKeys, Nexus nexus)
+        public readonly int BlockTime; // in seconds
+
+        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime)
         {
+            Throw.If(blockTime < MinimumBlockTime, "invalid block time");
+
             this._validatorKeys = validatorKeys;
             this.Nexus = nexus;
+            this.BlockTime = blockTime;
         }
 
         public void Submit(Transaction tx)
@@ -216,7 +221,7 @@ namespace Phantasma.Blockchain
 
                     var lastBlockTime = chain.LastBlock != null ? chain.LastBlock.Timestamp : new Timestamp(0);
                     var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
-                    if (timeDiff < MinimumBlockTime)
+                    if (timeDiff < this.BlockTime)
                     {
                         continue;
                     }

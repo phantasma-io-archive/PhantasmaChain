@@ -61,7 +61,7 @@ namespace Phantasma.Tests
             BigInteger currentKeyBalance = GetBalance(currentKey.Value.Address);
 
             //while (currentKeyBalance > 9999)
-            while (totalTxs < 100)
+            while (totalTxs < 10)
             {
                 var destKey = currentKey.Next != null ? currentKey.Next : addressList.First;
 
@@ -118,7 +118,7 @@ namespace Phantasma.Tests
             }
             */
             // mempool setup
-            mempool = new Mempool(node_keys, nexus);
+            mempool = new Mempool(node_keys, nexus, Mempool.MinimumBlockTime);
             mempool.Start();
 
             // node setup
@@ -171,7 +171,7 @@ namespace Phantasma.Tests
                     return false;
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
             } while (true);
         }
     }
