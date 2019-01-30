@@ -1747,14 +1747,19 @@ namespace Phantasma.Tests
                     $"push r3",
                     $"ctx r1, r2",
                     $"switch r2",
+                    $"load r5, 42",
+                    $"push r5",
                     @"ret",
                 };
 
                 vm = ExecuteScript(scriptString);
 
-                Assert.IsTrue(vm.Stack.Count == 1);
+                Assert.IsTrue(vm.Stack.Count == 2);
 
                 var result = vm.Stack.Pop().AsNumber();
+                Assert.IsTrue(result == 42);
+
+                result = vm.Stack.Pop().AsNumber();
                 Assert.IsTrue(result == 2);
             }
         }
