@@ -285,7 +285,7 @@ namespace Phantasma.API
                 decimals = token.Decimals,
                 Flags = token.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 ownerAddress = token.Owner.Text,
-                metadata = metadataResults.ToArray()
+                metadataList = metadataResults.ToArray()
             };
         }
 
