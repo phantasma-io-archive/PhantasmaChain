@@ -7,6 +7,7 @@ using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Tests
 {
@@ -65,7 +66,7 @@ namespace Phantasma.Tests
             ScriptUtils.
                   BeginScript().
                   AllowGas(testUser.Address, 1, 9999).
-                  CallContract("market", "SellToken", testUser.Address, token.Symbol, "SOUL", tokenID, price, endDate).
+                  CallContract("market", "SellToken", testUser.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenID, price, endDate).
                   SpendGas(testUser.Address).
                   EndScript()
             );

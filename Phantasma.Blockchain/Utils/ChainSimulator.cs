@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain.Utils
             BeginBlock();
 
             var nacho = Nexus.FindTokenBySymbol("NACHO"); 
-            RandomSpreadNFT(nacho, 10);
+            RandomSpreadNFT(nacho, 150);
 
             GenerateSetTokenMetadata(_owner, nacho, "details", "https://nacho.men/luchador/*");
             GenerateSetTokenMetadata(_owner, nacho, "viewer", "https://nacho.men/luchador/body/*");
