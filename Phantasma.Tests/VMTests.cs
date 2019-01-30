@@ -54,19 +54,24 @@ namespace Phantasma.Tests
             if (contexts.ContainsKey(contextName))
                 return contexts[contextName];
 
-            var scriptString = new string[]
+            if (contextName == "test")
             {
+                var scriptString = new string[]
+                {
                 $"pop r1",
                 $"inc r1",
                 $"push r1",
                 @"ret",
-            };
+                };
 
-            var byteScript = BuildScript(scriptString);
+                var byteScript = BuildScript(scriptString);
 
-            contexts.Add(contextName, new ScriptContext(byteScript));
+                contexts.Add(contextName, new ScriptContext(byteScript));
 
-            return contexts[contextName];
+                return contexts[contextName];
+            }
+
+            return null;
         }
 
         public byte[] BuildScript(string[] lines)

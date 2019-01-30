@@ -121,10 +121,12 @@ namespace Phantasma.VM
 
         public virtual ExecutionState Execute()
         {
-            return SwitchContext(entryContext);
+            return SwitchContext(entryContext, 0);
         }
 
         #region FRAMES
+
+        // instructionPointer is the location to jump after the frame is popped!
         internal void PushFrame(ExecutionContext context, uint instructionPointer,  int registerCount)
         {
             var frame = new ExecutionFrame(this, instructionPointer, context, registerCount);
@@ -143,6 +145,18 @@ namespace Phantasma.VM
             this.CurrentContext = CurrentFrame.Context;
 
             return instructionPointer;
+        }
+
+        internal ExecutionFrame PeekFrame()
+        {
+            Throw.If(frames.Count < 2, "Not enough frames available");
+
+            // TODO do this without pop/push
+            var temp = frames.Pop();
+            var result = frames.Peek();
+            frames.Push(temp);
+
+            return result;
         }
 
         internal ExecutionContext FindContext(string contextName)
@@ -168,10 +182,10 @@ namespace Phantasma.VM
             return ExecutionState.Running;
         }
 
-        internal ExecutionState SwitchContext(ExecutionContext context)
+        internal ExecutionState SwitchContext(ExecutionContext context, uint instructionPointer)
         {
             this.CurrentContext = context;
-            PushFrame(context, 0, DefaultRegisterCount);
+            PushFrame(context, instructionPointer, DefaultRegisterCount);
             return context.Execute(this.CurrentFrame, this.Stack);
         }
         #endregion

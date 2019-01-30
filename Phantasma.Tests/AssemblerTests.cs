@@ -1729,9 +1729,9 @@ namespace Phantasma.Tests
             string[] scriptString;
             TestVM vm;
 
-            var args = new List<List<int>>()
+            var args = new List<int[]>()
             {
-                new List<int>() {1, 2},
+                new int[] {1, 2},
             };
 
             for (int i = 0; i < args.Count; i++)
@@ -1742,8 +1742,7 @@ namespace Phantasma.Tests
 
                 scriptString = new string[]
                 {
-                    //$"switch \\\"Test\\\"",
-                    $"load r1, \\\"context\\\"",
+                    $"load r1, \\\"test\\\"",
                     $"load r3, 1",
                     $"push r3",
                     $"ctx r1, r2",

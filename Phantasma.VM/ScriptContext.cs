@@ -310,9 +310,18 @@ namespace Phantasma.VM
                         {
                             if (frame.VM.frames.Count > 1)
                             {
-                                InstructionPointer = frame.VM.PopFrame();
-                                // Expect(frame.VM.CurrentContext == this); TODO check this later if necessary
-                                Expect(InstructionPointer < this.Script.Length);
+                                var temp = frame.VM.PeekFrame();
+
+                                if (temp.Context == this)
+                                {
+                                    frame.VM.PopFrame();
+                                    InstructionPointer = frame.VM.PopFrame();
+                                    Expect(InstructionPointer == this.Script.Length);
+                                }
+                                else
+                                { 
+                                    SetState(ExecutionState.Halt);
+                                }
                             }
                             else
                             {
@@ -736,11 +745,21 @@ namespace Phantasma.VM
 
                             var context = frame.Registers[src].AsInterop<ExecutionContext>();
 
-                            _state = frame.VM.SwitchContext(context);
+                            _state = frame.VM.SwitchContext(context, InstructionPointer);
 
-                            if (_state == ExecutionState.Running)
+                            if (_state == ExecutionState.Halt)
                             {
+                                _state = ExecutionState.Running;
                                 frame.VM.PopFrame();
+                            }
+                            else
+                            {
+#if DEBUG
+                                throw new VMDebugException(frame.VM, $"VM switch instruction failed: execution state did not halt");
+#else
+                                SetState(ExecutionState.Fault);
+                                return;
+#endif
                             }
 
                             break;

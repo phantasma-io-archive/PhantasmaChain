@@ -73,6 +73,12 @@ namespace Phantasma.Blockchain.Contracts
                     result = ExecutionState.Fault;
 #endif
                 }
+
+                if (result == ExecutionState.Running)
+                {
+                    result = ExecutionState.Halt;
+                }
+
                 return result;
             }
 
