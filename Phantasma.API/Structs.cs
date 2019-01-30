@@ -156,6 +156,9 @@ namespace Phantasma.API
         [APIDescription("Address that controls minting of tokens")]
         public string ownerAddress;
 
+        [APIDescription("Metadata associated with the token")]
+        public TokenMetadataResult[] metadataList;
+
         public string Flags;
     }
 
@@ -213,5 +216,11 @@ namespace Phantasma.API
         public string quoteSymbol;
         public string tokenId;
         public string price;
+    }
+
+    public struct TokenMetadataResult : IAPIResult
+    {
+        public string key;
+        public byte[] value;
     }
 }

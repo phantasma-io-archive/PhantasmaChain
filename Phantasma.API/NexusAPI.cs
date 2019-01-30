@@ -264,6 +264,18 @@ namespace Phantasma.API
         #region UTILS
         private TokenResult FillToken(Token token)
         {
+            var metadata = (TokenMetadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", token.Symbol);
+            var metadataResults = new List<TokenMetadataResult>();
+
+            for (int i = 0; i < metadata.Length; i++)
+            {
+                metadataResults.Add(new TokenMetadataResult
+                {
+                    key = metadata[i].key,
+                    value = metadata[i].value
+                });
+            }
+
             return new TokenResult
             {
                 symbol = token.Symbol,
@@ -272,7 +284,8 @@ namespace Phantasma.API
                 maxSupply = token.MaxSupply.ToString(),
                 decimals = token.Decimals,
                 Flags = token.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
-                ownerAddress = token.Owner.Text
+                ownerAddress = token.Owner.Text,
+                metadata = metadataResults.ToArray()
             };
         }
 
