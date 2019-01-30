@@ -159,7 +159,7 @@ namespace Phantasma.API
         [APIDescription("Metadata associated with the token")]
         public TokenMetadataResult[] metadataList;
 
-        public string Flags;
+        public string flags;
     }
 
     public struct TokenDataResult : IAPIResult
@@ -221,6 +221,6 @@ namespace Phantasma.API
     public struct TokenMetadataResult : IAPIResult
     {
         public string key;
-        public byte[] value;
+        public string value;
     }
 }

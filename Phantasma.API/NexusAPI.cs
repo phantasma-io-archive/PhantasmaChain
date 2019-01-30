@@ -272,7 +272,7 @@ namespace Phantasma.API
                 metadataResults.Add(new TokenMetadataResult
                 {
                     key = metadata[i].key,
-                    value = metadata[i].value
+                    value = metadata[i].value.Encode()
                 });
             }
 
@@ -283,7 +283,7 @@ namespace Phantasma.API
                 currentSupply = token.CurrentSupply.ToString(),
                 maxSupply = token.MaxSupply.ToString(),
                 decimals = token.Decimals,
-                Flags = token.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
+                flags = token.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 ownerAddress = token.Owner.Text,
                 metadataList = metadataResults.ToArray()
             };
