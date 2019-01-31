@@ -108,7 +108,7 @@ namespace Phantasma.API
         public uint total;
         public uint totalPages;
 
-        public IAPIResult results;
+        public IAPIResult result;
     }
 
     public struct BlockResult : IAPIResult

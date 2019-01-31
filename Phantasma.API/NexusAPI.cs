@@ -55,10 +55,12 @@ namespace Phantasma.API
     public class APIInfoAttribute : APIDescriptionAttribute
     {
         public readonly Type ReturnType;
+        public readonly bool Paginated;
 
-        public APIInfoAttribute(Type returnType, string description) : base(description)
+        public APIInfoAttribute(Type returnType, string description, bool paginated = false) : base(description)
         {
             ReturnType = returnType;
+            Paginated = paginated;
         }
     }
 
@@ -87,6 +89,8 @@ namespace Phantasma.API
 
         public readonly Type ReturnType;
         public readonly string Description;
+
+        public readonly bool IsPaginated;
 
         public readonly APIFailCaseAttribute[] FailCases;
 
@@ -146,11 +150,13 @@ namespace Phantasma.API
                 var attr = info.GetCustomAttribute<APIInfoAttribute>();
                 ReturnType = attr.ReturnType;
                 Description = attr.Description;
+                IsPaginated = attr.Paginated;
             }
             catch
             {
                 ReturnType = null;
                 Description = "TODO document me";
+                IsPaginated = false;
             }
         }
 
@@ -604,7 +610,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(PaginatedResult), "Returns last X transactions of given address.")]
+        [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.", true)]
         [APIFailCase("address is invalid", "543533")]
         [APIFailCase("page is invalid", "-1")]
         [APIFailCase("pageSize is invalid", "-1")]
@@ -637,7 +643,7 @@ namespace Phantasma.API
                     .Skip((int)((page - 1) * pageSize))
                     .Take((int)pageSize);
 
-                var results = new AccountTransactionsResult
+                var result = new AccountTransactionsResult
                 {
                     address = address.Text,
                     txs = txs.Select(FillTransaction).ToArray()
@@ -648,7 +654,7 @@ namespace Phantasma.API
                 paginatedResult.total = numberRecords;
                 paginatedResult.page = page;
 
-                paginatedResult.results = results;
+                paginatedResult.result = result;
 
                 return paginatedResult;
             }
@@ -949,7 +955,7 @@ namespace Phantasma.API
             return new ArrayResult() { values = appList.ToArray() };
         }
 
-        [APIInfo(typeof(PaginatedResult), "Returns last X transactions of given token.")]
+        [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.", true)]
         [APIFailCase("token symbol is invalid", "43242342")]
         [APIFailCase("page is invalid", "-1")]
         [APIFailCase("pageSize is invalid", "-1")]
@@ -997,7 +1003,7 @@ namespace Phantasma.API
             paginatedResult.total = numberRecords;
             paginatedResult.page = page;
 
-            paginatedResult.results = new ArrayResult { values = txList.ToArray() };
+            paginatedResult.result = new ArrayResult { values = txList.ToArray() };
 
             return paginatedResult;
         }
