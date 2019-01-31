@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Tokens
         {
             if (string.IsNullOrEmpty(value)) return 0;
 
-            BigInteger big = BigInteger.Parse(value, units);
+            BigInteger big = BigInteger.Parse(value);
 
             return ToDecimal(big, units);
         }
