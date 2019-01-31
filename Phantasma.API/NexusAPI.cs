@@ -1080,7 +1080,7 @@ namespace Phantasma.API
             return new SingleResult { value = entries.Count() };
         }
 
-        [APIInfo(typeof(PaginatedResult), "Returns the auctions available in the market.")]
+        [APIInfo(typeof(MarketAuction[]), "Returns the auctions available in the market.", true)]
         public IAPIResult GetAuctions([APIParameter("Token symbol used as filter", "NACHO")] string symbol = null,
             [APIParameter("Index of page to return", "5")] uint page = 1,
             [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
@@ -1125,7 +1125,7 @@ namespace Phantasma.API
             paginatedResult.total = numberRecords;
             paginatedResult.page = page;
 
-            paginatedResult.results = new ArrayResult { values = entries.Select(x => (object)FillAuction(x)).ToArray() };
+            paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x)).ToArray() };
 
             return paginatedResult;
         }
