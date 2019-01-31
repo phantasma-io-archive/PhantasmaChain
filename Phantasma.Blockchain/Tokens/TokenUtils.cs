@@ -34,14 +34,14 @@ namespace Phantasma.Blockchain.Tokens
         {
             if (string.IsNullOrEmpty(value)) return 0;
 
-            BigInteger big = BigInteger.Parse(value);
+            BigInteger big = BigInteger.Parse(value, units);
 
             return ToDecimal(big, units);
         }
 
         public static BigInteger ToBigInteger(decimal n, int units)
         {
-            var multiplier = GetMultiplier(units);            
+            var multiplier = GetMultiplier(units);
             var A = new BigInteger((long)n);
             var B = new BigInteger((long)multiplier);
 
