@@ -20,6 +20,18 @@ namespace Phantasma.Core.Utils
             return buffer;
         }
 
+        public static byte[] DupBytes(byte[] src)
+        {
+            if (src == null)
+            {
+                return null;
+            }
+
+            var tmp = new byte[src.Length];
+            CopyBytes(src, 0, tmp, 0, src.Length);
+            return tmp;
+        }
+
         public static void CopyBytes(byte[] src, int spos, byte[] dst, int dpos, int len)
         {
 #if BRIDGE_NET

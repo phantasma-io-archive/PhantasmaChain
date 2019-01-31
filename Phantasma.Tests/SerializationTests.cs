@@ -23,7 +23,7 @@ namespace Phantasma.Tests
             var keysB = KeyPair.Generate();
 
             var script = ScriptUtils.BeginScript().
-                AllowGas(keysA.Address, 1, 9999).
+                AllowGas(keysA.Address, Address.Null, 1, 9999).
                 TransferTokens(Nexus.NativeTokenSymbol, keysA.Address, keysB.Address, TokenUtils.ToBigInteger(25, Nexus.NativeTokenDecimals)).
                 SpendGas(keysA.Address).
                 EndScript();
@@ -57,7 +57,7 @@ namespace Phantasma.Tests
                 var keysB = KeyPair.Generate();
 
                 var script = ScriptUtils.BeginScript().
-                    AllowGas(keysA.Address, 1, 9999).
+                    AllowGas(keysA.Address, Address.Null, 1, 9999).
                     TransferTokens(Nexus.NativeTokenSymbol, keysA.Address, keysB.Address, TokenUtils.ToBigInteger(20 +i , Nexus.NativeTokenDecimals)).
                     SpendGas(keysA.Address).
                     EndScript();

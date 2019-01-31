@@ -330,7 +330,7 @@ namespace Phantasma.Blockchain.Utils
 
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, 1, 9999).
+                AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("nexus", "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags).
                 SpendGas(owner.Address).
                 EndScript();
@@ -360,7 +360,7 @@ namespace Phantasma.Blockchain.Utils
 
             var sb = ScriptUtils.
                 BeginScript().
-                AllowGas(source.Address, 1, 9999);
+                AllowGas(source.Address, Address.Null, 1, 9999);
 
             if (targetAddress != source.Address)
             {
@@ -391,7 +391,7 @@ namespace Phantasma.Blockchain.Utils
             var script = ScriptUtils.
                 BeginScript().
                 CallContract("token", "SettleBlock", sourceChain.Address, targetHash).
-                AllowGas(source.Address, 1, 9999).
+                AllowGas(source.Address, Address.Null, 1, 9999).
                 SpendGas(source.Address).
                 EndScript();
             var tx = MakeTransaction(source, destChain, script);
@@ -400,7 +400,7 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("bank", "Claim", source.Address, amount).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("bank", "Claim", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             tx.Sign(source);
             return tx;
@@ -408,7 +408,7 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("bank", "Redeem", source.Address, amount).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("bank", "Redeem", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
@@ -416,7 +416,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
             var sourceChain = this.Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("account", "Register", source.Address, name).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("account", "Register", source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);
@@ -426,7 +426,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateChain(KeyPair source, Chain parentchain, string name)
         {
             var script = ScriptUtils.BeginScript().
-                AllowGas(source.Address, 1, 9999).
+                AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name).
                 SpendGas(source.Address).
                 EndScript();
@@ -437,7 +437,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().
-                AllowGas(source.Address, 1, 9999).
+                AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("token", "TransferTokens", source.Address, dest, token.Symbol, amount).
                 SpendGas(source.Address).
                 EndScript();
@@ -447,7 +447,7 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, Token token, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "TransferToken", source.Address, dest, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "TransferToken", source.Address, dest, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
@@ -455,14 +455,14 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateNftSidechainTransfer(KeyPair source, Address destAddress, Chain sourceChain,
             Chain destChain, Token token, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "SendToken", destChain.Address, source.Address, destAddress, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "SendToken", destChain.Address, source.Address, destAddress, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
 
         public Transaction GenerateNftBurn(KeyPair source, Chain chain, Token token, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("token", "BurnToken", source.Address, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "BurnToken", source.Address, token.Symbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
@@ -470,7 +470,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
         {
             var endDate = new Timestamp(Timestamp.Now + TimeSpan.FromDays(5));
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }        
@@ -479,7 +479,7 @@ namespace Phantasma.Blockchain.Utils
         {
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(source.Address, 1, 9999).
+                AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("token", "MintToken", destAddress, token.Symbol, rom, ram).
                 SpendGas(source.Address).
                 EndScript();
@@ -493,13 +493,13 @@ namespace Phantasma.Blockchain.Utils
             var contract = "apps";
 
             var chain = Nexus.FindChainByName("apps");
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract(contract, "RegisterApp", source.Address, name).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "RegisterApp", source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract(contract, "SetAppUrl", name, url).SpendGas(source.Address).EndScript();
+            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "SetAppUrl", name, url).SpendGas(source.Address).EndScript();
             tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract(contract, "SetAppDescription", name, description).SpendGas(source.Address).EndScript();
+            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "SetAppDescription", name, description).SpendGas(source.Address).EndScript();
             tx = MakeTransaction(source, chain, script);
 
             return tx;
@@ -514,7 +514,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateSetTokenMetadata(KeyPair source, Token token, string key, byte[] value)
         {
             var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, 1, 9999).CallContract("nexus", "SetTokenMetadata", token.Symbol, key, value).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("nexus", "SetTokenMetadata", token.Symbol, key, value).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             
             return tx;

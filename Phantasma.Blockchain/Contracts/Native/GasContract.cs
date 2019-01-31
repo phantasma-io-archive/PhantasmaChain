@@ -7,6 +7,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public struct GasEventData
     {
+        public Address address;
         public BigInteger price;
         public BigInteger amount;
     }
@@ -16,8 +17,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public override string Name => "gas";
 
         internal StorageMap _allowanceMap; //<Address, BigInteger>
+        internal StorageMap _allowanceTargets; //<Address, Address>
 
-        public void AllowGas(Address from, BigInteger price, BigInteger limit)
+        public void AllowGas(Address from, Address to, BigInteger price, BigInteger limit)
         {
             if (Runtime.readOnlyMode)
             {
@@ -25,6 +27,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(from != to, "invalid gas target");
+            Runtime.Expect(Runtime.Chain.Address != to, "invalid gas target");
 
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
@@ -47,8 +51,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             allowance += maxAmount;
             _allowanceMap.Set(from, allowance);
+            _allowanceTargets.Set(from, to);
 
-            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { price = price, amount = limit });
+            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = Runtime.Chain.Address, price = price, amount = limit });
         }
 
         public void SpendGas(Address from) {
@@ -76,15 +81,66 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var leftoverAmount = availableAmount - requiredAmount;
 
+            var targetAddress = _allowanceTargets.Get<Address, Address>(from);
+            BigInteger targetGas;
+
+            if (targetAddress != Address.Null)
+            {
+                targetGas = spentGas / 2; // 50% for dapps
+            }
+            else
+            {
+                targetGas = 0;
+            }
+
+            BigInteger storageGas;
+
+            if (Runtime.Nexus.StorageAddress != Address.Null)
+            {
+                storageGas = spentGas / 2; // 50% of remainder to storage pool
+            }
+            else
+            {
+                storageGas = 0;
+            }
+
+            // return unused gas to transaction creator
             if (leftoverAmount > 0)
             {
                 Runtime.Expect(balances.Subtract(Runtime.Chain.Address, leftoverAmount), "gas leftover deposit failed");
                 Runtime.Expect(balances.Add(from, leftoverAmount), "gas leftover withdraw failed");
             }
 
-            _allowanceMap.Remove(from);
+            if (targetGas > 0)
+            {
+                var targetPayment = targetGas * Runtime.GasPrice;
+                Runtime.Expect(balances.Subtract(Runtime.Chain.Address, targetPayment), "gas target withdraw failed");
+                Runtime.Expect(balances.Add(targetAddress, targetPayment), "gas target deposit failed");
+                spentGas -= targetGas;
+            }
 
-            Runtime.Notify(EventKind.GasPayment, from, new GasEventData() { price = Runtime.GasPrice, amount = spentGas});
+            if (storageGas > 0)
+            {
+                var storagePayment = storageGas * Runtime.GasPrice;
+                Runtime.Expect(balances.Subtract(Runtime.Chain.Address, storagePayment), "gas storage withdraw failed");
+                Runtime.Expect(balances.Add(Runtime.Nexus.StorageAddress, storagePayment), "gas storage deposit failed");
+                spentGas -= storageGas;
+            }
+
+            _allowanceMap.Remove(from);
+            _allowanceTargets.Remove(from);
+
+            if (targetGas > 0)
+            {
+                Runtime.Notify(EventKind.GasPayment, targetAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = targetGas });
+            }
+
+            if (storageGas > 0)
+            {
+                Runtime.Notify(EventKind.GasPayment, Runtime.Nexus.StorageAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = storageGas });
+            }
+
+            Runtime.Notify(EventKind.GasPayment, Runtime.Chain.Address, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
         }
 
     }

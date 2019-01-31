@@ -129,7 +129,7 @@ namespace Phantasma.Tests
 
         private Hash SendTransfer(Logger log, string host, KeyPair from, Address to, BigInteger amount)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(from.Address, 1, 9999).TransferTokens("SOUL", from.Address, to, amount).SpendGas(from.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(from.Address, Address.Null, 1, 9999).TransferTokens("SOUL", from.Address, to, amount).SpendGas(from.Address).EndScript();
 
             var tx = new Transaction("simnet", "main", script, Timestamp.Now + TimeSpan.FromMinutes(30));
             tx.Sign(from);

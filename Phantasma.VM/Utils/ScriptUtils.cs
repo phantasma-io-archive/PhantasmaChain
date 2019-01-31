@@ -19,9 +19,9 @@ namespace Phantasma.VM.Utils
             return sb.ToScript();
         }
 
-        public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address address, BigInteger gasPrice, BigInteger gasLimit)
+        public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address from, Address to, BigInteger gasPrice, BigInteger gasLimit)
         {
-            CallContract(sb, "gas", "AllowGas", address, gasPrice, gasLimit);
+            CallContract(sb, "gas", "AllowGas", from, to, gasPrice, gasLimit);
             return sb;
         }
 

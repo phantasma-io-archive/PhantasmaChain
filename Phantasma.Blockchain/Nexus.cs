@@ -8,6 +8,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
@@ -41,6 +42,7 @@ namespace Phantasma.Blockchain
         public IEnumerable<Token> Tokens => _tokens.Values;
 
         public readonly Address GenesisAddress;
+        public readonly Address StorageAddress;
 
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
@@ -52,6 +54,15 @@ namespace Phantasma.Blockchain
         public Nexus(string name, Address genesisAddress, Logger logger = null)
         {
             GenesisAddress = genesisAddress;
+
+            var temp = ByteArrayUtils.DupBytes(genesisAddress.PublicKey);
+            var str = "STORAGE";
+            for (int i=0; i<str.Length; i++)
+            {
+                temp[i] = (byte)str[i];
+            }
+            StorageAddress = new Address(temp);
+
             _logger = logger;
             Name = name;
 
@@ -457,7 +468,7 @@ namespace Phantasma.Blockchain
 
             if (symbol != NativeTokenSymbol)
             {
-                sb.AllowGas(owner.Address, 1, 9999);
+                sb.AllowGas(owner.Address, Address.Null, 1, 9999);
             }
 
             sb.CallContract(ScriptBuilderExtensions.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
@@ -465,7 +476,7 @@ namespace Phantasma.Blockchain
             if (symbol == NativeTokenSymbol)
             {
                 sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
-                sb.AllowGas(owner.Address, 1, 9999);
+                sb.AllowGas(owner.Address, Address.Null, 1, 9999);
             }
 
             var script = sb.SpendGas(owner.Address).EndScript();
@@ -480,7 +491,7 @@ namespace Phantasma.Blockchain
         {
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, 1, 9999).
+                AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name).
                 SpendGas(owner.Address).
                 EndScript();
@@ -494,7 +505,7 @@ namespace Phantasma.Blockchain
         {
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, 1, 9999).
+                AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("stake", "Stake", owner.Address).
                 SpendGas(owner.Address).
                 EndScript();

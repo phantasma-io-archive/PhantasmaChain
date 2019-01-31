@@ -65,7 +65,7 @@ namespace Phantasma.Tests
             simulator.GenerateCustomTransaction(testUser, () =>
             ScriptUtils.
                   BeginScript().
-                  AllowGas(testUser.Address, 1, 9999).
+                  AllowGas(testUser.Address, Address.Null, 1, 9999).
                   CallContract("market", "SellToken", testUser.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenID, price, endDate).
                   SpendGas(testUser.Address).
                   EndScript()
@@ -79,7 +79,7 @@ namespace Phantasma.Tests
             simulator.GenerateCustomTransaction(owner, () =>
             ScriptUtils.
                   BeginScript().
-                  AllowGas(owner.Address, 1, 9999).
+                  AllowGas(owner.Address, Address.Null, 1, 9999).
                   CallContract("market", "BuyToken", owner.Address, token.Symbol, auctions[previousAuctionCount].TokenID).
                   SpendGas(owner.Address).
                   EndScript()

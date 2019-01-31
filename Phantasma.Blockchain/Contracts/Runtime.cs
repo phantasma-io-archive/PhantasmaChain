@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain.Contracts
                 case EventKind.GasPayment:
                     {
                         var gasInfo = (GasEventData)(object)content;
-                        this.PaidGas = gasInfo.amount;
+                        this.PaidGas += gasInfo.amount;
                         break;
                     }
             }
