@@ -505,10 +505,10 @@ namespace Phantasma.Blockchain
         }
 
         public const string NativeTokenSymbol = "ALMA";
-        public const string PlatformName = "Phantasma Alma";
+        public const string PlatformName = "Phantasma Energy";
 
         public const string StableTokenSymbol = "SUS";
-        public const string StableTokenName = "Stable Coin";
+        public const string StableTokenName = "Phantasma Dollar";
 
         public const int NativeTokenDecimals = 10;
         public const int StableTokenDecimals = 8;
