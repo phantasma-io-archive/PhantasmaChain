@@ -64,6 +64,11 @@ namespace Phantasma.Blockchain.Contracts
                 return true;
             }
 
+            if (Runtime.Transaction == null)
+            {
+                return false;
+            }
+
             return Runtime.Transaction.IsSignedBy(address);
         }
 
