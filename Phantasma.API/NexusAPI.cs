@@ -1077,6 +1077,11 @@ namespace Phantasma.API
 
             IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions");
 
+            if (!string.IsNullOrEmpty(symbol))
+            {
+                entries =  entries.Where(x => x.BaseSymbol == symbol);
+            }
+
             return new SingleResult { value = entries.Count() };
         }
 
