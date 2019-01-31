@@ -71,14 +71,16 @@ namespace Phantasma.API
         public readonly string Description;
         public readonly string ExampleValue; // example value
         public readonly object DefaultValue;
+        public readonly bool HasDefaultValue;
 
-        public APIValue(Type type, string name, string description, string exampleValue, object defaultValue)
+        public APIValue(Type type, string name, string description, string exampleValue, object defaultValue, bool hasDefaultValue)
         {
             Type = type;
             Name = name;
             Description = description;
             ExampleValue = exampleValue;
             DefaultValue = defaultValue;
+            HasDefaultValue = hasDefaultValue;
         }
     }
 
@@ -133,7 +135,7 @@ namespace Phantasma.API
                     defaultValue = null;
                 }
 
-                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description, exampleValue, defaultValue));
+                Parameters.Add(new APIValue(entry.ParameterType, entry.Name, description, exampleValue, defaultValue, entry.HasDefaultValue));
             }
 
             try
@@ -177,7 +179,7 @@ namespace Phantasma.API
             {
                 if (Parameters[i].Type == typeof(string))
                 {
-                    args[i] = input[i].ToString();
+                    args[i] = input[i] == null ? null : input[i].ToString();
                     continue;
                 }
 
@@ -1080,7 +1082,7 @@ namespace Phantasma.API
             return new SingleResult { value = entries.Count() };
         }
 
-        [APIInfo(typeof(MarketAuction[]), "Returns the auctions available in the market.", true)]
+        [APIInfo(typeof(AuctionResult[]), "Returns the auctions available in the market.", true)]
         public IAPIResult GetAuctions([APIParameter("Token symbol used as filter", "NACHO")] string symbol = null,
             [APIParameter("Index of page to return", "5")] uint page = 1,
             [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)

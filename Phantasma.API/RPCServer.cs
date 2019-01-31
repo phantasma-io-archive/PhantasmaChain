@@ -44,7 +44,7 @@ namespace Phantasma.API
                             args[i] = paramNode.GetNodeByIndex(i).Value;
                         }
                         else
-                        if (apiMethod.Parameters[i].DefaultValue != null)
+                        if (apiMethod.Parameters[i].HasDefaultValue)
                         {
                             args[i] = apiMethod.Parameters[i].DefaultValue;
                         }
