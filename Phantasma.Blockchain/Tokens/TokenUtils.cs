@@ -5,9 +5,10 @@ namespace Phantasma.Blockchain.Tokens
 {
     public static class TokenUtils
     {
-        private static decimal GetMultiplier(int units)
+        // TODO why not just BigInteger.Pow(10, units)???
+        private static BigInteger GetMultiplier(int units)
         {
-            decimal unitMultiplier = 1m;
+            BigInteger unitMultiplier = 1;
             while (units > 0)
             {
                 unitMultiplier *= 10;
@@ -24,15 +25,17 @@ namespace Phantasma.Blockchain.Tokens
                 return 0;
             }
 
-            var n = (long)value;
 
             if (units == 0)
             {
-                return n;
+                return (long)value;
             }
 
-            var multiplier = GetMultiplier(units);            
-            return n / multiplier;
+            var multiplier = GetMultiplier(units);
+            value /= multiplier;
+            var n = (long)value;
+
+            return n;
         }
 
         public static decimal ToDecimal(string value, int units)
@@ -55,7 +58,7 @@ namespace Phantasma.Blockchain.Tokens
 
             if (fracPart > 0)
             {
-                var l = fracPart * multiplier;
+                var l = fracPart * (long)multiplier;
                 C = new BigInteger((long)l);
             }
 

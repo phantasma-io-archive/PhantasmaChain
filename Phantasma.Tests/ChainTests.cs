@@ -31,6 +31,11 @@ namespace Phantasma.Tests
 
             var tmp2 = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
             Assert.IsTrue(tmp2 > 0);
+
+            decimal eos = 1006245120;
+            var tmp3 = TokenUtils.ToBigInteger(eos, 18);
+            var dec = TokenUtils.ToDecimal(tmp3, 18);
+            Assert.IsTrue(dec == eos);
         }
 
         [TestMethod]
