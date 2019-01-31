@@ -1065,11 +1065,10 @@ namespace Phantasma.API
 
             return result;
         }
-
-        [APIInfo(typeof(AuctionResult[]), "Returns the auctions available in the market.")]
-        public IAPIResult GetAuctions([APIParameter("Token symbol used as filter", "NACHO")] string symbol = null)
+        [APIInfo(typeof(int), "Returns the number of active auctions.")]
+        public IAPIResult GetAuctionsCount([APIParameter("Token symbol used as filter", "NACHO")]
+            string symbol = null)
         {
-            //var chain = Nexus.FindChainByName("market");
             var chain = Nexus.RootChain;
             if (chain == null)
             {
@@ -1078,12 +1077,57 @@ namespace Phantasma.API
 
             IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions");
 
+            return new SingleResult { value = entries.Count() };
+        }
+
+        [APIInfo(typeof(PaginatedResult), "Returns the auctions available in the market.")]
+        public IAPIResult GetAuctions([APIParameter("Token symbol used as filter", "NACHO")] string symbol = null,
+            [APIParameter("Index of page to return", "5")] uint page = 1,
+            [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
+        {
+            //var chain = Nexus.FindChainByName("market");
+            var chain = Nexus.RootChain;
+            if (chain == null)
+            {
+                return new ErrorResult { error = "Market not available" };
+            }
+
+            if (page < 1 || pageSize < 1)
+            {
+                return new ErrorResult { error = "invalid page/pageSize" };
+            }
+
+            if (pageSize > PaginationMaxResults)
+            {
+                pageSize = PaginationMaxResults;
+            }
+
+            var paginatedResult = new PaginatedResult();
+
+            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions");
+
             if (!string.IsNullOrEmpty(symbol))
             {
                 entries = entries.Where(x => x.BaseSymbol == symbol);
             }
 
-            return new ArrayResult() { values = entries.Select(x => (object)FillAuction(x)).ToArray() }; // TODO make this less ugly
+            // pagination
+            uint numberRecords = (uint)entries.Count();
+            uint totalPages = (uint)Math.Ceiling(numberRecords / (double)pageSize);
+            //
+
+            entries = entries.OrderByDescending(p => p.StartDate.Value)
+                .Skip((int)((page - 1) * pageSize))
+                .Take((int)pageSize);
+
+            paginatedResult.pageSize = pageSize;
+            paginatedResult.totalPages = totalPages;
+            paginatedResult.total = numberRecords;
+            paginatedResult.page = page;
+
+            paginatedResult.results = new ArrayResult { values = entries.Select(x => (object)FillAuction(x)).ToArray() };
+
+            return paginatedResult;
         }
     }
 }
