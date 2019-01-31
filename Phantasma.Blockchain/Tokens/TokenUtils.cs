@@ -26,7 +26,12 @@ namespace Phantasma.Blockchain.Tokens
 
             var n = (long)value;
 
-            var multiplier = GetMultiplier(units);
+            if (units == 0)
+            {
+                return n;
+            }
+
+            var multiplier = GetMultiplier(units);            
             return n / multiplier;
         }
 
