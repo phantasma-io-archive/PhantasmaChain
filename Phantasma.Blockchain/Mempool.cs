@@ -266,6 +266,7 @@ namespace Phantasma.Blockchain
                         _rejections[e.Hash] = e.Message;
                     }
 
+                    transactions.Remove(tx);
                     OnTransactionFailed?.Invoke(tx);
                     continue;
                 }
