@@ -71,7 +71,7 @@ namespace Phantasma.Blockchain
             {
                 new NexusContract(),
                 new TokenContract(),
-                new StakeContract(),
+                new ConsensusContract(),
                 new GovernanceContract(),
                 new AccountContract(),
                 new OracleContract(),
@@ -501,12 +501,12 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction StakeCreateTx(Chain chain, KeyPair owner)
+        private Transaction ConsensusStakeCreateTx(Chain chain, KeyPair owner)
         {
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("stake", "Stake", owner.Address).
+                CallContract("consensus", "Stake", owner.Address).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -550,7 +550,7 @@ namespace Phantasma.Blockchain
                 TokenCreateTx(RootChain, owner, "ETH", "Ethereum", TokenUtils.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External),
                 TokenCreateTx(RootChain, owner, "EOS", "EOS", TokenUtils.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External),
 
-                StakeCreateTx(RootChain, owner)
+                ConsensusStakeCreateTx(RootChain, owner)
             };
 
             var genesisMessage = Encoding.UTF8.GetBytes("A Phantasma was born...");
@@ -618,13 +618,13 @@ namespace Phantasma.Blockchain
         #region VALIDATORS
         public IEnumerable<Address> GetValidators()
         {
-            var validators = (Address[])RootChain.InvokeContract("stake", "GetValidators");
+            var validators = (Address[])RootChain.InvokeContract("consensus", "GetValidators");
             return validators;
         }
 
         public int GetValidatorCount()
         {
-            var count = (BigInteger)RootChain.InvokeContract("stake", "GetActiveValidatorss");
+            var count = (BigInteger)RootChain.InvokeContract("consensus", "GetActiveValidatorss");
             return (int)count;
         }
 
@@ -640,7 +640,7 @@ namespace Phantasma.Blockchain
                 return -1;
             }
 
-            var result = (int)(BigInteger)RootChain.InvokeContract("stake", "GetIndexOfValidator", address);
+            var result = (int)(BigInteger)RootChain.InvokeContract("consensus", "GetIndexOfValidator", address);
             return result;
         }
 
@@ -653,7 +653,7 @@ namespace Phantasma.Blockchain
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = (Address)RootChain.InvokeContract("stake", "GetValidatorByIndex", (BigInteger)index);
+            var result = (Address)RootChain.InvokeContract("consensus", "GetValidatorByIndex", (BigInteger)index);
             return result;
         }
         #endregion
