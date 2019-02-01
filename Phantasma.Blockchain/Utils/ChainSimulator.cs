@@ -1,4 +1,6 @@
-﻿using Phantasma.Blockchain;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
@@ -8,10 +10,6 @@ using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 
 namespace Phantasma.Blockchain.Utils
 {
@@ -199,6 +197,8 @@ namespace Phantasma.Blockchain.Utils
                 throw new Exception("Simulator block not open");
             }
 
+            usedAddresses.Clear();
+
             blockOpen = false;
 
             var blocks = new List<Block>();
@@ -308,6 +308,8 @@ namespace Phantasma.Blockchain.Utils
             txChainMap[tx.Hash] = chain;
             txHashMap[tx.Hash] = tx;
             transactions.Add(tx);
+
+            usedAddresses.Add(source.Address);
 
             return tx;
         }
@@ -521,9 +523,12 @@ namespace Phantasma.Blockchain.Utils
         }
 
         private int step;
+        private HashSet<Address> usedAddresses = new HashSet<Address>();
+
 
         public void GenerateRandomBlock(Mempool mempool = null)
         {
+            //Console.WriteLine("begin block #" + Nexus.RootChain.BlockHeight);
             BeginBlock();
 
             int transferCount = 1 + _rnd.Next() % 10;
@@ -531,15 +536,24 @@ namespace Phantasma.Blockchain.Utils
             {
                 var source = _keys[_rnd.Next() % _keys.Count];
 
+                if (usedAddresses.Contains(source.Address))
+                {
+                    continue;
+                }
+
+                var prevTxCount = transactions.Count;
+
                 var sourceChain = Nexus.RootChain;
+                var fee = 9999;
+
                 Token token;
 
                 switch (_rnd.Next() % 4)
                 {
                     case 1: token = Nexus.StableToken; break;
+                    case 2: token = Nexus.StakingToken; break;
                     default: token = Nexus.FuelToken; break;
                 }
-
 
                 switch (_rnd.Next() % 7)
                 {
@@ -552,10 +566,18 @@ namespace Phantasma.Blockchain.Utils
                             var targetChainList = Nexus.Chains.Where(x => x.ParentChain == sourceChain || sourceChain.ParentChain == x).ToArray();
                             var targetChain = targetChainList[_rnd.Next() % targetChainList.Length];
 
-                            var balance = sourceChain.GetTokenBalance(token, source.Address);
+                            var total = TokenUtils.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals);
 
-                            var total = balance / 10;
-                            if (total > 0)
+                            var tokenBalance = sourceChain.GetTokenBalance(token, source.Address);
+                            var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelToken, source.Address);
+
+                            var expectedTotal = total;
+                            if (token == Nexus.FuelToken)
+                            {
+                                expectedTotal += fee;
+                            }
+
+                            if (tokenBalance > expectedTotal && fuelBalance > fee)
                             {
                                 GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, 0);
                             }
@@ -592,8 +614,9 @@ namespace Phantasma.Blockchain.Utils
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
 
-                            var total = balance / 10;
-                            if (total > 0)
+                            var total = TokenUtils.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals - 1);
+
+                            if (balance > total + fee)
                             {
                                 GenerateStableClaim(source, sourceChain, total);
                             }
@@ -607,12 +630,13 @@ namespace Phantasma.Blockchain.Utils
                             sourceChain = bankChain;
                             token = Nexus.StableToken;
 
-                            var balance = sourceChain.GetTokenBalance(token, source.Address);
+                            var tokenBalance = sourceChain.GetTokenBalance(token, source.Address);
+                            var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelToken, source.Address);
 
                             var bankContract = bankChain.FindContract<BankContract>("bank");
                             var rate = bankContract.GetRate(Nexus.FuelTokenSymbol);
-                            var total = balance / 10;
-                            if (total >= rate)
+                            var total = tokenBalance / 10;
+                            if (total >= rate && fuelBalance > fee)
                             {
                                 GenerateStableRedeem(source, sourceChain, total);
                             }
@@ -627,7 +651,7 @@ namespace Phantasma.Blockchain.Utils
                             token = Nexus.FuelToken;
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
-                            if (balance >= AccountContract.RegistrationCost && !pendingNames.Contains(source.Address))
+                            if (balance > fee + AccountContract.RegistrationCost && !pendingNames.Contains(source.Address))
                             {
                                 var randomName = accountNames[_rnd.Next() % accountNames.Length];
 
@@ -682,12 +706,21 @@ namespace Phantasma.Blockchain.Utils
 
                             if (source.Address != targetAddress)
                             {
-                                var balance = sourceChain.GetTokenBalance(token, source.Address);
+                                var total = TokenUtils.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals - 1) ;
 
-                                var total = balance / 10;
-                                if (total > 0)
+                                var tokenBalance = sourceChain.GetTokenBalance(token, source.Address);
+                                var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelToken, source.Address);
+
+                                var expectedTotal = total;
+                                if (token == Nexus.FuelToken)
+                                {
+                                    expectedTotal += fee;
+                                }
+
+                                if (tokenBalance > expectedTotal && fuelBalance > fee)
                                 {
                                     GenerateTransfer(source, targetAddress, sourceChain, token, total);
+                                    //Console.WriteLine(source.Address + " => " + targetAddress + " " + TokenUtils.ToDecimal( total, token.Decimals) + " " + token.Symbol);
                                 }
                             }
                             break;
