@@ -182,7 +182,20 @@ namespace Phantasma.Blockchain.Utils
             transactions.Clear();
             txChainMap.Clear();
             txHashMap.Clear();
-            pendingNames.Clear();
+
+            var readyNames = new List<Address>();
+            foreach (var address in pendingNames)
+            {
+                var currentName = Nexus.LookUpAddress(address);
+                if (currentName != AccountContract.ANONYMOUS)
+                {
+                    readyNames.Add(address);
+                }
+            }
+            foreach (var address in readyNames)
+            {
+                pendingNames.Remove(address);
+            }
 
             blockOpen = true;
 
