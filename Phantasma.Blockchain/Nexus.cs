@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain
                 new OracleContract(),
                 new ExchangeContract(),
                 new MarketContract(),
-                new GasContract()
+                new GasContract(),
             };
 
             RootChain = new Chain(this, "main", contracts, logger);
@@ -274,6 +274,7 @@ namespace Phantasma.Blockchain
                 case "apps": contract = new AppsContract(); break;
                 case "dex": contract = new ExchangeContract(); break;
                 case "market": contract = new MarketContract(); break;
+                case "energy": contract = new EnergyContract(); break;
                 default:
                     {
                         var sb = new ScriptBuilder();
@@ -560,7 +561,8 @@ namespace Phantasma.Blockchain
                 SideChainCreateTx(RootChain, owner, "interop"),
                 // SideChainCreateTx(RootChain, owner, "market"), TODO
                 SideChainCreateTx(RootChain, owner, "apps"),
-                
+                SideChainCreateTx(RootChain, owner, "energy"),
+
                 TokenCreateTx(RootChain, owner, "NEO", "NEO", TokenUtils.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External),
                 TokenCreateTx(RootChain, owner, "ETH", "Ethereum", TokenUtils.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External),
                 TokenCreateTx(RootChain, owner, "EOS", "EOS", TokenUtils.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External),
