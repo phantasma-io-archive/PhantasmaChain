@@ -25,16 +25,14 @@ namespace Phantasma.Blockchain.Tokens
                 return 0;
             }
 
-
             if (units == 0)
             {
                 return (long)value;
             }
 
-            var multiplier = GetMultiplier(units);
-            value /= multiplier;
-            var n = (long)value;
-
+            var multiplier = (decimal)GetMultiplier(units);
+            var n = decimal.Parse(value.ToString()); // TODO not very efficient, improve later...
+            n /= multiplier;
             return n;
         }
 

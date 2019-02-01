@@ -36,6 +36,11 @@ namespace Phantasma.Tests
             var tmp3 = TokenUtils.ToBigInteger(eos, 18);
             var dec = TokenUtils.ToDecimal(tmp3, 18);
             Assert.IsTrue(dec == eos);
+
+            BigInteger small = 60;
+            var tmp4 = TokenUtils.ToDecimal(small, 10);
+            var dec2 = 0.000000006m;
+            Assert.IsTrue(dec2 == tmp4);
         }
 
         [TestMethod]
