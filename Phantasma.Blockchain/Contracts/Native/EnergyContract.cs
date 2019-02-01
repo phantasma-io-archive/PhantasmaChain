@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private StorageMap _entryMap; // <Address, EnergyStakeInfo>
 
-        public readonly static BigInteger EnergyRacioDivisor = 100; // used as 1/N 
+        public readonly static BigInteger EnergyRacioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
         public EnergyContract() : base()
         {
