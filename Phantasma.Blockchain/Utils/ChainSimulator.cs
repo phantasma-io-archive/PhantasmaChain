@@ -577,9 +577,15 @@ namespace Phantasma.Blockchain.Utils
                                 expectedTotal += fee;
                             }
 
-                            if (tokenBalance > expectedTotal && fuelBalance > fee)
+                            var sideFee = 0;
+                            if (token != Nexus.FuelToken)
                             {
-                                GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, 0);
+                                sideFee = fee;
+                            }
+
+                            if (tokenBalance > expectedTotal && fuelBalance > fee + sideFee)
+                            {                                
+                                GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, sideFee);
                             }
                             break;
                         }
