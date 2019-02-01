@@ -26,6 +26,11 @@ namespace Phantasma.Cryptography
             this.Address = new Address(publicKey);
         }
 
+        public override string ToString()
+        {
+            return Address.Text;
+        }
+
         private static Random rnd = new Random(); // TODO use crypto RNG
 
         public static KeyPair Generate()
