@@ -30,7 +30,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.NativeToken, 1000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 1000000);
             simulator.GenerateToken(owner, nftSymbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.Transferable);
             simulator.EndBlock();
 
@@ -66,7 +66,7 @@ namespace Phantasma.Tests
             ScriptUtils.
                   BeginScript().
                   AllowGas(testUser.Address, Address.Null, 1, 9999).
-                  CallContract("market", "SellToken", testUser.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenID, price, endDate).
+                  CallContract("market", "SellToken", testUser.Address, token.Symbol, Nexus.FuelTokenSymbol, tokenID, price, endDate).
                   SpendGas(testUser.Address).
                   EndScript()
             );

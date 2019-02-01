@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetRequiredStake()
         {
-            return TokenUtils.ToBigInteger(50000, Nexus.NativeTokenDecimals); // TODO this should be dynamic
+            return TokenUtils.ToBigInteger(50000, Nexus.StakingTokenDecimals); // TODO this should be dynamic
         }
 
         public Address[] GetValidators()
@@ -61,7 +61,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var stakeAmount = GetRequiredStake();
 
-            var balances = Runtime.Chain.GetTokenBalances(Runtime.Nexus.NativeToken);
+            var token = Runtime.Nexus.StakingToken;
+            var balances = Runtime.Chain.GetTokenBalances(token);
             var balance = balances.Get(address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
@@ -78,6 +79,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 slashes = 0
             };
             _entryMap.Set(address, entry);
+
+            Runtime.Notify(EventKind.TokenStake, address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = stakeAmount });
         }
 
         public void Unstake(Address address)
@@ -93,7 +96,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(days >= 30, "waiting period required");
 
             var stakeAmount = entry.stake;
-            var balances = Runtime.Chain.GetTokenBalances(Runtime.Nexus.NativeToken);
+            var token = Runtime.Nexus.StakingToken;
+            var balances = Runtime.Chain.GetTokenBalances(token);
             var balance = balances.Get(Runtime.Chain.Address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
@@ -101,8 +105,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Add(address, stakeAmount), "balance add failed");
 
             _entryMap.Remove(address);
-
             _entryList.Remove(address);
+
+            Runtime.Notify(EventKind.TokenUnstake, address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = stakeAmount });
         }
 
         public BigInteger GetStake(Address address)

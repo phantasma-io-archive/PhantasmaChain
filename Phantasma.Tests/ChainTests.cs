@@ -29,7 +29,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(d == TokenUtils.ToDecimal(n, places));
             Assert.IsTrue(n == TokenUtils.ToBigInteger(d, places));
 
-            var tmp2 = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
+            var tmp2 = TokenUtils.ToBigInteger(0.1m, Nexus.FuelTokenDecimals);
             Assert.IsTrue(tmp2 > 0);
 
             decimal eos = 1006245120;
@@ -47,7 +47,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
 
             var rootChain = nexus.RootChain;
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             Assert.IsTrue(token != null);
             Assert.IsTrue(token.CurrentSupply > 0);
@@ -74,7 +74,7 @@ namespace Phantasma.Tests
 
             var nexus = simulator.Nexus;
             var accountChain = nexus.FindChainByName("account");
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             var testUser = KeyPair.Generate();
 
@@ -104,7 +104,7 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             Func<KeyPair, string, bool> registerName = (keypair, name) =>
             {
@@ -173,7 +173,7 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var targetChain = nexus.FindChainByName("privacy");
 
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
@@ -228,7 +228,7 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var targetChain = nexus.FindChainByName("privacy");
 
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             var sender = KeyPair.Generate();
             var receiver = sender;
@@ -281,7 +281,7 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var appsChain = nexus.FindChainByName("apps");
 
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
@@ -402,7 +402,7 @@ namespace Phantasma.Tests
 
             // Send some SOUL to the test user (required for gas used in "burn" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, chain, simulator.Nexus.NativeToken, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals));
+            simulator.GenerateTransfer(owner, testUser.Address, chain, simulator.Nexus.FuelToken, TokenUtils.ToBigInteger(1, Nexus.FuelTokenDecimals));
             simulator.EndBlock();
 
             var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
@@ -457,7 +457,7 @@ namespace Phantasma.Tests
 
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, chain, simulator.Nexus.NativeToken, TokenUtils.ToBigInteger(1, Nexus.NativeTokenDecimals));
+            simulator.GenerateTransfer(owner, sender.Address, chain, simulator.Nexus.FuelToken, TokenUtils.ToBigInteger(1, Nexus.FuelTokenDecimals));
             simulator.EndBlock();
 
             // Create the token CoolToken as an NFT
@@ -524,13 +524,13 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var fullAmount = TokenUtils.ToBigInteger(10, Nexus.NativeTokenDecimals);
+            var fullAmount = TokenUtils.ToBigInteger(10, Nexus.FuelTokenDecimals);
             var smallAmount = fullAmount / 2;
             Assert.IsTrue(smallAmount > 0);
 
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, sourceChain, simulator.Nexus.NativeToken, fullAmount);
+            simulator.GenerateTransfer(owner, sender.Address, sourceChain, simulator.Nexus.FuelToken, fullAmount);
             simulator.EndBlock();
 
             // Create the token CoolToken as an NFT
@@ -565,11 +565,11 @@ namespace Phantasma.Tests
             ownedTokenList = targetChain.GetTokenOwnerships(token).Get(receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
 
-            var extraFee = TokenUtils.ToBigInteger(0.001m, nexus.NativeToken.Decimals);
+            var extraFee = TokenUtils.ToBigInteger(0.001m, nexus.FuelToken.Decimals);
 
             // transfer that nft from sender to receiver
             simulator.BeginBlock();
-            simulator.GenerateSideChainSend(sender, simulator.Nexus.NativeToken, sourceChain, receiver.Address, targetChain, smallAmount, extraFee);
+            simulator.GenerateSideChainSend(sender, simulator.Nexus.FuelToken, sourceChain, receiver.Address, targetChain, smallAmount, extraFee);
             var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, token, tokenId);
             simulator.EndBlock();
 
@@ -603,7 +603,7 @@ namespace Phantasma.Tests
 
             var nexus = simulator.Nexus;
             var accountChain = nexus.FindChainByName("account");
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
@@ -654,7 +654,7 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var targetChain = nexus.FindChainByName("privacy");
 
-            var token = nexus.NativeToken;
+            var token = nexus.FuelToken;
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();

@@ -13,6 +13,8 @@ namespace Phantasma.Blockchain.Contracts
         TokenMint,
         TokenBurn,
         TokenEscrow,
+        TokenStake,
+        TokenUnstake,
         AddressRegister,
         FriendAdd,
         FriendRemove,

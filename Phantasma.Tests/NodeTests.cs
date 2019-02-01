@@ -46,7 +46,7 @@ namespace Phantasma.Tests
             var masterKeys = KeyPair.FromWIF(nexusWif);
             log.Message($"Connecting to host: {host} with address {masterKeys.Address.Text}");
 
-            var amount = TokenUtils.ToBigInteger(1000000, Nexus.NativeTokenDecimals);
+            var amount = TokenUtils.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
             var hash = SendTransfer(log, host, masterKeys, currentKey.Value.Address, amount);
             if (hash == Hash.Null)
             {
@@ -69,7 +69,7 @@ namespace Phantasma.Tests
                 if (txHash == Hash.Null)
                 {
                     log.Error($"Error sending {amount} SOUL from {currentKey.Value.Address} to {destKey.Value.Address}...");
-                    amount = TokenUtils.ToBigInteger(1000000, Nexus.NativeTokenDecimals);
+                    amount = TokenUtils.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
                     SendTransfer(log, host, masterKeys, currentKey.Value.Address, amount);
                 }
 
@@ -93,7 +93,7 @@ namespace Phantasma.Tests
 
         private BigInteger GetBalance(Address address)
         {
-            return nexus.RootChain.GetTokenBalance(nexus.NativeToken, address);
+            return nexus.RootChain.GetTokenBalance(nexus.FuelToken, address);
         }
 
         private void InitMainNode()

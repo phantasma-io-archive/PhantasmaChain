@@ -12,9 +12,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {           
             //Runtime.Expect(symbol == Nexus.NativeTokenSymbol, "invalid token");
 
-            if (symbol == Nexus.NativeTokenSymbol)
+            if (symbol == Nexus.FuelTokenSymbol)
             {
-                return TokenUtils.ToBigInteger(0.08m, Nexus.NativeTokenDecimals);
+                return TokenUtils.ToBigInteger(0.08m, Nexus.FuelTokenDecimals);
             }
 
             return 0;
@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 
-            var nativeToken = Runtime.Nexus.FindTokenBySymbol(Nexus.NativeTokenSymbol);
+            var nativeToken = Runtime.Nexus.FindTokenBySymbol(Nexus.FuelTokenSymbol);
             Runtime.Expect(nativeToken != null, "invalid native token");
             Runtime.Expect(nativeToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
@@ -35,12 +35,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             var nativeBalances = Runtime.Chain.GetTokenBalances(nativeToken);
             Runtime.Expect(nativeToken.Transfer(nativeBalances, target, Runtime.Chain.Address, amount), "transfer failed");
 
-            var stableAmount = amount * GetRate(Nexus.NativeTokenSymbol);
+            var stableAmount = amount * GetRate(Nexus.FuelTokenSymbol);
 
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
             Runtime.Expect(stableToken.Mint(stableBalances, target, stableAmount), "mint failed");
 
-            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.NativeTokenSymbol });
+            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
             Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = stableAmount, symbol = Nexus.StableTokenSymbol });
         }
 
@@ -49,7 +49,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 
-            var nativeToken = Runtime.Nexus.FindTokenBySymbol(Nexus.NativeTokenSymbol);
+            var nativeToken = Runtime.Nexus.FindTokenBySymbol(Nexus.FuelTokenSymbol);
             Runtime.Expect(nativeToken != null, "invalid native token");
             Runtime.Expect(nativeToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
@@ -59,13 +59,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
             Runtime.Expect(stableToken.Burn(stableBalances, target, amount), "burn failed");
 
-            var expectedAmount = amount / GetRate(Nexus.NativeTokenSymbol);
+            var expectedAmount = amount / GetRate(Nexus.FuelTokenSymbol);
             Runtime.Expect(expectedAmount > 0, "swap amount should greater than zero");
 
             var nativeBalances = Runtime.Chain.GetTokenBalances(nativeToken);
             Runtime.Expect(nativeToken.Transfer(nativeBalances, Runtime.Chain.Address, target, expectedAmount), "transfer failed");
 
-            Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = expectedAmount, symbol = Nexus.NativeTokenSymbol });
+            Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = expectedAmount, symbol = Nexus.FuelTokenSymbol });
             Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.StableTokenSymbol });
         }
     }

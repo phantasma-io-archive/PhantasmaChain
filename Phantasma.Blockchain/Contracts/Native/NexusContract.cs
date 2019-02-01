@@ -45,13 +45,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(decimals >= 0, "token decimals cant be negative");
             Runtime.Expect(decimals <= MAX_TOKEN_DECIMALS, $"token decimals cant exceed {MAX_TOKEN_DECIMALS}");
 
-            if (symbol == Nexus.NativeTokenSymbol)
+            if (symbol == Nexus.FuelTokenSymbol)
             {
-                Runtime.Expect(flags.HasFlag(TokenFlags.Native), "token should be native");
+                Runtime.Expect(flags.HasFlag(TokenFlags.Fuel), "token should be native");
             }
             else
             {
-                Runtime.Expect(!flags.HasFlag(TokenFlags.Native), "token can't be native");
+                Runtime.Expect(!flags.HasFlag(TokenFlags.Fuel), "token can't be native");
+            }
+
+            if (symbol == Nexus.StakingTokenSymbol)
+            {
+                Runtime.Expect(flags.HasFlag(TokenFlags.Stakable), "token should be stakable");
+            }
+
+            if (symbol == Nexus.StableTokenSymbol)
+            {
+                Runtime.Expect(flags.HasFlag(TokenFlags.Stable), "token should be stable");
             }
 
             if (flags.HasFlag(TokenFlags.External))

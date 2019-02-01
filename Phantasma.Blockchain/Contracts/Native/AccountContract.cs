@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 
 
-        public static readonly BigInteger RegistrationCost = TokenUtils.ToBigInteger(0.1m, Nexus.NativeTokenDecimals);
+        public static readonly BigInteger RegistrationCost = TokenUtils.ToBigInteger(0.1m, Nexus.FuelTokenDecimals);
 
         public AccountContract() : base()
         {
@@ -30,7 +30,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
 
-            var token = Runtime.Nexus.NativeToken;
+            var token = Runtime.Nexus.FuelToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
             Runtime.Expect(token.Transfer(balances, target, Runtime.Chain.Address, RegistrationCost), "fee failed");
 

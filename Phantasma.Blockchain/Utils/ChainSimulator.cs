@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain.Utils
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.NativeToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(100, Nexus.NativeTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(100, Nexus.FuelTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain.Utils
                     {
                         nftSales.Add(new KeyValuePair<KeyPair, BigInteger>(key, ID));
                         // send some gas to the sellers
-                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.NativeToken, TokenUtils.ToBigInteger(200, Nexus.NativeTokenDecimals));
+                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, TokenUtils.ToBigInteger(200, Nexus.FuelTokenDecimals));
                     }
                 }
             }
@@ -145,7 +145,7 @@ namespace Phantasma.Blockchain.Utils
             foreach (var sale in nftSales)
             {
                 // TODO this later should be the market chain instead of root
-                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, TokenUtils.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.NativeTokenDecimals));
+                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, TokenUtils.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
             }
             EndBlock();
         }
@@ -349,7 +349,7 @@ namespace Phantasma.Blockchain.Utils
             Throw.IfNull(targetChain, nameof(targetChain));
             Throw.If(amount<=0, "positive amount required");
 
-            if (source.Address == targetAddress && token == Nexus.NativeToken)
+            if (source.Address == targetAddress && token == Nexus.FuelToken)
             {
                 Throw.If(fee != 0, "no fees for same address");
             }
@@ -470,7 +470,7 @@ namespace Phantasma.Blockchain.Utils
         public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
         {
             var endDate = new Timestamp(Timestamp.Now + TimeSpan.FromDays(5));
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.NativeTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }        
@@ -537,7 +537,7 @@ namespace Phantasma.Blockchain.Utils
                 switch (_rnd.Next() % 4)
                 {
                     case 1: token = Nexus.StableToken; break;
-                    default: token = Nexus.NativeToken; break;
+                    default: token = Nexus.FuelToken; break;
                 }
 
 
@@ -588,7 +588,7 @@ namespace Phantasma.Blockchain.Utils
                     case 3:
                         {
                             sourceChain = bankChain;
-                            token = Nexus.NativeToken;
+                            token = Nexus.FuelToken;
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
 
@@ -610,7 +610,7 @@ namespace Phantasma.Blockchain.Utils
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
 
                             var bankContract = bankChain.FindContract<BankContract>("bank");
-                            var rate = bankContract.GetRate(Nexus.NativeTokenSymbol);
+                            var rate = bankContract.GetRate(Nexus.FuelTokenSymbol);
                             var total = balance / 10;
                             if (total >= rate)
                             {
@@ -624,7 +624,7 @@ namespace Phantasma.Blockchain.Utils
                     case 5:
                         {
                             sourceChain = this.Nexus.RootChain;                            
-                            token = Nexus.NativeToken;
+                            token = Nexus.FuelToken;
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
                             if (balance >= AccountContract.RegistrationCost && !pendingNames.Contains(source.Address))
