@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _friends.Add(friend);
 
-            Runtime.Notify(EventKind.FriendAdd, target, friend);
+            Runtime.Notify(EventKind.AddressAdd, target, friend);
         }
 
         public void RemoveFriend(Address target, Address friend)
@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(_friends.Contains(friend), "friend not found");
             _friends.Remove(friend);
 
-            Runtime.Notify(EventKind.FriendRemove, target, friend);
+            Runtime.Notify(EventKind.AddressRemove, target, friend);
         }
 
         public Address[] GetFriends(Address target)

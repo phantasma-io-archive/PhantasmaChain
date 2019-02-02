@@ -205,6 +205,7 @@ namespace Phantasma.Blockchain.Storage
             return items;
         }
 
+        // TODO should this delete all entries instead of just adjusting the count()?
         public static void Clear(this StorageList list)
         {
             BigInteger count = 0;
