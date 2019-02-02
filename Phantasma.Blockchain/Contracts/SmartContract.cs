@@ -139,8 +139,9 @@ namespace Phantasma.Blockchain.Contracts
             this.ABI = new ContractInterface(methods);
         }
 
-        internal bool HasInternalMethod(string methodName)
+        internal bool HasInternalMethod(string methodName, out BigInteger gasCost)
         {
+            gasCost = 10; // TODO make this depend on method
             return _methodTable.ContainsKey(methodName);
         }
 

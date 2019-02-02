@@ -165,7 +165,26 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var gasCost = GetGasCostForOpcode(opcode);
-            Throw.If(gasCost < 0, "invalid gas amount");
+            return ConsumeGas(gasCost);
+        }
+
+        public ExecutionState ConsumeGas(BigInteger gasCost)
+        {
+            if (gasCost == 0)
+            {
+                return ExecutionState.Running;
+            }
+
+            if (gasCost < 0)
+            {
+                Throw.If(gasCost < 0, "invalid gas amount");
+            }
+
+            // required for allowing transactions to occur pre-minting of native token
+            if (readOnlyMode || Nexus.FuelToken == null || Nexus.FuelToken.CurrentSupply == 0)
+            {
+                return ExecutionState.Running;
+            }
 
             UsedGas += gasCost;
 

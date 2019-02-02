@@ -58,12 +58,18 @@ namespace Phantasma.Blockchain.Contracts
 #endif
             }
 
-            if (this.Contract.HasInternalMethod(methodName))
+            BigInteger gasCost;
+            if (this.Contract.HasInternalMethod(methodName, out gasCost))
             {
                 ExecutionState result;
                 try
                 {
-                    result = InternalCall(method, frame, stack);
+                    var runtime = (RuntimeVM)frame.VM;
+                    result = runtime.ConsumeGas(gasCost);
+                    if (result == ExecutionState.Running)
+                    {
+                        result = InternalCall(method, frame, stack);
+                    }
                 }
                 catch (ArgumentException ex)
                 {
@@ -74,6 +80,7 @@ namespace Phantasma.Blockchain.Contracts
 #endif
                 }
 
+                // we terminate here execution, since it will be restarted in next context
                 if (result == ExecutionState.Running)
                 {
                     result = ExecutionState.Halt;
