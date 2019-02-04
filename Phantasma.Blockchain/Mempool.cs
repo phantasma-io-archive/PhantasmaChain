@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain
     public class Mempool: Runnable
     {
         public static readonly int MinimumBlockTime = 2; // in seconds
-        public static readonly int MaxTransactionsPerBlock = 20000;
+        public static readonly int MaxTransactionsPerBlock = 5000;
 
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
