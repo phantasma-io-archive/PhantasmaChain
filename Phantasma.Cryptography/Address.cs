@@ -66,7 +66,7 @@ namespace Phantasma.Cryptography
         {
             if (this == Null)
             {
-                return "[Burner address]";
+                return "[Null address]";
             }
 
             return this.Text;
