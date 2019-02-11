@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
@@ -9,6 +10,15 @@ namespace Phantasma.Pay.Chains
 {
     public class BitcoinWallet: CryptoWallet
     {
+        private List<Unspent> _unspents = new List<Unspent>();
+
+        public struct Unspent
+        {
+            public BigInteger index;
+            public decimal amount;
+            public string script;
+        }
+
         public BitcoinWallet(KeyPair keys) : base(keys)
         {
         }
@@ -23,6 +33,7 @@ namespace Phantasma.Pay.Chains
         public override void SyncBalances(Action<bool> callback)
         {
             _balances.Clear();
+            _unspents.Clear();
 
             var url = "https://blockchain.info/rawaddr/" + this.Address;
             JSONRequest(url, (root) =>
@@ -33,9 +44,36 @@ namespace Phantasma.Pay.Chains
                     return;
                 }
 
-                var temp = BigInteger.Parse(root.GetString("final_balance"));
-                var amount = UnitConversion.ToDecimal(temp, 8); // convert from satoshi to BTC
-                _balances.Add(new WalletBalance("BTC", amount));
+                decimal btcBalance = 0;
+
+                var txNode = root["txs"];
+                foreach (var node in txNode.Children)
+                {
+                    var outputsNode = node["out"];
+                    foreach (var outputNode in outputsNode.Children)
+                    {
+                        var addr = outputNode.GetString("addr");
+                        if (addr != this.Address)
+                        {
+                            continue;
+                        }
+
+                        bool spent = outputNode.GetBool("spent");
+                        if (spent == false)
+                        {
+                            var unspent = new Unspent();
+                            unspent.index = BigInteger.Parse(outputNode.GetString("tx_index"));
+                            unspent.script = outputNode.GetString("script");
+                            var temp = BigInteger.Parse(outputNode.GetString("value"));
+                            unspent.amount = UnitConversion.ToDecimal(temp, 8);
+                            btcBalance += unspent.amount;
+                            _unspents.Add(unspent);
+                        }
+                    }
+                }
+
+                _balances.Add(new WalletBalance("BTC", btcBalance));
+
                 callback(true);
             });            
         }
