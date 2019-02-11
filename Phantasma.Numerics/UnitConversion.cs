@@ -1,7 +1,6 @@
-﻿using Phantasma.Numerics;
-using System;
+﻿using System;
 
-namespace Phantasma.Blockchain.Tokens
+namespace Phantasma.Numerics
 {
     public static class UnitConversion
     {
@@ -20,7 +19,7 @@ namespace Phantasma.Blockchain.Tokens
 
         public static decimal ToDecimal(BigInteger value, int units)
         {
-            if (value == null || value == 0)
+            if (value == 0)
             {
                 return 0;
             }
