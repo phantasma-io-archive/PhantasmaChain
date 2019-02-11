@@ -36,7 +36,7 @@ namespace Phantasma.Pay.Chains
 
                 var temp = root.GetString("balance");
                 var n = BigInteger.Parse(temp);
-                var amount = TokenUtils.ToDecimal(n, 18);
+                var amount = UnitConversion.ToDecimal(n, 18);
                 _balances.Add(new WalletBalance("ETH", amount));
                 callback(true);
             });

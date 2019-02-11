@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetRequiredStake()
         {
-            return TokenUtils.ToBigInteger(50000, Nexus.StakingTokenDecimals); // TODO this should be dynamic
+            return UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals); // TODO this should be dynamic
         }
 
         public Address[] GetValidators()

@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (symbol == Nexus.FuelTokenSymbol)
             {
-                return TokenUtils.ToBigInteger(0.08m, Nexus.FuelTokenDecimals);
+                return UnitConversion.ToBigInteger(0.08m, Nexus.FuelTokenDecimals);
             }
 
             return 0;

@@ -1,7 +1,9 @@
 ﻿using System;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
+using Phantasma.Numerics;
 
 namespace Phantasma.Pay.Chains
 {
@@ -22,7 +24,7 @@ namespace Phantasma.Pay.Chains
         {
             _balances.Clear();
 
-            var url = "https://blockexplorer.com/api/addr/" + this.Address;
+            var url = "https://blockchain.info/rawaddr/" + this.Address;
             JSONRequest(url, (root) =>
             {
                 if (root == null)
@@ -31,7 +33,8 @@ namespace Phantasma.Pay.Chains
                     return;
                 }
 
-                var amount = root.GetDecimal("balance");
+                var temp = BigInteger.Parse(root.GetString("final_balance"));
+                var amount = UnitConversion.ToDecimal(temp, 8); // convert from satoshi to BTC
                 _balances.Add(new WalletBalance("BTC", amount));
                 callback(true);
             });            

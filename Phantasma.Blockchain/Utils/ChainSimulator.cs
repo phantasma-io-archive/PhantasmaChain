@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain.Utils
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, TokenUtils.ToBigInteger(100, Nexus.FuelTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, UnitConversion.ToBigInteger(100, Nexus.FuelTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -132,7 +132,7 @@ namespace Phantasma.Blockchain.Utils
                     {
                         nftSales.Add(new KeyValuePair<KeyPair, BigInteger>(key, ID));
                         // send some gas to the sellers
-                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, TokenUtils.ToBigInteger(200, Nexus.FuelTokenDecimals));
+                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(200, Nexus.FuelTokenDecimals));
                     }
                 }
             }
@@ -143,7 +143,7 @@ namespace Phantasma.Blockchain.Utils
             foreach (var sale in nftSales)
             {
                 // TODO this later should be the market chain instead of root
-                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, TokenUtils.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
+                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, UnitConversion.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
             }
             EndBlock();
         }
@@ -579,7 +579,7 @@ namespace Phantasma.Blockchain.Utils
                             var targetChainList = Nexus.Chains.Where(x => x.ParentChain == sourceChain || sourceChain.ParentChain == x).ToArray();
                             var targetChain = targetChainList[_rnd.Next() % targetChainList.Length];
 
-                            var total = TokenUtils.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals);
+                            var total = UnitConversion.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals);
 
                             var tokenBalance = sourceChain.GetTokenBalance(token, source.Address);
                             var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelToken, source.Address);
@@ -633,7 +633,7 @@ namespace Phantasma.Blockchain.Utils
 
                             var balance = sourceChain.GetTokenBalance(token, source.Address);
 
-                            var total = TokenUtils.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals - 1);
+                            var total = UnitConversion.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals - 1);
 
                             if (balance > total + fee)
                             {
@@ -725,7 +725,7 @@ namespace Phantasma.Blockchain.Utils
 
                             if (source.Address != targetAddress)
                             {
-                                var total = TokenUtils.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals - 1) ;
+                                var total = UnitConversion.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals - 1) ;
 
                                 var tokenBalance = sourceChain.GetTokenBalance(token, source.Address);
                                 var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelToken, source.Address);

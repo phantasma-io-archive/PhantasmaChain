@@ -41,7 +41,7 @@ namespace Phantasma.Pay.Chains
 
                     var temp = child.GetString("amount");
                     var n = BigInteger.Parse(temp);
-                    var amount = TokenUtils.ToDecimal(n, decimals);
+                    var amount = UnitConversion.ToDecimal(n, decimals);
 
                     _balances.Add(new WalletBalance(symbol, amount));
                 }

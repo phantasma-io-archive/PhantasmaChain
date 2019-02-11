@@ -5,7 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Phantasma.API\Phantasma.API.csproj" />
+    <PackageReference Include="LunarLabs.Parser" Version="1.2.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
   </ItemGroup>
 

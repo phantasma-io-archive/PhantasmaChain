@@ -3,7 +3,7 @@ using System;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public static class TokenUtils
+    public static class UnitConversion
     {
         // TODO why not just BigInteger.Pow(10, units)???
         private static BigInteger GetMultiplier(int units)
