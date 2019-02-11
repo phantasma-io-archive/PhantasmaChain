@@ -33,9 +33,17 @@ namespace Phantasma.Pay
 
         public IEnumerable<CryptoWallet> Wallets => _wallets.Values;
 
-        public WalletManager(KeyPair keys)
+        public WalletManager(KeyPair keys, params WalletKind[] kinds)
         {
             this.keys = keys;
+
+            if (kinds != null)
+            {
+                foreach (var kind in kinds)
+                {
+                    GetAddress(kind);
+                }
+            }
         }
 
         public string GetAddress(WalletKind kind)
