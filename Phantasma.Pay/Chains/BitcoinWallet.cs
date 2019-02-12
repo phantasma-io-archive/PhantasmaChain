@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;

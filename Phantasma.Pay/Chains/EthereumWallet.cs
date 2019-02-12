@@ -1,5 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;

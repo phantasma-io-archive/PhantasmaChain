@@ -2,14 +2,14 @@
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 using Phantasma.Cryptography;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
-using System.Collections.Generic;
 using Phantasma.VM.Utils;
+using Phantasma.Numerics;
 
 namespace Phantasma.Tests
 {
