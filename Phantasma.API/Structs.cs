@@ -137,6 +137,12 @@ namespace Phantasma.API
         public string reward;
     }
 
+    public struct TokenMetadataResult : IAPIResult
+    {
+        public string key;
+        public string value;
+    }
+
     public struct TokenResult : IAPIResult
     {
         [APIDescription("Ticker symbol for the token")]
@@ -216,11 +222,5 @@ namespace Phantasma.API
         public string quoteSymbol;
         public string tokenId;
         public string price;
-    }
-
-    public struct TokenMetadataResult : IAPIResult
-    {
-        public string key;
-        public string value;
     }
 }
