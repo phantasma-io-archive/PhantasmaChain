@@ -18,8 +18,17 @@
   <a href="https://github.com/phantasma-io/PhantasmaChain/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
   </a>
-
 </p>
+
+## Commits
+[![GitHub last commit](https://img.shields.io/github/last-commit/phantasma-io/PhantasmaChain.svg?style=flat)]()
+[![GitHub commit activity the past week, 4 weeks](https://img.shields.io/github/commit-activity/y/phantasma-io/PhantasmaChain.svg?style=flat)]()
+
+#### Discord  
+[![Discord Chat](https://img.shields.io/discord/404769727634997261.svg)](https://discord.gg/)  
+
+#### Twitter
+[![Twitter Follow](https://img.shields.io/twitter/follow/phantasmachain.svg?style=social)](https://twitter.com/phantasmachain)
 
 ## Contents
 
@@ -84,9 +93,11 @@ For more information about how to build dApps for Phantasma, please read the [do
 
 ## Contributing
 
-You can contribute to Phantasma with [issues](https://github.com/PhantasmaProtocol/PhantasmaChain/issues) and [PRs](https://github.com/PhantasmaProtocol/PhantasmaChain/pulls). Simply filing issues for problems you encounter is a great way to contribute. Contributing implementations is greatly appreciated.
+You can contribute to Phantasma with [issues](https://github.com/Phantasma-io/PhantasmaChain/issues) and [PRs](https://github.com/Phantasma-io/PhantasmaChain/pulls). Simply filing issues for problems you encounter is a great way to contribute. Contributing implementations is greatly appreciated.
 
 ## License
+
+[![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/tterb/atomic-design-ui/blob/master/LICENSEs)
 
 The Phantasma project is released under the MIT license, see `LICENSE.md` for more details.
 
