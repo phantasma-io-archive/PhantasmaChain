@@ -24,11 +24,13 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/phantasma-io/PhantasmaChain.svg?style=flat)]()
 [![GitHub commit activity the past week, 4 weeks](https://img.shields.io/github/commit-activity/y/phantasma-io/PhantasmaChain.svg?style=flat)]()
 
+<p align="center">      
 #### Discord  
-[![Discord Chat](https://img.shields.io/discord/404769727634997261.svg)](https://discord.gg/)  
+[![Discord Chat](https://img.shields.io/discord/404769727634997261.svg)](https://discord.gg/RsKn8EN)  
 
 #### Twitter
 [![Twitter Follow](https://img.shields.io/twitter/follow/phantasmachain.svg?style=social)](https://twitter.com/phantasmachain)
+</p>
 
 ## Contents
 
