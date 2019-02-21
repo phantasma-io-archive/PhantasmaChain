@@ -9,6 +9,12 @@ using Phantasma.Numerics;
 
 namespace Phantasma.IO
 {
+    public interface ISerializable
+    {
+        void SerializeData(BinaryWriter writer);
+        void UnserializeData(BinaryReader reader);
+    }
+
     public static class Serialization
     {
         public static byte[] Serialize(this object obj)
@@ -111,6 +117,12 @@ namespace Phantasma.IO
             if (type == typeof(Address))
             {
                 writer.WriteAddress((Address)obj);
+            }
+            else
+            if (typeof(ISerializable).IsAssignableFrom(type))
+            {
+                var serializable = (ISerializable)obj;
+                serializable.SerializeData(writer);
             }
             else
             if (type.IsArray)
@@ -257,6 +269,14 @@ namespace Phantasma.IO
             if (type == typeof(Timestamp))
             {
                 return new Timestamp(reader.ReadUInt32());
+            }
+
+            if (typeof(ISerializable).IsAssignableFrom(type))
+            {
+                var obj = Activator.CreateInstance(type);
+                var serializable = (ISerializable)obj;
+                serializable.UnserializeData(reader);
+                return obj;
             }
 
             if (type.IsArray)

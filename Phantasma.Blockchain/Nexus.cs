@@ -231,7 +231,7 @@ namespace Phantasma.Blockchain
 
         public int GetTotalTransactionCount()
         {
-            return Chains.Sum(x => x.TransactionCount);
+            return Chains.Sum(x => (int)x.TransactionCount);
         }
         #endregion
 

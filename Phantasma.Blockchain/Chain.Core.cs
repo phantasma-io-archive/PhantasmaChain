@@ -13,6 +13,7 @@ using Phantasma.VM.Utils;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Consensus;
 using System;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -37,8 +38,8 @@ namespace Phantasma.Blockchain
     public partial class Chain
     {
         #region PRIVATE
-        private Dictionary<Hash, Transaction> _transactions = new Dictionary<Hash, Transaction>();
-        private Dictionary<Hash, Block> _blockHashes = new Dictionary<Hash, Block>();
+        private KeyStore<Transaction> _transactions;
+        private KeyStore<Block> _blocks;
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
         private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
@@ -72,9 +73,7 @@ namespace Phantasma.Blockchain
 
         public Epoch CurrentEpoch { get; private set; }
 
-        public IEnumerable<Block> Blocks => _blockHashes.Values;
-
-        public uint BlockHeight => (uint)_blockHashes.Count;
+        public uint BlockHeight => (uint)_blocks.Count;
        
         public Block LastBlock { get; private set; }
 
@@ -82,7 +81,8 @@ namespace Phantasma.Blockchain
 
         public StorageContext Storage { get; private set; }
 
-        public int TransactionCount => _blockHashes.Sum(entry => entry.Value.TransactionHashes.Count());  //todo move this?
+        public uint TransactionCount => _transactions.Count;
+
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
@@ -102,6 +102,10 @@ namespace Phantasma.Blockchain
             var hash = CryptoExtensions.SHA256(bytes);
 
             this.Address = new Address(hash);
+
+            // init stores
+            _transactions = new KeyStore<Transaction>(this.Address, "txs");
+            _blocks = new KeyStore<Block>(this.Address, "blocks");
 
             foreach (var contract in contracts)
             {
@@ -147,7 +151,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            return _blockHashes.ContainsKey(hash);
+            return _blocks.ContainsKey(hash);
         }
 
         public IEnumerable<Transaction> GetBlockTransactions(Block block)
@@ -221,7 +225,7 @@ namespace Phantasma.Blockchain
 
             // from here on, the block is accepted
             _blockHeightMap[block.Height] = block;
-            _blockHashes[block.Hash] = block;
+            _blocks[block.Hash] = block;
             _blockChangeSets[block.Hash] = changeSet;
 
             changeSet.Execute();
@@ -305,7 +309,7 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByHash(Hash hash)
         {
-            return _blockHashes.ContainsKey(hash) ? _blockHashes[hash] : null;
+            return _blocks.ContainsKey(hash) ? _blocks[hash] : null;
         }
 
         public Block FindBlockByHeight(BigInteger height)
@@ -452,7 +456,7 @@ namespace Phantasma.Blockchain
 
                 _blockChangeSets.Remove(currentBlock.Hash);
                 _blockHeightMap.Remove(currentBlock.Height);
-                _blockHashes.Remove(currentBlock.Hash);
+                _blocks.Remove(currentBlock.Hash);
 
                 currentBlock = FindBlockByHash(currentBlock.PreviousHash);
                 this.LastBlock = currentBlock;
