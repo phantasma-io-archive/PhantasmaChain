@@ -539,7 +539,7 @@ namespace Phantasma.IO
         }
     }
 
-    public class KeyStore<T> : IKeyStore where T:ISerializable
+    public class KeyStore<T> : IKeyStore 
     {
         public readonly string Name;
 

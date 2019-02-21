@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Linq;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using System.IO;
 
 namespace Phantasma.Cryptography
 {

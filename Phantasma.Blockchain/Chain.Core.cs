@@ -40,9 +40,10 @@ namespace Phantasma.Blockchain
         #region PRIVATE
         private KeyStore<Transaction> _transactions;
         private KeyStore<Block> _blocks;
+        private KeyStore<Hash> _transactionBlockMap;
+
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
-        private Dictionary<Hash, Block> _transactionBlockMap = new Dictionary<Hash, Block>();
 
         private Dictionary<Hash, Epoch> _epochMap = new Dictionary<Hash, Epoch>();
 
@@ -106,6 +107,7 @@ namespace Phantasma.Blockchain
             // init stores
             _transactions = new KeyStore<Transaction>(this.Address, "txs");
             _blocks = new KeyStore<Block>(this.Address, "blocks");
+            _transactionBlockMap = new KeyStore<Hash>(this.Address, "txbk");
 
             foreach (var contract in contracts)
             {
@@ -243,7 +245,7 @@ namespace Phantasma.Blockchain
             foreach (Transaction tx in transactions)
             {
                 _transactions[tx.Hash] = tx;
-                _transactionBlockMap[tx.Hash] = block;
+                _transactionBlockMap[tx.Hash] = block.Hash;
             }
 
             Nexus.PluginTriggerBlock(this, block);
@@ -304,7 +306,13 @@ namespace Phantasma.Blockchain
 
         public Block FindTransactionBlock(Hash hash)
         {
-            return _transactionBlockMap.ContainsKey(hash) ? _transactionBlockMap[hash] : null;
+            if (_transactionBlockMap.ContainsKey(hash))
+            {
+                var blockHash = _transactionBlockMap[hash];
+                return FindBlockByHash(blockHash);
+            }
+
+            return null;
         }
 
         public Block FindBlockByHash(Hash hash)
