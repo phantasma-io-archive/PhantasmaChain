@@ -22,13 +22,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private StorageMap _entryMap; // <Address, EnergyStakeInfo>
         private StorageMap _proxyMap; // <Address, List<EnergyProxy>>
+        private StorageMap _claims; // <Address, Timestamp>
 
         public readonly static BigInteger EnergyRacioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
         public EnergyContract() : base()
         {
         }
- 
+
         public void Stake(Address from, BigInteger stakeAmount)
         {
             Runtime.Expect(stakeAmount >= EnergyRacioDivisor, "invalid amount");
@@ -41,6 +42,57 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(stakeBalances.Subtract(from, stakeAmount), "balance subtract failed");
             Runtime.Expect(stakeBalances.Add(Runtime.Chain.Address, stakeAmount), "balance add failed");
+
+
+            var entry = new EnergyStakeInfo()
+            {
+                stake = stakeAmount,
+                timestamp = Timestamp.Now,
+            };
+            _entryMap.Set(from, entry);
+
+            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = stakeAmount });
+        }
+
+        public BigInteger Unstake(Address from)
+        {
+            Runtime.Expect(IsWitness(from), "witness failed");
+
+            var entry = _entryMap.Get<Address, ValidatorInfo>(from);
+
+            var diff = Timestamp.Now - entry.timestamp;
+            var days = diff / 86400; // convert seconds to days
+
+            Runtime.Expect(days >= 1, "waiting period required");
+
+            var amount = entry.stake;
+            var token = Runtime.Nexus.StakingToken;
+            var balances = Runtime.Chain.GetTokenBalances(token);
+            var balance = balances.Get(Runtime.Chain.Address);
+            Runtime.Expect(balance >= amount, "not enough balance");
+
+            Runtime.Expect(balances.Subtract(Runtime.Chain.Address, amount), "balance subtract failed");
+            Runtime.Expect(balances.Add(from, amount), "balance add failed");
+
+            _entryMap.Remove(from);
+
+            Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
+
+            return amount;
+        }
+
+        public void Claim(Address from)
+        {
+            var claimDate = _claims.Get<Address, Timestamp>(from);
+            var diff = Timestamp.Now - claimDate;
+            var days = diff / 86400; // convert seconds to days
+            Runtime.Expect(days >= 1, "waiting period required");
+
+            var entry = _entryMap.Get<Address, ValidatorInfo>(from);
+
+
+            var stakeAmount = entry.stake;
+            var stakeToken = Runtime.Nexus.StakingToken;
 
             var fuelToken = Runtime.Nexus.FuelToken;
             var fuelBalances = Runtime.Chain.GetTokenBalances(stakeToken);
@@ -69,42 +121,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
             Runtime.Expect(fuelToken.Mint(fuelBalances, from, availableAmount), "fuel minting failed");
 
-            var entry = new EnergyStakeInfo()
-            {
-                stake = stakeAmount,
-                timestamp = Timestamp.Now,
-            };
-            _entryMap.Set(from, entry);
+            _claims.Set<Address, Timestamp>(from, Timestamp.Now);
 
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = stakeAmount });
-            Runtime.Notify(EventKind.TokenMint, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = fuelToken.Symbol, value = fuelAmount});
-        }
-
-        public BigInteger Unstake(Address from)
-        {
-            Runtime.Expect(IsWitness(from), "witness failed");
-
-            var entry = _entryMap.Get<Address, ValidatorInfo>(from);
-
-            var diff = Timestamp.Now - entry.timestamp;
-            var days = diff / 86400; // convert seconds to days
-
-            Runtime.Expect(days >= 1, "waiting period required");
-
-            var amount = entry.stake;
-            var token = Runtime.Nexus.StakingToken;
-            var balances = Runtime.Chain.GetTokenBalances(token);
-            var balance = balances.Get(Runtime.Chain.Address);
-            Runtime.Expect(balance >= amount, "not enough balance");
-
-            Runtime.Expect(balances.Subtract(Runtime.Chain.Address, amount), "balance subtract failed");
-            Runtime.Expect(balances.Add(from, amount), "balance add failed");
-
-            _entryMap.Remove(from);
-
-            Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
-
-            return amount;
+            Runtime.Notify(EventKind.TokenMint, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = fuelToken.Symbol, value = fuelAmount });
         }
 
         public BigInteger GetStake(Address address)
