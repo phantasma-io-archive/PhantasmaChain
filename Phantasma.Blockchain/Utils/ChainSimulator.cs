@@ -712,7 +712,7 @@ namespace Phantasma.Blockchain.Utils
                             var temp = _rnd.Next() % 5;
                             Address targetAddress;
 
-                            if (_keys.Count < 2 || temp == 0)
+                            if ((_keys.Count < 2 || temp == 0) && _keys.Count < 2000)
                             {
                                 var key = KeyPair.Generate();
                                 _keys.Add(key);
