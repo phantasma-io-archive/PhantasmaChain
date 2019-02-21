@@ -539,7 +539,7 @@ namespace Phantasma.IO
         }
     }
 
-    public class KeyStore<T> : IKeyStore 
+    public class KeyValueStore<T> : IKeyStore 
     {
         public readonly string Name;
 
@@ -549,7 +549,7 @@ namespace Phantasma.IO
         public uint Count => _disk.Count;
 
         // TODO increase default size
-        public KeyStore(string name, int maxSize)
+        public KeyValueStore(string name, int maxSize)
         {
             var fileName = name + ".bin";
 
@@ -557,7 +557,7 @@ namespace Phantasma.IO
             _disk = new DiskStore(fileName);
         }
 
-        public KeyStore(Address address, string name, int maxSize = 16) : this(address.Text + "_" + name, maxSize)
+        public KeyValueStore(Address address, string name, int maxSize = 16) : this(address.Text + "_" + name, maxSize)
         {
         }
 

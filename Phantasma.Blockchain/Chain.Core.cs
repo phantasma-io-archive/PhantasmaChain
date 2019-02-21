@@ -38,9 +38,9 @@ namespace Phantasma.Blockchain
     public partial class Chain
     {
         #region PRIVATE
-        private KeyStore<Transaction> _transactions;
-        private KeyStore<Block> _blocks;
-        private KeyStore<Hash> _transactionBlockMap;
+        private KeyValueStore<Transaction> _transactions;
+        private KeyValueStore<Block> _blocks;
+        private KeyValueStore<Hash> _transactionBlockMap;
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
@@ -105,9 +105,9 @@ namespace Phantasma.Blockchain
             this.Address = new Address(hash);
 
             // init stores
-            _transactions = new KeyStore<Transaction>(this.Address, "txs");
-            _blocks = new KeyStore<Block>(this.Address, "blocks");
-            _transactionBlockMap = new KeyStore<Hash>(this.Address, "txbk");
+            _transactions = new KeyValueStore<Transaction>(this.Address, "txs");
+            _blocks = new KeyValueStore<Block>(this.Address, "blocks");
+            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk");
 
             foreach (var contract in contracts)
             {
