@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -243,6 +244,9 @@ namespace Phantasma.Blockchain
 
         private void MintBlock(List<Transaction> transactions, Chain chain)
         {
+            // sync disk writes before generating more
+            DiskStore.FlushAll();
+
             var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
 
             var isFirstBlock = chain.LastBlock == null;

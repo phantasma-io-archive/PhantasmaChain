@@ -267,10 +267,13 @@ namespace Phantasma.IO
                     writer.Write(entry.Length);
                 }
                 writer.Write((uint)_lastBlockOffset);
+
+                _stream.Seek(0, SeekOrigin.Begin);
                 writer.Write((uint)blockOffset);
             }
 
             _lastBlockOffset = blockOffset;
+
             _pendingEntries.Clear();
             _pendingWrite = false;
 
@@ -281,25 +284,23 @@ namespace Phantasma.IO
         {
             lock (_lock)
             {
-                if (_stream == null)
-                {
-                    _stream = new FileStream(fileName, FileMode.OpenOrCreate);
-                }
+                InitStream();
 
                 _entries.Clear();
                 _freeSpace.Clear();
 
                 if (_stream.Length > 0)
                 {
-                    uint nextOffset = (uint)(_stream.Length - _header.Length);
-                    _lastBlockOffset = nextOffset;
+                    _stream.Seek(0, SeekOrigin.Begin);
 
                     using (var reader = new BinaryReader(_stream, Encoding.ASCII, true))
                     {
-                        while (nextOffset > 0)
+                        //uint nextOffset = (uint)(_stream.Length - _header.Length);
+                        uint blockOffset = reader.ReadUInt32();
+                        _lastBlockOffset = blockOffset;
+
+                        while (blockOffset > 0)
                         {
-                            _stream.Seek(nextOffset, SeekOrigin.Begin);
-                            var blockOffset = reader.ReadUInt32();
                             _stream.Seek(blockOffset, SeekOrigin.Begin);
 
                             var temp = reader.ReadBytes(_header.Length);
@@ -320,7 +321,7 @@ namespace Phantasma.IO
                                 entryCount--;
                             }
 
-                            nextOffset = reader.ReadUInt32();
+                            blockOffset = reader.ReadUInt32();
                         }
                     }
                 }
@@ -332,15 +333,22 @@ namespace Phantasma.IO
             }
         }
 
+        private void InitStream()
+        {
+            if (_stream == null)
+            {
+                _stream = new FileStream(fileName, FileMode.OpenOrCreate);
+                var temp = new byte[0];
+                _stream.Write(temp, 0, temp.Length); // write null block offset
+            }
+        }
+
         // inserts a key/value into an existing space
         // if necessary, splits the space into two (used/free)
         // NOTE - only call this method from inside a lock {} block
         private void InsertIntoDisk(Hash key, byte[] value, DiskEntry entry)
         {
-            if (_stream == null)
-            {
-                _stream = new FileStream(fileName, FileMode.OpenOrCreate);
-            }
+            InitStream();
 
             if (_stream.Position != entry.Offset)
             {
@@ -423,14 +431,8 @@ namespace Phantasma.IO
             {
                 lock (_lock)
                 {
-                    if (_stream == null)
-                    {
-                        _stream = new FileStream(fileName, FileMode.OpenOrCreate);
-                    }
-                    else
-                    {
-                        _stream.Seek(0, SeekOrigin.End);
-                    }
+                    InitStream();
+                    _stream.Seek(0, SeekOrigin.End);
 
                     var entry = new DiskEntry() { Length = (uint)value.Length, Offset = (uint)_stream.Position };
                     InsertIntoDisk(key, value, entry);
