@@ -10,6 +10,7 @@ namespace Phantasma.Blockchain.Contracts
         TokenCreate,
         TokenSend,
         TokenReceive,
+        TokenClaim,
         TokenMint,
         TokenBurn,
         TokenEscrow,

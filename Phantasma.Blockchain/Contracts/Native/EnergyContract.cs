@@ -82,12 +82,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             return amount;
         }
 
-        public void Claim(Address from)
+        public void Claim(Address from, Address stakeAddress)
         {
-            var stake = _stakes.Get<Address, EnergyAction>(from);
+            Runtime.Expect(IsWitness(from), "witness failed");
+
+            var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
             var unclaimedAmount = stake.amount;
 
-            var lastClaim = _claims.Get<Address, EnergyAction>(from);
+            var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
             var diff = Timestamp.Now - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
@@ -107,8 +109,24 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fuelAmount = unclaimedAmount / EnergyRacioDivisor;
 
             // distribute to proxy list
-            var list = _proxyMap.Get<Address, StorageList>(from);
+            var list = _proxyMap.Get<Address, StorageList>(stakeAddress);
             var count = list.Count();
+
+            // if the transaction comes from someone other than the stake owner, must be registred in proxy list
+            if (from != stakeAddress)
+            {
+                bool found = false;
+                for (int i = 0; i < count; i++)
+                {
+                    var proxy = list.Get<EnergyProxy>(i);
+                    if (proxy.address == from)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                Runtime.Expect(found, "invalid permissions");
+            }
 
             BigInteger sum = 0;
             BigInteger availableAmount = fuelAmount;
@@ -127,11 +145,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.Expect(fuelToken.Mint(fuelBalances, from, availableAmount), "fuel minting failed");
+            Runtime.Expect(fuelToken.Mint(fuelBalances, stakeAddress, availableAmount), "fuel minting failed");
 
-            _claims.Set<Address, Timestamp>(from, Timestamp.Now);
+            // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
+            var action = new EnergyAction() { amount = stake.amount, timestamp = Timestamp.Now };
+            _claims.Set<Address, EnergyAction>(stakeAddress, action);
 
-            Runtime.Notify(EventKind.TokenMint, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = fuelToken.Symbol, value = fuelAmount });
+            Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = unclaimedAmount});
+            Runtime.Notify(EventKind.TokenMint, stakeAddress, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = fuelToken.Symbol, value = fuelAmount });
         }
 
         public BigInteger GetStake(Address address)
