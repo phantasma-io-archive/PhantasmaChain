@@ -2078,7 +2078,7 @@ namespace Phantasma.Tests
             var script = BuildScript(scriptString);
 
             var keys = KeyPair.Generate();
-            var nexus = new Nexus("vmnet", keys.Address, new ConsoleLogger());
+            var nexus = new Nexus("vmnet", keys.Address, -1, new ConsoleLogger());
             var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
 
             var vm = new TestVM(tx.Script);

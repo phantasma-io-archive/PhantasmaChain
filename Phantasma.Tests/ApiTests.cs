@@ -25,7 +25,7 @@ namespace Phantasma.Tests
         private TestData CreateAPI()
         {
             var owner = KeyPair.FromWIF(testWIF);
-            var sim = new ChainSimulator(owner, 1234);
+            var sim = new ChainSimulator(owner, 1234, -1);
             var api = new NexusAPI(sim.Nexus);
 
             var data = new TestData()

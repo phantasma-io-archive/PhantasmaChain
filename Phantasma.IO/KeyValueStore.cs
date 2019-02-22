@@ -37,7 +37,7 @@ namespace Phantasma.IO
 
         public MemoryStore(int cacheSize)
         {
-            Throw.If(cacheSize < 4, "invalid maxsize");
+            Throw.If(cacheSize != -1 && cacheSize < 4, "invalid maxsize");
             this.CacheSize = cacheSize;
         }
 
@@ -49,10 +49,13 @@ namespace Phantasma.IO
                 return;
             }
 
-            while (_cache.Count >= CacheSize)
+            if (CacheSize != -1)
             {
-                var first = _dates.Keys[0];
-                Remove(first);
+                while (_cache.Count >= CacheSize)
+                {
+                    var first = _dates.Keys[0];
+                    Remove(first);
+                }
             }
 
             _cache[key] = value;
@@ -588,15 +591,20 @@ namespace Phantasma.IO
         private MemoryStore _memory;
         private DiskStore _disk;
 
-        public uint Count => _disk.Count;
+        public uint Count => _disk != null ? _disk.Count : _memory.Count;
 
         // TODO increase default size
         public KeyValueStore(string name, KeyStoreDataSize dataSize, int cacheSize)
         {
             var fileName = name + ".bin";
 
+            var useDisk = cacheSize != -1;
+
             _memory = new MemoryStore(cacheSize);
-            _disk = new DiskStore(fileName, dataSize);
+            if (useDisk)
+            {
+                _disk = new DiskStore(fileName, dataSize);
+            }
         }
 
         public KeyValueStore(Address address, string name, KeyStoreDataSize dataSize, int cacheSize = 16) : this(address.Text + "_" + name, dataSize, cacheSize)
@@ -625,7 +633,11 @@ namespace Phantasma.IO
         public void SetValue(Hash key, byte[] value)
         {
             _memory.SetValue(key, value);
-            _disk.SetValue(key, value);
+
+            if (_disk != null)
+            {
+                _disk.SetValue(key, value);
+            }
         }
 
         public byte[] GetValue(Hash key)
@@ -635,20 +647,39 @@ namespace Phantasma.IO
                 return _memory.GetValue(key);
             }
 
-            var result = _disk.GetValue(key);
-
-            _memory.SetValue(key, result); // promote this value to memory cache
-
-            return result;
+            if (_disk != null)
+            {
+                var result = _disk.GetValue(key);
+                _memory.SetValue(key, result); // promote this value to memory cache
+                return result;
+            }
+            else {
+                return null;
+            }
         }
 
         public bool ContainsKey(Hash key)
         {
-            return _memory.ContainsKey(key) || _disk.ContainsKey(key);
+            if (_memory.ContainsKey(key))
+            {
+                return true;
+            }
+
+            if (_disk != null)
+            {
+                return _disk.ContainsKey(key);
+            }
+
+            return false;
         }
 
         public bool Remove(Hash key)
         {
+            if (_disk == null)
+            {
+                return _memory.Remove(key);
+            }
+
             if (_disk.Remove(key))
             {
                 _memory.Remove(key);

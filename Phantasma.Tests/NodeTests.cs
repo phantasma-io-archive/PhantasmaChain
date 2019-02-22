@@ -109,7 +109,7 @@ namespace Phantasma.Tests
 
             var node_keys = KeyPair.FromWIF(wif);
 
-            var simulator = new ChainSimulator(node_keys, 1234);
+            var simulator = new ChainSimulator(node_keys, 1234, -1);
             nexus = simulator.Nexus;
             /*
             for (int i = 0; i < 100; i++)

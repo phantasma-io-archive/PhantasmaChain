@@ -19,7 +19,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new ChainSimulator(owner, 1234, -1);
             var nexus = simulator.Nexus;
 
             var chain = nexus.RootChain;

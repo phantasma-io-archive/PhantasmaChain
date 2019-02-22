@@ -43,6 +43,8 @@ namespace Phantasma.Blockchain
 
         public IEnumerable<Token> Tokens => _tokens.Values;
 
+        public readonly int CacheSize;
+
         public readonly Address GenesisAddress;
         public readonly Address StorageAddress;
 
@@ -53,9 +55,11 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, Address genesisAddress, Logger logger = null)
+        public Nexus(string name, Address genesisAddress, int cacheSize, Logger logger = null)
         {
             GenesisAddress = genesisAddress;
+
+            this.CacheSize = cacheSize;
 
             var temp = ByteArrayUtils.DupBytes(genesisAddress.PublicKey);
             var str = "STORAGE";

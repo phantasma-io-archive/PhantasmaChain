@@ -55,12 +55,12 @@ namespace Phantasma.Blockchain.Utils
 
         public readonly Logger Logger;
 
-        public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null)
+        public ChainSimulator(KeyPair ownerKey, int seed, int cacheSize, Logger logger = null)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
 
             _owner = ownerKey;
-            this.Nexus = new Nexus("simnet", ownerKey.Address);
+            this.Nexus = new Nexus("simnet", ownerKey.Address, cacheSize);
 
             CurrentTime = new DateTime(2018, 8, 26);
 
