@@ -127,7 +127,7 @@ namespace Phantasma.Blockchain
             this.ParentBlock = parentBlock;
 
             // TODO support persistence storage
-            this.Storage = new MemoryStorageContext();
+            this.Storage = new DiskStorageContext(this.Address, "data");
             this.Log = Logger.Init(log);
 
             if (parentChain != null)

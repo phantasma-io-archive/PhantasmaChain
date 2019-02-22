@@ -178,8 +178,18 @@ namespace Phantasma.Cryptography
             var src = val.ToByteArray();
             Throw.If(src.Length > Length, "number is too large");
 
+            return FromBytes(src);
+        }
+
+        public static Hash FromBytes(byte[] input)
+        {
+            if (input.Length > Length)
+            {
+                input = CryptoExtensions.SHA256(input);
+            }
+
             var bytes = new byte[Length];
-            Array.Copy(src, bytes, src.Length);
+            Array.Copy(input, bytes, input.Length);
             return new Hash(bytes);
         }
 
