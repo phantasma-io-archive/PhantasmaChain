@@ -334,7 +334,7 @@ namespace Phantasma.Blockchain
                 return _tokenBalances[token];
             }
 
-            var sheet = new BalanceSheet();
+            var sheet = new BalanceSheet(token.Symbol, this.Storage);
             _tokenBalances[token] = sheet;
             return sheet;
         }
@@ -375,7 +375,7 @@ namespace Phantasma.Blockchain
                 return _tokenOwnerships[token];
             }
 
-            var sheet = new OwnershipSheet();
+            var sheet = new OwnershipSheet(token.Symbol, this.Storage);
             _tokenOwnerships[token] = sheet;
             return sheet;
         }

@@ -1,26 +1,40 @@
-﻿using Phantasma.Core;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using System;
-using System.Collections.Generic;
+using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
 {
     public class BalanceSheet
     {
-        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
+        private byte[] _prefix;
+        private StorageContext _storage;
+
+        public BalanceSheet(string symbol, StorageContext storage)
+        {
+            symbol = symbol + ".";
+            this._prefix = Encoding.ASCII.GetBytes(symbol);
+            this._storage = storage;
+        }
+
+        private byte[] GetKeyForAddress(Address address)
+        {
+            return ByteArrayUtils.ConcatBytes(_prefix, address.PublicKey);
+        }
 
         public BigInteger Get(Address address)
         {
-            lock (_balances)
+            lock (_storage)
             {
-                if (_balances.ContainsKey(address))
+                var key = GetKeyForAddress(address);
+                var temp = _storage.Get(key); // TODO make utils method GetBigInteger
+                if (temp == null || temp.Length == 0)
                 {
-                    return _balances[address];
+                    return 0;
                 }
+                return new BigInteger(temp);
             }
-
-            return 0;
         }
 
         public bool Add(Address address, BigInteger amount)
@@ -33,9 +47,11 @@ namespace Phantasma.Blockchain.Tokens
             var balance = Get(address);
             balance += amount;
 
-            lock (_balances)
+            var key = GetKeyForAddress(address);
+
+            lock (_storage)
             {
-                _balances[address] = balance;
+                _storage.Put(key, balance);
             }
 
             return true;
@@ -57,32 +73,21 @@ namespace Phantasma.Blockchain.Tokens
 
             balance -= amount;
 
-            lock (_balances)
+            var key = GetKeyForAddress(address);
+
+            lock (_storage)
             {
                 if (balance == 0)
                 {
-                    _balances.Remove(address);
+                    _storage.Delete(key);
                 }
                 else
                 {
-                    _balances[address] = balance;
+                    _storage.Put(key, balance);
                 }
             }
 
             return true;
-        }
-
-        public void ForEach(Action<Address, BigInteger> visitor)
-        {
-            Throw.IfNull(visitor, nameof(visitor));
-
-            lock (_balances)
-            {
-                foreach (var entry in _balances)
-                {
-                    visitor(entry.Key, entry.Value);
-                }
-            }
         }
     }
 }
