@@ -9,10 +9,10 @@ namespace Phantasma.Blockchain.Storage
         private MemoryStore _memory;
         private DiskStore _disk;
 
-        public DiskStorageContext(Address address, string name)
+        public DiskStorageContext(Address address, string name, KeyStoreDataSize dataSize)
         {
             _memory = new MemoryStore(32);
-            _disk = new DiskStore(address.Text + "_" + name);
+            _disk = new DiskStore(address.Text + "_" + name, dataSize);
         }
 
         private Hash CreateHash(StorageKey key)

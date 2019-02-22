@@ -105,9 +105,9 @@ namespace Phantasma.Blockchain
             this.Address = new Address(hash);
 
             // init stores
-            _transactions = new KeyValueStore<Transaction>(this.Address, "txs");
-            _blocks = new KeyValueStore<Block>(this.Address, "blocks");
-            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk");
+            _transactions = new KeyValueStore<Transaction>(this.Address, "txs", KeyStoreDataSize.Medium);
+            _blocks = new KeyValueStore<Block>(this.Address, "blocks",KeyStoreDataSize.Medium);
+            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk", KeyStoreDataSize.Small);
 
             foreach (var contract in contracts)
             {
@@ -127,7 +127,7 @@ namespace Phantasma.Blockchain
             this.ParentBlock = parentBlock;
 
             // TODO support persistence storage
-            this.Storage = new DiskStorageContext(this.Address, "data");
+            this.Storage = new DiskStorageContext(this.Address, "data", KeyStoreDataSize.Medium);
             this.Log = Logger.Init(log);
 
             if (parentChain != null)

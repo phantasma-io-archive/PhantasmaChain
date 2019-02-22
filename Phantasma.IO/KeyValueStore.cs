@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Phantasma.IO
 {
-    public interface IKeyStore
+    public interface IKeyValueStore
     {
         void SetValue(Hash key, byte[] value);
         byte[] GetValue(Hash key);
@@ -18,7 +18,15 @@ namespace Phantasma.IO
         uint Count { get; }
     }
 
-    public class MemoryStore : IKeyStore
+    public enum KeyStoreDataSize
+    {
+        Small, // up to 255 bytes per entry
+        Medium, // up to 64kb per entry
+        Large, // up to 16mb per entry
+        Huge, // up to 4gb per entry
+    }
+
+    public class MemoryStore : IKeyValueStore
     {
         public readonly int CacheSize;
 
@@ -95,9 +103,11 @@ namespace Phantasma.IO
         public uint Length;
     }
 
-    public class DiskStore : IKeyStore, IDisposable
+    public class DiskStore : IKeyValueStore, IDisposable
     {
         private const bool BackgroundWriting = true;
+
+        public readonly KeyStoreDataSize DataSize;
 
         public readonly string fileName;
         public uint Count => (uint)_entries.Count;
@@ -124,9 +134,11 @@ namespace Phantasma.IO
         private static Dictionary<string, DiskStore> _storeMap = new Dictionary<string, DiskStore>();
         private static HashSet<string> _pendingFiles = new HashSet<string>();
 
-        public DiskStore(string fileName)
+        public DiskStore(string fileName, KeyStoreDataSize dataSize)
         {
             Throw.If(string.IsNullOrEmpty(fileName), "invalid filename");
+
+            this.DataSize = dataSize;
 
             //var path = Path.GetDirectoryName(fileName);
             var path = "Storage";
@@ -162,6 +174,19 @@ namespace Phantasma.IO
             }
 
             _ready = true;
+        }
+
+        public static uint GetMaxAlllowedItemSize(KeyStoreDataSize dataSize)
+        {
+            switch (dataSize)
+            {
+                case KeyStoreDataSize.Small: return 0xFF;
+                case KeyStoreDataSize.Medium: return 0xFFFF;
+                case KeyStoreDataSize.Large: return 0xFFFFFF;
+                case KeyStoreDataSize.Huge: return 0xFFFFFF;
+
+                default: throw new Exception("invalid data size");
+            }
         }
 
         public static void FlushAll()
@@ -264,7 +289,15 @@ namespace Phantasma.IO
 
                     var entry = _entries[hash];
                     writer.Write(entry.Offset);
-                    writer.Write(entry.Length);
+
+                    switch (DataSize)
+                    {
+                        case KeyStoreDataSize.Small: writer.Write((byte)entry.Length); break;
+                        case KeyStoreDataSize.Medium: writer.Write((ushort)entry.Length); break;
+                        case KeyStoreDataSize.Large: writer.WriteUInt24(entry.Length); break;
+                        case KeyStoreDataSize.Huge: writer.Write(entry.Length); break;
+                        default: throw new Exception("unsupported data size");
+                    }                    
                 }
                 writer.Write((uint)_lastBlockOffset);
 
@@ -310,8 +343,17 @@ namespace Phantasma.IO
                             while (entryCount > 0)
                             {
                                 var hash = reader.ReadHash();
-                                var location = reader.ReadUInt32();
-                                var size = reader.ReadUInt32();
+                                uint location = reader.ReadUInt32();
+
+                                uint size;
+                                switch (DataSize)
+                                {
+                                    case KeyStoreDataSize.Small: size = reader.ReadByte(); break;
+                                    case KeyStoreDataSize.Medium: size = reader.ReadUInt16(); break;
+                                    case KeyStoreDataSize.Large: size = reader.ReadUInt24(); break;
+                                    case KeyStoreDataSize.Huge: size = reader.ReadUInt32(); break;
+                                    default: throw new Exception("unsupported data size");
+                                }
 
                                 if (!_entries.ContainsKey(hash))
                                 {
@@ -539,7 +581,7 @@ namespace Phantasma.IO
         }
     }
 
-    public class KeyValueStore<T> : IKeyStore 
+    public class KeyValueStore<T> : IKeyValueStore 
     {
         public readonly string Name;
 
@@ -549,15 +591,15 @@ namespace Phantasma.IO
         public uint Count => _disk.Count;
 
         // TODO increase default size
-        public KeyValueStore(string name, int maxSize)
+        public KeyValueStore(string name, KeyStoreDataSize dataSize, int cacheSize)
         {
             var fileName = name + ".bin";
 
-            _memory = new MemoryStore(maxSize);
-            _disk = new DiskStore(fileName);
+            _memory = new MemoryStore(cacheSize);
+            _disk = new DiskStore(fileName, dataSize);
         }
 
-        public KeyValueStore(Address address, string name, int maxSize = 16) : this(address.Text + "_" + name, maxSize)
+        public KeyValueStore(Address address, string name, KeyStoreDataSize dataSize, int cacheSize = 16) : this(address.Text + "_" + name, dataSize, cacheSize)
         {
         }
 
