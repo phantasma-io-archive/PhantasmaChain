@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(balances, from, amount), "burn failed");
+            Runtime.Expect(token.Burn(this.Storage, balances, from, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Mint(balances, to, amount), "minting failed");
+            Runtime.Expect(token.Mint(this.Storage, balances, to, amount), "minting failed");
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
         }
@@ -89,7 +89,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(balances, from, amount), "burning failed");
+            Runtime.Expect(token.Burn(this.Storage, balances, from, amount), "burning failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount });
         }
@@ -106,7 +106,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, source, destination, amount), "transfer failed");
+            Runtime.Expect(token.Transfer(this.Storage, balances, source, destination, amount), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
@@ -119,7 +119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            return balances.Get(address);
+            return balances.Get(this.Storage, address);
         }
         #endregion
 
@@ -131,7 +131,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            return ownerships.Get(address).ToArray();
+            return ownerships.Get(this.Storage, address).ToArray();
         }
 
         public BigInteger MintToken(Address to, string symbol, byte[] ram, byte[] rom)
@@ -152,7 +152,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
             Runtime.Expect(token.Mint(), "minting failed");
-            Runtime.Expect(ownerships.Give(to, tokenID), "give token failed");
+            Runtime.Expect(ownerships.Give(this.Storage, to, tokenID), "give token failed");
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = tokenID });
             return tokenID;
@@ -173,7 +173,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
+            Runtime.Expect(ownerships.Take(this.Storage, from, tokenID), "take token failed");
             Runtime.Expect(token.Burn(), "burn failed");
 
             Runtime.Expect(this.Runtime.Nexus.DestroyNFT(token, tokenID), "destroy token failed");
@@ -192,8 +192,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Take(source, tokenID), "take token failed");
-            Runtime.Expect(ownerships.Give(destination, tokenID), "give token failed");
+            Runtime.Expect(ownerships.Take(this.Storage, source, tokenID), "take token failed");
+            Runtime.Expect(ownerships.Give(this.Storage, destination, tokenID), "give token failed");
 
             var nft = this.Runtime.Nexus.GetNFT(token, tokenID);
             nft.CurrentChain = Runtime.Chain.Address;
@@ -235,7 +235,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-            Runtime.Expect(ownerships.Take(from, tokenID), "take token failed");
+            Runtime.Expect(ownerships.Take(this.Storage, from, tokenID), "take token failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChain });
@@ -288,12 +288,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
                 var balances = this.Runtime.Chain.GetTokenBalances(token);
-                Runtime.Expect(token.Mint(balances, targetAddress, value), "mint failed");
+                Runtime.Expect(token.Mint(this.Storage, balances, targetAddress, value), "mint failed");
             }
             else
             {
                 var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
-                Runtime.Expect(ownerships.Give(targetAddress, value), "give token failed");
+                Runtime.Expect(ownerships.Give(this.Storage, targetAddress, value), "give token failed");
 
                 var nft = this.Runtime.Nexus.GetNFT(token, value);
                 nft.CurrentChain = Runtime.Chain.Address;

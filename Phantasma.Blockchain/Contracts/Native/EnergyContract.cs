@@ -38,11 +38,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var stakeToken = Runtime.Nexus.StakingToken;
             var stakeBalances = Runtime.Chain.GetTokenBalances(stakeToken);
-            var balance = stakeBalances.Get(from);
+            var balance = stakeBalances.Get(this.Storage, from);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
-            Runtime.Expect(stakeBalances.Subtract(from, stakeAmount), "balance subtract failed");
-            Runtime.Expect(stakeBalances.Add(Runtime.Chain.Address, stakeAmount), "balance add failed");
+            Runtime.Expect(stakeBalances.Subtract(this.Storage, from, stakeAmount), "balance subtract failed");
+            Runtime.Expect(stakeBalances.Add(this.Storage, Runtime.Chain.Address, stakeAmount), "balance add failed");
 
 
             var entry = new EnergyAction()
@@ -69,11 +69,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var amount = stake.amount;
             var token = Runtime.Nexus.StakingToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
-            var balance = balances.Get(Runtime.Chain.Address);
+            var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= amount, "not enough balance");
 
-            Runtime.Expect(balances.Subtract(Runtime.Chain.Address, amount), "balance subtract failed");
-            Runtime.Expect(balances.Add(from, amount), "balance add failed");
+            Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, amount), "balance subtract failed");
+            Runtime.Expect(balances.Add(this.Storage, from, amount), "balance add failed");
 
             _stakes.Remove(from);
 
@@ -139,13 +139,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.Expect(fuelToken.Mint(fuelBalances, proxy.address, proxyAmount), "proxy fuel minting failed");
+                    Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, proxy.address, proxyAmount), "proxy fuel minting failed");
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.Expect(fuelToken.Mint(fuelBalances, stakeAddress, availableAmount), "fuel minting failed");
+            Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, stakeAddress, availableAmount), "fuel minting failed");
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var action = new EnergyAction() { amount = stake.amount, timestamp = Timestamp.Now };

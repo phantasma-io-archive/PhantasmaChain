@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var token = Runtime.Nexus.FuelToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, target, Runtime.Chain.Address, RegistrationCost), "fee failed");
+            Runtime.Expect(token.Transfer(this.Storage, balances, target, Runtime.Chain.Address, RegistrationCost), "fee failed");
 
             _addressMap.Set(target, name);
             _nameMap.Set(name, target);

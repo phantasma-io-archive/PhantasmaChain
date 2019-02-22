@@ -40,11 +40,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balances = this.Runtime.Chain.GetTokenBalances(token);
             var maxAmount = price * limit;
 
-            var balance = balances.Get(from);
+            var balance = balances.Get(this.Storage, from);
             Runtime.Expect(balance >= maxAmount, "not enough gas in address");
 
-            Runtime.Expect(balances.Subtract(from, maxAmount), "gas escrow withdraw failed");
-            Runtime.Expect(balances.Add(Runtime.Chain.Address, maxAmount), "gas escrow deposit failed");
+            Runtime.Expect(balances.Subtract(this.Storage, from, maxAmount), "gas escrow withdraw failed");
+            Runtime.Expect(balances.Add(this.Storage, Runtime.Chain.Address, maxAmount), "gas escrow deposit failed");
 
             var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
             Runtime.Expect(allowance == 0, "unexpected pending allowance");
@@ -107,23 +107,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             // return unused gas to transaction creator
             if (leftoverAmount > 0)
             {
-                Runtime.Expect(balances.Subtract(Runtime.Chain.Address, leftoverAmount), "gas leftover deposit failed");
-                Runtime.Expect(balances.Add(from, leftoverAmount), "gas leftover withdraw failed");
+                Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, leftoverAmount), "gas leftover deposit failed");
+                Runtime.Expect(balances.Add(this.Storage, from, leftoverAmount), "gas leftover withdraw failed");
             }
 
             if (targetGas > 0)
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
-                Runtime.Expect(balances.Subtract(Runtime.Chain.Address, targetPayment), "gas target withdraw failed");
-                Runtime.Expect(balances.Add(targetAddress, targetPayment), "gas target deposit failed");
+                Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, targetPayment), "gas target withdraw failed");
+                Runtime.Expect(balances.Add(this.Storage, targetAddress, targetPayment), "gas target deposit failed");
                 spentGas -= targetGas;
             }
 
             if (storageGas > 0)
             {
                 var storagePayment = storageGas * Runtime.GasPrice;
-                Runtime.Expect(balances.Subtract(Runtime.Chain.Address, storagePayment), "gas storage withdraw failed");
-                Runtime.Expect(balances.Add(Runtime.Nexus.StorageAddress, storagePayment), "gas storage deposit failed");
+                Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, storagePayment), "gas storage withdraw failed");
+                Runtime.Expect(balances.Add(this.Storage, Runtime.Nexus.StorageAddress, storagePayment), "gas storage deposit failed");
                 spentGas -= storageGas;
             }
 

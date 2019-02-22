@@ -63,11 +63,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var token = Runtime.Nexus.StakingToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
-            var balance = balances.Get(address);
+            var balance = balances.Get(this.Storage, address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
-            Runtime.Expect(balances.Subtract(address, stakeAmount), "balance subtract failed");
-            Runtime.Expect(balances.Add(Runtime.Chain.Address, stakeAmount), "balance add failed");
+            Runtime.Expect(balances.Subtract(this.Storage, address, stakeAmount), "balance subtract failed");
+            Runtime.Expect(balances.Add(this.Storage, Runtime.Chain.Address, stakeAmount), "balance add failed");
 
             _entryList.Add(address);
 
@@ -98,11 +98,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakeAmount = entry.stake;
             var token = Runtime.Nexus.StakingToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
-            var balance = balances.Get(Runtime.Chain.Address);
+            var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
-            Runtime.Expect(balances.Subtract(Runtime.Chain.Address, stakeAmount), "balance subtract failed");
-            Runtime.Expect(balances.Add(address, stakeAmount), "balance add failed");
+            Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, stakeAmount), "balance subtract failed");
+            Runtime.Expect(balances.Add(this.Storage, address, stakeAmount), "balance add failed");
 
             _entryMap.Remove(address);
             _entryList.Remove(address);

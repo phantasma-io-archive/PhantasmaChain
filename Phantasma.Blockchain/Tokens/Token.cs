@@ -90,7 +90,7 @@ namespace Phantasma.Blockchain.Tokens
             return $"{Name} ({Symbol})";
         }
 
-        internal bool Mint(BalanceSheet balances, Address target, BigInteger amount)
+        internal bool Mint(StorageContext storage, BalanceSheet balances, Address target, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -107,7 +107,7 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (!balances.Add(target, amount))
+            if (!balances.Add(storage, target, amount))
             {
                 return false;
             }
@@ -135,7 +135,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Burn(BalanceSheet balances, Address target, BigInteger amount)
+        internal bool Burn(StorageContext storage, BalanceSheet balances, Address target, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -152,7 +152,7 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (!balances.Subtract(target, amount))
+            if (!balances.Subtract(storage, target, amount))
             {
                 return false;
             }
@@ -180,7 +180,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Transfer(BalanceSheet balances, Address source, Address destination, BigInteger amount)
+        internal bool Transfer(StorageContext storage, BalanceSheet balances, Address source, Address destination, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Transferable))
             {
@@ -197,12 +197,12 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (!balances.Subtract(source, amount))
+            if (!balances.Subtract(storage, source, amount))
             {
                 return false;
             }
 
-            if (!balances.Add(destination, amount))
+            if (!balances.Add(storage, destination, amount))
             {
                 return false;
             }
@@ -210,7 +210,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Transfer(OwnershipSheet ownerships, Address source, Address destination, BigInteger ID)
+        internal bool Transfer(StorageContext storage, OwnershipSheet ownerships, Address source, Address destination, BigInteger ID)
         {
             if (!Flags.HasFlag(TokenFlags.Transferable))
             {
@@ -227,12 +227,12 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (!ownerships.Take(source, ID))
+            if (!ownerships.Take(storage, source, ID))
             {
                 return false;
             }
 
-            if (!ownerships.Give(destination, ID))
+            if (!ownerships.Give(storage, destination, ID))
             {
                 return false;
             }

@@ -375,7 +375,7 @@ namespace Phantasma.Blockchain
                 return _tokenOwnerships[token];
             }
 
-            var sheet = new OwnershipSheet(token.Symbol, this.Storage);
+            var sheet = new OwnershipSheet(token.Symbol);
             _tokenOwnerships[token] = sheet;
             return sheet;
         }
@@ -385,12 +385,12 @@ namespace Phantasma.Blockchain
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
                 var balances = GetTokenBalances(token);
-                return balances.Get(address);
+                return balances.Get(Storage, address);
             }
             else
             {
                 var ownerships = GetTokenOwnerships(token);
-                var items = ownerships.Get(address);
+                var items = ownerships.Get(this.Storage, address);
                 return items.Count();
             }
 
@@ -409,13 +409,13 @@ namespace Phantasma.Blockchain
             Throw.If(token.IsFungible, "non fungible required");
 
             var ownerships = GetTokenOwnerships(token);
-            return ownerships.GetOwner(tokenID);
+            return ownerships.GetOwner(this.Storage, tokenID);
         }
 
         public IEnumerable<BigInteger> GetOwnedTokens(Token token, Address address)
         {
             var ownership = GetTokenOwnerships(token);
-            return ownership.Get(address);
+            return ownership.Get(this.Storage, address);
         }
 
         public static bool ValidateName(string name)

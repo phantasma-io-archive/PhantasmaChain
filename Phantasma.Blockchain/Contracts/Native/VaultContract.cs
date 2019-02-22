@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, from, Runtime.Chain.Address, amount), "transfer failed");
+            Runtime.Expect(token.Transfer(this.Storage, balances, from, Runtime.Chain.Address, amount), "transfer failed");
 
             List<VaultEntry> list;
 
@@ -89,7 +89,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, Runtime.Chain.Address, from, amount), "transfer failed");
+            Runtime.Expect(token.Transfer(this.Storage, balances, Runtime.Chain.Address, from, amount), "transfer failed");
         }
     }
 }

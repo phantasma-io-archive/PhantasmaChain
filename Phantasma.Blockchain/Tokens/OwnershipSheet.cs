@@ -12,16 +12,11 @@ namespace Phantasma.Blockchain.Tokens
     {
         private byte[] _prefixItems;
         private byte[] _prefixOwner;
-        private StorageContext _storage;
 
-     //   private Dictionary<Address, HashSet<BigInteger>> _items = new Dictionary<Address, HashSet<BigInteger>>();
-     //   private Dictionary<BigInteger, Address> _ownerMap = new Dictionary<BigInteger, Address>();
-
-        public OwnershipSheet(string symbol, StorageContext storage)
+        public OwnershipSheet(string symbol)
         {
             this._prefixItems = Encoding.ASCII.GetBytes(symbol + ".ids.");
             this._prefixOwner = Encoding.ASCII.GetBytes(symbol + ".own.");
-            this._storage = storage;
         }
 
         private byte[] GetKeyForList(Address address)
@@ -34,23 +29,23 @@ namespace Phantasma.Blockchain.Tokens
             return ByteArrayUtils.ConcatBytes(_prefixOwner, tokenID.ToByteArray());
         }
 
-        public BigInteger[] Get(Address address)
+        public BigInteger[] Get(StorageContext storage, Address address)
         {
-            lock (_storage)
+            lock (storage)
             {
                 var listKey = GetKeyForList(address);
-                var list = new StorageList(listKey, _storage);
+                var list = new StorageList(listKey, storage);
                 return list.All<BigInteger>();
             }
         }
 
-        public Address GetOwner(BigInteger tokenID)
+        public Address GetOwner(StorageContext storage, BigInteger tokenID)
         {
-            lock (_storage)
+            lock (storage)
             {
                 var ownerKey = GetKeyForOwner(tokenID);
 
-                var temp = _storage.Get(ownerKey);
+                var temp = storage.Get(ownerKey);
                 if (temp == null || temp.Length != Address.PublicKeyLength)
                 {
                     return Address.Null;
@@ -60,14 +55,14 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
-        public bool Give(Address address, BigInteger tokenID)
+        public bool Give(StorageContext storage, Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
                 return false;
             }
 
-            if (GetOwner(tokenID) != Address.Null)
+            if (GetOwner(storage, tokenID) != Address.Null)
             {
                 return false;
             }
@@ -75,24 +70,24 @@ namespace Phantasma.Blockchain.Tokens
             var listKey = GetKeyForList(address);
             var ownerKey = GetKeyForOwner(tokenID);
 
-            lock (_storage)
+            lock (storage)
             {
-                var list = new StorageList(listKey, _storage);
+                var list = new StorageList(listKey, storage);
                 list.Add<BigInteger>(tokenID);
 
-                _storage.Put(ownerKey, address);
+                storage.Put(ownerKey, address);
             } 
             return true;
         }
 
-        public bool Take(Address address, BigInteger tokenID)
+        public bool Take(StorageContext storage, Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
                 return false;
             }
 
-            if (GetOwner(tokenID) != address)
+            if (GetOwner(storage, tokenID) != address)
             {
                 return false;
             }
@@ -100,12 +95,12 @@ namespace Phantasma.Blockchain.Tokens
             var listKey = GetKeyForList(address);
             var ownerKey = GetKeyForOwner(tokenID);
 
-            lock (_storage)
+            lock (storage)
             {
-                var list = new StorageList(listKey, _storage);
+                var list = new StorageList(listKey, storage);
                 list.Remove(tokenID);
 
-                _storage.Delete(ownerKey);
+                storage.Delete(ownerKey);
             }
 
             return true;

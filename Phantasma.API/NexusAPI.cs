@@ -441,7 +441,8 @@ namespace Phantasma.API
 
                         if (!token.IsFungible)
                         {
-                            var idList = chain.GetTokenOwnerships(token).Get(address);
+                            // TODO do we need to go this deep, arent there any higher level methods to achieve this already?
+                            var idList = chain.GetTokenOwnerships(token).Get(chain.Storage, address);
                             if (idList != null && idList.Any())
                             {
                                 balanceEntry.ids = idList.Select(x => x.ToString()).ToArray();
@@ -1058,7 +1059,7 @@ namespace Phantasma.API
 
             if (!token.IsFungible)
             {
-                var idList = chain.GetTokenOwnerships(token).Get(address);
+                var idList = chain.GetTokenOwnerships(token).Get(chain.Storage, address);
                 if (idList != null && idList.Any())
                 {
                     result.ids = idList.Select(x => x.ToString()).ToArray();

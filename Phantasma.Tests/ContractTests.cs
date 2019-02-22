@@ -38,7 +38,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(token != null, "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
@@ -53,7 +53,7 @@ namespace Phantasma.Tests
             var previousAuctionCount = auctions.Length;
 
             // verify nft presence on the user post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
             var tokenID = ownedTokenList.First();
 
@@ -90,10 +90,10 @@ namespace Phantasma.Tests
             Assert.IsTrue(auctions.Length == previousAuctionCount, "auction ids should be empty at this point");
 
             // verify that the nft was really moved
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 0, "How does the seller still have one?");
 
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(owner.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, owner.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the buyer does not have what he bought?");
         }
     }
