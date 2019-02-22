@@ -59,14 +59,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var entry = _stakes.Get<Address, EnergyAction>(from);
+            var stake = _stakes.Get<Address, EnergyAction>(from);
 
-            var diff = Timestamp.Now - entry.timestamp;
+            var diff = Timestamp.Now - stake.timestamp;
             var days = diff / 86400; // convert seconds to days
 
             Runtime.Expect(days >= 1, "waiting period required");
 
-            var amount = entry.stake;
+            var amount = stake.amount;
             var token = Runtime.Nexus.StakingToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
             var balance = balances.Get(Runtime.Chain.Address);
@@ -158,8 +158,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger GetStake(Address address)
         {
             Runtime.Expect(_stakes.ContainsKey(address), "not a validator address");
-            var entry = _stakes.Get<Address, EnergyAction>(address);
-            return entry.stake;
+            var stake = _stakes.Get<Address, EnergyAction>(address);
+            return stake.amount;
         }
 
         public EnergyProxy[] GetProxies(Address address)
