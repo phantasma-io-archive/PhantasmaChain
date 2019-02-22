@@ -5,13 +5,14 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public struct EnergyStakeInfo
+    public struct EnergyAction
     {
-        public BigInteger stake;
+        public BigInteger amount;
         public Timestamp timestamp;
     }
 
-    public struct EnergyProxy {
+    public struct EnergyProxy
+    {
         public Address address;
         public byte percentage;
     }
@@ -20,9 +21,9 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "energy";
 
-        private StorageMap _entryMap; // <Address, EnergyStakeInfo>
+        private StorageMap _stakes; // <Address, EnergyAction>
         private StorageMap _proxyMap; // <Address, List<EnergyProxy>>
-        private StorageMap _claims; // <Address, Timestamp>
+        private StorageMap _claims; // <Address, EnergyAction>
 
         public readonly static BigInteger EnergyRacioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
@@ -44,12 +45,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(stakeBalances.Add(Runtime.Chain.Address, stakeAmount), "balance add failed");
 
 
-            var entry = new EnergyStakeInfo()
+            var entry = new EnergyAction()
             {
-                stake = stakeAmount,
+                amount = stakeAmount,
                 timestamp = Timestamp.Now,
             };
-            _entryMap.Set(from, entry);
+            _stakes.Set(from, entry);
 
             Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = stakeAmount });
         }
@@ -58,7 +59,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var entry = _entryMap.Get<Address, ValidatorInfo>(from);
+            var entry = _stakes.Get<Address, EnergyAction>(from);
 
             var diff = Timestamp.Now - entry.timestamp;
             var days = diff / 86400; // convert seconds to days
@@ -74,7 +75,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Subtract(Runtime.Chain.Address, amount), "balance subtract failed");
             Runtime.Expect(balances.Add(from, amount), "balance add failed");
 
-            _entryMap.Remove(from);
+            _stakes.Remove(from);
 
             Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
 
@@ -83,20 +84,27 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void Claim(Address from)
         {
-            var claimDate = _claims.Get<Address, Timestamp>(from);
-            var diff = Timestamp.Now - claimDate;
+            var stake = _stakes.Get<Address, EnergyAction>(from);
+            var unclaimedAmount = stake.amount;
+
+            var lastClaim = _claims.Get<Address, EnergyAction>(from);
+            var diff = Timestamp.Now - lastClaim.timestamp;
+
             var days = diff / 86400; // convert seconds to days
-            Runtime.Expect(days >= 1, "waiting period required");
 
-            var entry = _entryMap.Get<Address, ValidatorInfo>(from);
+            // if not enough time has passed, deduct the last claim from the available amount
+            if (days < 0)
+            {
+                unclaimedAmount -= lastClaim.amount;
+            }
 
+            Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
 
-            var stakeAmount = entry.stake;
             var stakeToken = Runtime.Nexus.StakingToken;
 
             var fuelToken = Runtime.Nexus.FuelToken;
             var fuelBalances = Runtime.Chain.GetTokenBalances(stakeToken);
-            var fuelAmount = stakeAmount / EnergyRacioDivisor;
+            var fuelAmount = unclaimedAmount / EnergyRacioDivisor;
 
             // distribute to proxy list
             var list = _proxyMap.Get<Address, StorageList>(from);
@@ -128,8 +136,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetStake(Address address)
         {
-            Runtime.Expect(_entryMap.ContainsKey(address), "not a validator address");
-            var entry = _entryMap.Get<Address, ValidatorInfo>(address);
+            Runtime.Expect(_stakes.ContainsKey(address), "not a validator address");
+            var entry = _stakes.Get<Address, EnergyAction>(address);
             return entry.stake;
         }
 
