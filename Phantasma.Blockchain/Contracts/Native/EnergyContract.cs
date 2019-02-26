@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _proxyMap; // <Address, List<EnergyProxy>>
         private StorageMap _claims; // <Address, EnergyAction>
 
-        public readonly static BigInteger EnergyRacioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
+        public readonly static BigInteger EnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
         public EnergyContract() : base()
         {
@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void Stake(Address from, BigInteger stakeAmount)
         {
-            Runtime.Expect(stakeAmount >= EnergyRacioDivisor, "invalid amount");
+            Runtime.Expect(stakeAmount >= EnergyRatioDivisor, "invalid amount");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var stakeToken = Runtime.Nexus.StakingToken;
@@ -109,6 +109,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var unclaimedAmount = stake.amount;
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
+
+            if (lastClaim.timestamp.Value == 0)
+                lastClaim.timestamp = Timestamp.Now;
+
             var diff = Timestamp.Now - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
@@ -130,7 +134,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 unclaimedAmount = 0;
             }
 
-            return unclaimedAmount;
+            return unclaimedAmount / EnergyRatioDivisor;
         }
 
         public void Claim(Address from, Address stakeAddress)
@@ -145,7 +149,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var fuelToken = Runtime.Nexus.FuelToken;
             var fuelBalances = Runtime.Chain.GetTokenBalances(stakeToken);
-            var fuelAmount = unclaimedAmount / EnergyRacioDivisor;
+            var fuelAmount = unclaimedAmount;
 
             // distribute to proxy list
             var list = _proxyMap.Get<Address, StorageList>(stakeAddress);
