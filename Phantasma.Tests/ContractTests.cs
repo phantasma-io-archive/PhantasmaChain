@@ -8,6 +8,7 @@ using Phantasma.Blockchain.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain;
+using Phantasma.Numerics;
 
 namespace Phantasma.Tests
 {
@@ -95,6 +96,203 @@ namespace Phantasma.Tests
 
             ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, owner.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the buyer does not have what he bought?");
+        }
+
+        [TestMethod]
+        public void TestGetUnclaimed()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234, -1);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+            var stakeAmount = EnergyContract.EnergyRatioDivisor;
+            var expectedUnclaimedAmount = stakeAmount / EnergyContract.EnergyRatioDivisor;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, stakeAmount);
+            simulator.EndBlock();
+
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Stake", testUser.Address, stakeAmount).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            }
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimedAmount);
+        }
+
+        [TestMethod]
+        public void TestStaking()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234, -1);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            var amount = EnergyContract.EnergyRatioDivisor * 10;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, amount);
+            simulator.EndBlock();
+
+            //Try to stake an amount lower than EnergyRacioDivisor
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Stake", testUser.Address, EnergyContract.EnergyRatioDivisor / 2).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+            //----------
+            //Try to stake an amount higher than the account's balance
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Stake", testUser.Address, EnergyContract.EnergyRatioDivisor * 100).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+            //-----------
+            //Perform a valid Stake call
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Stake", testUser.Address, EnergyContract.EnergyRatioDivisor).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            }
+
+            BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == EnergyContract.EnergyRatioDivisor);
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == (stakedAmount/EnergyContract.EnergyRatioDivisor));
+
+            //-----------
+            //Perform a claim call: should pass
+
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Claim", testUser.Address, testUser.Address).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            }
+
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == EnergyContract.EnergyRatioDivisor);
+
+            //-----------
+            //Increase the staked amount
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Stake", testUser.Address, EnergyContract.EnergyRatioDivisor * 2).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            }
+
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == EnergyContract.EnergyRatioDivisor * 2);
+            //-----------
+            //Perform another claim call: should get reward only for the newly staked amount
+
+            //-----------
+            //Perform another claim call: should fail
+
+            //-----------
+            //Time skip 1 day
+            simulator.CurrentTime = simulator.CurrentTime.AddDays(1);
+            //Perform another claim call: should get reward for total staked amount
+
+            //-----------
+            //Try to reduce the staked amount via Stake function call
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Stake", testUser.Address, EnergyContract.EnergyRatioDivisor).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            //-----------
+            //Add main account as proxy to itself: should fail
+
+            //-----------
+            //Add 0% proxy: should fail
+
+            //-----------
+            //Add 25% proxy A: should pass
+
+            //-----------
+            //Add an 80% proxy: should fail
+
+            //-----------
+            //Add 25% proxy B: should pass
+
+            //-----------
+            //Try to claim from main: should fail
+
+            //-----------
+            //Try to claim from proxy A: should fail
+
+            //-----------
+            //Time skip 1 day
+            //Try to claim from main: should pass
+
+            //-----------
+            //Time skip 1 day
+            //Try to claim from proxy A: should pass
+
+            //-----------
+            //Remove proxy A
+
+            //-----------
+            //Try to claim from proxy A: should fail
+
+            //-----------
+            //Try to claim from main: should fail
+
+            //-----------
+            //Time skip 1 day
+            //Try to claim from proxy A: should fail
+
+            //-----------
+            //Try to claim from main: should pass, check removed proxy received nothing
+            
+            //-----------
+            //Time skip 5 days
+            //Try to claim from main: should pass, check claimed amount is from 5 days worth of accumulation
         }
     }
 }
