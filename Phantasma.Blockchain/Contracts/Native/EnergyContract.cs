@@ -59,7 +59,17 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
+            if (!_stakes.ContainsKey<Address>(from))
+            {
+                return 0;
+            }
+
             var stake = _stakes.Get<Address, EnergyAction>(from);
+
+            if (stake.timestamp.Value == 0) // failsafe, should never happen
+            {
+                return 0;
+            }
 
             var diff = Timestamp.Now - stake.timestamp;
             var days = diff / 86400; // convert seconds to days
