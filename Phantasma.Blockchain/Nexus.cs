@@ -84,6 +84,7 @@ namespace Phantasma.Blockchain
                 new ExchangeContract(),
                 new MarketContract(),
                 new GasContract(),
+                new EnergyContract(),
             };
 
             RootChain = new Chain(this, "main", contracts, logger);
