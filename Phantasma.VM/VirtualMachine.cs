@@ -75,7 +75,9 @@ namespace Phantasma.VM
             lines.AddRange(disasm);
             lines.Add("");
 
-            File.WriteAllLines("vm_dump.txt", lines.ToArray());
+            var path = Directory.GetCurrentDirectory() + "\\" + "vm_dump.txt";
+            System.Diagnostics.Debug.WriteLine("Dumped VM data: " + path);
+            File.WriteAllLines(path, lines.ToArray());
         }
     }
 #endif
