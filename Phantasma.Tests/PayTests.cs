@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
@@ -51,5 +52,30 @@ namespace Phantasma.Tests
             var address = wallet.GetAddress(WalletKind.Bitcoin);
             Assert.IsTrue(address.Equals("17JsmEygbbEUEpvt4PFtYaTeSqfb9ki1F1", StringComparison.OrdinalIgnoreCase));
         }
+
+        [TestMethod]
+        public void TestEndian()
+        {
+            var n = new BigInteger(100000000);
+            var bytes = n.ToByteArray(false);
+            Assert.IsTrue(bytes.Length == 4);
+            Assert.IsTrue(bytes[0] == 00);
+            Assert.IsTrue(bytes[1] == 0xe1);
+            Assert.IsTrue(bytes[2] == 0xf5);
+            Assert.IsTrue(bytes[3] == 05);
+        }
+
+        [TestMethod]
+        public void TestDecodeScriptHash()
+        {
+            var targetAddress = "2N8bXfrWTzqZoV89dosge2JxvE38VnHurqD";
+            var temp = targetAddress.Base58CheckDecode().Skip(1).ToArray();
+
+            byte OP_HASH160 = 0xa9;
+            byte OP_EQUAL = 0x87;
+            var outputKeyScript = ByteArrayUtils.ConcatBytes(new byte[] { OP_HASH160, 0x14 }, ByteArrayUtils.ConcatBytes(temp, new byte[] { OP_EQUAL }));
+            var hex = Base16.Encode(outputKeyScript).ToLower();
+        }
+
     }
 }

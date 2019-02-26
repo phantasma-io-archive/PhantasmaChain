@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
@@ -10,6 +11,9 @@ namespace Phantasma.Pay.Chains
     public class BitcoinWallet: CryptoWallet
     {
         private List<Unspent> _unspents = new List<Unspent>();
+
+        private const byte OP_HASH160 = 0xa9;
+        private const byte OP_EQUAL = 0x87;
 
         public struct Unspent
         {
@@ -26,7 +30,38 @@ namespace Phantasma.Pay.Chains
 
         public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
         {
-            throw new NotImplementedException();
+            if (_unspents.Count <= 0)
+            {
+                callback(false);
+                return;
+            }
+
+            decimal totalMoving = 0;
+            var unspentList = new List<Unspent>();
+
+            foreach (var unspent in _unspents)
+            {
+                totalMoving += unspent.amount;
+                if (totalMoving >= amount)
+                {
+                    break;
+                }
+            }
+
+            // not enough funds
+            if (totalMoving < amount)
+            {
+                callback(false);
+                return;
+            }
+
+            var number = UnitConversion.ToBigInteger(amount, 8);
+
+            var temp = targetAddress.Base58CheckDecode().Skip(1).ToArray();
+
+            var outputKeyScript = ByteArrayUtils.ConcatBytes(new byte[] { OP_HASH160, 0x14 }, ByteArrayUtils.ConcatBytes(temp, new byte[] { OP_EQUAL }));
+
+            decimal change = (totalMoving > amount) ? totalMoving - amount : 0;
         }
 
         public override void SyncBalances(Action<bool> callback)
