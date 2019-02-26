@@ -57,11 +57,14 @@ namespace Phantasma.Pay.Chains
 
             var number = UnitConversion.ToBigInteger(amount, 8);
 
-            var temp = targetAddress.Base58CheckDecode().Skip(1).ToArray();
 
-            var outputKeyScript = ByteArrayUtils.ConcatBytes(new byte[] { OP_HASH160, 0x14 }, ByteArrayUtils.ConcatBytes(temp, new byte[] { OP_EQUAL }));
+            decimal change = totalMoving - amount;
+        }
 
-            decimal change = (totalMoving > amount) ? totalMoving - amount : 0;
+        private byte[] CalculatePublicKeyScript(string address)
+        {
+            var temp = address.Base58CheckDecode().Skip(1).ToArray();
+            return ByteArrayUtils.ConcatBytes(new byte[] { OP_HASH160, 0x14 }, ByteArrayUtils.ConcatBytes(temp, new byte[] { OP_EQUAL }));
         }
 
         public override void SyncBalances(Action<bool> callback)
