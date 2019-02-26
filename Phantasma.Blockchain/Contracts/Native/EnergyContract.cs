@@ -82,10 +82,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             return amount;
         }
 
-        public void Claim(Address from, Address stakeAddress)
+        public BigInteger GetUnclaimed(Address stakeAddress)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
-
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
             var unclaimedAmount = stake.amount;
 
@@ -104,6 +102,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 unclaimedAmount *= days;
             }
+
+            // clamp to avoid negative values
+            if (unclaimedAmount < 0)
+            {
+                unclaimedAmount = 0;
+            }
+
+            return unclaimedAmount;
+        }
+
+        public void Claim(Address from, Address stakeAddress)
+        {
+            Runtime.Expect(IsWitness(from), "witness failed");
+
+            var unclaimedAmount = GetUnclaimed(stakeAddress);
 
             Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
 
@@ -153,6 +166,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, stakeAddress, availableAmount), "fuel minting failed");
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
+            var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
+            Runtime.Expect(stake.amount > 0, "stake missing"); // failsafe, should never happen
             var action = new EnergyAction() { amount = stake.amount, timestamp = Timestamp.Now };
             _claims.Set<Address, EnergyAction>(stakeAddress, action);
 
