@@ -94,7 +94,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetUnclaimed(Address stakeAddress)
         {
+            if (!_stakes.ContainsKey<Address>(stakeAddress))
+            {
+                return 0;
+            }
+
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
+
+            if (stake.timestamp.Value == 0) // failsafe, should never happen
+            {
+                return 0;
+            }
+
             var unclaimedAmount = stake.amount;
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
