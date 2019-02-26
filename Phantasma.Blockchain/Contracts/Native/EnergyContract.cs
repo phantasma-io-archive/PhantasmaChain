@@ -99,6 +99,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 unclaimedAmount -= lastClaim.amount;
             }
+            else
+            if (days > 1) // allow for staking accumulation over several days
+            {
+                unclaimedAmount *= days;
+            }
 
             Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
 
