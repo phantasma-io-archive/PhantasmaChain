@@ -27,25 +27,29 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
 
+            SupplySheet sourceSupplies;
+
             if (token.IsCapped)
             {
-                var sourceSupplies = this.Runtime.Chain.GetTokenSupplies(token);
+                sourceSupplies = this.Runtime.Chain.GetTokenSupplies(token);
                 var targetSupplies = otherChain.GetTokenSupplies(token);
 
                 if (IsParentChain(targetChain))
                 {
                     Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
-                    Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, amount), "target supply check failed");
                 }
                 else // child chain
                 {
                     Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, amount), "source supply check failed");
-                    Runtime.Expect(targetSupplies.MoveFromParent(amount), "target supply check failed");
                 }
+            }
+            else
+            {
+                sourceSupplies = null;
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(this.Storage, balances, from, amount), "burn failed");
+            Runtime.Expect(token.Burn(this.Storage, balances, sourceSupplies, from, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChain });
@@ -61,14 +65,20 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsWitness(token.Owner), "invalid witness");
 
+            SupplySheet supplies;
+
             if (token.IsCapped)
             {
-                var supplies = this.Runtime.Chain.GetTokenSupplies(token);
+                supplies = this.Runtime.Chain.GetTokenSupplies(token);
                 Runtime.Expect(supplies.Mint(amount), "increasing supply failed");
+            }
+            else
+            {
+                supplies = null;
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Mint(this.Storage, balances, to, amount), "minting failed");
+            Runtime.Expect(token.Mint(this.Storage, balances, supplies, to, amount), "minting failed");
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
         }
@@ -82,14 +92,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
+            SupplySheet supplies;
             if (token.IsCapped)
             {
-                var supplies = this.Runtime.Chain.GetTokenSupplies(token);
+                supplies = this.Runtime.Chain.GetTokenSupplies(token);
                 Runtime.Expect(supplies.Burn(amount), "decreasing supply failed");
+            }
+            else
+            {
+                supplies = null;
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(this.Storage, balances, from, amount), "burning failed");
+            Runtime.Expect(token.Burn(this.Storage, balances, supplies, from, amount), "burning failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount });
         }
@@ -225,12 +240,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (IsParentChain(targetChain))
                 {
                     Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
-                    Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, amount), "target supply check failed");
                 }
                 else // child chain
                 {
                     Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, amount), "source supply check failed");
-                    Runtime.Expect(targetSupplies.MoveFromParent(amount), "target supply check failed");
                 }
             }
 
@@ -275,12 +288,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (IsParentChain(sourceChain.Address))
                 {
-                    Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, value), "source supply check failed");
                     Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
                 }
                 else // child chain
                 {
-                    Runtime.Expect(sourceSupplies.MoveToParent(value), "source supply check failed");
                     Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
                 }
             }
@@ -288,7 +299,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
                 var balances = this.Runtime.Chain.GetTokenBalances(token);
-                Runtime.Expect(token.Mint(this.Storage, balances, targetAddress, value), "mint failed");
+                var supplies = token.IsCapped ? this.Runtime.Chain.GetTokenSupplies(token) : null;
+                Runtime.Expect(token.Mint(this.Storage, balances, supplies, targetAddress, value), "mint failed");
             }
             else
             {

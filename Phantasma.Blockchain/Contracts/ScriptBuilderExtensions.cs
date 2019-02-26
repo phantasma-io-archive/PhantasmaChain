@@ -9,6 +9,8 @@ namespace Phantasma.Blockchain.Contracts
     {
         public static readonly string NexusContract = "nexus";
         public static readonly string TokenContract = "token";
+        public static readonly string EnergyContract = "energy";
+
 
         public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, BigInteger amount)
         {

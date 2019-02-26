@@ -173,6 +173,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             BigInteger sum = 0;
             BigInteger availableAmount = fuelAmount;
+            var fuelSupplies = Runtime.Chain.GetTokenSupplies(fuelToken);
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
@@ -182,13 +183,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, proxy.address, proxyAmount), "proxy fuel minting failed");
+                    Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, fuelSupplies, proxy.address, proxyAmount), "proxy fuel minting failed");
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, stakeAddress, availableAmount), "fuel minting failed");
+            Runtime.Expect(fuelToken.Mint(this.Storage, fuelBalances, fuelSupplies, stakeAddress, availableAmount), "fuel minting failed");
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);

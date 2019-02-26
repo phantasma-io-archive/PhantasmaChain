@@ -90,7 +90,7 @@ namespace Phantasma.Blockchain.Tokens
             return $"{Name} ({Symbol})";
         }
 
-        internal bool Mint(StorageContext storage, BalanceSheet balances, Address target, BigInteger amount)
+        internal bool Mint(StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -102,9 +102,17 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (IsCapped && this.CurrentSupply + amount > this.MaxSupply)
+            if (IsCapped)
             {
-                return false;
+                if (this.CurrentSupply + amount > this.MaxSupply)
+                {
+                    return false;
+                }
+
+                if (!supply.Mint(amount))
+                {
+                    return false;
+                }
             }
 
             if (!balances.Add(storage, target, amount))
@@ -135,7 +143,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Burn(StorageContext storage, BalanceSheet balances, Address target, BigInteger amount)
+        internal bool Burn(StorageContext storage, BalanceSheet balances, SupplySheet supply,  Address target, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -148,6 +156,11 @@ namespace Phantasma.Blockchain.Tokens
             }
 
             if (this.CurrentSupply - amount < 0)
+            {
+                return false;
+            }
+
+            if (IsCapped && !supply.Burn(amount))
             {
                 return false;
             }

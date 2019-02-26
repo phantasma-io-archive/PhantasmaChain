@@ -38,7 +38,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stableAmount = amount * GetRate(Nexus.FuelTokenSymbol);
 
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
-            Runtime.Expect(stableToken.Mint(this.Storage, stableBalances, target, stableAmount), "mint failed");
+            var supplies = Runtime.Chain.GetTokenSupplies(stableToken);
+            Runtime.Expect(stableToken.Mint(this.Storage, stableBalances, supplies, target, stableAmount), "mint failed");
 
             Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
             Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = stableAmount, symbol = Nexus.StableTokenSymbol });
@@ -57,7 +58,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(stableToken != null, "invalid stable token");
 
             var stableBalances = Runtime.Chain.GetTokenBalances(stableToken);
-            Runtime.Expect(stableToken.Burn(this.Storage, stableBalances, target, amount), "burn failed");
+            var supplies = Runtime.Chain.GetTokenSupplies(stableToken);
+            Runtime.Expect(stableToken.Burn(this.Storage, stableBalances, supplies, target, amount), "burn failed");
 
             var expectedAmount = amount / GetRate(Nexus.FuelTokenSymbol);
             Runtime.Expect(expectedAmount > 0, "swap amount should greater than zero");

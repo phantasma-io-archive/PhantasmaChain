@@ -475,29 +475,36 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
+        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, bool useGas)
         {
             var sb = ScriptUtils.BeginScript();
 
-            if (symbol != FuelTokenSymbol)
+            if (useGas)
             {
                 sb.AllowGas(owner.Address, Address.Null, 1, 9999);
             }
 
             sb.CallContract(ScriptBuilderExtensions.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
 
-            if (symbol == FuelTokenSymbol)
-            {
-                sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
-                sb.AllowGas(owner.Address, Address.Null, 1, 9999); // done here only because before fuel token does not exist yet!
-            }
-            else
             if (symbol == StakingTokenSymbol)
             {
                 sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             }
+            else
+            if (symbol == FuelTokenSymbol)
+            {
+                // requires staking token to be created previously
+                // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
+                sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
+                sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
+            }
 
-            var script = sb.SpendGas(owner.Address).EndScript();
+            if (useGas)
+            {
+                sb.SpendGas(owner.Address);
+            }
+
+            var script = sb.EndScript();
 
             var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
@@ -556,9 +563,9 @@ namespace Phantasma.Blockchain
 
             var transactions = new List<Transaction>
             {
-                TokenCreateTx(RootChain, owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel),
-                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable),
-                TokenCreateTx(RootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, false),
+                TokenCreateTx(RootChain, owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, false),
+                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, true),
 
                 SideChainCreateTx(RootChain, owner, "privacy"),
                 SideChainCreateTx(RootChain, owner, "vault"),
@@ -568,9 +575,9 @@ namespace Phantasma.Blockchain
                 SideChainCreateTx(RootChain, owner, "apps"),
                 SideChainCreateTx(RootChain, owner, "energy"),
 
-                TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External),
-                TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External),
-                TokenCreateTx(RootChain, owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
+                TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
+                TokenCreateTx(RootChain, owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, true),
 
                 ConsensusStakeCreateTx(RootChain, owner)
             };

@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain.Utils
 
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, UnitConversion.ToBigInteger(100, Nexus.FuelTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals), 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -132,7 +132,7 @@ namespace Phantasma.Blockchain.Utils
                     {
                         nftSales.Add(new KeyValuePair<KeyPair, BigInteger>(key, ID));
                         // send some gas to the sellers
-                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(200, Nexus.FuelTokenDecimals));
+                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(0.01m, Nexus.FuelTokenDecimals));
                     }
                 }
             }
@@ -564,8 +564,8 @@ namespace Phantasma.Blockchain.Utils
                 switch (_rnd.Next() % 4)
                 {
                     case 1: token = Nexus.StableToken; break;
-                    case 2: token = Nexus.StakingToken; break;
-                    default: token = Nexus.FuelToken; break;
+                    //case 2: token = Nexus.FuelToken; break;
+                    default: token = Nexus.StakingToken; break;
                 }
 
                 switch (_rnd.Next() % 7)

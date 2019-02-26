@@ -28,7 +28,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var source = Address.Null;
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Mint(this.Storage, balances, destination, amount), "mint failed");
+            var supplies = token.IsCapped ? Runtime.Chain.GetTokenSupplies(token) : null; 
+            Runtime.Expect(token.Mint(this.Storage, balances, supplies, destination, amount), "mint failed");
 
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
         }
@@ -49,7 +50,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var source = Address.Null;
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Burn(this.Storage, balances, destination, amount), "burn failed");
+            var supplies = token.IsCapped ? Runtime.Chain.GetTokenSupplies(token) : null;
+            Runtime.Expect(token.Burn(this.Storage, balances, supplies, destination, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenSend, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
         }
