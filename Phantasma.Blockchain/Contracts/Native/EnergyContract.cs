@@ -148,7 +148,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakeToken = Runtime.Nexus.StakingToken;
 
             var fuelToken = Runtime.Nexus.FuelToken;
-            var fuelBalances = Runtime.Chain.GetTokenBalances(stakeToken);
+            var fuelBalances = Runtime.Chain.GetTokenBalances(fuelToken);
             var fuelAmount = unclaimedAmount;
 
             // distribute to proxy list
