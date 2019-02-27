@@ -48,7 +48,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var entry = new EnergyAction()
             {
                 amount = stakeAmount,
-                timestamp = Timestamp.Now,
+                timestamp = this.Runtime.Time,
             };
             _stakes.Set(from, entry);
 
@@ -71,7 +71,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var diff = Timestamp.Now - stake.timestamp;
+            var diff = Runtime.Time - stake.timestamp;
             var days = diff / 86400; // convert seconds to days
 
             Runtime.Expect(days >= 1, "waiting period required");
@@ -111,9 +111,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
             if (lastClaim.timestamp.Value == 0)
-                lastClaim.timestamp = Timestamp.Now;
+                lastClaim.timestamp = Runtime.Time;
 
-            var diff = Timestamp.Now - lastClaim.timestamp;
+            var diff = Runtime.Time - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
 
@@ -194,7 +194,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
             Runtime.Expect(stake.amount > 0, "stake missing"); // failsafe, should never happen
-            var action = new EnergyAction() { amount = stake.amount, timestamp = Timestamp.Now };
+            var action = new EnergyAction() { amount = stake.amount, timestamp = Runtime.Time };
             _claims.Set<Address, EnergyAction>(stakeAddress, action);
 
             Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = unclaimedAmount});

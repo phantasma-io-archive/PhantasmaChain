@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var entry = new VaultEntry()
             {
                 amount = amount,
-                unlockTime = Runtime.Block.Timestamp.Value + duration,
+                unlockTime = Runtime.Time + duration,
             };
             list.Add(entry);
         }
@@ -71,14 +71,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             foreach (var entry in list)
             {
-                if (entry.unlockTime <= Runtime.Block.Timestamp.Value)
+                if (entry.unlockTime <= Runtime.Time)
                 {
                     amount += entry.amount;
                 }
             }
             Runtime.Expect(amount > 0, "available amount must be greater than zero");
 
-            list = list.Where(x => x.unlockTime > Runtime.Block.Timestamp.Value).ToList();
+            list = list.Where(x => x.unlockTime > Runtime.Time).ToList();
             if (list.Count > 0)
             {
                 _entries[from] = list;

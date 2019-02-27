@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(baseToken.Transfer(this.Storage, ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
-            var auction = new MarketAuction(from, Timestamp.Now, endDate, baseSymbol, quoteSymbol, tokenID, price);
+            var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);

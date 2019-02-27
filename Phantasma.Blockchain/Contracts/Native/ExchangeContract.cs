@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 default: throw new ContractException("invalid order side");
             }
 
-            var order = new ExchangeOrder(Timestamp.Now, from, quantity, rate, side);
+            var order = new ExchangeOrder(Runtime.Time, from, quantity, rate, side);
             var list = _orders.Get<string, StorageList>(pair);
             list.Add(order);
         }

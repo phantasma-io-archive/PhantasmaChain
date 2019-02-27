@@ -8,6 +8,7 @@ using Phantasma.Blockchain.Storage;
 using Phantasma.Core;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -17,6 +18,8 @@ namespace Phantasma.Blockchain.Contracts
         public Chain Chain { get; private set; }
         public Block Block { get; private set; }
         public Nexus Nexus => Chain.Nexus;
+
+        public Timestamp Time => Block.Timestamp;
         
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;

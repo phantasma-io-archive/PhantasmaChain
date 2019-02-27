@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 address = address,
                 stake = stakeAmount,
-                timestamp = Timestamp.Now,
+                timestamp = Runtime.Time,
                 slashes = 0
             };
             _entryMap.Set(address, entry);
