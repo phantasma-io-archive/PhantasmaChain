@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 return 0;
             }
-
+            
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
 
             if (stake.timestamp.Value == 0) // failsafe, should never happen
@@ -106,7 +106,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var unclaimedAmount = stake.amount;
+            var unclaimedAmount = stake.amount / EnergyRatioDivisor;
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
@@ -118,9 +118,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var days = diff / 86400; // convert seconds to days
 
             // if not enough time has passed, deduct the last claim from the available amount
-            if (days < 0)
+            if (days <= 0)
             {
-                unclaimedAmount -= lastClaim.amount;
+                unclaimedAmount -= (lastClaim.amount / EnergyRatioDivisor);
             }
             else
             if (days > 1) // allow for staking accumulation over several days
@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 unclaimedAmount = 0;
             }
 
-            return unclaimedAmount / EnergyRatioDivisor;
+            return unclaimedAmount;
         }
 
         public void Claim(Address from, Address stakeAddress)
@@ -146,7 +146,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
 
             var stakeToken = Runtime.Nexus.StakingToken;
-
+            
             var fuelToken = Runtime.Nexus.FuelToken;
             var fuelBalances = Runtime.Chain.GetTokenBalances(fuelToken);
             var fuelAmount = unclaimedAmount;
