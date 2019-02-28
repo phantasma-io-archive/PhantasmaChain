@@ -484,7 +484,7 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
         {
-            var endDate = new Timestamp(Timestamp.Now + TimeSpan.FromDays(5));
+            Timestamp endDate = this.CurrentTime + TimeSpan.FromDays(5);
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
