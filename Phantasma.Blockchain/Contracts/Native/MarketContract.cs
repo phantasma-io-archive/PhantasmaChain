@@ -51,9 +51,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SellToken(Address from, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, Timestamp endDate)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(endDate > Timestamp.Now, "invalid end date");
+            Runtime.Expect(endDate > Runtime.Time, "invalid end date");
 
-            var maxAllowedDate = Timestamp.Now + TimeSpan.FromDays(30);
+            var maxAllowedDate = Runtime.Time + TimeSpan.FromDays(30);
             Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant");
 
             var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
