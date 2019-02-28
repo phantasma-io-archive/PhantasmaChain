@@ -538,15 +538,16 @@ namespace Phantasma.Blockchain.Utils
         private int step;
         private HashSet<Address> usedAddresses = new HashSet<Address>();
 
-
         public void GenerateRandomBlock(Mempool mempool = null)
         {
             //Console.WriteLine("begin block #" + Nexus.RootChain.BlockHeight);
             BeginBlock();
 
             int transferCount = 1 + _rnd.Next() % 10;
-            while (transactions.Count < transferCount)
+            int tries = 0;
+            while (transactions.Count < transferCount && tries < 1000)
             {
+                tries++;
                 var source = _keys[_rnd.Next() % _keys.Count];
 
                 if (usedAddresses.Contains(source.Address))
