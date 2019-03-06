@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Storage;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -94,6 +94,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetUnclaimed(Address stakeAddress)
         {
+            return CustomGetUnclaimed(stakeAddress, new Timestamp(0));
+        }
+
+        public BigInteger CustomGetUnclaimed(Address stakeAddress, Timestamp time)
+        {
             if (!_stakes.ContainsKey<Address>(stakeAddress))
             {
                 return 0;
@@ -110,10 +115,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
-            if (lastClaim.timestamp.Value == 0)
-                lastClaim.timestamp = Runtime.Time;
+            time = time.Value == 0 ? Runtime.Time : time;
 
-            var diff = Runtime.Time - lastClaim.timestamp;
+            if (lastClaim.timestamp.Value == 0)
+                lastClaim.timestamp =  time;
+
+            var diff = time - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
 
