@@ -248,21 +248,24 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var list = _proxyMap.Get<Address, StorageList>(from);
 
-            BigInteger sum = 0;
+            BigInteger sum = percentage;
             int index = -1;
             var count = list.Count();
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
-                if (proxy.address == to)
+
+                Runtime.Expect(proxy.address != to, "repeated proxy address");
+
+                /*if (proxy.address == to)
                 {
                     sum += percentage;
                     index = i;
                 }
                 else
-                {
+                {*/
                     sum += proxy.percentage;
-                }
+                //}
             }
 
             Runtime.Expect(sum <= 100, "invalid sum");
