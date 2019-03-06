@@ -19,16 +19,17 @@ namespace Phantasma.Blockchain.Consensus
         }
     }
 
-    public class Epoch
+    public class Epoch: ISerializable
     {
         public static readonly uint DurationInSeconds = 60;
         public static readonly uint SlashLimitInSeconds = 5;
 
-        public readonly uint Index;
-        public readonly Hash PreviousHash;
-        public readonly Timestamp StartTime;
-        public readonly Timestamp EndTime;
-        public readonly Address ValidatorAddress;
+        public uint Index { get; private set; }
+        public Hash PreviousHash { get; private set; }
+        public Timestamp StartTime { get; private set; }
+        public Timestamp EndTime { get; private set; }
+        public Address ValidatorAddress { get; private set; }
+
         public IEnumerable<Address> Signers => _signatures.Keys;
         public IEnumerable<Hash> BlockHashes => _blockHashes;
 
@@ -198,6 +199,60 @@ namespace Phantasma.Blockchain.Consensus
         public bool IsSlashed(Timestamp time)
         {
             return ((time - StartTime) - DurationInSeconds) >= SlashLimitInSeconds;
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarInt(Index);
+            writer.WriteHash(PreviousHash);
+            writer.Write(StartTime.Value);
+            writer.Write(EndTime.Value);
+            writer.WriteAddress(ValidatorAddress);
+            writer.WriteHash(Hash);
+
+            int sigCount = _signatures.Count;
+            writer.Write(sigCount);
+            foreach (var sig in _signatures)
+            {
+                writer.WriteAddress(sig.Key);
+                writer.WriteSignature(sig.Value);
+            }
+
+            int hashesCount = _blockHashes.Count;
+            writer.Write(hashesCount);
+            foreach (var hash in _blockHashes)
+            {
+                writer.WriteHash(hash);
+            }
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            Index = (uint)reader.ReadVarInt();
+            PreviousHash = reader.ReadHash();
+            StartTime = new Timestamp(reader.ReadUInt32());
+            EndTime = new Timestamp(reader.ReadUInt32());
+            ValidatorAddress = reader.ReadAddress();
+            Hash = reader.ReadHash();
+
+            var sigCount = reader.ReadInt32();
+            _signatures.Clear();
+            while (sigCount > 0)
+            {
+                var address = reader.ReadAddress();
+                var sig = reader.ReadSignature();
+                _signatures[address] = (Ed25519Signature) sig;
+                sigCount--;
+            }
+
+            var hashesCount = reader.ReadInt32();
+            _blockHashes.Clear();
+            while (hashesCount>0)
+            {
+                var hash = reader.ReadHash();
+                _blockHashes.Add(hash);
+                hashesCount--;
+            }
         }
     }
 }

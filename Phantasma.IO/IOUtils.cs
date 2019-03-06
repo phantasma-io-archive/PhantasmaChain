@@ -53,7 +53,7 @@ namespace Phantasma.IO
             writer.Write(bytes);
         }
 
-        public static void WriteLargeInteger(this BinaryWriter writer, BigInteger n)
+        public static void WriteBigInteger(this BinaryWriter writer, BigInteger n)
         {
             var bytes = n.ToByteArray();
             writer.Write((byte)bytes.Length);
@@ -97,12 +97,12 @@ namespace Phantasma.IO
 
                 case SignatureKind.Ring:
                     var rs = (RingSignature)signature;
-                    writer.WriteLargeInteger(rs.Y0);
-                    writer.WriteLargeInteger(rs.S);
+                    writer.WriteBigInteger(rs.Y0);
+                    writer.WriteBigInteger(rs.S);
                     writer.WriteVarInt(rs.C.Length);
                     foreach (var entry in rs.C)
                     {
-                        writer.WriteLargeInteger(entry);
+                        writer.WriteBigInteger(entry);
                     }
                     break;
 
@@ -138,7 +138,7 @@ namespace Phantasma.IO
             return result == Hash.Null ? Hash.Null : result;
         }
 
-        public static BigInteger ReadLargeInteger(this BinaryReader reader)
+        public static BigInteger ReadBigInteger(this BinaryReader reader)
         {
             var length = reader.ReadByte();
             var bytes = reader.ReadBytes(length);
@@ -183,13 +183,13 @@ namespace Phantasma.IO
 
                 case SignatureKind.Ring:
                     {
-                        var Y0 = reader.ReadLargeInteger();
-                        var S = reader.ReadLargeInteger();
+                        var Y0 = reader.ReadBigInteger();
+                        var S = reader.ReadBigInteger();
                         var len = (int)reader.ReadVarInt(1024);
                         var C = new BigInteger[len];
                         for (int i = 0; i < len; i++)
                         {
-                            C[i] = reader.ReadLargeInteger();
+                            C[i] = reader.ReadBigInteger();
                         }
 
                         return new RingSignature(Y0, S, C);

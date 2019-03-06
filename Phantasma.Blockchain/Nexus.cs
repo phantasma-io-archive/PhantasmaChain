@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Phantasma.Blockchain.Contracts;
@@ -10,16 +11,17 @@ using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus
+    public class Nexus: ISerializable
     {
-        public string Name { get; }
+        public string Name { get; private set; }
 
-        public Chain RootChain { get; }
+        public Chain RootChain { get; private set; }
 
         public Token FuelToken { get; private set; }
         public Token StakingToken { get; private set; }
@@ -45,8 +47,7 @@ namespace Phantasma.Blockchain
 
         public readonly int CacheSize;
 
-        public readonly Address GenesisAddress;
-        public readonly Address StorageAddress;
+        public Address GenesisAddress { get; private set; }
 
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
@@ -60,14 +61,6 @@ namespace Phantasma.Blockchain
             GenesisAddress = genesisAddress;
 
             this.CacheSize = cacheSize;
-
-            var temp = ByteArrayUtils.DupBytes(genesisAddress.PublicKey);
-            var str = "STORAGE";
-            for (int i=0; i<str.Length; i++)
-            {
-                temp[i] = (byte)str[i];
-            }
-            StorageAddress = new Address(temp);
 
             _logger = logger;
             Name = name;
@@ -202,7 +195,7 @@ namespace Phantasma.Blockchain
 
         #region NAME SERVICE
         public Address LookUpName(string name)
-        {
+        { 
             if (!AccountContract.ValidateAddressName(name))
             {
                 return Address.Null;
@@ -349,7 +342,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal Token CreateToken(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -363,7 +356,7 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
-            var token = new Token(chain, owner, symbol, name, maxSupply, decimals, flags);
+            var token = new Token(owner, symbol, name, maxSupply, decimals, flags);
 
             if (symbol == FuelTokenSymbol)
             {
@@ -686,5 +679,64 @@ namespace Phantasma.Blockchain
             return result;
         }
         #endregion
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarString(Name);
+            writer.WriteAddress(GenesisAddress);
+
+            int chainCount = _chains.Count;
+            writer.WriteVarInt(chainCount);
+            foreach (Chain entry in _chains.Values)
+            {
+                entry.SerializeData(writer);
+            }
+
+            int tokenCount = _tokens.Count;
+            writer.WriteVarInt(tokenCount);
+            foreach (Token entry in _tokens.Values)
+            {
+                entry.SerializeData(writer);
+            }
+
+            writer.WriteAddress(RootChain.Address);
+            writer.WriteVarString(FuelToken.Symbol);
+            writer.WriteVarString(StakingToken.Symbol);
+            writer.WriteVarString(StableToken.Symbol);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this.Name = reader.ReadVarString();
+            this.GenesisAddress = reader.ReadAddress();
+
+            int chainCount = (int)reader.ReadVarInt();
+            while (chainCount > 0)
+            {
+                var chain = new Chain();
+                chain.UnserializeData(reader);
+                chainCount--;
+            }
+
+            int tokenCount = (int)reader.ReadVarInt();
+            while (tokenCount > 0)
+            {
+                var token = new Token();
+                token.UnserializeData(reader);
+                tokenCount--;
+            }
+
+            var RootChainAddress = reader.ReadAddress();
+            RootChain = FindChainByAddress(RootChainAddress);
+
+            var FuelTokenSymbol = reader.ReadVarString();
+            FuelToken = FindTokenBySymbol(FuelTokenSymbol);
+
+            var StakingTokenSymbol = reader.ReadVarString();
+            StakingToken = FindTokenBySymbol(StakingTokenSymbol);
+
+            var StableTokenSymbol = reader.ReadVarString();
+            StableToken = FindTokenBySymbol(StableTokenSymbol);
+        }
     }
 }

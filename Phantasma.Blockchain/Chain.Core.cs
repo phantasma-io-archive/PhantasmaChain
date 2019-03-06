@@ -14,6 +14,7 @@ using Phantasma.Core.Types;
 using Phantasma.Blockchain.Consensus;
 using System;
 using Phantasma.IO;
+using System.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -35,24 +36,21 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public partial class Chain
+    public partial class Chain: ISerializable
     {
         #region PRIVATE
         private KeyValueStore<Transaction> _transactions;
         private KeyValueStore<Block> _blocks;
         private KeyValueStore<Hash> _transactionBlockMap;
+        private KeyValueStore<Epoch> _epochMap;
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
-
-        private Dictionary<Hash, Epoch> _epochMap = new Dictionary<Hash, Epoch>();
-
-        private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
-
         private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
         private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
-
         private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
+
+        private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
         private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
@@ -87,6 +85,12 @@ namespace Phantasma.Blockchain
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
+        // required for serialization
+        public Chain()
+        {
+
+        }
+
         public Chain(Nexus nexus, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
         {
             Throw.IfNull(nexus, "nexus required");
@@ -106,8 +110,9 @@ namespace Phantasma.Blockchain
 
             // init stores
             _transactions = new KeyValueStore<Transaction>(this.Address, "txs", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _blocks = new KeyValueStore<Block>(this.Address, "blocks",KeyStoreDataSize.Medium, nexus.CacheSize);
+            _blocks = new KeyValueStore<Block>(this.Address, "blocks", KeyStoreDataSize.Medium, nexus.CacheSize);
             _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk", KeyStoreDataSize.Small, nexus.CacheSize);
+            _epochMap = new KeyValueStore<Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium, nexus.CacheSize);
 
             foreach (var contract in contracts)
             {
@@ -627,5 +632,16 @@ namespace Phantasma.Blockchain
             CurrentEpoch = epoch;
         }
         #endregion
+
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

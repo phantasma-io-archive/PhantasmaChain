@@ -3,6 +3,8 @@ using Phantasma.Cryptography;
 using Phantasma.Blockchain.Storage;
 using System;
 using Phantasma.Core;
+using Phantasma.IO;
+using System.IO;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -20,14 +22,12 @@ namespace Phantasma.Blockchain.Tokens
         External = 1 << 7,
     }
 
-    public class Token
+    public class Token: ISerializable
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }
 
         public TokenFlags Flags { get; private set; }
-
-        public Chain Chain { get; private set; }
 
         public BigInteger MaxSupply { get; private set; }
 
@@ -46,22 +46,23 @@ namespace Phantasma.Blockchain.Tokens
 
         public int Decimals { get; private set; }
 
+        public Token()
+        {
+
+        }
+
         public Token(StorageContext storage)
         {
             this._storage = storage;
         }
 
-        internal Token(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             Throw.If(maxSupply < 0, "negative supply");
             Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
             Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
 
-            if (flags.HasFlag(TokenFlags.Fungible))
-            {
-                Throw.If(!chain.IsRoot, "root chain required");
-            }
-            else
+            if (!flags.HasFlag(TokenFlags.Fungible))
             {
                 Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
             }
@@ -258,5 +259,25 @@ namespace Phantasma.Blockchain.Tokens
             _lastId++;
             return _lastId;
         }
-   }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarString(Symbol);
+            writer.WriteVarString(Name);
+            writer.Write((uint)Flags);
+            writer.WriteBigInteger(_supply);
+            writer.WriteAddress(Owner);
+            writer.WriteBigInteger(_lastId);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            Symbol = reader.ReadVarString();
+            Name = reader.ReadVarString();
+            Flags = (TokenFlags) reader.ReadUInt32();
+            _supply = reader.ReadBigInteger();
+            Owner = reader.ReadAddress();
+            _lastId = reader.ReadBigInteger();
+        }
+    }
 }

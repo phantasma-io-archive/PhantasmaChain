@@ -101,7 +101,7 @@ namespace Phantasma.IO
             else
             if (type == typeof(BigInteger))
             {
-                writer.WriteLargeInteger((BigInteger)obj);
+                writer.WriteBigInteger((BigInteger)obj);
             }
             else
             if (type == typeof(Hash))
@@ -253,7 +253,7 @@ namespace Phantasma.IO
 
             if (type == typeof(BigInteger))
             {
-                return reader.ReadLargeInteger();
+                return reader.ReadBigInteger();
             }
 
             if (type == typeof(Hash))
