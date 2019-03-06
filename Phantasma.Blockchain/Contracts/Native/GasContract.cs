@@ -93,17 +93,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 targetGas = 0;
             }
 
-            BigInteger storageGas;
-
-            if (Runtime.Nexus.StorageAddress != Address.Null)
-            {
-                storageGas = spentGas / 2; // 50% of remainder to storage pool
-            }
-            else
-            {
-                storageGas = 0;
-            }
-
             // return unused gas to transaction creator
             if (leftoverAmount > 0)
             {
@@ -119,25 +108,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 spentGas -= targetGas;
             }
 
-            if (storageGas > 0)
-            {
-                var storagePayment = storageGas * Runtime.GasPrice;
-                Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, storagePayment), "gas storage withdraw failed");
-                Runtime.Expect(balances.Add(this.Storage, Runtime.Nexus.StorageAddress, storagePayment), "gas storage deposit failed");
-                spentGas -= storageGas;
-            }
-
             _allowanceMap.Remove(from);
             _allowanceTargets.Remove(from);
 
             if (targetGas > 0)
             {
                 Runtime.Notify(EventKind.GasPayment, targetAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = targetGas });
-            }
-
-            if (storageGas > 0)
-            {
-                Runtime.Notify(EventKind.GasPayment, Runtime.Nexus.StorageAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = storageGas });
             }
 
             Runtime.Notify(EventKind.GasPayment, Runtime.Chain.Address, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
