@@ -115,7 +115,7 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, stakeAmount);
             simulator.EndBlock();
 
-            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
 
             {
                 simulator.BeginBlock();
@@ -126,7 +126,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             }
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
 
             Assert.IsTrue(unclaimedAmount == expectedUnclaimedAmount);
         }
@@ -142,7 +142,7 @@ namespace Phantasma.Tests
             var fuelToken = simulator.Nexus.FuelToken;
 
             var testUser = KeyPair.Generate();
-            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
 
             var accountBalance = EnergyContract.EnergyRatioDivisor * 100;
@@ -165,7 +165,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
            
             //----------
@@ -180,7 +180,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
             
             //-----------
@@ -195,7 +195,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == EnergyContract.EnergyRatioDivisor);
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == (stakedAmount/EnergyContract.EnergyRatioDivisor));
 
             //-----------
@@ -217,7 +217,7 @@ namespace Phantasma.Tests
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == EnergyContract.EnergyRatioDivisor);
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
 
             //-----------
@@ -235,7 +235,7 @@ namespace Phantasma.Tests
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == previousStake + addedStake);
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == (addedStake / EnergyContract.EnergyRatioDivisor));
 
             //-----------
@@ -257,7 +257,7 @@ namespace Phantasma.Tests
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == previousStake + addedStake);
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
             
             //-----------
@@ -275,7 +275,7 @@ namespace Phantasma.Tests
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == previousStake + addedStake);
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == (addedStake / EnergyContract.EnergyRatioDivisor));
 
             //-----------
@@ -297,7 +297,7 @@ namespace Phantasma.Tests
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == previousStake + addedStake);
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
             //-----------
             //Perform another claim call: should fail
@@ -314,8 +314,9 @@ namespace Phantasma.Tests
             //-----------
             //Time skip 1 day
             simulator.CurrentTime = simulator.CurrentTime.AddDays(1);
+
             //Perform another claim call: should get reward for total staked amount
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(unclaimedAmount == (stakedAmount / EnergyContract.EnergyRatioDivisor));
 
@@ -333,68 +334,376 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(finalFuelBalance == (startingFuelBalance + unclaimedAmount - txCost));
 
-            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
             Assert.IsTrue(unclaimedAmount == 0);
             //-----------
-            //Try to reduce the staked amount via Stake function call
-            Assert.ThrowsException<Exception>(() =>
-            {
+            //Try to reduce the staked amount via Stake function call: should pass (TODO: ???)
+            //Assert.ThrowsException<Exception>(() =>
+            //{
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Stake", testUser.Address, EnergyContract.EnergyRatioDivisor).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
-            });
+            //});
 
             //-----------
             //Add main account as proxy to itself: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, testUser.Address, 50).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            });
 
             //-----------
             //Add 0% proxy: should fail
+            var proxyA = KeyPair.Generate();
+            var proxyAPercentage = 25;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, proxyA.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.EndBlock();
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 0).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            });
+
+            //-----------
+            //Add and remove 90% proxy: should pass
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 90).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "RemoveProxy", testUser.Address, proxyA.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            
+            //-----------
+            //Add and remove 100% proxy: should pass
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 100).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "RemoveProxy", testUser.Address, proxyA.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            
+            //-----------
+            //Add 101% proxy: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 101).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            });
 
             //-----------
             //Add 25% proxy A: should pass
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, proxyAPercentage).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            //-----------
+            //Re-add proxy A: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 25).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+            });
 
             //-----------
             //Add an 80% proxy: should fail
+            var proxyB = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, proxyB.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.EndBlock();
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 80).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
+            
+            //-----------
+            //Add 25% proxy B and remove it: should pass
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 25).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "RemoveProxy", testUser.Address, proxyB.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
 
             //-----------
-            //Add 25% proxy B: should pass
+            //Add 75% proxy B and remove it: should pass
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 75).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "RemoveProxy", testUser.Address, proxyB.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            //-----------
+            //Try to remove proxy B again: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "RemoveProxy", testUser.Address, proxyB.Address).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            //-----------
+            //Add 76% proxy B: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 76).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
 
             //-----------
             //Try to claim from main: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Claim", testUser.Address, testUser.Address).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
 
             //-----------
             //Try to claim from proxy A: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(proxyA, () =>
+                    ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
+                        .EndScript());
+                simulator.EndBlock();
+            });
 
             //-----------
             //Time skip 1 day
+            simulator.CurrentTime = simulator.CurrentTime.AddDays(1);
+
             //Try to claim from main: should pass
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+
+            var mainStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            var proxyStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            var mainFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            var proxyFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
+            txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            var mainRatio = (100 -proxyAPercentage);
+            var proxyRatio = proxyAPercentage;
+
+            Assert.IsTrue(mainFinalFuelBalance == (mainStartingFuelBalance + (unclaimedAmount*mainRatio)/100 - txCost));
+            Assert.IsTrue(proxyFinalFuelBalance == (proxyStartingFuelBalance + (unclaimedAmount*proxyRatio)/100));
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            Assert.IsTrue(unclaimedAmount == 0);
 
             //-----------
             //Time skip 1 day
+            simulator.CurrentTime = simulator.CurrentTime.AddDays(1);
+            
             //Try to claim from proxy A: should pass
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+
+            mainStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            proxyStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(proxyA, () =>
+                ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", proxyA.Address, proxyA.Address).SpendGas(proxyA.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            mainFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            proxyFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
+            txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            mainRatio = (100-proxyAPercentage) / 100;
+            proxyRatio = proxyAPercentage / 100;
+
+            Assert.IsTrue(mainFinalFuelBalance == (mainStartingFuelBalance + (unclaimedAmount* mainRatio)));
+            Assert.IsTrue(proxyFinalFuelBalance == (proxyStartingFuelBalance + (unclaimedAmount* proxyRatio) - txCost));
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            Assert.IsTrue(unclaimedAmount == 0);
 
             //-----------
             //Remove proxy A
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "RemoveProxy", testUser.Address, proxyA.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
 
             //-----------
             //Try to claim from proxy A: should fail
-
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(proxyA, () =>
+                    ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
+                        .EndScript());
+                simulator.EndBlock();
+            });
+            
             //-----------
             //Try to claim from main: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Claim", testUser.Address, testUser.Address).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
 
             //-----------
             //Time skip 1 day
+            simulator.CurrentTime = simulator.CurrentTime.AddDays(1);
+
             //Try to claim from proxy A: should fail
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(proxyA, () =>
+                    ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
+                        .EndScript());
+                simulator.EndBlock();
+            });
 
             //-----------
             //Try to claim from main: should pass, check removed proxy received nothing
-            
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+
+            mainStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            proxyStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            mainFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            proxyFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
+            txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(mainFinalFuelBalance == (mainFinalFuelBalance + unclaimedAmount - txCost));
+            Assert.IsTrue(proxyFinalFuelBalance == mainFinalFuelBalance);
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            Assert.IsTrue(unclaimedAmount == 0);
+
             //-----------
             //Time skip 5 days
+            simulator.CurrentTime = simulator.CurrentTime.AddDays(5);
+
             //Try to claim from main: should pass, check claimed amount is from 5 days worth of accumulation
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+
+            Assert.IsTrue(unclaimedAmount == (5 * stakedAmount / EnergyContract.EnergyRatioDivisor));
+
+            mainStartingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            mainFinalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(mainFinalFuelBalance == (mainFinalFuelBalance + unclaimedAmount - txCost));
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "CustomGetUnclaimed", testUser.Address, (Timestamp) simulator.CurrentTime);
+            Assert.IsTrue(unclaimedAmount == 0);
         }
     }
 }
+

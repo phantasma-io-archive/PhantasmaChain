@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Storage;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -94,6 +94,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetUnclaimed(Address stakeAddress)
         {
+            return CustomGetUnclaimed(stakeAddress, new Timestamp(0));
+        }
+
+        public BigInteger CustomGetUnclaimed(Address stakeAddress, Timestamp time)
+        {
             if (!_stakes.ContainsKey<Address>(stakeAddress))
             {
                 return 0;
@@ -110,10 +115,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
-            if (lastClaim.timestamp.Value == 0)
-                lastClaim.timestamp = Runtime.Time;
+            time = time.Value == 0 ? Runtime.Time : time;
 
-            var diff = Runtime.Time - lastClaim.timestamp;
+            if (lastClaim.timestamp.Value == 0)
+                lastClaim.timestamp =  time;
+
+            var diff = time - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
 
@@ -241,21 +248,24 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var list = _proxyMap.Get<Address, StorageList>(from);
 
-            BigInteger sum = 0;
+            BigInteger sum = percentage;
             int index = -1;
             var count = list.Count();
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
-                if (proxy.address == to)
+
+                Runtime.Expect(proxy.address != to, "repeated proxy address");
+
+                /*if (proxy.address == to)
                 {
                     sum += percentage;
                     index = i;
                 }
                 else
-                {
+                {*/
                     sum += proxy.percentage;
-                }
+                //}
             }
 
             Runtime.Expect(sum <= 100, "invalid sum");
