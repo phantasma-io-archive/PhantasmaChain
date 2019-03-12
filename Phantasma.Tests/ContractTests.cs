@@ -155,6 +155,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var fuelToken = simulator.Nexus.FuelToken;
+            var stakeToken = simulator.Nexus.StakingToken;
 
             var testUser = KeyPair.Generate();
             var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -172,6 +173,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call
             var desiredStakeAmount = 10 * EnergyContract.EnergyRatioDivisor;
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -183,6 +185,9 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == desiredStakeAmount);
 
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(desiredStakeAmount == startingSoulBalance - finalSoulBalance);
+
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             Assert.IsTrue(unclaimedAmount == (stakedAmount / EnergyContract.EnergyRatioDivisor));
 
@@ -190,6 +195,7 @@ namespace Phantasma.Tests
             //Try to reduce the staked amount via Unstake function call: should fail, not enough time passed
             var initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             var stakeReduction = initialStakedAmount - EnergyContract.EnergyRatioDivisor;
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
 
             Assert.ThrowsException<Exception>(() =>
             {
@@ -205,8 +211,13 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(initialStakedAmount == finalStakedAmount);
 
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(finalSoulBalance == startingSoulBalance);
+
             //-----------
             //Try to reduce staked amount below what is staked: should fail
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+
             Assert.ThrowsException<Exception>(() =>
             {
                 simulator.BeginBlock();
@@ -216,6 +227,9 @@ namespace Phantasma.Tests
                             EnergyContract.EnergyRatioDivisor * 10000000).SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
+
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(finalSoulBalance == startingSoulBalance);
 
             //-----------
             //Time skip 1 day
@@ -240,6 +254,32 @@ namespace Phantasma.Tests
             finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(initialStakedAmount - finalStakedAmount == stakeReduction);
             
+            //-----------
+            //Try a full unstake: should fail, didnt wait 24h
+            initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            stakeReduction = initialStakedAmount;
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "Unstake", testUser.Address, stakeReduction).SpendGas(testUser.Address)
+                        .EndScript());
+                simulator.EndBlock();
+            });
+
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(startingSoulBalance == finalSoulBalance);
+
+            finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(initialStakedAmount == finalStakedAmount);
+
+            //-----------
+            //Time skip 1 day
+            simulator.TimeSkip(1);
+
             //-----------
             //Try a full unstake: should pass
             initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
@@ -1011,6 +1051,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var fuelToken = simulator.Nexus.FuelToken;
+            var stakeToken = simulator.Nexus.StakingToken;
 
             var testUser = KeyPair.Generate();
             var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -1026,6 +1067,8 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             //Try to stake an amount lower than EnergyRacioDivisor
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+
             Assert.ThrowsException<Exception>(() =>
             {
                 simulator.BeginBlock();
@@ -1038,7 +1081,10 @@ namespace Phantasma.Tests
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             Assert.IsTrue(unclaimedAmount == 0);
-           
+
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(finalSoulBalance == startingSoulBalance);
+
             //----------
             //Try to stake an amount higher than the account's balance
             Assert.ThrowsException<Exception>(() =>
@@ -1057,6 +1103,8 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call
             var desiredStake = EnergyContract.EnergyRatioDivisor * 10;
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
@@ -1069,6 +1117,9 @@ namespace Phantasma.Tests
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             Assert.IsTrue(unclaimedAmount == (stakedAmount / EnergyContract.EnergyRatioDivisor));
+
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(desiredStake == startingSoulBalance - finalSoulBalance);
         }
     }
 }
