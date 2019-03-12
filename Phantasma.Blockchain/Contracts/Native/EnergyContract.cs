@@ -58,7 +58,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = stakeAmount });
         }
 
-        public BigInteger Unstake(Address from)
+        public BigInteger Unstake(Address from, BigInteger amount)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
@@ -79,16 +79,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(days >= 1, "waiting period required");
 
-            var amount = stake.amount;
             var token = Runtime.Nexus.StakingToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= amount, "not enough balance");
 
+            Runtime.Expect(stake.amount >= amount, "tried to unstake more than what was staked");
+
             Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, amount), "balance subtract failed");
             Runtime.Expect(balances.Add(this.Storage, from, amount), "balance add failed");
 
-            _stakes.Remove(from);
+            if(stake.amount - amount == 0)
+                _stakes.Remove(from);
 
             Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
 
