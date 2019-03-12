@@ -220,11 +220,12 @@ namespace Phantasma.Tests
             //-----------
             //Time skip 1 day
             simulator.TimeSkip(1);
-
+            
             //-----------
-            //Try to reduce the staked amount via Unstake function call: should pass
+            //Try a partial unstake: should pass
             initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             stakeReduction = initialStakedAmount - EnergyContract.EnergyRatioDivisor;
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
@@ -233,8 +234,29 @@ namespace Phantasma.Tests
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
-            finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(stakeReduction == finalSoulBalance - startingSoulBalance);
 
+            finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(initialStakedAmount - finalStakedAmount == stakeReduction);
+            
+            //-----------
+            //Try a full unstake: should pass
+            initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            stakeReduction = initialStakedAmount;
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(stakeReduction == finalSoulBalance - startingSoulBalance);
+
+            finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(initialStakedAmount - finalStakedAmount == stakeReduction);
         }
 
