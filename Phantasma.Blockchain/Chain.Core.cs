@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
@@ -517,7 +517,7 @@ namespace Phantasma.Blockchain
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null, null, changeSet, true);
+            var vm = new RuntimeVM(script, this, this.LastBlock, null, changeSet, true);
 
             contract.SetRuntimeData(vm);
 
