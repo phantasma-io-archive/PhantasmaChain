@@ -41,6 +41,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balance = stakeBalances.Get(this.Storage, from);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
+            var currentStake = _stakes.Get<Address, EnergyAction>(from).amount;
+            Runtime.Expect(currentStake < stakeAmount, "tried to reduce stake amount via Stake() call");
+
             Runtime.Expect(stakeBalances.Subtract(this.Storage, from, stakeAmount), "balance subtract failed");
             Runtime.Expect(stakeBalances.Add(this.Storage, Runtime.Chain.Address, stakeAmount), "balance add failed");
 
