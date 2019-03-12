@@ -115,12 +115,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
-            time = time.Value == 0 ? Runtime.Time : time;
+            var currentTime = Runtime.Time;
 
             if (lastClaim.timestamp.Value == 0)
-                lastClaim.timestamp =  time;
+                lastClaim.timestamp = currentTime;
 
-            var diff = time - lastClaim.timestamp;
+            var diff = currentTime - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
 
