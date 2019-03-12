@@ -89,8 +89,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, amount), "balance subtract failed");
             Runtime.Expect(balances.Add(this.Storage, from, amount), "balance add failed");
 
-            if(stake.amount - amount == 0)
+            stake.amount -= amount;
+            
+            if (stake.amount == 0)
                 _stakes.Remove(from);
+            else
+            {
+                var entry = new EnergyAction()
+                {
+                    amount = stake.amount,
+                    timestamp = this.Runtime.Time,
+                };
+
+                _stakes.Set(from, entry);
+            }
 
             Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
 
