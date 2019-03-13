@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _proxyMap; // <Address, List<EnergyProxy>>
         private StorageMap _claims; // <Address, EnergyAction>
 
-        public readonly static BigInteger EnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
+        public readonly static BigInteger EnergyRatioDivisor = 5; // used as 1/500, will generate 0.002 per staked token
  
         public EnergyContract() : base()
         {
