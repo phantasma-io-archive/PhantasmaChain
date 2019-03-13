@@ -24,6 +24,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _stakes; // <Address, EnergyAction>
         private StorageMap _proxyMap; // <Address, List<EnergyProxy>>
         private StorageMap _claims; // <Address, EnergyAction>
+        private StorageList _masters; // <Address>
 
         public readonly static BigInteger EnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
@@ -123,7 +124,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var unclaimedAmount = StakeToFuel(stake.amount);
+            var unclaimedAmount = stake.amount;
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
@@ -139,7 +140,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // if not enough time has passed, deduct the last claim from the available amount
             if (days <= 0)
             {
-                unclaimedAmount -= StakeToFuel(lastClaim.amount);
+                unclaimedAmount -= lastClaim.amount;
             }
             else
             if (days > 1) // allow for staking accumulation over several days
@@ -153,7 +154,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 unclaimedAmount = 0;
             }
 
-            return unclaimedAmount;
+            return StakeToFuel(unclaimedAmount);
         }
 
         public void Claim(Address from, Address stakeAddress)

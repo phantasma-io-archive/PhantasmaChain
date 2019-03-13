@@ -74,9 +74,17 @@ namespace Phantasma.Blockchain.Utils
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
 
+            var oneFuel = UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals);
+            var localBalance = Nexus.RootChain.GetTokenBalance(Nexus.FuelToken, _owner.Address);
+
+            if (localBalance < oneFuel)
+            {
+                throw new Exception("Funds missing oops");
+            }
+
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
