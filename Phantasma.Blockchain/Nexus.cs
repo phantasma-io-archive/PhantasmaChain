@@ -533,7 +533,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public const string FuelTokenSymbol = "ALMA";
+        public const string FuelTokenSymbol = "KCAL";
         public const string FuelTokenName = "Phantasma Energy";
         public const int FuelTokenDecimals = 10;
 
