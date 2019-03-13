@@ -923,14 +923,14 @@ namespace Phantasma.Numerics
             return 1;
         }
 
-        public static BigInteger Pow(BigInteger a, BigInteger b)
+        public static BigInteger Pow(BigInteger powBase, BigInteger powExp)
         {
             var val = One;
             var i = Zero;
 
-            while (i < b)
+            while (i < powExp)
             {
-                val *= a;
+                val *= powBase;
                 i = i + One;
             }
             return val;

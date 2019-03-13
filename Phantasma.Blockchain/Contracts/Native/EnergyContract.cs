@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void Stake(Address from, BigInteger stakeAmount)
         {
-            Runtime.Expect(stakeAmount >= EnergyRatioDivisor, "invalid amount");
+            Runtime.Expect(StakeToFuel(stakeAmount) >= EnergyRatioDivisor, "invalid amount");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var stakeToken = Runtime.Nexus.StakingToken;
@@ -123,7 +123,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var unclaimedAmount = stake.amount / EnergyRatioDivisor;
+            var unclaimedAmount = StakeToFuel(stake.amount);
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
@@ -139,7 +139,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // if not enough time has passed, deduct the last claim from the available amount
             if (days <= 0)
             {
-                unclaimedAmount -= (lastClaim.amount / EnergyRatioDivisor);
+                unclaimedAmount -= StakeToFuel(lastClaim.amount);
             }
             else
             if (days > 1) // allow for staking accumulation over several days
@@ -321,6 +321,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             list.RemoveAt<EnergyProxy>(index);
             Runtime.Notify(EventKind.AddressRemove, from, to);
+        }
+
+        public static BigInteger FuelToStake(BigInteger fuelAmount)
+        {
+            return UnitConversion.ConvertDecimals(fuelAmount * EnergyRatioDivisor, Nexus.FuelTokenDecimals, Nexus.StakingTokenDecimals);
+        }
+
+        public static BigInteger StakeToFuel(BigInteger stakeAmount)
+        {
+            return UnitConversion.ConvertDecimals(stakeAmount, Nexus.StakingTokenDecimals, Nexus.FuelTokenDecimals) / EnergyRatioDivisor;
         }
 
     }
