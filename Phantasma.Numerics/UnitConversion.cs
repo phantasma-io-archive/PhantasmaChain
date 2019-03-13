@@ -66,11 +66,10 @@ namespace Phantasma.Numerics
         {
             //doing "value * BigInteger.Pow(10, decimalTo - decimalFrom)" would not work for negative exponents as it would always be 0;
             //separating the calculations in two steps leads to only returning 0 when the final value would be < 1
-            var fromFactor = BigInteger.Pow(10, decimalFrom); 
-            var output = value * fromFactor;
+            var fromFactor = BigInteger.Pow(10, decimalFrom);
+            var toFactor = BigInteger.Pow(10, decimalTo);
 
-            var toFactor = BigInteger.Pow(10, decimalTo);   
-            output = output / toFactor;
+            var output = value * toFactor / fromFactor;
 
             return output;
         }        

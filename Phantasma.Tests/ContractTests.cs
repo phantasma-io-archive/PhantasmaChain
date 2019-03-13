@@ -106,11 +106,30 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234, -1);
             var nexus = simulator.Nexus;
 
-            var fuelTokenUnit = UnitConversion.ToDecimal(1, nexus.FuelToken.Decimals);
-            var soulEnergyRatio =
-                UnitConversion.ToDecimal(EnergyContract.EnergyRatioDivisor, nexus.StakingToken.Decimals);
+            var testUser = KeyPair.Generate();
+            var stakeAmount = EnergyContract.EnergyRatioDivisor;
+            double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -Nexus.StakingTokenDecimals);
+            double realExpectedUnclaimedAmount = ((double) (EnergyContract.StakeToFuel(stakeAmount))) * Math.Pow(10, -Nexus.FuelTokenDecimals);
 
-            Assert.IsTrue((BigInteger)(soulEnergyRatio / fuelTokenUnit) == EnergyContract.EnergyRatioDivisor);
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, stakeAmount);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            double realUnclaimedAmount = ((double)unclaimedAmount) * Math.Pow(10, -Nexus.FuelTokenDecimals);
+
+            Assert.IsTrue(realUnclaimedAmount == realExpectedUnclaimedAmount);
+
+            BigInteger actualEnergyRatio = (BigInteger) (realStakeAmount / realUnclaimedAmount);
+            Assert.IsTrue(actualEnergyRatio == EnergyContract.EnergyRatioDivisor);
         }
 
         [TestMethod]
@@ -123,7 +142,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
             var stakeAmount = EnergyContract.EnergyRatioDivisor;
-            var expectedUnclaimedAmount = stakeAmount / EnergyContract.EnergyRatioDivisor;
+            var expectedUnclaimedAmount = EnergyContract.StakeToFuel(stakeAmount);
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
