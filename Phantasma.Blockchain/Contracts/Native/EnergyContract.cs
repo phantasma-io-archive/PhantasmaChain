@@ -26,7 +26,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _claims; // <Address, EnergyAction>
         private StorageList _masters; // <Address>
 
-        public readonly static BigInteger EnergyRatioDivisor = 5; // used as 1/500, will generate 0.002 per staked token
+        public readonly static BigInteger EnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
         public EnergyContract() : base()
         {
@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void Stake(Address from, BigInteger stakeAmount)
         {
-            Runtime.Expect(StakeToFuel(stakeAmount) >= EnergyRatioDivisor, "invalid amount");
+            Runtime.Expect(StakeToFuel(stakeAmount) >= 1, "invalid amount");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var stakeToken = Runtime.Nexus.StakingToken;
