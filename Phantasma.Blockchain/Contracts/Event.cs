@@ -24,6 +24,8 @@ namespace Phantasma.Blockchain.Contracts
         AuctionCreated,
         AuctionCancelled,
         AuctionFilled,
+        MasterPromote,
+        MasterDemote,
         Metadata,
     }
 
