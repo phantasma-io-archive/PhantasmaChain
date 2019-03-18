@@ -115,17 +115,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakeToken = Runtime.Nexus.StakingToken;
             var stakeBalances = Runtime.Chain.GetTokenBalances(stakeToken);
             var balance = stakeBalances.Get(this.Storage, from);
-            Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
             var currentStake = _stakes.Get<Address, EnergyAction>(from).amount;
-            Runtime.Expect(currentStake < stakeAmount, "tried to reduce stake amount via Stake() call");
+            var newStake = stakeAmount + currentStake;
+
+            Runtime.Expect(balance >= newStake, "not enough balance");
 
             Runtime.Expect(stakeBalances.Subtract(this.Storage, from, stakeAmount), "balance subtract failed");
             Runtime.Expect(stakeBalances.Add(this.Storage, Runtime.Chain.Address, stakeAmount), "balance add failed");
 
             var entry = new EnergyAction()
             {
-                amount = stakeAmount,
+                amount = newStake,
                 timestamp = this.Runtime.Time,
             };
             _stakes.Set(from, entry);
@@ -151,7 +152,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = stakeAmount });
+            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = newStake });
         }
 
         public BigInteger Unstake(Address from, BigInteger amount)
