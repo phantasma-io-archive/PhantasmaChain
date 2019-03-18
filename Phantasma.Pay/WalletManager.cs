@@ -26,7 +26,7 @@ namespace Phantasma.Pay
         }
     }
 
-    public class WalletManager
+    public abstract class WalletManager
     {
         private Dictionary<WalletKind, CryptoWallet> _wallets = new Dictionary<WalletKind, CryptoWallet>();
         private KeyPair keys;
@@ -46,6 +46,8 @@ namespace Phantasma.Pay
             }
         }
 
+        public abstract void FetchURL(string url, Action<string> callback);
+
         public string GetAddress(WalletKind kind)
         {
             if (_wallets.ContainsKey(kind))
@@ -56,11 +58,11 @@ namespace Phantasma.Pay
             CryptoWallet wallet;
             switch (kind)
             {
-                case WalletKind.Phantasma: wallet = new PhantasmaWallet(keys); break;
-                case WalletKind.Neo: wallet = new NeoWallet(keys); break;
-                case WalletKind.Bitcoin: wallet = new BitcoinWallet(keys); break;
-                case WalletKind.Ethereum: wallet = new EthereumWallet(keys); break;
-                case WalletKind.EOS: wallet = new EOSWallet(keys); break;
+                case WalletKind.Phantasma: wallet = new PhantasmaWallet(keys, FetchURL); break;
+                case WalletKind.Neo: wallet = new NeoWallet(keys, FetchURL); break;
+                case WalletKind.Bitcoin: wallet = new BitcoinWallet(keys, FetchURL); break;
+                case WalletKind.Ethereum: wallet = new EthereumWallet(keys, FetchURL); break;
+                case WalletKind.EOS: wallet = new EOSWallet(keys, FetchURL); break;
                 default: throw new Exception("Unsupported wallet kind: " + kind);
             }
 

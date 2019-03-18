@@ -13,10 +13,18 @@ namespace Phantasma.Pay
 
         protected List<WalletBalance> _balances = new List<WalletBalance>();
         public IEnumerable<WalletBalance> Balances => _balances;
-        
-        public CryptoWallet(KeyPair keys)
+
+        private Action<string, Action<string>> _urlFetcher;
+
+        public CryptoWallet(KeyPair keys, Action<string, Action<string>> urlFetcher)
         {
             this.Address = DeriveAddress(keys);
+            this._urlFetcher = urlFetcher;
+        }
+
+        protected void FetchURL(string url, Action<string> callback)
+        {
+            _urlFetcher(url, callback);
         }
 
         protected abstract string DeriveAddress(KeyPair keys);
@@ -26,21 +34,25 @@ namespace Phantasma.Pay
 
         protected void JSONRequest(string url, Action<DataNode> callback)
         {
-            string contents;
-            try
+            FetchURL(url, (json) =>
             {
-                using (var wc = new System.Net.WebClient())
+                if (string.IsNullOrEmpty(json))
                 {
-                    contents = wc.DownloadString(url);
-                    var root = JSONReader.ReadFromString(contents);
-                    callback(root);
-                    return;
+                    callback(null);
                 }
-            }
-            catch (Exception e)
-            {                
-                callback(null);
-            }
+                else
+                {
+                    try
+                    {
+                        var root = JSONReader.ReadFromString(json);
+                        callback(root);
+                    }
+                    catch
+                    {
+                        callback(null);
+                    }
+                }
+            });
         }
     }
 }

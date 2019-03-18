@@ -8,7 +8,7 @@ namespace Phantasma.Pay.Chains
 {
     public class PhantasmaWallet : CryptoWallet
     {
-        public PhantasmaWallet(KeyPair keys) : base(keys)
+        public PhantasmaWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
         }
 

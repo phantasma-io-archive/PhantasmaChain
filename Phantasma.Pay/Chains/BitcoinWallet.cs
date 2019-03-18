@@ -22,7 +22,7 @@ namespace Phantasma.Pay.Chains
             public string script;
         }
 
-        public BitcoinWallet(KeyPair keys) : base(keys)
+        public BitcoinWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
         }
 

@@ -7,7 +7,7 @@ namespace Phantasma.Pay.Chains
 {
     public class NeoWallet : CryptoWallet
     {
-        public NeoWallet(KeyPair keys) : base(keys)
+        public NeoWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
         }
 

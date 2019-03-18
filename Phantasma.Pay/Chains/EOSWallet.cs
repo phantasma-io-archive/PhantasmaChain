@@ -10,7 +10,7 @@ namespace Phantasma.Pay.Chains
 {
     public class EOSWallet: CryptoWallet
     {
-        public EOSWallet(KeyPair keys) : base(keys)
+        public EOSWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
         }
 

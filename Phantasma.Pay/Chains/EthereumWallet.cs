@@ -9,7 +9,7 @@ namespace Phantasma.Pay.Chains
 {
     public class EthereumWallet: CryptoWallet
     {
-        public EthereumWallet(KeyPair keys) : base(keys)
+        public EthereumWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
         }
 
