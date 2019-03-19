@@ -60,8 +60,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public Timestamp GetNextMasterClaim(uint times = 1)
         {
-            // 30 days since last claim
-            return new Timestamp(_lastMasterClaim.Value + (86400 * 30 * times));
+            DateTime referenceDate;
+            if (_lastMasterClaim.Value == 0)
+                referenceDate = new DateTime(Runtime.Nexus.RootChain.FindBlockByHeight(0).Timestamp.Value);
+            else
+                referenceDate = new DateTime(_lastMasterClaim.Value);
+
+            //Allow a claim once per month starting on the 1st day of each month
+            return new Timestamp((uint)new DateTime(referenceDate.Year, referenceDate.Month + 1, 1).Ticks);
         }
 
         public void MasterClaim(Address from)
