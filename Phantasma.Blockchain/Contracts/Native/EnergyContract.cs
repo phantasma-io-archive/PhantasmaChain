@@ -1,3 +1,4 @@
+using System;
 using Phantasma.Blockchain.Storage;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -36,6 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private uint _masterClaimCount;
 
         public readonly static BigInteger MasterAccountThreshold = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
+        public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
 
         public readonly static BigInteger EnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
@@ -43,31 +45,73 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public bool IsMaster(Address address)
+        public EnergyMaster GetMaster(Address address)
         {
             var count = _mastersList.Count();
-            for (int i=0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 var master = _mastersList.Get<EnergyMaster>(i);
                 if (master.address == address)
                 {
-                    return true;
+                    return master;
                 }
             }
 
-            return false;
+            return new EnergyMaster{address=Address.Null};
         }
 
-        public Timestamp GetNextMasterClaim(uint times = 1)
+        public bool IsMaster(Address address)
+        {
+            return GetMaster(address).address != Address.Null;
+        }
+
+        public BigInteger GetCurrentMasterCount()
+        {
+            return _mastersList.Count();
+        }
+
+        //verifies how many valid masters are in the condition to claim the reward for a specific master claim date, assuming no changes in their master status in the meantime
+        public BigInteger GetClaimMasterCount(Timestamp claimDate)
+        {
+            var count = GetCurrentMasterCount();
+            var result = count;
+            DateTime requestedClaimDate = new DateTime(((DateTime) claimDate).Year, ((DateTime)claimDate).Month, 1);
+
+            for (int i = 0; i < count; i++)
+            {
+                DateTime currentMasterClaimDate = _mastersList.Get<EnergyMaster>(i).claimDate;
+                if ( currentMasterClaimDate > requestedClaimDate)
+                    result--;
+            }
+
+            return result;
+        }
+
+        public Timestamp GetMasterClaimDate(BigInteger claimDistance)
+        {
+            return GetMasterClaimDateFromReference(claimDistance, default(Timestamp));
+        }
+
+        public Timestamp GetMasterClaimDateFromReference(BigInteger claimDistance, Timestamp referenceTime)
         {
             DateTime referenceDate;
-            if (_lastMasterClaim.Value == 0)
-                referenceDate = new DateTime(Runtime.Nexus.RootChain.FindBlockByHeight(0).Timestamp.Value);
+            if (referenceTime.Value != 0)
+                referenceDate = referenceTime;
+            else if (_lastMasterClaim.Value == 0)
+                referenceDate = Runtime.Nexus.RootChain.FindBlockByHeight(1).Timestamp;
             else
-                referenceDate = new DateTime(_lastMasterClaim.Value);
+                referenceDate = _lastMasterClaim;
+
+            var nextMasterClaim = (Timestamp)(new DateTime(referenceDate.Year, referenceDate.Month, 1, 0, 0, 0)).AddMonths((int) claimDistance);
+            var dateTimeClaim = (DateTime) nextMasterClaim;
+
+            if (dateTimeClaim.Hour == 23)
+                nextMasterClaim = dateTimeClaim.AddHours(1);
+            if (dateTimeClaim.Hour == 1)
+                nextMasterClaim = dateTimeClaim.AddHours(-1);
 
             //Allow a claim once per month starting on the 1st day of each month
-            return new Timestamp((uint)new DateTime(referenceDate.Year, referenceDate.Month + 1, 1).Ticks);
+            return nextMasterClaim;
         }
 
         public void MasterClaim(Address from)
@@ -77,35 +121,45 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(IsMaster(from), "invalid master");
 
-            var nextClaimTime = GetNextMasterClaim();
-            Runtime.Expect(Runtime.Time >= nextClaimTime, "not enough time waited");
+            var thisClaimDate = GetMaster(from).claimDate;
+            Runtime.Expect(Runtime.Time >= thisClaimDate, "not enough time waited");
 
             var token = Runtime.Nexus.StakingToken;
             var stakeBalances = Runtime.Chain.GetTokenBalances(token);
             var stakeSupplies = Runtime.Chain.GetTokenSupplies(token);
 
-            var totalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
+            var totalAmount = MasterClaimGlobalAmount;
             Runtime.Expect(token.Mint(Runtime.ChangeSet, stakeBalances, stakeSupplies, Runtime.Chain.Address, totalAmount), "mint failed");
 
-            var count = _mastersList.Count();
-            var individualAmount = totalAmount / count;
-            var leftovers = totalAmount % count;
+            var listSize = _mastersList.Count();
 
-            for (int i = 0; i < count; i++)
+            var validMasterCount = GetClaimMasterCount(thisClaimDate);
+
+            var individualAmount = totalAmount / validMasterCount;
+            var leftovers = totalAmount % validMasterCount;
+
+            for (int i = 0; i < listSize; i++)
             {
-                var targetAddress = _mastersList.Get<Address>(i);
+                var targetMaster = _mastersList.Get<EnergyMaster>(i);
+
+                if (targetMaster.claimDate != thisClaimDate)
+                    continue;
 
                 var transferAmount = individualAmount;
-                if (targetAddress == from)
+                if (targetMaster.address == from)
                 {
                     transferAmount += leftovers;
                 }
 
-                Runtime.Expect(token.Transfer(Runtime.ChangeSet, stakeBalances, Runtime.Chain.Address, targetAddress, transferAmount), "transfer failed");
+                Runtime.Expect(token.Transfer(Runtime.ChangeSet, stakeBalances, Runtime.Chain.Address, targetMaster.address, transferAmount), "transfer failed");
 
                 totalAmount -= transferAmount;
 
-                Runtime.Notify(EventKind.TokenMint, targetAddress, new TokenEventData() { symbol = token.Symbol, value = transferAmount, chainAddress = Runtime.Chain.Address });
+                Runtime.Notify(EventKind.TokenMint, targetMaster.address, new TokenEventData() { symbol = token.Symbol, value = transferAmount, chainAddress = Runtime.Chain.Address });
+
+                var nextClaim = GetMasterClaimDateFromReference(1, thisClaimDate);
+
+                _mastersList.Replace(i, new EnergyMaster() { address = from, claimDate = nextClaim });
             }
             Runtime.Expect(totalAmount == 0, "something failed");
 
@@ -125,7 +179,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var currentStake = _stakes.Get<Address, EnergyAction>(from).amount;
             var newStake = stakeAmount + currentStake;
 
-            Runtime.Expect(balance >= newStake, "not enough balance");
+            Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
             Runtime.Expect(stakeBalances.Subtract(this.Storage, from, stakeAmount), "balance subtract failed");
             Runtime.Expect(stakeBalances.Add(this.Storage, Runtime.Chain.Address, stakeAmount), "balance add failed");
@@ -137,25 +191,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
             _stakes.Set(from, entry);
 
-            if (stakeAmount >= MasterAccountThreshold)
+            if (Runtime.Nexus.GenesisAddress != from && newStake >= MasterAccountThreshold && !IsMaster(from))
             {
-                if (!IsMaster(from))
+                var nextClaim = GetMasterClaimDate(2);
+
+                /*
+                // check for unstaking penalization
+                if (_masterMemory.ContainsKey<Address>(from))
                 {
-                    var nextClaim = GetNextMasterClaim();
-
-                    // check for unstaking penalization
-                    if (_masterMemory.ContainsKey<Address>(from))
+                    var lastClaim = _masterMemory.Get<Address, Timestamp>(from);
+                    if (lastClaim > nextClaim)
                     {
-                        var lastClaim = _masterMemory.Get<Address, Timestamp>(from);
-                        if (lastClaim > nextClaim)
-                        {
-                            nextClaim = lastClaim;
-                        }
+                        nextClaim = lastClaim;
                     }
+                }*/
 
-                    _mastersList.Add<EnergyMaster>(new EnergyMaster() { address = from, claimDate = nextClaim});
-                    Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
-                }
+                _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim});
+                Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
             }
 
             Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = newStake });
@@ -223,10 +275,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (index >= 0)
                 {
+                    var penalizationDate = GetMasterClaimDateFromReference(1, _mastersList.Get<EnergyMaster>(index).claimDate);
                     _mastersList.RemoveAt<EnergyMaster>(index);
-
-                    var penalizationDate = GetNextMasterClaim(2);
-                    _masterMemory.Set<Address, Timestamp>(from, penalizationDate);
 
                     Runtime.Notify(EventKind.MasterDemote, from, penalizationDate);
                 }
