@@ -24,6 +24,30 @@ namespace Phantasma.Blockchain.Contracts
         AuctionCancelled,
         AuctionFilled,
         Metadata,
+
+        WrestlerReceived,
+        Purchase,
+        ItemAdded,
+        ItemRemoved,
+        ItemReceived,
+        ItemSpent,
+        ItemActivated,
+        ItemUnwrapped,
+        Stance,
+        StatusAdded,
+        StatusRemoved,
+        Buff,
+        Debuff,
+        Experience,
+        Unlock,
+        Rename,
+        Auto,
+        Pot,
+        Referal,
+        Trophy,
+        Confusion,
+        MoveMiss,
+        SelectAvatar
     }
 
     public class Event

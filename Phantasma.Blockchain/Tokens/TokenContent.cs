@@ -18,7 +18,8 @@ namespace Phantasma.Blockchain.Tokens
             this.RAM= ram;
         }
 
-        public void WriteData(byte[] data)
+        // TODO this should be stored to persistent storage!
+        public void WriteRAM(byte[] data)
         {
             Throw.IfNull(data, nameof(data));
             this.RAM = data;
