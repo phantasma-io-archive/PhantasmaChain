@@ -759,9 +759,22 @@ namespace Phantasma.Blockchain.Utils
             EndBlock(mempool);
         }
 
-        public void TimeSkip(double days)
+        public void TimeSkip(double days, bool roundUp = false)
         {
             CurrentTime = CurrentTime.AddDays(days);
+
+            if (roundUp)
+            {
+                CurrentTime = CurrentTime.AddDays(1);
+                CurrentTime = new DateTime(CurrentTime.Year, CurrentTime.Month, CurrentTime.Day);
+
+                var timestamp = (Timestamp) CurrentTime;
+                var datetime = (DateTime) timestamp;
+                if (datetime.Hour == 23)
+                    datetime = datetime.AddHours(2);
+                
+                CurrentTime = new DateTime(datetime.Year, datetime.Month, datetime.Day, datetime.Hour, 0 , 0);   //to set the time of day component to 0
+            }
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, () =>
