@@ -1,6 +1,7 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using Phantasma.API;
 using Phantasma.Blockchain.Storage;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts.Native;
@@ -1171,6 +1172,327 @@ namespace Phantasma.Tests
 
             finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
             Assert.IsTrue(totalExpectedStake == startingSoulBalance - finalSoulBalance);
+        }
+
+        [TestMethod]
+        public void TestSoulMaster()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234, -1);
+            var nexus = simulator.Nexus;
+
+            var fuelToken = simulator.Nexus.FuelToken;
+            var stakeToken = simulator.Nexus.StakingToken;
+
+            //Let A be an address
+            var testUserA = KeyPair.Generate();
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUserA.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            Transaction tx = null;
+
+            BigInteger accountBalance = MasterAccountThreshold;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, nexus.StakingToken, accountBalance);
+            simulator.EndBlock();
+
+            //-----------
+            //A stakes under master threshold -> verify A is not master
+            var initialStake = accountBalance - FuelToStake(1);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserA.Address, initialStake).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var isMaster = (bool)simulator.Nexus.RootChain.InvokeContract("energy", "IsMaster", testUserA.Address);
+            Assert.IsTrue(isMaster == false);
+
+            //-----------
+            //A attempts master claim -> verify failure: not a master
+            var startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUserA, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "MasterClaim", testUserA.Address).
+                        SpendGas(testUserA.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == startingBalance);
+
+            //----------
+            //A stakes the master threshold -> verify A is master
+            var missingStake = MasterAccountThreshold - initialStake;
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserA.Address, missingStake).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            isMaster = (bool)simulator.Nexus.RootChain.InvokeContract("energy", "IsMaster", testUserA.Address);
+            Assert.IsTrue(isMaster);
+
+            //-----------
+            //A attempts master claim -> verify failure: didn't wait until the 1st of the month after genesis block
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUserA, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "MasterClaim", testUserA.Address).SpendGas(testUserA.Address)
+                        .EndScript());
+                simulator.EndBlock();
+            });
+
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == startingBalance);
+
+            //-----------
+            //A attempts master claim during the first valid staking period -> verify failure: rewards are only available at the end of each staking period
+            var missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
+            simulator.TimeSkip(missingDays, true);
+
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUserA, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "MasterClaim", testUserA.Address).SpendGas(testUserA.Address)
+                        .EndScript());
+                simulator.EndBlock();
+            });
+
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == startingBalance);
+
+            //-----------
+            //A attempts master claim -> verify success
+            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
+            simulator.TimeSkip(missingDays, true);
+
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+            var claimMasterCount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", (Timestamp)simulator.CurrentTime);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "MasterClaim", testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            
+            var expectedBalance = startingBalance + (MasterClaimGlobalAmount / claimMasterCount) + (MasterClaimGlobalAmount % claimMasterCount);
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == expectedBalance);
+
+            //-----------
+            //A attempts master claim -> verify failure: not enough time passed since last claim
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUserA, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "MasterClaim", testUserA.Address).
+                        SpendGas(testUserA.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == startingBalance);
+
+            //-----------
+            //A unstakes under master thresold -> verify lost master status
+            var stakeReduction = FuelToStake(1);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Unstake", testUserA.Address, stakeReduction).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            isMaster = (bool)simulator.Nexus.RootChain.InvokeContract("energy", "IsMaster", testUserA.Address);
+            Assert.IsTrue(isMaster == false);
+
+            //-----------
+            //A restakes to the master threshold -> verify won master status again
+            missingStake = MasterAccountThreshold - initialStake;
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserA.Address, missingStake).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            isMaster = (bool)simulator.Nexus.RootChain.InvokeContract("energy", "IsMaster", testUserA.Address);
+            Assert.IsTrue(isMaster);
+
+            //-----------
+            //Time skip to the next possible claim date
+            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
+            simulator.TimeSkip(missingDays, true);
+
+            //-----------
+            //A attempts master claim -> verify failure, because he lost master status once during this reward period
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(testUserA, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                        .CallContract("energy", "MasterClaim", testUserA.Address).
+                        SpendGas(testUserA.Address).EndScript());
+                simulator.EndBlock();
+            });
+
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == startingBalance);
+
+            //-----------
+            //Time skip to the next possible claim date
+            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
+            simulator.TimeSkip(missingDays, true);
+
+            //-----------
+            //A attempts master claim -> verify success
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "MasterClaim", testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            expectedBalance = startingBalance + (MasterClaimGlobalAmount / claimMasterCount) + (MasterClaimGlobalAmount % claimMasterCount);
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == expectedBalance);
+
+            //Let B and C be other addresses
+            var testUserB = KeyPair.Generate();
+            var testUserC = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, nexus.StakingToken, accountBalance);
+            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, nexus.StakingToken, accountBalance);
+            simulator.EndBlock();
+
+            //----------
+            //B and C stake the master threshold -> verify both become masters
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserB, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserB.Address, accountBalance).
+                    SpendGas(testUserB.Address).EndScript());
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserC, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserC.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserC.Address, accountBalance).
+                    SpendGas(testUserC.Address).EndScript());
+            simulator.EndBlock();
+
+            isMaster = (bool)simulator.Nexus.RootChain.InvokeContract("energy", "IsMaster", testUserB.Address);
+            Assert.IsTrue(isMaster);
+
+            isMaster = (bool)simulator.Nexus.RootChain.InvokeContract("energy", "IsMaster", testUserC.Address);
+            Assert.IsTrue(isMaster);
+
+            //----------
+            //Confirm that B and C should only receive master claim rewards on the 2nd closest claim date
+
+            var closeClaimDate = (Timestamp) simulator.Nexus.RootChain.InvokeContract("energy", "GetMasterClaimDate", 1);
+            var farClaimDate = (Timestamp) simulator.Nexus.RootChain.InvokeContract("energy", "GetMasterClaimDate", 2);
+
+            var closeClaimMasters = (BigInteger) simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", closeClaimDate);
+            var farClaimMasters = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", farClaimDate);
+            Assert.IsTrue(closeClaimMasters == 1 && farClaimMasters == 3);
+
+            //----------
+            //Confirm in fact that only A receives rewards on the closeClaimDate
+            
+            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month, 1).AddMonths(1) - simulator.CurrentTime).Days;
+            simulator.TimeSkip(missingDays, true);
+
+            var startingBalanceA = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+            var startingBalanceB = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserB.Address);
+            var startingBalanceC = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserC.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "MasterClaim", testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            expectedBalance = startingBalanceA + (MasterClaimGlobalAmount / closeClaimMasters) + (MasterClaimGlobalAmount % closeClaimMasters);
+            var finalBalanceA = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+            var finalBalanceB = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserB.Address);
+            var finalBalanceC = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserC.Address);
+
+            Assert.IsTrue(finalBalanceA == expectedBalance);
+            Assert.IsTrue(finalBalanceB == startingBalanceB);
+            Assert.IsTrue(finalBalanceC == startingBalanceC);
+
+            //----------
+            //Confirm in fact that A, B and C receive rewards on the farClaimDate
+
+            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month, 1).AddMonths(1) - simulator.CurrentTime).Days;
+            simulator.TimeSkip(missingDays, true);
+
+            startingBalanceA = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+            startingBalanceB = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserB.Address);
+            startingBalanceC = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserC.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "MasterClaim", testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var expectedBalanceA = startingBalanceA + (MasterClaimGlobalAmount / farClaimMasters) + (MasterClaimGlobalAmount % farClaimMasters);
+            var expectedBalanceB = startingBalanceB + (MasterClaimGlobalAmount / farClaimMasters);
+            var expectedBalanceC = startingBalanceC + (MasterClaimGlobalAmount / farClaimMasters);
+
+
+            finalBalanceA = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
+            finalBalanceB = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserB.Address);
+            finalBalanceC = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserC.Address);
+
+            Assert.IsTrue(finalBalanceA == expectedBalanceA);
+            Assert.IsTrue(finalBalanceB == expectedBalanceB);
+            Assert.IsTrue(finalBalanceC == expectedBalanceC);
         }
 
         [TestMethod]
