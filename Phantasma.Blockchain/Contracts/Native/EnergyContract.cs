@@ -36,10 +36,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _masterMemory; // <Address, Timestamp>
         private uint _masterClaimCount;
 
+        private Timestamp genesisTimestamp = 0;
+
         public readonly static BigInteger MasterAccountThreshold = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
 
-        public readonly static BigInteger EnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
+        public readonly static BigInteger BaseEnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
  
         public EnergyContract() : base()
         {
@@ -301,7 +303,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var unclaimedAmount = stake.amount;
+            var currentStake = stake.amount;
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
@@ -317,21 +319,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             // if not enough time has passed, deduct the last claim from the available amount
             if (days <= 0)
             {
-                unclaimedAmount -= lastClaim.amount;
+                currentStake -= lastClaim.amount;
             }
-            else
-            if (days > 1) // allow for staking accumulation over several days
-            {
-                unclaimedAmount *= days;
-            }
-
+            
             // clamp to avoid negative values
-            if (unclaimedAmount < 0)
+            if (currentStake < 0)
             {
-                unclaimedAmount = 0;
+                currentStake = 0;
             }
 
-            return StakeToFuel(unclaimedAmount);
+            return CalculateRewardsWithHalving(currentStake, lastClaim.timestamp, currentTime); ;
         }
 
         public void Claim(Address from, Address stakeAddress)
@@ -503,12 +500,65 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static BigInteger FuelToStake(BigInteger fuelAmount)
         {
-            return UnitConversion.ConvertDecimals(fuelAmount * EnergyRatioDivisor, Nexus.FuelTokenDecimals, Nexus.StakingTokenDecimals);
+            return UnitConversion.ConvertDecimals(fuelAmount * BaseEnergyRatioDivisor, Nexus.FuelTokenDecimals, Nexus.StakingTokenDecimals);
         }
 
         public static BigInteger StakeToFuel(BigInteger stakeAmount)
         {
-            return UnitConversion.ConvertDecimals(stakeAmount, Nexus.StakingTokenDecimals, Nexus.FuelTokenDecimals) / EnergyRatioDivisor;
+            return UnitConversion.ConvertDecimals(stakeAmount, Nexus.StakingTokenDecimals, Nexus.FuelTokenDecimals) / BaseEnergyRatioDivisor;
+        }
+
+        private BigInteger CalculateRewardsWithHalving(BigInteger stake, Timestamp startTime, Timestamp endTime)
+        {
+            if (genesisTimestamp == 0)
+            {
+                var genesisBlock = Runtime.Nexus.RootChain.FindBlockByHeight(1);
+                if (genesisBlock == null)   //special case for genesis block's creation
+                    return StakeToFuel(stake);
+
+                genesisTimestamp = genesisBlock.Timestamp;
+            }
+           
+            if (StakeToFuel(stake) <= 0)
+                return 0;
+
+            DateTime genesisDate = genesisTimestamp;
+            DateTime startDate = startTime;
+            DateTime endDate = endTime;
+
+            BigInteger reward = 0;
+            uint halvingAmount = 1;
+            var currentDate = startDate;
+            var nextHalvingDate = genesisDate.AddYears(2);
+
+            while (currentDate <= endDate)
+            {
+                if (startDate < nextHalvingDate)
+                {
+                    var daysInCurrentHalving = 0;
+                    if (endDate > nextHalvingDate)
+                    {
+                        daysInCurrentHalving = (nextHalvingDate - currentDate).Days;
+                        currentDate = nextHalvingDate;
+                    }
+                    else
+                    {
+                        daysInCurrentHalving = (endDate - currentDate).Days;
+
+                        if (currentDate == startDate && daysInCurrentHalving == 0)
+                            daysInCurrentHalving = 1;
+
+                        currentDate = endDate.AddDays(1);   //to force the while to break
+                    }
+
+                    reward += (StakeToFuel(stake) / halvingAmount) * daysInCurrentHalving;
+                }
+
+                nextHalvingDate = nextHalvingDate.AddYears(2);
+                halvingAmount *= 2;
+            }
+
+            return reward;
         }
 
     }
