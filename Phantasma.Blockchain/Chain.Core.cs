@@ -495,6 +495,7 @@ namespace Phantasma.Blockchain
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null, null, changeSet, true);
 
+            // TODO This should not be necessary here, as it is done in LoadContext in the RuntimeVM?
             contract.SetRuntimeData(vm);
 
             var state = vm.Execute();

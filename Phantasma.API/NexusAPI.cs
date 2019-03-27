@@ -9,6 +9,10 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.VM;
+using Phantasma.IO;
 
 namespace Phantasma.API
 {
@@ -801,6 +805,61 @@ namespace Phantasma.API
             return new SingleResult { value = tx.Hash.ToString() };
         }
 
+        [APIInfo(typeof(string), "Allows to invoke script based on network state, without state changes.")]
+        [APIFailCase("script is invalid", "")]
+        [APIFailCase("failed to decoded script", "0000")]
+        public IAPIResult InvokeRawScript([APIParameter("Address or name of chain", "root")] string chainInput, [APIParameter("Serialized script bytes, in hexadecimal format", "0000000000")] string scriptData)
+        {
+            var chain = FindChainByInput(chainInput);
+            if (chain == null)
+            {
+                return new ErrorResult { error = "invalid chain" };
+            }
+
+            byte[] script;
+            try
+            {
+                script = Base16.Decode(scriptData);
+            }
+            catch
+            {
+                return new ErrorResult { error = "Failed to decode script" };
+            }
+
+            if (script.Length == 0)
+            {
+                return new ErrorResult { error = "Invalid transaction script" };
+            }
+
+            var changeSet = new StorageChangeSetContext(chain.Storage);
+            var vm = new RuntimeVM(script, chain, null, null, changeSet, true);
+
+            var state = vm.Execute();
+
+            if (state != ExecutionState.Halt)
+            {
+                return new ErrorResult { error = $"Execution failed, state:{state}" };
+            }
+
+            string encodedResult;
+
+            if (vm.Stack.Count == 0)
+            {
+                encodedResult = "";
+            }
+            else
+            {
+                var temp = vm.Stack.Pop();
+                var result = temp.ToObject();
+                var resultBytes = Serialization.Serialize(result);
+                encodedResult = Base16.Encode(resultBytes);
+            }
+
+            var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) });
+
+            return new ScriptResult { result = encodedResult, events = evts.ToArray() };
+        }
+
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
         [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult GetTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
@@ -1081,7 +1140,7 @@ namespace Phantasma.API
 
             if (!string.IsNullOrEmpty(symbol))
             {
-                entries =  entries.Where(x => x.BaseSymbol == symbol);
+                entries = entries.Where(x => x.BaseSymbol == symbol);
             }
 
             return new SingleResult { value = entries.Count() };

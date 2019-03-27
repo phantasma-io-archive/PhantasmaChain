@@ -223,4 +223,14 @@ namespace Phantasma.API
         public string tokenId;
         public string price;
     }
+
+    public struct ScriptResult : IAPIResult
+    {
+        [APIDescription("List of events that triggered in the transaction")]
+        public EventResult[] events;
+
+        [APIDescription("Result of the transaction, if any. Serialized, in hexadecimal format")]
+        public string result;
+    }
+
 }
