@@ -2113,6 +2113,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 {
                     battleID = 0,
                     queueBet = 0,
+                    queueWrestlerIDs = new BigInteger[0],
                     unused = "",
                     neoAddress = "",
                     creationTime = 0,
