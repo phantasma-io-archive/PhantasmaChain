@@ -5598,9 +5598,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         */
 
-        public void InitPot()
+        private void InitPot()
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "developer only");
+            //Runtime.Expect(IsWitness(DevelopersAddress), "developer only");
             Runtime.Expect(!Storage.Has("pot"), "pot already created");
 
             //Runtime.Expect(DepositNEP5(DevelopersAddress, amount), "deposit failed");
