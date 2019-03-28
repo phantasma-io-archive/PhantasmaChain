@@ -8496,7 +8496,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         /// the result of this should be always MajorVersion * 256 + MinorVersion
-        public int GetProtocolVersion()
+        public BigInteger GetProtocolVersion()
         {
             return 1 * 256 + 9;
         }
