@@ -805,7 +805,7 @@ namespace Phantasma.API
             return new SingleResult { value = tx.Hash.ToString() };
         }
 
-        [APIInfo(typeof(string), "Allows to invoke script based on network state, without state changes.")]
+        [APIInfo(typeof(ScriptResult), "Allows to invoke script based on network state, without state changes.")]
         [APIFailCase("script is invalid", "")]
         [APIFailCase("failed to decoded script", "0000")]
         public IAPIResult InvokeRawScript([APIParameter("Address or name of chain", "root")] string chainInput, [APIParameter("Serialized script bytes, in hexadecimal format", "0000000000")] string scriptData)
