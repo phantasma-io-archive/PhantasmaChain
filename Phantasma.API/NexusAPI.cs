@@ -460,6 +460,24 @@ namespace Phantasma.API
             return result;
         }
 
+        [APIInfo(typeof(string), "Returns the address that owns a given name.")]
+        [APIFailCase("address is invalid", "ABCD123")]
+        public IAPIResult LookUpName([APIParameter("Name of account", "blabla")] string name)
+        {
+            if (!AccountContract.ValidateAddressName(name))
+            {
+                return new ErrorResult { error = "invalid name" };
+            }
+
+            var address = Nexus.LookUpName(name);
+            if (address == Address.Null)
+            {
+                return new ErrorResult { error = "name not owned" };
+            }
+
+            return new SingleResult() { value = address.Text };
+        }
+
         [APIInfo(typeof(int), "Returns the height of a chain.")]
         [APIFailCase("chain is invalid", "4533")]
         public IAPIResult GetBlockHeight([APIParameter("Address or name of chain", "root")] string chainInput)
