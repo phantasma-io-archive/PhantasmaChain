@@ -2097,16 +2097,22 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
                 }*/
 
-                if (account.ELO == 0)
-                {
-                    account.ELO = Constants.DEFAULT_ELO;
-                }
+                //if (account.ELO == 0)
+                //{
+                //    account.ELO = Constants.DEFAULT_ELO;
+                //}
+
+                //if (account.queueBet == 0)
+                //{
+                //    account.queueBet = 0;
+                //}
             }
             else
             {
                 account = new NachoAccount()
                 {
                     battleID = 0,
+                    queueBet = 0,
                     unused = "",
                     neoAddress = "",
                     creationTime = 0,
@@ -2116,6 +2122,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     referal = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
+                    
                 };
             }
 
