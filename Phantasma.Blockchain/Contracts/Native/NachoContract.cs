@@ -2206,7 +2206,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         Runtime.Expect(referalIndex >= 0, "no referal slots available");
 
         referal.address = from;
-        referal.referalTime = Runtime.Block.Timestamp.Value;
+        referal.referalTime = Runtime.Time.Value;
         referals.Replace(referalIndex, referal);
 
         fromAccount.referal = target;
@@ -2318,32 +2318,32 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             int currentReferralPercent;
 
-            if (Runtime.Block.Timestamp.Value <= 1541030400) // 1 nov
+            if (Runtime.Time.Value <= 1541030400) // 1 nov
             {
                 currentReferralPercent = 40;
             }
             else
-            if (Runtime.Block.Timestamp.Value <= 1541635200) //  8 nov
+            if (Runtime.Time.Value <= 1541635200) //  8 nov
             {
                 currentReferralPercent = 30;
             }
             else
-            if (Runtime.Block.Timestamp.Value <= 1542240000) // 15 nov
+            if (Runtime.Time.Value <= 1542240000) // 15 nov
             {
                 currentReferralPercent = 25;
             }
             else
-            if (Runtime.Block.Timestamp.Value <= 1542844800) //  22 nov
+            if (Runtime.Time.Value <= 1542844800) //  22 nov
             {
                 currentReferralPercent = 20;
             }
             else
-            if (Runtime.Block.Timestamp.Value <= 1543449600) // 29 nov
+            if (Runtime.Time.Value <= 1543449600) // 29 nov
             {
                 currentReferralPercent = 15;
             }
             else
-            if (Runtime.Block.Timestamp.Value <= 1544054400) // 6 dec
+            if (Runtime.Time.Value <= 1544054400) // 6 dec
             {
                 currentReferralPercent = 10;
             }
@@ -2352,7 +2352,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 currentReferralPercent = 5;
             }
 
-            referal.stakeTime = Runtime.Block.Timestamp.Value;
+            referal.stakeTime = Runtime.Time.Value;
             referal.stakeAmount = stakeAmount;
             referal.bonusPercentage = currentReferralPercent;
 
@@ -2385,7 +2385,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (referral.stakeAmount > 0)
             {
-                var diff = Runtime.Block.Timestamp.Value - referral.stakeTime;
+                var diff = Runtime.Time.Value - referral.stakeTime;
                 diff = diff / Constants.SECONDS_PER_DAY; // convert to days
                 Runtime.Expect(diff >= Constants.REFERRAL_MINIMUM_DAYS, "too soon");
             }
@@ -3192,7 +3192,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var totalDays = (auction.endTime - auction.startTime) / Constants.SECONDS_PER_DAY;
             if (totalDays < 1) totalDays = 1;
 
-            var currentDay = (Runtime.Block.Timestamp.Value - auction.startTime) / Constants.SECONDS_PER_DAY;
+            var currentDay = (Runtime.Time.Value - auction.startTime) / Constants.SECONDS_PER_DAY;
 
             var incrementPerDay = (auction.endPrice - auction.startPrice) / totalDays;
 
@@ -3288,7 +3288,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 auctionID = auctionID,
                 buyer = to,
                 price = receivedAmount,
-                time = Runtime.Block.Timestamp.Value
+                time = Runtime.Time.Value
             };
 
             var sales = Storage.FindCollectionForContract<NachoSale>(GLOBAL_SALES_LIST);
@@ -3715,7 +3715,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (roomCounter >= nextNumber && stakedAmount >= nextNumber)
             {
                 BigInteger itemID;
-                BigInteger lastID = Runtime.Block.Timestamp.Value;
+                BigInteger lastID = Runtime.Time.Value;
 
                 Rarity rarity;
                 if (nextNumber >= 1000)
@@ -4855,7 +4855,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(account.queueWrestlerIDs.Length == 1, "invalid wrester count"); // TODO tag team support
 
-            var updateDiff = Runtime.Block.Timestamp.Value - account.queueUpdateTime;
+            var updateDiff = Runtime.Time.Value - account.queueUpdateTime;
             Runtime.Expect(updateDiff >= Constants.MATCHMAKER_UPDATE_SECONDS, "too soon");
 
             if (Rules.IsModeWithMatchMaker(account.queueMode) && MatchMakerFindMatch(from))
@@ -4866,7 +4866,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             account.queueUpdateTime = GetCurrentTime();
             SetAccount(from, account);
 
-            var joinDiff = Runtime.Block.Timestamp.Value - account.queueJoinTime;
+            var joinDiff = Runtime.Time.Value - account.queueJoinTime;
             if (joinDiff >= Constants.QUEUE_FORCE_BOT_SECONDS && account.queueMode == BattleMode.Unranked)
             {
                 int minID, maxID;
@@ -4898,7 +4898,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.queueMode = BattleMode.Pratice;
                 SetAccount(from, account);
 
-                int botID = (int)(minID + Runtime.Block.Timestamp.Value % (1 + maxID - minID));
+                int botID = (int)(minID + Runtime.Time.Value % (1 + maxID - minID));
                 StartBotMatch(from, botID);
                 return;
             }
@@ -8355,7 +8355,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // returns a first initial pseudo random number
         private BigInteger Randomize(byte[] init)
         {
-            var time = System.BitConverter.GetBytes(Runtime.Block.Timestamp.Value);
+            var time = System.BitConverter.GetBytes(Runtime.Time.Value);
             var temp = ByteArrayUtils.ConcatBytes(time, init);
             var seed = new BigInteger(temp);
             return seed;
@@ -8446,7 +8446,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #region PROTOCOL
         private uint GetCurrentTime()
         {
-            return Runtime.Block.Timestamp.Value;
+            return Runtime.Time.Value;
         }
         #endregion
 
