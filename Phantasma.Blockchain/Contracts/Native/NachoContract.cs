@@ -1823,7 +1823,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoAccount
     {
         public uint creationTime;
-        public BigInteger balanceSOUL;
         public BigInteger battleID;
         public string unused;
         public string neoAddress;
@@ -1844,7 +1843,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
-        public BigInteger balanceNACHOS;
         public int avatarID;
     }
 
@@ -2113,8 +2111,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 account = new NachoAccount()
                 {
-                    balanceSOUL         = new BigInteger(0),
-                    balanceNACHOS       = new BigInteger(0),
                     battleID            = 0,
                     queueBet            = 0,
                     queueWrestlerIDs    = new BigInteger[0],
@@ -2127,7 +2123,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                     referal             = Address.Null,
                     ELO                 = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     avatarID            = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
-                    
                 };
             }
 
