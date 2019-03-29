@@ -1823,6 +1823,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoAccount
     {
         public uint creationTime;
+        public BigInteger balanceSOUL;
         public BigInteger battleID;
         public string unused;
         public string neoAddress;
@@ -1843,6 +1844,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
+        public BigInteger balanceNACHOS;
         public int avatarID;
     }
 
