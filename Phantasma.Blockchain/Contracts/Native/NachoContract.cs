@@ -2113,18 +2113,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 account = new NachoAccount()
                 {
-                    battleID = 0,
-                    queueBet = 0,
-                    queueWrestlerIDs = new BigInteger[0],
-                    unused = "",
-                    neoAddress = "",
-                    creationTime = 0,
-                    flags = AccountFlags.None,
-                    counters = new int[Constants.ACCOUNT_COUNTER_MAX],
-                    comment = "",
-                    referal = Address.Null,
-                    ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
-                    avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
+                    balanceSOUL         = new BigInteger(0),
+                    balanceNACHOS       = new BigInteger(0),
+                    battleID            = 0,
+                    queueBet            = 0,
+                    queueWrestlerIDs    = new BigInteger[0],
+                    unused              = "",
+                    neoAddress          = "",
+                    creationTime        = 0,
+                    flags               = AccountFlags.None,
+                    counters            = new int[Constants.ACCOUNT_COUNTER_MAX],
+                    comment             = "",
+                    referal             = Address.Null,
+                    ELO                 = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
+                    avatarID            = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                     
                 };
             }
