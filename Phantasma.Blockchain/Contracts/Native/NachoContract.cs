@@ -1843,7 +1843,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
-        public int avatarID;
+        public BigInteger avatarID;
     }
 
     public struct NachoReferral
@@ -2776,13 +2776,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
             var account = GetAccount(from);
-            account.avatarID = Formulas.GetAvatarID(itemID);
+            account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
             SetAccount(from, account);
 
             Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
         }
 
-        public void UseDefaultAvatar(Address from, int avatarID)
+        // todo confirmar se pode ficar com bigint. Com int dava erro a converter 
+        public void UseDefaultAvatar(Address from, BigInteger avatarID)
         {
             Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
 
