@@ -92,6 +92,7 @@ namespace Phantasma.Blockchain.Utils
             GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, "LUCHA", "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, "ITEM", "Nachomen Item", 0, 0, TokenFlags.Transferable);
+            GenerateTransfer(_owner, Address.FromText("PGasVpbFYdu7qERihCsR22nTDQp1JwVAjfuJ38T8NtrCB"), Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(200, Nexus.FuelTokenDecimals));
             EndBlock();
 
             var market = Nexus.FindChainByName("market");
