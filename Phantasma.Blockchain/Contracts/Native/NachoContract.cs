@@ -1843,7 +1843,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
-        public int avatarID;
+        public BigInteger avatarID;
     }
 
     public struct NachoReferral
@@ -2111,19 +2111,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 account = new NachoAccount()
                 {
-                    battleID = 0,
-                    queueBet = 0,
-                    queueWrestlerIDs = new BigInteger[0],
-                    unused = "",
-                    neoAddress = "",
-                    creationTime = 0,
-                    flags = AccountFlags.None,
-                    counters = new int[Constants.ACCOUNT_COUNTER_MAX],
-                    comment = "",
-                    referal = Address.Null,
-                    ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
-                    avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
-                    
+                    battleID            = 0,
+                    queueBet            = 0,
+                    queueWrestlerIDs    = new BigInteger[0],
+                    unused              = "",
+                    neoAddress          = "",
+                    creationTime        = 0,
+                    flags               = AccountFlags.None,
+                    counters            = new int[Constants.ACCOUNT_COUNTER_MAX],
+                    comment             = "",
+                    referal             = Address.Null,
+                    ELO                 = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
+                    avatarID            = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                 };
             }
 
@@ -2777,13 +2776,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
             var account = GetAccount(from);
-            account.avatarID = Formulas.GetAvatarID(itemID);
+            account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
             SetAccount(from, account);
 
             Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
         }
 
-        public void UseDefaultAvatar(Address from, int avatarID)
+        // todo confirmar se pode ficar com bigint. Com int dava erro a converter 
+        public void UseDefaultAvatar(Address from, BigInteger avatarID)
         {
             Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
 
