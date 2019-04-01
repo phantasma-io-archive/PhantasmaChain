@@ -128,9 +128,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetStake(Address address)
         {
-            Runtime.Expect(_entryMap.ContainsKey(address), "not a validator address");
-            var entry = _entryMap.Get<Address, ValidatorInfo>(address);
-            return entry.stake;
+            if (_entryMap.ContainsKey(address))
+            {
+                var entry = _entryMap.Get<Address, ValidatorInfo>(address);
+                return entry.stake;
+            }
+
+            return 0;
         }
 
         public EnergyProxy[] GetProxies(Address address)
