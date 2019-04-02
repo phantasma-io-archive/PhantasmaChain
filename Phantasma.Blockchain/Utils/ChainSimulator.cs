@@ -759,7 +759,21 @@ namespace Phantasma.Blockchain.Utils
             EndBlock(mempool);
         }
 
-        public void TimeSkip(double days, bool roundUp = false)
+        public void TimeSkipYears(int years)
+        {
+            CurrentTime = CurrentTime.AddYears(years);
+
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+        }
+
+        public void TimeSkipDays(double days, bool roundUp = false)
         {
             CurrentTime = CurrentTime.AddDays(days);
 

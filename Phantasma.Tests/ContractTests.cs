@@ -254,7 +254,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Time skip 1 day
-            simulator.TimeSkip(1);
+            simulator.TimeSkipDays(1);
             
             //-----------
             //Try a partial unstake: should pass
@@ -299,7 +299,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Time skip 1 day
-            simulator.TimeSkip(1);
+            simulator.TimeSkipDays(1);
 
             //-----------
             //Try a full unstake: should pass
@@ -482,7 +482,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Time skip 1 day
-            simulator.TimeSkip(1);
+            simulator.TimeSkipDays(1);
 
             //Perform another claim call: should get reward for total staked amount
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -510,7 +510,7 @@ namespace Phantasma.Tests
             //-----------
             //Time skip 5 days
             var days = 5;
-            simulator.TimeSkip(days);
+            simulator.TimeSkipDays(days);
 
             //Perform another claim call: should get reward for accumulated days
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -534,25 +534,34 @@ namespace Phantasma.Tests
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             Assert.IsTrue(unclaimedAmount == 0);
 
-            //Time skip over 2 years
-            simulator.TimeSkip(800);
+            //-----------
+            //Increase the staked amount a 3rd time
+            previousStake = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            addedStake = FuelToStake(10);
 
-            //Do a claim just to clear unclaimed fuel
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).
+                    .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
-            //Time skip 1 day
-            simulator.TimeSkip(1);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == previousStake + addedStake);
 
-            //Validate halving
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == StakeToFuel(addedStake));
+
+            //-----------
+            //Time skip 1 day
+            days = 1;
+            simulator.TimeSkipDays(days);
+
+            //Perform another claim call: should get reward for 1 day of full stake and 1 day of partial stake
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
-
-            Assert.IsTrue(unclaimedAmount == StakeToFuel(stakedAmount) / 2);
+            expectedUnclaimed = StakeToFuel(stakedAmount) + StakeToFuel(addedStake);
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
 
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
 
@@ -565,6 +574,147 @@ namespace Phantasma.Tests
 
             finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
             txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(finalFuelBalance == (startingFuelBalance + unclaimedAmount - txCost));
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            //----------
+            //Increase stake by X
+            previousStake = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            addedStake = FuelToStake(10);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, addedStake).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == previousStake + addedStake);
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == StakeToFuel(addedStake));
+
+            //Time skip 1 day
+            days = 1;
+            simulator.TimeSkipDays(days);
+
+            //Total unstake
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Unstake", testUser.Address, previousStake + addedStake).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var finalStake = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(finalStake == 0);
+
+            //Claim -> should get StakeToFuel(X)
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            expectedUnclaimed = StakeToFuel(addedStake);
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
+
+            startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(finalFuelBalance == (startingFuelBalance + unclaimedAmount - txCost));
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+        }
+
+        [TestMethod]
+        public void TestHalving()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234, -1);
+            var nexus = simulator.Nexus;
+
+            var fuelToken = simulator.Nexus.FuelToken;
+            var stakeToken = simulator.Nexus.StakingToken;
+
+            var testUser = KeyPair.Generate();
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            var accountBalance = BaseEnergyRatioDivisor * 100;
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, accountBalance);
+            simulator.EndBlock();
+
+            //-----------
+            //Perform a valid Stake call
+            var desiredStakeAmount = FuelToStake(10);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, desiredStakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == desiredStakeAmount);
+
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUser.Address);
+            Assert.IsTrue(desiredStakeAmount == startingSoulBalance - finalSoulBalance);
+
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == StakeToFuel(stakedAmount));
+
+            //Time skip over 4 years and 8 days
+            var startDate = simulator.CurrentTime;
+            simulator.CurrentTime = ((DateTime) nexus.RootChain.FindBlockByHeight(1).Timestamp).AddYears(2);
+            simulator.TimeSkipDays(0);
+            var firstHalvingDate = simulator.CurrentTime;
+            var firstHalvingDayCount = (firstHalvingDate - startDate).Days;
+
+            simulator.CurrentTime = simulator.CurrentTime.AddYears(2);
+            simulator.TimeSkipDays(0);
+            var secondHalvingDate = simulator.CurrentTime;
+            var secondHalvingDayCount = (secondHalvingDate - firstHalvingDate).Days;
+
+
+            var thirdHalvingDayCount = 8;
+            simulator.TimeSkipDays(thirdHalvingDayCount);
+
+            //Validate halving
+            unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+
+            var expectedUnclaimed = StakeToFuel(stakedAmount) * (1 + firstHalvingDayCount + (secondHalvingDayCount / 2) + (thirdHalvingDayCount / 4));
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
+
+            var startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
+            var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
 
             Assert.IsTrue(finalFuelBalance == (startingFuelBalance + unclaimedAmount - txCost));
 
@@ -905,7 +1055,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Time skip 1 day
-            simulator.TimeSkip(1);
+            simulator.TimeSkipDays(1);
 
             //Try to claim from proxy A: should pass, but the proxy should earn nothing
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -942,7 +1092,7 @@ namespace Phantasma.Tests
             //-----------
             //Increase the staked amount
             var addedStake = FuelToStake(3);
-            var desiredFuelClaim = StakeToFuel(initialStake + addedStake);
+            var desiredFuelClaim = StakeToFuel(initialStake + addedStake*2);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
@@ -953,13 +1103,13 @@ namespace Phantasma.Tests
 
             //-----------
             //Time skip 1 day
-            simulator.TimeSkip(1);
+            simulator.TimeSkipDays(1);
 
             //Try to claim from proxy A: should pass, and the proxy should earn 1 fuel satoshi
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
 
-            Assert.IsTrue(unclaimedAmount == StakeToFuel(stakedAmount));
+            Assert.IsTrue(unclaimedAmount == StakeToFuel(stakedAmount + addedStake));
 
             startingMainFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, testUser.Address);
             startingProxyFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(fuelToken, proxyA.Address);
@@ -1022,7 +1172,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Time skip 1 day
-            simulator.TimeSkip(1);
+            simulator.TimeSkipDays(1);
 
             //Try to claim from proxy A: should fail
             Assert.ThrowsException<Exception>(() =>
@@ -1075,7 +1225,7 @@ namespace Phantasma.Tests
             //-----------
             //Time skip 5 days
             var days = 5;
-            simulator.TimeSkip(days);
+            simulator.TimeSkipDays(days);
 
             //Try to claim from main: should pass, check claimed amount is from 5 days worth of accumulation
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -1303,7 +1453,7 @@ namespace Phantasma.Tests
             //-----------
             //A attempts master claim during the first valid staking period -> verify failure: rewards are only available at the end of each staking period
             var missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
-            simulator.TimeSkip(missingDays, true);
+            simulator.TimeSkipDays(missingDays, true);
 
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
 
@@ -1324,7 +1474,7 @@ namespace Phantasma.Tests
             //-----------
             //A attempts master claim -> verify success
             missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
-            simulator.TimeSkip(missingDays, true);
+            simulator.TimeSkipDays(missingDays, true);
 
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
             var claimMasterCount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", (Timestamp)simulator.CurrentTime);
@@ -1391,7 +1541,7 @@ namespace Phantasma.Tests
             //-----------
             //Time skip to the next possible claim date
             missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
-            simulator.TimeSkip(missingDays, true);
+            simulator.TimeSkipDays(missingDays, true);
 
             //-----------
             //A attempts master claim -> verify failure, because he lost master status once during this reward period
@@ -1414,7 +1564,7 @@ namespace Phantasma.Tests
             //-----------
             //Time skip to the next possible claim date
             missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
-            simulator.TimeSkip(missingDays, true);
+            simulator.TimeSkipDays(missingDays, true);
 
             //-----------
             //A attempts master claim -> verify success
@@ -1480,7 +1630,7 @@ namespace Phantasma.Tests
             //Confirm in fact that only A receives rewards on the closeClaimDate
             
             missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month, 1).AddMonths(1) - simulator.CurrentTime).Days;
-            simulator.TimeSkip(missingDays, true);
+            simulator.TimeSkipDays(missingDays, true);
 
             var startingBalanceA = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
             var startingBalanceB = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserB.Address);
@@ -1506,7 +1656,7 @@ namespace Phantasma.Tests
             //Confirm in fact that A, B and C receive rewards on the farClaimDate
 
             missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month, 1).AddMonths(1) - simulator.CurrentTime).Days;
-            simulator.TimeSkip(missingDays, true);
+            simulator.TimeSkipDays(missingDays, true);
 
             startingBalanceA = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserA.Address);
             startingBalanceB = simulator.Nexus.RootChain.GetTokenBalance(stakeToken, testUserB.Address);
