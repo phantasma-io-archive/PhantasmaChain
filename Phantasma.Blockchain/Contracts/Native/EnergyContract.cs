@@ -8,7 +8,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public struct EnergyAction
     {
-        public BigInteger amount;
+        public BigInteger unclaimedPartials;
+        public BigInteger totalAmount;
         public Timestamp timestamp;
     }
 
@@ -178,8 +179,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakeBalances = Runtime.Chain.GetTokenBalances(stakeToken);
             var balance = stakeBalances.Get(this.Storage, from);
 
-            var currentStake = _stakes.Get<Address, EnergyAction>(from).amount;
-            var newStake = stakeAmount + currentStake;
+            var currentStake = _stakes.Get<Address, EnergyAction>(from);
+
+            var newStake = stakeAmount + currentStake.totalAmount;
 
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
@@ -188,7 +190,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var entry = new EnergyAction()
             {
-                amount = newStake,
+                unclaimedPartials = stakeAmount + GetLastAction(from).unclaimedPartials,
+                totalAmount = newStake,
                 timestamp = this.Runtime.Time,
             };
             _stakes.Set(from, entry);
@@ -196,17 +199,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (Runtime.Nexus.GenesisAddress != from && newStake >= MasterAccountThreshold && !IsMaster(from))
             {
                 var nextClaim = GetMasterClaimDate(2);
-
-                /*
-                // check for unstaking penalization
-                if (_masterMemory.ContainsKey<Address>(from))
-                {
-                    var lastClaim = _masterMemory.Get<Address, Timestamp>(from);
-                    if (lastClaim > nextClaim)
-                    {
-                        nextClaim = lastClaim;
-                    }
-                }*/
 
                 _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim});
                 Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
@@ -241,27 +233,31 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= amount, "not enough balance");
 
-            Runtime.Expect(stake.amount >= amount, "tried to unstake more than what was staked");
+            Runtime.Expect(stake.totalAmount >= amount, "tried to unstake more than what was staked");
 
             Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, amount), "balance subtract failed");
             Runtime.Expect(balances.Add(this.Storage, from, amount), "balance add failed");
 
-            stake.amount -= amount;
-            
-            if (stake.amount == 0)
+            stake.totalAmount -= amount;
+
+            var unclaimedPartials = GetLastAction(from).unclaimedPartials;
+
+
+            if (stake.totalAmount == 0 && unclaimedPartials == 0)
                 _stakes.Remove(from);
             else
             {
                 var entry = new EnergyAction()
                 {
-                    amount = stake.amount,
+                    unclaimedPartials = unclaimedPartials,
+                    totalAmount = stake.totalAmount,
                     timestamp = this.Runtime.Time,
                 };
 
                 _stakes.Set(from, entry);
             }
 
-            if (stake.amount < MasterAccountThreshold)
+            if (stake.totalAmount < MasterAccountThreshold)
             {
                 var count = _mastersList.Count();
                 var index = -1;
@@ -298,19 +294,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
 
-            if (stake.timestamp.Value == 0) // failsafe, should never happen
-            {
-                return 0;
-            }
-
-            var currentStake = stake.amount;
+            var currentStake = stake.totalAmount;
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
             var currentTime = Runtime.Time;
 
             if (lastClaim.timestamp.Value == 0)
-                lastClaim.timestamp = currentTime;
+                lastClaim.timestamp = stake.timestamp;
 
             var diff = currentTime - lastClaim.timestamp;
 
@@ -319,7 +310,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // if not enough time has passed, deduct the last claim from the available amount
             if (days <= 0)
             {
-                currentStake -= lastClaim.amount;
+                currentStake -= lastClaim.totalAmount;
             }
             
             // clamp to avoid negative values
@@ -328,7 +319,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 currentStake = 0;
             }
 
-            return CalculateRewardsWithHalving(currentStake, lastClaim.timestamp, currentTime); ;
+            return CalculateRewardsWithHalving(currentStake, GetLastAction(stakeAddress).unclaimedPartials, lastClaim.timestamp, currentTime); ;
         }
 
         public void Claim(Address from, Address stakeAddress)
@@ -387,8 +378,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
-            Runtime.Expect(stake.amount > 0, "stake missing"); // failsafe, should never happen
-            var action = new EnergyAction() { amount = stake.amount, timestamp = Runtime.Time };
+
+            if (stake.totalAmount == 0 && GetLastAction(stakeAddress).unclaimedPartials == 0)
+                _stakes.Remove(from);
+
+            var action = new EnergyAction()
+            {
+                unclaimedPartials = 0,
+                totalAmount = stake.totalAmount,
+                timestamp = Runtime.Time
+            };
+
             _claims.Set<Address, EnergyAction>(stakeAddress, action);
 
             Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = stakeToken.Symbol, value = unclaimedAmount});
@@ -400,7 +400,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             BigInteger stake = 0;
 
             if (_stakes.ContainsKey(address))
-                stake = _stakes.Get<Address, EnergyAction>(address).amount;
+                stake = _stakes.Get<Address, EnergyAction>(address).totalAmount;
 
             return stake;
         }
@@ -508,18 +508,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             return UnitConversion.ConvertDecimals(stakeAmount, Nexus.StakingTokenDecimals, Nexus.FuelTokenDecimals) / BaseEnergyRatioDivisor;
         }
 
-        private BigInteger CalculateRewardsWithHalving(BigInteger stake, Timestamp startTime, Timestamp endTime)
+        private BigInteger CalculateRewardsWithHalving(BigInteger totalStake, BigInteger unclaimedPartials, Timestamp startTime, Timestamp endTime)
         {
             if (genesisTimestamp == 0)
             {
                 var genesisBlock = Runtime.Nexus.RootChain.FindBlockByHeight(1);
                 if (genesisBlock == null)   //special case for genesis block's creation
-                    return StakeToFuel(stake);
+                    return StakeToFuel(totalStake);
 
                 genesisTimestamp = genesisBlock.Timestamp;
             }
            
-            if (StakeToFuel(stake) <= 0)
+            if (StakeToFuel(totalStake + unclaimedPartials) <= 0)
                 return 0;
 
             DateTime genesisDate = genesisTimestamp;
@@ -530,12 +530,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             uint halvingAmount = 1;
             var currentDate = startDate;
             var nextHalvingDate = genesisDate.AddYears(2);
+            var partialRewardsFlag = true;
 
             while (currentDate <= endDate)
             {
                 if (startDate < nextHalvingDate)
                 {
                     var daysInCurrentHalving = 0;
+
+                    if (partialRewardsFlag)
+                    {
+                        partialRewardsFlag = false;
+                        reward += StakeToFuel(unclaimedPartials) / halvingAmount;
+                    }
+
                     if (endDate > nextHalvingDate)
                     {
                         daysInCurrentHalving = (nextHalvingDate - currentDate).Days;
@@ -545,13 +553,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         daysInCurrentHalving = (endDate - currentDate).Days;
 
-                        if (currentDate == startDate && daysInCurrentHalving == 0)
-                            daysInCurrentHalving = 1;
-
-                        currentDate = endDate.AddDays(1);   //to force the while to break
+                        currentDate = endDate.AddDays(1);   //to force the while to break on next condition evaluation
                     }
 
-                    reward += (StakeToFuel(stake) / halvingAmount) * daysInCurrentHalving;
+                    reward += StakeToFuel(totalStake) * daysInCurrentHalving / halvingAmount ;
                 }
 
                 nextHalvingDate = nextHalvingDate.AddYears(2);
@@ -561,5 +566,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return reward;
         }
 
+        private EnergyAction GetLastAction(Address address)
+        {
+            var lastClaim = _claims.Get<Address, EnergyAction>(address);
+            var lastStake = _stakes.Get<Address, EnergyAction>(address);
+
+            return lastClaim.timestamp > lastStake.timestamp ? lastClaim : lastStake;
+        }
     }
 }
