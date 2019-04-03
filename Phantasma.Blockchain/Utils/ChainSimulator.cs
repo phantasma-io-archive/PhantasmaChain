@@ -90,11 +90,15 @@ namespace Phantasma.Blockchain.Utils
 
             BeginBlock();
             GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 999);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
             GenerateSideChainSettlement(_owner, Nexus.RootChain, appsChain, blockTx.Hash);
+            GenerateSideChainSettlement(_owner, Nexus.RootChain, nachoChain, blockTx.Hash);
+            EndBlock();
+
+            BeginBlock();
             GenerateChain(_owner, Nexus.RootChain, "dex");
             GenerateChain(_owner, Nexus.RootChain, "market");
             EndBlock();
@@ -321,11 +325,11 @@ namespace Phantasma.Blockchain.Utils
                                 }
                             }
 
-                            Logger.Message($"End block #{step}: {block.Hash}");
+                            Logger.Message($"End block #{step} @ {chain.Name} chain: {block.Hash}");
                         }
                         else
                         {
-                            throw new Exception($"add block in {chain.Name} failed");
+                            throw new Exception($"add block @ {chain.Name} failed");
                         }
                     }
                 }
