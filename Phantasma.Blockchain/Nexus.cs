@@ -564,6 +564,7 @@ namespace Phantasma.Blockchain
                 // SideChainCreateTx(RootChain, owner, "market"), TODO
                 SideChainCreateTx(RootChain, owner, "apps"),
                 SideChainCreateTx(RootChain, owner, "energy"),
+                SideChainCreateTx(RootChain, owner, "nacho"),
 
                 TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
                 TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
