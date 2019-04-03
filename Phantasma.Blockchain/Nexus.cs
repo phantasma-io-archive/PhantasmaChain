@@ -269,6 +269,7 @@ namespace Phantasma.Blockchain
                 case "dex": contract = new ExchangeContract(); break;
                 case "market": contract = new MarketContract(); break;
                 case "energy": contract = new EnergyContract(); break;
+                case "nacho": contract = new NachoContract(); break;
                 default:
                     {
                         var sb = new ScriptBuilder();
