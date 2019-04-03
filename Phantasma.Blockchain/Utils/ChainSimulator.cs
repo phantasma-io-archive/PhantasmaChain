@@ -82,9 +82,15 @@ namespace Phantasma.Blockchain.Utils
                 throw new Exception("Funds missing oops");
             }
 
+            var nachoAddress = Address.FromText("PGasVpbFYdu7qERihCsR22nTDQp1JwVAjfuJ38T8NtrCB");
+            var nachoFuel = UnitConversion.ToBigInteger(5, Nexus.FuelTokenDecimals);
+            var nachoChain = Nexus.FindChainByName("nacho");
+
             var appsChain = Nexus.FindChainByName("apps");
+
             BeginBlock();
             GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -100,7 +106,6 @@ namespace Phantasma.Blockchain.Utils
             GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, "LUCHA", "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, "ITEM", "Nachomen Item", 0, 0, TokenFlags.Transferable);
-            GenerateTransfer(_owner, Address.FromText("PGasVpbFYdu7qERihCsR22nTDQp1JwVAjfuJ38T8NtrCB"), Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(2, Nexus.FuelTokenDecimals));
             EndBlock();
 
             var market = Nexus.FindChainByName("market");
