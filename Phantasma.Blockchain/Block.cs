@@ -6,12 +6,11 @@ using Phantasma.Numerics;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.IO;
-using System;
 using Phantasma.Core;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Block
+    public sealed class Block : ISerializable
     {
         public static readonly BigInteger InitialDifficulty = 127;
         public static readonly float IdealBlockTime = 5;
@@ -35,6 +34,12 @@ namespace Phantasma.Blockchain
 
         // stores the results of invocations
         private Dictionary<Hash, byte[]> _resultMap = new Dictionary<Hash, byte[]>();
+
+        // required for unserialization
+        public Block()
+        {
+
+        }
 
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
@@ -103,6 +108,11 @@ namespace Phantasma.Blockchain
         internal void UpdateHash(byte[] payload)
         {
             this.Payload = payload;
+            UpdateHash();
+        }
+
+        internal void UpdateHash()
+        {
             var data = ToByteArray();
             var hashBytes = CryptoExtensions.SHA256(data);
             this.Hash = new Hash(hashBytes);
@@ -143,7 +153,8 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void Serialize(BinaryWriter writer) {
+        internal void Serialize(BinaryWriter writer)
+        {
             writer.Write((uint)Height);
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
@@ -159,7 +170,7 @@ namespace Phantasma.Blockchain
                 {
                     evt.Serialize(writer);
                 }
-                int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length: -1;
+                int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length : -1;
                 writer.Write((short)resultLen);
                 if (resultLen > 0)
                 {
@@ -181,18 +192,38 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public static Block Unserialize(BinaryReader reader) {
-            var height = reader.ReadUInt32();
-            var timestamp = new Timestamp(reader.ReadUInt32());
-            var prevHash = reader.ReadHash();
-            var chainAddress = reader.ReadAddress();
+        public static Block Unserialize(BinaryReader reader)
+        {
+            var block = new Block();
+            block.UnserializeData(reader);
+            return block;
+        }
+
+        internal void SetResultForHash(Hash hash, byte[] result)
+        {
+            Throw.IfNull(result, nameof(result));
+            Throw.If(result.Length > 32 * 1024, "transaction result is too large");
+            _resultMap[hash] = result;
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            Serialize(writer);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this.Height = reader.ReadUInt32();
+            this.Timestamp = new Timestamp(reader.ReadUInt32());
+            this.PreviousHash = reader.ReadHash();
+            this.ChainAddress = reader.ReadAddress();
 
             var hashCount = reader.ReadUInt16();
             var hashes = new List<Hash>();
 
-            var eventMap = new Dictionary<Hash, List<Event>>();
-            var resultMap = new Dictionary<Hash, byte[]>();
-            for (int j=0; j<hashCount; j++)
+            _eventMap = new Dictionary<Hash, List<Event>>();
+            _resultMap = new Dictionary<Hash, byte[]>();
+            for (int j = 0; j < hashCount; j++)
             {
                 var hash = reader.ReadHash();
                 hashes.Add(hash);
@@ -204,35 +235,32 @@ namespace Phantasma.Blockchain
                     evts.Add(Event.Unserialize(reader));
                 }
 
-                eventMap[hash] = evts;
+                _eventMap[hash] = evts;
 
                 var resultLen = reader.ReadInt16();
                 if (resultLen >= 0)
                 {
                     if (resultLen == 0)
                     {
-                        resultMap[hash] = new byte[0];
+                        _resultMap[hash] = new byte[0];
                     }
                     else
                     {
-                        resultMap[hash] = reader.ReadByteArray();
+                        _resultMap[hash] = reader.ReadByteArray();
                     }
                 }
             }
 
-            var payLoad = reader.ReadByteArray();
+            this.Payload = reader.ReadByteArray();
 
-            var block = new Block(height, chainAddress, timestamp, hashes, prevHash, payLoad);
-            block._eventMap = eventMap;
-            block._resultMap = resultMap;
-            return block;
-        }
+            _transactionHashes = new List<Hash>();
+            foreach (var hash in hashes)
+            {
+                _transactionHashes.Add(hash);
+            }
 
-        internal void SetResultForHash(Hash hash, byte[] result)
-        {
-            Throw.IfNull(result, nameof(result));
-            Throw.If(result.Length > 32 * 1024, "transaction result is too large");
-            _resultMap[hash] = result;
+
+            this.UpdateHash();
         }
         #endregion
     }

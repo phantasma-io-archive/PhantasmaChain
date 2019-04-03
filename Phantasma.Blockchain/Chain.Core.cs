@@ -109,10 +109,10 @@ namespace Phantasma.Blockchain
             this.Address = new Address(hash);
 
             // init stores
-            _transactions = new KeyValueStore<Transaction>(this.Address, "txs", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _blocks = new KeyValueStore<Block>(this.Address, "blocks", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk", KeyStoreDataSize.Small, nexus.CacheSize);
-            _epochMap = new KeyValueStore<Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium, nexus.CacheSize);
+            _transactions = new KeyValueStore<Transaction>(this.Address, "txs", KeyStoreDataSize.Medium);
+            _blocks = new KeyValueStore<Block>(this.Address, "blocks", KeyStoreDataSize.Medium);
+            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk", KeyStoreDataSize.Small);
+            _epochMap = new KeyValueStore<Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium);
 
             foreach (var contract in contracts)
             {
@@ -131,14 +131,7 @@ namespace Phantasma.Blockchain
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
 
-            if (nexus.CacheSize == -1)
-            {
-                this.Storage = new MemoryStorageContext();
-            }
-            else
-            {
-                this.Storage = new DiskStorageContext(this.Address, "data", KeyStoreDataSize.Medium);
-            }
+            this.Storage = new MemoryStorageContext();
 
             this.Log = Logger.Init(log);
 

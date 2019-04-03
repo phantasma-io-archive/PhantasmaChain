@@ -45,8 +45,6 @@ namespace Phantasma.Blockchain
 
         public IEnumerable<Token> Tokens => _tokens.Values;
 
-        public readonly int CacheSize;
-
         public Address GenesisAddress { get; private set; }
 
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
@@ -56,11 +54,9 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, Address genesisAddress, int cacheSize, Logger logger = null)
+        public Nexus(string name, Address genesisAddress, Logger logger = null)
         {
             GenesisAddress = genesisAddress;
-
-            this.CacheSize = cacheSize;
 
             _logger = logger;
             Name = name;

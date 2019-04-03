@@ -14,13 +14,13 @@ using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Transaction
+    public sealed class Transaction : ISerializable
     {
-        public Timestamp Expiration { get; }
-        public byte[] Script { get; }
+        public Timestamp Expiration { get; private set; }
+        public byte[] Script { get; private set; }
 
-        public string NexusName { get; }
-        public string ChainName { get; }
+        public string NexusName { get; private set; }
+        public string ChainName { get; private set; }
 
         public Signature[] Signatures { get; private set; }
         public Hash Hash { get; private set; }
@@ -38,29 +38,9 @@ namespace Phantasma.Blockchain
 
         public static Transaction Unserialize(BinaryReader reader)
         {
-            var nexusName = reader.ReadVarString();
-            var chainName = reader.ReadVarString();
-            var script = reader.ReadByteArray();
-            var expiration = reader.ReadUInt32();
-
-            Signature[] signatures;
-
-            // check if we have some signatures attached
-            try
-            {
-                var signatureCount = (int)reader.ReadVarInt();
-                signatures = new Signature[signatureCount];
-                for (int i = 0; i < signatureCount; i++)
-                {
-                    signatures[i] = reader.ReadSignature();
-                }
-            }
-            catch
-            {
-                signatures = new Signature[0];
-            }
-
-            return new Transaction(nexusName, chainName, script, new Timestamp(expiration), signatures);
+            var tx = new Transaction();
+            tx.UnserializeData(reader);
+            return tx;
         }
 
         public void Serialize(BinaryWriter writer, bool withSignature)
@@ -108,7 +88,7 @@ namespace Phantasma.Blockchain
             var cost = runtime.UsedGas;
 
             // fee distribution TODO
-//            if (chain.NativeTokenAddress != null && cost > 0)
+            //            if (chain.NativeTokenAddress != null && cost > 0)
             {
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
@@ -117,7 +97,7 @@ namespace Phantasma.Blockchain
             {
                 onNotify(this.Hash, evt);
             }
-            
+
             if (runtime.Stack.Count > 0)
             {
                 var obj = runtime.Stack.Pop();
@@ -125,6 +105,12 @@ namespace Phantasma.Blockchain
             }
 
             return true;
+        }
+
+        // required for deserialization
+        public Transaction()
+        {
+
         }
 
         public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, IEnumerable<Signature> signatures = null)
@@ -224,7 +210,7 @@ namespace Phantasma.Blockchain
             {
                 return false;
             }
-           
+
             /*if (chain.NativeTokenAddress != null)
             {
                 if (this.Fee < cost)
@@ -248,6 +234,36 @@ namespace Phantasma.Blockchain
             var data = this.ToByteArray(false);
             var hash = CryptoExtensions.SHA256(data);
             this.Hash = new Hash(hash);
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            this.Serialize(writer, true);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this.NexusName = reader.ReadVarString();
+            this.ChainName = reader.ReadVarString();
+            this.Script = reader.ReadByteArray();
+            this.Expiration = reader.ReadUInt32();
+
+            // check if we have some signatures attached
+            try
+            {
+                var signatureCount = (int)reader.ReadVarInt();
+                this.Signatures = new Signature[signatureCount];
+                for (int i = 0; i < signatureCount; i++)
+                {
+                    Signatures[i] = reader.ReadSignature();
+                }
+            }
+            catch
+            {
+                this.Signatures = new Signature[0];
+            }
+
+            this.UpdateHash();
         }
     }
 }

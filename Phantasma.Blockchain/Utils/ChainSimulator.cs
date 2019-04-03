@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Phantasma.Blockchain.Contracts.Native;
@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain.Utils
             this.Logger = logger != null ? logger : new DummyLogger();
 
             _owner = ownerKey;
-            this.Nexus = new Nexus("simnet", ownerKey.Address, -1);
+            this.Nexus = new Nexus("simnet", ownerKey.Address);
 
             CurrentTime = new DateTime(2018, 8, 26);
 
@@ -74,9 +74,17 @@ namespace Phantasma.Blockchain.Utils
             _rnd = new System.Random(seed);
             _keys.Add(_owner);
 
+            var oneFuel = UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals);
+            var localBalance = Nexus.RootChain.GetTokenBalance(Nexus.FuelToken, _owner.Address);
+
+            if (localBalance < oneFuel)
+            {
+                throw new Exception("Funds missing oops");
+            }
+
             var appsChain = Nexus.FindChainByName("apps");
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, UnitConversion.ToBigInteger(100, Nexus.FuelTokenDecimals), 0);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -92,7 +100,7 @@ namespace Phantasma.Blockchain.Utils
             GenerateToken(_owner, "NACHO", "Nachomen", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, "LUCHA", "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, "ITEM", "Nachomen Item", 0, 0, TokenFlags.Transferable);
-            GenerateTransfer(_owner, Address.FromText("PGasVpbFYdu7qERihCsR22nTDQp1JwVAjfuJ38T8NtrCB"), Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(200, Nexus.FuelTokenDecimals));
+            GenerateTransfer(_owner, Address.FromText("PGasVpbFYdu7qERihCsR22nTDQp1JwVAjfuJ38T8NtrCB"), Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(2, Nexus.FuelTokenDecimals));
             EndBlock();
 
             var market = Nexus.FindChainByName("market");
@@ -135,7 +143,7 @@ namespace Phantasma.Blockchain.Utils
                     {
                         nftSales.Add(new KeyValuePair<KeyPair, BigInteger>(key, ID));
                         // send some gas to the sellers
-                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(200, Nexus.FuelTokenDecimals));
+                        GenerateTransfer(_owner, key.Address, Nexus.RootChain, Nexus.FuelToken, UnitConversion.ToBigInteger(0.01m, Nexus.FuelTokenDecimals));
                     }
                 }
             }
@@ -204,6 +212,18 @@ namespace Phantasma.Blockchain.Utils
 
             step++;
             Logger.Message($"Begin block #{step}");
+        }
+
+        public void CancelBlock()
+        {
+            if (!blockOpen)
+            {
+                throw new Exception("Simulator block not started");
+            }
+
+            blockOpen = false;
+            Logger.Message($"Cancel block #{step}");
+            step--;
         }
 
         public IEnumerable<Block> EndBlock(Mempool mempool = null)
@@ -292,7 +312,7 @@ namespace Phantasma.Blockchain.Utils
                                     };
 
                                     _pendingBlocks.Add(pendingBlock);
-                                    Logger.Message($"...Sending {entry.sourceChain.Name}=>{entry.destChain.Name}: {block.Hash}");
+                                    Logger.Debug($"...Sending {entry.sourceChain.Name}=>{entry.destChain.Name}: {block.Hash}");
                                 }
                             }
 
@@ -487,7 +507,7 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateNftSale(KeyPair source, Chain chain, Token token, BigInteger tokenId, BigInteger price)
         {
-            var endDate = new Timestamp(Timestamp.Now + TimeSpan.FromDays(5));
+            Timestamp endDate = this.CurrentTime + TimeSpan.FromDays(5);
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("market", "SellToken", source.Address, token.Symbol, Nexus.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
@@ -541,15 +561,21 @@ namespace Phantasma.Blockchain.Utils
         private int step;
         private HashSet<Address> usedAddresses = new HashSet<Address>();
 
-
         public void GenerateRandomBlock(Mempool mempool = null)
         {
             //Console.WriteLine("begin block #" + Nexus.RootChain.BlockHeight);
             BeginBlock();
 
             int transferCount = 1 + _rnd.Next() % 10;
-            while (transactions.Count < transferCount)
+            int tries = 0;
+            while (tries < 10000)
             {
+                if (transactions.Count >= transferCount)
+                {
+                    break;
+                }
+
+                tries++;
                 var source = _keys[_rnd.Next() % _keys.Count];
 
                 if (usedAddresses.Contains(source.Address))
@@ -567,8 +593,8 @@ namespace Phantasma.Blockchain.Utils
                 switch (_rnd.Next() % 4)
                 {
                     case 1: token = Nexus.StableToken; break;
-                    case 2: token = Nexus.StakingToken; break;
-                    default: token = Nexus.FuelToken; break;
+                    //case 2: token = Nexus.FuelToken; break;
+                    default: token = Nexus.StakingToken; break;
                 }
 
                 switch (_rnd.Next() % 7)
@@ -601,6 +627,7 @@ namespace Phantasma.Blockchain.Utils
 
                             if (tokenBalance > expectedTotal && fuelBalance > fee + sideFee)
                             {
+                                Logger.Debug($"Rnd.SideChainSend: {total} {token.Symbol} from {source.Address}");
                                 GenerateSideChainSend(source, token, sourceChain, source.Address, targetChain, total, sideFee);
                             }
                             break;
@@ -640,6 +667,7 @@ namespace Phantasma.Blockchain.Utils
 
                             if (balance > total + fee)
                             {
+                                Logger.Debug($"Rnd.StableClaim: {total} {token.Symbol} from {source.Address}");
                                 GenerateStableClaim(source, sourceChain, total);
                             }
 
@@ -660,6 +688,7 @@ namespace Phantasma.Blockchain.Utils
                             var total = tokenBalance / 10;
                             if (total >= rate && fuelBalance > fee)
                             {
+                                Logger.Debug($"Rnd.StableRedeem: {total} {token.Symbol} from {source.Address}");
                                 GenerateStableRedeem(source, sourceChain, total);
                             }
 
@@ -701,6 +730,7 @@ namespace Phantasma.Blockchain.Utils
                                     var lookup = Nexus.LookUpName(randomName);
                                     if (lookup == Address.Null)
                                     {
+                                        Logger.Debug($"Rnd.GenerateAccount: {source.Address} => {randomName}");
                                         GenerateAccountRegistration(source, randomName);
                                     }
                                 }
@@ -715,7 +745,7 @@ namespace Phantasma.Blockchain.Utils
                             var temp = _rnd.Next() % 5;
                             Address targetAddress;
 
-                            if (_keys.Count < 2 || temp == 0)
+                            if ((_keys.Count < 2 || temp == 0) && _keys.Count < 2000)
                             {
                                 var key = KeyPair.Generate();
                                 _keys.Add(key);
@@ -741,8 +771,8 @@ namespace Phantasma.Blockchain.Utils
 
                                 if (tokenBalance > expectedTotal && fuelBalance > fee)
                                 {
+                                    Logger.Debug($"Rnd.Transfer: {total} {token.Symbol} from {source.Address} to {targetAddress}");
                                     GenerateTransfer(source, targetAddress, sourceChain, token, total);
-                                    //Console.WriteLine(source.Address + " => " + targetAddress + " " + TokenUtils.ToDecimal( total, token.Decimals) + " " + token.Symbol);
                                 }
                             }
                             break;
@@ -750,7 +780,55 @@ namespace Phantasma.Blockchain.Utils
                 }
             }
 
-            EndBlock(mempool);
+            if (transactions.Count > 0)
+            {
+                EndBlock(mempool);
+            }
+            else{
+                CancelBlock();
+            }
+        }
+
+        public void TimeSkipYears(int years)
+        {
+            CurrentTime = CurrentTime.AddYears(years);
+
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+        }
+
+        public void TimeSkipDays(double days, bool roundUp = false)
+        {
+            CurrentTime = CurrentTime.AddDays(days);
+
+            if (roundUp)
+            {
+                CurrentTime = CurrentTime.AddDays(1);
+                CurrentTime = new DateTime(CurrentTime.Year, CurrentTime.Month, CurrentTime.Day);
+
+                var timestamp = (Timestamp)CurrentTime;
+                var datetime = (DateTime)timestamp;
+                if (datetime.Hour == 23)
+                    datetime = datetime.AddHours(2);
+
+                CurrentTime = new DateTime(datetime.Year, datetime.Month, datetime.Day, datetime.Hour, 0, 0);   //to set the time of day component to 0
+            }
+
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+
         }
     }
 
