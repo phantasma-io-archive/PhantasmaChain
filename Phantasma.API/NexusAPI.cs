@@ -318,7 +318,7 @@ namespace Phantasma.API
         private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockForTransaction(tx);
-            var chain = Nexus.FindChainForBlock(block.Hash);
+            var chain = Nexus.FindChainByAddress(block.ChainAddress);
 
             var result = new TransactionResult
             {
