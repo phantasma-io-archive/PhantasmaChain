@@ -15,6 +15,13 @@ namespace Phantasma.Numerics
     {
         private int _sign;
         private uint[] _data;
+
+        private uint[] Data
+        {
+            get => _data ?? (_data = new uint[0]);
+            set => _data = value;
+        }
+
         private const int _Base = sizeof(uint) * 8;    //number of bits required for shift operations
 
         private static uint _MaxVal => (uint)Math.Pow(2, _Base) - 1;
@@ -22,7 +29,7 @@ namespace Phantasma.Numerics
         public static readonly BigInteger Zero = new BigInteger(0L);
 
         public static readonly BigInteger One = new BigInteger(1L);
-        private int dataLength => _data.Length;
+        private int dataLength => _data?.Length ?? 0;
 
         public BigInteger(BigInteger other)
         {
@@ -137,7 +144,7 @@ namespace Phantasma.Numerics
 
             if (n <= 0)
             {
-                _data = new uint[1];
+                _data = new uint[] { 0 };
                 _sign = 0;
             }
             else
@@ -149,7 +156,7 @@ namespace Phantasma.Numerics
 
         public BigInteger(string value, int radix)
         {
-            value = value.ToUpper().Trim().Replace("\r","").Replace(" ","").Replace("\n","");
+            value = value.ToUpper().Trim().Replace("\r", "").Replace(" ", "").Replace("\n", "");
 
             var BigInteger = new BigInteger(0);
             var bi = new BigInteger(1L);
@@ -157,7 +164,7 @@ namespace Phantasma.Numerics
             if (value == "0")
             {
                 _sign = 0;
-                _data = new uint[1] { 0 };
+                _data = new uint[] { 0 };
                 return;
             }
 
@@ -178,7 +185,7 @@ namespace Phantasma.Numerics
             }
 
             _data = null;
-            InitFromArray(BigInteger._data);
+            InitFromArray(BigInteger.Data);
         }
 
         public static BigInteger FromHex(string p0)
@@ -193,10 +200,10 @@ namespace Phantasma.Numerics
 
         public static explicit operator int(BigInteger value)
         {
-            if (value._data.Length == 0)
+            if (value.dataLength == 0)
                 return 0;
 
-            int result = (int)value._data[0];
+            int result = (int)value.Data[0];
 
             if (value._sign < 0)
                 result *= -1;
@@ -206,12 +213,15 @@ namespace Phantasma.Numerics
 
         public static explicit operator long(BigInteger value)
         {
+            if (value.dataLength == 0)
+                return 0;
+
             long result = 0;
 
-            result = value._data[0];
+            result = value.Data[0];
 
-            if(value.dataLength > 1)
-                result |= (long)((ulong)value._data[1] << 32);
+            if (value.dataLength > 1)
+                result |= (long)((ulong)value.Data[1] << 32);
 
             if (value._sign < 0)
                 result *= -1;
@@ -231,7 +241,7 @@ namespace Phantasma.Numerics
 
         public static BigInteger Abs(BigInteger x)
         {
-            return new BigInteger(x._data, 1);
+            return new BigInteger(x.Data, 1);
         }
 
         public override string ToString()
@@ -255,7 +265,7 @@ namespace Phantasma.Numerics
             var largeInteger2 = new BigInteger();
             var largeInteger3 = new BigInteger();
             var bi = new BigInteger(radix);
-            if (largeInteger._data.Length == 0 || (largeInteger._data.Length == 1 && largeInteger._data[0] == 0))
+            if (largeInteger._data == null || largeInteger._data.Length == 0 || (largeInteger._data.Length == 1 && largeInteger._data[0] == 0))
             {
                 text2 = "0";
             }
@@ -283,7 +293,7 @@ namespace Phantasma.Numerics
         {
             string result = "";
 
-            foreach (var digit in _data)
+            foreach (var digit in Data)
             {
                 result += digit.ToString("x8");
             }
@@ -295,6 +305,9 @@ namespace Phantasma.Numerics
 
         private static uint[] Add(uint[] X, uint[] Y)
         {
+            X = X ?? new uint[0];
+            Y = Y ?? new uint[0];
+
             var longest = Math.Max(X.Length, Y.Length);
             var r = new uint[longest + 1];
 
@@ -315,6 +328,9 @@ namespace Phantasma.Numerics
 
         private static uint[] Subtract(uint[] X, uint[] Y)
         {
+            X = X ?? new uint[0];
+            Y = Y ?? new uint[0];
+
             var longest = X.Length > Y.Length ? X.Length : Y.Length;
             var r = new uint[longest];
 
@@ -334,6 +350,9 @@ namespace Phantasma.Numerics
 
         private static uint[] Multiply(uint[] X, uint[] Y)
         {
+            X = X ?? new uint[0];
+            Y = Y ?? new uint[0];
+
             uint[] output = new uint[X.Length + Y.Length + 1];
 
             for (int i = 0; i < X.Length; i++)
@@ -347,7 +366,7 @@ namespace Phantasma.Numerics
                 for (int j = 0; j < Y.Length; j++, k++)
                 {
                     ulong tmp = (ulong)(X[i] * (long)Y[j] + output[k] + (long)carry);
-                    output[k] = (uint) (tmp);
+                    output[k] = (uint)(tmp);
                     carry = tmp >> 32;
                 }
 
@@ -365,7 +384,7 @@ namespace Phantasma.Numerics
             //allowing the large int operations to deal only in the scope of unsigned numbers
             if (a._sign < 0 && b._sign < 0)
             {
-                result = new BigInteger(Add(a._data, b._data));
+                result = new BigInteger(Add(a.Data, b.Data));
                 result._sign = result == 0 ? 0 : -1;
             }
             else
@@ -373,12 +392,12 @@ namespace Phantasma.Numerics
             {
                 if (Abs(a) < b)
                 {
-                    result = new BigInteger(Subtract(b._data, a._data));
+                    result = new BigInteger(Subtract(b.Data, a.Data));
                     result._sign = result == 0 ? 0 : 1;
                 }
                 else
                 {
-                    result = new BigInteger(Subtract(a._data, b._data));
+                    result = new BigInteger(Subtract(a.Data, b.Data));
                     result._sign = result == 0 ? 0 : -1;
                 }
             }
@@ -386,18 +405,18 @@ namespace Phantasma.Numerics
             {
                 if (a < Abs(b))
                 {
-                    result = new BigInteger(Subtract(b._data, a._data));
+                    result = new BigInteger(Subtract(b.Data, a.Data));
                     result._sign = result == 0 ? 0 : -1;
                 }
                 else
                 {
-                    result = new BigInteger(Subtract(a._data, b._data));
+                    result = new BigInteger(Subtract(a.Data, b.Data));
                     result._sign = result == 0 ? 0 : 1;
                 }
             }
             else
             {
-                result = new BigInteger(Add(b._data, a._data));
+                result = new BigInteger(Add(b.Data, a.Data));
                 result._sign = result == 0 ? 0 : 1;
             }
 
@@ -414,36 +433,36 @@ namespace Phantasma.Numerics
             {
                 if (Abs(a) < Abs(b))
                 {
-                    result = new BigInteger(Subtract(b._data, a._data));
+                    result = new BigInteger(Subtract(b.Data, a.Data));
                     result._sign = result == 0 ? 0 : 1;
                 }
                 else
                 {
-                    result = new BigInteger(Subtract(a._data, b._data));
+                    result = new BigInteger(Subtract(a.Data, b.Data));
                     result._sign = result == 0 ? 0 : -1;
                 }
             }
             else
             if (a._sign < 0)
             {
-                result = new BigInteger(Add(a._data, b._data));
+                result = new BigInteger(Add(a.Data, b.Data));
                 result._sign = result == 0 ? 0 : -1;
             }
             else if (b._sign < 0)
             {
-                result = new BigInteger(Add(a._data, b._data));
+                result = new BigInteger(Add(a.Data, b.Data));
                 result._sign = result == 0 ? 0 : 1;
             }
             else
             {
                 if (a < b)
                 {
-                    result = new BigInteger(Subtract(b._data, a._data));
+                    result = new BigInteger(Subtract(b.Data, a.Data));
                     result._sign = result == 0 ? 0 : -1;
                 }
                 else
                 {
-                    result = new BigInteger(Subtract(a._data, b._data));
+                    result = new BigInteger(Subtract(a.Data, b.Data));
                     result._sign = result == 0 ? 0 : 1;
                 }
             }
@@ -453,7 +472,7 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator *(BigInteger a, BigInteger b)
         {
-            var result = new BigInteger(Multiply(a._data, b._data))
+            var result = new BigInteger(Multiply(a.Data, b.Data))
             {
                 _sign = a._sign * b._sign
             };
@@ -484,19 +503,19 @@ namespace Phantasma.Numerics
                 return;
             }
 
-            if (a._data.Length < b._data.Length)
+            if (a.Data.Length < b.Data.Length)
             {
                 quot = new BigInteger(0);
                 rem = new BigInteger(a);
                 return;
             }
 
-            if (b._data.Length == 1)
+            if (b.Data.Length == 1)
                 SingleDigitDivMod(a, b, out quot, out rem);
             else
                 MultiDigitDivMod(a, b, out quot, out rem);
 
-            
+
             rem._sign = a._sign;
             rem = a >= 0 ? rem : b + rem;
 
@@ -537,7 +556,7 @@ namespace Phantasma.Numerics
             }
 
             uint[] quotArray = new uint[quotIter];
-            for(int i = quotArray.Length - 1, j = 0; i >= 0; i--, j++)
+            for (int i = quotArray.Length - 1, j = 0; i >= 0; i--, j++)
             {
                 quotArray[j] = tmpQuotArray[i];
             }
@@ -633,9 +652,13 @@ namespace Phantasma.Numerics
         public static BigInteger operator >>(BigInteger n, int bits)
         {
             bits = bits < 0 ? -bits : bits;
+
+            if (n._data == null)
+                n._data = new uint[0];
+
             ShiftRight(ref n._data, bits);
 
-            if (n._data[0] == 0 && n.dataLength == 1)
+            if (n.Data[0] == 0 && n.dataLength == 1)
                 n._sign = 0;
 
             return n;
@@ -656,7 +679,7 @@ namespace Phantasma.Numerics
 
             int newLength = buffer.Length - shrinkage - extraShrinkage;
 
-            if(newLength <= 0)
+            if (newLength <= 0)
             {
                 buffer = new uint[1];
                 return;
@@ -670,12 +693,12 @@ namespace Phantasma.Numerics
             if (extraShrinkage == 1)
                 newBuffer[newLength - 1] = buffer[length - 1] << quickShiftAmount;
 
-            for (int i = length - (1 + extraShrinkage) , j = newLength - 1; j >= 1; i--, j--)
+            for (int i = length - (1 + extraShrinkage), j = newLength - 1; j >= 1; i--, j--)
             {
-                ulong upshiftedVal = (ulong) buffer[i] << quickShiftAmount;
+                ulong upshiftedVal = (ulong)buffer[i] << quickShiftAmount;
 
                 uint shiftMsd = (uint)(upshiftedVal >> 32);
-                uint shiftLsd = (uint) upshiftedVal;
+                uint shiftLsd = (uint)upshiftedVal;
 
                 newBuffer[j] |= shiftMsd;
                 newBuffer[j - 1] |= shiftLsd;
@@ -690,6 +713,8 @@ namespace Phantasma.Numerics
         public static BigInteger operator <<(BigInteger n, int bits)
         {
             bits = bits < 0 ? -bits : bits;
+            if (n._data == null)
+                n._data = new uint[0];
             ShiftLeft(ref n._data, bits);
             return n;
         }
@@ -703,8 +728,8 @@ namespace Phantasma.Numerics
 
             long msd = ((long)buffer[length - 1]) << quickShiftAmount;  //shifts the most significant digit
 
-            int extraDigit = (msd != (uint) msd) ? 1 : 0;  //if it goes above the uint range, we need to add
-                                                            //a new position for the new MSD
+            int extraDigit = (msd != (uint)msd) ? 1 : 0;  //if it goes above the uint range, we need to add
+                                                          //a new position for the new MSD
 
             int newLength = buffer.Length + amountOfZeros + extraDigit;
             uint[] newBuffer = new uint[newLength];
@@ -712,13 +737,13 @@ namespace Phantasma.Numerics
             for (int i = 0, j = amountOfZeros; i < length; i++, j++)
             {
                 ulong shiftedVal = ((ulong)buffer[i]) << quickShiftAmount;
-                
-                var shiftLsd = (uint) shiftedVal;
+
+                var shiftLsd = (uint)shiftedVal;
                 var shiftMsd = (uint)(shiftedVal >> 32);
 
                 newBuffer[j] |= shiftLsd;
 
-                if(shiftMsd > 0)
+                if (shiftMsd > 0)
                     newBuffer[j + 1] |= shiftMsd;
             }
 
@@ -743,12 +768,12 @@ namespace Phantasma.Numerics
 
         public static bool operator ==(BigInteger a, BigInteger b)
         {
-            return a._data.Length == b._data.Length && a._sign == b._sign && a._data.SequenceEqual(b._data);
+            return a.Data.Length == b.Data.Length && a._sign == b._sign && a.Data.SequenceEqual(b.Data);
         }
 
         public static bool operator !=(BigInteger a, BigInteger b)
         {
-            return a._data.Length != b._data.Length || a._sign != b._sign || !a._data.SequenceEqual(b._data);
+            return a.Data.Length != b.Data.Length || a._sign != b._sign || !a.Data.SequenceEqual(b.Data);
         }
 
         private static bool LogicalCompare(BigInteger a, BigInteger b, bool op)
@@ -763,18 +788,18 @@ namespace Phantasma.Numerics
                 return !op;
             }
 
-            if (a._data.Length < b._data.Length)
+            if (a.Data.Length < b.Data.Length)
             {
                 return op;
             }
 
-            if (a._data.Length > b._data.Length)
+            if (a.Data.Length > b.Data.Length)
             {
                 return !op;
             }
 
-            var A = a._data;
-            var B = b._data;
+            var A = a.Data;
+            var B = b.Data;
             for (int i = A.Length - 1; i >= 0; i--)
             {
                 var x = A[i];
@@ -815,14 +840,14 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator ^(BigInteger a, BigInteger b)
         {
-            var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
+            var len = a.Data.Length > b.Data.Length ? a.Data.Length : b.Data.Length;
             var temp = new uint[len];
 
 
             for (int i = 0; i < len; i++)
             {
-                uint A = i < a._data.Length ? a._data[i] : 0;
-                uint B = i < b._data.Length ? b._data[i] : 0;
+                uint A = i < a.Data.Length ? a.Data[i] : 0;
+                uint B = i < b.Data.Length ? b.Data[i] : 0;
                 temp[i] = (A ^ B);
             }
 
@@ -831,14 +856,14 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator |(BigInteger a, BigInteger b)
         {
-            var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
+            var len = a.Data.Length > b.Data.Length ? a.Data.Length : b.Data.Length;
             var temp = new uint[len];
 
 
             for (int i = 0; i < len; i++)
             {
-                uint A = i < a._data.Length ? a._data[i] : 0;
-                uint B = i < b._data.Length ? b._data[i] : 0;
+                uint A = i < a.Data.Length ? a.Data[i] : 0;
+                uint B = i < b.Data.Length ? b.Data[i] : 0;
                 temp[i] = A | B;
             }
 
@@ -847,11 +872,11 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator ~(BigInteger a)
         {
-            var buffer = new uint[a._data.Length];
+            var buffer = new uint[a.Data.Length];
 
             for (int i = 0; i < buffer.Length; i++)
             {
-                buffer[i] = ~a._data[i];
+                buffer[i] = ~a.Data[i];
             }
 
             return new BigInteger(buffer);
@@ -859,14 +884,14 @@ namespace Phantasma.Numerics
 
         public static BigInteger operator &(BigInteger a, BigInteger b)
         {
-            var len = a._data.Length > b._data.Length ? a._data.Length : b._data.Length;
+            var len = a.Data.Length > b.Data.Length ? a.Data.Length : b.Data.Length;
             var temp = new uint[len];
 
 
             for (int i = 0; i < len; i++)
             {
-                uint A = i < a._data.Length ? a._data[i] : 0;
-                uint B = i < b._data.Length ? b._data[i] : 0;
+                uint A = i < a.Data.Length ? a.Data[i] : 0;
+                uint B = i < b.Data.Length ? b.Data[i] : 0;
                 temp[i] = A & B;
             }
 
@@ -875,12 +900,12 @@ namespace Phantasma.Numerics
 
         public bool Equals(BigInteger other)
         {
-            if (other._data.Length != _data.Length)
+            if (other.Data.Length != Data.Length)
             {
                 return false;
             }
 
-            return _data.SequenceEqual(other._data);
+            return Data.SequenceEqual(other.Data);
         }
 
         public int CompareTo(BigInteger other)
@@ -898,14 +923,14 @@ namespace Phantasma.Numerics
             return 1;
         }
 
-        public static BigInteger Pow(BigInteger a, BigInteger b)
+        public static BigInteger Pow(BigInteger powBase, BigInteger powExp)
         {
             var val = One;
             var i = Zero;
 
-            while (i < b)
+            while (i < powExp)
             {
-                val *= a;
+                val *= powBase;
                 i = i + One;
             }
             return val;
@@ -964,7 +989,7 @@ namespace Phantasma.Numerics
             int num = 0;
             BigInteger bi = modulus;
             BigInteger bigInteger = this;
-            while (bigInteger.dataLength > 1 || (bigInteger.dataLength == 1 && bigInteger._data[0] != 0))
+            while (bigInteger.dataLength > 1 || (bigInteger.dataLength == 1 && bigInteger.Data[0] != 0))
             {
                 BigInteger bigInteger2 = new BigInteger();
                 BigInteger bigInteger3 = new BigInteger();
@@ -974,10 +999,10 @@ namespace Phantasma.Numerics
                     array[0] = array[1];
                     array[1] = bigInteger4;
                 }
-                
+
                 DivideAndModulus(bi, bigInteger, out bigInteger2, out bigInteger3);
-                
-                
+
+
                 array2[0] = array2[1];
                 array3[0] = array3[1];
                 array2[1] = bigInteger2;
@@ -987,7 +1012,7 @@ namespace Phantasma.Numerics
                 num++;
             }
 
-            Throw.If(array3[0].dataLength > 1 || (array3[0].dataLength == 1 && array3[0]._data[0] != 1), "No inverse!");
+            Throw.If(array3[0].dataLength > 1 || (array3[0].dataLength == 1 && array3[0].Data[0] != 1), "No inverse!");
 
             BigInteger bigInteger5 = (array[0] - array[1] * array2[0]) % modulus;
             if (bigInteger5._sign < 0)
@@ -1038,19 +1063,19 @@ namespace Phantasma.Numerics
 
         public int GetBitLength()
         {
-            if (Object.Equals(this, null) || (_data.Length == 1 && _data[0] == 0) || _data.Length == 0)
+            if (Object.Equals(this, null) || (Data.Length == 1 && Data[0] == 0) || Data.Length == 0)
                 return 0;
 
-            var result = (_data.Length - 1) * 32;
+            var result = (Data.Length - 1) * 32;
 
-            result += (int) Math.Log(_data[_data.Length - 1], 2) + 1;
+            result += (int)Math.Log(Data[Data.Length - 1], 2) + 1;
 
             return result;
         }
 
         public uint[] ToUintArray()
         {
-            return (uint[])_data.Clone();
+            return (uint[])Data.Clone();
         }
 
 
@@ -1107,7 +1132,7 @@ public void SetBit(uint bitNum)
             bitLength = (((bitLength & 1) == 0) ? (bitLength >> 1) : ((bitLength >> 1) + 1));
             uint num2 = bitLength >> 5;
             byte b = (byte)(bitLength & 0x1F);
-            
+
             uint num3;
 
             if (b == 0)
@@ -1120,7 +1145,7 @@ public void SetBit(uint bitNum)
                 num2++;
             }
 
-            var sqrtArray = new uint[(int) num2];
+            var sqrtArray = new uint[(int)num2];
             for (int num4 = (int)(num2 - 1); num4 >= 0; num4--)
             {
                 while (num3 != 0)
@@ -1147,9 +1172,9 @@ public void SetBit(uint bitNum)
 
             bool applyTwosComplement = includeSignInArray && (_sign == -1);    //only apply two's complement if this number is negative
 
-            for (int i = 0, j = 0; i < _data.Length; i++, j += 4)
+            for (int i = 0, j = 0; i < Data.Length; i++, j += 4)
             {
-                byte[] bytes = BitConverter.GetBytes(_data[i]);
+                byte[] bytes = BitConverter.GetBytes(Data[i]);
                 for (int k = 0; k < 4; k++)
                 {
                     if (!applyTwosComplement && bytes[k] == 0)
@@ -1157,8 +1182,8 @@ public void SetBit(uint bitNum)
                     if (applyTwosComplement && j + k >= byteArraySize)
                         continue;
 
-                    if(applyTwosComplement)
-                        result[j + k] = (byte) (bytes[k] ^ 0xFF);
+                    if (applyTwosComplement)
+                        result[j + k] = (byte)(bytes[k] ^ 0xFF);
                     else
                         result[j + k] = bytes[k];
                 }
@@ -1167,7 +1192,7 @@ public void SetBit(uint bitNum)
             //this could be optimized if needed, but likely not worth it for now
             if (applyTwosComplement)
             {
-                
+
                 var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1.
 
                 result = tmp.ToByteArray(true);     //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to keep sign information while in byte[] format
@@ -1189,7 +1214,7 @@ public void SetBit(uint bitNum)
             }
 
             var tmp = (new BigInteger(buffer, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
-            
+
             buffer = tmp.ToByteArray(true); //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
             //but the twos complement logic won't get applied again given the bigint has positive sign.
 
@@ -1202,9 +1227,9 @@ public void SetBit(uint bitNum)
             long hashCode = -1521134295 * _sign;
 
             // Rotate by 3 bits and XOR the new value
-            for (var i = 0; i < _data.Length; i++)
+            for (var i = 0; i < Data.Length; i++)
             {
-                hashCode = (int)((hashCode << 3) | (hashCode >> (29)) ^ _data[i]);
+                hashCode = (int)((hashCode << 3) | (hashCode >> (29)) ^ Data[i]);
             }
 
             return (int)hashCode;
@@ -1214,7 +1239,7 @@ public void SetBit(uint bitNum)
         {
             if (obj is BigInteger temp)
             {
-                return temp._sign == _sign && temp._data.SequenceEqual(this._data);
+                return temp._sign == _sign && temp.Data.SequenceEqual(this.Data);
             }
 
             return false;

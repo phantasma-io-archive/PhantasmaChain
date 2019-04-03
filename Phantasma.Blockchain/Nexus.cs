@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Phantasma.Blockchain.Contracts;
@@ -10,16 +11,17 @@ using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus
+    public class Nexus : ISerializable
     {
-        public string Name { get; }
+        public string Name { get; private set; }
 
-        public Chain RootChain { get; }
+        public Chain RootChain { get; private set; }
 
         public Token FuelToken { get; private set; }
         public Token StakingToken { get; private set; }
@@ -43,8 +45,9 @@ namespace Phantasma.Blockchain
 
         public IEnumerable<Token> Tokens => _tokens.Values;
 
-        public readonly Address GenesisAddress;
-        public readonly Address StorageAddress;
+        public readonly int CacheSize;
+
+        public Address GenesisAddress { get; private set; }
 
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
@@ -53,17 +56,11 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, Address genesisAddress, Logger logger = null)
+        public Nexus(string name, Address genesisAddress, int cacheSize, Logger logger = null)
         {
             GenesisAddress = genesisAddress;
 
-            var temp = ByteArrayUtils.DupBytes(genesisAddress.PublicKey);
-            var str = "STORAGE";
-            for (int i=0; i<str.Length; i++)
-            {
-                temp[i] = (byte)str[i];
-            }
-            StorageAddress = new Address(temp);
+            this.CacheSize = cacheSize;
 
             _logger = logger;
             Name = name;
@@ -80,7 +77,7 @@ namespace Phantasma.Blockchain
                 new ExchangeContract(),
                 new MarketContract(),
                 new GasContract(),
-                new NachoContract(), // TODO remove later
+                new EnergyContract(),
             };
 
             RootChain = new Chain(this, "main", contracts, logger);
@@ -232,7 +229,7 @@ namespace Phantasma.Blockchain
 
         public int GetTotalTransactionCount()
         {
-            return Chains.Sum(x => x.TransactionCount);
+            return Chains.Sum(x => (int)x.TransactionCount);
         }
         #endregion
 
@@ -345,7 +342,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal Token CreateToken(Chain chain, Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -359,7 +356,7 @@ namespace Phantasma.Blockchain
                 return null;
             }
 
-            var token = new Token(chain, owner, symbol, name, maxSupply, decimals, flags);
+            var token = new Token(owner, symbol, name, maxSupply, decimals, flags);
 
             if (symbol == FuelTokenSymbol)
             {
@@ -471,29 +468,36 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
+        private Transaction TokenCreateTx(Chain chain, KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, bool useGas)
         {
             var sb = ScriptUtils.BeginScript();
 
-            if (symbol != FuelTokenSymbol)
+            if (useGas)
             {
                 sb.AllowGas(owner.Address, Address.Null, 1, 9999);
             }
 
             sb.CallContract(ScriptBuilderExtensions.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
 
-            if (symbol == FuelTokenSymbol)
-            {
-                sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, totalSupply);
-                sb.AllowGas(owner.Address, Address.Null, 1, 9999); // done here only because before fuel token does not exist yet!
-            }
-            else
             if (symbol == StakingTokenSymbol)
             {
                 sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             }
+            else
+            if (symbol == FuelTokenSymbol)
+            {
+                // requires staking token to be created previously
+                // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
+                sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
+                sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
+            }
 
-            var script = sb.SpendGas(owner.Address).EndScript();
+            if (useGas)
+            {
+                sb.SpendGas(owner.Address);
+            }
+
+            var script = sb.EndScript();
 
             var tx = new Transaction(Name, chain.Name, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
@@ -529,7 +533,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public const string FuelTokenSymbol = "ALMA";
+        public const string FuelTokenSymbol = "KCAL";
         public const string FuelTokenName = "Phantasma Energy";
         public const int FuelTokenDecimals = 10;
 
@@ -552,9 +556,9 @@ namespace Phantasma.Blockchain
 
             var transactions = new List<Transaction>
             {
-                TokenCreateTx(RootChain, owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel),
-                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable),
-                TokenCreateTx(RootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, false),
+                TokenCreateTx(RootChain, owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, false),
+                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, true),
 
                 SideChainCreateTx(RootChain, owner, "privacy"),
                 SideChainCreateTx(RootChain, owner, "vault"),
@@ -564,9 +568,9 @@ namespace Phantasma.Blockchain
                 SideChainCreateTx(RootChain, owner, "apps"),
                 SideChainCreateTx(RootChain, owner, "energy"),
 
-                TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External),
-                TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External),
-                TokenCreateTx(RootChain, owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External),
+                TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
+                TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
+                TokenCreateTx(RootChain, owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, true),
 
                 ConsensusStakeCreateTx(RootChain, owner)
             };
@@ -675,5 +679,64 @@ namespace Phantasma.Blockchain
             return result;
         }
         #endregion
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarString(Name);
+            writer.WriteAddress(GenesisAddress);
+
+            int chainCount = _chains.Count;
+            writer.WriteVarInt(chainCount);
+            foreach (Chain entry in _chains.Values)
+            {
+                entry.SerializeData(writer);
+            }
+
+            int tokenCount = _tokens.Count;
+            writer.WriteVarInt(tokenCount);
+            foreach (Token entry in _tokens.Values)
+            {
+                entry.SerializeData(writer);
+            }
+
+            writer.WriteAddress(RootChain.Address);
+            writer.WriteVarString(FuelToken.Symbol);
+            writer.WriteVarString(StakingToken.Symbol);
+            writer.WriteVarString(StableToken.Symbol);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this.Name = reader.ReadVarString();
+            this.GenesisAddress = reader.ReadAddress();
+
+            int chainCount = (int)reader.ReadVarInt();
+            while (chainCount > 0)
+            {
+                var chain = new Chain();
+                chain.UnserializeData(reader);
+                chainCount--;
+            }
+
+            int tokenCount = (int)reader.ReadVarInt();
+            while (tokenCount > 0)
+            {
+                var token = new Token();
+                token.UnserializeData(reader);
+                tokenCount--;
+            }
+
+            var RootChainAddress = reader.ReadAddress();
+            RootChain = FindChainByAddress(RootChainAddress);
+
+            var FuelTokenSymbol = reader.ReadVarString();
+            FuelToken = FindTokenBySymbol(FuelTokenSymbol);
+
+            var StakingTokenSymbol = reader.ReadVarString();
+            StakingToken = FindTokenBySymbol(StakingTokenSymbol);
+
+            var StableTokenSymbol = reader.ReadVarString();
+            StableToken = FindTokenBySymbol(StableTokenSymbol);
+        }
     }
 }

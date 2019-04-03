@@ -51,9 +51,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SellToken(Address from, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, Timestamp endDate)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(endDate > Timestamp.Now, "invalid end date");
+            Runtime.Expect(endDate > Runtime.Time, "invalid end date");
 
-            var maxAllowedDate = Timestamp.Now + TimeSpan.FromDays(30);
+            var maxAllowedDate = Runtime.Time + TimeSpan.FromDays(30);
             Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant");
 
             var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
@@ -65,12 +65,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "base token must be non-fungible");
 
             var ownerships = Runtime.Chain.GetTokenOwnerships(baseToken);
-            var owner = ownerships.GetOwner(tokenID);
+            var owner = ownerships.GetOwner(this.Storage, tokenID);
             Runtime.Expect(owner == from, "invalid owner");
 
-            Runtime.Expect(baseToken.Transfer(ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
+            Runtime.Expect(baseToken.Transfer(this.Storage, ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
-            var auction = new MarketAuction(from, Timestamp.Now, endDate, baseSymbol, quoteSymbol, tokenID, price);
+            var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
@@ -96,7 +96,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
 
             var ownerships = Runtime.Chain.GetTokenOwnerships(baseToken);
-            var owner = ownerships.GetOwner(auction.TokenID);
+            var owner = ownerships.GetOwner(this.Storage, auction.TokenID);
             Runtime.Expect(owner == Runtime.Chain.Address, "invalid owner");
 
             if (auction.Creator != from)
@@ -106,13 +106,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "quote token must be fungible");
 
                 var balances = Runtime.Chain.GetTokenBalances(quoteToken);
-                var balance = balances.Get(from);
+                var balance = balances.Get(this.Storage, from);
                 Runtime.Expect(balance >= auction.Price, "not enough balance");
 
-                Runtime.Expect(quoteToken.Transfer(balances, from, auction.Creator, auction.Price), "payment failed");
+                Runtime.Expect(quoteToken.Transfer(this.Storage, balances, from, auction.Creator, auction.Price), "payment failed");
             }
 
-            Runtime.Expect(baseToken.Transfer(ownerships, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
+            Runtime.Expect(baseToken.Transfer(this.Storage, ownerships, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
 
             _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);
@@ -135,7 +135,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var ids = _auctionIDs.All<string>();
             var auctions = new MarketAuction[ids.Length];
-            for (int i=0; i<auctions.Length; i++)
+            for (int i = 0; i < auctions.Length; i++)
             {
                 auctions[i] = _auctionMap.Get<string, MarketAuction>(ids[i]);
             }

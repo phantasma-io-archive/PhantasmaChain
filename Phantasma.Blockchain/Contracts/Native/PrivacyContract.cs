@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (_queues.ContainsKey(token))
             {
                 var list = _queues.Get<string, StorageList>(token.Symbol);
-                
+
                 var queues = list.All<PrivacyQueue>();
                 foreach (var entry in queues)
                 {
@@ -88,7 +88,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            var balance = balances.Get(from);
+            var balance = balances.Get(this.Storage, from);
             Runtime.Expect(balance >= TransferAmount, "not enough balance");
 
             var queue = FetchQueue(token);
@@ -100,7 +100,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(address != from, "address already in queue");
             }
 
-            balances.Subtract(from, TransferAmount);
+            balances.Subtract(this.Storage, from, TransferAmount);
             queue.addresses.Add(from);
 
             return queue.ID; // TODO should be quueue ID
@@ -136,7 +136,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             queue.signatures.Add(signature);
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            balances.Add(to, TransferAmount);
+            balances.Add(this.Storage, to, TransferAmount);
         }
     }
 }

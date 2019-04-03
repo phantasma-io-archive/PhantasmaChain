@@ -37,14 +37,14 @@ namespace Phantasma.Blockchain.Contracts.Native
                 description = "",
                 icon = Hash.Null,
             };
-            
+
             _apps.Add(app);
         }
 
         private int FindAppIndex(string name)
         {
             var count = _apps.Count();
-            for (int i=0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 var app = _apps.Get<AppInfo>(i);
                 if (app.id == name)

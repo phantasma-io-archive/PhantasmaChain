@@ -47,7 +47,7 @@ namespace Phantasma.Tests
         public void GenesisBlock()
         {
             var owner = KeyPair.Generate();
-            var nexus = new Nexus("tests", owner.Address);
+            var nexus = new Nexus("tests", owner.Address, -1);
 
             Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
 
@@ -155,7 +155,7 @@ namespace Phantasma.Tests
 
             Assert.IsFalse(registerName(testUser, targetName.Substring(3)));
             Assert.IsFalse(registerName(testUser, targetName.ToUpper()));
-            Assert.IsFalse(registerName(testUser, targetName+"!"));
+            Assert.IsFalse(registerName(testUser, targetName + "!"));
             Assert.IsTrue(registerName(testUser, targetName));
 
             var currentName = nexus.LookUpAddress(testUser.Address);
@@ -361,7 +361,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(token != null, "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
@@ -373,7 +373,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
@@ -415,7 +415,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(token != null, "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the user already have a CoolToken?");
 
             // Mint a new CoolToken directly on the user
@@ -424,7 +424,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the user not have one now?");
 
             //verify that the present nft is the same we actually tried to create
@@ -439,7 +439,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             //verify the user no longer has the token
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the user still have it post-burn?");
         }
 
@@ -475,7 +475,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(token != null, "Can't find the token symbol");
 
             // verify nft presence on the sender pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(sender.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             // Mint a new CoolToken directly on the sender
@@ -484,7 +484,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(sender.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, sender.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
@@ -494,7 +494,7 @@ namespace Phantasma.Tests
                 "And why is this NFT different than expected? Not the same data");
 
             // verify nft presence on the receiver pre-transfer
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(receiver.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
 
             // transfer that nft from sender to receiver
@@ -503,7 +503,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify nft presence on the receiver post-transfer
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(receiver.Address);
+            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, receiver.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the receiver not have one now?");
 
             //verify that the transfered nft is the same we actually tried to create
@@ -548,7 +548,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(token != null, "Can't find the token symbol");
 
             // verify nft presence on the sender pre-mint
-            var ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sender.Address);
+            var ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sourceChain.Storage, sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             // Mint a new CoolToken directly on the sender
@@ -557,7 +557,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
-            ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sender.Address);
+            ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sourceChain.Storage, sender.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
@@ -567,7 +567,7 @@ namespace Phantasma.Tests
                 "And why is this NFT different than expected? Not the same data");
 
             // verify nft presence on the receiver pre-transfer
-            ownedTokenList = targetChain.GetTokenOwnerships(token).Get(receiver.Address);
+            ownedTokenList = targetChain.GetTokenOwnerships(token).Get(targetChain.Storage, receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
 
             var extraFee = UnitConversion.ToBigInteger(0.001m, nexus.FuelToken.Decimals);
@@ -586,11 +586,11 @@ namespace Phantasma.Tests
             Assert.IsTrue(simulator.EndBlock().Any());
 
             // verify the sender no longer has it
-            ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sender.Address);
+            ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sourceChain.Storage, sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender still have one?");
 
             // verify nft presence on the receiver post-transfer
-            ownedTokenList = targetChain.GetTokenOwnerships(token).Get(receiver.Address);
+            ownedTokenList = targetChain.GetTokenOwnerships(token).Get(targetChain.Storage, receiver.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the receiver not have one now?");
 
             //verify that the transfered nft is the same we actually tried to create

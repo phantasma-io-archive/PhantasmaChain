@@ -1,54 +1,68 @@
-﻿using Phantasma.Core;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using System;
-using System.Collections.Generic;
+using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
 {
     public class BalanceSheet
     {
-        private Dictionary<Address, BigInteger> _balances = new Dictionary<Address, BigInteger>();
+        private byte[] _prefix;
 
-        public BigInteger Get(Address address)
+        public BalanceSheet(string symbol)
         {
-            lock (_balances)
-            {
-                if (_balances.ContainsKey(address))
-                {
-                    return _balances[address];
-                }
-            }
-
-            return 0;
+            symbol = symbol + ".";
+            this._prefix = Encoding.ASCII.GetBytes(symbol);
         }
 
-        public bool Add(Address address, BigInteger amount)
+        private byte[] GetKeyForAddress(Address address)
+        {
+            return ByteArrayUtils.ConcatBytes(_prefix, address.PublicKey);
+        }
+
+        public BigInteger Get(StorageContext storage, Address address)
+        {
+            lock (storage)
+            {
+                var key = GetKeyForAddress(address);
+                var temp = storage.Get(key); // TODO make utils method GetBigInteger
+                if (temp == null || temp.Length == 0)
+                {
+                    return 0;
+                }
+                return new BigInteger(temp);
+            }
+        }
+
+        public bool Add(StorageContext storage, Address address, BigInteger amount)
         {
             if (amount <= 0)
             {
                 return false;
             }
 
-            var balance = Get(address);
+            var balance = Get(storage, address);
             balance += amount;
 
-            lock (_balances)
+            var key = GetKeyForAddress(address);
+
+            lock (storage)
             {
-                _balances[address] = balance;
+                storage.Put(key, balance);
             }
 
             return true;
         }
 
-        public bool Subtract(Address address, BigInteger amount)
+        public bool Subtract(StorageContext storage, Address address, BigInteger amount)
         {
             if (amount <= 0)
             {
                 return false;
             }
 
-            var balance = Get(address);
+            var balance = Get(storage, address);
 
             if (balance < amount)
             {
@@ -57,32 +71,21 @@ namespace Phantasma.Blockchain.Tokens
 
             balance -= amount;
 
-            lock (_balances)
+            var key = GetKeyForAddress(address);
+
+            lock (storage)
             {
                 if (balance == 0)
                 {
-                    _balances.Remove(address);
+                    storage.Delete(key);
                 }
                 else
                 {
-                    _balances[address] = balance;
+                    storage.Put(key, balance);
                 }
             }
 
             return true;
-        }
-
-        public void ForEach(Action<Address, BigInteger> visitor)
-        {
-            Throw.IfNull(visitor, nameof(visitor));
-
-            lock (_balances)
-            {
-                foreach (var entry in _balances)
-                {
-                    visitor(entry.Key, entry.Value);
-                }
-            }
         }
     }
 }

@@ -2075,7 +2075,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = Runtime.Nexus.StakingToken;
             var balances = Runtime.Chain.GetTokenBalances(token);
 
-            return token.Transfer(balances, address, DevelopersAddress, amount);
+            return token.Transfer(this.Storage, balances, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)
@@ -2111,18 +2111,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 account = new NachoAccount()
                 {
-                    battleID            = 0,
-                    queueBet            = 0,
-                    queueWrestlerIDs    = new BigInteger[0],
-                    unused              = "",
-                    neoAddress          = "",
-                    creationTime        = 0,
-                    flags               = AccountFlags.None,
-                    counters            = new int[Constants.ACCOUNT_COUNTER_MAX],
-                    comment             = "",
-                    referal             = Address.Null,
-                    ELO                 = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
-                    avatarID            = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
+                    battleID = 0,
+                    queueBet = 0,
+                    queueWrestlerIDs = new BigInteger[0],
+                    unused = "",
+                    neoAddress = "",
+                    creationTime = 0,
+                    flags = AccountFlags.None,
+                    counters = new int[Constants.ACCOUNT_COUNTER_MAX],
+                    comment = "",
+                    referal = Address.Null,
+                    ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
+                    avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                 };
             }
 
@@ -2400,22 +2400,22 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
         }*/
 
-            /* TODO LATER
-        public void DeleteWrestler(Address from, BigInteger wrestlerID)
-        {
-            Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
+        /* TODO LATER
+    public void DeleteWrestler(Address from, BigInteger wrestlerID)
+    {
+        Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
 
-            var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            Runtime.Expect(wrestlers.Contains(wrestlerID), "not found");
+        var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+        Runtime.Expect(wrestlers.Contains(wrestlerID), "not found");
 
-            var wrestler = GetWrestler(wrestlerID);
-            Runtime.Expect(wrestler.location != WrestlerLocation.Market, "in auction");
+        var wrestler = GetWrestler(wrestlerID);
+        Runtime.Expect(wrestler.location != WrestlerLocation.Market, "in auction");
 
-            wrestler.location = WrestlerLocation.None;
-            wrestler.owner = Address.Null;
+        wrestler.location = WrestlerLocation.None;
+        wrestler.owner = Address.Null;
 
-            wrestlers.Remove(wrestlerID);
-        }*/
+        wrestlers.Remove(wrestlerID);
+    }*/
 
         // get how many wrestlers in an account
         public BigInteger[] GetAccountWrestlers(Address address)
@@ -2423,7 +2423,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
             var ownerships = Runtime.Chain.GetTokenOwnerships(token);
 
-            var ownerIDs = ownerships.Get(address);
+            var ownerIDs = ownerships.Get(this.Storage, address);
 
             return ownerIDs.ToArray();
         }
@@ -2433,7 +2433,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
             var ownerships = Runtime.Chain.GetTokenOwnerships(token);
 
-            var ownerIDs = ownerships.Get(address);
+            var ownerIDs = ownerships.Get(this.Storage, address);
 
             return ownerIDs.ToArray();
             /*
@@ -2560,7 +2560,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
             var ownerships = Runtime.Chain.GetTokenOwnerships(token);
-            return ownerships.GetOwner(itemID) == address;
+            return ownerships.GetOwner(this.Storage, itemID) == address;
         }
 
         public void DeleteItem(Address from, BigInteger itemID)
@@ -2578,7 +2578,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.location = ItemLocation.None;
             item.owner = Address.Null;
 
-            ownerships.Take(from, itemID);
+            ownerships.Take(this.Storage, from, itemID);
             //token.Burn(balances, from,) TODO how to burn NFT?
 
             Runtime.Notify(EventKind.TokenBurn, from, itemID);
@@ -2802,7 +2802,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
             var ownerships = Runtime.Chain.GetTokenOwnerships(token);
-            return ownerships.GetOwner(wrestlerID) == address;
+            return ownerships.GetOwner(this.Storage, wrestlerID) == address;
         }
 
         /* TODO LATER
@@ -3605,7 +3605,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetWrestler(wrestlerID, wrestler);
 
             item.location = ItemLocation.None;
-            item.locationID = 0; 
+            item.locationID = 0;
             SetItem(itemID, item);
 
             Runtime.Notify(EventKind.ItemRemoved, from, itemID);
@@ -5841,7 +5841,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         AddToPot(Address.Null, potAmount);
                     }
-                    
+
                     /* TODO LATER
                     for (var i = 0; i < 2; i++)
                     {
@@ -8202,7 +8202,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (shouldNotify)
             {
-                Runtime.Notify(shouldConsume ? EventKind.ItemSpent :  EventKind.ItemActivated,  info[target].address, states[target].itemKind);
+                Runtime.Notify(shouldConsume ? EventKind.ItemSpent : EventKind.ItemActivated, info[target].address, states[target].itemKind);
             }
 
             if (shouldConsume)
@@ -8326,7 +8326,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 ApplyStatBoost(ref info, ref states, other, stat, boost, false);
             }
 
-            Runtime.Notify(boost > 0? EventKind.Buff : EventKind.Debuff, info[target].address, stat);
+            Runtime.Notify(boost > 0 ? EventKind.Buff : EventKind.Debuff, info[target].address, stat);
 
             return true;
         }

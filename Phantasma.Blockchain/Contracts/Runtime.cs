@@ -43,7 +43,7 @@ namespace Phantasma.Blockchain.Contracts
             this.GasPrice = 0;
             this.UsedGas = 0;
             this.PaidGas = 0;
-            this.MaxGas = 100;  // a minimum amount required for allowing calls to Gas contract etc
+            this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
 
             this.Chain = chain;
             this.Block = block;

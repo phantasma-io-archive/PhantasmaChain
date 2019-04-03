@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             symbol = symbol.ToUpperInvariant();
 
-            var token = this.Runtime.Nexus.CreateToken(Runtime.Chain, owner, symbol, name, maxSupply, (int)decimals, flags);
+            var token = this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags);
             Runtime.Expect(token != null, "invalid token");
 
             if (token.IsCapped)

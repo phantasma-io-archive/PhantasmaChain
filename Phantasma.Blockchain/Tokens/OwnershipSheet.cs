@@ -1,116 +1,109 @@
-﻿using Phantasma.Core;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using System;
-using System.Collections.Generic;
+using System.Text;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Tokens
 {
     public class OwnershipSheet
     {
-        private Dictionary<Address, HashSet<BigInteger>> _items = new Dictionary<Address, HashSet<BigInteger>>();
-        private Dictionary<BigInteger, Address> _ownerMap = new Dictionary<BigInteger, Address>();
+        private byte[] _prefixItems;
+        private byte[] _prefixOwner;
 
-        public IEnumerable<BigInteger> Get(Address address)
+        public OwnershipSheet(string symbol)
         {
-            lock (_items)
-            {
-                if (_items.ContainsKey(address))
-                {
-                    var items = _items[address];
-                    if (items != null)
-                    {
-                        return items;
-                    }
-                }
-            }
-
-            return Enumerable.Empty<BigInteger>();
+            this._prefixItems = Encoding.ASCII.GetBytes(symbol + ".ids.");
+            this._prefixOwner = Encoding.ASCII.GetBytes(symbol + ".own.");
         }
 
-        public Address GetOwner(BigInteger tokenID)
+        private byte[] GetKeyForList(Address address)
         {
-            lock (_items)
-            {
-                if (_ownerMap.ContainsKey(tokenID))
-                {
-                    return _ownerMap[tokenID];
-                }
-            }
-
-            return Address.Null;
+            return ByteArrayUtils.ConcatBytes(_prefixItems, address.PublicKey);
         }
 
-        public bool Give(Address address, BigInteger tokenID)
+        private byte[] GetKeyForOwner(BigInteger tokenID)
+        {
+            return ByteArrayUtils.ConcatBytes(_prefixOwner, tokenID.ToByteArray());
+        }
+
+        public BigInteger[] Get(StorageContext storage, Address address)
+        {
+            lock (storage)
+            {
+                var listKey = GetKeyForList(address);
+                var list = new StorageList(listKey, storage);
+                return list.All<BigInteger>();
+            }
+        }
+
+        public Address GetOwner(StorageContext storage, BigInteger tokenID)
+        {
+            lock (storage)
+            {
+                var ownerKey = GetKeyForOwner(tokenID);
+
+                var temp = storage.Get(ownerKey);
+                if (temp == null || temp.Length != Address.PublicKeyLength)
+                {
+                    return Address.Null;
+                }
+
+                return new Address(temp);
+            }
+        }
+
+        public bool Give(StorageContext storage, Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
                 return false;
             }
 
-            if (GetOwner(tokenID) != Address.Null)
+            if (GetOwner(storage, tokenID) != Address.Null)
             {
                 return false;
             }
 
-            lock (_items)
+            var listKey = GetKeyForList(address);
+            var ownerKey = GetKeyForOwner(tokenID);
+
+            lock (storage)
             {
-                HashSet<BigInteger> items;
+                var list = new StorageList(listKey, storage);
+                list.Add<BigInteger>(tokenID);
 
-                if (_items.ContainsKey(address))
-                {
-                    items = _items[address];
-                }
-                else
-                {
-                    items = new HashSet<BigInteger>();
-                    _items[address] = items;
-                }
-
-                items.Add(tokenID);
-                _ownerMap[tokenID] = address;
+                storage.Put(ownerKey, address);
             }
             return true;
         }
 
-        public bool Take(Address address, BigInteger tokenID)
+        public bool Take(StorageContext storage, Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
                 return false;
             }
 
-            if (GetOwner(tokenID) != address)
+            if (GetOwner(storage, tokenID) != address)
             {
                 return false;
             }
 
-            lock (_items)
-            {
-                if (_items.ContainsKey(address))
-                {
-                    var items = _items[address];
-                    items.Remove(tokenID);
-                }
+            var listKey = GetKeyForList(address);
+            var ownerKey = GetKeyForOwner(tokenID);
 
-                _ownerMap.Remove(tokenID);
+            lock (storage)
+            {
+                var list = new StorageList(listKey, storage);
+                list.Remove(tokenID);
+
+                storage.Delete(ownerKey);
             }
 
             return true;
-        }
-
-        public void ForEach(Action<Address, IEnumerable<BigInteger>> visitor)
-        {
-            Throw.IfNull(visitor, nameof(visitor));
-
-            lock (_items)
-            {
-                foreach (var entry in _items)
-                {
-                    visitor(entry.Key, entry.Value);
-                }
-            }
         }
     }
 }

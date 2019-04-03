@@ -1,6 +1,7 @@
 ﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -33,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, from, Runtime.Chain.Address, amount), "transfer failed");
+            Runtime.Expect(token.Transfer(this.Storage, balances, from, Runtime.Chain.Address, amount), "transfer failed");
 
             List<VaultEntry> list;
 
@@ -50,7 +51,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var entry = new VaultEntry()
             {
                 amount = amount,
-                unlockTime = Runtime.Block.Timestamp.Value + duration,
+                unlockTime = Runtime.Time + TimeSpan.FromSeconds(duration),
             };
             list.Add(entry);
         }
@@ -71,14 +72,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             foreach (var entry in list)
             {
-                if (entry.unlockTime <= Runtime.Block.Timestamp.Value)
+                if (entry.unlockTime <= Runtime.Time)
                 {
                     amount += entry.amount;
                 }
             }
             Runtime.Expect(amount > 0, "available amount must be greater than zero");
 
-            list = list.Where(x => x.unlockTime > Runtime.Block.Timestamp.Value).ToList();
+            list = list.Where(x => x.unlockTime > Runtime.Time).ToList();
             if (list.Count > 0)
             {
                 _entries[from] = list;
@@ -89,7 +90,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(balances, Runtime.Chain.Address, from, amount), "transfer failed");
+            Runtime.Expect(token.Transfer(this.Storage, balances, Runtime.Chain.Address, from, amount), "transfer failed");
         }
     }
 }

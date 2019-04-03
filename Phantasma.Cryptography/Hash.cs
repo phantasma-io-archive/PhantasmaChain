@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Linq;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using System.IO;
 
 namespace Phantasma.Cryptography
 {
@@ -35,7 +33,7 @@ namespace Phantasma.Cryptography
                 return false;
             }
 
-            for (int i=0; i<thisData.Length; i++)
+            for (int i = 0; i < thisData.Length; i++)
             {
                 if (otherData[i] != thisData[i])
                 {
@@ -180,8 +178,18 @@ namespace Phantasma.Cryptography
             var src = val.ToByteArray();
             Throw.If(src.Length > Length, "number is too large");
 
+            return FromBytes(src);
+        }
+
+        public static Hash FromBytes(byte[] input)
+        {
+            if (input.Length > Length)
+            {
+                input = CryptoExtensions.SHA256(input);
+            }
+
             var bytes = new byte[Length];
-            Array.Copy(src, bytes, src.Length);
+            Array.Copy(input, bytes, input.Length);
             return new Hash(bytes);
         }
 
