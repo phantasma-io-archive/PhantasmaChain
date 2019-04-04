@@ -193,6 +193,9 @@ namespace Phantasma.API
 
         [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
+
+        [APIDescription("True if is being sold in market")]
+        public bool forSale;
     }
 
     public struct SendRawTxResult : IAPIResult

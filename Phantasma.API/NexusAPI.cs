@@ -962,6 +962,19 @@ namespace Phantasma.API
 
             var info = Nexus.GetNFT(token, ID);
 
+            var chain = GetMarketChain();
+            bool forSale;
+
+            if (chain != null)
+            {
+                forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
+            }
+            else
+            {
+                forSale = false;
+            }
+
+
             return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
 
@@ -1099,11 +1112,17 @@ namespace Phantasma.API
 
             return result;
         }
+
+        private Chain GetMarketChain()
+        {
+            return Nexus.RootChain; // TODO change later
+        }
+
         [APIInfo(typeof(int), "Returns the number of active auctions.")]
         public IAPIResult GetAuctionsCount([APIParameter("Token symbol used as filter", "NACHO")]
             string symbol = null)
         {
-            var chain = Nexus.RootChain;
+            var chain = GetMarketChain();
             if (chain == null)
             {
                 return new ErrorResult { error = "Market not available" };
