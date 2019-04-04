@@ -326,6 +326,7 @@ namespace Phantasma.API
                 chainAddress = chain.Address.Text,
                 timestamp = block.Timestamp.Value,
                 blockHeight = block.Height,
+                confirmations = Nexus.GetConfirmationsOfBlock(block),
                 script = tx.Script.Encode()
             };
 
@@ -726,53 +727,6 @@ namespace Phantasma.API
             }
 
             return new SingleResult() { value = count };
-        }
-
-        [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
-        [APIFailCase("hash is invalid", "asdfsa")]
-        public IAPIResult GetConfirmations([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
-        {
-            var result = new TxConfirmationResult();
-            if (Hash.TryParse(hashText, out var hash))
-            {
-                int confirmations = -1;
-
-                var block = Nexus.FindBlockForHash(hash);
-                if (block != null)
-                {
-                    confirmations = Nexus.GetConfirmationsOfBlock(block);
-                }
-                else
-                {
-                    var tx = Nexus.FindTransactionByHash(hash);
-                    if (tx != null)
-                    {
-                        block = Nexus.FindBlockForTransaction(tx);
-                        if (block != null)
-                        {
-                            confirmations = Nexus.GetConfirmationsOfBlock(block);
-                        }
-                    }
-                }
-
-                Chain chain = (block != null) ? Nexus.FindChainForBlock(block) : null;
-
-                if (confirmations == -1 || block == null || chain == null)
-                {
-                    return new ErrorResult() { error = "unknown hash" };
-                }
-                else
-                {
-                    result.confirmations = confirmations;
-                    result.hash = block.Hash.ToString();
-                    result.height = block.Height;
-                    result.chainAddress = chain.Address.Text;
-                }
-
-                return result;
-            }
-
-            return new ErrorResult() { error = "invalid hash" };
         }
 
         [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
