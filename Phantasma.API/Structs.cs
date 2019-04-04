@@ -74,14 +74,23 @@ namespace Phantasma.API
 
     public struct TransactionResult : IAPIResult
     {
+        [APIDescription("Hash of the transaction")]
         public string hash;
 
         [APIDescription("Transaction chain address")]
         public string chainAddress;
 
+        [APIDescription("Block time")]
         public uint timestamp;
 
+        [APIDescription("Number of confirmations for the transaction")]
+        public int confirmations;
+
+        [APIDescription("Block height at which the transaction was accepted")]
         public uint blockHeight;
+
+        [APIDescription("Hash of the block")]
+        public string blockHash;
 
         [APIDescription("Script content of the transaction, in hexadecimal format")]
         public string script;
@@ -184,21 +193,6 @@ namespace Phantasma.API
 
         [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
-    }
-
-    public struct TxConfirmationResult : IAPIResult
-    {
-        [APIDescription("Hash of transaction")]
-        public string hash;
-
-        [APIDescription("Address that controls minting of tokens")]
-        public string chainAddress;
-
-        [APIDescription("Number of confirmations for the transaction")]
-        public int confirmations;
-
-        [APIDescription("Block height at which the transaction was accepted")]
-        public uint height;
     }
 
     public struct SendRawTxResult : IAPIResult
