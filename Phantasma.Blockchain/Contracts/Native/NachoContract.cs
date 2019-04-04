@@ -1799,18 +1799,18 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger stakeAmount;
     }
 
-    public struct NachoAuction
-    {
-        public uint startTime;
-        public uint endTime;
-        public BigInteger contentID;
-        public BigInteger startPrice;
-        public BigInteger endPrice;
-        public Address creator;
-        public AuctionKind kind;
-        public string comment;
-        public AuctionCurrency currency;
-    }
+    //public struct NachoAuction
+    //{
+    //    public uint startTime;
+    //    public uint endTime;
+    //    public BigInteger contentID;
+    //    public BigInteger startPrice;
+    //    public BigInteger endPrice;
+    //    public Address creator;
+    //    public AuctionKind kind;
+    //    public string comment;
+    //    public AuctionCurrency currency;
+    //}
 
     public struct NachoSale
     {
