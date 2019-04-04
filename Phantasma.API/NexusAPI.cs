@@ -326,6 +326,7 @@ namespace Phantasma.API
                 chainAddress = chain.Address.Text,
                 timestamp = block.Timestamp.Value,
                 blockHeight = block.Height,
+                blockHash = block.Hash.ToString(),
                 confirmations = Nexus.GetConfirmationsOfBlock(block),
                 script = tx.Script.Encode()
             };

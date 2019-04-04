@@ -74,6 +74,7 @@ namespace Phantasma.API
 
     public struct TransactionResult : IAPIResult
     {
+        [APIDescription("Hash of the transaction")]
         public string hash;
 
         [APIDescription("Transaction chain address")]
@@ -87,6 +88,9 @@ namespace Phantasma.API
 
         [APIDescription("Block height at which the transaction was accepted")]
         public uint blockHeight;
+
+        [APIDescription("Hash of the block")]
+        public string blockHash;
 
         [APIDescription("Script content of the transaction, in hexadecimal format")]
         public string script;
