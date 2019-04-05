@@ -1143,8 +1143,7 @@ namespace Phantasma.API
             [APIParameter("Index of page to return", "5")] uint page = 1,
             [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
         {
-            //var chain = Nexus.FindChainByName("market");
-            var chain = Nexus.RootChain;
+            var chain = GetMarketChain();
             if (chain == null)
             {
                 return new ErrorResult { error = "Market not available" };
@@ -1186,6 +1185,48 @@ namespace Phantasma.API
             paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x)).ToArray() };
 
             return paginatedResult;
+        }
+
+        [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", true)]
+        public IAPIResult GetAuction([APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
+        {
+            var token = Nexus.FindTokenBySymbol(symbol);
+            if (token == null)
+            {
+                return new ErrorResult() { error = "invalid token" };
+            }
+
+            BigInteger ID;
+            if (!BigInteger.TryParse(IDtext, out ID))
+            {
+                return new ErrorResult() { error = "invalid ID" };
+            }
+
+            var info = Nexus.GetNFT(token, ID);
+
+            var chain = GetMarketChain();
+            if (chain == null)
+            {
+                return new ErrorResult { error = "Market not available" };
+            }
+
+            var forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
+            if (!forSale)
+            {
+                return new ErrorResult { error = "Token not for sale" };
+            }
+
+            var auction = (MarketAuction)chain.InvokeContract("market", "GetAuction", ID);
+
+            return new AuctionResult() {
+                baseSymbol = auction.BaseSymbol,
+                quoteSymbol = auction.QuoteSymbol,
+                creatorAddress = auction.Creator.Text,
+                tokenId = auction.TokenID.ToString(),
+                price = auction.Price.ToString(),
+                startDate = auction.StartDate.Value,
+                endDate = auction.EndDate.Value
+            };
         }
     }
 }
