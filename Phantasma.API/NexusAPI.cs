@@ -1187,7 +1187,7 @@ namespace Phantasma.API
             return paginatedResult;
         }
 
-        [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", true)]
+        [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false)]
         public IAPIResult GetAuction([APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
         {
             var token = Nexus.FindTokenBySymbol(symbol);
