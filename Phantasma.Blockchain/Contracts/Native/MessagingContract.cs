@@ -19,7 +19,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int MAX_MESSAGE_LENGTH = 16;
 
         internal StorageList _messages;
-        internal StorageList _friends;
 
         public MessagingContract() : base()
         {
@@ -46,38 +45,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             return _messages.All<AddressMessage>();
         }
-
-        #region FRIENDLIST
-        public void AddFriend(Address target, Address friend)
-        {
-            Runtime.Expect(IsWitness(target), "invalid witness");
-
-            Runtime.Expect(friend != Address.Null, "friend address must not be null");
-            Runtime.Expect(friend != target, "friend must be different from target address");
-
-            _friends.Add(friend);
-
-            Runtime.Notify(EventKind.AddressAdd, target, friend);
-        }
-
-        public void RemoveFriend(Address target, Address friend)
-        {
-            Runtime.Expect(IsWitness(target), "invalid witness");
-
-            Runtime.Expect(friend != Address.Null, "friend address must not be null");
-            Runtime.Expect(friend != target, "friend must be different from target address");
-
-            Runtime.Expect(_friends.Contains(friend), "friend not found");
-            _friends.Remove(friend);
-
-            Runtime.Notify(EventKind.AddressRemove, target, friend);
-        }
-
-        public Address[] GetFriends(Address target)
-        {
-            return _friends.All<Address>();
-        }
-        #endregion
 
     }
 }
