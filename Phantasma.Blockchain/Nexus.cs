@@ -9,7 +9,6 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
-using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
@@ -69,6 +68,7 @@ namespace Phantasma.Blockchain
                 new ConsensusContract(),
                 new GovernanceContract(),
                 new AccountContract(),
+                new FriendContract(),
                 new OracleContract(),
                 new ExchangeContract(),
                 new MarketContract(),
