@@ -28,8 +28,12 @@ namespace Phantasma.Blockchain.Contracts
         AuctionFilled,
         Metadata,
 
+        Transfer,
+        Deposit,
+        Withdraw,
         WrestlerReceived,
         Purchase,
+        Auction,
         ItemAdded,
         ItemRemoved,
         ItemReceived,
@@ -46,10 +50,12 @@ namespace Phantasma.Blockchain.Contracts
         Rename,
         Auto,
         Pot,
-        Referal,
+        Referral,
         Trophy,
         Confusion,
         MoveMiss,
+        AddFriend,
+        RemoveFriend,
         SelectAvatar
     }
 
