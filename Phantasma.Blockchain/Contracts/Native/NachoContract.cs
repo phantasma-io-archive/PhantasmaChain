@@ -8348,27 +8348,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
 
-        #region MATH
-        public static readonly uint RND_A = 16807;
-        public static readonly uint RND_M = 2147483647;
-
-        // returns a first initial pseudo random number
-        private BigInteger Randomize(byte[] init)
-        {
-            var time = System.BitConverter.GetBytes(Runtime.Time.Value);
-            var temp = ByteArrayUtils.ConcatBytes(time, init);
-            var seed = new BigInteger(temp);
-            return seed;
-        }
-
-        // returns a next random number (seed must be initialized with Randomize)
-        private BigInteger NextRandom(BigInteger seed)
-        {
-            return ((RND_A * seed) % RND_M);
-        }
-
-        #endregion
-
         #region SOUL API
         /*
                 private bool DepositNEP5(Address address, BigInteger amount)
