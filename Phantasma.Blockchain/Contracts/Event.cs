@@ -57,6 +57,13 @@ namespace Phantasma.Blockchain.Contracts
         Confusion           = 46,
         MoveMiss            = 47,
         SelectAvatar        = 48,
+
+        // casino => REMOVE LATER
+        CasinoTableQueued = 60,
+        CasinoTableStart = 61,
+        CasinoTableCard= 62,
+        CasinoTableTurn = 63,
+        CasinoTableResult = 64,
     }
 
     public class Event
