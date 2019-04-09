@@ -270,6 +270,7 @@ namespace Phantasma.Blockchain
                 case "market": contract = new MarketContract(); break;
                 case "energy": contract = new EnergyContract(); break;
                 case "nacho": contract = new NachoContract(); break;
+                case "casino": contract = new CasinoContract(); break;
                 default:
                     {
                         var sb = new ScriptBuilder();
@@ -565,6 +566,7 @@ namespace Phantasma.Blockchain
                 SideChainCreateTx(RootChain, owner, "apps"),
                 SideChainCreateTx(RootChain, owner, "energy"),
                 SideChainCreateTx(RootChain, owner, "nacho"),
+                SideChainCreateTx(RootChain, owner, "casino"),
 
                 TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
                 TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),

@@ -20,8 +20,22 @@ namespace Phantasma.Blockchain
 
         public uint Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
-        public Hash Hash { get; private set; }
         public Hash PreviousHash { get; private set; }
+
+        private bool _dirty;
+        private Hash _hash;
+        public Hash Hash
+        {
+            get
+            {
+                if (_dirty)
+                {
+                    UpdateHash();
+                }
+
+                return _hash;
+            }
+        }
 
         public byte[] Payload { get; private set; }
 
@@ -84,10 +98,11 @@ namespace Phantasma.Blockchain
                 this.difficulty = InitialDifficulty;
             }*/
 
-            this.UpdateHash(new byte[0]);
+            this.Payload = new byte[0];
+            this._dirty = true;
         }
 
-        internal void Notify(Hash hash, Event evt)
+        public void Notify(Hash hash, Event evt)
         {
             List<Event> list;
 
@@ -102,6 +117,7 @@ namespace Phantasma.Blockchain
             }
 
             list.Add(evt);
+            _dirty = true;
         }
 
         // TODO - Optimize this to avoid recalculating the arrays if only the nonce changed
@@ -115,7 +131,8 @@ namespace Phantasma.Blockchain
         {
             var data = ToByteArray();
             var hashBytes = CryptoExtensions.SHA256(data);
-            this.Hash = new Hash(hashBytes);
+            _hash = new Hash(hashBytes);
+            _dirty = false;
         }
 
         public IEnumerable<Event> GetEventsForTransaction(Hash hash)
@@ -259,8 +276,7 @@ namespace Phantasma.Blockchain
                 _transactionHashes.Add(hash);
             }
 
-
-            this.UpdateHash();
+            _dirty = true;
         }
         #endregion
     }

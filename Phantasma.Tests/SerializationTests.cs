@@ -10,6 +10,8 @@ using Phantasma.Blockchain;
 using Phantasma.Core.Types;
 using Phantasma.VM.Utils;
 using Phantasma.Numerics;
+using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.IO;
 
 namespace Phantasma.Tests
 {
@@ -51,14 +53,19 @@ namespace Phantasma.Tests
             var keysA = KeyPair.Generate();
 
             var txs = new List<Transaction>();
+            var symbol = Nexus.FuelTokenSymbol;
 
-            for (int i = 1; i<=5; i++)
+            int count = 5;
+            var amounts = new BigInteger[count];
+
+            for (int i = 0; i<count; i++)
             {
                 var keysB = KeyPair.Generate();
+                amounts[i] = UnitConversion.ToBigInteger(20 + (i+1), Nexus.FuelTokenDecimals);
 
                 var script = ScriptUtils.BeginScript().
                     AllowGas(keysA.Address, Address.Null, 1, 9999).
-                    TransferTokens(Nexus.FuelTokenSymbol, keysA.Address, keysB.Address, UnitConversion.ToBigInteger(20 +i , Nexus.FuelTokenDecimals)).
+                    TransferTokens(symbol, keysA.Address, keysB.Address, amounts[i]).
                     SpendGas(keysA.Address).
                     EndScript();
 
@@ -70,6 +77,15 @@ namespace Phantasma.Tests
             var chainKeys = KeyPair.Generate();
             var hashes = txs.Select(x => x.Hash);
             var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null);
+
+            int index = 0;
+            foreach (var hash in hashes)
+            {
+                var data = new TokenEventData() { symbol = symbol, chainAddress = keysA.Address, value = amounts[index] };
+                var dataBytes = Serialization.Serialize(data);
+                block.Notify(hash, new Event(EventKind.TokenSend, keysA.Address, dataBytes));
+                index++;
+            }
 
             var bytes = block.ToByteArray();
 
