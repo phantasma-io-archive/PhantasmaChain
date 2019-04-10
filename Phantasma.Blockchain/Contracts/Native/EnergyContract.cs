@@ -36,7 +36,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public override string Name => "energy";
 
         private StorageMap _stakes; // <Address, EnergyAction>
-        private StorageMap _proxyMap; // <Address, List<EnergyProxy>>
+        private StorageMap _proxyStakersMap; // <Address, List<EnergyProxy>>
+        private StorageMap _proxyReceiversMap; // <Address, List<Address>>
         private StorageMap _claims; // <Address, EnergyAction>
         private StorageList _mastersList; // <Address>
         private Timestamp _lastMasterClaim;
@@ -386,7 +387,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fuelAmount = unclaimedAmount;
 
             // distribute to proxy list
-            var list = _proxyMap.Get<Address, StorageList>(stakeAddress);
+            var list = _proxyStakersMap.Get<Address, StorageList>(stakeAddress);
             var count = list.Count();
 
             // if the transaction comes from someone other than the stake owner, must be registred in proxy list
@@ -456,25 +457,34 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public EnergyProxy[] GetProxies(Address address)
         {
-            var list = _proxyMap.Get<Address, StorageList>(address);
+            var list = _proxyStakersMap.Get<Address, StorageList>(address);
             return list.All<EnergyProxy>();
+        }
+
+        //returns the list of staking addresses that give a share of their rewards to the specified address
+        public Address[] GetProxyStakers(Address address)
+        {
+            var receiversList = _proxyReceiversMap.Get<Address, StorageList>(address);
+            return receiversList.All<Address>();
         }
 
         public void ClearProxies(Address from)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var list = _proxyMap.Get<Address, StorageList>(from);
-            var count = list.Count();
+            var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
+            var count = stakersList.Count();
             if (count > 0)
             {
                 for (int i = 0; i < count; i++)
                 {
-                    var proxy = list.Get<EnergyProxy>(i);
+                    var proxy = stakersList.Get<EnergyProxy>(i);
                     Runtime.Notify(EventKind.AddressRemove, from, proxy.address);
 
+                    var receiversList = _proxyReceiversMap.Get<Address, StorageList>(proxy.address);
+                    receiversList.Remove(from);
                 }
-                list.Clear();
+                stakersList.Clear();
             }
         }
 
@@ -485,14 +495,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(from != to, "invalid proxy address");
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var list = _proxyMap.Get<Address, StorageList>(from);
+            var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
+            var receiversList = _proxyReceiversMap.Get<Address, StorageList>(to);
 
             BigInteger sum = percentage;
             int index = -1;
-            var count = list.Count();
+            var count = stakersList.Count();
             for (int i = 0; i < count; i++)
             {
-                var proxy = list.Get<EnergyProxy>(i);
+                var proxy = stakersList.Get<EnergyProxy>(i);
 
                 Runtime.Expect(proxy.address != to, "repeated proxy address");
 
@@ -510,14 +521,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(sum <= 100, "invalid sum");
 
             var entry = new EnergyProxy() { percentage = (byte)percentage, address = to };
-            if (index < 0)
-            {
-                list.Add<EnergyProxy>(entry);
-            }
+            //if (index < 0)
+            //{
+            stakersList.Add<EnergyProxy>(entry);
+            receiversList.Add<Address>(from);
+            /*}
             else
             {
-                list.Replace<EnergyProxy>(index, entry);
-            }
+                stakersList.Replace<EnergyProxy>(index, entry);
+            }*/
 
             Runtime.Notify(EventKind.AddressAdd, from, to);
         }
@@ -527,13 +539,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(from != to, "invalid proxy address");
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var list = _proxyMap.Get<Address, StorageList>(from);
+            var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
+            var receiversList = _proxyReceiversMap.Get<Address, StorageList>(to);
 
             int index = -1;
-            var count = list.Count();
+            var count = stakersList.Count();
             for (int i = 0; i < count; i++)
             {
-                var proxy = list.Get<EnergyProxy>(i);
+                var proxy = stakersList.Get<EnergyProxy>(i);
                 if (proxy.address == to)
                 {
                     index = i;
@@ -543,7 +556,8 @@ namespace Phantasma.Blockchain.Contracts.Native
            
             Runtime.Expect(index>=0, "proxy not found");
 
-            list.RemoveAt<EnergyProxy>(index);
+            stakersList.RemoveAt<EnergyProxy>(index);
+            receiversList.Remove<Address>(from);
             Runtime.Notify(EventKind.AddressRemove, from, to);
         }
 
