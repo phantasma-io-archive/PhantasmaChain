@@ -13,6 +13,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Timestamp timestamp;
     }
 
+    public struct VotingLogEntry
+    {
+        public Timestamp timestamp;
+        public BigInteger amount;
+    }
+
     public struct EnergyProxy
     {
         public Address address;
@@ -35,6 +41,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageList _mastersList; // <Address>
         private Timestamp _lastMasterClaim;
         private StorageMap _masterMemory; // <Address, Timestamp>
+        private StorageMap _voteHistory; // <Address, List<StakeLog>>
         private uint _masterClaimCount;
 
         private Timestamp genesisTimestamp = 0;
@@ -43,7 +50,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
 
         public readonly static BigInteger BaseEnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
- 
+
+        public readonly static BigInteger MaxVotingPowerBonus = 1000;
+        public readonly static BigInteger DailyVotingBonus = 1;
+
         public EnergyContract() : base()
         {
         }
@@ -196,6 +206,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
             _stakes.Set(from, entry);
 
+            var logEntry = new VotingLogEntry()
+            {
+                timestamp = this.Runtime.Time,
+                amount = stakeAmount
+            };
+
+            var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
+            votingLogbook.Add(logEntry);
+
             if (Runtime.Nexus.GenesisAddress != from && newStake >= MasterAccountThreshold && !IsMaster(from))
             {
                 var nextClaim = GetMasterClaimDate(2);
@@ -244,7 +263,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
 
             if (stake.totalAmount == 0 && unclaimedPartials == 0)
+            {
                 _stakes.Remove(from);
+                _voteHistory.Remove(from);
+            }
             else
             {
                 var entry = new EnergyAction()
@@ -255,6 +277,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 };
 
                 _stakes.Set(from, entry);
+
+                RemoveVotingPower(from, amount);
             }
 
             if (stake.totalAmount < MasterAccountThreshold)
@@ -283,6 +307,31 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
 
             return amount;
+        }
+
+        private void RemoveVotingPower(Address from, BigInteger amount)
+        {
+            var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
+
+            var listSize = votingLogbook.Count();
+
+            for (var i = listSize - 1; i >= 0 && amount > 0; i--)
+            {
+                var votingEntry = votingLogbook.Get<VotingLogEntry>(i);
+
+                if (votingEntry.amount > amount)
+                {
+                    votingEntry.amount -= amount;
+                    votingLogbook.Replace(i, votingEntry);
+
+                    amount = 0;
+                }
+                else
+                {
+                    amount -= votingEntry.amount;
+                    votingLogbook.RemoveAt<VotingLogEntry>(i);
+                }
+            }
         }
 
         public BigInteger GetUnclaimed(Address stakeAddress)
@@ -506,6 +555,43 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static BigInteger StakeToFuel(BigInteger stakeAmount)
         {
             return UnitConversion.ConvertDecimals(stakeAmount, Nexus.StakingTokenDecimals, Nexus.FuelTokenDecimals) / BaseEnergyRatioDivisor;
+        }
+
+        public BigInteger GetAddressVotingPower(Address address)
+        {
+            var votingLogbook = _voteHistory.Get<Address, StorageList>(address);
+            BigInteger power = 0;
+
+            var listSize = votingLogbook.Count();
+            var time = Runtime.Time;
+
+            for (int i = 0; i < listSize; i++)
+            {
+                var entry = votingLogbook.Get<VotingLogEntry>(i);
+
+                if (i > 0)
+                    Runtime.Expect(votingLogbook.Get<VotingLogEntry>(i-1).timestamp <= entry.timestamp, "Voting list became unsorted!");
+
+                power += CalculateEntryVotingPower(entry, time);
+            }
+
+            return power;
+        }
+
+        private BigInteger CalculateEntryVotingPower(VotingLogEntry entry, Timestamp currentTime)
+        {
+            BigInteger baseMultiplier = 100;
+
+            BigInteger votingMultiplier = baseMultiplier;
+            var diff = (currentTime - entry.timestamp)/86400;
+
+            var votingBonus = diff < MaxVotingPowerBonus ? diff : MaxVotingPowerBonus;
+
+            votingMultiplier += DailyVotingBonus * votingBonus;
+
+            var votingPower = (entry.amount * votingMultiplier) / 100;
+
+            return votingPower;
         }
 
         private BigInteger CalculateRewardsWithHalving(BigInteger totalStake, BigInteger unclaimedPartials, Timestamp startTime, Timestamp endTime)

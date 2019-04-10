@@ -1258,6 +1258,131 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestVotingPower()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234, -1);
+            var nexus = simulator.Nexus;
+
+            var fuelToken = simulator.Nexus.FuelToken;
+            var stakeToken = simulator.Nexus.StakingToken;
+
+            var testUser = KeyPair.Generate();
+            var unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            var accountBalance = BaseEnergyRatioDivisor * 100;
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, accountBalance);
+            simulator.EndBlock();
+
+            var actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+            Assert.IsTrue(actualVotingPower == 0);
+
+            var initialStake = 10;
+
+            //-----------
+            //Try a partial unstake
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, initialStake).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+            Assert.IsTrue(actualVotingPower == initialStake);
+
+            var addedStake = 20;
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, addedStake).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+            Assert.IsTrue(actualVotingPower == initialStake + addedStake);
+
+            var firstWait = 10;
+            simulator.TimeSkipDays(firstWait);
+
+            BigInteger expectedVotingPower = ((initialStake + addedStake) * (100 + firstWait));
+            expectedVotingPower = expectedVotingPower / 100;
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+
+            Assert.IsTrue(actualVotingPower == expectedVotingPower);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, addedStake).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var secondWait = 5;
+            simulator.TimeSkipDays(secondWait);
+
+            expectedVotingPower = ((initialStake + addedStake) * (100 + firstWait + secondWait)) + (addedStake * (100 + secondWait));
+            expectedVotingPower = expectedVotingPower / 100;
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+
+            Assert.IsTrue(actualVotingPower == expectedVotingPower);
+
+            //-----------
+            //Try a partial unstake
+            var stakeReduction = 5;
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            expectedVotingPower = ((initialStake + addedStake) * (100 + firstWait + secondWait)) / 100;
+            expectedVotingPower += ((addedStake - stakeReduction) * (100 + secondWait)) / 100;
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+
+            Assert.IsTrue(actualVotingPower == expectedVotingPower);
+
+            //-----------
+            //Try full unstake of the last stake
+            var thirdWait = 1;
+            simulator.TimeSkipDays(thirdWait);
+
+            stakeReduction = addedStake - stakeReduction;
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            expectedVotingPower = ((initialStake + addedStake) * (100 + firstWait + secondWait + thirdWait)) / 100;
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+
+            Assert.IsTrue(actualVotingPower == expectedVotingPower);
+
+            //-----------
+            //Test max voting power bonus cap
+
+            simulator.TimeSkipDays(1500);
+
+            expectedVotingPower = ((initialStake + addedStake) * (100 + MaxVotingPowerBonus)) / 100;
+            actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
+
+            Assert.IsTrue(actualVotingPower == expectedVotingPower);
+        }
+
+        [TestMethod]
         public void TestStaking()
         {
             var owner = KeyPair.Generate();
