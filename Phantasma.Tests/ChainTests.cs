@@ -8,6 +8,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Utils;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {
@@ -167,6 +168,67 @@ namespace Phantasma.Tests
             Assert.IsTrue(someAddress == testUser.Address);
 
             Assert.IsFalse(registerName(testUser, "other"));
+        }
+
+        [TestMethod]
+        public void TransferToAccountName()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234, -1);
+
+            var nexus = simulator.Nexus;
+            var token = nexus.FuelToken;
+
+            Func<KeyPair, string, bool> registerName = (keypair, name) =>
+            {
+                bool result = true;
+
+                try
+                {
+                    simulator.BeginBlock();
+                    var tx = simulator.GenerateAccountRegistration(keypair, name);
+                    var lastBlock = simulator.EndBlock().FirstOrDefault();
+
+                    if (lastBlock != null)
+                    {
+                        Assert.IsTrue(tx != null);
+
+                        var evts = lastBlock.GetEventsForTransaction(tx.Hash);
+                        Assert.IsTrue(evts.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
+                    }
+                }
+                catch (Exception)
+                {
+                    result = false;
+                }
+
+                return result;
+            };
+            var targetName = "hello";
+            var testUser = KeyPair.Generate();
+            var amount = UnitConversion.ToBigInteger(10, token.Decimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, token, amount);
+            simulator.EndBlock();
+
+            Assert.IsTrue(registerName(testUser, targetName));
+
+            // Send from Genesis address to test user
+            var transferAmount = 1;
+
+            var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(token, testUser.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .CallContract("token", "TransferTokens", owner.Address, targetName, token.Symbol, transferAmount)
+                    .SpendGas(owner.Address).EndScript());
+            simulator.EndBlock();
+
+            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(token, testUser.Address);
+
+            Assert.IsTrue(finalFuelBalance - initialFuelBalance == transferAmount);
         }
 
         [TestMethod]
