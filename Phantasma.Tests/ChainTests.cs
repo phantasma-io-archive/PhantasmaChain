@@ -174,7 +174,7 @@ namespace Phantasma.Tests
         public void TransferToAccountName()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var token = nexus.FuelToken;
