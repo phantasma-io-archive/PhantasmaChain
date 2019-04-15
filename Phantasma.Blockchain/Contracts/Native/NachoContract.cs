@@ -2165,14 +2165,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             _accounts.Set<Address, NachoAccount>(address, account);
         }
 
-        public NachoReferral[] GetAccountReferals(Address address)
+        public NachoReferral[] GetAccountReferrals(Address address)
         {
-            var referals = _referrals.Get<Address, StorageList>(address);
-            return referals.All<NachoReferral>();
+            var referrals = _referrals.Get<Address, StorageList>(address);
+            return referrals.All<NachoReferral>();
         }
 
         /* TODO LATER
-    public void RegisterReferal(Address from, Address target)
+    public void RegisterReferral(Address from, Address target)
     {
         Runtime.Expect(IsWitness(from), "witness failed");
 
@@ -2186,29 +2186,29 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         Runtime.Expect(fromAccount.creationTime > targetAccount.creationTime, "newer account failed");
 
-        var referals = _referrals.Get<Address, StorageList>(target);
+        var referrals = _referrals.Get<Address, StorageList>(target);
 
-        var referal = new NachoReferral();
-        int referalIndex = -1;
-        var count = referals.Count(); 
+        var referral = new NachoReferral();
+        int referralIndex = -1;
+        var count = referrals.Count(); 
         for (int i=0; i<count; i++) // no breaks here, we need to check every referal to make sure we're not registering the same guy twice
         { 
-            referal = referals.Get<NachoReferral>(i);
-            Runtime.Expect(referal.address != from, "already referal");
+            referral = referals.Get<NachoReferral>(i);
+            Runtime.Expect(referral.address != from, "already referral");
 
-            if (referal.address == Address.Null && referal.stakeAmount> 0)
+            if (referral.address == Address.Null && referral.stakeAmount> 0)
             {
-                referalIndex = i;
+                referralIndex = i;
             }
         }
 
-        Runtime.Expect(referalIndex >= 0, "no referal slots available");
+        Runtime.Expect(referralIndex >= 0, "no refreral slots available");
 
-        referal.address = from;
-        referal.referalTime = Runtime.Time.Value;
-        referals.Replace(referalIndex, referal);
+        referral.address = from;
+        referral.referalTime = Runtime.Time.Value;
+        referrals.Replace(referralIndex, referral);
 
-        fromAccount.referal = target;
+        fromAccount.referral = target;
         SetAccount(from, fromAccount);
 
         var rnd = new Random();
