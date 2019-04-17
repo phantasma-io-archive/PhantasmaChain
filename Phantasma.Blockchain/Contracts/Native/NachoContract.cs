@@ -1303,7 +1303,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         None = 0,
         Dummy = 1,
         Pot = 2,
-        Referal = 4,
+        Referral = 4,
         Safe = 8,
         Drink = 16,
         Clown = 32,
@@ -2281,19 +2281,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             return bonusAmount;
         }
 
-        public void StakeReferal(Address from, int referralIndex)
+        public void StakeReferral(Address from, int referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(referralIndex >= 0, "invalid referal");
+            Runtime.Expect(referralIndex >= 0, "invalid referral");
 
-            var referals = _referrals.Get<Address, StorageList>(from);
-            var count = referals.Count();
+            var referrals = _referrals.Get<Address, StorageList>(from);
+            var count = referrals.Count();
 
-            NachoReferral referal;
+            NachoReferral referral;
 
             if (referralIndex == count) // new slot
             {
-                referal = new NachoReferral()
+                referral = new NachoReferral()
                 {
                     address = Address.Null,
                     stakeAmount = 0,
@@ -2302,9 +2302,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                Runtime.Expect(referralIndex < count, "invalid referal");
-                referal = referals.Get<NachoReferral>(referralIndex);
-                Runtime.Expect(referal.stakeAmount == 0, "already staked");
+                Runtime.Expect(referralIndex < count, "invalid referral");
+                referral = referrals.Get<NachoReferral>(referralIndex);
+                Runtime.Expect(referral.stakeAmount == 0, "already staked");
             }
 
             var stakeAmount = UnitConversion.ToBigInteger(Constants.REFERRAL_STAKE_AMOUNT, Nexus.StakingTokenDecimals);
@@ -2351,33 +2351,33 @@ namespace Phantasma.Blockchain.Contracts.Native
                 currentReferralPercent = 5;
             }
 
-            referal.stakeTime = Runtime.Time.Value;
-            referal.stakeAmount = stakeAmount;
-            referal.bonusPercentage = currentReferralPercent;
+            referral.stakeTime = Runtime.Time.Value;
+            referral.stakeAmount = stakeAmount;
+            referral.bonusPercentage = currentReferralPercent;
 
             if (referralIndex == count)
             {
-                referals.Add(referal);
+                referrals.Add(referral);
             }
             else
             {
-                referals.Replace(referralIndex, referal);
+                referrals.Replace(referralIndex, referral);
             }
 
             Runtime.Notify(EventKind.TokenStake, from, referralIndex);
         }
 
         /* TODO LATER
-        public void UnstakeReferal(Address from, int referalIndex)
+        public void UnstakeReferral(Address from, int referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             var referrals = _referrals.Get<Address, StorageList>(from);
             var count = referrals.Count();
-            Runtime.Expect(referalIndex >= 0, "invalid referal");
-            Runtime.Expect(referalIndex < count, "invalid referal");
+            Runtime.Expect(referralIndex >= 0, "invalid referral");
+            Runtime.Expect(referralIndex < count, "invalid referral");
 
-            var referral = referrals.Get<NachoReferral>(referalIndex);
+            var referral = referrals.Get<NachoReferral>(referralIndex);
             var outputAmount = referral.stakeAmount + referral.bonusAmount;
 
             Runtime.Expect(outputAmount > 0, "already unstaked");
@@ -2393,9 +2393,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
-            referrals.Replace(referalIndex, referral);
+            referrals.Replace(referralIndex, referral);
 
-            AddTrophy(from, TrophyFlag.Referal);
+            AddTrophy(from, TrophyFlag.Referral);
 
             Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
         }*/
