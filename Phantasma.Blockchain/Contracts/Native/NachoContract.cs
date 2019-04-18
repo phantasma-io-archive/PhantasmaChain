@@ -1303,7 +1303,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         None = 0,
         Dummy = 1,
         Pot = 2,
-        Referal = 4,
+        Referral = 4,
         Safe = 8,
         Drink = 16,
         Clown = 32,
@@ -2165,14 +2165,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             _accounts.Set<Address, NachoAccount>(address, account);
         }
 
-        public NachoReferral[] GetAccountReferals(Address address)
+        public NachoReferral[] GetAccountReferrals(Address address)
         {
-            var referals = _referrals.Get<Address, StorageList>(address);
-            return referals.All<NachoReferral>();
+            var referrals = _referrals.Get<Address, StorageList>(address);
+            return referrals.All<NachoReferral>();
         }
 
         /* TODO LATER
-    public void RegisterReferal(Address from, Address target)
+    public void RegisterReferral(Address from, Address target)
     {
         Runtime.Expect(IsWitness(from), "witness failed");
 
@@ -2186,29 +2186,29 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         Runtime.Expect(fromAccount.creationTime > targetAccount.creationTime, "newer account failed");
 
-        var referals = _referrals.Get<Address, StorageList>(target);
+        var referrals = _referrals.Get<Address, StorageList>(target);
 
-        var referal = new NachoReferral();
-        int referalIndex = -1;
-        var count = referals.Count(); 
+        var referral = new NachoReferral();
+        int referralIndex = -1;
+        var count = referrals.Count(); 
         for (int i=0; i<count; i++) // no breaks here, we need to check every referal to make sure we're not registering the same guy twice
         { 
-            referal = referals.Get<NachoReferral>(i);
-            Runtime.Expect(referal.address != from, "already referal");
+            referral = referals.Get<NachoReferral>(i);
+            Runtime.Expect(referral.address != from, "already referral");
 
-            if (referal.address == Address.Null && referal.stakeAmount> 0)
+            if (referral.address == Address.Null && referral.stakeAmount> 0)
             {
-                referalIndex = i;
+                referralIndex = i;
             }
         }
 
-        Runtime.Expect(referalIndex >= 0, "no referal slots available");
+        Runtime.Expect(referralIndex >= 0, "no refreral slots available");
 
-        referal.address = from;
-        referal.referalTime = Runtime.Time.Value;
-        referals.Replace(referalIndex, referal);
+        referral.address = from;
+        referral.referalTime = Runtime.Time.Value;
+        referrals.Replace(referralIndex, referral);
 
-        fromAccount.referal = target;
+        fromAccount.referral = target;
         SetAccount(from, fromAccount);
 
         var rnd = new Random();
@@ -2281,19 +2281,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             return bonusAmount;
         }
 
-        public void StakeReferal(Address from, int referralIndex)
+        public void StakeReferral(Address from, int referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(referralIndex >= 0, "invalid referal");
+            Runtime.Expect(referralIndex >= 0, "invalid referral");
 
-            var referals = _referrals.Get<Address, StorageList>(from);
-            var count = referals.Count();
+            var referrals = _referrals.Get<Address, StorageList>(from);
+            var count = referrals.Count();
 
-            NachoReferral referal;
+            NachoReferral referral;
 
             if (referralIndex == count) // new slot
             {
-                referal = new NachoReferral()
+                referral = new NachoReferral()
                 {
                     address = Address.Null,
                     stakeAmount = 0,
@@ -2302,9 +2302,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                Runtime.Expect(referralIndex < count, "invalid referal");
-                referal = referals.Get<NachoReferral>(referralIndex);
-                Runtime.Expect(referal.stakeAmount == 0, "already staked");
+                Runtime.Expect(referralIndex < count, "invalid referral");
+                referral = referrals.Get<NachoReferral>(referralIndex);
+                Runtime.Expect(referral.stakeAmount == 0, "already staked");
             }
 
             var stakeAmount = UnitConversion.ToBigInteger(Constants.REFERRAL_STAKE_AMOUNT, Nexus.StakingTokenDecimals);
@@ -2351,33 +2351,33 @@ namespace Phantasma.Blockchain.Contracts.Native
                 currentReferralPercent = 5;
             }
 
-            referal.stakeTime = Runtime.Time.Value;
-            referal.stakeAmount = stakeAmount;
-            referal.bonusPercentage = currentReferralPercent;
+            referral.stakeTime = Runtime.Time.Value;
+            referral.stakeAmount = stakeAmount;
+            referral.bonusPercentage = currentReferralPercent;
 
             if (referralIndex == count)
             {
-                referals.Add(referal);
+                referrals.Add(referral);
             }
             else
             {
-                referals.Replace(referralIndex, referal);
+                referrals.Replace(referralIndex, referral);
             }
 
             Runtime.Notify(EventKind.TokenStake, from, referralIndex);
         }
 
         /* TODO LATER
-        public void UnstakeReferal(Address from, int referalIndex)
+        public void UnstakeReferral(Address from, int referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             var referrals = _referrals.Get<Address, StorageList>(from);
             var count = referrals.Count();
-            Runtime.Expect(referalIndex >= 0, "invalid referal");
-            Runtime.Expect(referalIndex < count, "invalid referal");
+            Runtime.Expect(referralIndex >= 0, "invalid referral");
+            Runtime.Expect(referralIndex < count, "invalid referral");
 
-            var referral = referrals.Get<NachoReferral>(referalIndex);
+            var referral = referrals.Get<NachoReferral>(referralIndex);
             var outputAmount = referral.stakeAmount + referral.bonusAmount;
 
             Runtime.Expect(outputAmount > 0, "already unstaked");
@@ -2393,9 +2393,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
-            referrals.Replace(referalIndex, referral);
+            referrals.Replace(referralIndex, referral);
 
-            AddTrophy(from, TrophyFlag.Referal);
+            AddTrophy(from, TrophyFlag.Referral);
 
             Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
         }*/
