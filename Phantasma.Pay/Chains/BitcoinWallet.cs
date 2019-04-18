@@ -87,5 +87,11 @@ namespace Phantasma.Pay.Chains
 
             return bytes.Base58CheckEncode();
         }
+
+        public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
+        {
+            yield return new CryptoCurrencyInfo("BTC", "Bitcoin", 8, WalletKind.Bitcoin);
+            yield break;
+        }
     }
 }
