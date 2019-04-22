@@ -224,7 +224,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 case ItemKind.Fork:
                 case ItemKind.Gnome_Cap:
                 case ItemKind.Wood_Potato:
-                case ItemKind.Avatar:
+                //case ItemKind.Avatar:
                 case ItemKind.Make_Up_Common:
                     return Rarity.Common;
 
@@ -704,7 +704,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 case ItemKind.Make_Up_Rare: return true;
                 case ItemKind.Make_Up_Epic: return true;
                 case ItemKind.Make_Up_Legendary: return true;
-                case ItemKind.Avatar: return true;
+                //case ItemKind.Avatar: return true;
 
                 // those should never be released
                 case ItemKind.Dev_Badge: return false;
@@ -718,8 +718,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             switch (itemKind)
             {
-                case ItemKind.Avatar:
-                    return ItemCategory.Avatar;
+                //case ItemKind.Avatar:
+                //    return ItemCategory.Avatar;
 
                 case ItemKind.Dumbell:
                 case ItemKind.Gym_Card:
@@ -1289,7 +1289,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         Gym,
         Battle,
         Decoration,
-        Avatar,
+        //Avatar,
         Other
     }
 
@@ -1428,7 +1428,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         Make_Up_Rare = 87,
         Make_Up_Epic = 88,
         Make_Up_Legendary = 89,
-        Avatar = 90 // TODO avatars
+        //Avatar = 90 // TODO avatars
     }
 
     public enum Rarity
@@ -1845,7 +1845,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
-        public BigInteger avatarID;
+        //public BigInteger avatarID;
     }
 
     public struct NachoReferral
@@ -1909,7 +1909,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public string name;
         public Address address;
-        public int avatarID;
+        //public int avatarID;
         public int ELO;
     }
 
@@ -2123,7 +2123,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     comment = "",
                     referal = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
-                    avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
+                    //avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                 };
             }
 
@@ -2757,43 +2757,43 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #region AVATAR API
         // TODO when player sells an equipped avatar, the avatar must revert back to default avatar!
-        public void UseAvatar(Address from, BigInteger itemID)
-        {
-            var kind = Formulas.GetItemKind(itemID);
-            var category = Rules.GetItemCategory(kind);
-            Runtime.Expect(category == ItemCategory.Avatar, "not avatar");
+        //public void UseAvatar(Address from, BigInteger itemID)
+        //{
+        //    var kind = Formulas.GetItemKind(itemID);
+        //    var category = Rules.GetItemCategory(kind);
+        //    Runtime.Expect(category == ItemCategory.Avatar, "not avatar");
 
-            Runtime.Expect(HasItem(from, itemID), "invalid item");
+        //    Runtime.Expect(HasItem(from, itemID), "invalid item");
 
-            var item = GetItem(itemID);
+        //    var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+        //    if (item.owner == Address.Null)
+        //    {
+        //        item.owner = from;
+        //    }
 
-            Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
-            Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+        //    Runtime.Expect(item.location == ItemLocation.None, "invalid location");
+        //    Runtime.Expect(item.owner == from, "invalid owner");
+        //    Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-            var account = GetAccount(from);
-            account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
-            SetAccount(from, account);
+        //    var account = GetAccount(from);
+        //    account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
+        //    SetAccount(from, account);
 
-            Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
-        }
+        //    Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
+        //}
 
         // todo confirmar se pode ficar com bigint. Com int dava erro a converter 
-        public void UseDefaultAvatar(Address from, BigInteger avatarID)
-        {
-            Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
+        //public void UseDefaultAvatar(Address from, BigInteger avatarID)
+        //{
+        //    Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
 
-            var account = GetAccount(from);
-            account.avatarID = avatarID;
-            SetAccount(from, account);
+        //    var account = GetAccount(from);
+        //    account.avatarID = avatarID;
+        //    SetAccount(from, account);
 
-            Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
-        }
+        //    Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
+        //}
         #endregion
 
         #region WRESTLER API
