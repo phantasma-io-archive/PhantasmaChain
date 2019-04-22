@@ -924,6 +924,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const string WRESTLER_SYMBOL = "LUCHA";
         public const string ITEM_SYMBOL = "ITEMS"; // TODO later combine both items and wrestlers into a single token
 
+        public const int LOOTBOX_SALE_RANKED_POT_FEE = 10; // 10%
+
         public const uint NEO_TICKER = 1376;
         public const uint SOUL_TICKER = 2827;
 
@@ -1884,7 +1886,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoConfig
     {
         public uint time;
-        public BigInteger rankedFee;
         public bool suspendedTransfers;
     }
 
@@ -8450,7 +8451,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             return new NachoConfig()
             {
-                rankedFee = UnitConversion.ToBigInteger(5, Nexus.StakingTokenDecimals),
+                //rankedFee = UnitConversion.ToBigInteger(5, Nexus.StakingTokenDecimals),
                 time = GetCurrentTime(),
                 suspendedTransfers = SuspendTransfers
             };
