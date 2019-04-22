@@ -58,7 +58,7 @@ namespace Phantasma.Pay.Chains
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
             yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Phantasma);
-            yield return new CryptoCurrencyInfo("KCAL", "Phantasma Energy", 8, WalletKind.Phantasma);
+            yield return new CryptoCurrencyInfo("KCAL", "Phantasma Energy", 10, WalletKind.Phantasma);
             yield break;
         }
     }
