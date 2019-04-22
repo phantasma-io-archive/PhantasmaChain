@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts
         WrestlerReceived    = 26,
         Purchase            = 27,
         ItemAdded           = 28,
-        ItemRemoved         = 39,
+        ItemRemoved         = 29,
         ItemReceived        = 30,
         ItemSpent           = 31,
         ItemActivated       = 32,
