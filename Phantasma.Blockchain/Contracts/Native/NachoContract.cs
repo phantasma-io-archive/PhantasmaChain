@@ -2506,15 +2506,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region ITEM API
-        public NachoItem[] GetItems(BigInteger[] IDs)
-        {
-            var items = new NachoItem[IDs.Length];
-            for (int i = 0; i < items.Length; i++)
-            {
-                items[i] = GetItem(IDs[i]);
-            }
-            return items;
-        }
+        //public NachoItem[] GetItems(BigInteger[] IDs)
+        //{
+        //    var items = new NachoItem[IDs.Length];
+        //    for (int i = 0; i < items.Length; i++)
+        //    {
+        //        items[i] = GetItem(IDs[i]);
+        //    }
+        //    return items;
+        //}
 
         // TODO error handling when item not exist
         public NachoItem GetItem(BigInteger ID)
@@ -2907,15 +2907,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         */
 
-        public NachoWrestler[] GetWrestlers(BigInteger[] IDs)
-        {
-            var wrestlers = new NachoWrestler[IDs.Length];
-            for (int i = 0; i < wrestlers.Length; i++)
-            {
-                wrestlers[i] = GetWrestler(IDs[i]);
-            }
-            return wrestlers;
-        }
+        //public NachoWrestler[] GetWrestlers(BigInteger[] IDs)
+        //{
+        //    var wrestlers = new NachoWrestler[IDs.Length];
+        //    for (int i = 0; i < wrestlers.Length; i++)
+        //    {
+        //        wrestlers[i] = GetWrestler(IDs[i]);
+        //    }
+        //    return wrestlers;
+        //}
 
         public NachoWrestler GetBot(int botID)
         {
