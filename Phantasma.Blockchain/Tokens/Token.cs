@@ -43,9 +43,9 @@ namespace Phantasma.Blockchain.Tokens
             this.Owner = owner;
             this.Symbol = symbol;
             this.Name = name;
-            this.MaxSupply = maxSupply;
-            this.Decimals = decimals;
             this.Flags = flags;
+            this.Decimals = decimals;
+            this.MaxSupply = maxSupply;
         }
 
         public override string ToString()
@@ -55,18 +55,22 @@ namespace Phantasma.Blockchain.Tokens
 
         public void SerializeData(BinaryWriter writer)
         {
+            writer.WriteAddress(Owner);
             writer.WriteVarString(Symbol);
             writer.WriteVarString(Name);
             writer.Write((uint)Flags);
-            writer.WriteAddress(Owner);
+            writer.Write(Decimals);
+            writer.WriteBigInteger(MaxSupply);
         }
 
         public void UnserializeData(BinaryReader reader)
         {
+            Owner = reader.ReadAddress();
             Symbol = reader.ReadVarString();
             Name = reader.ReadVarString();
             Flags = (TokenFlags)reader.ReadUInt32();
-            Owner = reader.ReadAddress();
+            Decimals = reader.ReadInt32();
+            MaxSupply = reader.ReadBigInteger();
         }
     }
 }
