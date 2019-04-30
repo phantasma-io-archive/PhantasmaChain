@@ -16,7 +16,7 @@ using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus : ISerializable
+    public class Nexus
     {
         public string Name { get; private set; }
 
@@ -515,9 +515,34 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        // NOTE editing the ram is optional, if null passed, the ram is not touched
-        internal bool EditNFT(Token token, BigInteger tokenID, Address chainAddress, Address owner, byte[] ram = null)
+        internal bool EditNFTLocation(Token token, BigInteger tokenID, Address chainAddress, Address owner)
         {
+            lock (_tokenContents)
+            {
+                if (_tokenContents.ContainsKey(token))
+                {
+                    var contents = _tokenContents[token];
+
+                    if (contents.ContainsKey(tokenID))
+                    {
+                        var content = contents[tokenID];
+                        content = new TokenContent(chainAddress, owner, content.ROM, content.RAM);
+                        contents.Set(tokenID, content);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        internal bool EditNFTContent(Token token, BigInteger tokenID, byte[] ram)
+        {
+            if (ram == null || ram.Length > TokenContent.MaxRAMSize)
+            {
+                return false;
+            }
+
             lock (_tokenContents)
             {
                 if (_tokenContents.ContainsKey(token))
@@ -531,7 +556,7 @@ namespace Phantasma.Blockchain
                         {
                             ram = content.RAM;
                         }
-                        content = new TokenContent(chainAddress, owner, content.ROM, ram);
+                        content = new TokenContent(content.CurrentChain, content.CurrentOwner, content.ROM, ram);
                         contents.Set(tokenID, content);
                         return true;
                     }

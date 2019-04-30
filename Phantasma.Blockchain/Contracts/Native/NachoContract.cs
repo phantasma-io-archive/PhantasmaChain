@@ -2551,10 +2551,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SetItem(BigInteger ID, NachoItem item)
         {
             var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
-            var nft = Runtime.Nexus.GetNFT(token, ID);
-
             var bytes = Serialization.Serialize(item);
-            nft.WriteRAM(bytes);
+            Runtime.Nexus.EditNFTContent(token, ID, bytes);
         }
 
         public bool HasItem(Address address, BigInteger itemID)
@@ -3171,10 +3169,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         */
 
             var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
-            var nft = Runtime.Nexus.GetNFT(token, wrestlerID);
             var bytes = Serialization.Serialize(wrestler);
-
-            nft.WriteRAM(bytes);
+            Runtime.Nexus.EditNFTContent(token, wrestlerID, bytes);
         }
 
         #endregion

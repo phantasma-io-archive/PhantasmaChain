@@ -127,8 +127,12 @@ namespace Phantasma.Blockchain.Utils
             for (int i = 1; i < 7; i++)
             {
                 BigInteger ID = i + 100;
-                var info = Nexus.GetNFT(nacho, ID);
-                if (info == null)
+                TokenContent info;
+                try
+                {
+                    info = Nexus.GetNFT(nacho, ID);
+                }
+                catch  
                 {
                     continue;
                 }
