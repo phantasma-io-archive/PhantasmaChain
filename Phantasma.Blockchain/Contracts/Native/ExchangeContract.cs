@@ -57,12 +57,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var baseToken = Runtime.Nexus.FindTokenBySymbol(baseSymbol);
-            Runtime.Expect(baseToken != null, "invalid base token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
+            var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
-            Runtime.Expect(quoteToken != null, "invalid quote token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(quoteSymbol), "invalid quote token");
+            var quoteToken = Runtime.Nexus.GetTokenInfo(quoteSymbol);
             Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             //var tokenABI = Chain.FindABI(NativeABI.Token);
@@ -74,24 +74,25 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 case ExchangeOrderSide.Sell:
                     {
-                        var balances = Runtime.Chain.GetTokenBalances(baseToken);
+                        var balances = Runtime.Chain.GetTokenBalances(baseSymbol);
                         var balance = balances.Get(this.Storage, from);
                         Runtime.Expect(balance >= quantity, "not enought balance");
 
-                        Runtime.Expect(baseToken.Transfer(this.Storage, balances, from, Runtime.Chain.Address, quantity), "transfer failed");
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, balances, from, Runtime.Chain.Address, quantity), "transfer failed");
 
                         break;
                     }
 
                 case ExchangeOrderSide.Buy:
                     {
-                        var balances = Runtime.Chain.GetTokenBalances(quoteToken);
+                        var balances = Runtime.Chain.GetTokenBalances(quoteSymbol);
                         var balance = balances.Get(this.Storage, from);
 
                         var expectedAmount = quantity / rate;
                         Runtime.Expect(balance >= expectedAmount, "not enought balance");
 
-                        Runtime.Expect(baseToken.Transfer(this.Storage, balances, from, Runtime.Chain.Address, expectedAmount), "transfer failed");
+                        // TODO check this
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, balances, from, Runtime.Chain.Address, expectedAmount), "transfer failed");
                         break;
                     }
 
@@ -109,11 +110,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
 
-            var baseToken = Runtime.Nexus.FindTokenBySymbol(baseSymbol);
-            Runtime.Expect(baseToken != null, "invalid base token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
+            var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var baseBalances = Runtime.Chain.GetTokenBalances(baseToken);
+            var baseBalances = Runtime.Chain.GetTokenBalances(baseSymbol);
             var baseBalance = baseBalances.Get(this.Storage, seller);
             Runtime.Expect(baseBalance >= amount, "invalid amount");
 
@@ -130,16 +131,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             var msg = Serialization.Serialize(swap);
             Runtime.Expect(Ed25519.Verify(signature, msg, seller.PublicKey), "invalid signature");
 
-            var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
-            Runtime.Expect(quoteToken != null, "invalid base token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(quoteSymbol), "invalid quote token");
+            var quoteToken = Runtime.Nexus.GetTokenInfo(quoteSymbol);
             Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var quoteBalances = Runtime.Chain.GetTokenBalances(quoteToken);
+            var quoteBalances = Runtime.Chain.GetTokenBalances(quoteSymbol);
             var quoteBalance = quoteBalances.Get(this.Storage, buyer);
             Runtime.Expect(quoteBalance >= price, "invalid balance");
 
-            Runtime.Expect(quoteToken.Transfer(this.Storage, quoteBalances, buyer, seller, price), "payment failed");
-            Runtime.Expect(baseToken.Transfer(this.Storage, baseBalances, seller, buyer, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, quoteBalances, buyer, seller, price), "payment failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, baseBalances, seller, buyer, amount), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = amount });
             Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });
@@ -153,11 +154,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
 
-            var baseToken = Runtime.Nexus.FindTokenBySymbol(baseSymbol);
-            Runtime.Expect(baseToken != null, "invalid base token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
+            var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(baseToken);
+            var ownerships = Runtime.Chain.GetTokenOwnerships(baseSymbol);
             var owner = ownerships.GetOwner(this.Storage, tokenID);
             Runtime.Expect(owner == seller, "invalid owner");
 
@@ -174,16 +175,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             var msg = Serialization.Serialize(swap);
             Runtime.Expect(Ed25519.Verify(signature, msg, seller.PublicKey), "invalid signature");
 
-            var quoteToken = Runtime.Nexus.FindTokenBySymbol(quoteSymbol);
-            Runtime.Expect(quoteToken != null, "invalid base token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(quoteSymbol), "invalid quote token");
+            var quoteToken = Runtime.Nexus.GetTokenInfo(quoteSymbol);
             Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var balances = Runtime.Chain.GetTokenBalances(quoteToken);
+            var balances = Runtime.Chain.GetTokenBalances(quoteSymbol);
             var balance = balances.Get(this.Storage, buyer);
             Runtime.Expect(balance >= price, "invalid balance");
 
-            Runtime.Expect(quoteToken.Transfer(this.Storage, balances, buyer, owner, price), "payment failed");
-            Runtime.Expect(baseToken.Transfer(this.Storage, ownerships, owner, buyer, tokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, balances, buyer, owner, price), "payment failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(baseSymbol, this.Storage, ownerships, owner, buyer, tokenID), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = tokenID });
             Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });

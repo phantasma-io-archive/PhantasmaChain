@@ -22,17 +22,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly BigInteger TransferAmount = 10;
 
-        internal StorageMap _queues; // = new Dictionary<Token, List<PrivacyQueue>>();
+        internal StorageMap _queues; // = new Dictionary<string, List<PrivacyQueue>>();
 
         public PrivacyContract() : base()
         {
         }
 
-        private PrivacyQueue FindQueue(Token token, uint ID)
+        private PrivacyQueue FindQueue(string tokenSymbol, uint ID)
         {
-            if (_queues.ContainsKey(token))
+            if (_queues.ContainsKey(tokenSymbol))
             {
-                var list = _queues.Get<string, StorageList>(token.Symbol);
+                var list = _queues.Get<string, StorageList>(tokenSymbol);
 
                 var queues = list.All<PrivacyQueue>();
                 foreach (var entry in queues)
@@ -47,9 +47,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             return new PrivacyQueue();
         }
 
-        private PrivacyQueue FetchQueue(Token token)
+        private PrivacyQueue FetchQueue(string symbol)
         {
-            StorageList list = _queues.Get<string, StorageList>(token.Symbol);
+            StorageList list = _queues.Get<string, StorageList>(symbol);
 
             PrivacyQueue queue;
 
@@ -64,7 +64,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var id = (uint)(count + 1);
-            var baseKey = $"{token.Symbol}.{id}";
+            var baseKey = $"{symbol}.{id}";
 
             var addrKey = $"{baseKey}.addr".AsByteArray();
             var addressList = new StorageList(addrKey, Runtime.ChangeSet);
@@ -83,15 +83,16 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
 
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+
+            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
             var balance = balances.Get(this.Storage, from);
             Runtime.Expect(balance >= TransferAmount, "not enough balance");
 
-            var queue = FetchQueue(token);
+            var queue = FetchQueue(symbol);
             Runtime.Expect(queue.addresses.Count() < queue.size, "queue full");
 
             var addresses = queue.addresses.All<Address>();
@@ -108,11 +109,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void TakePrivate(Address to, string symbol, uint queueID, RingSignature signature)
         {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var queue = FindQueue(token, queueID);
+            var queue = FindQueue(symbol, queueID);
             Runtime.Expect(queue.ID > 0, "invalid queue");
 
             Runtime.Expect(queue.ID == queueID, "mismatching queue");
@@ -135,7 +136,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             queue.signatures.Add(signature);
 
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
             balances.Add(this.Storage, to, TransferAmount);
         }
     }

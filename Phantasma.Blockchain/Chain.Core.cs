@@ -46,9 +46,9 @@ namespace Phantasma.Blockchain
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
-        private Dictionary<Token, BalanceSheet> _tokenBalances = new Dictionary<Token, BalanceSheet>();
-        private Dictionary<Token, OwnershipSheet> _tokenOwnerships = new Dictionary<Token, OwnershipSheet>();
-        private Dictionary<Token, SupplySheet> _tokenSupplies = new Dictionary<Token, SupplySheet>();
+        private Dictionary<string, BalanceSheet> _tokenBalances = new Dictionary<string, BalanceSheet>();
+        private Dictionary<string, OwnershipSheet> _tokenOwnerships = new Dictionary<string, OwnershipSheet>();
+        private Dictionary<string, SupplySheet> _tokenSupplies = new Dictionary<string, SupplySheet>();
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
@@ -337,96 +337,96 @@ namespace Phantasma.Blockchain
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
-        public BalanceSheet GetTokenBalances(Token token)
+        public BalanceSheet GetTokenBalances(string tokenSymbol)
         {
-            Throw.If(!token.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            Throw.If(!tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
 
-            if (_tokenBalances.ContainsKey(token))
+            if (_tokenBalances.ContainsKey(tokenSymbol))
             {
-                return _tokenBalances[token];
+                return _tokenBalances[tokenSymbol];
             }
 
-            var sheet = new BalanceSheet(token.Symbol, this.Storage);
-            _tokenBalances[token] = sheet;
+            var sheet = new BalanceSheet(tokenSymbol, this.Storage);
+            _tokenBalances[tokenSymbol] = sheet;
             return sheet;
         }
 
-        internal void InitSupplySheet(Token token, BigInteger maxSupply)
+        // TODO investigate the necessity of having this method
+        internal void InitSupplySheet(string tokenSymbol, BigInteger maxSupply)
         {
-            Throw.If(!token.IsCapped, "should be capped");
-            Throw.If(_tokenSupplies.ContainsKey(token), "supply sheet already created");
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            Throw.If(!tokenInfo.IsCapped, "should be capped");
+            Throw.If(_tokenSupplies.ContainsKey(tokenSymbol), "supply sheet already created");
 
             var sheet = new SupplySheet(0, 0, maxSupply);
-            _tokenSupplies[token] = sheet;
+            _tokenSupplies[tokenSymbol] = sheet;
         }
 
-        internal SupplySheet GetTokenSupplies(Token token)
+        internal SupplySheet GetTokenSupplies(string tokenSymbol)
         {
-            Throw.If(!token.IsCapped, "should be capped");
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            Throw.If(!tokenInfo.IsCapped, "should be capped");
 
-            if (_tokenSupplies.ContainsKey(token))
+            if (_tokenSupplies.ContainsKey(tokenSymbol))
             {
-                return _tokenSupplies[token];
+                return _tokenSupplies[tokenSymbol];
             }
 
             Throw.If(this.ParentChain == null, "supply sheet not created");
 
-            var parentSupplies = this.ParentChain.GetTokenSupplies(token);
+            var parentSupplies = this.ParentChain.GetTokenSupplies(tokenSymbol);
 
-            var sheet = new SupplySheet(parentSupplies.LocalBalance, 0, token.MaxSupply);
-            _tokenSupplies[token] = sheet;
+            var sheet = new SupplySheet(parentSupplies.LocalBalance, 0, tokenInfo.MaxSupply);
+            _tokenSupplies[tokenSymbol] = sheet;
             return sheet;
         }
 
-        public OwnershipSheet GetTokenOwnerships(Token token)
+        public OwnershipSheet GetTokenOwnerships(string tokenSymbol)
         {
-            Throw.If(token.Flags.HasFlag(TokenFlags.Fungible), "cannot be fungible");
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            Throw.If(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "cannot be fungible");
 
-            if (_tokenOwnerships.ContainsKey(token))
+            if (_tokenOwnerships.ContainsKey(tokenSymbol))
             {
-                return _tokenOwnerships[token];
+                return _tokenOwnerships[tokenSymbol];
             }
 
-            var sheet = new OwnershipSheet(token.Symbol);
-            _tokenOwnerships[token] = sheet;
+            var sheet = new OwnershipSheet(tokenSymbol);
+            _tokenOwnerships[tokenSymbol] = sheet;
             return sheet;
         }
 
-        public BigInteger GetTokenBalance(Token token, Address address)
+        public BigInteger GetTokenBalance(string tokenSymbol, Address address)
         {
-            if (token.Flags.HasFlag(TokenFlags.Fungible))
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
-                var balances = GetTokenBalances(token);
+                var balances = GetTokenBalances(tokenSymbol);
                 return balances.Get(Storage, address);
             }
             else
             {
-                var ownerships = GetTokenOwnerships(token);
+                var ownerships = GetTokenOwnerships(tokenSymbol);
                 var items = ownerships.Get(this.Storage, address);
                 return items.Count();
             }
-
-            /*            var contract = this.FindContract(token);
-                        Throw.IfNull(contract, "contract not found");
-
-                        var tokenABI = Chain.FindABI(NativeABI.Token);
-                        Throw.IfNot(contract.ABI.Implements(tokenABI), "invalid contract");
-
-                        var balance = (BigInteger)tokenABI["BalanceOf"].Invoke(contract, account);
-                        return balance;*/
         }
 
-        public Address GetTokenOwner(Token token, BigInteger tokenID)
+        // NOTE this only works if the token is curently on this chain
+        public Address GetTokenOwner(string tokenSymbol, BigInteger tokenID)
         {
-            Throw.If(token.IsFungible, "non fungible required");
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            Throw.If(tokenInfo.IsFungible, "non fungible required");
 
-            var ownerships = GetTokenOwnerships(token);
+            var ownerships = GetTokenOwnerships(tokenSymbol);
             return ownerships.GetOwner(this.Storage, tokenID);
         }
 
-        public IEnumerable<BigInteger> GetOwnedTokens(Token token, Address address)
+        // NOTE this lists only nfts owned in this chain
+        public IEnumerable<BigInteger> GetOwnedTokens(string tokenSymbol, Address address)
         {
-            var ownership = GetTokenOwnerships(token);
+            var ownership = GetTokenOwnerships(tokenSymbol);
             return ownership.Get(this.Storage, address);
         }
 

@@ -61,8 +61,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var stakeAmount = GetRequiredStake();
 
-            var token = Runtime.Nexus.StakingToken;
-            var balances = Runtime.Chain.GetTokenBalances(token);
+            var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
+            var balances = Runtime.Chain.GetTokenBalances(token.Symbol);
             var balance = balances.Get(this.Storage, address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
@@ -96,8 +96,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(days >= 30, "waiting period required");
 
             var stakeAmount = entry.stake;
-            var token = Runtime.Nexus.StakingToken;
-            var balances = Runtime.Chain.GetTokenBalances(token);
+            var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
+            var balances = Runtime.Chain.GetTokenBalances(token.Symbol);
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 

@@ -2073,10 +2073,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return true;
             }
 
-            var token = Runtime.Nexus.StakingToken;
-            var balances = Runtime.Chain.GetTokenBalances(token);
+            var tokenSymbol = Nexus.StakingTokenSymbol;
+            var balances = Runtime.Chain.GetTokenBalances(tokenSymbol);
 
-            return token.Transfer(this.Storage, balances, address, DevelopersAddress, amount);
+            return Runtime.Nexus.TransferTokens(tokenSymbol, this.Storage, balances, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)
@@ -2421,21 +2421,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         // get how many wrestlers in an account
         public BigInteger[] GetAccountWrestlers(Address address)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
-
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
             var ownerIDs = ownerships.Get(this.Storage, address);
-
             return ownerIDs.ToArray();
         }
 
         public BigInteger[] GetAccountItems(Address address)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
-
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
             var ownerIDs = ownerships.Get(this.Storage, address);
-
             return ownerIDs.ToArray();
             /*
             var items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, address);
@@ -2519,8 +2513,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // TODO error handling when item not exist
         public NachoItem GetItem(BigInteger ID)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
-            var nft = Runtime.Nexus.GetNFT(token, ID);
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, ID);
 
             var item = Serialization.Unserialize<NachoItem>(nft.RAM);
 
@@ -2550,15 +2543,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetItem(BigInteger ID, NachoItem item)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
             var bytes = Serialization.Serialize(item);
-            Runtime.Nexus.EditNFTContent(token, ID, bytes);
+            Runtime.Nexus.EditNFTContent(Constants.ITEM_SYMBOL, ID, bytes);
         }
 
         public bool HasItem(Address address, BigInteger itemID)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
             return ownerships.GetOwner(this.Storage, itemID) == address;
         }
 
@@ -2566,8 +2557,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
 
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
 
             Runtime.Expect(HasItem(from, itemID), "invalid owner");
 
@@ -2577,6 +2566,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.location = ItemLocation.None;
             item.owner = Address.Null;
 
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
             //token.Burn(balances, from,) TODO how to burn NFT?
 
@@ -2799,8 +2789,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasWrestler(Address address, BigInteger wrestlerID)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
             return ownerships.GetOwner(this.Storage, wrestlerID) == address;
         }
 
@@ -3066,8 +3055,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return GetBot((int)wrestlerID);
             }
 
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
-            var nft = Runtime.Nexus.GetNFT(token, wrestlerID);
+            var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, wrestlerID);
 
             var wrestler = Serialization.Unserialize<NachoWrestler>(nft.RAM);
             if (wrestler.moveOverrides == null || wrestler.moveOverrides.Length < Constants.MOVE_OVERRIDE_COUNT)
@@ -3168,9 +3156,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         Runtime.Expect(luchador.Rarity != Rarity.Bot, "invalid dummy");
         */
 
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
             var bytes = Serialization.Serialize(wrestler);
-            Runtime.Nexus.EditNFTContent(token, wrestlerID, bytes);
+            Runtime.Nexus.EditNFTContent(Constants.WRESTLER_SYMBOL, wrestlerID, bytes);
         }
 
         #endregion

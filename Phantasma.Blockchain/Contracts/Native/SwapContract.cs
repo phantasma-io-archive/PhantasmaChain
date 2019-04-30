@@ -21,13 +21,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
-            if (toSymbol == Runtime.Nexus.StakingToken.Symbol)
+            if (toSymbol == Nexus.StakingTokenSymbol)
             {
                 var quoteBalance = _quoteBalance.Get<string, BigInteger>(fromSymbol);
                 Runtime.Expect(quoteBalance > 0, "invalid balance");
             }
             else
-            if (fromSymbol == Runtime.Nexus.StakingToken.Symbol)
+            if (fromSymbol == Nexus.StakingTokenSymbol)
             {
 
             }

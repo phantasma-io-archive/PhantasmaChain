@@ -75,13 +75,13 @@ namespace Phantasma.Tests
             test.simulator.GenerateToken(test.owner, nftSymbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
             test.simulator.EndBlock();
 
-            var token = test.simulator.Nexus.FindTokenBySymbol(nftSymbol);
+            var token = test.simulator.Nexus.GetTokenInfo(nftSymbol);
             var tokenData = new byte[] { 0x1, 0x3, 0x3, 0x7 };
-            Assert.IsTrue(token != null, "Can't find the token symbol");
+            Assert.IsTrue(test.simulator.Nexus.TokenExists(nftSymbol), "Can't find the token symbol");
 
             // Mint a new CoolToken directly on the user
             test.simulator.BeginBlock();
-            test.simulator.GenerateNft(test.owner, testUser.Address, chain, token, tokenData, new byte[0]);
+            test.simulator.GenerateNft(test.owner, testUser.Address, chain, nftSymbol, tokenData, new byte[0]);
             test.simulator.EndBlock();
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);

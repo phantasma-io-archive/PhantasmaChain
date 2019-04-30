@@ -92,7 +92,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
                 }
                 else
-                if (PaidGas < UsedGas && Nexus.FuelToken != null)
+                if (PaidGas < UsedGas && Nexus.GenesisHash != null)
                 {
 #if DEBUG
                     throw new VMDebugException(this, "VM unpaid gas");
@@ -193,7 +193,7 @@ namespace Phantasma.Blockchain.Contracts
         public override ExecutionState ValidateOpcode(Opcode opcode)
         {
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || Nexus.FuelToken == null || Nexus.FuelToken.CurrentSupply == 0)
+            if (readOnlyMode || Nexus.GenesisHash == null || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
             {
                 return ExecutionState.Running;
             }
@@ -215,7 +215,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || Nexus.FuelToken == null || Nexus.FuelToken.CurrentSupply == 0)
+            if (readOnlyMode || Nexus.GenesisHash == null || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
             {
                 return ExecutionState.Running;
             }

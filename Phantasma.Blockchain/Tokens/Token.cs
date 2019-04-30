@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Tokens
         External = 1 << 7,
     }
 
-    public class Token : ISerializable
+    public struct TokenInfo : ISerializable
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }
@@ -36,54 +36,16 @@ namespace Phantasma.Blockchain.Tokens
 
         public Address Owner { get; private set; }
 
-        private BigInteger _lastId = new BigInteger(0);
-        internal BigInteger LastID { get; private set; }
-
-        private StorageContext _storage;
-
-        private BigInteger _supply = 0;
-        public BigInteger CurrentSupply => _supply;
-
         public int Decimals { get; private set; }
 
-        public Token()
+        internal TokenInfo(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
-
-        }
-
-        public Token(StorageContext storage)
-        {
-            this._storage = storage;
-        }
-
-        internal Token(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
-        {
-            Throw.If(maxSupply < 0, "negative supply");
-            Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
-            Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
-
-            if (!flags.HasFlag(TokenFlags.Fungible))
-            {
-                Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
-            }
-
-            if (flags.HasFlag(TokenFlags.Divisible))
-            {
-                Throw.If(decimals <= 0, "divisible token must have decimals");
-            }
-            else
-            {
-                Throw.If(decimals > 0, "indivisible token can't have decimals");
-            }
-
             this.Owner = owner;
             this.Symbol = symbol;
             this.Name = name;
             this.MaxSupply = maxSupply;
             this.Decimals = decimals;
             this.Flags = flags;
-
-            _supply = 0;
         }
 
         public override string ToString()
@@ -91,183 +53,12 @@ namespace Phantasma.Blockchain.Tokens
             return $"{Name} ({Symbol})";
         }
 
-        internal bool Mint(StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
-        {
-            if (!Flags.HasFlag(TokenFlags.Fungible))
-            {
-                return false;
-            }
-
-            if (amount <= 0)
-            {
-                return false;
-            }
-
-            if (IsCapped)
-            {
-                if (this.CurrentSupply + amount > this.MaxSupply)
-                {
-                    return false;
-                }
-
-                if (!supply.Mint(amount))
-                {
-                    return false;
-                }
-            }
-
-            if (!balances.Add(storage, target, amount))
-            {
-                return false;
-            }
-
-            this._supply += amount;
-            return true;
-        }
-
-        // NFT version
-        internal bool Mint()
-        {
-            if (Flags.HasFlag(TokenFlags.Fungible))
-            {
-                return false;
-            }
-
-            BigInteger amount = 1;
-
-            if (IsCapped && this.CurrentSupply + amount > this.MaxSupply)
-            {
-                return false;
-            }
-
-            this._supply += amount;
-            return true;
-        }
-
-        internal bool Burn(StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
-        {
-            if (!Flags.HasFlag(TokenFlags.Fungible))
-            {
-                return false;
-            }
-
-            if (amount <= 0)
-            {
-                return false;
-            }
-
-            if (this.CurrentSupply - amount < 0)
-            {
-                return false;
-            }
-
-            if (IsCapped && !supply.Burn(amount))
-            {
-                return false;
-            }
-
-            if (!balances.Subtract(storage, target, amount))
-            {
-                return false;
-            }
-
-            this._supply -= amount;
-            return true;
-        }
-
-        // NFT version
-        internal bool Burn()
-        {
-            if (Flags.HasFlag(TokenFlags.Fungible))
-            {
-                return false;
-            }
-
-            BigInteger amount = 1;
-
-            if (this.CurrentSupply - amount < 0)
-            {
-                return false;
-            }
-
-            this._supply -= amount;
-            return true;
-        }
-
-        internal bool Transfer(StorageContext storage, BalanceSheet balances, Address source, Address destination, BigInteger amount)
-        {
-            if (!Flags.HasFlag(TokenFlags.Transferable))
-            {
-                throw new Exception("Not transferable");
-            }
-
-            if (!Flags.HasFlag(TokenFlags.Fungible))
-            {
-                throw new Exception("Should be fungible");
-            }
-
-            if (amount <= 0)
-            {
-                return false;
-            }
-
-            if (!balances.Subtract(storage, source, amount))
-            {
-                return false;
-            }
-
-            if (!balances.Add(storage, destination, amount))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        internal bool Transfer(StorageContext storage, OwnershipSheet ownerships, Address source, Address destination, BigInteger ID)
-        {
-            if (!Flags.HasFlag(TokenFlags.Transferable))
-            {
-                throw new Exception("Not transferable");
-            }
-
-            if (Flags.HasFlag(TokenFlags.Fungible))
-            {
-                throw new Exception("Should be non-fungible");
-            }
-
-            if (ID <= 0)
-            {
-                return false;
-            }
-
-            if (!ownerships.Take(storage, source, ID))
-            {
-                return false;
-            }
-
-            if (!ownerships.Give(storage, destination, ID))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        internal BigInteger GenerateID()
-        {
-            _lastId++;
-            return _lastId;
-        }
-
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(Symbol);
             writer.WriteVarString(Name);
             writer.Write((uint)Flags);
-            writer.WriteBigInteger(_supply);
             writer.WriteAddress(Owner);
-            writer.WriteBigInteger(_lastId);
         }
 
         public void UnserializeData(BinaryReader reader)
@@ -275,9 +66,7 @@ namespace Phantasma.Blockchain.Tokens
             Symbol = reader.ReadVarString();
             Name = reader.ReadVarString();
             Flags = (TokenFlags)reader.ReadUInt32();
-            _supply = reader.ReadBigInteger();
             Owner = reader.ReadAddress();
-            _lastId = reader.ReadBigInteger();
         }
     }
 }

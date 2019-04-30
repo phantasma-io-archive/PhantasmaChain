@@ -73,12 +73,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             symbol = symbol.ToUpperInvariant();
 
-            var token = this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags);
-            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags), "token creation failed");
 
-            if (token.IsCapped)
+            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
+            if (tokenInfo.IsCapped)
             {
-                Runtime.Chain.InitSupplySheet(token, maxSupply);
+                Runtime.Chain.InitSupplySheet(symbol, maxSupply);
             }
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
@@ -105,10 +105,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetTokenMetadata(string symbol, string key, byte[] value)
         {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "token not found");
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
 
-            Runtime.Expect(IsWitness(token.Owner), "invalid witness");
+            Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
 
             var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
 
@@ -135,13 +135,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 metadataEntries.Add<TokenMetadata>(metadata);
             }
 
-            Runtime.Notify(EventKind.Metadata, token.Owner, new MetadataEventData() { symbol = symbol, metadata = metadata });
+            Runtime.Notify(EventKind.Metadata, tokenInfo.Owner, new MetadataEventData() { symbol = symbol, metadata = metadata });
         }
 
         public byte[] GetTokenMetadata(string symbol, string key)
         {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "token not found");
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
 
             var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
 
@@ -160,8 +160,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public TokenMetadata[] GetTokenMetadataList(string symbol)
         {
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "token not found");
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
 
             var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
 

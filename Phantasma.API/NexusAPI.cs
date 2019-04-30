@@ -274,9 +274,12 @@ namespace Phantasma.API
         }
 
         #region UTILS
-        private TokenResult FillToken(Token token)
+        private TokenResult FillToken(string tokenSymbol)
         {
-            var metadata = (TokenMetadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", token.Symbol);
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            var currentSupply = Nexus.GetTokenSupply(tokenSymbol);
+
+            var metadata = (TokenMetadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol);
             var metadataResults = new List<TokenMetadataResult>();
 
             for (int i = 0; i < metadata.Length; i++)
@@ -290,13 +293,13 @@ namespace Phantasma.API
 
             return new TokenResult
             {
-                symbol = token.Symbol,
-                name = token.Name,
-                currentSupply = token.CurrentSupply.ToString(),
-                maxSupply = token.MaxSupply.ToString(),
-                decimals = token.Decimals,
-                flags = token.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
-                ownerAddress = token.Owner.Text,
+                symbol = tokenInfo.Symbol,
+                name = tokenInfo.Name,
+                currentSupply = currentSupply.ToString(),
+                maxSupply = tokenInfo.MaxSupply.ToString(),
+                decimals = tokenInfo.Decimals,
+                flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
+                ownerAddress = tokenInfo.Owner.Text,
                 metadataList = metadataResults.ToArray()
             };
         }
@@ -429,13 +432,14 @@ namespace Phantasma.API
             result.name = Nexus.LookUpAddress(address);
 
             var balanceList = new List<BalanceResult>();
-            foreach (var token in Nexus.Tokens)
+            foreach (var symbol in Nexus.Tokens)
             {
                 foreach (var chain in Nexus.Chains)
                 {
-                    var balance = chain.GetTokenBalance(token, address);
+                    var balance = chain.GetTokenBalance(symbol, address);
                     if (balance > 0)
                     {
+                        var token = Nexus.GetTokenInfo(symbol);
                         var balanceEntry = new BalanceResult
                         {
                             chain = chain.Name,
@@ -447,7 +451,7 @@ namespace Phantasma.API
 
                         if (!token.IsFungible)
                         {
-                            var idList = chain.GetTokenOwnerships(token).Get(chain.Storage, address);
+                            var idList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, address);
                             if (idList != null && idList.Any())
                             {
                                 balanceEntry.ids = idList.Select(x => x.ToString()).ToArray();
@@ -934,13 +938,13 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.")]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol)
         {
-            var token = Nexus.FindTokenBySymbol(symbol);
-            if (token == null)
+            var token = Nexus.GetTokenInfo(symbol);
+            if (!Nexus.TokenExists(symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
             }
 
-            var result = FillToken(token);
+            var result = FillToken(symbol);
 
             return result;
         }
@@ -948,8 +952,7 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.")]
         public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
         {
-            var token = Nexus.FindTokenBySymbol(symbol);
-            if (token == null)
+            if (!Nexus.TokenExists(symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
             }
@@ -960,7 +963,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            var info = Nexus.GetNFT(token, ID);
+            var info = Nexus.GetNFT(symbol, ID);
 
             var chain = GetMarketChain();
             bool forSale;
@@ -1018,8 +1021,7 @@ namespace Phantasma.API
                 pageSize = PaginationMaxResults;
             }
 
-            var token = Nexus.FindTokenBySymbol(tokenSymbol);
-            if (token == null)
+            if (!Nexus.TokenExists(tokenSymbol))
             {
                 return new ErrorResult { error = "Invalid token" };
             }
@@ -1076,12 +1078,12 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
-            Token token = Nexus.FindTokenBySymbol(tokenSymbol);
-
-            if (token == null)
+            if (!Nexus.TokenExists(tokenSymbol))
             {
                 return new ErrorResult { error = "invalid token" };
             }
+
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
 
             var chain = FindChainByInput(chainInput);
 
@@ -1091,19 +1093,19 @@ namespace Phantasma.API
             }
 
             var address = Address.FromText(addressText);
-            var balance = chain.GetTokenBalance(token, address);
+            var balance = chain.GetTokenBalance(tokenSymbol, address);
 
             var result = new BalanceResult()
             {
                 amount = balance.ToString(),
                 symbol = tokenSymbol,
-                decimals = (uint)token.Decimals,
+                decimals = (uint)tokenInfo.Decimals,
                 chain = chain.Address.Text
             };
 
-            if (!token.IsFungible)
+            if (!tokenInfo.IsFungible)
             {
-                var idList = chain.GetTokenOwnerships(token).Get(chain.Storage, address);
+                var idList = chain.GetTokenOwnerships(tokenSymbol).Get(chain.Storage, address);
                 if (idList != null && idList.Any())
                 {
                     result.ids = idList.Select(x => x.ToString()).ToArray();
@@ -1190,8 +1192,7 @@ namespace Phantasma.API
         [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false)]
         public IAPIResult GetAuction([APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
         {
-            var token = Nexus.FindTokenBySymbol(symbol);
-            if (token == null)
+            if (!Nexus.TokenExists(symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
             }
@@ -1202,7 +1203,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            var info = Nexus.GetNFT(token, ID);
+            var info = Nexus.GetNFT(symbol, ID);
 
             var chain = GetMarketChain();
             if (chain == null)

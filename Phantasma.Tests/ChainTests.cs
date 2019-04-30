@@ -53,11 +53,14 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
 
             var rootChain = nexus.RootChain;
-            var token = nexus.FuelToken;
 
-            Assert.IsTrue(token != null);
-            Assert.IsTrue(token.CurrentSupply > 0);
+            var symbol = Nexus.FuelTokenSymbol;
+            Assert.IsTrue(nexus.TokenExists(symbol));
+            var token = nexus.GetTokenInfo(symbol);
             Assert.IsTrue(token.MaxSupply > 0);
+
+            var supply = nexus.GetTokenSupply(symbol);
+            Assert.IsTrue(supply > 0);
 
             Assert.IsTrue(rootChain != null);
             Assert.IsTrue(rootChain.BlockHeight > 0);
@@ -80,26 +83,27 @@ namespace Phantasma.Tests
 
             var nexus = simulator.Nexus;
             var accountChain = nexus.FindChainByName("account");
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
+            var token = nexus.GetTokenInfo(symbol);
 
             var testUser = KeyPair.Generate();
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
 
             Assert.IsTrue(oldBalance > amount);
 
             // Send from Genesis address to test user
             simulator.BeginBlock();
-            var tx = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, token, amount);
+            var tx = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(token, testUser.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
             Assert.IsTrue(transferBalance == amount);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
             Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
@@ -112,7 +116,7 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234, -1);
 
             var nexus = simulator.Nexus;
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
 
             Func<KeyPair, string, bool> registerName = (keypair, name) =>
             {
@@ -142,15 +146,16 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
+            var token = nexus.GetTokenInfo(symbol);
             var amount = UnitConversion.ToBigInteger(10, token.Decimals);
 
             // Send from Genesis address to test user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, token, amount);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(token, testUser.Address);
+            var balance = nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
             Assert.IsTrue(balance == amount);
 
             var targetName = "hello";
@@ -177,7 +182,7 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234, -1);
 
             var nexus = simulator.Nexus;
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
 
             Func<KeyPair, string, bool> registerName = (keypair, name) =>
             {
@@ -204,12 +209,14 @@ namespace Phantasma.Tests
 
                 return result;
             };
+
             var targetName = "hello";
             var testUser = KeyPair.Generate();
+            var token = nexus.GetTokenInfo(symbol);
             var amount = UnitConversion.ToBigInteger(10, token.Decimals);
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, token, amount);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             Assert.IsTrue(registerName(testUser, targetName));
@@ -217,7 +224,7 @@ namespace Phantasma.Tests
             // Send from Genesis address to test user
             var transferAmount = 1;
 
-            var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(token, testUser.Address);
+            var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
@@ -226,7 +233,7 @@ namespace Phantasma.Tests
                     .SpendGas(owner.Address).EndScript());
             simulator.EndBlock();
 
-            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(token, testUser.Address);
+            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
 
             Assert.IsTrue(finalFuelBalance - initialFuelBalance == transferAmount);
         }
@@ -242,11 +249,12 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var targetChain = nexus.FindChainByName("privacy");
 
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
+            var token = nexus.GetTokenInfo(symbol);
             var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
@@ -254,18 +262,18 @@ namespace Phantasma.Tests
 
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             var crossFee = UnitConversion.ToBigInteger(0.001m, token.Decimals);
 
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain, sideAmount, crossFee);
+            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, receiver.Address, targetChain, sideAmount, crossFee);
             simulator.EndBlock();
             var blockA = nexus.RootChain.LastBlock;
 
@@ -276,13 +284,13 @@ namespace Phantasma.Tests
 
             // verify balances
             var feeB = targetChain.GetTransactionFee(txB);
-            balance = targetChain.GetTokenBalance(token, receiver.Address);
+            balance = targetChain.GetTokenBalance(symbol, receiver.Address);
             Assert.IsTrue(balance == sideAmount - feeB);
 
             var feeA = sourceChain.GetTransactionFee(txA);
             var leftoverAmount = originalAmount - (sideAmount + feeA + crossFee);
 
-            balance = sourceChain.GetTokenBalance(token, sender.Address);
+            balance = sourceChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
         }
 
@@ -297,7 +305,8 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var targetChain = nexus.FindChainByName("privacy");
 
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
+            var token = nexus.GetTokenInfo(symbol);
 
             var sender = KeyPair.Generate();
             var receiver = sender;
@@ -309,16 +318,16 @@ namespace Phantasma.Tests
 
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, sideAmount);
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain, sideAmount, 0);
+            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, receiver.Address, targetChain, sideAmount, 0);
             simulator.EndBlock();
             var blockA = nexus.RootChain.LastBlock;
 
@@ -329,13 +338,13 @@ namespace Phantasma.Tests
 
             // verify balances
             var feeB = targetChain.GetTransactionFee(txB);
-            balance = targetChain.GetTokenBalance(token, receiver.Address);
+            balance = targetChain.GetTokenBalance(symbol, receiver.Address);
             Assert.IsTrue(balance == sideAmount - feeB);
 
             var feeA = sourceChain.GetTransactionFee(txA);
             var leftoverAmount = originalAmount - (sideAmount + feeA);
 
-            balance = sourceChain.GetTokenBalance(token, sender.Address);
+            balance = sourceChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
         }
 
@@ -350,7 +359,8 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var appsChain = nexus.FindChainByName("apps");
 
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
+            var token = nexus.GetTokenInfo(symbol);
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
@@ -364,19 +374,19 @@ namespace Phantasma.Tests
 
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
             simulator.GenerateChain(owner, appsChain, newChainName);
             simulator.EndBlock();
 
             var targetChain = nexus.FindChainByName(newChainName);
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             // do a side chain send using test user balance from root to apps chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, token, sourceChain, sender.Address, appsChain, sideAmount, 0);
+            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, sender.Address, appsChain, sideAmount, 0);
             var blockA = simulator.EndBlock().FirstOrDefault();
 
             // finish the chain transfer
@@ -391,7 +401,7 @@ namespace Phantasma.Tests
 
             // do another side chain send using test user balance from apps to target chain
             simulator.BeginBlock();
-            var txC = simulator.GenerateSideChainSend(sender, token, appsChain, receiver.Address, targetChain, sideAmount, extraFree);
+            var txC = simulator.GenerateSideChainSend(sender, symbol, appsChain, receiver.Address, targetChain, sideAmount, extraFree);
             var blockC = simulator.EndBlock().FirstOrDefault();
 
             // finish the chain transfer
@@ -412,20 +422,20 @@ namespace Phantasma.Tests
 
             var chain = nexus.RootChain;
 
-            var nftSymbol = "COOL";
+            var symbol = "COOL";
 
             var testUser = KeyPair.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, nftSymbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
-            Assert.IsTrue(token != null, "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(symbol);
+            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
@@ -433,20 +443,21 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenROM, tokenRAM);
+            simulator.GenerateNft(owner, testUser.Address, chain, symbol, tokenROM, tokenRAM);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.GetNFT(token, tokenId);
+            var nft = nexus.GetNFT(symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) && nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
-            Assert.IsTrue(token.CurrentSupply == 1, "why supply did not increase?");
+            var currentSupply = nexus.GetTokenSupply(symbol);
+            Assert.IsTrue(currentSupply == 1, "why supply did not increase?");
         }
 
 
@@ -460,50 +471,50 @@ namespace Phantasma.Tests
 
             var chain = nexus.RootChain;
 
-            var nftSymbol = "COOL";
+            var symbol = "COOL";
 
             var testUser = KeyPair.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, nftSymbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
             simulator.EndBlock();
 
             // Send some SOUL to the test user (required for gas used in "burn" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, chain, simulator.Nexus.FuelToken, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals));
+            simulator.GenerateTransfer(owner, testUser.Address, chain, Nexus.FuelTokenSymbol, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals));
             simulator.EndBlock();
 
-            var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
+            var token = simulator.Nexus.GetTokenInfo(symbol);
             var tokenData = new byte[] { 0x1, 0x3, 0x3, 0x7 };
-            Assert.IsTrue(token != null, "Can't find the token symbol");
+            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the user already have a CoolToken?");
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, chain, token, tokenData, new byte[0]);
+            simulator.GenerateNft(owner, testUser.Address, chain, symbol, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the user not have one now?");
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.GetNFT(token, tokenId);
+            var nft = nexus.GetNFT(symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
 
             // burn the token
             simulator.BeginBlock();
-            simulator.GenerateNftBurn(testUser, chain, token, tokenId);
+            simulator.GenerateNftBurn(testUser, chain, symbol, tokenId);
             simulator.EndBlock();
 
             //verify the user no longer has the token
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, testUser.Address);
+            ownedTokenList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the user still have it post-burn?");
         }
 
@@ -526,7 +537,7 @@ namespace Phantasma.Tests
 
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, chain, simulator.Nexus.FuelToken, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals));
+            simulator.GenerateTransfer(owner, sender.Address, chain, Nexus.FuelTokenSymbol, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals));
             simulator.EndBlock();
 
             // Create the token CoolToken as an NFT
@@ -534,45 +545,45 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, nftSymbol, nftName, 0, 0, Blockchain.Tokens.TokenFlags.None);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
+            var token = simulator.Nexus.GetTokenInfo(nftSymbol);
             var tokenData = new byte[] { 0x1, 0x3, 0x3, 0x7 };
-            Assert.IsTrue(token != null, "Can't find the token symbol");
+            Assert.IsTrue(nexus.TokenExists(nftSymbol), "Can't find the token symbol");
 
             // verify nft presence on the sender pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, sender.Address);
+            var ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             // Mint a new CoolToken directly on the sender
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, sender.Address, chain, token, tokenData, new byte[0]);
+            simulator.GenerateNft(owner, sender.Address, chain, nftSymbol, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, sender.Address);
+            ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, sender.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.GetNFT(token, tokenId);
+            var nft = nexus.GetNFT(nftSymbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
 
             // verify nft presence on the receiver pre-transfer
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, receiver.Address);
+            ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
 
             // transfer that nft from sender to receiver
             simulator.BeginBlock();
-            var txA = simulator.GenerateNftTransfer(sender, receiver.Address, chain, token, tokenId);
+            var txA = simulator.GenerateNftTransfer(sender, receiver.Address, chain, nftSymbol, tokenId);
             simulator.EndBlock();
 
             // verify nft presence on the receiver post-transfer
-            ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, receiver.Address);
+            ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, receiver.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the receiver not have one now?");
 
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
-            nft = nexus.GetNFT(token, tokenId);
+            nft = nexus.GetNFT(nftSymbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
@@ -599,7 +610,7 @@ namespace Phantasma.Tests
 
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, sourceChain, simulator.Nexus.FuelToken, fullAmount);
+            simulator.GenerateTransfer(owner, sender.Address, sourceChain, Nexus.FuelTokenSymbol, fullAmount);
             simulator.EndBlock();
 
             // Create the token CoolToken as an NFT
@@ -607,39 +618,39 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, nftSymbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.FindTokenBySymbol(nftSymbol);
+            var token = simulator.Nexus.GetTokenInfo(nftSymbol);
             var tokenData = new byte[] { 0x1, 0x3, 0x3, 0x7 };
-            Assert.IsTrue(token != null, "Can't find the token symbol");
+            Assert.IsTrue(nexus.TokenExists(nftSymbol), "Can't find the token symbol");
 
             // verify nft presence on the sender pre-mint
-            var ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sourceChain.Storage, sender.Address);
+            var ownedTokenList = sourceChain.GetTokenOwnerships(nftSymbol).Get(sourceChain.Storage, sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             // Mint a new CoolToken directly on the sender
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, sender.Address, sourceChain, token, tokenData, new byte[0]);
+            simulator.GenerateNft(owner, sender.Address, sourceChain, nftSymbol, tokenData, new byte[0]);
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
-            ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sourceChain.Storage, sender.Address);
+            ownedTokenList = sourceChain.GetTokenOwnerships(nftSymbol).Get(sourceChain.Storage, sender.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.GetNFT(token, tokenId);
+            var nft = nexus.GetNFT(nftSymbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
 
             // verify nft presence on the receiver pre-transfer
-            ownedTokenList = targetChain.GetTokenOwnerships(token).Get(targetChain.Storage, receiver.Address);
+            ownedTokenList = targetChain.GetTokenOwnerships(nftSymbol).Get(targetChain.Storage, receiver.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the receiver already have a CoolToken?");
 
-            var extraFee = UnitConversion.ToBigInteger(0.001m, nexus.FuelToken.Decimals);
+            var extraFee = UnitConversion.ToBigInteger(0.001m, Nexus.FuelTokenDecimals);
 
             // transfer that nft from sender to receiver
             simulator.BeginBlock();
-            simulator.GenerateSideChainSend(sender, simulator.Nexus.FuelToken, sourceChain, receiver.Address, targetChain, smallAmount, extraFee);
-            var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, token, tokenId);
+            simulator.GenerateSideChainSend(sender, Nexus.FuelTokenSymbol, sourceChain, receiver.Address, targetChain, smallAmount, extraFee);
+            var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, nftSymbol, tokenId);
             simulator.EndBlock();
 
             var blockA = nexus.RootChain.LastBlock;
@@ -650,16 +661,16 @@ namespace Phantasma.Tests
             Assert.IsTrue(simulator.EndBlock().Any());
 
             // verify the sender no longer has it
-            ownedTokenList = sourceChain.GetTokenOwnerships(token).Get(sourceChain.Storage, sender.Address);
+            ownedTokenList = sourceChain.GetTokenOwnerships(nftSymbol).Get(sourceChain.Storage, sender.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender still have one?");
 
             // verify nft presence on the receiver post-transfer
-            ownedTokenList = targetChain.GetTokenOwnerships(token).Get(targetChain.Storage, receiver.Address);
+            ownedTokenList = targetChain.GetTokenOwnerships(nftSymbol).Get(targetChain.Storage, receiver.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the receiver not have one now?");
 
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
-            nft = nexus.GetNFT(token, tokenId);
+            nft = nexus.GetNFT(nftSymbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
@@ -672,25 +683,27 @@ namespace Phantasma.Tests
 
             var nexus = simulator.Nexus;
             var accountChain = nexus.FindChainByName("account");
-            var token = nexus.FuelToken;
+
+            var symbol = Nexus.FuelTokenSymbol;
+            var token = nexus.GetTokenInfo(symbol);
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
             var amount = UnitConversion.ToBigInteger(400, token.Decimals);
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
 
             // Send from Genesis address to test user
             simulator.BeginBlock();
-            var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, amount);
+            var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(transferBalance == amount);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
             Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
@@ -699,7 +712,7 @@ namespace Phantasma.Tests
             try
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, token, transferBalance);
+                tx = simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, symbol, transferBalance);
                 simulator.EndBlock();
             }
             catch (Exception e)
@@ -708,7 +721,7 @@ namespace Phantasma.Tests
             }
 
             // verify balances, receiver should have 0 balance
-            transferBalance = nexus.RootChain.GetTokenBalance(token, receiver.Address);
+            transferBalance = nexus.RootChain.GetTokenBalance(symbol, receiver.Address);
             Assert.IsTrue(transferBalance == 0, "Transaction failed completely as expected");
         }
 
@@ -723,7 +736,8 @@ namespace Phantasma.Tests
             var sourceChain = nexus.RootChain;
             var targetChain = nexus.FindChainByName("privacy");
 
-            var token = nexus.FuelToken;
+            var symbol = Nexus.FuelTokenSymbol;
+            var token = nexus.GetTokenInfo(symbol);
 
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
@@ -735,11 +749,11 @@ namespace Phantasma.Tests
 
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, token, originalAmount);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(token, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             Transaction txA = null, txB = null;
@@ -748,7 +762,7 @@ namespace Phantasma.Tests
             {
                 // do a side chain send using test user balance from root to account chain
                 simulator.BeginBlock();
-                txA = simulator.GenerateSideChainSend(sender, token, sourceChain, receiver.Address, targetChain,
+                txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, receiver.Address, targetChain,
                     originalAmount, 1);
                 simulator.EndBlock();
             }
@@ -773,7 +787,7 @@ namespace Phantasma.Tests
 
 
             // verify balances, receiver should have 0 balance
-            balance = targetChain.GetTokenBalance(token, receiver.Address);
+            balance = targetChain.GetTokenBalance(symbol, receiver.Address);
             Assert.IsTrue(balance == 0);
         }
 

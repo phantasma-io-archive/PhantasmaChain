@@ -33,11 +33,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
 
-            var token = this.Runtime.Nexus.FuelToken;
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
+            //var token = this.Runtime.Nexus.FuelToken;
+            //Runtime.Expect(token != null, "invalid token");
+            //Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
 
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(Nexus.FuelTokenSymbol);
             var maxAmount = price * limit;
 
             var balance = balances.Get(this.Storage, from);
@@ -74,11 +74,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(availableAmount >= requiredAmount, "gas allowance is not enough");
 
-            var token = this.Runtime.Nexus.FuelToken;
+            /*var token = this.Runtime.Nexus.FuelToken;
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
+            */
 
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
+            var balances = this.Runtime.Chain.GetTokenBalances(Nexus.FuelTokenSymbol);
 
             var leftoverAmount = availableAmount - requiredAmount;
 

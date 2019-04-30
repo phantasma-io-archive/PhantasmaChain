@@ -93,7 +93,7 @@ namespace Phantasma.Tests
 
         private BigInteger GetBalance(Address address)
         {
-            return nexus.RootChain.GetTokenBalance(nexus.FuelToken, address);
+            return nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, address);
         }
 
         private void InitMainNode()

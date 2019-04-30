@@ -29,12 +29,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(duration >= 86400, "minimum duration should be one day"); // minimum 1 day
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(this.Storage, balances, from, Runtime.Chain.Address, amount), "transfer failed");
+            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
+            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, balances, from, Runtime.Chain.Address, amount), "transfer failed");
 
             List<VaultEntry> list;
 
@@ -60,9 +60,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             Runtime.Expect(_entries.ContainsKey(from), "address not in vault");
 
@@ -89,8 +89,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 _entries.Remove(from);
             }
 
-            var balances = this.Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(this.Storage, balances, Runtime.Chain.Address, from, amount), "transfer failed");
+            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
+            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, balances, Runtime.Chain.Address, from, amount), "transfer failed");
         }
     }
 }

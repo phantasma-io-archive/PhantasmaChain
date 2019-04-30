@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
 using Phantasma.Core.Log;
@@ -22,16 +23,12 @@ namespace Phantasma.Blockchain
 
         public Chain RootChain { get; private set; }
 
-        public Token FuelToken { get; private set; }
-        public Token StakingToken { get; private set; }
-        public Token StableToken { get; private set; }
-
         public static readonly int DefaultCacheSize = 64;
 
         private readonly Dictionary<string, Chain> _chainMap = new Dictionary<string, Chain>();
-        private readonly Dictionary<string, Token> _tokenMap = new Dictionary<string, Token>();
 
-        private Dictionary<Token, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, KeyValueStore<BigInteger, TokenContent>>();
+        private KeyValueStore<string, byte[]> _vars;
+        private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
 
         public IEnumerable<Chain> Chains
         {
@@ -44,24 +41,59 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public IEnumerable<Token> Tokens => _tokenMap.Values;
-
         public readonly int CacheSize;
 
-        public Address GenesisAddress { get; private set; }
-        public Hash GenesisHash { get; private set; }
+        public Address GenesisAddress
+        {
+            get
+            {
+                return Serialization.Unserialize<Address>(_vars.Get(nameof(GenesisAddress)));
+            }
+
+            private set
+            {
+                _vars.Set(nameof(GenesisAddress), Serialization.Serialize(value));
+            }
+        }
+
+        public Hash GenesisHash
+        {
+            get
+            {
+                return Serialization.Unserialize<Hash>(_vars.Get(nameof(GenesisHash)));
+            }
+
+            private set
+            {
+                _vars.Set(nameof(GenesisHash), Serialization.Serialize(value));
+            }
+        }
+
+        public IEnumerable<string> Tokens
+        {
+            get
+            {
+                return Serialization.Unserialize<string[]>(_vars.Get(nameof(Tokens)));
+            }
+
+            private set
+            {
+                var symbols = value.ToArray();
+                _vars.Set(nameof(Tokens), Serialization.Serialize(symbols));
+            }
+        }
 
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
         private readonly Logger _logger;
-
-        private string _diskPath = null;
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
         public Nexus(string name, Address genesisAddress, int cacheSize, Logger logger = null)
         {
+            this._vars = new KeyValueStore<string, byte[]>("nexus", KeyStoreDataSize.Medium, Nexus.DefaultCacheSize);
+
             GenesisAddress = genesisAddress;
             GenesisHash = null;
 
@@ -90,75 +122,12 @@ namespace Phantasma.Blockchain
             _chainMap[RootChain.Name] = RootChain;
         }
 
-        private string NexusFile => _diskPath + "nexus.bin";
-
-        public bool InitFromDisk(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                path = ".";
-            }
-
-            if (!path.EndsWith("\\"))
-            {
-                path += "\\";
-            }
-
-            _diskPath = path;
-
-            var fileName = NexusFile;
-            if (File.Exists(fileName))
-            {
-                using (var stream = new FileStream(fileName, FileMode.Open))
-                {
-                    using (var reader = new BinaryReader(stream))
-                    {
-                        this.UnserializeData(reader);
-                    }
-                }
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool _saveRequested;
-        private void RequestSave()
-        {
-            _saveRequested = true;
-        }
-
-        public void SaveChanges()
-        {
-            if (!_saveRequested)
-            {
-                return;
-            }
-
-            if (string.IsNullOrEmpty(_diskPath))
-            {
-                return;
-            }
-
-            var fileName = NexusFile;
-            using (var stream = new FileStream(fileName, FileMode.Create))
-            {
-                using (var writer = new BinaryWriter(stream))
-                {
-                    this.SerializeData(writer);
-                }
-            }
-
-            _saveRequested = false;
-        }
-
         #region PLUGINS
         public void AddPlugin(IChainPlugin plugin)
         {
             _plugins.Add(plugin);
         }
 
-        // NOTE this call is necessary even if no plugins are being used, because this method also saves any changes to disk
         internal void PluginTriggerBlock(Chain chain, Block block)
         {
             foreach (var plugin in _plugins)
@@ -169,8 +138,6 @@ namespace Phantasma.Blockchain
                     plugin.OnTransaction(chain, block, tx);
                 }
             }
-
-            this.SaveChanges();
         }
 
         public Chain FindChainForBlock(Block block)
@@ -364,8 +331,6 @@ namespace Phantasma.Blockchain
                 _chainMap[name] = chain;
             }
 
-            RequestSave();
-
             return chain;
         }
 
@@ -417,77 +382,357 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal Token CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal bool CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
-                return null;
+                return false;
             }
 
             // check if already exists something with that name
-            var temp = FindTokenBySymbol(symbol);
-            if (temp != null)
+            if (TokenExists(symbol))
             {
-                return null;
+                return false;
             }
 
-            var token = new Token(owner, symbol, name, maxSupply, decimals, flags);
+            Throw.If(maxSupply < 0, "negative supply");
+            Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
+            Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
 
-            if (symbol == FuelTokenSymbol)
+            if (!flags.HasFlag(TokenFlags.Fungible))
             {
-                FuelToken = token;
+                Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
+            }
+
+            if (flags.HasFlag(TokenFlags.Divisible))
+            {
+                Throw.If(decimals <= 0, "divisible token must have decimals");
             }
             else
-            if (symbol == StakingTokenSymbol)
             {
-                StakingToken = token;
-            }
-            else
-            if (symbol == StableTokenSymbol)
-            {
-                StableToken = token;
+                Throw.If(decimals > 0, "indivisible token can't have decimals");
             }
 
-            lock (_tokenMap)
-            {
-                _tokenMap[symbol] = token;
-            }
+            var tokenInfo = new TokenInfo(owner, symbol, name, maxSupply, decimals, flags);
+            EditToken(symbol, tokenInfo);
 
-            RequestSave();
-
-            return token;
+            return true;
         }
 
-        public Token FindTokenBySymbol(string symbol)
+        private string GetTokenInfoKey(string symbol)
         {
-            if (_tokenMap.ContainsKey(symbol))
+            return "info:" + symbol;
+        }
+
+        private void EditToken(string symbol, TokenInfo tokenInfo)
+        {
+            var key = GetTokenInfoKey(symbol);
+            var bytes = Serialization.Serialize(tokenInfo);
+            _vars.Set(key, bytes);
+        }
+
+        public bool TokenExists(string symbol)
+        {
+            var key = GetTokenInfoKey(symbol);
+            return _vars.ContainsKey(key);
+        }
+
+        public TokenInfo GetTokenInfo(string symbol)
+        {
+            var key = GetTokenInfoKey(symbol);
+            if (_vars.ContainsKey(key))
             {
-                return _tokenMap[symbol];
+                var bytes = _vars.Get(key);
+                return Serialization.Unserialize<TokenInfo>(bytes);
             }
 
-            return null;
+            throw new ChainException($"Token does not exist ({symbol})");
         }
+
+        public BigInteger GetTokenSupply(string symbol)
+        {
+            if (!TokenExists(symbol))
+            {
+                throw new ChainException($"Token does not exist ({symbol})");
+            }
+
+            return EditTokenSupply(symbol, 0);
+        }
+
+        private BigInteger EditTokenSupply(string symbol, BigInteger change)
+        {
+            if (!TokenExists(symbol))
+            {
+                throw new ChainException($"Token does not exist ({symbol})");
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            var key = "supply:" + symbol;
+
+            BigInteger currentSupply;
+            byte[] bytes;
+            if (_vars.ContainsKey(key))
+            {
+                bytes = _vars.Get(key);
+                currentSupply = Serialization.Unserialize<BigInteger>(bytes);
+            }
+            else {
+                currentSupply = 0;
+            }
+
+            currentSupply += change;
+
+            if (currentSupply<0)
+            {
+                throw new ChainException("Invalid negative supply");
+            }
+            else
+            if (tokenInfo.IsCapped && currentSupply > tokenInfo.MaxSupply)
+            {
+                throw new ChainException("Exceeded max supply");
+            }
+
+            if (change != 0)
+            {
+                bytes = Serialization.Serialize(currentSupply);
+                _vars.Set(key, bytes);
+            }
+
+            return currentSupply;
+        }
+
+        internal bool MintTokens(string symbol, StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
+        {
+            if (!TokenExists(symbol))
+            {
+                return false;
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            if (!tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            if (tokenInfo.IsCapped)
+            {
+                if (!supply.Mint(amount))
+                {
+                    return false;
+                }
+            }
+
+            if (!balances.Add(storage, target, amount))
+            {
+                return false;
+            }
+
+            EditTokenSupply(symbol, amount);
+            return true;
+        }
+
+        // NFT version
+        internal bool MintToken(string symbol)
+        {
+            if (!TokenExists(symbol))
+            {
+                return false;
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            EditTokenSupply(symbol, 1);
+
+            return true;
+        }
+
+        internal bool BurnTokens(string symbol, StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
+        {
+            if (!TokenExists(symbol))
+            {
+                return false;
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            if (!tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            if (tokenInfo.IsCapped && !supply.Burn(amount))
+            {
+                return false;
+            }
+
+            if (!balances.Subtract(storage, target, amount))
+            {
+                return false;
+            }
+
+            EditTokenSupply(symbol, -amount);
+            return true;
+        }
+
+        // NFT version
+        internal bool BurnToken(string symbol)
+        {
+            if (!TokenExists(symbol))
+            {
+                return false;
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                return false;
+            }
+
+            EditTokenSupply(symbol, -1);
+            return true;
+        }
+
+        internal bool TransferTokens(string symbol, StorageContext storage, BalanceSheet balances, Address source, Address destination, BigInteger amount)
+        {
+            if (!TokenExists(symbol))
+            {
+                return false;
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            if (!tokenInfo.Flags.HasFlag(TokenFlags.Transferable))
+            {
+                throw new Exception("Not transferable");
+            }
+
+            if (!tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                throw new Exception("Should be fungible");
+            }
+
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            if (!balances.Subtract(storage, source, amount))
+            {
+                return false;
+            }
+
+            if (!balances.Add(storage, destination, amount))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        internal bool TransferToken(string symbol, StorageContext storage, OwnershipSheet ownerships, Address source, Address destination, BigInteger ID)
+        {
+            if (!TokenExists(symbol))
+            {
+                return false;
+            }
+
+            var tokenInfo = GetTokenInfo(symbol);
+
+            if (!tokenInfo.Flags.HasFlag(TokenFlags.Transferable))
+            {
+                throw new Exception("Not transferable");
+            }
+
+            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                throw new Exception("Should be non-fungible");
+            }
+
+            if (ID <= 0)
+            {
+                return false;
+            }
+
+            if (!ownerships.Take(storage, source, ID))
+            {
+                return false;
+            }
+
+            if (!ownerships.Give(storage, destination, ID))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region NFT
-        internal BigInteger CreateNFT(Token token, Address chainAddress, Address ownerAddress, byte[] rom, byte[] ram)
+        private BigInteger GenerateIDForNFT(string tokenSymbol)
+        {
+            var key = "ID:" + tokenSymbol;
+            BigInteger tokenID;
+
+            byte[] bytes;
+
+            lock (_vars)
+            {
+                if (_vars.ContainsKey(key))
+                {
+                    bytes = _vars.Get(key);
+                    tokenID = Serialization.Unserialize<BigInteger>(bytes);
+                    tokenID++;
+                }
+                else
+                {
+                    tokenID = 1;
+                }
+
+                bytes = Serialization.Serialize(tokenID);
+                _vars.Set(key, bytes);
+            }
+
+            return tokenID;
+        }
+
+        internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, Address ownerAddress, byte[] rom, byte[] ram)
         {
             lock (_tokenContents)
             {
                 KeyValueStore<BigInteger, TokenContent> contents;
 
-                if (_tokenContents.ContainsKey(token))
+                if (_tokenContents.ContainsKey(tokenSymbol))
                 {
-                    contents = _tokenContents[token];
+                    contents = _tokenContents[tokenSymbol];
                 }
                 else
                 {
                     // NOTE here we specify the data size as small, meaning the total allowed size of a nft including rom + ram is 255 bytes
-                    contents = new KeyValueStore<BigInteger, TokenContent>("nft_"+token.Symbol, KeyStoreDataSize.Small, Nexus.DefaultCacheSize);
-                    _tokenContents[token] = contents;
+                    var key = "nft_" + tokenSymbol;
+                    contents = new KeyValueStore<BigInteger, TokenContent>(key, KeyStoreDataSize.Small, Nexus.DefaultCacheSize);
+                    _tokenContents[tokenSymbol] = contents;
                 }
 
-                var tokenID = token.GenerateID();
+                var tokenID = GenerateIDForNFT(tokenSymbol);
 
                 var content = new TokenContent(chainAddress, ownerAddress, rom, ram);
                 contents[tokenID] = content;
@@ -496,13 +741,13 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal bool DestroyNFT(Token token, BigInteger tokenID)
+        internal bool DestroyNFT(string tokenSymbol, BigInteger tokenID)
         {
             lock (_tokenContents)
             {
-                if (_tokenContents.ContainsKey(token))
+                if (_tokenContents.ContainsKey(tokenSymbol))
                 {
-                    var contents = _tokenContents[token];
+                    var contents = _tokenContents[tokenSymbol];
 
                     if (contents.ContainsKey(tokenID))
                     {
@@ -515,13 +760,13 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        internal bool EditNFTLocation(Token token, BigInteger tokenID, Address chainAddress, Address owner)
+        internal bool EditNFTLocation(string tokenSymbol, BigInteger tokenID, Address chainAddress, Address owner)
         {
             lock (_tokenContents)
             {
-                if (_tokenContents.ContainsKey(token))
+                if (_tokenContents.ContainsKey(tokenSymbol))
                 {
-                    var contents = _tokenContents[token];
+                    var contents = _tokenContents[tokenSymbol];
 
                     if (contents.ContainsKey(tokenID))
                     {
@@ -536,7 +781,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        internal bool EditNFTContent(Token token, BigInteger tokenID, byte[] ram)
+        internal bool EditNFTContent(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             if (ram == null || ram.Length > TokenContent.MaxRAMSize)
             {
@@ -545,9 +790,9 @@ namespace Phantasma.Blockchain
 
             lock (_tokenContents)
             {
-                if (_tokenContents.ContainsKey(token))
+                if (_tokenContents.ContainsKey(tokenSymbol))
                 {
-                    var contents = _tokenContents[token];
+                    var contents = _tokenContents[tokenSymbol];
 
                     if (contents.ContainsKey(tokenID))
                     {
@@ -566,13 +811,13 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        public TokenContent GetNFT(Token token, BigInteger tokenID)
+        public TokenContent GetNFT(string tokenSymbol, BigInteger tokenID)
         {
             lock (_tokenContents)
             {
-                if (_tokenContents.ContainsKey(token))
+                if (_tokenContents.ContainsKey(tokenSymbol))
                 {
-                    var contents = _tokenContents[token];
+                    var contents = _tokenContents[tokenSymbol];
 
                     if (contents.ContainsKey(tokenID))
                     {
@@ -582,7 +827,7 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            throw new ChainException($"NFT not found ({token.Symbol}:{tokenID})");
+            throw new ChainException($"NFT not found ({tokenSymbol}:{tokenID})");
         }
         #endregion
 
@@ -672,9 +917,6 @@ namespace Phantasma.Blockchain
             {
                 return false;
             }
-
-            Throw.If(FuelToken != null, "Fuel token already created");
-            Throw.If(StakingToken != null, "Staking token already created");
 
             var transactions = new List<Transaction>
             {
@@ -807,6 +1049,7 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
+        /*
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(Name);
@@ -831,41 +1074,6 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(FuelToken.Symbol);
             writer.WriteVarString(StakingToken.Symbol);
             writer.WriteVarString(StableToken.Symbol);
-        }
-
-        public void UnserializeData(BinaryReader reader)
-        {
-            this.Name = reader.ReadVarString();
-            this.GenesisAddress = reader.ReadAddress();
-            this.GenesisHash = reader.ReadHash();
-
-            int chainCount = (int)reader.ReadVarInt();
-            while (chainCount > 0)
-            {
-                var chain = new Chain();
-                chain.UnserializeData(reader);
-                chainCount--;
-            }
-
-            int tokenCount = (int)reader.ReadVarInt();
-            while (tokenCount > 0)
-            {
-                var token = new Token();
-                token.UnserializeData(reader);
-                tokenCount--;
-            }
-
-            var RootChainAddress = reader.ReadAddress();
-            RootChain = FindChainByAddress(RootChainAddress);
-
-            var FuelTokenSymbol = reader.ReadVarString();
-            FuelToken = FindTokenBySymbol(FuelTokenSymbol);
-
-            var StakingTokenSymbol = reader.ReadVarString();
-            StakingToken = FindTokenBySymbol(StakingTokenSymbol);
-
-            var StableTokenSymbol = reader.ReadVarString();
-            StableToken = FindTokenBySymbol(StableTokenSymbol);
-        }
+        }*/
     }
 }
