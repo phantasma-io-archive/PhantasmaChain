@@ -1,28 +1,43 @@
-﻿using Phantasma.Core;
+﻿using System.IO;
+using Phantasma.Core;
 using Phantasma.Cryptography;
+using Phantasma.IO;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public class TokenContent
+    public struct TokenContent: ISerializable
     {
-        public Address CurrentChain { get; internal set; }
-        public Address CurrentOwner { get; internal set; }
+        // sizes in bytes
+        public static readonly int MaxROMSize = 64;
+        public static readonly int MaxRAMSize = 96;
+
+        public TokenContent(Address currentChain, Address currentOwner, byte[] ROM, byte[] RAM) : this()
+        {
+            CurrentChain = currentChain;
+            CurrentOwner = currentOwner;
+            this.ROM = ROM;
+            this.RAM = RAM;
+        }
+
+        public Address CurrentChain { get; private set; }
+        public Address CurrentOwner { get; private set; }
         public byte[] ROM { get; private set; }
         public byte[] RAM { get; private set; }
 
-        public TokenContent(byte[] rom, byte[] ram)
+        public void SerializeData(BinaryWriter writer)
         {
-            Throw.IfNull(rom, nameof(rom));
-            Throw.IfNull(ram, nameof(ram));
-            this.ROM = rom;
-            this.RAM= ram;
+            writer.WriteAddress(CurrentChain);
+            writer.WriteAddress(CurrentOwner);
+            writer.WriteByteArray(ROM);
+            writer.WriteByteArray(RAM);
         }
 
-        // TODO this should be stored to persistent storage!
-        public void WriteRAM(byte[] data)
+        public void UnserializeData(BinaryReader reader)
         {
-            Throw.IfNull(data, nameof(data));
-            this.RAM = data;
+            CurrentChain = reader.ReadAddress();
+            CurrentOwner = reader.ReadAddress();
+            ROM = reader.ReadByteArray();
+            RAM = reader.ReadByteArray();
         }
     }
 }

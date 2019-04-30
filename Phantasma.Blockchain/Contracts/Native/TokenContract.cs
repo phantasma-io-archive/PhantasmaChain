@@ -149,12 +149,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             return ownerships.Get(this.Storage, address).ToArray();
         }
 
+        // TODO minting a NFT will require a certain amount of KCAL that is released upon burning
         public BigInteger MintToken(Address to, string symbol, byte[] ram, byte[] rom)
         {
             var token = this.Runtime.Nexus.FindTokenBySymbol(symbol);
             Runtime.Expect(token != null, "invalid token");
             Runtime.Expect(!token.IsFungible, "token must be non-fungible");
             Runtime.Expect(IsWitness(token.Owner), "invalid witness");
+
+            Runtime.Expect(rom.Length < TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
+            Runtime.Expect(ram.Length < TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
             var tokenID = this.Runtime.Nexus.CreateNFT(token, Runtime.Chain.Address, to, ram, rom);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
@@ -210,9 +214,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(ownerships.Take(this.Storage, source, tokenID), "take token failed");
             Runtime.Expect(ownerships.Give(this.Storage, destination, tokenID), "give token failed");
 
-            var nft = this.Runtime.Nexus.GetNFT(token, tokenID);
-            nft.CurrentChain = Runtime.Chain.Address;
-            nft.CurrentOwner = destination;
+            this.Runtime.Nexus.EditNFT(token, tokenID, Runtime.Chain.Address, destination);
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
@@ -307,9 +309,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var ownerships = this.Runtime.Chain.GetTokenOwnerships(token);
                 Runtime.Expect(ownerships.Give(this.Storage, targetAddress, value), "give token failed");
 
-                var nft = this.Runtime.Nexus.GetNFT(token, value);
-                nft.CurrentChain = Runtime.Chain.Address;
-                nft.CurrentOwner = targetAddress;
+                this.Runtime.Nexus.EditNFT(token, value, Runtime.Chain.Address, targetAddress);
             }
 
             Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = sourceChain.Address });

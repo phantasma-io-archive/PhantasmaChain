@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain
         private readonly Dictionary<string, Chain> _chainMap = new Dictionary<string, Chain>();
         private readonly Dictionary<string, Token> _tokenMap = new Dictionary<string, Token>();
 
-        private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
+        private Dictionary<Token, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, KeyValueStore<BigInteger, TokenContent>>();
 
         public IEnumerable<Chain> Chains
         {
@@ -474,7 +474,7 @@ namespace Phantasma.Blockchain
         {
             lock (_tokenContents)
             {
-                Dictionary<BigInteger, TokenContent> contents;
+                KeyValueStore<BigInteger, TokenContent> contents;
 
                 if (_tokenContents.ContainsKey(token))
                 {
@@ -482,15 +482,14 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    contents = new Dictionary<BigInteger, TokenContent>();
+                    // NOTE here we specify the data size as small, meaning the total allowed size of a nft including rom + ram is 255 bytes
+                    contents = new KeyValueStore<BigInteger, TokenContent>("nft_"+token.Symbol, KeyStoreDataSize.Small, Nexus.DefaultCacheSize);
                     _tokenContents[token] = contents;
                 }
 
                 var tokenID = token.GenerateID();
 
-                var content = new TokenContent(rom, ram);
-                content.CurrentChain = chainAddress;
-                content.CurrentOwner = ownerAddress;
+                var content = new TokenContent(chainAddress, ownerAddress, rom, ram);
                 contents[tokenID] = content;
 
                 return tokenID;
@@ -516,6 +515,32 @@ namespace Phantasma.Blockchain
             return false;
         }
 
+        // NOTE editing the ram is optional, if null passed, the ram is not touched
+        internal bool EditNFT(Token token, BigInteger tokenID, Address chainAddress, Address owner, byte[] ram = null)
+        {
+            lock (_tokenContents)
+            {
+                if (_tokenContents.ContainsKey(token))
+                {
+                    var contents = _tokenContents[token];
+
+                    if (contents.ContainsKey(tokenID))
+                    {
+                        var content = contents[tokenID];
+                        if (ram == null)
+                        {
+                            ram = content.RAM;
+                        }
+                        content = new TokenContent(chainAddress, owner, content.ROM, ram);
+                        contents.Set(tokenID, content);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public TokenContent GetNFT(Token token, BigInteger tokenID)
         {
             lock (_tokenContents)
@@ -526,24 +551,13 @@ namespace Phantasma.Blockchain
 
                     if (contents.ContainsKey(tokenID))
                     {
-                        var result = contents[tokenID];
-
-                        var chain = FindChainByAddress(result.CurrentChain);
-                        if (chain != null)
-                        {
-                            result.CurrentOwner = chain.GetTokenOwner(token, tokenID);
-                        }
-                        else
-                        {
-                            result.CurrentOwner = Address.Null;
-                        }
-
-                        return result;
+                        var content = contents[tokenID];
+                        return content;
                     }
                 }
             }
 
-            return null;
+            throw new ChainException($"NFT not found ({token.Symbol}:{tokenID})");
         }
         #endregion
 
