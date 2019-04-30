@@ -133,6 +133,11 @@ namespace Phantasma.Cryptography
             return bytes.SHA256();
         }
 
+        public static byte[] Sha256(this byte[] value)
+        {
+            return new SHA256().ComputeHash(value, 0, (uint)value.Length);
+        }
+
         public static byte[] Sha256(this byte[] value, uint offset, uint count)
         {
             return new SHA256().ComputeHash(value, offset, count);

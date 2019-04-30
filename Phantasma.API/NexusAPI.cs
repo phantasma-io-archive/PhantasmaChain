@@ -9,6 +9,10 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.VM;
+using Phantasma.IO;
 
 namespace Phantasma.API
 {
@@ -314,7 +318,7 @@ namespace Phantasma.API
         private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockForTransaction(tx);
-            var chain = Nexus.FindChainForBlock(block.Hash);
+            var chain = Nexus.FindChainByAddress(block.ChainAddress);
 
             var result = new TransactionResult
             {
@@ -322,6 +326,8 @@ namespace Phantasma.API
                 chainAddress = chain.Address.Text,
                 timestamp = block.Timestamp.Value,
                 blockHeight = block.Height,
+                blockHash = block.Hash.ToString(),
+                confirmations = Nexus.GetConfirmationsOfBlock(block),
                 script = tx.Script.Encode()
             };
 
@@ -441,7 +447,6 @@ namespace Phantasma.API
 
                         if (!token.IsFungible)
                         {
-                            // TODO do we need to go this deep, arent there any higher level methods to achieve this already?
                             var idList = chain.GetTokenOwnerships(token).Get(chain.Storage, address);
                             if (idList != null && idList.Any())
                             {
@@ -455,6 +460,24 @@ namespace Phantasma.API
             result.balances = balanceList.ToArray();
 
             return result;
+        }
+
+        [APIInfo(typeof(string), "Returns the address that owns a given name.")]
+        [APIFailCase("address is invalid", "ABCD123")]
+        public IAPIResult LookUpName([APIParameter("Name of account", "blabla")] string name)
+        {
+            if (!AccountContract.ValidateAddressName(name))
+            {
+                return new ErrorResult { error = "invalid name" };
+            }
+
+            var address = Nexus.LookUpName(name);
+            if (address == Address.Null)
+            {
+                return new ErrorResult { error = "name not owned" };
+            }
+
+            return new SingleResult() { value = address.Text };
         }
 
         [APIInfo(typeof(int), "Returns the height of a chain.")]
@@ -707,53 +730,6 @@ namespace Phantasma.API
             return new SingleResult() { value = count };
         }
 
-        [APIInfo(typeof(int), "Returns the number of confirmations of given transaction hash and other useful info.")]
-        [APIFailCase("hash is invalid", "asdfsa")]
-        public IAPIResult GetConfirmations([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
-        {
-            var result = new TxConfirmationResult();
-            if (Hash.TryParse(hashText, out var hash))
-            {
-                int confirmations = -1;
-
-                var block = Nexus.FindBlockForHash(hash);
-                if (block != null)
-                {
-                    confirmations = Nexus.GetConfirmationsOfBlock(block);
-                }
-                else
-                {
-                    var tx = Nexus.FindTransactionByHash(hash);
-                    if (tx != null)
-                    {
-                        block = Nexus.FindBlockForTransaction(tx);
-                        if (block != null)
-                        {
-                            confirmations = Nexus.GetConfirmationsOfBlock(block);
-                        }
-                    }
-                }
-
-                Chain chain = (block != null) ? Nexus.FindChainForBlock(block) : null;
-
-                if (confirmations == -1 || block == null || chain == null)
-                {
-                    return new ErrorResult() { error = "unknown hash" };
-                }
-                else
-                {
-                    result.confirmations = confirmations;
-                    result.hash = block.Hash.ToString();
-                    result.height = block.Height;
-                    result.chainAddress = chain.Address.Text;
-                }
-
-                return result;
-            }
-
-            return new ErrorResult() { error = "invalid hash" };
-        }
-
         [APIInfo(typeof(string), "Allows to broadcast a signed operation on the network, but it's required to build it manually.")]
         [APIFailCase("rejected by mempool", "0000")] // TODO not correct
         [APIFailCase("script is invalid", "")]
@@ -800,6 +776,61 @@ namespace Phantasma.API
             }
 
             return new SingleResult { value = tx.Hash.ToString() };
+        }
+
+        [APIInfo(typeof(ScriptResult), "Allows to invoke script based on network state, without state changes.")]
+        [APIFailCase("script is invalid", "")]
+        [APIFailCase("failed to decoded script", "0000")]
+        public IAPIResult InvokeRawScript([APIParameter("Address or name of chain", "root")] string chainInput, [APIParameter("Serialized script bytes, in hexadecimal format", "0000000000")] string scriptData)
+        {
+            var chain = FindChainByInput(chainInput);
+            if (chain == null)
+            {
+                return new ErrorResult { error = "invalid chain" };
+            }
+
+            byte[] script;
+            try
+            {
+                script = Base16.Decode(scriptData);
+            }
+            catch
+            {
+                return new ErrorResult { error = "Failed to decode script" };
+            }
+
+            if (script.Length == 0)
+            {
+                return new ErrorResult { error = "Invalid transaction script" };
+            }
+
+            var changeSet = new StorageChangeSetContext(chain.Storage);
+            var vm = new RuntimeVM(script, chain, null, null, changeSet, true);
+
+            var state = vm.Execute();
+
+            if (state != ExecutionState.Halt)
+            {
+                return new ErrorResult { error = $"Execution failed, state:{state}" };
+            }
+
+            string encodedResult;
+
+            if (vm.Stack.Count == 0)
+            {
+                encodedResult = "";
+            }
+            else
+            {
+                var temp = vm.Stack.Pop();
+                var result = temp.ToObject();
+                var resultBytes = Serialization.Serialize(result);
+                encodedResult = Base16.Encode(resultBytes);
+            }
+
+            var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) });
+
+            return new ScriptResult { result = encodedResult, events = evts.ToArray() };
         }
 
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]
@@ -930,6 +961,19 @@ namespace Phantasma.API
             }
 
             var info = Nexus.GetNFT(token, ID);
+
+            var chain = GetMarketChain();
+            bool forSale;
+
+            if (chain != null)
+            {
+                forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
+            }
+            else
+            {
+                forSale = false;
+            }
+
 
             return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
@@ -1068,11 +1112,17 @@ namespace Phantasma.API
 
             return result;
         }
+
+        private Chain GetMarketChain()
+        {
+            return Nexus.RootChain; // TODO change later
+        }
+
         [APIInfo(typeof(int), "Returns the number of active auctions.")]
         public IAPIResult GetAuctionsCount([APIParameter("Token symbol used as filter", "NACHO")]
             string symbol = null)
         {
-            var chain = Nexus.RootChain;
+            var chain = GetMarketChain();
             if (chain == null)
             {
                 return new ErrorResult { error = "Market not available" };
@@ -1082,7 +1132,7 @@ namespace Phantasma.API
 
             if (!string.IsNullOrEmpty(symbol))
             {
-                entries =  entries.Where(x => x.BaseSymbol == symbol);
+                entries = entries.Where(x => x.BaseSymbol == symbol);
             }
 
             return new SingleResult { value = entries.Count() };
@@ -1093,8 +1143,7 @@ namespace Phantasma.API
             [APIParameter("Index of page to return", "5")] uint page = 1,
             [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
         {
-            //var chain = Nexus.FindChainByName("market");
-            var chain = Nexus.RootChain;
+            var chain = GetMarketChain();
             if (chain == null)
             {
                 return new ErrorResult { error = "Market not available" };
@@ -1136,6 +1185,48 @@ namespace Phantasma.API
             paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x)).ToArray() };
 
             return paginatedResult;
+        }
+
+        [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false)]
+        public IAPIResult GetAuction([APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
+        {
+            var token = Nexus.FindTokenBySymbol(symbol);
+            if (token == null)
+            {
+                return new ErrorResult() { error = "invalid token" };
+            }
+
+            BigInteger ID;
+            if (!BigInteger.TryParse(IDtext, out ID))
+            {
+                return new ErrorResult() { error = "invalid ID" };
+            }
+
+            var info = Nexus.GetNFT(token, ID);
+
+            var chain = GetMarketChain();
+            if (chain == null)
+            {
+                return new ErrorResult { error = "Market not available" };
+            }
+
+            var forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
+            if (!forSale)
+            {
+                return new ErrorResult { error = "Token not for sale" };
+            }
+
+            var auction = (MarketAuction)chain.InvokeContract("market", "GetAuction", ID);
+
+            return new AuctionResult() {
+                baseSymbol = auction.BaseSymbol,
+                quoteSymbol = auction.QuoteSymbol,
+                creatorAddress = auction.Creator.Text,
+                tokenId = auction.TokenID.ToString(),
+                price = auction.Price.ToString(),
+                startDate = auction.StartDate.Value,
+                endDate = auction.EndDate.Value
+            };
         }
     }
 }

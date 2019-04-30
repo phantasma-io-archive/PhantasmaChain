@@ -54,5 +54,12 @@ namespace Phantasma.Pay.Chains
         {
             return keys.Address.Text; 
         }
+
+        public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
+        {
+            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Phantasma);
+            yield return new CryptoCurrencyInfo("KCAL", "Phantasma Energy", 10, WalletKind.Phantasma);
+            yield break;
+        }
     }
 }

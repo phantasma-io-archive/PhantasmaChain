@@ -553,8 +553,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                     break;
                 }
             }
-           
-            Runtime.Expect(index>=0, "proxy not found");
 
             stakersList.RemoveAt<EnergyProxy>(index);
             receiversList.Remove<Address>(from);

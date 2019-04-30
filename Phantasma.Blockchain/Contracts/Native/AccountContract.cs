@@ -1,5 +1,4 @@
 ﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
@@ -29,10 +28,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(ValidateAddressName(name), "invalid name");
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
-
-            var token = Runtime.Nexus.FuelToken;
-            var balances = Runtime.Chain.GetTokenBalances(token);
-            Runtime.Expect(token.Transfer(this.Storage, balances, target, Runtime.Chain.Address, RegistrationCost), "fee failed");
+            Runtime.Expect(!_nameMap.ContainsKey(name), "name already used");
 
             _addressMap.Set(target, name);
             _nameMap.Set(name, target);

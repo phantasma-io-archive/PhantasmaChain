@@ -15,11 +15,6 @@ namespace Phantasma.Blockchain.Storage
             _disk = new DiskStore(address.Text + "_" + name, dataSize);
         }
 
-        private Hash CreateHash(StorageKey key)
-        {
-            return Hash.FromBytes(key.keyData);
-        }
-
         public override void Clear()
         {
             throw new NotImplementedException();
@@ -27,24 +22,22 @@ namespace Phantasma.Blockchain.Storage
 
         public override void Delete(StorageKey key)
         {
-            var hash = CreateHash(key);
-            if (_disk.Remove(hash))
+            if (_disk.Remove(key.keyData))
             {
-                _memory.Remove(hash);
+                _memory.Remove(key.keyData);
             }
         }
 
         public override byte[] Get(StorageKey key)
         {
-            var hash = CreateHash(key);
-            if (_memory.ContainsKey(hash))
+            if (_memory.ContainsKey(key.keyData))
             {
-                return _memory.GetValue(hash);
+                return _memory.GetValue(key.keyData);
             }
 
-            if (_disk.ContainsKey(hash))
+            if (_disk.ContainsKey(key.keyData))
             {
-                return _disk.GetValue(hash);
+                return _disk.GetValue(key.keyData);
             }
 
             return null;
@@ -52,15 +45,13 @@ namespace Phantasma.Blockchain.Storage
 
         public override bool Has(StorageKey key)
         {
-            var hash = CreateHash(key);
-            return _disk.ContainsKey(hash);
+            return _disk.ContainsKey(key.keyData);
         }
 
         public override void Put(StorageKey key, byte[] value)
         {
-            var hash = CreateHash(key);
-            _disk.SetValue(hash, value);
-            _memory.SetValue(hash, value);
+            _disk.SetValue(key.keyData, value);
+            _memory.SetValue(key.keyData, value);
         }
     }
 }

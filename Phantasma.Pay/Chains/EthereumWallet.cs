@@ -3,6 +3,7 @@ using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phantasma.Pay.Chains
@@ -49,6 +50,12 @@ namespace Phantasma.Pay.Chains
 
             var kak = SHA3Keccak.CalculateHash(publicKey);
             return "0x" + Base16.Encode(kak.Skip(12).ToArray());
+        }
+
+        public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
+        {
+            yield return new CryptoCurrencyInfo("ETH", "Ether", 8, WalletKind.Ethereum);
+            yield break;
         }
     }
 }

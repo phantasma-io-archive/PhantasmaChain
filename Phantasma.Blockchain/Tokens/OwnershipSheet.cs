@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain.Tokens
                 list.Add<BigInteger>(tokenID);
 
                 storage.Put(ownerKey, address);
-            } 
+            }
             return true;
         }
 

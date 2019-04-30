@@ -62,7 +62,7 @@ namespace Phantasma.IO
 
         public static void WriteByteArray(this BinaryWriter writer, byte[] bytes)
         {
-            if (bytes == null)
+            if (bytes == null || bytes.Length == 0)
             {
                 writer.WriteVarInt(0);
                 return;

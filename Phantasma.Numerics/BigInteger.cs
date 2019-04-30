@@ -156,7 +156,7 @@ namespace Phantasma.Numerics
 
         public BigInteger(string value, int radix)
         {
-            value = value.ToUpper().Trim().Replace("\r","").Replace(" ","").Replace("\n","");
+            value = value.ToUpper().Trim().Replace("\r", "").Replace(" ", "").Replace("\n", "");
 
             var BigInteger = new BigInteger(0);
             var bi = new BigInteger(1L);
@@ -366,7 +366,7 @@ namespace Phantasma.Numerics
                 for (int j = 0; j < Y.Length; j++, k++)
                 {
                     ulong tmp = (ulong)(X[i] * (long)Y[j] + output[k] + (long)carry);
-                    output[k] = (uint) (tmp);
+                    output[k] = (uint)(tmp);
                     carry = tmp >> 32;
                 }
 
@@ -515,7 +515,7 @@ namespace Phantasma.Numerics
             else
                 MultiDigitDivMod(a, b, out quot, out rem);
 
-            
+
             rem._sign = a._sign;
             rem = a >= 0 ? rem : b + rem;
 
@@ -556,7 +556,7 @@ namespace Phantasma.Numerics
             }
 
             uint[] quotArray = new uint[quotIter];
-            for(int i = quotArray.Length - 1, j = 0; i >= 0; i--, j++)
+            for (int i = quotArray.Length - 1, j = 0; i >= 0; i--, j++)
             {
                 quotArray[j] = tmpQuotArray[i];
             }
@@ -679,7 +679,7 @@ namespace Phantasma.Numerics
 
             int newLength = buffer.Length - shrinkage - extraShrinkage;
 
-            if(newLength <= 0)
+            if (newLength <= 0)
             {
                 buffer = new uint[1];
                 return;
@@ -693,12 +693,12 @@ namespace Phantasma.Numerics
             if (extraShrinkage == 1)
                 newBuffer[newLength - 1] = buffer[length - 1] << quickShiftAmount;
 
-            for (int i = length - (1 + extraShrinkage) , j = newLength - 1; j >= 1; i--, j--)
+            for (int i = length - (1 + extraShrinkage), j = newLength - 1; j >= 1; i--, j--)
             {
-                ulong upshiftedVal = (ulong) buffer[i] << quickShiftAmount;
+                ulong upshiftedVal = (ulong)buffer[i] << quickShiftAmount;
 
                 uint shiftMsd = (uint)(upshiftedVal >> 32);
-                uint shiftLsd = (uint) upshiftedVal;
+                uint shiftLsd = (uint)upshiftedVal;
 
                 newBuffer[j] |= shiftMsd;
                 newBuffer[j - 1] |= shiftLsd;
@@ -728,8 +728,8 @@ namespace Phantasma.Numerics
 
             long msd = ((long)buffer[length - 1]) << quickShiftAmount;  //shifts the most significant digit
 
-            int extraDigit = (msd != (uint) msd) ? 1 : 0;  //if it goes above the uint range, we need to add
-                                                            //a new position for the new MSD
+            int extraDigit = (msd != (uint)msd) ? 1 : 0;  //if it goes above the uint range, we need to add
+                                                          //a new position for the new MSD
 
             int newLength = buffer.Length + amountOfZeros + extraDigit;
             uint[] newBuffer = new uint[newLength];
@@ -737,13 +737,13 @@ namespace Phantasma.Numerics
             for (int i = 0, j = amountOfZeros; i < length; i++, j++)
             {
                 ulong shiftedVal = ((ulong)buffer[i]) << quickShiftAmount;
-                
-                var shiftLsd = (uint) shiftedVal;
+
+                var shiftLsd = (uint)shiftedVal;
                 var shiftMsd = (uint)(shiftedVal >> 32);
 
                 newBuffer[j] |= shiftLsd;
 
-                if(shiftMsd > 0)
+                if (shiftMsd > 0)
                     newBuffer[j + 1] |= shiftMsd;
             }
 
@@ -999,10 +999,10 @@ namespace Phantasma.Numerics
                     array[0] = array[1];
                     array[1] = bigInteger4;
                 }
-                
+
                 DivideAndModulus(bi, bigInteger, out bigInteger2, out bigInteger3);
-                
-                
+
+
                 array2[0] = array2[1];
                 array3[0] = array3[1];
                 array2[1] = bigInteger2;
@@ -1132,7 +1132,7 @@ public void SetBit(uint bitNum)
             bitLength = (((bitLength & 1) == 0) ? (bitLength >> 1) : ((bitLength >> 1) + 1));
             uint num2 = bitLength >> 5;
             byte b = (byte)(bitLength & 0x1F);
-            
+
             uint num3;
 
             if (b == 0)
@@ -1145,7 +1145,7 @@ public void SetBit(uint bitNum)
                 num2++;
             }
 
-            var sqrtArray = new uint[(int) num2];
+            var sqrtArray = new uint[(int)num2];
             for (int num4 = (int)(num2 - 1); num4 >= 0; num4--)
             {
                 while (num3 != 0)
@@ -1182,8 +1182,8 @@ public void SetBit(uint bitNum)
                     if (applyTwosComplement && j + k >= byteArraySize)
                         continue;
 
-                    if(applyTwosComplement)
-                        result[j + k] = (byte) (bytes[k] ^ 0xFF);
+                    if (applyTwosComplement)
+                        result[j + k] = (byte)(bytes[k] ^ 0xFF);
                     else
                         result[j + k] = bytes[k];
                 }
@@ -1192,7 +1192,7 @@ public void SetBit(uint bitNum)
             //this could be optimized if needed, but likely not worth it for now
             if (applyTwosComplement)
             {
-                
+
                 var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1.
 
                 result = tmp.ToByteArray(true);     //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to keep sign information while in byte[] format
@@ -1214,7 +1214,7 @@ public void SetBit(uint bitNum)
             }
 
             var tmp = (new BigInteger(buffer, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
-            
+
             buffer = tmp.ToByteArray(true); //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
             //but the twos complement logic won't get applied again given the bigint has positive sign.
 

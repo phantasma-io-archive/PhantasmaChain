@@ -14,7 +14,7 @@ using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Transaction: ISerializable
+    public sealed class Transaction : ISerializable
     {
         public Timestamp Expiration { get; private set; }
         public byte[] Script { get; private set; }
@@ -88,7 +88,7 @@ namespace Phantasma.Blockchain
             var cost = runtime.UsedGas;
 
             // fee distribution TODO
-//            if (chain.NativeTokenAddress != null && cost > 0)
+            //            if (chain.NativeTokenAddress != null && cost > 0)
             {
                 //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
             }
@@ -97,7 +97,7 @@ namespace Phantasma.Blockchain
             {
                 onNotify(this.Hash, evt);
             }
-            
+
             if (runtime.Stack.Count > 0)
             {
                 var obj = runtime.Stack.Pop();
@@ -210,7 +210,7 @@ namespace Phantasma.Blockchain
             {
                 return false;
             }
-           
+
             /*if (chain.NativeTokenAddress != null)
             {
                 if (this.Fee < cost)

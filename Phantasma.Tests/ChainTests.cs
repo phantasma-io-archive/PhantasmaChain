@@ -84,9 +84,11 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var amount = UnitConversion.ToBigInteger(400, token.Decimals);
+            var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
             var oldBalance = nexus.RootChain.GetTokenBalance(token, owner.Address);
+
+            Assert.IsTrue(oldBalance > amount);
 
             // Send from Genesis address to test user
             simulator.BeginBlock();
@@ -156,7 +158,7 @@ namespace Phantasma.Tests
 
             Assert.IsFalse(registerName(testUser, targetName.Substring(3)));
             Assert.IsFalse(registerName(testUser, targetName.ToUpper()));
-            Assert.IsFalse(registerName(testUser, targetName+"!"));
+            Assert.IsFalse(registerName(testUser, targetName + "!"));
             Assert.IsTrue(registerName(testUser, targetName));
 
             var currentName = nexus.LookUpAddress(testUser.Address);

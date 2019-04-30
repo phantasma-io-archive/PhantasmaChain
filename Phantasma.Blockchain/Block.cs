@@ -10,7 +10,7 @@ using Phantasma.Core;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Block: ISerializable
+    public sealed class Block : ISerializable
     {
         public static readonly BigInteger InitialDifficulty = 127;
         public static readonly float IdealBlockTime = 5;
@@ -20,8 +20,22 @@ namespace Phantasma.Blockchain
 
         public uint Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
-        public Hash Hash { get; private set; }
         public Hash PreviousHash { get; private set; }
+
+        private bool _dirty;
+        private Hash _hash;
+        public Hash Hash
+        {
+            get
+            {
+                if (_dirty)
+                {
+                    UpdateHash();
+                }
+
+                return _hash;
+            }
+        }
 
         public byte[] Payload { get; private set; }
 
@@ -84,10 +98,11 @@ namespace Phantasma.Blockchain
                 this.difficulty = InitialDifficulty;
             }*/
 
-            this.UpdateHash(new byte[0]);
+            this.Payload = new byte[0];
+            this._dirty = true;
         }
 
-        internal void Notify(Hash hash, Event evt)
+        public void Notify(Hash hash, Event evt)
         {
             List<Event> list;
 
@@ -102,6 +117,7 @@ namespace Phantasma.Blockchain
             }
 
             list.Add(evt);
+            _dirty = true;
         }
 
         // TODO - Optimize this to avoid recalculating the arrays if only the nonce changed
@@ -115,7 +131,8 @@ namespace Phantasma.Blockchain
         {
             var data = ToByteArray();
             var hashBytes = CryptoExtensions.SHA256(data);
-            this.Hash = new Hash(hashBytes);
+            _hash = new Hash(hashBytes);
+            _dirty = false;
         }
 
         public IEnumerable<Event> GetEventsForTransaction(Hash hash)
@@ -153,7 +170,8 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void Serialize(BinaryWriter writer) {
+        internal void Serialize(BinaryWriter writer)
+        {
             writer.Write((uint)Height);
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
@@ -169,7 +187,7 @@ namespace Phantasma.Blockchain
                 {
                     evt.Serialize(writer);
                 }
-                int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length: -1;
+                int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length : -1;
                 writer.Write((short)resultLen);
                 if (resultLen > 0)
                 {
@@ -191,7 +209,8 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public static Block Unserialize(BinaryReader reader) {
+        public static Block Unserialize(BinaryReader reader)
+        {
             var block = new Block();
             block.UnserializeData(reader);
             return block;
@@ -257,8 +276,7 @@ namespace Phantasma.Blockchain
                 _transactionHashes.Add(hash);
             }
 
-
-            this.UpdateHash();
+            _dirty = true;
         }
         #endregion
     }

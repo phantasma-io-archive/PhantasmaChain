@@ -6,6 +6,22 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.Pay
 {
+    public struct CryptoCurrencyInfo
+    {
+        public readonly string Symbol;
+        public readonly string Name;
+        public readonly int Decimals;
+        public readonly WalletKind Kind;
+
+        public CryptoCurrencyInfo(string symbol, string name, int decimals, WalletKind kind)
+        {
+            Symbol = symbol;
+            Name = name;
+            Decimals = decimals;
+            Kind = kind;
+        }
+    }
+
     public abstract class CryptoWallet
     {
         public abstract WalletKind Kind { get; }
@@ -31,6 +47,8 @@ namespace Phantasma.Pay
 
         public abstract void SyncBalances(Action<bool> callback);
         public abstract void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback);
+
+        public abstract IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos();
 
         protected void JSONRequest(string url, Action<DataNode> callback)
         {

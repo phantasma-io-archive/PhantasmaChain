@@ -33,7 +33,7 @@ namespace Phantasma.Cryptography
                 return false;
             }
 
-            for (int i=0; i<thisData.Length; i++)
+            for (int i = 0; i < thisData.Length; i++)
             {
                 if (otherData[i] != thisData[i])
                 {

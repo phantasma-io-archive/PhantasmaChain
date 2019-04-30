@@ -98,7 +98,7 @@ namespace Phantasma.VM.Utils
                 }
                 else
                 {
-                    throw new System.Exception("invalid type");
+                    throw new System.Exception("invalid type: "+arg.GetType().Name);
                 }
             }
         }

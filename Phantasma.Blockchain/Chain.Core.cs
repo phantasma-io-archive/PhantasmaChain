@@ -36,13 +36,13 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public partial class Chain: ISerializable
+    public partial class Chain : ISerializable
     {
         #region PRIVATE
-        private KeyValueStore<Transaction> _transactions;
-        private KeyValueStore<Block> _blocks;
-        private KeyValueStore<Hash> _transactionBlockMap;
-        private KeyValueStore<Epoch> _epochMap;
+        private KeyValueStore<Hash, Transaction> _transactions;
+        private KeyValueStore<Hash, Block> _blocks;
+        private KeyValueStore<Hash, Hash> _transactionBlockMap;
+        private KeyValueStore<Hash, Epoch> _epochMap;
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
@@ -54,7 +54,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
-        
+
         private int _level;
         #endregion
 
@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain
         public Epoch CurrentEpoch { get; private set; }
 
         public uint BlockHeight => (uint)_blocks.Count;
-       
+
         public Block LastBlock { get; private set; }
 
         public readonly Logger Log;
@@ -109,10 +109,10 @@ namespace Phantasma.Blockchain
             this.Address = new Address(hash);
 
             // init stores
-            _transactions = new KeyValueStore<Transaction>(this.Address, "txs", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _blocks = new KeyValueStore<Block>(this.Address, "blocks", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk", KeyStoreDataSize.Small, nexus.CacheSize);
-            _epochMap = new KeyValueStore<Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium, nexus.CacheSize);
+            _transactions = new KeyValueStore<Hash, Transaction>(this.Address, "txs", KeyStoreDataSize.Medium, nexus.CacheSize);
+            _blocks = new KeyValueStore<Hash, Block>(this.Address, "blocks", KeyStoreDataSize.Medium, nexus.CacheSize);
+            _transactionBlockMap = new KeyValueStore<Hash, Hash>(this.Address, "txbk", KeyStoreDataSize.Small, nexus.CacheSize);
+            _epochMap = new KeyValueStore<Hash, Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium, nexus.CacheSize);
 
             foreach (var contract in contracts)
             {
@@ -221,7 +221,7 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
-            foreach (var  tx in transactions)
+            foreach (var tx in transactions)
             {
                 byte[] result;
                 if (tx.Execute(this, block, changeSet, block.Notify, out result))
@@ -232,7 +232,7 @@ namespace Phantasma.Blockchain
                     }
                 }
                 else
-                { 
+                {
                     throw new InvalidTransactionException(tx.Hash, $"transaction execution failed with hash {tx.Hash}");
                 }
             }
@@ -488,7 +488,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public T FindContract<T>(string contractName) where T: SmartContract
+        public T FindContract<T>(string contractName) where T : SmartContract
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
 

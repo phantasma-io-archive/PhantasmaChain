@@ -9,7 +9,6 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
-using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
@@ -17,7 +16,7 @@ using Phantasma.VM.Utils;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus: ISerializable
+    public class Nexus : ISerializable
     {
         public string Name { get; private set; }
 
@@ -27,8 +26,10 @@ namespace Phantasma.Blockchain
         public Token StakingToken { get; private set; }
         public Token StableToken { get; private set; }
 
-        private readonly Dictionary<string, Chain> _chains = new Dictionary<string, Chain>();
-        private readonly Dictionary<string, Token> _tokens = new Dictionary<string, Token>();
+        public static readonly int DefaultCacheSize = 64;
+
+        private readonly Dictionary<string, Chain> _chainMap = new Dictionary<string, Chain>();
+        private readonly Dictionary<string, Token> _tokenMap = new Dictionary<string, Token>();
 
         private Dictionary<Token, Dictionary<BigInteger, TokenContent>> _tokenContents = new Dictionary<Token, Dictionary<BigInteger, TokenContent>>();
 
@@ -36,22 +37,25 @@ namespace Phantasma.Blockchain
         {
             get
             {
-                lock (_chains)
+                lock (_chainMap)
                 {
-                    return _chains.Values;
+                    return _chainMap.Values;
                 }
             }
         }
 
-        public IEnumerable<Token> Tokens => _tokens.Values;
+        public IEnumerable<Token> Tokens => _tokenMap.Values;
 
         public readonly int CacheSize;
 
         public Address GenesisAddress { get; private set; }
+        public Hash GenesisHash { get; private set; }
 
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
         private readonly Logger _logger;
+
+        private string _diskPath = null;
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
@@ -59,6 +63,7 @@ namespace Phantasma.Blockchain
         public Nexus(string name, Address genesisAddress, int cacheSize, Logger logger = null)
         {
             GenesisAddress = genesisAddress;
+            GenesisHash = null;
 
             this.CacheSize = cacheSize;
 
@@ -73,6 +78,7 @@ namespace Phantasma.Blockchain
                 new ConsensusContract(),
                 new GovernanceContract(),
                 new AccountContract(),
+                new FriendContract(),
                 new OracleContract(),
                 new ExchangeContract(),
                 new MarketContract(),
@@ -81,7 +87,69 @@ namespace Phantasma.Blockchain
             };
 
             RootChain = new Chain(this, "main", contracts, logger);
-            _chains[RootChain.Name] = RootChain;
+            _chainMap[RootChain.Name] = RootChain;
+        }
+
+        private string NexusFile => _diskPath + "nexus.bin";
+
+        public bool InitFromDisk(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                path = ".";
+            }
+
+            if (!path.EndsWith("\\"))
+            {
+                path += "\\";
+            }
+
+            _diskPath = path;
+
+            var fileName = NexusFile;
+            if (File.Exists(fileName))
+            {
+                using (var stream = new FileStream(fileName, FileMode.Open))
+                {
+                    using (var reader = new BinaryReader(stream))
+                    {
+                        this.UnserializeData(reader);
+                    }
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool _saveRequested;
+        private void RequestSave()
+        {
+            _saveRequested = true;
+        }
+
+        public void SaveChanges()
+        {
+            if (!_saveRequested)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(_diskPath))
+            {
+                return;
+            }
+
+            var fileName = NexusFile;
+            using (var stream = new FileStream(fileName, FileMode.Create))
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    this.SerializeData(writer);
+                }
+            }
+
+            _saveRequested = false;
         }
 
         #region PLUGINS
@@ -90,6 +158,7 @@ namespace Phantasma.Blockchain
             _plugins.Add(plugin);
         }
 
+        // NOTE this call is necessary even if no plugins are being used, because this method also saves any changes to disk
         internal void PluginTriggerBlock(Chain chain, Block block)
         {
             foreach (var plugin in _plugins)
@@ -100,6 +169,8 @@ namespace Phantasma.Blockchain
                     plugin.OnTransaction(chain, block, tx);
                 }
             }
+
+            this.SaveChanges();
         }
 
         public Chain FindChainForBlock(Block block)
@@ -109,9 +180,9 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainForBlock(Hash hash)
         {
-            lock (_chains)
+            lock (_chainMap)
             {
-                foreach (var chain in _chains.Values)
+                foreach (var chain in _chainMap.Values)
                 {
                     if (chain.ContainsBlock(hash))
                     {
@@ -149,9 +220,9 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockForHash(Hash hash)
         {
-            lock (_chains)
+            lock (_chainMap)
             {
-                foreach (var chain in _chains.Values)
+                foreach (var chain in _chainMap.Values)
                 {
                     if (chain.ContainsTransaction(hash))
                     {
@@ -165,9 +236,9 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByHash(Hash hash)
         {
-            lock (_chains)
+            lock (_chainMap)
             {
-                foreach (var chain in _chains.Values)
+                foreach (var chain in _chainMap.Values)
                 {
                     if (chain.ContainsBlock(hash))
                     {
@@ -273,6 +344,8 @@ namespace Phantasma.Blockchain
                 case "dex": contract = new ExchangeContract(); break;
                 case "market": contract = new MarketContract(); break;
                 case "energy": contract = new EnergyContract(); break;
+                case "nacho": contract = new NachoContract(); break;
+                case "casino": contract = new CasinoContract(); break;
                 default:
                     {
                         var sb = new ScriptBuilder();
@@ -286,10 +359,12 @@ namespace Phantasma.Blockchain
 
             var chain = new Chain(this, name, new[] { tokenContract, gasContract, contract }, _logger, parentChain, parentBlock);
 
-            lock (_chains)
+            lock (_chainMap)
             {
-                _chains[name] = chain;
+                _chainMap[name] = chain;
             }
+
+            RequestSave();
 
             return chain;
         }
@@ -302,9 +377,9 @@ namespace Phantasma.Blockchain
             }
 
             bool result;
-            lock (_chains)
+            lock (_chainMap)
             {
-                result = _chains.ContainsKey(chain.Name);
+                result = _chainMap.ContainsKey(chain.Name);
             }
 
             return result;
@@ -312,9 +387,9 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainByAddress(Address address)
         {
-            lock (_chains)
+            lock (_chainMap)
             {
-                foreach (var entry in _chains.Values)
+                foreach (var entry in _chainMap.Values)
                 {
                     if (entry.Address == address)
                     {
@@ -328,11 +403,11 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainByName(string name)
         {
-            lock (_chains)
+            lock (_chainMap)
             {
-                if (_chains.ContainsKey(name))
+                if (_chainMap.ContainsKey(name))
                 {
-                    return _chains[name];
+                    return _chainMap[name];
                 }
             }
 
@@ -373,16 +448,21 @@ namespace Phantasma.Blockchain
                 StableToken = token;
             }
 
-            _tokens[symbol] = token;
+            lock (_tokenMap)
+            {
+                _tokenMap[symbol] = token;
+            }
+
+            RequestSave();
 
             return token;
         }
 
         public Token FindTokenBySymbol(string symbol)
         {
-            if (_tokens.ContainsKey(symbol))
+            if (_tokenMap.ContainsKey(symbol))
             {
-                return _tokens[symbol];
+                return _tokenMap[symbol];
             }
 
             return null;
@@ -549,10 +629,13 @@ namespace Phantasma.Blockchain
 
         public bool CreateGenesisBlock(KeyPair owner, Timestamp timestamp)
         {
-            if (FuelToken != null)
+            if (GenesisHash != null)
             {
                 return false;
             }
+
+            Throw.If(FuelToken != null, "Fuel token already created");
+            Throw.If(StakingToken != null, "Staking token already created");
 
             var transactions = new List<Transaction>
             {
@@ -567,6 +650,10 @@ namespace Phantasma.Blockchain
                 // SideChainCreateTx(RootChain, owner, "market"), TODO
                 SideChainCreateTx(RootChain, owner, "apps"),
                 SideChainCreateTx(RootChain, owner, "energy"),
+
+                // TODO remove those from here, theyare here just for testing
+                SideChainCreateTx(RootChain, owner, "nacho"),
+                SideChainCreateTx(RootChain, owner, "casino"),
 
                 TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
                 TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
@@ -587,6 +674,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            GenesisHash = block.Hash;
             return true;
         }
 
@@ -684,17 +772,18 @@ namespace Phantasma.Blockchain
         {
             writer.WriteVarString(Name);
             writer.WriteAddress(GenesisAddress);
+            writer.WriteHash(GenesisHash);
 
-            int chainCount = _chains.Count;
+            int chainCount = _chainMap.Count;
             writer.WriteVarInt(chainCount);
-            foreach (Chain entry in _chains.Values)
+            foreach (Chain entry in _chainMap.Values)
             {
                 entry.SerializeData(writer);
             }
 
-            int tokenCount = _tokens.Count;
+            int tokenCount = _tokenMap.Count;
             writer.WriteVarInt(tokenCount);
-            foreach (Token entry in _tokens.Values)
+            foreach (Token entry in _tokenMap.Values)
             {
                 entry.SerializeData(writer);
             }
@@ -709,6 +798,7 @@ namespace Phantasma.Blockchain
         {
             this.Name = reader.ReadVarString();
             this.GenesisAddress = reader.ReadAddress();
+            this.GenesisHash = reader.ReadHash();
 
             int chainCount = (int)reader.ReadVarInt();
             while (chainCount > 0)

@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Tokens
         External = 1 << 7,
     }
 
-    public class Token: ISerializable
+    public class Token : ISerializable
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }
@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain.Tokens
         public Address Owner { get; private set; }
 
         private BigInteger _lastId = new BigInteger(0);
-        internal BigInteger LastID { get ; private set; }
+        internal BigInteger LastID { get; private set; }
 
         private StorageContext _storage;
 
@@ -144,7 +144,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        internal bool Burn(StorageContext storage, BalanceSheet balances, SupplySheet supply,  Address target, BigInteger amount)
+        internal bool Burn(StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
         {
             if (!Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -274,7 +274,7 @@ namespace Phantasma.Blockchain.Tokens
         {
             Symbol = reader.ReadVarString();
             Name = reader.ReadVarString();
-            Flags = (TokenFlags) reader.ReadUInt32();
+            Flags = (TokenFlags)reader.ReadUInt32();
             _supply = reader.ReadBigInteger();
             Owner = reader.ReadAddress();
             _lastId = reader.ReadBigInteger();

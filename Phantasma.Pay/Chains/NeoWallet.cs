@@ -1,6 +1,7 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phantasma.Pay.Chains
@@ -63,5 +64,14 @@ namespace Phantasma.Pay.Chains
             Buffer.BlockCopy(scriptHash.ToArray(), 0, data, 1, 20);
             return data.Base58CheckEncode();
         }
+
+        public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
+        {
+            yield return new CryptoCurrencyInfo("NEO", "NEO", 0, WalletKind.Neo); // TODO check if 1 or 0
+            yield return new CryptoCurrencyInfo("GAS", "GAS", 8, WalletKind.Neo);
+            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Neo);
+            yield break;
+        }
+
     }
 }

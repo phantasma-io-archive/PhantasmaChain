@@ -56,7 +56,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = Runtime.Chain.Address, price = price, amount = limit });
         }
 
-        public void SpendGas(Address from) {
+        public void SpendGas(Address from)
+        {
             if (Runtime.readOnlyMode)
             {
                 return;

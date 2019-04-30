@@ -135,17 +135,22 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var ids = _auctionIDs.All<string>();
             var auctions = new MarketAuction[ids.Length];
-            for (int i=0; i<auctions.Length; i++)
+            for (int i = 0; i < auctions.Length; i++)
             {
                 auctions[i] = _auctionMap.Get<string, MarketAuction>(ids[i]);
             }
             return auctions;
         }
 
-        public MarketAuction GetAuctionInfo(BigInteger auctionID)
+        public bool HasAuction(BigInteger tokenID)
         {
-            Runtime.Expect(_auctionMap.ContainsKey<BigInteger>(auctionID), "invalid auction");
-            var auction = _auctionMap.Get<BigInteger, MarketAuction>(auctionID);
+            return _auctionMap.ContainsKey<BigInteger>(tokenID);
+        }
+
+        public MarketAuction GetAuction(BigInteger tokenID)
+        {
+            Runtime.Expect(_auctionMap.ContainsKey<BigInteger>(tokenID), "invalid auction");
+            var auction = _auctionMap.Get<BigInteger, MarketAuction>(tokenID);
             return auction;
         }
     }

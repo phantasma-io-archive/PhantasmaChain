@@ -4,6 +4,7 @@ using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Phantasma.Pay.Chains
@@ -41,5 +42,12 @@ namespace Phantasma.Pay.Chains
             ByteArrayUtils.CopyBytes(checksum, 0, buffer, data.Length, 4);
             return "EOS" + Base58.Encode(buffer);
         }
+
+        public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
+        {
+            yield return new CryptoCurrencyInfo("EOS", "EOS", 18, WalletKind.EOS);
+            yield break;
+        }
+
     }
 }

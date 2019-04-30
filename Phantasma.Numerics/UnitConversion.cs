@@ -72,6 +72,6 @@ namespace Phantasma.Numerics
             var output = value * toFactor / fromFactor;
 
             return output;
-        }        
+        }
     }
 }

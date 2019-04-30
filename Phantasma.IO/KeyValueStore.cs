@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,10 @@ namespace Phantasma.IO
 {
     public interface IKeyValueStore
     {
-        void SetValue(Hash key, byte[] value);
-        byte[] GetValue(Hash key);
-        bool ContainsKey(Hash key);
-        bool Remove(Hash key);
+        void SetValue(byte[] key, byte[] value);
+        byte[] GetValue(byte[] key);
+        bool ContainsKey(byte[] key);
+        bool Remove(byte[] key);
         uint Count { get; }
     }
 
@@ -26,12 +27,23 @@ namespace Phantasma.IO
         Huge, // up to 4gb per entry
     }
 
+    internal struct MemoryStoreEntry
+    {
+        public readonly byte[] Value;
+        public readonly long Timestamp;
+
+        public MemoryStoreEntry(byte[] value, long timestamp)
+        {
+            Value = value;
+            Timestamp = timestamp;
+        }
+    }
+
     public class MemoryStore : IKeyValueStore
     {
         public readonly int CacheSize;
 
-        private Dictionary<Hash, byte[]> _cache = new Dictionary<Hash, byte[]>();
-        private SortedList<Hash, long> _dates = new SortedList<Hash, long>();
+        private Dictionary<byte[], MemoryStoreEntry> _cache = new Dictionary<byte[], MemoryStoreEntry>(new ByteArrayComparer());
 
         public uint Count => (uint)_cache.Count;
 
@@ -41,7 +53,7 @@ namespace Phantasma.IO
             this.CacheSize = cacheSize;
         }
 
-        public void SetValue(Hash key, byte[] value)
+        public void SetValue(byte[] key, byte[] value)
         {
             if (value == null || value.Length == 0)
             {
@@ -53,44 +65,53 @@ namespace Phantasma.IO
             {
                 while (_cache.Count >= CacheSize)
                 {
-                    var first = _dates.Keys[0];
-                    Remove(first);
+                    long minVal = 0;
+                    byte[] minKey = null;
+
+                    foreach (var entry in _cache)
+                    {
+                        if (minKey == null || entry.Value.Timestamp < minVal)
+                        {
+                            minVal = entry.Value.Timestamp;
+                            minKey = entry.Key;
+                        }
+                    }
+                    Remove(minKey);
                 }
             }
 
-            _cache[key] = value;
-            _dates[key] = DateTime.UtcNow.Ticks;
+            _cache[key] = new MemoryStoreEntry(value, DateTime.UtcNow.Ticks);
         }
 
-        public byte[] GetValue(Hash key)
+        public byte[] GetValue(byte[] key)
         {
             if (ContainsKey(key))
             {
-                _dates[key] = DateTime.UtcNow.Ticks;
-                return _cache[key];
+                var val = _cache[key].Value;
+                _cache[key] = new MemoryStoreEntry(val, DateTime.UtcNow.Ticks);
+                return val;
             }
 
             return null;
         }
 
-        public bool ContainsKey(Hash key)
+        public bool ContainsKey(byte[] key)
         {
             var result = _cache.ContainsKey(key);
 
             if (result)
             {
-                _dates[key] = DateTime.UtcNow.Ticks;
+                _cache[key] = new MemoryStoreEntry(_cache[key].Value, DateTime.UtcNow.Ticks);
             }
 
             return result;
         }
 
-        public bool Remove(Hash key)
+        public bool Remove(byte[] key)
         {
             if (ContainsKey(key))
             {
                 _cache.Remove(key);
-                _dates.Remove(key);
                 return true;
             }
             else
@@ -117,13 +138,13 @@ namespace Phantasma.IO
 
         private object _lock = new object();
 
-        private Dictionary<Hash, DiskEntry> _entries = new Dictionary<Hash, DiskEntry>();
+        private Dictionary<byte[], DiskEntry> _entries = new Dictionary<byte[], DiskEntry>(new ByteArrayComparer());
 
         private FileStream _stream;
         private uint _lastBlockOffset;
 
         private List<DiskEntry> _freeSpace = new List<DiskEntry>();
-        private HashSet<Hash> _pendingEntries = new HashSet<Hash>();
+        private HashSet<byte[]> _pendingEntries = new HashSet<byte[]>(new ByteArrayComparer());
 
         private static readonly byte[] _header = Encoding.ASCII.GetBytes("BLOK");
 
@@ -253,7 +274,7 @@ namespace Phantasma.IO
             }
         }
 
-        private void RequestUpdate(Hash key)
+        private void RequestUpdate(byte[] key)
         {
             if (!_pendingWrite)
             {
@@ -286,11 +307,11 @@ namespace Phantasma.IO
             {
                 writer.Write(_header);
                 writer.Write((uint)_pendingEntries.Count);
-                foreach (var hash in _pendingEntries)
+                foreach (var key in _pendingEntries)
                 {
-                    writer.WriteHash(hash);
+                    writer.WriteByteArray(key);
 
-                    var entry = _entries[hash];
+                    var entry = _entries[key];
                     writer.Write(entry.Offset);
 
                     switch (DataSize)
@@ -345,7 +366,7 @@ namespace Phantasma.IO
                             var entryCount = reader.ReadUInt32();
                             while (entryCount > 0)
                             {
-                                var hash = reader.ReadHash();
+                                var key = reader.ReadByteArray();
                                 uint location = reader.ReadUInt32();
 
                                 uint size;
@@ -358,9 +379,9 @@ namespace Phantasma.IO
                                     default: throw new Exception("unsupported data size");
                                 }
 
-                                if (!_entries.ContainsKey(hash))
+                                if (!_entries.ContainsKey(key))
                                 {
-                                    _entries[hash] = new DiskEntry() { Length = size, Offset = location };
+                                    _entries[key] = new DiskEntry() { Length = size, Offset = location };
                                 }
 
                                 entryCount--;
@@ -391,7 +412,7 @@ namespace Phantasma.IO
         // inserts a key/value into an existing space
         // if necessary, splits the space into two (used/free)
         // NOTE - only call this method from inside a lock {} block
-        private void InsertIntoDisk(Hash key, byte[] value, DiskEntry entry)
+        private void InsertIntoDisk(byte[] key, byte[] value, DiskEntry entry)
         {
             InitStream();
 
@@ -415,7 +436,7 @@ namespace Phantasma.IO
             RequestUpdate(key);
         }
 
-        public void SetValue(Hash key, byte[] value)
+        public void SetValue(byte[] key, byte[] value)
         {
             Throw.If(!_ready, "not ready");
 
@@ -485,7 +506,7 @@ namespace Phantasma.IO
             }
         }
 
-        public byte[] GetValue(Hash key)
+        public byte[] GetValue(byte[] key)
         {
             Throw.If(!_ready, "not ready");
 
@@ -512,7 +533,7 @@ namespace Phantasma.IO
             return null;
         }
 
-        public bool ContainsKey(Hash key)
+        public bool ContainsKey(byte[] key)
         {
             bool result;
 
@@ -529,7 +550,7 @@ namespace Phantasma.IO
             return result;
         }
 
-        public bool Remove(Hash key)
+        public bool Remove(byte[] key)
         {
             Throw.If(!_ready, "not ready");
 
@@ -584,7 +605,7 @@ namespace Phantasma.IO
         }
     }
 
-    public class KeyValueStore<T> : IKeyValueStore 
+    public class KeyValueStore<K, V> : IKeyValueStore 
     {
         public readonly string Name;
 
@@ -611,26 +632,28 @@ namespace Phantasma.IO
         {
         }
 
-        public T this[Hash key]
+        public V this[K key]
         {
             get { return Get(key); }
             set { Set(key, value); }
         }
 
-        public void Set(Hash key, T value)
+        public void Set(K key, V value)
         {
-            var bytes = Serialization.Serialize(value);
-            SetValue(key, bytes);
+            var keyBytes = Serialization.Serialize(key);
+            var valBytes = Serialization.Serialize(value);
+            SetValue(keyBytes, valBytes);
         }
 
-        public T Get(Hash key)
+        public V Get(K key)
         {
-            var bytes = GetValue(key);
+            var keyBytes = Serialization.Serialize(key);
+            var bytes = GetValue(keyBytes);
             Throw.If(bytes == null, "item not found in keystore");
-            return Serialization.Unserialize<T>(bytes);
+            return Serialization.Unserialize<V>(bytes);
         }
 
-        public void SetValue(Hash key, byte[] value)
+        public void SetValue(byte[] key, byte[] value)
         {
             _memory.SetValue(key, value);
 
@@ -640,7 +663,7 @@ namespace Phantasma.IO
             }
         }
 
-        public byte[] GetValue(Hash key)
+        public byte[] GetValue(byte[] key)
         {
             if (_memory.ContainsKey(key))
             {
@@ -658,7 +681,13 @@ namespace Phantasma.IO
             }
         }
 
-        public bool ContainsKey(Hash key)
+        public bool ContainsKey(K key)
+        {
+            var keyBytes = Serialization.Serialize(key);
+            return ContainsKey(keyBytes);
+        }
+
+        public bool ContainsKey(byte[] key)
         {
             if (_memory.ContainsKey(key))
             {
@@ -673,7 +702,13 @@ namespace Phantasma.IO
             return false;
         }
 
-        public bool Remove(Hash key)
+        public bool Remove(K key)
+        {
+            var keyBytes = Serialization.Serialize(key);
+            return Remove(keyBytes);
+        }
+
+        public bool Remove(byte[] key)
         {
             if (_disk == null)
             {

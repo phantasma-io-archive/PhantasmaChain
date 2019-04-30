@@ -183,7 +183,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (token.IsCapped)
             {
-                var supplies = this.Runtime.Chain.GetTokenSupplies(token);                
+                var supplies = this.Runtime.Chain.GetTokenSupplies(token);
                 Runtime.Expect(supplies.Burn(1), "decreasing supply failed");
             }
 

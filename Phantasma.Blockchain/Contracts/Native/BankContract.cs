@@ -9,7 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public override string Name => "bank";
 
         public BigInteger GetRate(string symbol)
-        {           
+        {
             //Runtime.Expect(symbol == Nexus.NativeTokenSymbol, "invalid token");
 
             if (symbol == Nexus.FuelTokenSymbol)

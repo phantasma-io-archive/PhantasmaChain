@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (_queues.ContainsKey(token))
             {
                 var list = _queues.Get<string, StorageList>(token.Symbol);
-                
+
                 var queues = list.All<PrivacyQueue>();
                 foreach (var entry in queues)
                 {
