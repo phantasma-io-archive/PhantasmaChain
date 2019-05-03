@@ -48,9 +48,9 @@ namespace Phantasma.Tests
         public void GenesisBlock()
         {
             var owner = KeyPair.Generate();
-            var nexus = new Nexus("tests", owner.Address, -1);
+            var nexus = new Nexus();
 
-            Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
+            Assert.IsTrue(nexus.CreateGenesisBlock("simnet", owner, DateTime.Now));
 
             var rootChain = nexus.RootChain;
 

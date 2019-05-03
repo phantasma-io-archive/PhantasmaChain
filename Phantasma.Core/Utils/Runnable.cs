@@ -4,7 +4,7 @@ namespace Phantasma.Core
 {
     public abstract class Runnable
     {
-        private enum State
+        public enum State
         {
             Stopped,
             Running,
@@ -13,6 +13,8 @@ namespace Phantasma.Core
 
         private State _state = State.Stopped;
 
+        public State CurrentState => _state;
+        
         protected abstract bool Run();
 
         public void Start(ThreadPriority priority = ThreadPriority.Normal)

@@ -19,16 +19,14 @@ namespace Phantasma.Blockchain
 {
     public class Nexus
     {
-        public string Name { get; private set; }
-
-        public Chain RootChain { get; private set; }
-
-        public static readonly int DefaultCacheSize = 64;
+        public Chain RootChain => FindChainByAddress(RootAddress);
 
         private readonly Dictionary<string, Chain> _chainMap = new Dictionary<string, Chain>();
 
         private KeyValueStore<string, byte[]> _vars;
         private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
+
+        public bool Ready { get; private set; }
 
         public IEnumerable<Chain> Chains
         {
@@ -41,7 +39,34 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public readonly int CacheSize;
+        public string Name
+        {
+            get
+            {
+                var bytes = _vars.Get(nameof(Name));
+                var result = Serialization.Unserialize<string>(bytes);
+                return result;
+            }
+
+            private set
+            {
+                var bytes = Serialization.Serialize(value);
+                _vars.Set(nameof(Name), bytes);
+            }
+        }
+
+        public Address RootAddress
+        {
+            get
+            {
+                return Serialization.Unserialize<Address>(_vars.Get(nameof(RootAddress)));
+            }
+
+            private set
+            {
+                _vars.Set(nameof(RootAddress), Serialization.Serialize(value));
+            }
+        }
 
         public Address GenesisAddress
         {
@@ -60,7 +85,8 @@ namespace Phantasma.Blockchain
         {
             get
             {
-                return Serialization.Unserialize<Hash>(_vars.Get(nameof(GenesisHash)));
+                var result = Serialization.Unserialize<Hash>(_vars.Get(nameof(GenesisHash)));
+                return result;
             }
 
             private set
@@ -87,39 +113,45 @@ namespace Phantasma.Blockchain
 
         private readonly Logger _logger;
 
+        private Func<string, IKeyValueStoreAdapter> _adapterFactory = null;
+
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, Address genesisAddress, int cacheSize, Logger logger = null)
+        public Nexus(Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory= null)
         {
-            this._vars = new KeyValueStore<string, byte[]>("nexus", KeyStoreDataSize.Medium, Nexus.DefaultCacheSize);
+            this._adapterFactory = adapterFactory;
 
-            GenesisAddress = genesisAddress;
-            GenesisHash = null;
+            this._vars = new KeyValueStore<string, byte[]>(CreateKeyStoreAdapter("nexus"));
 
-            this.CacheSize = cacheSize;
+            try
+            {
+                var temp = this.Name;
+                Ready = !string.IsNullOrEmpty(temp);
+            }
+            catch
+            {
+                Ready = false;
+            }
 
             _logger = logger;
-            Name = name;
+        }
 
-            // TODO this probably should be done using a normal transaction instead of here
-            var contracts = new List<SmartContract>
+        internal IKeyValueStoreAdapter CreateKeyStoreAdapter(Address address, string name)
+        {
+            return CreateKeyStoreAdapter(address.Text + "_ " + name);
+        }
+
+        internal IKeyValueStoreAdapter CreateKeyStoreAdapter(string name)
+        {
+            if (_adapterFactory != null)
             {
-                new NexusContract(),
-                new TokenContract(),
-                new ConsensusContract(),
-                new GovernanceContract(),
-                new AccountContract(),
-                new FriendContract(),
-                new OracleContract(),
-                new ExchangeContract(),
-                new MarketContract(),
-                new GasContract(),
-                new EnergyContract(),
-            };
+                var result = _adapterFactory(name);
+                Throw.If(result == null, "keystore adapter factory failed");
+                return result;
+            }
 
-            RootChain = new Chain(this, "main", contracts, logger);
-            _chainMap[RootChain.Name] = RootChain;
+            return new MemoryStore();
         }
 
         #region PLUGINS
@@ -728,7 +760,7 @@ namespace Phantasma.Blockchain
                 {
                     // NOTE here we specify the data size as small, meaning the total allowed size of a nft including rom + ram is 255 bytes
                     var key = "nft_" + tokenSymbol;
-                    contents = new KeyValueStore<BigInteger, TokenContent>(key, KeyStoreDataSize.Small, Nexus.DefaultCacheSize);
+                    contents = new KeyValueStore<BigInteger, TokenContent>(this.CreateKeyStoreAdapter(key));
                     _tokenContents[tokenSymbol] = contents;
                 }
 
@@ -911,13 +943,40 @@ namespace Phantasma.Blockchain
 
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
 
-        public bool CreateGenesisBlock(KeyPair owner, Timestamp timestamp)
+        public bool CreateGenesisBlock(string name, KeyPair owner, Timestamp timestamp)
         {
-            if (GenesisHash != null)
+            if (Ready)
             {
                 return false;
             }
 
+            // TODO validate name
+            this.Name = name;
+
+            this.GenesisAddress = owner.Address;
+
+            // TODO this probably should be done using a normal transaction instead of here
+            var contracts = new List<SmartContract>
+            {
+                new NexusContract(),
+                new TokenContract(),
+                new ConsensusContract(),
+                new GovernanceContract(),
+                new AccountContract(),
+                new FriendContract(),
+                new OracleContract(),
+                new ExchangeContract(),
+                new MarketContract(),
+                new GasContract(),
+                new EnergyContract(),
+            };
+
+            // create root chain, TODO this probably should also be included as a transaction later
+            var chain = new Chain(this, "main", contracts, this._logger);
+            _chainMap[chain.Name] = chain;
+            this.RootAddress = chain.Address;
+
+            // create genesis transactions
             var transactions = new List<Transaction>
             {
                 TokenCreateTx(RootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, false),
@@ -952,10 +1011,12 @@ namespace Phantasma.Blockchain
             }
             catch (Exception e)
             {
+                _logger.Error(e.ToString());
                 return false;
             }
 
             GenesisHash = block.Hash;
+            this.Ready = true;
             return true;
         }
 

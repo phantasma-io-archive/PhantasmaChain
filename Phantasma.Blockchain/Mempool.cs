@@ -69,8 +69,13 @@ namespace Phantasma.Blockchain
             this.BlockTime = blockTime;
         }
 
-        public void Submit(Transaction tx)
+        public bool Submit(Transaction tx)
         {
+            if (this.CurrentState != State.Running)
+            {
+                return false;
+            }
+
            Throw.IfNull(tx, nameof(tx));
 
             var chain = Nexus.FindChainByName(tx.ChainName);
@@ -120,10 +125,16 @@ namespace Phantasma.Blockchain
 
             Interlocked.Increment(ref _size);
             OnTransactionAdded?.Invoke(tx);
+            return true;
         }
 
         public bool Discard(Transaction tx)
         {
+            if (this.CurrentState != State.Running)
+            {
+                return false;
+            }
+
             if (_hashMap.ContainsKey(tx.Hash))
             {
                 var chainName = _hashMap[tx.Hash];
@@ -244,9 +255,6 @@ namespace Phantasma.Blockchain
 
         private void MintBlock(List<Transaction> transactions, Chain chain)
         {
-            // sync disk writes before generating more
-            DiskStore.FlushAll();
-
             var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
 
             var isFirstBlock = chain.LastBlock == null;

@@ -60,11 +60,11 @@ namespace Phantasma.Blockchain.Utils
             this.Logger = logger != null ? logger : new DummyLogger();
 
             _owner = ownerKey;
-            this.Nexus = new Nexus("simnet", ownerKey.Address, cacheSize);
+            this.Nexus = new Nexus();
 
             CurrentTime = new DateTime(2018, 8, 26);
 
-            if (!Nexus.CreateGenesisBlock(_owner, CurrentTime))
+            if (!Nexus.CreateGenesisBlock("simnet", _owner, CurrentTime))
             {
                 throw new ChainException("Genesis block failure");
             }

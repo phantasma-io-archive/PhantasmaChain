@@ -24,6 +24,11 @@ namespace Phantasma.IO
                 return new byte[0];
             }
 
+            if (obj.GetType() == typeof(byte[]))
+            {
+                return (byte[])obj;
+            }
+
             using (var stream = new MemoryStream())
             {
                 using (var writer = new BinaryWriter(stream))
@@ -180,6 +185,11 @@ namespace Phantasma.IO
 
         public static object Unserialize(byte[] bytes, Type type)
         {
+            if (type == typeof(byte[]))
+            {
+                return bytes;
+            }
+
             if (bytes.Length == 0)
             {
                 return null;

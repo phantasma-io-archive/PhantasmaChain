@@ -193,7 +193,7 @@ namespace Phantasma.Blockchain.Contracts
         public override ExecutionState ValidateOpcode(Opcode opcode)
         {
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || Nexus.GenesisHash == null || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
+            if (readOnlyMode || !Nexus.Ready || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
             {
                 return ExecutionState.Running;
             }
@@ -215,7 +215,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || Nexus.GenesisHash == null || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
+            if (readOnlyMode || !Nexus.Ready || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
             {
                 return ExecutionState.Running;
             }

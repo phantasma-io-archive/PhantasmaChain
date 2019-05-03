@@ -32,7 +32,15 @@ namespace Phantasma.Core.Utils
         public int GetHashCode(byte[] key)
         {
             Throw.IfNull(key, nameof(key));
-            return key.Sum(b => b);
+            unchecked // disable overflow, for the unlikely possibility that you
+            {         // are compiling with overflow-checking enabled
+                int hash = 27;
+                for (int i=0; i<key.Length; i++)
+                {
+                    hash = (13 * hash) + key[i];
+                }
+                return hash;
+            }
         }
     }
 

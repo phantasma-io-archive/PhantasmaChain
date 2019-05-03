@@ -103,16 +103,19 @@ namespace Phantasma.Blockchain
                 //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
             }
 
+            this.Name = name;
+            this.Nexus = nexus;
+
             var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
             var hash = CryptoExtensions.SHA256(bytes);
 
             this.Address = new Address(hash);
 
             // init stores
-            _transactions = new KeyValueStore<Hash, Transaction>(this.Address, "txs", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _blocks = new KeyValueStore<Hash, Block>(this.Address, "blocks", KeyStoreDataSize.Medium, nexus.CacheSize);
-            _transactionBlockMap = new KeyValueStore<Hash, Hash>(this.Address, "txbk", KeyStoreDataSize.Small, nexus.CacheSize);
-            _epochMap = new KeyValueStore<Hash, Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium, nexus.CacheSize);
+            _transactions = new KeyValueStore<Hash, Transaction>(Nexus.CreateKeyStoreAdapter(this.Address, "txs"));
+            _blocks = new KeyValueStore<Hash, Block>(Nexus.CreateKeyStoreAdapter(this.Address, "blocks"));
+            _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
+            _epochMap = new KeyValueStore<Hash, Epoch>(Nexus.CreateKeyStoreAdapter(this.Address, "epoch"));
 
             foreach (var contract in contracts)
             {
@@ -125,20 +128,10 @@ namespace Phantasma.Blockchain
                 this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
             }
 
-            this.Name = name;
-            this.Nexus = nexus;
-
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
 
-            if (nexus.CacheSize == -1)
-            {
-                this.Storage = new MemoryStorageContext();
-            }
-            else
-            {
-                this.Storage = new DiskStorageContext(this.Address, "data", KeyStoreDataSize.Medium);
-            }
+            this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
 
             this.Log = Logger.Init(log);
 
