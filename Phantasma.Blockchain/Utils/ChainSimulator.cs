@@ -91,6 +91,7 @@ namespace Phantasma.Blockchain.Utils
             BeginBlock();
             GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
             GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
+            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -116,19 +117,20 @@ namespace Phantasma.Blockchain.Utils
             var market = Nexus.FindChainByName("market");
             BeginBlock();
 
-            var nacho = Nexus.FindTokenBySymbol(Constants.NACHO_SYMBOL);
-            RandomSpreadNFT(nacho, 150);
+            var nachoToken = Nexus.FindTokenBySymbol(Constants.NACHO_SYMBOL);
+            RandomSpreadNFT(nachoToken, 150);
 
-            GenerateSetTokenMetadata(_owner, nacho, "details", "https://nacho.men/luchador/*");
-            GenerateSetTokenMetadata(_owner, nacho, "viewer", "https://nacho.men/luchador/body/*");
+            GenerateSetTokenMetadata(_owner, nachoToken, "details", "https://nacho.men/luchador/*");
+            GenerateSetTokenMetadata(_owner, nachoToken, "viewer", "https://nacho.men/luchador/body/*");
             EndBlock();
 
             var nftSales = new List<KeyValuePair<KeyPair, BigInteger>>();
+
             BeginBlock();
             for (int i = 1; i < 7; i++)
             {
                 BigInteger ID = i + 100;
-                var info = Nexus.GetNFT(nacho, ID);
+                var info = Nexus.GetNFT(nachoToken, ID);
                 if (info == null)
                 {
                     continue;
@@ -140,7 +142,7 @@ namespace Phantasma.Blockchain.Utils
                     continue;
                 }
 
-                var nftOwner = chain.GetTokenOwner(nacho, ID);
+                var nftOwner = chain.GetTokenOwner(nachoToken, ID);
 
                 if (nftOwner == Address.Null)
                 {
@@ -164,8 +166,54 @@ namespace Phantasma.Blockchain.Utils
             foreach (var sale in nftSales)
             {
                 // TODO this later should be the market chain instead of root
-                GenerateNftSale(sale.Key, Nexus.RootChain, nacho, sale.Value, UnitConversion.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
+                GenerateNftSale(sale.Key, Nexus.RootChain, nachoToken, sale.Value, UnitConversion.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
             }
+            EndBlock();
+
+            BeginBlock();
+
+            var wrestlerToken = Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
+
+            var newWrestler = new NachoWrestler()
+            {
+                auctionID = 0,
+                battleCount = 0,
+                comments = new string[0],
+                currentMojo = 10,
+                experience = 10000,
+                flags = WrestlerFlags.None,
+                genes = new byte[] { 115, 169, 73, 21, 111, 3, 174, 90, 137, 58 }, //"Piece, 115, 169, 73, 21, 111, 3, 174, 90, 137, 58"
+                gymBoostAtk = byte.MaxValue,
+                gymBoostDef = byte.MaxValue,
+                gymBoostStamina = byte.MaxValue,
+                gymTime = 0,
+                itemID = 0,
+                location = WrestlerLocation.None,
+                maskOverrideCheck = byte.MaxValue,
+                maskOverrideID = byte.MaxValue,
+                maskOverrideRarity = byte.MaxValue,
+                maxMojo = 10,
+                mojoTime = 0,
+                moveOverrides = new byte[0],
+                nickname = "testname",
+                owner = nachoAddress,
+                perfumeTime = 0,
+                praticeLevel = PraticeLevel.Gold,
+                roomTime = 0,
+                score = 0,
+                stakeAmount = 0,
+                trainingStat = StatKind.None,
+                ua1 = byte.MaxValue,
+                ua2 = byte.MaxValue,
+                ua3 = byte.MaxValue,
+                us1 = byte.MaxValue,
+                us2 = byte.MaxValue,
+                us3 = byte.MaxValue
+            };
+            
+            var wrestlerBytes = newWrestler.Serialize();
+            GenerateNft(_owner, nachoAddress, nachoChain, wrestlerToken, new byte[0], wrestlerBytes);
+
             EndBlock();
         }
 
