@@ -320,7 +320,7 @@ namespace Phantasma.API
 
         private TransactionResult FillTransaction(Transaction tx)
         {
-            var block = Nexus.FindBlockForTransaction(tx);
+            var block = Nexus.FindBlockByTransaction(tx);
             var chain = Nexus.FindChainByAddress(block.ChainAddress);
 
             var result = new TransactionResult
@@ -434,8 +434,9 @@ namespace Phantasma.API
             var balanceList = new List<BalanceResult>();
             foreach (var symbol in Nexus.Tokens)
             {
-                foreach (var chain in Nexus.Chains)
+                foreach (var chainName in Nexus.Chains)
                 {
+                    var chain = Nexus.FindChainByName(chainName);
                     var balance = chain.GetTokenBalance(symbol, address);
                     if (balance > 0)
                     {
@@ -523,8 +524,9 @@ namespace Phantasma.API
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
-                foreach (var chain in Nexus.Chains)
+                foreach (var chainName in Nexus.Chains)
                 {
+                    var chain = Nexus.FindChainByName(chainName);
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
@@ -542,8 +544,9 @@ namespace Phantasma.API
         {
             if (Hash.TryParse(blockHash, out var hash))
             {
-                foreach (var chain in Nexus.Chains)
+                foreach (var chainName in Nexus.Chains)
                 {
+                    var chain = Nexus.FindChainByName(chainName);
                     var block = chain.FindBlockByHash(hash);
                     if (block != null)
                     {
@@ -669,7 +672,7 @@ namespace Phantasma.API
 
                 var txs = plugin.GetAddressTransactions(address)
                     .Select(hash => Nexus.FindTransactionByHash(hash))
-                    .OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value)
+                    .OrderByDescending(tx => Nexus.FindBlockByTransaction(tx).Timestamp.Value)
                     .Skip((int)((page - 1) * pageSize))
                     .Take((int)pageSize);
 
@@ -721,13 +724,14 @@ namespace Phantasma.API
                     return new ErrorResult() { error = "invalid chain" };
                 }
 
-                count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockByHash(tx).ChainAddress.Equals(chain.Address));
             }
             else
             {
-                foreach (var chain in Nexus.Chains)
+                foreach (var chainName in Nexus.Chains)
                 {
-                    count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockForHash(tx).ChainAddress.Equals(chain.Address));
+                    var chain = Nexus.FindChainByName(chainName);
+                    count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockByHash(tx).ChainAddress.Equals(chain.Address));
                 }
             }
 
@@ -911,8 +915,9 @@ namespace Phantasma.API
 
             var objs = new List<object>();
 
-            foreach (var chain in Nexus.Chains)
+            foreach (var chainName in Nexus.Chains)
             {
+                var chain = Nexus.FindChainByName(chainName);
                 var single = FillChain(chain);
                 objs.Add(single);
             }
@@ -1035,7 +1040,7 @@ namespace Phantasma.API
 
             var transfers = plugin.GetTokenTransactions(tokenSymbol)
                 .Select(hash => Nexus.FindTransactionByHash(hash))
-                .OrderByDescending(tx => Nexus.FindBlockForTransaction(tx).Timestamp.Value)
+                .OrderByDescending(tx => Nexus.FindBlockByTransaction(tx).Timestamp.Value)
                 .Skip((int)((page - 1) * pageSize))
                 .Take((int)pageSize);
 

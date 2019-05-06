@@ -2421,21 +2421,18 @@ namespace Phantasma.Blockchain.Contracts.Native
         // get how many wrestlers in an account
         public BigInteger[] GetAccountWrestlers(Address address)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
-            Runtime.Expect(token != null, Constants.WRESTLER_SYMBOL + " token not found");
+            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), Constants.WRESTLER_SYMBOL + " token not found");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
-
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
         }
 
         public BigInteger[] GetAccountItems(Address address)
         {
-            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
-            Runtime.Expect(token != null, Constants.ITEM_SYMBOL + " token not found");
+            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), Constants.ITEM_SYMBOL + " token not found");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
+            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
 
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();

@@ -89,9 +89,9 @@ namespace Phantasma.Blockchain.Utils
             var appsChain = Nexus.FindChainByName("apps");
 
             BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
-            GenerateSideChainSend(_owner, Nexus.FuelToken, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
+            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
+            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
+            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -117,13 +117,9 @@ namespace Phantasma.Blockchain.Utils
             var market = Nexus.FindChainByName("market");
             BeginBlock();
 
-            var nachoToken = Nexus.FindTokenBySymbol(Constants.NACHO_SYMBOL);
-            RandomSpreadNFT(nachoToken, 150);
             var nachoSymbol = "NACHO";
             RandomSpreadNFT(nachoSymbol, 150);
 
-            GenerateSetTokenMetadata(_owner, nachoToken, "details", "https://nacho.men/luchador/*");
-            GenerateSetTokenMetadata(_owner, nachoToken, "viewer", "https://nacho.men/luchador/body/*");
             GenerateSetTokenMetadata(_owner, nachoSymbol, "details", "https://nacho.men/luchador/*");
             GenerateSetTokenMetadata(_owner, nachoSymbol, "viewer", "https://nacho.men/luchador/body/*");
             EndBlock();
@@ -180,8 +176,6 @@ namespace Phantasma.Blockchain.Utils
 
             BeginBlock();
 
-            var wrestlerToken = Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
-
             var newWrestler = new NachoWrestler()
             {
                 auctionID = 0,
@@ -220,7 +214,7 @@ namespace Phantasma.Blockchain.Utils
             };
             
             var wrestlerBytes = newWrestler.Serialize();
-            GenerateNft(_owner, nachoAddress, nachoChain, wrestlerToken, new byte[0], wrestlerBytes);
+            GenerateNft(_owner, nachoAddress, nachoChain, nachoSymbol, new byte[0], wrestlerBytes);
 
             EndBlock();
         }

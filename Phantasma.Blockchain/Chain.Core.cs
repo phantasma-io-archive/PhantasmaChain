@@ -99,7 +99,7 @@ namespace Phantasma.Blockchain
             if (parentChain != null)
             {
                 Throw.IfNull(parentBlock, "parent block required");
-                Throw.IfNot(nexus.ContainsChain(parentChain), "invalid chain");
+                Throw.IfNot(nexus.ChainExists(parentChain.Name), "invalid chain");
                 //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
             }
 

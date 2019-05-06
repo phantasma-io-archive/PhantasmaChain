@@ -74,14 +74,20 @@ namespace Phantasma.IO
 
         public uint Count => (uint)_cache.Count;
 
-        private string path;
+        private string fileName;
 
-        public BasicDiskStore(string path)
+        public BasicDiskStore(string fileName)
         {
-            this.path = path;
-            if (File.Exists(path))
+            var path = Path.GetDirectoryName(fileName);
+            if (!Directory.Exists(path))
             {
-                var lines = File.ReadAllLines(path);
+                Directory.CreateDirectory(path);
+            }
+
+            this.fileName = fileName;
+            if (File.Exists(fileName))
+            {
+                var lines = File.ReadAllLines(fileName);
                 foreach (var line in lines)
                 {
                     var temp = line.Split(',');
@@ -105,7 +111,7 @@ namespace Phantasma.IO
                 _cache[key] = value;
             }
 
-            File.WriteAllLines(path, _cache.Select(x => Convert.ToBase64String(x.Key) + ","+ Convert.ToBase64String(x.Value)));
+            File.WriteAllLines(fileName, _cache.Select(x => Convert.ToBase64String(x.Key) + ","+ Convert.ToBase64String(x.Value)));
         }
 
         public byte[] GetValue(byte[] key)

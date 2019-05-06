@@ -21,7 +21,7 @@ namespace Phantasma.Blockchain
         public static readonly string RootChainName = "main";
         private static readonly string ChainAddressMapKey = "chain.";
 
-        public Chain RootChain => FindChainByAddress(RootAddress);
+        public Chain RootChain => FindChainByName(RootChainName);
 
         private KeyValueStore<string, byte[]> _vars;
         private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
@@ -214,12 +214,12 @@ namespace Phantasma.Blockchain
             return epoch.ValidatorAddress;
         }
 
-        public Block FindBlockForTransaction(Transaction tx)
+        public Block FindBlockByTransaction(Transaction tx)
         {
-            return FindBlockForHash(tx.Hash);
+            return FindBlockByHash(tx.Hash);
         }
 
-        public Block FindBlockForHash(Hash hash)
+        public Block FindBlockByHash(Hash hash)
         {
             var chainNames = this.Chains;
             foreach (var chainName in chainNames)
@@ -368,14 +368,14 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public bool ContainsChain(Chain chain)
+        public bool ChainExists(string chainName)
         {
-            if (chain == null)
+            if (string.IsNullOrEmpty(chainName))
             {
                 return false;
             }
 
-            return FindChainByName(chain.Name) == chain;
+            return FindChainByName(chainName) != null;
         }
 
         private Dictionary<string, Chain> _chainCache = new Dictionary<string, Chain>();
@@ -383,6 +383,11 @@ namespace Phantasma.Blockchain
         public Chain FindChainByAddress(Address address)
         {
             var name = LookUpChainNameByAddress(address);
+            if (string.IsNullOrEmpty(name))
+            {
+                return null; // TODO should be exception
+            }
+
             return FindChainByName(name);
         }
 
@@ -961,42 +966,42 @@ namespace Phantasma.Blockchain
             };
 
             // create root chain, TODO this probably should also be included as a transaction later
-            var chain = new Chain(this, RootChainName, contracts, this._logger);
-            _chainCache[chain.Name] = chain;
-            this.RootAddress = chain.Address;
+            var rootChain = new Chain(this, RootChainName, contracts, this._logger);
+            _chainCache[rootChain.Name] = rootChain;
+            this.RootAddress = rootChain.Address;
 
             // create genesis transactions
             var transactions = new List<Transaction>
             {
-                TokenCreateTx(RootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, false),
-                TokenCreateTx(RootChain, owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, false),
-                TokenCreateTx(RootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, true),
+                TokenCreateTx(rootChain, owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, false),
+                TokenCreateTx(rootChain, owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, false),
+                TokenCreateTx(rootChain, owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, true),
 
-                SideChainCreateTx(RootChain, owner, "privacy"),
-                SideChainCreateTx(RootChain, owner, "vault"),
-                SideChainCreateTx(RootChain, owner, "bank"),
-                SideChainCreateTx(RootChain, owner, "interop"),
+                SideChainCreateTx(rootChain, owner, "privacy"),
+                SideChainCreateTx(rootChain, owner, "vault"),
+                SideChainCreateTx(rootChain, owner, "bank"),
+                SideChainCreateTx(rootChain, owner, "interop"),
                 // SideChainCreateTx(RootChain, owner, "market"), TODO
-                SideChainCreateTx(RootChain, owner, "apps"),
-                SideChainCreateTx(RootChain, owner, "energy"),
+                SideChainCreateTx(rootChain, owner, "apps"),
+                SideChainCreateTx(rootChain, owner, "energy"),
 
                 // TODO remove those from here, theyare here just for testing
-                SideChainCreateTx(RootChain, owner, "nacho"),
-                SideChainCreateTx(RootChain, owner, "casino"),
+                SideChainCreateTx(rootChain, owner, "nacho"),
+                SideChainCreateTx(rootChain, owner, "casino"),
 
-                TokenCreateTx(RootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
-                TokenCreateTx(RootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
-                TokenCreateTx(RootChain, owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, true),
+                TokenCreateTx(rootChain, owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
+                TokenCreateTx(rootChain, owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
+                TokenCreateTx(rootChain, owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, true),
 
-                ConsensusStakeCreateTx(RootChain, owner)
+                ConsensusStakeCreateTx(rootChain, owner)
             };
 
             var genesisMessage = Encoding.UTF8.GetBytes("A Phantasma was born...");
-            var block = new Block(Chain.InitialHeight, RootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
+            var block = new Block(Chain.InitialHeight, rootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
             try
             {
-                RootChain.AddBlock(block, transactions);
+                rootChain.AddBlock(block, transactions);
             }
             catch (Exception e)
             {
@@ -1011,7 +1016,7 @@ namespace Phantasma.Blockchain
 
         public int GetConfirmationsOfHash(Hash hash)
         {
-            var block = FindBlockForHash(hash);
+            var block = FindBlockByHash(hash);
             if (block != null)
             {
                 return GetConfirmationsOfBlock(block);
@@ -1030,7 +1035,7 @@ namespace Phantasma.Blockchain
         {
             Throw.IfNull(transaction, nameof(transaction));
 
-            var block = FindBlockForTransaction(transaction);
+            var block = FindBlockByTransaction(transaction);
             if (block == null)
             {
                 return 0;
