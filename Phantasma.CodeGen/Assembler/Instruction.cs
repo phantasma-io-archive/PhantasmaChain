@@ -375,7 +375,7 @@ namespace Phantasma.CodeGen.Assembler
                 else
                 if (Arguments[1].IsBytes())
                 {
-                    sb.EmitLoad(reg, Arguments[1].IsBytes());
+                    sb.EmitLoad(reg, Arguments[1].AsBytes());
                 }
                 else
                 if (Arguments[1].IsBool())

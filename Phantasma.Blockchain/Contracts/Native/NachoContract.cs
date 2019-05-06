@@ -2421,14 +2421,22 @@ namespace Phantasma.Blockchain.Contracts.Native
         // get how many wrestlers in an account
         public BigInteger[] GetAccountWrestlers(Address address)
         {
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
+            var token = Runtime.Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
+            Runtime.Expect(token != null, Constants.WRESTLER_SYMBOL + " token not found");
+
+            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
+
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
         }
 
         public BigInteger[] GetAccountItems(Address address)
         {
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var token = Runtime.Nexus.FindTokenBySymbol(Constants.ITEM_SYMBOL);
+            Runtime.Expect(token != null, Constants.ITEM_SYMBOL + " token not found");
+
+            var ownerships = Runtime.Chain.GetTokenOwnerships(token);
+
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
             /*
@@ -2500,15 +2508,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region ITEM API
-        public NachoItem[] GetItems(BigInteger[] IDs)
-        {
-            var items = new NachoItem[IDs.Length];
-            for (int i = 0; i < items.Length; i++)
-            {
-                items[i] = GetItem(IDs[i]);
-            }
-            return items;
-        }
+        //public NachoItem[] GetItems(BigInteger[] IDs)
+        //{
+        //    var items = new NachoItem[IDs.Length];
+        //    for (int i = 0; i < items.Length; i++)
+        //    {
+        //        items[i] = GetItem(IDs[i]);
+        //    }
+        //    return items;
+        //}
 
         // TODO error handling when item not exist
         public NachoItem GetItem(BigInteger ID)
@@ -2894,15 +2902,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         */
 
-        public NachoWrestler[] GetWrestlers(BigInteger[] IDs)
-        {
-            var wrestlers = new NachoWrestler[IDs.Length];
-            for (int i = 0; i < wrestlers.Length; i++)
-            {
-                wrestlers[i] = GetWrestler(IDs[i]);
-            }
-            return wrestlers;
-        }
+        //public NachoWrestler[] GetWrestlers(BigInteger[] IDs)
+        //{
+        //    var wrestlers = new NachoWrestler[IDs.Length];
+        //    for (int i = 0; i < wrestlers.Length; i++)
+        //    {
+        //        wrestlers[i] = GetWrestler(IDs[i]);
+        //    }
+        //    return wrestlers;
+        //}
 
         public NachoWrestler GetBot(int botID)
         {

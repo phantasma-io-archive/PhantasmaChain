@@ -18,6 +18,7 @@ using Phantasma.Core;
 using Phantasma.CodeGen;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
+using Phantasma.VM;
 
 namespace Phantasma.Tests
 {
@@ -1805,6 +1806,91 @@ namespace Phantasma.Tests
             }
         }
 
+        private struct TestInteropStruct
+        {
+            public BigInteger ID;
+            public string name;
+            public Address address;
+        }
+
+        [TestMethod]
+        public void StructInterop()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var randomKey = KeyPair.Generate();
+
+            var demoValue = new TestInteropStruct()
+            {
+                ID = 1234,
+                name = "monkey",
+                address = randomKey.Address
+            };
+
+            var hexStr = Base16.Encode(demoValue.address.PublicKey);
+
+            scriptString = new string[]
+            {
+                // first field
+                $"load r1 \\\"ID\\\"",
+                $"load r2 {demoValue.ID}",
+                $"put r2 r3 r1",
+                $"load r1 \\\"name\\\"",
+
+                // second field
+                $"load r2 \\\"{demoValue.name}\\\"",
+                $"put r2 r3 r1",
+                $"load r1 \\\"address\\\"",
+
+                // third field
+                // this one is more complex because it is not a primitive type supported in the VM
+                $"load r2 0x{hexStr}",
+                $"push r2",
+                $"extcall \\\"Address()\\\"",
+                $"pop r2",
+                $"put r2 r3 r1",
+                $"push r3",
+                @"ret",
+            };
+
+            vm = ExecuteScript(scriptString, (_vm) =>
+            {
+                // here we register the interop for extcall "Address()"
+                // this part would not need to be here... 
+                // however this is normally done in the Chain Runtime, which we don't use for those tests
+                // suggestion: maybe move some of those interop to the VM core?
+                _vm.RegisterInterop("Address()", (frame) =>
+                {
+                    var input = _vm.Stack.Pop().AsType(VMType.Bytes);
+
+                    try
+                    {
+                        Address obj = new Address((byte[])input);
+                        var tempObj = new VMObject();
+                        tempObj.SetValue(obj);
+                        _vm.Stack.Push(tempObj);
+                    }
+                    catch
+                    {
+                        return ExecutionState.Fault;
+                    }
+
+                    return ExecutionState.Running;
+                });
+            });
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var temp = vm.Stack.Pop();
+            Assert.IsTrue(temp != null);
+
+            var result = temp.ToStruct<TestInteropStruct>();
+            Assert.IsTrue(demoValue.ID == result.ID);
+            Assert.IsTrue(demoValue.name == result.name);
+            Assert.IsTrue(demoValue.address == result.address);
+        }
+
         #endregion
 
         #region Data
@@ -2073,7 +2159,7 @@ namespace Phantasma.Tests
         #endregion
 
         #region AuxFunctions
-        private TestVM ExecuteScript(string[] scriptString)
+        private TestVM ExecuteScript(string[] scriptString, Action<TestVM> beforeExecute = null)
         {
             var script = BuildScript(scriptString);
 
@@ -2083,6 +2169,9 @@ namespace Phantasma.Tests
 
             var vm = new TestVM(tx.Script);
             vm.ThrowOnFault = true;
+
+            beforeExecute?.Invoke(vm);
+
             vm.Execute();
 
             return vm;
@@ -2115,7 +2204,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                throw new InternalTestFailureException("Error assembling the script");
+                throw new InternalTestFailureException("Error assembling the script: "+e.ToString());
             }
 
             return script;

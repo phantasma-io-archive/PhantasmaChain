@@ -519,6 +519,67 @@ namespace Phantasma.VM
             }
         }
 
+        public object ToObject(Type type)
+        {
+            if (this.Type == VMType.Struct)
+            {
+                if (type.IsArray)
+                {
+                    var elementType = type.GetElementType();
+                    return this.ToArray(elementType);
+                }
+                else 
+                if (type.IsStructOrClass())
+                {
+                    return this.ToStruct(type);
+                }
+                else
+                {
+                    throw new NotImplementedException(); // some stuff still missing: eg: lists, dictionaries..
+                }
+            }
+            else
+            {
+                return this.ToObject();
+            }
+        }
+
+        public T[] ToArray<T>()
+        {
+            return (T[])ToArray(typeof(T));
+        }
+
+        public object ToArray(Type arrayElementType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T ToStruct<T>()
+        {
+            return (T)ToStruct(typeof(T));
+        }
+
+        public object ToStruct(Type structType)
+        {
+            Throw.If(Type != VMType.Struct, "not a valid source struct");
+
+            Throw.If(!structType.IsStructOrClass(), "not a valid destination struct");
+
+            var dict = (Dictionary<string, VMObject>)this.Data;
+
+            var fields = structType.GetFields();
+            var result = Activator.CreateInstance(structType);
+
+            object boxed = result;
+            foreach (var field in fields)
+            {
+                Throw.If(!dict.ContainsKey(field.Name), "field not present in source struct: "+field.Name);
+                var val = dict[field.Name].ToObject(field.FieldType);
+                field.SetValue(boxed, val);
+            }
+            return boxed;
+        }
+
     }
 
 }
