@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
+using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
@@ -14,30 +9,24 @@ using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
     public class Nexus
     {
-        public Chain RootChain => FindChainByAddress(RootAddress);
+        public static readonly string RootChainName = "main";
+        private static readonly string ChainAddressMapKey = "chain.";
 
-        private readonly Dictionary<string, Chain> _chainMap = new Dictionary<string, Chain>();
+        public Chain RootChain => FindChainByAddress(RootAddress);
 
         private KeyValueStore<string, byte[]> _vars;
         private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
 
         public bool Ready { get; private set; }
-
-        public IEnumerable<Chain> Chains
-        {
-            get
-            {
-                lock (_chainMap)
-                {
-                    return _chainMap.Values;
-                }
-            }
-        }
 
         public string Name
         {
@@ -106,6 +95,20 @@ namespace Phantasma.Blockchain
             {
                 var symbols = value.ToArray();
                 _vars.Set(nameof(Tokens), Serialization.Serialize(symbols));
+            }
+        }
+
+        public IEnumerable<string> Chains
+        {
+            get
+            {
+                return Serialization.Unserialize<string[]>(_vars.Get(nameof(Chains)));
+            }
+
+            private set
+            {
+                var names = value.ToArray();
+                _vars.Set(nameof(Chains), Serialization.Serialize(names));
             }
         }
 
@@ -179,14 +182,13 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainForBlock(Hash hash)
         {
-            lock (_chainMap)
+            var chainNames = this.Chains;
+            foreach (var chainName in chainNames)
             {
-                foreach (var chain in _chainMap.Values)
+                var chain = FindChainByName(chainName);
+                if (chain.ContainsBlock(hash))
                 {
-                    if (chain.ContainsBlock(hash))
-                    {
-                        return chain;
-                    }
+                    return chain;
                 }
             }
 
@@ -219,30 +221,13 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockForHash(Hash hash)
         {
-            lock (_chainMap)
+            var chainNames = this.Chains;
+            foreach (var chainName in chainNames)
             {
-                foreach (var chain in _chainMap.Values)
+                var chain = FindChainByName(chainName);
+                if (chain.ContainsTransaction(hash))
                 {
-                    if (chain.ContainsTransaction(hash))
-                    {
-                        return chain.FindTransactionBlock(hash);
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        public Block FindBlockByHash(Hash hash)
-        {
-            lock (_chainMap)
-            {
-                foreach (var chain in _chainMap.Values)
-                {
-                    if (chain.ContainsBlock(hash))
-                    {
-                        return chain.FindBlockByHash(hash);
-                    }
+                    return chain.FindTransactionBlock(hash);
                 }
             }
 
@@ -285,8 +270,10 @@ namespace Phantasma.Blockchain
         #region TRANSACTIONS
         public Transaction FindTransactionByHash(Hash hash)
         {
-            foreach (var chain in Chains)
+            var chainNames = this.Chains;
+            foreach (var chainName in chainNames)
             {
+                var chain = FindChainByName(chainName);
                 var tx = chain.FindTransactionByHash(hash);
                 if (tx != null)
                 {
@@ -296,19 +283,17 @@ namespace Phantasma.Blockchain
 
             return null;
         }
-
-        public int GetTotalTransactionCount()
-        {
-            return Chains.Sum(x => (int)x.TransactionCount);
-        }
         #endregion
 
         #region CHAINS
         internal Chain CreateChain(Address owner, string name, Chain parentChain, Block parentBlock)
         {
-            if (parentChain == null || parentBlock == null)
+            if (name != RootChainName)
             {
-                return null;
+                if (parentChain == null || parentBlock == null)
+                {
+                    return null;
+                }
             }
 
             if (owner != GenesisAddress)
@@ -358,12 +343,29 @@ namespace Phantasma.Blockchain
 
             var chain = new Chain(this, name, new[] { tokenContract, gasContract, contract }, _logger, parentChain, parentBlock);
 
-            lock (_chainMap)
-            {
-                _chainMap[name] = chain;
-            }
+            // add to persisent list of chains
+            var chainList = this.Chains.ToList();
+            chainList.Add(name);
+            this.Chains = chainList;
+
+            // add address mapping 
+            this._vars.Set(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
+
+            _chainCache[chain.Name] = chain;
 
             return chain;
+        }
+
+        private string LookUpChainNameByAddress(Address address)
+        {
+            var key = ChainAddressMapKey + address.Text;
+            if (_vars.ContainsKey(key))
+            {
+                var bytes = _vars.Get(key);
+                return Encoding.UTF8.GetString(bytes);
+            }
+
+            return null;
         }
 
         public bool ContainsChain(Chain chain)
@@ -373,42 +375,29 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            bool result;
-            lock (_chainMap)
-            {
-                result = _chainMap.ContainsKey(chain.Name);
-            }
-
-            return result;
+            return FindChainByName(chain.Name) == chain;
         }
+
+        private Dictionary<string, Chain> _chainCache = new Dictionary<string, Chain>();
 
         public Chain FindChainByAddress(Address address)
         {
-            lock (_chainMap)
-            {
-                foreach (var entry in _chainMap.Values)
-                {
-                    if (entry.Address == address)
-                    {
-                        return entry;
-                    }
-                }
-            }
-
-            return null;
+            var name = LookUpChainNameByAddress(address);
+            return FindChainByName(name);
         }
 
         public Chain FindChainByName(string name)
         {
-            lock (_chainMap)
+            if (_chainCache.ContainsKey(name))
             {
-                if (_chainMap.ContainsKey(name))
-                {
-                    return _chainMap[name];
-                }
+                return _chainCache[name];
             }
 
-            return null;
+            throw new Exception("fixme pls");
+            /*
+            var chain = new Chain(this);
+            _chainCache[name] = chain;
+            return chain;*/
         }
 
         #endregion
@@ -972,8 +961,8 @@ namespace Phantasma.Blockchain
             };
 
             // create root chain, TODO this probably should also be included as a transaction later
-            var chain = new Chain(this, "main", contracts, this._logger);
-            _chainMap[chain.Name] = chain;
+            var chain = new Chain(this, RootChainName, contracts, this._logger);
+            _chainCache[chain.Name] = chain;
             this.RootAddress = chain.Address;
 
             // create genesis transactions
