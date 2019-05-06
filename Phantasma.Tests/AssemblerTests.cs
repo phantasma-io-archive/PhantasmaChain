@@ -1805,6 +1805,48 @@ namespace Phantasma.Tests
             }
         }
 
+        private struct TestInteropStruct
+        {
+            public BigInteger ID;
+            public string name;
+        }
+
+        [TestMethod]
+        public void StructInterop()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            var demoValue = new TestInteropStruct()
+            {
+                ID = 1234,
+                name = "monkey"
+            };
+
+            scriptString = new string[]
+            {
+                $"load r1 \\\"ID\\\"",
+                $"load r2 {demoValue.ID}",
+                $"put r2 r3 r1",
+                $"load r1 \\\"name\\\"",
+                $"load r2 \\\"{demoValue.name}\\\"",
+                $"put r2 r3 r1",
+                $"push r3",
+                @"ret",
+            };
+
+            vm = ExecuteScript(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var temp = vm.Stack.Pop();
+            Assert.IsTrue(temp != null);
+
+            var result = temp.ToStruct<TestInteropStruct>();
+            Assert.IsTrue(demoValue.ID == result.ID);
+            Assert.IsTrue(demoValue.name == result.name);
+        }
+
         #endregion
 
         #region Data
@@ -2115,7 +2157,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                throw new InternalTestFailureException("Error assembling the script");
+                throw new InternalTestFailureException("Error assembling the script: "+e.ToString());
             }
 
             return script;

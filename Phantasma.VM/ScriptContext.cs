@@ -671,13 +671,16 @@ namespace Phantasma.VM
                         {
                             var src = Read8();
                             var dst = Read8();
-                            var key = Read8();
+                            var keyReg = Read8();
 
                             Expect(src < frame.Registers.Length);
                             Expect(dst < frame.Registers.Length);
-                            Expect(key < frame.Registers.Length);
+                            Expect(keyReg < frame.Registers.Length);
 
-                            frame.Registers[dst].SetKey(frame.Registers[key].AsString(), frame.Registers[src]);
+                            var key = frame.Registers[keyReg].AsString();
+                            var value = frame.Registers[src];
+
+                            frame.Registers[dst].SetKey(key, value);
 
                             break;
                         }
