@@ -535,7 +535,7 @@ namespace Phantasma.VM
                 }
                 else
                 {
-                    throw new NotImplementedException();
+                    throw new NotImplementedException(); // some stuff still missing: eg: lists, dictionaries..
                 }
             }
             else
