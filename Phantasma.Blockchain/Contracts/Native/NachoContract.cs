@@ -1801,6 +1801,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger stakeAmount;
     }
 
+    public struct DailyReward
+    {
+        public BigInteger factionReward;
+        public BigInteger championshipReward;
+        public BigInteger vipWrestlerReward;
+        public BigInteger vipItemReward;
+        public BigInteger vipMakeUpReward;
+    }
+
     //public struct NachoAuction
     //{
     //    public uint startTime;
