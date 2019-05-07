@@ -575,7 +575,37 @@ namespace Phantasma.VM
 
         public object ToArray(Type arrayElementType)
         {
-            throw new NotImplementedException();
+            Throw.If(Type != VMType.Struct, "not a valid source struct");
+
+            var children = GetChildren();
+            int maxIndex = -1;
+            foreach (var child in children)
+            {
+                Throw.If(child.Key.Type != VMType.Number, "source contains an element with invalid array index");
+
+                var temp = child.Key.AsNumber();
+                // TODO use a constant for VM max array size
+                Throw.If(temp >= 1024, "source contains an element with a very large array index");
+
+                var index = (int)temp;
+                Throw.If(index < 0, "source contains an array index with negative value");
+
+                maxIndex = Math.Max(index, maxIndex);
+            }
+
+            var length = maxIndex + 1;
+            var array = Array.CreateInstance(arrayElementType, length);
+
+            foreach (var child in children)
+            {
+                var temp = child.Key.AsNumber();
+                var index = (int)temp;
+
+                var val = child.Value.ToObject(arrayElementType);
+                array.SetValue(val, index);
+            }
+
+            return array;
         }
 
         public T ToStruct<T>()

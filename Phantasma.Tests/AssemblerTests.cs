@@ -1891,6 +1891,35 @@ namespace Phantasma.Tests
             Assert.IsTrue(demoValue.address == result.address);
         }
 
+        [TestMethod]
+        public void ArrayInterop()
+        {
+            TestVM vm;
+
+            var demoArray = new BigInteger[] { 1, 42, 1024 };
+
+            var script = new List<string>();
+
+            for (int i=0; i<demoArray.Length; i++)
+            {
+                script.Add($"load r1 {i}");
+                script.Add($"load r2 {demoArray[i]}");
+                script.Add($"put r2 r3 r1");
+            }
+            script.Add("push r3");
+            script.Add("ret");
+
+            vm = ExecuteScript(script);
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var temp = vm.Stack.Pop();
+            Assert.IsTrue(temp != null);
+
+            var result = temp.ToArray<BigInteger>();
+            Assert.IsTrue(result.Length == demoArray.Length);
+        }
+
         #endregion
 
         #region Data
@@ -2159,7 +2188,7 @@ namespace Phantasma.Tests
         #endregion
 
         #region AuxFunctions
-        private TestVM ExecuteScript(string[] scriptString, Action<TestVM> beforeExecute = null)
+        private TestVM ExecuteScript(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
         {
             var script = BuildScript(scriptString);
 
@@ -2178,7 +2207,7 @@ namespace Phantasma.Tests
         }
 
 
-        private byte[] BuildScript(string[] lines)
+        private byte[] BuildScript(IEnumerable<string> lines)
         {
             IEnumerable<Semanteme> semantemes = null;
             try
