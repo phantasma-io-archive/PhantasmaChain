@@ -7,7 +7,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public sealed class FriendContract : SmartContract
     {
         public override string Name => "friends";
-        internal StorageList _friends;
+        internal StorageMap _friendMap;
 
         #region FRIENDLIST
         public void AddFriend(Address target, Address friend)
@@ -17,7 +17,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(friend != Address.Null, "friend address must not be null");
             Runtime.Expect(friend != target, "friend must be different from target address");
 
-            _friends.Add(friend);
+            var friendList = _friendMap.Get<Address, StorageList>(target);
+            Runtime.Expect(!friendList.Contains(friend), "already is friend");
+
+            friendList.Add(friend);
 
             Runtime.Notify(EventKind.AddressAdd, target, friend);
         }
@@ -29,15 +32,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(friend != Address.Null, "friend address must not be null");
             Runtime.Expect(friend != target, "friend must be different from target address");
 
-            Runtime.Expect(_friends.Contains(friend), "friend not found");
-            _friends.Remove(friend);
+            var friendList = _friendMap.Get<Address, StorageList>(target);
+
+            Runtime.Expect(friendList.Contains(friend), "friend not found");
+            friendList.Remove(friend);
 
             Runtime.Notify(EventKind.AddressRemove, target, friend);
         }
 
         public Address[] GetFriends(Address target)
         {
-            return _friends.All<Address>();
+            var friendList = _friendMap.Get<Address, StorageList>(target);
+            return friendList.All<Address>();
         }
         #endregion
 
