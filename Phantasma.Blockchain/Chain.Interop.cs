@@ -117,6 +117,12 @@ namespace Phantasma.Blockchain
             {
                 return ExecutionState.Fault;
             }
+            
+            url = url.Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(url))
+            {
+                return ExecutionState.Fault;
+            }
 
             var result = vm.OracleReader(vm.Transaction.Hash, url);
 
