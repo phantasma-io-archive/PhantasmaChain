@@ -20,7 +20,6 @@ namespace Phantasma.Blockchain
     {
         public static readonly string RootChainName = "main";
         private static readonly string ChainAddressMapKey = "chain.addr.";
-        private static readonly string ChainNameMapKey = "chain.name.";
         private static readonly string ChainParentNameKey = "chain.parent.";
         private static readonly string ChainParentBlockKey = "chain.block.";
 
@@ -346,7 +345,6 @@ namespace Phantasma.Blockchain
 
             // add address and name mapping 
             this._vars.Set(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
-            this._vars.Set(ChainNameMapKey + chain.Name, chain.Address.PublicKey);
             if (parentChain != null)
             {
                 this._vars.Set(ChainParentNameKey + chain.Name, Encoding.UTF8.GetBytes(parentChain.Name));
@@ -445,11 +443,9 @@ namespace Phantasma.Blockchain
                 return _chainCache[name];
             }
 
-            var key = ChainNameMapKey + name;
+            var key = ChainAddressMapKey + name;
             if (_vars.ContainsKey(key))
             {
-                var bytes = _vars.Get(key);
-                var address = new Address(bytes);
                 var chain = new Chain(this, name);
                 _chainCache[name] = chain;
                 return chain;

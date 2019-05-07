@@ -1,112 +1,162 @@
-﻿using Phantasma.Core;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using System.Collections.Generic;
+using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
 {
     public class SupplySheet
     {
-        public BigInteger ParentBalance { get; private set; }
-        public BigInteger LocalBalance { get; private set; }
-
         private BigInteger _maxBalance;
 
-        private Dictionary<Address, BigInteger> _childBalances = new Dictionary<Address, BigInteger>();
+        private byte[] _prefix;
 
-        public SupplySheet(BigInteger parentBalance, BigInteger localBalance, BigInteger maxBalance)
+        //private Dictionary<Address, BigInteger> _childBalances = new Dictionary<Address, BigInteger>();
+
+        private string _localName;
+        private string _parentName;
+
+        public SupplySheet(string symbol, string parentName, string localName, BigInteger maxBalance)
         {
-            this.ParentBalance = parentBalance;
-            this.LocalBalance = localBalance;
+            this._parentName = parentName;
+            this._localName = localName;
             this._maxBalance = maxBalance;
+            this._prefix = Encoding.ASCII.GetBytes(symbol);
         }
 
-        public BigInteger GetChildBalance(Chain chain)
+        private byte[] GetKeyForChain(string name)
         {
-            Throw.IfNull(chain, nameof(chain));
+            return ByteArrayUtils.ConcatBytes(_prefix, Encoding.UTF8.GetBytes(name));
+        }
 
-            if (_childBalances.ContainsKey(chain.Address))
+        private BigInteger Get(StorageContext storage, string name)
+        {
+            lock (storage)
             {
-                return _childBalances[chain.Address];
+                var key = GetKeyForChain(name);
+                var temp = storage.Get(key); // TODO make utils method GetBigInteger
+                if (temp == null || temp.Length == 0)
+                {
+                    return 0;
+                }
+                return new BigInteger(temp);
             }
-
-            return 0;
         }
 
-        public bool MoveToParent(BigInteger amount)
+        private void Set(StorageContext storage, string name, BigInteger value)
         {
-            if (LocalBalance < amount)
+            lock (storage)
+            {
+                var key = GetKeyForChain(name);
+                storage.Put(key, value);
+            }
+        }
+
+        public BigInteger GetChildBalance(StorageContext storage, string childChainName)
+        {
+            Throw.IfNull(childChainName, nameof(childChainName));
+
+            return Get(storage, childChainName);
+        }
+
+        public bool MoveToParent(StorageContext storage, BigInteger amount)
+        {
+            var localBalance = Get(storage, _localName);
+            if (localBalance < amount)
             {
                 return false;
             }
 
-            LocalBalance -= amount;
-            ParentBalance += amount;
+            localBalance -= amount;
+            Set(storage, _localName, localBalance);
+
+            var parentBalance = Get(storage, _parentName);
+            parentBalance += amount;
+            Set(storage, _parentName, parentBalance);
+
             return true;
         }
 
-        public bool MoveFromParent(BigInteger amount)
+        public bool MoveFromParent(StorageContext storage, BigInteger amount)
         {
-            if (ParentBalance < amount)
+            var parentBalance = Get(storage, _parentName);
+            if (parentBalance < amount)
             {
                 return false;
             }
 
-            LocalBalance += amount;
-            ParentBalance -= amount;
+            var localBalance = Get(storage, _localName);
+            localBalance += amount;
+            Set(storage, _localName, localBalance);
+
+            parentBalance -= amount;
+            Set(storage, _parentName, parentBalance);
+
             return true;
         }
 
-        public bool MoveToChild(Chain child, BigInteger amount)
+        public bool MoveToChild(StorageContext storage, string childChainName, BigInteger amount)
         {
-            Throw.IfNull(child, nameof(child));
+            Throw.IfNull(childChainName, nameof(childChainName));
 
-            if (LocalBalance < amount)
+            var localBalance = Get(storage, _localName);
+            if (localBalance < amount)
             {
                 return false;
             }
 
-            LocalBalance -= amount;
+            localBalance -= amount;
+            Set(storage, _localName, localBalance);
 
-            var childBalance = GetChildBalance(child);
+            var childBalance = GetChildBalance(storage, childChainName);
             childBalance += amount;
-            _childBalances[child.Address] = childBalance;
+            Set(storage, childChainName, childBalance);
 
             return true;
         }
 
-        public bool MoveFromChild(Chain child, BigInteger amount)
+        public bool MoveFromChild(StorageContext storage, string childChainName, BigInteger amount)
         {
-            Throw.IfNull(child, nameof(child));
+            Throw.IfNull(childChainName, nameof(childChainName));
 
-            var childBalance = GetChildBalance(child);
+            var childBalance = GetChildBalance(storage, childChainName);
 
             if (childBalance < amount)
             {
                 return false;
             }
 
-            LocalBalance += amount;
+            var localBalance = Get(storage, _localName);
+            localBalance += amount;
+            Set(storage, _localName, localBalance);
 
             childBalance -= amount;
-            _childBalances[child.Address] = childBalance;
+            Set(storage, childChainName, childBalance);
 
             return true;
         }
 
-        public bool Burn(BigInteger amount)
+        // TODO only can be done in rootchain
+        public bool Burn(StorageContext storage, BigInteger amount)
         {
-            if (LocalBalance < amount)
+            var localBalance = Get(storage, _localName);
+            if (localBalance < amount)
             {
                 return false;
             }
 
-            LocalBalance -= amount;
+            localBalance -= amount;
+            Set(storage, _localName, localBalance);
+
             return true;
         }
 
-        public bool Mint(BigInteger amount)
+        public bool Mint(StorageContext storage, BigInteger amount)
         {
+            throw new System.NotImplementedException();
+            /*
             BigInteger existingSupply = ParentBalance + LocalBalance;
 
             foreach (var childBalance in _childBalances.Values)
@@ -122,7 +172,7 @@ namespace Phantasma.Blockchain.Tokens
             }
 
             LocalBalance += amount;
-            return true;
+            return true;*/
         }
 
     }

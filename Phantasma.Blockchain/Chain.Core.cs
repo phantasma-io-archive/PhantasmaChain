@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Cryptography;
-using Phantasma.Numerics;
+using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Storage;
+using Phantasma.IO;
+using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Consensus;
-using System;
-using Phantasma.IO;
-using System.IO;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Cryptography;
+using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Blockchain
 {
@@ -68,7 +67,7 @@ namespace Phantasma.Blockchain
 
         public uint BlockHeight => (uint)_blocks.Count;
 
-        public Block LastBlock { get; private set; }
+        public Block LastBlock => FindBlockByHeight(BlockHeight);
 
         public readonly Logger Log;
 
@@ -217,8 +216,6 @@ namespace Phantasma.Blockchain
             CurrentEpoch.AddBlockHash(block.Hash);
             CurrentEpoch.UpdateHash();
 
-            LastBlock = block;
-
             foreach (Transaction tx in transactions)
             {
                 _transactions[tx.Hash] = tx;
@@ -306,17 +303,6 @@ namespace Phantasma.Blockchain
             return sheet;
         }
 
-        // TODO investigate the necessity of having this method
-        internal void InitSupplySheet(string tokenSymbol, BigInteger maxSupply)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(!tokenInfo.IsCapped, "should be capped");
-            Throw.If(_tokenSupplies.ContainsKey(tokenSymbol), "supply sheet already created");
-
-            var sheet = new SupplySheet(0, 0, maxSupply);
-            _tokenSupplies[tokenSymbol] = sheet;
-        }
-
         internal SupplySheet GetTokenSupplies(string tokenSymbol)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
@@ -333,7 +319,7 @@ namespace Phantasma.Blockchain
 
             var parentSupplies = parentChain.GetTokenSupplies(tokenSymbol);
 
-            var sheet = new SupplySheet(parentSupplies.LocalBalance, 0, tokenInfo.MaxSupply);
+            var sheet = new SupplySheet(tokenSymbol, parentChainName, this.Name, tokenInfo.MaxSupply);
             _tokenSupplies[tokenSymbol] = sheet;
             return sheet;
         }
@@ -386,6 +372,7 @@ namespace Phantasma.Blockchain
             return ownership.Get(this.Storage, address);
         }
 
+        // TODO move this along with other name validations to a common file
         public static bool ValidateName(string name)
         {
             if (name == null)
@@ -435,7 +422,6 @@ namespace Phantasma.Blockchain
                 _blocks.Remove(currentBlock.Hash);
 
                 currentBlock = FindBlockByHash(currentBlock.PreviousHash);
-                this.LastBlock = currentBlock;
 
                 if (currentBlock.PreviousHash == targetHash)
                 {
