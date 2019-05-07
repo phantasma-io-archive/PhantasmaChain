@@ -81,7 +81,7 @@ namespace Phantasma.Tests
         public void FungibleTokenTransfer()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var accountChain = nexus.FindChainByName("account");
@@ -115,7 +115,7 @@ namespace Phantasma.Tests
         public void AccountRegister()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var symbol = Nexus.FuelTokenSymbol;
@@ -181,7 +181,7 @@ namespace Phantasma.Tests
         public void TransferToAccountName()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var symbol = Nexus.FuelTokenSymbol;
@@ -245,7 +245,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
@@ -301,7 +301,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
@@ -355,7 +355,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
@@ -419,7 +419,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var chain = nexus.RootChain;
@@ -468,7 +468,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var chain = nexus.RootChain;
@@ -525,7 +525,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var chain = nexus.RootChain;
@@ -595,7 +595,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
@@ -681,7 +681,7 @@ namespace Phantasma.Tests
         public void TestNoGasSameChainTransfer()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var accountChain = nexus.FindChainByName("account");
@@ -732,7 +732,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
@@ -800,7 +800,7 @@ namespace Phantasma.Tests
             var owner = KeyPair.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
             var address = Address.FromText("P2f7ZFuj6NfZ76ymNMnG3xRBT5hAMicDrQRHE4S7SoxEr");
 
-            var simulator = new ChainSimulator(owner, 1234, -1);
+            var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             Assert.IsTrue(address.Text == nexus.GenesisAddress.Text);

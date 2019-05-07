@@ -36,7 +36,7 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public partial class Chain : ISerializable
+    public partial class Chain 
     {
         #region PRIVATE
         private KeyValueStore<Hash, Transaction> _transactions;
@@ -85,23 +85,9 @@ namespace Phantasma.Blockchain
         public bool IsRoot => this.ParentChain == null;
         #endregion
 
-        // required for serialization
-        public Chain()
-        {
-
-        }
-
-        public Chain(Nexus nexus, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, string name, Logger log = null)
         {
             Throw.IfNull(nexus, "nexus required");
-            Throw.If(contracts == null || !contracts.Any(), "contracts required");
-
-            if (parentChain != null)
-            {
-                Throw.IfNull(parentBlock, "parent block required");
-                Throw.IfNot(nexus.ChainExists(parentChain.Name), "invalid chain");
-                //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
-            }
 
             this.Name = name;
             this.Nexus = nexus;
@@ -117,6 +103,22 @@ namespace Phantasma.Blockchain
             _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
             _epochMap = new KeyValueStore<Hash, Epoch>(Nexus.CreateKeyStoreAdapter(this.Address, "epoch"));
 
+            this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
+
+            this.Log = Logger.Init(log);
+        }
+
+        internal void Initialize(IEnumerable<SmartContract> contracts, Chain parentChain = null, Block parentBlock = null)
+        {
+            Throw.If(contracts == null || !contracts.Any(), "contracts required");
+
+            if (parentChain != null)
+            {
+                Throw.IfNull(parentBlock, "parent block required");
+                Throw.IfNot(Nexus.ChainExists(parentChain.Name), "invalid chain");
+                //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
+            }
+
             foreach (var contract in contracts)
             {
                 if (this._contracts.ContainsKey(contract.Name))
@@ -131,13 +133,9 @@ namespace Phantasma.Blockchain
             this.ParentChain = parentChain;
             this.ParentBlock = parentBlock;
 
-            this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
-
-            this.Log = Logger.Init(log);
-
             if (parentChain != null)
             {
-                parentChain._childChains[name] = this;
+                parentChain._childChains[this.Name] = this;
                 _level = ParentChain.Level + 1;
             }
             else
@@ -626,15 +624,5 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-
-        public void SerializeData(BinaryWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UnserializeData(BinaryReader reader)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -130,7 +130,7 @@ namespace Phantasma.Tests
 
             var node_keys = KeyPair.FromWIF(wif);
 
-            var simulator = new ChainSimulator(node_keys, 1234, -1);
+            var simulator = new ChainSimulator(node_keys, 1234);
             nexus = simulator.Nexus;
 
             // mempool setup

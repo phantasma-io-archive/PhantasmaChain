@@ -55,7 +55,7 @@ namespace Phantasma.Blockchain.Utils
 
         public readonly Logger Logger;
 
-        public ChainSimulator(KeyPair ownerKey, int seed, int cacheSize, Logger logger = null)
+        public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
 

@@ -342,7 +342,8 @@ namespace Phantasma.Blockchain
             var tokenContract = new TokenContract();
             var gasContract = new GasContract();
 
-            var chain = new Chain(this, name, new[] { tokenContract, gasContract, contract }, _logger, parentChain, parentBlock);
+            var chain = new Chain(this, name, _logger);
+            chain.Initialize(new[] { tokenContract, gasContract, contract }, parentChain, parentBlock);
 
             // add to persisent list of chains
             var chainList = this.Chains.ToList();
@@ -400,19 +401,17 @@ namespace Phantasma.Blockchain
                 return _chainCache[name];
             }
 
-
             var key = ChainNameMapKey + name;
             if (_vars.ContainsKey(key))
             {
                 var bytes = _vars.Get(key);
-                return Encoding.UTF8.GetString(bytes);
+                var address = new Address(bytes);
+                var chain = new Chain(this, name);
+                _chainCache[name] = chain;
+                return chain;
             }
 
-            throw new Exception("fixme pls");
-            /*
-            var chain = new Chain(this);
-            _chainCache[name] = chain;
-            return chain;*/
+            throw new Exception("Chain not found: " + name);
         }
 
         #endregion
@@ -976,7 +975,8 @@ namespace Phantasma.Blockchain
             };
 
             // create root chain, TODO this probably should also be included as a transaction later
-            var rootChain = new Chain(this, RootChainName, contracts, this._logger);
+            var rootChain = new Chain(this, RootChainName, this._logger);
+            rootChain.Initialize(contracts);
             _chainCache[rootChain.Name] = rootChain;
             this.RootAddress = rootChain.Address;
 
