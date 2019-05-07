@@ -21,6 +21,8 @@ namespace Phantasma.Blockchain
         public static readonly string RootChainName = "main";
         private static readonly string ChainAddressMapKey = "chain.addr.";
         private static readonly string ChainNameMapKey = "chain.name.";
+        private static readonly string ChainParentNameKey = "chain.parent.";
+        private static readonly string ChainParentBlockKey = "chain.block.";
 
         public Chain RootChain => FindChainByName(RootChainName);
 
@@ -297,14 +299,6 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            if (owner != GenesisAddress)
-            {
-                if (parentChain.Level < 2)
-                {
-                    return null;
-                }
-            }
-
             if (!Chain.ValidateName(name))
             {
                 return null;
@@ -343,7 +337,7 @@ namespace Phantasma.Blockchain
             var gasContract = new GasContract();
 
             var chain = new Chain(this, name, _logger);
-            chain.Initialize(new[] { tokenContract, gasContract, contract }, parentChain, parentBlock);
+            chain.Initialize(new[] { tokenContract, gasContract, contract });
 
             // add to persisent list of chains
             var chainList = this.Chains.ToList();
@@ -353,6 +347,11 @@ namespace Phantasma.Blockchain
             // add address and name mapping 
             this._vars.Set(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
             this._vars.Set(ChainNameMapKey + chain.Name, chain.Address.PublicKey);
+            if (parentChain != null)
+            {
+                this._vars.Set(ChainParentNameKey + chain.Name, Encoding.UTF8.GetBytes(parentChain.Name));
+                this._vars.Set(ChainParentBlockKey + chain.Name, parentBlock.Hash.ToByteArray());
+            }
 
             _chainCache[chain.Name] = chain;
 
@@ -382,6 +381,51 @@ namespace Phantasma.Blockchain
         }
 
         private Dictionary<string, Chain> _chainCache = new Dictionary<string, Chain>();
+
+        public string GetParentChainByAddress(Address address)
+        {
+            var chain = FindChainByAddress(address);
+            if (chain == null)
+            {
+                return null;
+            }
+            return GetParentChainByName(chain.Name);
+        }
+
+        public string GetParentChainByName(string chainName)
+        {
+            if (chainName == RootChainName)
+            {
+                return null;
+            }
+
+            var key = ChainParentNameKey + chainName;
+            if (_vars.ContainsKey(key))
+            {
+                var bytes = _vars.Get(key);
+                var parentName = Encoding.UTF8.GetString(bytes);
+                return parentName;
+            }
+
+            throw new Exception("Parent name not found for chain: " + chainName);
+        }
+
+        public Hash GetParentBlockByName(string chainName)
+        {
+            if (chainName == RootChainName)
+            {
+                return null;
+            }
+
+            var key = ChainParentBlockKey + chainName;
+            if (_vars.ContainsKey(key))
+            {
+                var bytes = _vars.Get(key);
+                return new Hash(bytes);
+            }
+
+            throw new Exception("Parent block not found for chain: " + chainName);
+        }
 
         public Chain FindChainByAddress(Address address)
         {

@@ -199,24 +199,26 @@ namespace Phantasma.Blockchain.Contracts
             return !chain.IsRoot;
         }
 
-        public bool IsParentChain(Address address)
+        public bool IsAddressOfParentChain(Address address)
         {
-            if (Runtime.Chain.ParentChain == null)
+            if (Runtime.Chain.IsRoot)
             {
                 return false;
             }
-            return address == this.Runtime.Chain.ParentChain.Address;
+
+            return address == this.Runtime.ParentChain.Address;
         }
 
-        public bool IsChildChain(Address address)
+        public bool IsAddressOfChildChain(Address address)
         {
-            var chain = Runtime.Nexus.FindChainByAddress(address);
-            if (chain == null)
+            var parentName = Runtime.Nexus.GetParentChainByAddress(address);
+            var parent = Runtime.Nexus.FindChainByName(parentName);
+            if (parent== null)
             {
                 return false;
             }
 
-            return chain.ParentChain == this.Runtime.Chain;
+            return parent.Address == this.Runtime.Chain.Address;
         }
         #endregion
     }

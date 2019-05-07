@@ -666,7 +666,7 @@ namespace Phantasma.Blockchain.Utils
                             var sourceChainList = Nexus.Chains.ToArray();
                             sourceChain = Nexus.FindChainByName( sourceChainList[_rnd.Next() % sourceChainList.Length]);
 
-                            var targetChainList = Nexus.Chains.Select(x => Nexus.FindChainByName(x)).Where(x => x.ParentChain == sourceChain || sourceChain.ParentChain == x).ToArray();
+                            var targetChainList = Nexus.Chains.Select(x => Nexus.FindChainByName(x)).Where(x => Nexus.GetParentChainByName(x.Name) == sourceChain.Name || Nexus.GetParentChainByName(sourceChain.Name) == x.Name).ToArray();
                             var targetChain = targetChainList[_rnd.Next() % targetChainList.Length];
 
                             var total = UnitConversion.ToBigInteger(1 + _rnd.Next() % 100, Nexus.FuelTokenDecimals);

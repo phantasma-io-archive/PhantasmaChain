@@ -16,7 +16,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(IsParentChain(targetChain) || IsChildChain(targetChain), "target must be parent or child chain");
+            Runtime.Expect(IsAddressOfParentChain(targetChain) || IsAddressOfChildChain(targetChain), "target must be parent or child chain");
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
             /*TODO
@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 sourceSupplies = this.Runtime.Chain.GetTokenSupplies(symbol);
                 var targetSupplies = otherChain.GetTokenSupplies(symbol);
 
-                if (IsParentChain(targetChain))
+                if (IsAddressOfParentChain(targetChain))
                 {
                     Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
                 }
@@ -224,7 +224,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(IsParentChain(targetChain) || IsChildChain(targetChain), "source must be parent or child chain");
+            Runtime.Expect(IsAddressOfParentChain(targetChain) || IsAddressOfChildChain(targetChain), "source must be parent or child chain");
 
             var otherChain = this.Runtime.Nexus.FindChainByAddress(targetChain);
 
@@ -239,7 +239,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 BigInteger amount = 1;
 
-                if (IsParentChain(targetChain))
+                if (IsAddressOfParentChain(targetChain))
                 {
                     Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
                 }
@@ -288,7 +288,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var sourceSupplies = sourceChain.GetTokenSupplies(symbol);
                 var targetSupplies = this.Runtime.Chain.GetTokenSupplies(symbol);
 
-                if (IsParentChain(sourceChain.Address))
+                if (IsAddressOfParentChain(sourceChain.Address))
                 {
                     Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
                 }
@@ -318,7 +318,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SettleBlock(Address sourceChainAddress, Hash hash)
         {
-            Runtime.Expect(IsParentChain(sourceChainAddress) || IsChildChain(sourceChainAddress), "source must be parent or child chain");
+            Runtime.Expect(IsAddressOfParentChain(sourceChainAddress) || IsAddressOfChildChain(sourceChainAddress), "source must be parent or child chain");
 
             Runtime.Expect(!IsSettled(hash), "hash already settled");
 

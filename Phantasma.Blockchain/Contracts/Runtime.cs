@@ -17,6 +17,7 @@ namespace Phantasma.Blockchain.Contracts
     {
         public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
+        public Chain ParentChain { get; private set; }
         public Block Block { get; private set; }
         public Nexus Nexus => Chain.Nexus;
         public Timestamp Time => Block != null ? Block.Timestamp : Timestamp.Now;
@@ -55,6 +56,16 @@ namespace Phantasma.Blockchain.Contracts
             this.Transaction = transaction;
             this.ChangeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
+
+            if (this.Chain != null && !Chain.IsRoot)
+            {
+                var parentName = chain.Nexus.GetParentChainByName(chain.Name);
+                this.ParentChain = chain.Nexus.FindChainByName(parentName);
+            }
+            else
+            {
+                this.ParentChain = null;
+            }
 
             Chain.RegisterInterop(this);
         }

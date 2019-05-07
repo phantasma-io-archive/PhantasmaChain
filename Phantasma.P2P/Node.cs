@@ -399,7 +399,7 @@ namespace Phantasma.Network.P2P
 
                         if (request.Kind.HasFlag(RequestKind.Chains))
                         {
-                            var chains = Nexus.Chains.Select(x => Nexus.FindChainByName(x)).Select(x => new ChainInfo(x.Name, x.ParentChain != null ? x.ParentChain.Name: "", x.LastBlock != null ? x.LastBlock.Height : 0));
+                            var chains = Nexus.Chains.Select(x => Nexus.FindChainByName(x)).Select(x => new ChainInfo(x.Name, Nexus.GetParentChainByName(x.Name), x.LastBlock != null ? x.LastBlock.Height : 0));
                             answer.SetChains(chains);
                         }
 

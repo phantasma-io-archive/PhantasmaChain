@@ -387,12 +387,17 @@ namespace Phantasma.API
 
         private ChainResult FillChain(Chain chain)
         {
+            Throw.IfNull(chain, nameof(chain));
+
+            var parentName = Nexus.GetParentChainByName(chain.Name);
+            var parentChain = Nexus.FindChainByName(parentName);
+
             var result = new ChainResult
             {
                 name = chain.Name,
                 address = chain.Address.Text,
                 height = chain.BlockHeight,
-                parentAddress = chain.ParentChain != null ? chain.ParentChain.Address.ToString() : ""
+                parentAddress = parentChain != null ? parentChain.Address.ToString() : ""
             };
 
             return result;

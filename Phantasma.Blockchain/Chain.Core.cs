@@ -54,17 +54,11 @@ namespace Phantasma.Blockchain
 
         private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
-
-        private int _level;
         #endregion
 
         #region PUBLIC
         public static readonly uint InitialHeight = 1;
 
-        public int Level => _level;
-
-        public Chain ParentChain { get; private set; }
-        public Block ParentBlock { get; private set; }
         public Nexus Nexus { get; private set; }
 
         public string Name { get; private set; }
@@ -82,7 +76,7 @@ namespace Phantasma.Blockchain
 
         public uint TransactionCount => _transactions.Count;
 
-        public bool IsRoot => this.ParentChain == null;
+        public bool IsRoot => this.Name == Nexus.RootChainName;
         #endregion
 
         public Chain(Nexus nexus, string name, Logger log = null)
@@ -108,16 +102,9 @@ namespace Phantasma.Blockchain
             this.Log = Logger.Init(log);
         }
 
-        internal void Initialize(IEnumerable<SmartContract> contracts, Chain parentChain = null, Block parentBlock = null)
+        internal void Initialize(IEnumerable<SmartContract> contracts)
         {
             Throw.If(contracts == null || !contracts.Any(), "contracts required");
-
-            if (parentChain != null)
-            {
-                Throw.IfNull(parentBlock, "parent block required");
-                Throw.IfNot(Nexus.ChainExists(parentChain.Name), "invalid chain");
-                //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
-            }
 
             foreach (var contract in contracts)
             {
@@ -128,19 +115,6 @@ namespace Phantasma.Blockchain
 
                 this._contracts[contract.Name] = contract;
                 this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
-            }
-
-            this.ParentChain = parentChain;
-            this.ParentBlock = parentBlock;
-
-            if (parentChain != null)
-            {
-                parentChain._childChains[this.Name] = this;
-                _level = ParentChain.Level + 1;
-            }
-            else
-            {
-                _level = 1;
             }
         }
 
@@ -281,17 +255,6 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public Chain GetRoot()
-        {
-            var result = this;
-            while (result.ParentChain != null)
-            {
-                result = result.ParentChain;
-            }
-
-            return result;
-        }
-
         public bool ContainsTransaction(Hash hash)
         {
             return _transactions.ContainsKey(hash);
@@ -364,9 +327,11 @@ namespace Phantasma.Blockchain
                 return _tokenSupplies[tokenSymbol];
             }
 
-            Throw.If(this.ParentChain == null, "supply sheet not created");
+            var parentChainName = Nexus.GetParentChainByName(this.Name);
+            var parentChain = Nexus.FindChainByName(parentChainName);
+            Throw.If(parentChain == null, "supply sheet not created");
 
-            var parentSupplies = this.ParentChain.GetTokenSupplies(tokenSymbol);
+            var parentSupplies = parentChain.GetTokenSupplies(tokenSymbol);
 
             var sheet = new SupplySheet(parentSupplies.LocalBalance, 0, tokenInfo.MaxSupply);
             _tokenSupplies[tokenSymbol] = sheet;
