@@ -96,5 +96,54 @@ namespace Phantasma.Tests
             ownedTokenList = chain.GetTokenOwnerships(token).Get(chain.Storage, owner.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the buyer does not have what he bought?");
         }
+
+        [TestMethod]
+        public void TestFriendsContract()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var chain = nexus.RootChain;
+
+            var testUser = KeyPair.Generate();
+            var secondUser = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 1000000);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+            {
+                return ScriptUtils
+                   .BeginScript()
+                   .AllowGas(testUser.Address, Address.Null, 1, 9999)
+                   .CallContract("friends", "AddFriend", testUser.Address, secondUser.Address)
+                   .SpendGas(testUser.Address)
+                   .EndScript();
+            });
+            simulator.EndBlock();
+
+            var friends = (Address[])simulator.Nexus.RootChain.InvokeContract("friends", "GetFriends", testUser.Address);
+            Assert.IsTrue(friends.Length == 1);
+            Assert.IsTrue(friends[0] == secondUser.Address);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+            {
+                return ScriptUtils
+                   .BeginScript()
+                   .AllowGas(testUser.Address, Address.Null, 1, 9999)
+                   .CallContract("friends", "RemoveFriend", testUser.Address, secondUser.Address)
+                   .SpendGas(testUser.Address)
+                   .EndScript();
+            });
+            simulator.EndBlock();
+
+            friends = (Address[])simulator.Nexus.RootChain.InvokeContract("friends", "GetFriends", testUser.Address);
+            Assert.IsTrue(friends.Length == 0);
+        }
     }
 }
