@@ -29,7 +29,7 @@ namespace Phantasma.VM
 
         private int _localSize = 0;
 
-        private Dictionary<string, VMObject> GetChildren() => (Dictionary<string, VMObject>)Data;
+        private Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
 
         public int Size
         {
@@ -282,20 +282,31 @@ namespace Phantasma.VM
             return this;
         }
 
-        public void SetKey(string key, VMObject obj)
+        public void SetKey(VMObject key, VMObject obj)
         {
-            Dictionary<string, VMObject> children;
+            Dictionary<VMObject, VMObject> children;
+
+            // NOTE: here we need to instantiate the key as new object
+            // otherwise keeping the key in a register allows modifications to it that also affect the dictionary keys
+            var temp = new VMObject();
+            temp.Copy(key);
+            key = temp;
 
             if (this.Type == VMType.Struct)
             {
                 children = GetChildren();
             }
             else
+            if (this.Type == VMType.None)
             {
                 this.Type = VMType.Struct;
-                children = new Dictionary<string, VMObject>();
+                children = new Dictionary<VMObject, VMObject>();
                 this.Data = children;
                 this._localSize = 0;
+            }
+            else
+            {
+                throw new Exception($"Invalid cast from {this.Type} to struct");
             }
 
             var result = new VMObject();
@@ -303,7 +314,7 @@ namespace Phantasma.VM
             result.Copy(obj);
         }
 
-        public VMObject GetKey(string key)
+        public VMObject GetKey(VMObject key)
         {
             if (this.Type != VMType.Struct)
             {
@@ -320,14 +331,27 @@ namespace Phantasma.VM
             return new VMObject();
         }
 
-        public void SetKey(BigInteger key, VMObject obj)
-        {
-            SetKey(key.ToString(), obj);
-        }
-
         public override int GetHashCode()
         {
-            return Data.GetHashCode(); // TODO Fix me with proper hashing if byte array
+            switch (this.Type)
+            {
+                case VMType.Struct:
+                    {
+                        unchecked // Overflow is fine, just wrap
+                        {
+                            var hash = (int)2166136261;
+                            var children = this.GetChildren();
+                            foreach (var child in children)
+                            {
+                                hash = hash * 16777619 + child.GetHashCode();
+                            }
+                            return hash;
+                        }
+                    }
+
+                default: return Data.GetHashCode(); // TODO is this ok for all cases?
+
+            }
         }
 
         public override bool Equals(object obj)
@@ -400,7 +424,7 @@ namespace Phantasma.VM
 
             if (other.Type == VMType.Struct)
             {
-                var children = new Dictionary<string, VMObject>();
+                var children = new Dictionary<VMObject, VMObject>();
                 var otherChildren = other.GetChildren();
                 foreach (var key in otherChildren.Keys)
                 {
@@ -565,7 +589,7 @@ namespace Phantasma.VM
 
             Throw.If(!structType.IsStructOrClass(), "not a valid destination struct");
 
-            var dict = (Dictionary<string, VMObject>)this.Data;
+            var dict = this.GetChildren();
 
             var fields = structType.GetFields();
             var result = Activator.CreateInstance(structType);
@@ -573,8 +597,9 @@ namespace Phantasma.VM
             object boxed = result;
             foreach (var field in fields)
             {
-                Throw.If(!dict.ContainsKey(field.Name), "field not present in source struct: "+field.Name);
-                var val = dict[field.Name].ToObject(field.FieldType);
+                var key = VMObject.FromObject(field.Name);
+                Throw.If(!dict.ContainsKey(key), "field not present in source struct: "+field.Name);
+                var val = dict[key].ToObject(field.FieldType);
                 field.SetValue(boxed, val);
             }
             return boxed;
