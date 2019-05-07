@@ -7,7 +7,6 @@
         // register
         MOVE,    // copy reference
         COPY,   // copy by value
-        LOAD,
         PUSH,
         POP,
         SWAP,
@@ -22,11 +21,14 @@
         THROW,
 
         // data
+        LOAD,
+        CAST,
         CAT,
         SUBSTR,
         LEFT,
         RIGHT,
         SIZE,
+        COUNT,
 
         // logical
         NOT,

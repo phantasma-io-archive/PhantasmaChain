@@ -35,13 +35,10 @@ namespace Phantasma.CodeGen.Assembler
                     Process1Reg(sb);
                     break;
 
-                case Opcode.LOAD:
-                    ProcessLoad(sb);
-                    break;
-
                 //2 reg
                 case Opcode.SWAP:
                 case Opcode.SIZE:
+                case Opcode.COUNT:
                 case Opcode.NOT:
                 case Opcode.SIGN:
                 case Opcode.NEGATE:
@@ -73,6 +70,14 @@ namespace Phantasma.CodeGen.Assembler
                 case Opcode.PUT:
                 case Opcode.GET:
                     Process3Reg(sb);
+                    break;
+
+                case Opcode.LOAD:
+                    ProcessLoad(sb);
+                    break;
+
+                case Opcode.CAST:
+                    ProcessCast(sb);
                     break;
 
                 case Opcode.EXTCALL:
@@ -386,6 +391,38 @@ namespace Phantasma.CodeGen.Assembler
                 if (Arguments[1].IsString())
                 {
                     sb.EmitLoad(reg, Arguments[1].AsString());
+                }
+                else
+                {
+                    throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
+                }
+            }
+            else
+            {
+                throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
+            }
+        }
+
+        private void ProcessCast(ScriptBuilder sb)
+        {
+            if (Arguments.Length != 3)
+            {
+                throw new CompilerException(LineNumber, ERR_INCORRECT_NUMBER);
+            }
+
+            if (Arguments[0].IsRegister())
+            {
+                var srcReg = Arguments[0].AsRegister();
+
+                if (Arguments[1].IsRegister())
+                {
+                    var dstReg = Arguments[1].AsRegister();
+
+                    if (Arguments[2].IsType())
+                    {
+                        var type = Arguments[2].AsType();
+                        sb.Emit(Opcode.CAST, new byte[] { srcReg, dstReg, type });
+                    }
                 }
                 else
                 {
