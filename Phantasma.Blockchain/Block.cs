@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain
         private Dictionary<Hash, byte[]> _resultMap = new Dictionary<Hash, byte[]>();
 
         // stores the results of oracles
-        private Dictionary<string, byte[]> _oracleMap = new Dictionary<string, byte[]>();
+        private List<OracleEntry> _oracleData = new List<OracleEntry>();
 
         // required for unserialization
         public Block()
@@ -199,11 +199,11 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            writer.Write((ushort)_oracleMap.Count);
-            foreach (var entry in _oracleMap)
+            writer.Write((ushort)_oracleData.Count);
+            foreach (var entry in _oracleData)
             {
-                writer.WriteVarString(entry.Key);
-                writer.WriteByteArray(entry.Value);
+                writer.WriteVarString(entry.URL);
+                writer.WriteByteArray(entry.Content);
             }
 
             writer.WriteByteArray(Payload);
@@ -249,8 +249,8 @@ namespace Phantasma.Blockchain
             var hashCount = reader.ReadUInt16();
             var hashes = new List<Hash>();
 
-            _eventMap = new Dictionary<Hash, List<Event>>();
-            _resultMap = new Dictionary<Hash, byte[]>();
+            _eventMap.Clear();
+            _resultMap.Clear();
             for (int j = 0; j < hashCount; j++)
             {
                 var hash = reader.ReadHash();
@@ -280,11 +280,12 @@ namespace Phantasma.Blockchain
             }
 
             var oracleCount = reader.ReadUInt16();
+            _oracleData.Clear();
             while (oracleCount > 0)
             {
                 var key = reader.ReadString();
                 var val = reader.ReadByteArray();
-                _oracleMap.Add(key, val);
+                _oracleData.Add(new OracleEntry( key, val));
             }
 
             this.Payload = reader.ReadByteArray();
