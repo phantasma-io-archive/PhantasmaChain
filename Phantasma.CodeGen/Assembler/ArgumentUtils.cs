@@ -101,8 +101,9 @@ namespace Phantasma.CodeGen.Assembler
         public static byte AsType(this string arg)
         {
             VMType vmType;
-            
-            if (Enum.TryParse(arg, out vmType))
+
+            var val = arg.Substring(1);
+            if (Enum.TryParse(val, true, out vmType))
             {
                 return (byte)vmType;
             }
