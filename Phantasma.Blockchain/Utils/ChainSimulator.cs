@@ -342,7 +342,7 @@ namespace Phantasma.Blockchain.Utils
                         {
                             try
                             {
-                                chain.AddBlock(block, txs);
+                                chain.AddBlock(block, txs, null);
                                 submitted = true;
                             }
                             catch (Exception e)

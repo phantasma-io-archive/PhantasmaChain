@@ -32,6 +32,8 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger GasPrice { get; private set; }
         public readonly bool readOnlyMode;
 
+        public OracleReaderDelegate OracleReader = null;
+
         private BigInteger seed;
 
         public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode) : base(script)

@@ -49,6 +49,9 @@ namespace Phantasma.Blockchain
         // stores the results of invocations
         private Dictionary<Hash, byte[]> _resultMap = new Dictionary<Hash, byte[]>();
 
+        // stores the results of oracles
+        private Dictionary<string, byte[]> _oracleMap = new Dictionary<string, byte[]>();
+
         // required for unserialization
         public Block()
         {
@@ -195,6 +198,14 @@ namespace Phantasma.Blockchain
                     writer.WriteByteArray(result);
                 }
             }
+
+            writer.Write((ushort)_oracleMap.Count);
+            foreach (var entry in _oracleMap)
+            {
+                writer.WriteVarString(entry.Key);
+                writer.WriteByteArray(entry.Value);
+            }
+
             writer.WriteByteArray(Payload);
         }
 
@@ -266,6 +277,14 @@ namespace Phantasma.Blockchain
                         _resultMap[hash] = reader.ReadByteArray();
                     }
                 }
+            }
+
+            var oracleCount = reader.ReadUInt16();
+            while (oracleCount > 0)
+            {
+                var key = reader.ReadString();
+                var val = reader.ReadByteArray();
+                _oracleMap.Add(key, val);
             }
 
             this.Payload = reader.ReadByteArray();

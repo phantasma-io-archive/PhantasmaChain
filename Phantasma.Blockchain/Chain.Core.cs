@@ -164,7 +164,7 @@ namespace Phantasma.Blockchain
             return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
         }
 
-        public void AddBlock(Block block, IEnumerable<Transaction> transactions)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions, OracleReaderDelegate oracleReader)
         {
             /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
             {
@@ -215,7 +215,7 @@ namespace Phantasma.Blockchain
             foreach (var tx in transactions)
             {
                 byte[] result;
-                if (tx.Execute(this, block, changeSet, block.Notify, out result))
+                if (tx.Execute(this, block, changeSet, block.Notify, oracleReader, out result))
                 {
                     if (result != null)
                     {

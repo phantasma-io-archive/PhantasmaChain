@@ -1011,7 +1011,7 @@ namespace Phantasma.Blockchain
 
             try
             {
-                rootChain.AddBlock(block, transactions);
+                rootChain.AddBlock(block, transactions, null);
             }
             catch (Exception e)
             {
