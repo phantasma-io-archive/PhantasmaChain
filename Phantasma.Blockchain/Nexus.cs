@@ -19,7 +19,8 @@ namespace Phantasma.Blockchain
     public class Nexus
     {
         public static readonly string RootChainName = "main";
-        private static readonly string ChainAddressMapKey = "chain.";
+        private static readonly string ChainAddressMapKey = "chain.addr.";
+        private static readonly string ChainNameMapKey = "chain.name.";
 
         public Chain RootChain => FindChainByName(RootChainName);
 
@@ -348,8 +349,9 @@ namespace Phantasma.Blockchain
             chainList.Add(name);
             this.Chains = chainList;
 
-            // add address mapping 
+            // add address and name mapping 
             this._vars.Set(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
+            this._vars.Set(ChainNameMapKey + chain.Name, chain.Address.PublicKey);
 
             _chainCache[chain.Name] = chain;
 
@@ -396,6 +398,14 @@ namespace Phantasma.Blockchain
             if (_chainCache.ContainsKey(name))
             {
                 return _chainCache[name];
+            }
+
+
+            var key = ChainNameMapKey + name;
+            if (_vars.ContainsKey(key))
+            {
+                var bytes = _vars.Get(key);
+                return Encoding.UTF8.GetString(bytes);
             }
 
             throw new Exception("fixme pls");
