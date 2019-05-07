@@ -1,5 +1,6 @@
 ﻿using System;
 using Phantasma.Numerics;
+using Phantasma.VM;
 
 namespace Phantasma.CodeGen.Assembler
 {
@@ -7,6 +8,7 @@ namespace Phantasma.CodeGen.Assembler
     {
         public const string BYTE_PREFIX = "0x";
         public const string REG_PREFIX = "r";
+        public const string TYPE_PREFIX = "#";
         public const string LABEL_PREFIX = "@";
         public const string STRING_PREFIX = "\"";
 
@@ -18,6 +20,11 @@ namespace Phantasma.CodeGen.Assembler
         public static bool IsRegister(this string arg)
         {
             return arg.StartsWith(REG_PREFIX) && arg.Length > 1;
+        }
+
+        public static bool IsType(this string arg)
+        {
+            return arg.StartsWith(TYPE_PREFIX) && arg.Length > 1;
         }
 
         public static bool IsLabel(this string arg)
@@ -48,6 +55,20 @@ namespace Phantasma.CodeGen.Assembler
         public static byte AsRegister(this string arg)
         {
             return byte.Parse(arg.Substring(1));
+        }
+
+        public static byte AsType(this string arg)
+        {
+            VMType vmType;
+            
+            if (Enum.TryParse(arg, out vmType))
+            {
+                return (byte)vmType;
+            }
+            else
+            {
+                throw new Exception("Invalid asm type: " + arg);
+            }
         }
 
         public static string AsLabel(this string arg)

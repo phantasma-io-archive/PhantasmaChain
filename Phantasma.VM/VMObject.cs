@@ -29,7 +29,7 @@ namespace Phantasma.VM
 
         private int _localSize = 0;
 
-        private Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
+        internal Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
 
         public int Size
         {
@@ -457,6 +457,51 @@ namespace Phantasma.VM
                 case VMType.Enum: return $"[Enum] => {((uint)Data)}";
                 case VMType.Object: return $"[Object] => {Data.GetType().Name}";
                 default: return "Unknown";
+            }
+        }
+
+        public void CastTo(VMType type)
+        {
+            if (this.Type == type)
+            {
+                return;
+            }
+
+            switch (type) {
+                case VMType.String:
+                    this.Data = this.Data.ToString(); // TODO does this work for all types?
+                    break;
+
+                case VMType.Bool:
+                    switch (this.Type)
+                    {
+                        case VMType.Number: this.Data = this.AsNumber() != 0; break;
+                        case VMType.String: this.Data = !(((string)this.Data).Equals("false", StringComparison.OrdinalIgnoreCase)); break;
+                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                    }
+                    break;
+
+                case VMType.Bytes:
+                    switch (this.Type)
+                    {
+                        case VMType.Bool: this.Data = new byte[] { (byte)(this.AsBool() ? 1 : 0) }; break;
+                        case VMType.String: this.Data = Encoding.UTF8.GetBytes((string)this.Data); break;
+                        case VMType.Number: this.Data = ((BigInteger)this.Data).ToByteArray(); break;
+                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                    }
+                    break;
+
+                case VMType.Number:
+                    switch (this.Type)
+                    {
+                        case VMType.Bool: this.Data = this.AsBool() ? 1 : 0; break;
+                        case VMType.String: this.Data = BigInteger.Parse((string)this.Data); break;
+                        case VMType.Bytes: this.Data = new BigInteger((byte[])this.Data); break;
+                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                    }
+                    break;
+
+                default: throw new NotImplementedException();
             }
         }
 
