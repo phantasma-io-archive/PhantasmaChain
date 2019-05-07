@@ -9,13 +9,20 @@ namespace Phantasma.CodeGen.Assembler
 {
     public abstract class Semanteme
     {
-        public uint LineNumber;
+        public readonly uint LineNumber;
         public uint BaseAddress;
 
         public abstract void Process(ScriptBuilder sb);
 
+        public Semanteme(uint lineNumber)
+        {
+            this.LineNumber = lineNumber;
+        }
+
         public static IEnumerable<Semanteme> ProcessLines(IEnumerable<string> lines)
         {
+            ArgumentUtils.ClearAlias();
+
             bool isInComment = false;
             uint lineNumber = 0;
             foreach (string line in lines)
@@ -52,25 +59,16 @@ namespace Phantasma.CodeGen.Assembler
                 index = pline.IndexOf(':');
                 if (index >= 0)
                 {
-                    yield return new Label
-                    {
-                        LineNumber = lineNumber,
-                        Name = pline.Substring(0, index).AsLabel()
-                    };
+                    yield return new Label(lineNumber, pline.Substring(0, index).AsLabel());
                     pline = pline.Substring(index + 1).Trim();
                 }
                 if (!string.IsNullOrEmpty(pline))
                 {
                     //string[] words = pline.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
                     string[] words = SplitWords(pline);
-                    if (!Enum.TryParse(words[0], true, out Opcode name))
-                        throw new CompilerException(lineNumber, "syntax error");
-                    yield return new Instruction
-                    {
-                        LineNumber = lineNumber,
-                        Opcode = name,
-                        Arguments = words.Skip(1).ToArray()
-                    };
+                    var name = words[0];
+                    var args = words.Skip(1).ToArray();
+                    yield return new Instruction(lineNumber, name, args);
                 }
             }
         }

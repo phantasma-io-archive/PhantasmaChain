@@ -29,7 +29,7 @@ namespace Phantasma.VM
 
         private int _localSize = 0;
 
-        private Dictionary<string, VMObject> GetChildren() => (Dictionary<string, VMObject>)Data;
+        internal Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
 
         public int Size
         {
@@ -282,20 +282,31 @@ namespace Phantasma.VM
             return this;
         }
 
-        public void SetKey(string key, VMObject obj)
+        public void SetKey(VMObject key, VMObject obj)
         {
-            Dictionary<string, VMObject> children;
+            Dictionary<VMObject, VMObject> children;
+
+            // NOTE: here we need to instantiate the key as new object
+            // otherwise keeping the key in a register allows modifications to it that also affect the dictionary keys
+            var temp = new VMObject();
+            temp.Copy(key);
+            key = temp;
 
             if (this.Type == VMType.Struct)
             {
                 children = GetChildren();
             }
             else
+            if (this.Type == VMType.None)
             {
                 this.Type = VMType.Struct;
-                children = new Dictionary<string, VMObject>();
+                children = new Dictionary<VMObject, VMObject>();
                 this.Data = children;
                 this._localSize = 0;
+            }
+            else
+            {
+                throw new Exception($"Invalid cast from {this.Type} to struct");
             }
 
             var result = new VMObject();
@@ -303,7 +314,7 @@ namespace Phantasma.VM
             result.Copy(obj);
         }
 
-        public VMObject GetKey(string key)
+        public VMObject GetKey(VMObject key)
         {
             if (this.Type != VMType.Struct)
             {
@@ -320,14 +331,27 @@ namespace Phantasma.VM
             return new VMObject();
         }
 
-        public void SetKey(BigInteger key, VMObject obj)
-        {
-            SetKey(key.ToString(), obj);
-        }
-
         public override int GetHashCode()
         {
-            return Data.GetHashCode(); // TODO Fix me with proper hashing if byte array
+            switch (this.Type)
+            {
+                case VMType.Struct:
+                    {
+                        unchecked // Overflow is fine, just wrap
+                        {
+                            var hash = (int)2166136261;
+                            var children = this.GetChildren();
+                            foreach (var child in children)
+                            {
+                                hash = hash * 16777619 + child.GetHashCode();
+                            }
+                            return hash;
+                        }
+                    }
+
+                default: return Data.GetHashCode(); // TODO is this ok for all cases?
+
+            }
         }
 
         public override bool Equals(object obj)
@@ -400,7 +424,7 @@ namespace Phantasma.VM
 
             if (other.Type == VMType.Struct)
             {
-                var children = new Dictionary<string, VMObject>();
+                var children = new Dictionary<VMObject, VMObject>();
                 var otherChildren = other.GetChildren();
                 foreach (var key in otherChildren.Keys)
                 {
@@ -433,6 +457,51 @@ namespace Phantasma.VM
                 case VMType.Enum: return $"[Enum] => {((uint)Data)}";
                 case VMType.Object: return $"[Object] => {Data.GetType().Name}";
                 default: return "Unknown";
+            }
+        }
+
+        public void CastTo(VMType type)
+        {
+            if (this.Type == type)
+            {
+                return;
+            }
+
+            switch (type) {
+                case VMType.String:
+                    this.Data = this.Data.ToString(); // TODO does this work for all types?
+                    break;
+
+                case VMType.Bool:
+                    switch (this.Type)
+                    {
+                        case VMType.Number: this.Data = this.AsNumber() != 0; break;
+                        case VMType.String: this.Data = !(((string)this.Data).Equals("false", StringComparison.OrdinalIgnoreCase)); break;
+                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                    }
+                    break;
+
+                case VMType.Bytes:
+                    switch (this.Type)
+                    {
+                        case VMType.Bool: this.Data = new byte[] { (byte)(this.AsBool() ? 1 : 0) }; break;
+                        case VMType.String: this.Data = Encoding.UTF8.GetBytes((string)this.Data); break;
+                        case VMType.Number: this.Data = ((BigInteger)this.Data).ToByteArray(); break;
+                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                    }
+                    break;
+
+                case VMType.Number:
+                    switch (this.Type)
+                    {
+                        case VMType.Bool: this.Data = this.AsBool() ? 1 : 0; break;
+                        case VMType.String: this.Data = BigInteger.Parse((string)this.Data); break;
+                        case VMType.Bytes: this.Data = new BigInteger((byte[])this.Data); break;
+                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                    }
+                    break;
+
+                default: throw new NotImplementedException();
             }
         }
 
@@ -551,7 +620,37 @@ namespace Phantasma.VM
 
         public object ToArray(Type arrayElementType)
         {
-            throw new NotImplementedException();
+            Throw.If(Type != VMType.Struct, "not a valid source struct");
+
+            var children = GetChildren();
+            int maxIndex = -1;
+            foreach (var child in children)
+            {
+                Throw.If(child.Key.Type != VMType.Number, "source contains an element with invalid array index");
+
+                var temp = child.Key.AsNumber();
+                // TODO use a constant for VM max array size
+                Throw.If(temp >= 1024, "source contains an element with a very large array index");
+
+                var index = (int)temp;
+                Throw.If(index < 0, "source contains an array index with negative value");
+
+                maxIndex = Math.Max(index, maxIndex);
+            }
+
+            var length = maxIndex + 1;
+            var array = Array.CreateInstance(arrayElementType, length);
+
+            foreach (var child in children)
+            {
+                var temp = child.Key.AsNumber();
+                var index = (int)temp;
+
+                var val = child.Value.ToObject(arrayElementType);
+                array.SetValue(val, index);
+            }
+
+            return array;
         }
 
         public T ToStruct<T>()
@@ -565,7 +664,7 @@ namespace Phantasma.VM
 
             Throw.If(!structType.IsStructOrClass(), "not a valid destination struct");
 
-            var dict = (Dictionary<string, VMObject>)this.Data;
+            var dict = this.GetChildren();
 
             var fields = structType.GetFields();
             var result = Activator.CreateInstance(structType);
@@ -573,8 +672,9 @@ namespace Phantasma.VM
             object boxed = result;
             foreach (var field in fields)
             {
-                Throw.If(!dict.ContainsKey(field.Name), "field not present in source struct: "+field.Name);
-                var val = dict[field.Name].ToObject(field.FieldType);
+                var key = VMObject.FromObject(field.Name);
+                Throw.If(!dict.ContainsKey(key), "field not present in source struct: "+field.Name);
+                var val = dict[key].ToObject(field.FieldType);
                 field.SetValue(boxed, val);
             }
             return boxed;
