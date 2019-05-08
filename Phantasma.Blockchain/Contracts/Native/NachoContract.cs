@@ -944,7 +944,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // minimum vip points to reach each vip level. where the level = index of array
         public static readonly uint[] VIP_LEVEL_POINTS = new uint[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
 
-        public static readonly Dictionary<uint, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<uint, DailyRewards>()
+        public static readonly Dictionary<int, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<int, DailyRewards>()
         {
             { 0,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 0} },
             { 1,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 1} },
@@ -1872,6 +1872,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
+        public BigInteger vipPoints;
         //public BigInteger avatarID;
     }
 
@@ -8383,42 +8384,115 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public DailyRewards GetDailyRewards(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var vipPoints = account.vipPoints;
+
+            var vipLevel = 0;
+
+            for (int i = Constants.VIP_LEVEL_POINTS.Length - 1; i >= 0; i--)
+            {
+                if (vipPoints >= Constants.VIP_LEVEL_POINTS[i])
+                {
+                    vipLevel = i;
+                    break;
+                }
+            }
+
+            var rewards = Constants.VIP_DAILY_LOOT_BOX_REWARDS[vipLevel];
+
+            var nachosReward    = 10; // Player Nb of Battles / Total Nb of Battles of All Players ) * Amount of Nachos to distribute
+            var soulReward      = 10; // Player Nb of Battles / Total Nb of Battles of All Players ) * Amount of Nachos to distribute
             
-            return new DailyRewards();
+            rewards.factionReward       = nachosReward;
+            rewards.championshipReward  = soulReward;
+
+            return rewards;
         }
 
         public void CollectFactionReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.factionReward > 0, "no faction reward");
+
+            rewards.factionReward = 0;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectFactionReward, address, 1);
         }
 
         private void CollectChampionshipReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.championshipReward > 0, "no championship reward");
+
+            rewards.championshipReward = 0;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectChampionshipReward, address, 1);
         }
 
         private void CollectVipWrestlerReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipWrestlerReward > 0, "no vip wrestler reward");
+
+            rewards.vipWrestlerReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectVipWrestlerReward, address, 1);
         }
 
         private void CollectVipItemReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipItemReward > 0, "no vip item reward");
+
+            rewards.vipItemReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectVipItemReward, address, 1);
         }
 
         private void CollectVipMakeUpReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipMakeUpReward > 0, "no vip make up reward");
+
+            rewards.vipMakeUpReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectVipMakeUpReward, address, 1);
         }
