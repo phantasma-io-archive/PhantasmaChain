@@ -1801,7 +1801,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger stakeAmount;
     }
 
-    public struct DailyReward
+    public struct DailyRewards
     {
         public BigInteger factionReward;
         public BigInteger championshipReward;
@@ -8361,6 +8361,51 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         #endregion
 
+        #region Daily Rewards
+
+        public DailyRewards GetDailyRewards(Address address)
+        {
+            // TODO
+            
+            return new DailyRewards();
+        }
+
+        public void CollectFactionReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectFactionReward, address, 1);
+        }
+
+        private void CollectChampionshipReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectChampionshipReward, address, 1);
+        }
+
+        private void CollectVipWrestlerReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectVipWrestlerReward, address, 1);
+        }
+
+        private void CollectVipItemReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectVipItemReward, address, 1);
+        }
+
+        private void CollectVipMakeUpReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectVipMakeUpReward, address, 1);
+        }
+
+        #endregion
 
         #region SOUL API
         /*
