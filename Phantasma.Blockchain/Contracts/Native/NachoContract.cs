@@ -959,6 +959,30 @@ namespace Phantasma.Blockchain.Contracts.Native
             { 10,   new DailyRewards {vipWrestlerReward = 5, vipItemReward = 5, vipMakeUpReward = 5} },
         };
 
+        public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
+        {
+            { 0,    1 },
+            { 1,    2 },
+            { 2,    5 },
+            { 3,    10 },
+            { 4,    20 },
+            { 5,    50 },
+            { 6,    100 },
+            { 7,    150 }
+        };
+
+        public static readonly Dictionary<int, int> IN_APPS_NACHOS = new Dictionary<int, int>()
+        {
+            { 0,    100 },
+            { 1,    250 },
+            { 2,    600 },
+            { 3,    1300 },
+            { 4,    2750 },
+            { 5,    7500 },
+            { 6,    17500 },
+            { 7,    30000 }
+        };
+
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
         public const uint MIN_LEVEL = 1;
