@@ -941,6 +941,24 @@ namespace Phantasma.Blockchain.Contracts.Native
         // minimum XP to reach each level. where the level = index of array
         public static readonly uint[] EXPERIENCE_MAP = new uint[] { 0, 0, 3721, 14884, 33489, 59536, 93025, 133956, 182329, 238144, 301401, 372100, 450241, 535824, 628849, 729316, 837225, 952576, 1075369, 1205604, 1343281 };
 
+        // minimum vip points to reach each vip level. where the level = index of array
+        public static readonly uint[] VIP_LEVEL_POINTS = new uint[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
+
+        public static readonly Dictionary<uint, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<uint, DailyRewards>()
+        {
+            { 0,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 0} },
+            { 1,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 1} },
+            { 2,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 1, vipMakeUpReward = 1} },
+            { 3,    new DailyRewards {vipWrestlerReward = 1, vipItemReward = 1, vipMakeUpReward = 1} },
+            { 4,    new DailyRewards {vipWrestlerReward = 1, vipItemReward = 1, vipMakeUpReward = 3} },
+            { 5,    new DailyRewards {vipWrestlerReward = 2, vipItemReward = 2, vipMakeUpReward = 3} },
+            { 6,    new DailyRewards {vipWrestlerReward = 3, vipItemReward = 3, vipMakeUpReward = 3} },
+            { 7,    new DailyRewards {vipWrestlerReward = 3, vipItemReward = 3, vipMakeUpReward = 4} },
+            { 8,    new DailyRewards {vipWrestlerReward = 3, vipItemReward = 3, vipMakeUpReward = 5} },
+            { 9,    new DailyRewards {vipWrestlerReward = 4, vipItemReward = 4, vipMakeUpReward = 5} },
+            { 10,   new DailyRewards {vipWrestlerReward = 5, vipItemReward = 5, vipMakeUpReward = 5} },
+        };
+
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
         public const uint MIN_LEVEL = 1;
@@ -1799,6 +1817,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger auctionID;
         public WrestlerFlags flags;
         public BigInteger stakeAmount;
+    }
+
+    public struct DailyRewards
+    {
+        public BigInteger factionReward;
+        public BigInteger championshipReward;
+        public BigInteger vipWrestlerReward;
+        public BigInteger vipItemReward;
+        public BigInteger vipMakeUpReward;
     }
 
     //public struct NachoAuction
@@ -8352,6 +8379,51 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         #endregion
 
+        #region Daily Rewards
+
+        public DailyRewards GetDailyRewards(Address address)
+        {
+            // TODO
+            
+            return new DailyRewards();
+        }
+
+        public void CollectFactionReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectFactionReward, address, 1);
+        }
+
+        private void CollectChampionshipReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectChampionshipReward, address, 1);
+        }
+
+        private void CollectVipWrestlerReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectVipWrestlerReward, address, 1);
+        }
+
+        private void CollectVipItemReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectVipItemReward, address, 1);
+        }
+
+        private void CollectVipMakeUpReward(Address address)
+        {
+            // TODO
+
+            Runtime.Notify(EventKind.CollectVipMakeUpReward, address, 1);
+        }
+
+        #endregion
 
         #region SOUL API
         /*
