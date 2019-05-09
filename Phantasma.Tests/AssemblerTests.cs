@@ -243,37 +243,25 @@ namespace Phantasma.Tests
         [TestMethod]
         public void Call()
         {
-            string[] scriptString;
-            TestVM vm;
+            var initVal = 2;
+            var targetVal = initVal + 1;
 
-            var args = new List<List<int>>()
+            var scriptString = new string[]
             {
-                new List<int>() {1, 2},
+                $@"load r1, {initVal}",
+                @"call @label",
+                @"push r1",
+                @"ret",
+                $"@label: inc r1",
+                $"ret"
             };
 
-            for (int i = 0; i < args.Count; i++)
-            {
-                var argsLine = args[i];
-                var r1 = argsLine[0];
-                var target = argsLine[1];
+            var vm = ExecuteScript(scriptString);
 
-                scriptString = new string[]
-                {
-                    $@"load r1, {r1}",
-                    @"call @label",
-                    @"push r1",
-                    @"ret",
-                    $"@label: inc r1",
-                    $"ret"
-                };
+            Assert.IsTrue(vm.Stack.Count == 1);
 
-                vm = ExecuteScript(scriptString);
-
-                Assert.IsTrue(vm.Stack.Count == 1);
-
-                var result = vm.Stack.Pop().AsNumber();
-                Assert.IsTrue(result == target);
-            }
+            var result = vm.Stack.Pop().AsNumber();
+            Assert.IsTrue(result == targetVal);
         }
 
         [TestMethod]

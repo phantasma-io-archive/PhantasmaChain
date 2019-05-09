@@ -332,9 +332,8 @@ namespace Phantasma.VM
 
                                 if (temp.Context == this)
                                 {
-                                    frame.VM.PopFrame();
                                     InstructionPointer = frame.VM.PopFrame();
-                                    Expect(InstructionPointer == this.Script.Length);
+                                    //Expect(InstructionPointer == this.Script.Length);
                                 }
                                 else
                                 { 
