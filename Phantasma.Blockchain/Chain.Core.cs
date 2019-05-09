@@ -503,22 +503,34 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+
         public object InvokeContract(string contractName, string methodName, params object[] args)
         {
             var contract = FindContract<SmartContract>(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
+
+            var result = InvokeScript(script);
+
+            if (result == null)
+            {
+                throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed");
+            }
+
+            return result.ToObject(); // TODO remove ToObject and let the callers convert as they want
+        }
+
+        public VMObject InvokeScript(byte[] script)
+        {
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, this.LastBlock, null, changeSet, true);
-
-            contract.SetRuntimeData(vm);
 
             var state = vm.Execute();
 
             if (state != ExecutionState.Halt)
             {
-                throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed with state: " + state);
+                return null;
             }
 
             if (vm.Stack.Count == 0)
@@ -528,7 +540,7 @@ namespace Phantasma.Blockchain
 
             var result = vm.Stack.Pop();
 
-            return result.ToObject();
+            return result;
         }
 
         #region FEES 

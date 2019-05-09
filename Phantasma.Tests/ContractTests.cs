@@ -1864,7 +1864,7 @@ namespace Phantasma.Tests
                 $"load r0 \\\"friends\\\"",
                 $"ctx r0 r1",
 
-                $"load r0 \\\"0x{testUserA.Address}\\\"",
+                $"load r0 0x{Base16.Encode( testUserA.Address.PublicKey)}",
                 $"push r0",
                 $"extcall \\\"Address()\\\"",
 
@@ -1913,30 +1913,11 @@ namespace Phantasma.Tests
                 $"ret"
             };
 
-            var vm = ExecuteScript(scriptString, nexus);
 
-            Assert.IsTrue(vm.Stack.Count == 1);
-
-            var result = vm.Stack.Pop();
-        }
-
-        private TestVM ExecuteScript(string[] scriptString, Nexus nexus, Action<TestVM> beforeExecute = null)
-        {
             var script = BuildScript(scriptString);
-
-            var keys = KeyPair.Generate();
-            var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
-
-            var vm = new TestVM(tx.Script);
-            vm.ThrowOnFault = true;
-
-            beforeExecute?.Invoke(vm);
-
-            vm.Execute();
-
-            return vm;
+            var result = nexus.RootChain.InvokeScript(script);
+            Assert.IsTrue(result != null);
         }
-
 
         private byte[] BuildScript(string[] lines)
         {
