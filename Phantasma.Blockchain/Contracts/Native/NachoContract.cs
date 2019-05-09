@@ -931,6 +931,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int DEFAULT_AVATARS = 10;
 
+        public const int RANKED_BATTLE_ENTRY_COST       = 5;
+        public const int RANKED_BATTLE_WINNER_PRIZE     = 10;
+        public const int RANKED_BATTLE_DRAW_PRIZE       = 5;
+        public const int RANKED_BATTLE_LOSER_PRIZE      = 2;
+
+        public const int UNRANKED_BATTLE_WINNER_PRIZE   = 5;
+        public const int UNRANKED_BATTLE_DRAW_PRIZE     = 2;
+        public const int UNRANKED_BATTLE_LOSER_PRIZE    = 1;
+
         public const decimal DOLLAR_NACHOS_RATE = 100; // 1 USD = 100 NACHOS //TODO set this with the in-apps conversion rate
 
         public const string PHANTASMA_DEV_ADDRESS = "PGUHKgY6o72fTQCBHstFcBNwqfaFKMFAEGDr2pfxWg5bV";
@@ -944,7 +953,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // minimum vip points to reach each vip level. where the level = index of array
         public static readonly uint[] VIP_LEVEL_POINTS = new uint[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
 
-        public static readonly Dictionary<uint, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<uint, DailyRewards>()
+        public static readonly Dictionary<int, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<int, DailyRewards>()
         {
             { 0,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 0} },
             { 1,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 1} },
@@ -958,6 +967,32 @@ namespace Phantasma.Blockchain.Contracts.Native
             { 9,    new DailyRewards {vipWrestlerReward = 4, vipItemReward = 4, vipMakeUpReward = 5} },
             { 10,   new DailyRewards {vipWrestlerReward = 5, vipItemReward = 5, vipMakeUpReward = 5} },
         };
+
+        public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
+        {
+            { 0,    1 },
+            { 1,    2 },
+            { 2,    5 },
+            { 3,    10 },
+            { 4,    20 },
+            { 5,    50 },
+            { 6,    100 },
+            { 7,    150 }
+        };
+
+        public static readonly Dictionary<int, int> IN_APPS_NACHOS = new Dictionary<int, int>()
+        {
+            { 0,    100 },
+            { 1,    250 },
+            { 2,    600 },
+            { 3,    1300 },
+            { 4,    2750 },
+            { 5,    7500 },
+            { 6,    17500 },
+            { 7,    30000 }
+        };
+
+        public const int CHANGE_FACTION_COST = 500;
 
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
@@ -1285,6 +1320,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         None = 0,
         Luchador = 1,
         Equipment = 2,
+    }
+
+    public enum Faction
+    {
+        None,
+        Latinos,
+        Gringos
     }
 
     public enum Gender
@@ -1872,6 +1914,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
+        public BigInteger vipPoints;
+        public Faction faction;
+
         //public BigInteger avatarID;
     }
 
@@ -2023,6 +2068,35 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         #region ACCOUNT API
+
+        public void SetPlayerFaction(Address address, Faction faction)
+        {
+            // TODO finish implementation
+
+            Runtime.Expect(faction != Faction.None, "Faction not valid");
+
+            var account = GetAccount(address);
+
+            Runtime.Expect(account.faction != faction, "Player is already in this faction");
+
+            if (account.faction == Faction.None)
+            {
+                account.faction = faction;
+
+                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+            }
+            else
+            {
+                // charge change faction cost
+
+                var changeFactionCost = Constants.CHANGE_FACTION_COST;
+
+                // todo
+
+                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+            }
+        }
+
         /* TODO LATER
         public void TransferWrestler(Address from, Address to, BigInteger wrestlerID)
         {
@@ -5816,7 +5890,34 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (battle.bet > 0)
             {
-                BigInteger winnerAmount = battle.bet * 2;
+                //BigInteger winnerAmount = battle.bet * 2;
+                BigInteger winnerAmount = 0;
+                BigInteger loserAmount  = 0;
+                BigInteger drawAmount   = 0;
+
+                switch (battle.mode)
+                {
+                    case BattleMode.Academy:
+                        // ?
+                        break;
+                    case BattleMode.Pratice:
+                        // ?
+                        break;
+                    case BattleMode.Unranked:
+                        winnerAmount    = Constants.UNRANKED_BATTLE_WINNER_PRIZE;
+                        loserAmount     = Constants.UNRANKED_BATTLE_LOSER_PRIZE;
+                        drawAmount      = Constants.UNRANKED_BATTLE_DRAW_PRIZE;
+                        break;
+                    case BattleMode.Ranked:
+                        winnerAmount    = Constants.RANKED_BATTLE_WINNER_PRIZE;
+                        loserAmount     = Constants.RANKED_BATTLE_LOSER_PRIZE;
+                        drawAmount      = Constants.UNRANKED_BATTLE_DRAW_PRIZE;
+                        break;
+                    case BattleMode.Versus:
+                        // ?
+                        break;
+                }
+
                 BigInteger potAmount;
 
                 if (battle.mode == BattleMode.Ranked)
@@ -5830,21 +5931,25 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
 
                 int winnerSide;
+                int loserSide;
 
                 switch (battle.state)
                 {
                     case BattleState.WinA:
                     case BattleState.ForfeitB:
-                        winnerSide = 0;
+                        winnerSide  = 0;
+                        loserSide   = 1;
                         break;
 
                     case BattleState.WinB:
                     case BattleState.ForfeitA:
-                        winnerSide = 1;
+                        winnerSide  = 1;
+                        loserSide   = 0;
                         break;
 
                     default:
-                        winnerSide = -1;
+                        winnerSide  = -1;
+                        loserSide   = -1;
                         break;
                 }
 
@@ -5855,10 +5960,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                         AddToPot(battle.sides[winnerSide].address, potAmount);
                     }
 
+                    //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
+
                     //TODO LATER
                     Runtime.Expect(false, "not implemented, read code yrrytr");
                     /*Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
-
+                    
                     var other = 1 - winnerSide;
 
                     Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
@@ -5867,7 +5975,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 else
                 {
                     // refund both
-                    var refundAmount = winnerAmount / 2;
+                    //var refundAmount = winnerAmount / 2;
+                    var refundAmount = drawAmount;
 
                     if (potAmount > 0)
                     {
@@ -8383,42 +8492,115 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public DailyRewards GetDailyRewards(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var vipPoints = account.vipPoints;
+
+            var vipLevel = 0;
+
+            for (int i = Constants.VIP_LEVEL_POINTS.Length - 1; i >= 0; i--)
+            {
+                if (vipPoints >= Constants.VIP_LEVEL_POINTS[i])
+                {
+                    vipLevel = i;
+                    break;
+                }
+            }
+
+            var rewards = Constants.VIP_DAILY_LOOT_BOX_REWARDS[vipLevel];
+
+            var nachosReward    = 10; // Player Nb of Battles / Total Nb of Battles of All Players ) * Amount of Nachos to distribute
+            var soulReward      = 10; // Player Nb of Battles / Total Nb of Battles of All Players ) * Amount of Nachos to distribute
             
-            return new DailyRewards();
+            rewards.factionReward       = nachosReward;
+            rewards.championshipReward  = soulReward;
+
+            return rewards;
         }
 
         public void CollectFactionReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.factionReward > 0, "no faction reward");
+
+            rewards.factionReward = 0;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectFactionReward, address, 1);
         }
 
         private void CollectChampionshipReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.championshipReward > 0, "no championship reward");
+
+            rewards.championshipReward = 0;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectChampionshipReward, address, 1);
         }
 
         private void CollectVipWrestlerReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipWrestlerReward > 0, "no vip wrestler reward");
+
+            rewards.vipWrestlerReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectVipWrestlerReward, address, 1);
         }
 
         private void CollectVipItemReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipItemReward > 0, "no vip item reward");
+
+            rewards.vipItemReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectVipItemReward, address, 1);
         }
 
         private void CollectVipMakeUpReward(Address address)
         {
-            // TODO
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipMakeUpReward > 0, "no vip make up reward");
+
+            rewards.vipMakeUpReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
             Runtime.Notify(EventKind.CollectVipMakeUpReward, address, 1);
         }

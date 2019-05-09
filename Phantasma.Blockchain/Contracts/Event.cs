@@ -62,6 +62,7 @@ namespace Phantasma.Blockchain.Contracts
         CollectVipWrestlerReward    = 51,
         CollectVipItemReward        = 52,
         CollectVipMakeUpReward      = 53,
+        PlayerJoinFaction           = 54,
 
         // casino => REMOVE LATER
         CasinoTableQueued   = 60,
