@@ -434,11 +434,6 @@ namespace Phantasma.CodeGen.Assembler
             {
                 var reg = Arguments[0].AsRegister();
 
-                if (Arguments[1].IsNumber())
-                {
-                    sb.EmitLoad(reg, Arguments[1].AsNumber());
-                }
-                else
                 if (Arguments[1].IsBytes())
                 {
                     sb.EmitLoad(reg, Arguments[1].AsBytes());
@@ -452,6 +447,11 @@ namespace Phantasma.CodeGen.Assembler
                 if (Arguments[1].IsString())
                 {
                     sb.EmitLoad(reg, Arguments[1].AsString());
+                }
+                else
+                if (Arguments[1].IsNumber())
+                {
+                    sb.EmitLoad(reg, Arguments[1].AsNumber());
                 }
                 else
                 {

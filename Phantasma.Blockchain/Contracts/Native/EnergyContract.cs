@@ -220,7 +220,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var nextClaim = GetMasterClaimDate(2);
 
-                _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim});
+                _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim });
                 Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
             }
 
@@ -579,7 +579,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var entry = votingLogbook.Get<VotingLogEntry>(i);
 
                 if (i > 0)
-                    Runtime.Expect(votingLogbook.Get<VotingLogEntry>(i-1).timestamp <= entry.timestamp, "Voting list became unsorted!");
+                    Runtime.Expect(votingLogbook.Get<VotingLogEntry>(i - 1).timestamp <= entry.timestamp, "Voting list became unsorted!");
 
                 power += CalculateEntryVotingPower(entry, time);
             }
@@ -592,7 +592,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             BigInteger baseMultiplier = 100;
 
             BigInteger votingMultiplier = baseMultiplier;
-            var diff = (currentTime - entry.timestamp)/86400;
+            var diff = (currentTime - entry.timestamp) / 86400;
 
             var votingBonus = diff < MaxVotingPowerBonus ? diff : MaxVotingPowerBonus;
 
@@ -613,7 +613,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 genesisTimestamp = genesisBlock.Timestamp;
             }
-           
+
             if (StakeToFuel(totalStake + unclaimedPartials) <= 0)
                 return 0;
 
@@ -651,7 +651,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         currentDate = endDate.AddDays(1);   //to force the while to break on next condition evaluation
                     }
 
-                    reward += StakeToFuel(totalStake) * daysInCurrentHalving / halvingAmount ;
+                    reward += StakeToFuel(totalStake) * daysInCurrentHalving / halvingAmount;
                 }
 
                 nextHalvingDate = nextHalvingDate.AddYears(2);

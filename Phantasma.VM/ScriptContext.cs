@@ -187,9 +187,7 @@ namespace Phantasma.VM
                             Expect(src < frame.Registers.Length);
                             Expect(dst < frame.Registers.Length);
 
-                            var val = new VMObject();
-                            val.Copy(frame.Registers[src]);
-                            val.CastTo(type);
+                            var val = VMObject.CastTo(frame.Registers[src], type);
 
                             frame.Registers[dst] = val;
                             break;

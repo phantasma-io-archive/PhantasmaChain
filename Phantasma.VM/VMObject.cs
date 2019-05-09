@@ -248,6 +248,14 @@ namespace Phantasma.VM
             return this;
         }
 
+        public VMObject SetValue(Dictionary<VMObject, VMObject> children)
+        {
+            this.Type = VMType.Struct;
+            this.Data = children;
+            this._localSize = 4; // TODO not valid
+            return this;
+        }
+
         public VMObject SetValue(object val)
         {
             var type = val.GetType();
@@ -460,48 +468,106 @@ namespace Phantasma.VM
             }
         }
 
-        public void CastTo(VMType type)
+        public static VMObject CastTo(VMObject srcObj, VMType type)
         {
-            if (this.Type == type)
+            if (srcObj.Type == type)
             {
-                return;
+                var result = new VMObject();
+                result.Copy(srcObj);
+                return result;
             }
 
             switch (type) {
                 case VMType.String:
-                    this.Data = this.Data.ToString(); // TODO does this work for all types?
-                    break;
+                    {
+                        var result = new VMObject();
+                        result.SetValue(srcObj.Data.ToString()); // TODO does this work for all types?
+                        return result;
+                    }
 
                 case VMType.Bool:
-                    switch (this.Type)
+                    switch (srcObj.Type)
                     {
-                        case VMType.Number: this.Data = this.AsNumber() != 0; break;
-                        case VMType.String: this.Data = !(((string)this.Data).Equals("false", StringComparison.OrdinalIgnoreCase)); break;
-                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                        case VMType.Number:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(srcObj.AsNumber() != 0);
+                                return result;
+                            }
+
+                        case VMType.String:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(!(((string)srcObj.Data).Equals("false", StringComparison.OrdinalIgnoreCase)));
+                                return result;
+                            }
+
+                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
                     }
-                    break;
 
                 case VMType.Bytes:
-                    switch (this.Type)
+                    switch (srcObj.Type)
                     {
-                        case VMType.Bool: this.Data = new byte[] { (byte)(this.AsBool() ? 1 : 0) }; break;
-                        case VMType.String: this.Data = Encoding.UTF8.GetBytes((string)this.Data); break;
-                        case VMType.Number: this.Data = ((BigInteger)this.Data).ToByteArray(); break;
-                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
+                        case VMType.Bool:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(new byte[] { (byte)(srcObj.AsBool() ? 1 : 0) });
+                                return result;
+                            }
+
+                        case VMType.String:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(Encoding.UTF8.GetBytes((string)srcObj.Data));
+                                return result;
+                            }
+
+                        case VMType.Number:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(((BigInteger)srcObj.Data).ToByteArray());
+                                return result;
+                            }
+
+                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
                     }
-                    break;
 
                 case VMType.Number:
-                    switch (this.Type)
+                    switch (srcObj.Type)
                     {
-                        case VMType.Bool: this.Data = this.AsBool() ? 1 : 0; break;
-                        case VMType.String: this.Data = BigInteger.Parse((string)this.Data); break;
-                        case VMType.Bytes: this.Data = new BigInteger((byte[])this.Data); break;
-                        default: throw new Exception($"invalid cast: {this.Type} to {type}");
-                    }
-                    break;
+                        case VMType.Bool:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(srcObj.AsBool() ? 1 : 0);
+                                return result;
+                            }
 
-                default: throw new NotImplementedException();
+                        case VMType.String:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(BigInteger.Parse((string)srcObj.Data));
+                                return result;
+                            }
+
+                        case VMType.Bytes:
+                            {
+                                var result = new VMObject();
+                                result.SetValue(new BigInteger((byte[])srcObj.Data));
+                                return result;
+                            }
+
+                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
+                    }
+
+                case VMType.Struct:
+                    switch (srcObj.Type)
+                    {
+                        case VMType.Object: return CastViaReflection(srcObj.Data, 0); 
+
+                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
+                    }
+
+                default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
             }
         }
 
@@ -678,6 +744,70 @@ namespace Phantasma.VM
                 field.SetValue(boxed, val);
             }
             return boxed;
+        }
+
+        // this does the opposite of ToStruct(), takes a InteropObject and converts it to a VM.Struct
+        private static VMObject CastViaReflection(object srcObj, int level)
+        {
+            var srcType = srcObj.GetType();
+
+            if (srcType.IsArray)
+            {
+                var children = new Dictionary<VMObject, VMObject>();
+
+                var array = (Array)srcObj;
+                for (int i=0; i<array.Length; i++)
+                {
+                    var val = array.GetValue(i);
+                    var key = new VMObject();
+                    key.SetValue(i);
+                    var vmVal = CastViaReflection(val, level + 1);
+                    children[key] = vmVal;
+                }
+
+                var result = new VMObject();
+                result.SetValue(children);
+                return result;
+            }
+            else
+            {
+                VMObject result;
+
+                if (level == 0 && srcType.IsStructOrClass())
+                {
+                    var children = new Dictionary<VMObject, VMObject>();
+
+                    var fields = srcType.GetFields();
+
+                    if (fields.Length > 0)
+                    {
+                        foreach (var field in fields)
+                        {
+                            var key = new VMObject();
+                            key.SetValue(field.Name);
+                            var val = field.GetValue(srcObj);
+                            var vmVal = CastViaReflection(val, level + 1);
+                            children[key] = vmVal;
+                        }
+
+                        result = new VMObject();
+                        result.SetValue(children);
+                        return result;
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid cast, no fields available");
+                    }
+                }
+
+                result = VMObject.FromObject(srcObj);
+                if (result != null)
+                {
+                    return result;
+                }
+
+                throw new Exception($"invalid cast: Interop.{srcType.Name} to vm object");
+            }
         }
 
     }
