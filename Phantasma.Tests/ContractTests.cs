@@ -1820,6 +1820,12 @@ namespace Phantasma.Tests
             Assert.IsTrue(stake == stake2);
         }
 
+        private struct FriendTestStruct
+        {
+            public string name;
+            public Address address;
+        }
+
         [TestMethod]
         public void TestFriendArray()
         {
@@ -1861,62 +1867,69 @@ namespace Phantasma.Tests
 
             var scriptString = new string[]
             {
-                $"load r0 \\\"friends\\\"",
-                $"ctx r0 r1",
+                "load r0 \"friends\"",
+                "ctx r0 r1",
 
                 $"load r0 0x{Base16.Encode( testUserA.Address.PublicKey)}",
-                $"push r0",
-                $"extcall \\\"Address()\\\"",
+                "push r0",
+                "extcall \"Address()\"",
 
-                $"load r0 \\\"GetFriends\\\"",
-                $"push r0",
-                $"switch r1",
+                "load r0 \"GetFriends\"",
+                "push r0",
+                "switch r1",
 
-                $"alias r4 $friends",
-                $"alias r5 $address",
-                $"alias r6 $name",
-                $"alias r7 $i",
-                $"alias r8 $count",
-                $"alias r9 $loopflag",
-                $"alias r10 $friendname",
-                $"alias r11 $friendnamelist",
+                "alias r4 $friends",
+                "alias r5 $address",
+                "alias r6 $name",
+                "alias r7 $i",
+                "alias r8 $count",
+                "alias r9 $loopflag",
+                "alias r10 $friendname",
+                "alias r11 $friendnamelist",
 
-                $"pop r0",
-                $"cast r0 $friends #Struct",
-                $"count $friends $count",
+                "pop r0",
+                "cast r0 $friends #Struct",
+                "count $friends $count",
 
-                $"@loop: load $i 0",
-                $"lt $i $count $loopflag",
-                $"jmpnot $loopflag @finish",
+                "load $i 0",
+                "@loop: ",
+                "lt $i $count $loopflag",
+                "jmpnot $loopflag @finish",
 
-                $"get $friends $address $i",
-                $"push $address",
-                $"call @lookup",
-                $"pop $name",
+                "get $friends $address $i",
+                "push $address",
+                "call @lookup",
+                "pop $name",
 
-                $"load r0 0",
-                $"load r1 1",
+                "load r0 \"name\"",
+                "load r1 \"address\"",
 
-                $"put $address $friendname r0",
-                $"put $name $friendname r1",
+                "put $name $friendname[r0]",
+                "put $address $friendname[r1]",
 
-                $"put $friendname $friendnamelist $i",
+                "put $friendname $friendnamelist $i",
 
-                $"@finish: push $friendnamelist",
-                $"ret",
+                "inc $i",
+                "jmp @loop",
+                "@finish: push $friendnamelist",
+                "ret",
 
-                $"@lookup: load r0 \\\"account\\\"",
-                $"ctx r0 r1",
-                $"load r0 \\\"LookUpAddress\\\"",
-                $"push r0",
-                $"switch r1",
-                $"ret"
+                "@lookup: load r0 \"account\"",
+                "ctx r0 r1",
+                "load r0 \"LookUpAddress\"",
+                "push r0",
+                "switch r1",
+                "ret"
             };
-
 
             var script = BuildScript(scriptString);
             var result = nexus.RootChain.InvokeScript(script);
             Assert.IsTrue(result != null);
+
+            var temp = result.ToArray<FriendTestStruct>();
+            Assert.IsTrue(temp.Length == 2);
+            Assert.IsTrue(temp[0].address == testUserB.Address);
+            Assert.IsTrue(temp[1].address == testUserC.Address);
         }
 
         private byte[] BuildScript(string[] lines)

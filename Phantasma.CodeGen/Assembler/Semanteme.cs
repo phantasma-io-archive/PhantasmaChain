@@ -76,8 +76,9 @@ namespace Phantasma.CodeGen.Assembler
         private static string[] SplitWords(string line)
         {
             bool insideQuotes = false;
+            bool escaped = false;
             List<string> words = new List<string>();
-            StringBuilder currentWord = new StringBuilder();
+            var currentWord = new StringBuilder();
 
             for (int i = 0; i < line.Length; i++)
             {
@@ -86,6 +87,8 @@ namespace Phantasma.CodeGen.Assembler
                 switch (c)
                 {
                     case ',':
+                    case '[':
+                    case ']':
                     case ' ':
                         if (insideQuotes)
                             goto default;
@@ -102,43 +105,19 @@ namespace Phantasma.CodeGen.Assembler
                         if (i + 1 >= line.Length)
                             throw new Exception("Escaping character not followed by an escapee");
 
-                        i++;
-                        var c2 = line[i];
-
-                        switch (c2)
-                        {
-                            case '\"':
-                                currentWord.Append(c2);
-
-                                if (!insideQuotes)
-                                    insideQuotes = true;
-                                else
-                                {
-                                    
-                                    words.Add(currentWord.ToString());
-                                    currentWord.Clear();
-                                    insideQuotes = false;
-                                }
-                                break;
-
-                            default:
-                                if (!insideQuotes)
-                                    goto default;
-                                break;
-                        }
-                        
+                        escaped = true;                        
                         break;
 
                     case '\"':
-                        if (!insideQuotes)
+                        if (!escaped)
                         {
-                            throw new Exception(
-                                $"Badly escaped string argument delimiters on:\n{line}\nStrings should be delimited with \\\"");
-                            break;
+                            insideQuotes = !insideQuotes;
                         }
-                            
                         else
-                            goto default;
+                        {
+                            escaped = true;
+                        }
+                        goto default;
 
                     default:
                         currentWord.Append(c);
