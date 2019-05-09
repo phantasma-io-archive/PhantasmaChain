@@ -992,6 +992,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             { 7,    30000 }
         };
 
+        public const int CHANGE_FACTION_COST = 500;
+
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
         public const uint MIN_LEVEL = 1;
@@ -1318,6 +1320,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         None = 0,
         Luchador = 1,
         Equipment = 2,
+    }
+
+    public enum Faction
+    {
+        None,
+        Latinos,
+        Gringos
     }
 
     public enum Gender
@@ -1906,6 +1915,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Address lastOpponent;
 
         public BigInteger vipPoints;
+        public Faction faction;
+
         //public BigInteger avatarID;
     }
 
@@ -2057,6 +2068,35 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         #region ACCOUNT API
+
+        public void SetPlayerFaction(Address address, Faction faction)
+        {
+            // TODO finish implementation
+
+            Runtime.Expect(faction != Faction.None, "Faction not valid");
+
+            var account = GetAccount(address);
+
+            Runtime.Expect(account.faction != faction, "Player is already in this faction");
+
+            if (account.faction == Faction.None)
+            {
+                account.faction = faction;
+
+                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+            }
+            else
+            {
+                // charge change faction cost
+
+                var changeFactionCost = Constants.CHANGE_FACTION_COST;
+
+                // todo
+
+                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+            }
+        }
+
         /* TODO LATER
         public void TransferWrestler(Address from, Address to, BigInteger wrestlerID)
         {
