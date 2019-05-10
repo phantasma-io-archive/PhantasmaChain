@@ -1922,7 +1922,7 @@ namespace Phantasma.Tests
                 "ret"
             };
 
-            var script = BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString);
             var result = nexus.RootChain.InvokeScript(script);
             Assert.IsTrue(result != null);
 
@@ -1930,40 +1930,6 @@ namespace Phantasma.Tests
             Assert.IsTrue(temp.Length == 2);
             Assert.IsTrue(temp[0].address == testUserB.Address);
             Assert.IsTrue(temp[1].address == testUserC.Address);
-        }
-
-        private byte[] BuildScript(string[] lines)
-        {
-            IEnumerable<Semanteme> semantemes = null;
-            try
-            {
-                semantemes = Semanteme.ProcessLines(lines);
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error parsing the script");
-            }
-
-            var sb = new ScriptBuilder();
-            Semanteme tmp;
-            byte[] script = null;
-
-            try
-            {
-                foreach (var entry in semantemes)
-                {
-                    Trace.WriteLine($"{entry}");
-                    tmp = entry;
-                    entry.Process(sb);
-                }
-                script = sb.ToScript();
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error assembling the script: " + e.ToString());
-            }
-
-            return script;
         }
     }
 }

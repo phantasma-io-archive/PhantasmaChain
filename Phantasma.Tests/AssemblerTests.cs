@@ -2191,7 +2191,7 @@ namespace Phantasma.Tests
         #region AuxFunctions
         private TestVM ExecuteScript(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
         {
-            var script = BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString);
 
             var keys = KeyPair.Generate();
             var nexus = new Nexus("vmnet", keys.Address, new ConsoleLogger());
@@ -2208,37 +2208,6 @@ namespace Phantasma.Tests
         }
 
 
-        private byte[] BuildScript(IEnumerable<string> lines)
-        {
-            IEnumerable<Semanteme> semantemes = null;
-            try
-            {
-                semantemes = Semanteme.ProcessLines(lines);
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error parsing the script");
-            }
-
-            var sb = new ScriptBuilder();
-            byte[] script = null;
-
-            try
-            {
-                foreach (var entry in semantemes)
-                {
-                    Trace.WriteLine($"{entry}");
-                    entry.Process(sb);
-                }
-                script = sb.ToScript();
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error assembling the script: "+e.ToString());
-            }
-
-            return script;
-        }
         #endregion
 
     }
