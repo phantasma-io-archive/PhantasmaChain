@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.IO;
+using System.IO;
 
 namespace Phantasma.VM
 {
@@ -20,7 +21,7 @@ namespace Phantasma.VM
         Object
     }
 
-    public sealed class VMObject
+    public sealed class VMObject: ISerializable
     {
         public VMType Type { get; private set; }
         public bool IsEmpty => Data == null;
@@ -741,6 +742,27 @@ namespace Phantasma.VM
                 var key = VMObject.FromObject(field.Name);
                 Throw.If(!dict.ContainsKey(key), "field not present in source struct: "+field.Name);
                 var val = dict[key].ToObject(field.FieldType);
+
+                // here we check if the types mismatch
+                // in case of getting a byte[] instead of an object, we try unserializing the bytes in a different approach
+                // NOTE this should not be necessary often, but is already getting into black magic territory...
+                if (field.FieldType != typeof(byte[]) && val.GetType() == typeof(byte[]))
+                {
+                    if (typeof(ISerializable).IsAssignableFrom(field.FieldType))
+                    {
+                        var temp = (ISerializable)Activator.CreateInstance(field.FieldType);
+                        var bytes = (byte[])val;
+                        using (var stream = new MemoryStream(bytes))
+                        {
+                            using (var reader = new BinaryReader(stream))
+                            {
+                                temp.UnserializeData(reader);
+                            }
+                        }
+                        val = temp;
+                    }
+                }
+                
                 field.SetValue(boxed, val);
             }
             return boxed;
@@ -810,6 +832,91 @@ namespace Phantasma.VM
             }
         }
 
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.Write((byte)this.Type);
+
+            if (this.Type == VMType.Struct)
+            {
+                var children = this.GetChildren();
+                writer.WriteVarInt(children.Count);
+                foreach (var entry in children)
+                {
+                    entry.Key.SerializeData(writer);
+                    entry.Value.SerializeData(writer);
+                }
+            }
+            else
+            if (this.Type == VMType.Object)
+            {
+                var obj = this.Data as ISerializable;
+                if (obj != null)
+                {
+                    var bytes = Serialization.Serialize(obj);
+                    writer.WriteByteArray(bytes);
+                }
+                else
+                {
+                    var dataType = this.Data.GetType();
+                    throw new Exception($"Objects of type {dataType.Name} cannot be serialized");
+                }
+            }
+            else
+            {
+                Serialization.Serialize(writer, this.Data);
+            }
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this.Type = (VMType)reader.ReadByte();
+            switch (this.Type)
+            {
+                case VMType.Bool:
+                    this.Data = Serialization.Unserialize<bool>(reader);
+                    break;
+
+                case VMType.Bytes:
+                    this.Data = Serialization.Unserialize<byte[]>(reader);
+                    break;
+
+                case VMType.Number:
+                    this.Data = Serialization.Unserialize<BigInteger>(reader);
+                    break;
+
+                case VMType.String:
+                    this.Data = Serialization.Unserialize<string>(reader);
+                    break;
+
+                case VMType.Struct:
+                    var childCount = reader.ReadVarInt();
+                    var children = new Dictionary<VMObject, VMObject>();
+                    while (childCount > 0)
+                    {
+                        var key = new VMObject();
+                        key.UnserializeData(reader);
+
+                        var val = new VMObject();
+                        val.UnserializeData(reader);
+
+                        children[key] = val;
+                        childCount--;
+                    }
+
+                    this.Data = children;
+                    break;
+
+                // NOTE object type information is lost during serialization, so we reconstruct it as byte array
+                case VMType.Object:
+                    this.Type = VMType.Bytes;
+                    this.Data = reader.ReadByteArray();
+                    break;
+
+                case VMType.Enum: // TODO
+                default:
+                    throw new Exception($"invalid unserialize: type {this.Type}");
+            }
+        }
     }
 
 }

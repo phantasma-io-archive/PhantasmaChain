@@ -39,10 +39,10 @@ namespace Phantasma.Blockchain
     public partial class Chain : ISerializable
     {
         #region PRIVATE
-        private KeyValueStore<Transaction> _transactions;
-        private KeyValueStore<Block> _blocks;
-        private KeyValueStore<Hash> _transactionBlockMap;
-        private KeyValueStore<Epoch> _epochMap;
+        private Dictionary<Hash, Transaction> _transactions;
+        private Dictionary<Hash, Block> _blocks;
+        private Dictionary<Hash, Hash> _transactionBlockMap;
+        private Dictionary<Hash, Epoch> _epochMap;
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
@@ -80,7 +80,7 @@ namespace Phantasma.Blockchain
 
         public StorageContext Storage { get; private set; }
 
-        public uint TransactionCount => _transactions.Count;
+        public uint TransactionCount => (uint)_transactions.Count;
 
         public bool IsRoot => this.ParentChain == null;
         #endregion
@@ -109,10 +109,10 @@ namespace Phantasma.Blockchain
             this.Address = new Address(hash);
 
             // init stores
-            _transactions = new KeyValueStore<Transaction>(this.Address, "txs", KeyStoreDataSize.Medium);
-            _blocks = new KeyValueStore<Block>(this.Address, "blocks", KeyStoreDataSize.Medium);
-            _transactionBlockMap = new KeyValueStore<Hash>(this.Address, "txbk", KeyStoreDataSize.Small);
-            _epochMap = new KeyValueStore<Epoch>(this.Address, "epoch", KeyStoreDataSize.Medium);
+            _transactions = new Dictionary<Hash, Transaction>();
+            _blocks = new Dictionary<Hash, Block>();
+            _transactionBlockMap = new Dictionary<Hash, Hash>();
+            _epochMap = new Dictionary<Hash, Epoch>();
 
             foreach (var contract in contracts)
             {

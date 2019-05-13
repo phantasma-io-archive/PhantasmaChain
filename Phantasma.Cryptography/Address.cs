@@ -5,10 +5,12 @@ using System;
 using Phantasma.Numerics;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Core.Utils;
+using Phantasma.IO;
+using System.IO;
 
 namespace Phantasma.Cryptography
 {
-    public struct Address
+    public struct Address: ISerializable
     {
         public static readonly Address Null = new Address(new byte[PublicKeyLength]);
 
@@ -148,6 +150,17 @@ namespace Phantasma.Cryptography
             {
                 return false;
             }
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteByteArray(this._publicKey);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this._publicKey = reader.ReadByteArray();
+            this._text = null;
         }
     }
 }

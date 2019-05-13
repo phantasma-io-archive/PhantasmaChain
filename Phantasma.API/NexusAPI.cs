@@ -822,8 +822,7 @@ namespace Phantasma.API
             }
             else
             {
-                var temp = vm.Stack.Pop();
-                var result = temp.ToObject();
+                var result = vm.Stack.Pop();
                 var resultBytes = Serialization.Serialize(result);
                 encodedResult = Base16.Encode(resultBytes);
             }

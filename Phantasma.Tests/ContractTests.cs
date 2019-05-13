@@ -14,6 +14,9 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Log;
 using Phantasma.Numerics;
 using static Phantasma.Blockchain.Contracts.Native.EnergyContract;
+using Phantasma.API;
+using Phantasma.IO;
+using Phantasma.VM;
 
 namespace Phantasma.Tests
 {
@@ -1926,10 +1929,24 @@ namespace Phantasma.Tests
             var result = nexus.RootChain.InvokeScript(script);
             Assert.IsTrue(result != null);
 
-            var temp = result.ToArray<FriendTestStruct>();
-            Assert.IsTrue(temp.Length == 2);
-            Assert.IsTrue(temp[0].address == testUserB.Address);
-            Assert.IsTrue(temp[1].address == testUserC.Address);
+            var tempA = result.ToArray<FriendTestStruct>();
+            Assert.IsTrue(tempA.Length == 2);
+            Assert.IsTrue(tempA[0].address == testUserB.Address);
+            Assert.IsTrue(tempA[1].address == testUserC.Address);
+
+            // we also test that the API can handle complex return types
+            var api = new NexusAPI(nexus);
+            var apiResult = (ScriptResult) api.InvokeRawScript("main", Base16.Encode(script));
+
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytes = Base16.Decode(apiResult.result);
+            var resultB = Serialization.Unserialize<VMObject>(objBytes);
+
+            // finally as last step, convert it to a C# struct
+            var tempB = resultB.ToArray<FriendTestStruct>();
+            Assert.IsTrue(tempB.Length == 2);
+            Assert.IsTrue(tempB[0].address == testUserB.Address);
+            Assert.IsTrue(tempB[1].address == testUserC.Address);
         }
     }
 }

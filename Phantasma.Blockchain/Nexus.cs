@@ -683,7 +683,7 @@ namespace Phantasma.Blockchain
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(Name);
-            writer.WriteAddress(GenesisAddress);
+            GenesisAddress.SerializeData(writer);
 
             int chainCount = _chains.Count;
             writer.WriteVarInt(chainCount);
