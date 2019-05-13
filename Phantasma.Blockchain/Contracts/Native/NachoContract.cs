@@ -1278,14 +1278,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly int[] POT_PERCENTAGES = new int[]
         {
             50,
-            25,
+            20,
             10,
-            4,
-            3,
-            3,
+            5,
+            5,
             2,
             2,
-            1
+            2,
+            2,
+            2
         };
 
         public static readonly Dictionary<LuchadorHoroscope, byte[]> horoscopeStats = new Dictionary<LuchadorHoroscope, byte[]>()
