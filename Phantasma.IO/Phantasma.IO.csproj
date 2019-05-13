@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
-    <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
   </ItemGroup>
 

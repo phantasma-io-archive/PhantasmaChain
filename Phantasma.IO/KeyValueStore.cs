@@ -1,33 +1,47 @@
 ﻿using Phantasma.Core;
-using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 
 namespace Phantasma.IO
 {
-    public interface IKeyValueStoreAdapter
+    public interface IKeyValueStore
     {
-        void SetValue(byte[] key, byte[] value);
-        byte[] GetValue(byte[] key);
-        bool ContainsKey(byte[] key);
-        bool Remove(byte[] key);
+        void SetValue(Hash key, byte[] value);
+        byte[] GetValue(Hash key);
+        bool ContainsKey(Hash key);
+        bool Remove(Hash key);
         uint Count { get; }
     }
 
-    public class MemoryStore : IKeyValueStoreAdapter
+    public enum KeyStoreDataSize
     {
-        private Dictionary<byte[], byte[]> _cache = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
+        Small, // up to 255 bytes per entry
+        Medium, // up to 64kb per entry
+        Large, // up to 16mb per entry
+        Huge, // up to 4gb per entry
+    }
+
+    public class MemoryStore : IKeyValueStore
+    {
+        public readonly int CacheSize;
+
+        private Dictionary<Hash, byte[]> _cache = new Dictionary<Hash, byte[]>();
+        private SortedList<Hash, long> _dates = new SortedList<Hash, long>();
 
         public uint Count => (uint)_cache.Count;
 
-        public MemoryStore()
+        public MemoryStore(int cacheSize)
         {
+            Throw.If(cacheSize != -1 && cacheSize < 4, "invalid maxsize");
+            this.CacheSize = cacheSize;
         }
 
-        public void SetValue(byte[] key, byte[] value)
+        public void SetValue(Hash key, byte[] value)
         {
             if (value == null || value.Length == 0)
             {
@@ -35,106 +49,48 @@ namespace Phantasma.IO
                 return;
             }
 
-            _cache[key] = value;
-        }
-
-        public byte[] GetValue(byte[] key)
-        {
-            if (ContainsKey(key))
+            if (CacheSize != -1)
             {
-                return _cache[key];
-            }
-
-            return null;
-        }
-
-        public bool ContainsKey(byte[] key)
-        {
-            var result = _cache.ContainsKey(key);
-            return result;
-        }
-
-        public bool Remove(byte[] key)
-        {
-            if (ContainsKey(key))
-            {
-                _cache.Remove(key);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-
-    public class BasicDiskStore : IKeyValueStoreAdapter
-    {
-        private Dictionary<byte[], byte[]> _cache = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
-
-        public uint Count => (uint)_cache.Count;
-
-        private string fileName;
-
-        public BasicDiskStore(string fileName)
-        {
-            var path = Path.GetDirectoryName(fileName);
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-
-            this.fileName = fileName;
-            if (File.Exists(fileName))
-            {
-                var lines = File.ReadAllLines(fileName);
-                foreach (var line in lines)
+                while (_cache.Count >= CacheSize)
                 {
-                    var temp = line.Split(',');
-                    var key = Convert.FromBase64String(temp[0]);
-                    var val = Convert.FromBase64String(temp[1]);
-                    _cache[key] = val;
+                    var first = _dates.Keys[0];
+                    Remove(first);
                 }
             }
+
+            _cache[key] = value;
+            _dates[key] = DateTime.UtcNow.Ticks;
         }
 
-        public void SetValue(byte[] key, byte[] value)
-        {
-            Throw.IfNull(key, nameof(key));
-
-            if (value == null || value.Length == 0)
-            {
-                Remove(key);
-            }
-            else
-            {
-                _cache[key] = value;
-            }
-
-            File.WriteAllLines(fileName, _cache.Select(x => Convert.ToBase64String(x.Key) + ","+ Convert.ToBase64String(x.Value)));
-        }
-
-        public byte[] GetValue(byte[] key)
+        public byte[] GetValue(Hash key)
         {
             if (ContainsKey(key))
             {
+                _dates[key] = DateTime.UtcNow.Ticks;
                 return _cache[key];
             }
 
             return null;
         }
 
-        public bool ContainsKey(byte[] key)
+        public bool ContainsKey(Hash key)
         {
             var result = _cache.ContainsKey(key);
+
+            if (result)
+            {
+                _dates[key] = DateTime.UtcNow.Ticks;
+            }
+
             return result;
         }
 
-        public bool Remove(byte[] key)
+        public bool Remove(Hash key)
         {
             if (ContainsKey(key))
             {
                 _cache.Remove(key);
+                _dates.Remove(key);
                 return true;
             }
             else
@@ -144,55 +100,71 @@ namespace Phantasma.IO
         }
     }
 
-    public class KeyValueStore<K, V> 
+    public class KeyValueStore<T> : IKeyValueStore
     {
         public readonly string Name;
 
-        private IKeyValueStoreAdapter _adapter;
+        private MemoryStore _memory;
 
-        public uint Count => _adapter.Count;
+        public uint Count => _memory.Count;
 
         // TODO increase default size
-        public KeyValueStore(IKeyValueStoreAdapter adapter)
+        public KeyValueStore(string name, KeyStoreDataSize dataSize, int cacheSize)
         {
-            _adapter = adapter;
+            var fileName = name + ".bin";
+            _memory = new MemoryStore(-1);
         }
 
-        public V this[K key]
+        public KeyValueStore(Address address, string name, KeyStoreDataSize dataSize, int cacheSize = 16) : this(address.Text + "_" + name, dataSize, cacheSize)
+        {
+        }
+
+        public T this[Hash key]
         {
             get { return Get(key); }
             set { Set(key, value); }
         }
 
-        public void Set(K key, V value)
+        public void Set(Hash key, T value)
         {
-            var keyBytes = Serialization.Serialize(key);
-            var valBytes = Serialization.Serialize(value);
-            _adapter.SetValue(keyBytes, valBytes);
+            var bytes = Serialization.Serialize(value);
+            SetValue(key, bytes);
         }
 
-        public V Get(K key)
+        public T Get(Hash key)
         {
-            var keyBytes = Serialization.Serialize(key);
-            var bytes = _adapter.GetValue(keyBytes);
-            if (bytes == null)
+            var bytes = GetValue(key);
+            Throw.If(bytes == null, "item not found in keystore");
+            return Serialization.Unserialize<T>(bytes);
+        }
+
+        public void SetValue(Hash key, byte[] value)
+        {
+            _memory.SetValue(key, value);
+        }
+
+        public byte[] GetValue(Hash key)
+        {
+            if (_memory.ContainsKey(key))
             {
-                Throw.If(bytes == null, "item not found in keystore");
-
+                return _memory.GetValue(key);
             }
-            return Serialization.Unserialize<V>(bytes);
+                return null;
         }
 
-        public bool ContainsKey(K key)
+        public bool ContainsKey(Hash key)
         {
-            var keyBytes = Serialization.Serialize(key);
-            return _adapter.ContainsKey(keyBytes);
+            if (_memory.ContainsKey(key))
+            {
+                return true;
+            }
+
+            return false;
         }
 
-        public bool Remove(K key)
+        public bool Remove(Hash key)
         {
-            var keyBytes = Serialization.Serialize(key);
-            return _adapter.Remove(keyBytes);
+                return _memory.Remove(key);
         }
     }
 }

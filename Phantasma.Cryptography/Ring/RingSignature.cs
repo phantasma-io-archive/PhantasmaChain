@@ -5,6 +5,7 @@ using System.Text;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
+using Phantasma.IO;
 
 namespace Phantasma.Cryptography.Ring
 {
@@ -21,10 +22,16 @@ namespace Phantasma.Cryptography.Ring
         private static HMACDRBG drbg = new HMACDRBG();
         private static Modular mod = new Modular(GroupParameters.Prime);
 
-        public readonly BigInteger Y0, S;
-        public readonly BigInteger[] C;
+        public BigInteger Y0 { get; private set; }
+        public BigInteger S { get; private set; }
+        public BigInteger[] C { get; private set; }
 
         public override SignatureKind Kind => SignatureKind.Ring;
+
+        internal RingSignature()
+        {
+
+        }
 
         public RingSignature(BigInteger Y0, BigInteger S, BigInteger[] C) 
         {
@@ -152,6 +159,28 @@ namespace Phantasma.Cryptography.Ring
             return h1.Equals(b);
         }
 
+        public override void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteBigInteger(this.Y0);
+            writer.WriteBigInteger(this.S);
+            writer.WriteVarInt(this.C.Length);
+            foreach (var entry in this.C)
+            {
+                writer.WriteBigInteger(entry);
+            }
+        }
+
+        public override void UnserializeData(BinaryReader reader)
+        {
+            this.Y0 = reader.ReadBigInteger();
+            this.S = reader.ReadBigInteger();
+            var len = (int)reader.ReadVarInt(1024);
+            this.C = new BigInteger[len];
+            for (int i = 0; i < len; i++)
+            {
+                this.C[i] = reader.ReadBigInteger();
+            }
+        }
     }
 
 }

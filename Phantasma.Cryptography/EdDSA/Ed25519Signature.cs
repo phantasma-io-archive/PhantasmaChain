@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Phantasma.IO;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Phantasma.Cryptography.EdDSA
@@ -8,6 +9,11 @@ namespace Phantasma.Cryptography.EdDSA
         public byte[] Bytes { get; private set; }
 
         public override SignatureKind Kind => SignatureKind.Ed25519;
+
+        internal Ed25519Signature()
+        {
+            this.Bytes = null;
+        }
 
         public Ed25519Signature(byte[] bytes)
         {
@@ -25,6 +31,16 @@ namespace Phantasma.Cryptography.EdDSA
             }
 
             return false;
+        }
+
+        public override void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteByteArray(this.Bytes);
+        }
+
+        public override void UnserializeData(BinaryReader reader)
+        {
+            this.Bytes = reader.ReadByteArray();
         }
     }
 }

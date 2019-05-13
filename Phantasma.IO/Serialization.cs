@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using Phantasma.Core;
 using Phantasma.Core.Types;
-using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
 namespace Phantasma.IO
@@ -109,19 +108,9 @@ namespace Phantasma.IO
                 writer.WriteBigInteger((BigInteger)obj);
             }
             else
-            if (type == typeof(Hash))
-            {
-                writer.WriteHash((Hash)obj);
-            }
-            else
             if (type == typeof(Timestamp))
             {
                 writer.Write(((Timestamp)obj).Value);
-            }
-            else
-            if (type == typeof(Address))
-            {
-                writer.WriteAddress((Address)obj);
             }
             else
             if (typeof(ISerializable).IsAssignableFrom(type))
@@ -264,16 +253,6 @@ namespace Phantasma.IO
             if (type == typeof(BigInteger))
             {
                 return reader.ReadBigInteger();
-            }
-
-            if (type == typeof(Hash))
-            {
-                return reader.ReadHash();
-            }
-
-            if (type == typeof(Address))
-            {
-                return reader.ReadAddress();
             }
 
             if (type == typeof(Timestamp))

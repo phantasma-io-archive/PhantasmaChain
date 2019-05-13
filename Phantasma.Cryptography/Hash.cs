@@ -2,10 +2,12 @@
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
+using Phantasma.IO;
+using System.IO;
 
 namespace Phantasma.Cryptography
 {
-    public class Hash : IComparable<Hash>, IEquatable<Hash>
+    public class Hash : ISerializable, IComparable<Hash>, IEquatable<Hash>
     {
         public const int Length = 32;
 
@@ -191,6 +193,16 @@ namespace Phantasma.Cryptography
             var bytes = new byte[Length];
             Array.Copy(input, bytes, input.Length);
             return new Hash(bytes);
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteByteArray(this._data);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this._data = reader.ReadByteArray();
         }
 
         public static implicit operator BigInteger(Hash val)

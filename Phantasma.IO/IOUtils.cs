@@ -1,7 +1,4 @@
 ﻿using Phantasma.Core;
-using Phantasma.Cryptography;
-using Phantasma.Cryptography.EdDSA;
-using Phantasma.Cryptography.Ring;
 using Phantasma.Numerics;
 using System;
 using System.IO;
@@ -36,23 +33,6 @@ namespace Phantasma.IO
             }
         }
 
-        public static void WriteAddress(this BinaryWriter writer, Address address)
-        {
-            Throw.IfNull(address.PublicKey, "null address");
-            Throw.If(address.PublicKey.Length != Address.PublicKeyLength, "invalid address");
-            writer.Write(address.PublicKey);
-        }
-
-        public static void WriteHash(this BinaryWriter writer, Hash hash)
-        {
-            if (hash == null)
-            {
-                hash = Hash.Null;
-            }
-            var bytes = hash.ToByteArray();
-            writer.Write(bytes);
-        }
-
         public static void WriteBigInteger(this BinaryWriter writer, BigInteger n)
         {
             var bytes = n.ToByteArray();
@@ -83,32 +63,7 @@ namespace Phantasma.IO
             writer.WriteVarInt(bytes.Length);
             writer.Write(bytes);
         }
-
-        public static void WriteSignature(this BinaryWriter writer, Signature signature)
-        {
-            SignatureKind kind = signature != null ? signature.Kind : SignatureKind.None;
-            writer.Write((byte)kind);
-
-            switch (signature.Kind)
-            {
-                case SignatureKind.Ed25519:
-                    writer.WriteByteArray(((Ed25519Signature)signature).Bytes);
-                    break;
-
-                case SignatureKind.Ring:
-                    var rs = (RingSignature)signature;
-                    writer.WriteBigInteger(rs.Y0);
-                    writer.WriteBigInteger(rs.S);
-                    writer.WriteVarInt(rs.C.Length);
-                    foreach (var entry in rs.C)
-                    {
-                        writer.WriteBigInteger(entry);
-                    }
-                    break;
-
-            }
-        }
-
+        
         public static ulong ReadVarInt(this BinaryReader reader, ulong max = ulong.MaxValue)
         {
             byte fb = reader.ReadByte();
@@ -123,19 +78,6 @@ namespace Phantasma.IO
                 value = fb;
             if (value > max) throw new FormatException();
             return value;
-        }
-
-        public static Address ReadAddress(this BinaryReader reader)
-        {
-            var bytes = reader.ReadBytes(Address.PublicKeyLength);
-            return new Address(bytes);
-        }
-
-        public static Hash ReadHash(this BinaryReader reader)
-        {
-            var data = reader.ReadBytes(Hash.Length);
-            var result = new Hash(data);
-            return result == Hash.Null ? Hash.Null : result;
         }
 
         public static BigInteger ReadBigInteger(this BinaryReader reader)
@@ -163,41 +105,5 @@ namespace Phantasma.IO
             var bytes = reader.ReadBytes(length);
             return Encoding.UTF8.GetString(bytes);
         }
-
-        public static Signature ReadSignature(this BinaryReader reader)
-        {
-            var kind = (SignatureKind)reader.ReadByte();
-
-            if (kind == SignatureKind.None)
-            {
-                return null;
-            }
-
-            switch (kind)
-            {
-                case SignatureKind.Ed25519:
-                    {
-                        var bytes = reader.ReadByteArray();
-                        return new Ed25519Signature(bytes);
-                    }
-
-                case SignatureKind.Ring:
-                    {
-                        var Y0 = reader.ReadBigInteger();
-                        var S = reader.ReadBigInteger();
-                        var len = (int)reader.ReadVarInt(1024);
-                        var C = new BigInteger[len];
-                        for (int i = 0; i < len; i++)
-                        {
-                            C[i] = reader.ReadBigInteger();
-                        }
-
-                        return new RingSignature(Y0, S, C);
-                    }
-
-                default: throw new Exception("Unknown signature type: " + kind.ToString());
-            }
-        }
-
     }
 }

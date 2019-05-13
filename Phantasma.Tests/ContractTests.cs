@@ -15,6 +15,9 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Log;
 using Phantasma.Numerics;
 using static Phantasma.Blockchain.Contracts.Native.EnergyContract;
+using Phantasma.API;
+using Phantasma.IO;
+using Phantasma.VM;
 
 namespace Phantasma.Tests
 {
@@ -3622,48 +3625,28 @@ namespace Phantasma.Tests
                 "ret"
             };
 
-            var script = BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString);
             var result = nexus.RootChain.InvokeScript(script);
             Assert.IsTrue(result != null);
 
-            var temp = result.ToArray<FriendTestStruct>();
-            Assert.IsTrue(temp.Length == 2);
-            Assert.IsTrue(temp[0].address == testUserB.Address);
-            Assert.IsTrue(temp[1].address == testUserC.Address);
-        }
+            var tempA = result.ToArray<FriendTestStruct>();
+            Assert.IsTrue(tempA.Length == 2);
+            Assert.IsTrue(tempA[0].address == testUserB.Address);
+            Assert.IsTrue(tempA[1].address == testUserC.Address);
 
-        private byte[] BuildScript(string[] lines)
-        {
-            IEnumerable<Semanteme> semantemes = null;
-            try
-            {
-                semantemes = Semanteme.ProcessLines(lines);
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error parsing the script");
-            }
+            // we also test that the API can handle complex return types
+            var api = new NexusAPI(nexus);
+            var apiResult = (ScriptResult) api.InvokeRawScript("main", Base16.Encode(script));
 
-            var sb = new ScriptBuilder();
-            Semanteme tmp;
-            byte[] script = null;
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytes = Base16.Decode(apiResult.result);
+            var resultB = Serialization.Unserialize<VMObject>(objBytes);
 
-            try
-            {
-                foreach (var entry in semantemes)
-                {
-                    Trace.WriteLine($"{entry}");
-                    tmp = entry;
-                    entry.Process(sb);
-                }
-                script = sb.ToScript();
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error assembling the script: " + e.ToString());
-            }
-
-            return script;
+            // finally as last step, convert it to a C# struct
+            var tempB = resultB.ToArray<FriendTestStruct>();
+            Assert.IsTrue(tempB.Length == 2);
+            Assert.IsTrue(tempB[0].address == testUserB.Address);
+            Assert.IsTrue(tempB[1].address == testUserC.Address);
         }
     }
 }
