@@ -968,6 +968,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             { 10,   new DailyRewards {vipWrestlerReward = 5, vipItemReward = 5, vipMakeUpReward = 5} },
         };
 
+        public static readonly Dictionary<ELOOT_BOX_TYPE, int> LOOT_BOX_NACHOS_PRICE = new Dictionary<ELOOT_BOX_TYPE, int>()
+        {
+            { ELOOT_BOX_TYPE.WRESTLER,  50 },
+            { ELOOT_BOX_TYPE.ITEM,      25 },
+            { ELOOT_BOX_TYPE.MAKE_UP,   10 },
+            //{ ELOOT_BOX_TYPE.AVATAR,    10 },
+        };
+
         public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
         {
             { 0,    1 },
@@ -1352,6 +1360,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         Decoration,
         //Avatar,
         Other
+    }
+
+    public enum ELOOT_BOX_TYPE
+    {
+        WRESTLER,
+        ITEM,
+        MAKE_UP,
+        //AVATAR
     }
 
     public enum AuctionCurrency
