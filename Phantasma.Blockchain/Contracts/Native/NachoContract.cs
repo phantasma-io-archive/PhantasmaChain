@@ -1272,7 +1272,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static int LUCHADOR_COMMENT_REVERSAL = 8;
         public static int LUCHADOR_COMMENT_MAX = 9;
 
-        public static int POT_FEE_PERCENTAGE = 10;
+        public static int LOOT_BOX_POT_NACHOS_PERCENTAGE                = 5;
+        public static int LOOT_BOX_FACTION_REWARD_NACHOS_PERCENTAGE     = 20;
+        public static int NACHOS_IN_APPS_SOUL_REWARD_SOUL_PERCENTAGE    = 25;
 
         public static int REFERRAL_STAKE_AMOUNT = 100;
         public static int REFERRAL_MINIMUM_DAYS = 30;
@@ -5934,17 +5936,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                         break;
                 }
 
-                BigInteger potAmount;
-
-                if (battle.mode == BattleMode.Ranked)
-                {
-                    potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
-                    winnerAmount -= potAmount;
-                }
-                else
-                {
-                    potAmount = 0;
-                }
+                // Ranked battle fees do not go to the pot anymore
+                //BigInteger potAmount;
+                //if (battle.mode == BattleMode.Ranked)
+                //{
+                //    potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
+                //    winnerAmount -= potAmount;
+                //}
+                //else
+                //{
+                //    potAmount = 0;
+                //}
 
                 int winnerSide;
                 int loserSide;
@@ -5971,10 +5973,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (winnerSide != -1)
                 {
-                    if (potAmount > 0)
-                    {
-                        AddToPot(battle.sides[winnerSide].address, potAmount);
-                    }
+                    //if (potAmount > 0)
+                    //{
+                    //    AddToPot(battle.sides[winnerSide].address, potAmount);
+                    //}
 
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
@@ -5990,13 +5992,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else
                 {
-                    // refund both
+                    // refund bothy
                     var refundAmount = drawAmount;
 
-                    if (potAmount > 0)
-                    {
-                        AddToPot(Address.Null, potAmount);
-                    }
+                    //if (potAmount > 0)
+                    //{
+                    //    AddToPot(Address.Null, potAmount);
+                    //}
 
                     /* TODO LATER
                     for (var i = 0; i < 2; i++)
