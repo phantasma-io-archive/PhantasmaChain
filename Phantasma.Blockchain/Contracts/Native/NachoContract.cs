@@ -933,11 +933,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int RANKED_BATTLE_ENTRY_COST       = 5;
         public const int RANKED_BATTLE_WINNER_PRIZE     = 10;
-        public const int RANKED_BATTLE_DRAW_PRIZE       = 5;
+        public const int RANKED_BATTLE_DRAW_PRIZE       = 6;
         public const int RANKED_BATTLE_LOSER_PRIZE      = 2;
 
         public const int UNRANKED_BATTLE_WINNER_PRIZE   = 5;
-        public const int UNRANKED_BATTLE_DRAW_PRIZE     = 2;
+        public const int UNRANKED_BATTLE_DRAW_PRIZE     = 3;
         public const int UNRANKED_BATTLE_LOSER_PRIZE    = 1;
 
         public const decimal DOLLAR_NACHOS_RATE = 100; // 1 USD = 100 NACHOS //TODO set this with the in-apps conversion rate
@@ -5907,7 +5907,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (battle.bet > 0)
             {
-                //BigInteger winnerAmount = battle.bet * 2;
                 BigInteger winnerAmount = 0;
                 BigInteger loserAmount  = 0;
                 BigInteger drawAmount   = 0;
@@ -5915,10 +5914,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 switch (battle.mode)
                 {
                     case BattleMode.Academy:
-                        // ?
-                        break;
                     case BattleMode.Pratice:
-                        // ?
+                        // Battles against bots do not give nacho prizes
                         break;
                     case BattleMode.Unranked:
                         winnerAmount    = Constants.UNRANKED_BATTLE_WINNER_PRIZE;
@@ -5928,10 +5925,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                     case BattleMode.Ranked:
                         winnerAmount    = Constants.RANKED_BATTLE_WINNER_PRIZE;
                         loserAmount     = Constants.RANKED_BATTLE_LOSER_PRIZE;
-                        drawAmount      = Constants.UNRANKED_BATTLE_DRAW_PRIZE;
+                        drawAmount      = Constants.RANKED_BATTLE_DRAW_PRIZE;
                         break;
                     case BattleMode.Versus:
-                        // ?
+                        winnerAmount    = battle.bet * 2;
+                        loserAmount     = 0;
+                        drawAmount      = battle.bet;
                         break;
                 }
 
@@ -5992,7 +5991,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 else
                 {
                     // refund both
-                    //var refundAmount = winnerAmount / 2;
                     var refundAmount = drawAmount;
 
                     if (potAmount > 0)
