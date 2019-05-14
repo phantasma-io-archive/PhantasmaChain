@@ -38,6 +38,12 @@ namespace Phantasma.VM.Utils
             writer.Write((byte)reg);
         }
 
+        public void EmitPop(byte reg)
+        {
+            Emit(Opcode.POP);
+            writer.Write((byte)reg);
+        }
+
         public void EmitExtCall(string method, byte reg = 0)
         {
             EmitLoad(reg, method);
