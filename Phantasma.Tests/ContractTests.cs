@@ -1948,5 +1948,44 @@ namespace Phantasma.Tests
             Assert.IsTrue(tempB[0].address == testUserB.Address);
             Assert.IsTrue(tempB[1].address == testUserC.Address);
         }
+
+        public struct NachoConfigTestStruct
+        {
+            public uint time;
+            public bool suspendedTransfers;
+        }
+
+        [TestMethod]
+        public void TestGetNachoConfig()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, 100000000);
+            simulator.EndBlock();
+
+            var script = ScriptUtils.BeginScript().CallContract("nacho", "nacho", new object[0]).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
+            //var result = nexus.RootChain.InvokeScript(script);
+            //Assert.IsTrue(result != null);
+            
+            var api = new NexusAPI(nexus);
+            var apiResult = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(script));
+
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytes = Base16.Decode(apiResult.result);
+            var resultObj = Serialization.Unserialize<VMObject>(objBytes);
+
+            // finally as last step, convert it to a C# struct
+            var userConfig = resultObj.ToStruct<NachoConfigTestStruct>();
+
+            Assert.IsTrue(userConfig.time > 0);
+            Assert.IsTrue(userConfig.suspendedTransfers == false);
+        }
     }
 }
