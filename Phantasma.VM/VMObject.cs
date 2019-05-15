@@ -6,6 +6,7 @@ using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.IO;
 using System.IO;
+using Phantasma.Core.Types;
 
 namespace Phantasma.VM
 {
@@ -16,6 +17,7 @@ namespace Phantasma.VM
         Bytes,
         Number,
         String,
+        Timestamp,
         Bool,
         Enum,
         Object
@@ -29,6 +31,8 @@ namespace Phantasma.VM
         public object Data { get; private set; }
 
         private int _localSize = 0;
+
+        private static readonly string TimeFormat = "MM/dd/yyyy HH:mm:ss";
 
         internal Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
 
@@ -70,6 +74,16 @@ namespace Phantasma.VM
             return (BigInteger)Data;
         }
 
+        public Timestamp AsTimestamp()
+        {
+            if (this.Type != VMType.Timestamp)
+            {
+                throw new Exception("Invalid cast");
+            }
+
+            return (Timestamp)Data;
+        }
+
         public object AsType(VMType type)
         {
             switch (type)
@@ -78,6 +92,7 @@ namespace Phantasma.VM
                 case VMType.String: return AsString();
                 case VMType.Bytes: return AsByteArray();
                 case VMType.Number: return AsNumber();
+                case VMType.Timestamp: return AsTimestamp();
                 default: throw new ArgumentException("Unsupported VM cast");
             }
         }
@@ -118,6 +133,10 @@ namespace Phantasma.VM
 
                 case VMType.Bool:
                     return ((bool)Data) ? "true" : "false";
+
+                case VMType.Timestamp:
+                    var date = (DateTime)(Timestamp)Data;
+                    return date.ToString(TimeFormat);
 
                 default:
                     throw new Exception("Invalid cast");
@@ -226,6 +245,13 @@ namespace Phantasma.VM
                         break;
                     }
 
+                case VMType.Timestamp:
+                    {
+                        var temp = BitConverter.ToUInt32(val, 0);
+                        this.Data = new Timestamp(temp);
+                        break;
+                    }
+
                 case VMType.Bool:
                     {
                         this.Data = BitConverter.ToBoolean(val, 0);
@@ -262,6 +288,19 @@ namespace Phantasma.VM
             var type = val.GetType();
             Throw.If(!type.IsStructOrClass(), "invalid cast");
             this.Type = VMType.Object;
+            this.Data = val;
+            this._localSize = 4;
+            return this;
+        }
+
+        public VMObject SetValue(DateTime val)
+        {
+            return SetValue((Timestamp)val);
+        }
+
+        public VMObject SetValue(Timestamp val)
+        {
+            this.Type = VMType.Timestamp;
             this.Data = val;
             this._localSize = 4;
             return this;
@@ -461,6 +500,7 @@ namespace Phantasma.VM
                 case VMType.Struct: return "[Struct]";
                 case VMType.Bytes: return $"[Bytes] => {Base16.Encode(((byte[])Data))}";
                 case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
+                case VMType.Timestamp: return $"[Time] => {((DateTime)((Timestamp)Data)).ToString(TimeFormat)}";
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
                 case VMType.Enum: return $"[Enum] => {((uint)Data)}";
@@ -482,11 +522,19 @@ namespace Phantasma.VM
                 case VMType.String:
                     {
                         var result = new VMObject();
-                        result.SetValue(srcObj.Data.ToString()); // TODO does this work for all types?
+                        result.SetValue(srcObj.AsString()); // TODO does this work for all types?
+                        return result;
+                    }
+
+                case VMType.Timestamp:
+                    {
+                        var result = new VMObject();
+                        result.SetValue(srcObj.AsTimestamp()); // TODO does this work for all types?
                         return result;
                     }
 
                 case VMType.Bool:
+                    // TODO move this stuff to AsBool()
                     switch (srcObj.Type)
                     {
                         case VMType.Number:
@@ -599,9 +647,14 @@ namespace Phantasma.VM
                 return VMType.Number;
             }
 
+            if (type == typeof(Timestamp) || type == typeof(uint))
+            {
+                return VMType.Timestamp;
+            }
+
             if (type.IsEnum)
             {
-                return VMType.Number; // TODO make new optimized type for enums
+                return VMType.Enum; 
             }
 
             if (type.IsClass || type.IsValueType) 
@@ -633,6 +686,13 @@ namespace Phantasma.VM
                 case VMType.Number: result.SetValue((BigInteger)obj); break;
                 case VMType.Enum: result.SetValue((Enum)obj); break;
                 case VMType.Object: result.SetValue(obj); break;
+                case VMType.Timestamp:
+                    if (obj.GetType() == typeof(uint))
+                    {
+                        obj = new Timestamp((uint)obj); // HACK
+                    }
+                    result.SetValue((Timestamp)obj);
+                    break;
                 default: return null;
             }
 
@@ -649,6 +709,7 @@ namespace Phantasma.VM
                 case VMType.Bytes: return this.AsByteArray();
                 case VMType.String: return this.AsString();
                 case VMType.Number: return this.AsNumber();
+                case VMType.Timestamp: return this.AsTimestamp();
                 case VMType.Object: return this.Data;
                 case VMType.Enum: return this.Data;
                 default: return null;
@@ -762,7 +823,7 @@ namespace Phantasma.VM
                         val = temp;
                     }
                 }
-                
+
                 field.SetValue(boxed, val);
             }
             return boxed;
@@ -882,6 +943,10 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     this.Data = Serialization.Unserialize<BigInteger>(reader);
+                    break;
+
+                case VMType.Timestamp:
+                    this.Data = Serialization.Unserialize<Timestamp>(reader);
                     break;
 
                 case VMType.String:

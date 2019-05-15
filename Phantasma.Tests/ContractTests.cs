@@ -1951,7 +1951,7 @@ namespace Phantasma.Tests
 
         public struct NachoConfigTestStruct
         {
-            public uint time;
+            public Timestamp time;
             public bool suspendedTransfers;
         }
 
@@ -1970,12 +1970,12 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, 100000000);
             simulator.EndBlock();
 
-            var script = ScriptUtils.BeginScript().CallContract("nacho", "nacho", new object[0]).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
+            var script = ScriptUtils.BeginScript().CallContract("nacho", "GetConfig", new object[0]).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
             //var result = nexus.RootChain.InvokeScript(script);
             //Assert.IsTrue(result != null);
             
             var api = new NexusAPI(nexus);
-            var apiResult = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(script));
+            var apiResult = (ScriptResult)api.InvokeRawScript("nacho", Base16.Encode(script));
 
             // NOTE objBytes will contain a serialized VMObject
             var objBytes = Base16.Decode(apiResult.result);
