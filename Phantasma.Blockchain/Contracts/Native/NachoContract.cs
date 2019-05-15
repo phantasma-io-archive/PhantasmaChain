@@ -786,7 +786,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return 1 + (Sqrt(XP) / 61);
         }
 
-        public static int CalculateXpPercentage(uint currentXp, uint currentLevel)
+        public static int CalculateXpPercentage(int currentXp, int currentLevel)
         {
             if (currentLevel == Constants.MAX_LEVEL) return 100;
 
@@ -1004,9 +1004,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
-        public const uint MIN_LEVEL = 1;
+        public const int MIN_LEVEL = 1;
         // max level than a luchador can reach
-        public const uint MAX_LEVEL = 16;
+        public const int MAX_LEVEL = 16;
 
         // average expected XP per battle (taking account all battles from lv 1 to max level)
         public const int AVERAGE_XP_GAIN = 4372;
