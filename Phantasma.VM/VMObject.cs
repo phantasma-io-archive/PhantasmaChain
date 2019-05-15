@@ -519,6 +519,9 @@ namespace Phantasma.VM
             }
 
             switch (type) {
+                case VMType.None:
+                    return new VMObject();
+
                 case VMType.String:
                     {
                         var result = new VMObject();

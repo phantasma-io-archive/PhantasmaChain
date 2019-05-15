@@ -744,8 +744,7 @@ namespace Phantasma.Blockchain.Utils
                             var tokenBalance = sourceChain.GetTokenBalance(tokenSymbol, source.Address);
                             var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelTokenSymbol, source.Address);
 
-                            var bankContract = bankChain.FindContract<BankContract>("bank");
-                            var rate = bankContract.GetRate(Nexus.FuelTokenSymbol);
+                            var rate = (BigInteger) bankChain.InvokeContract("bank", "GetRate", Nexus.FuelTokenSymbol);
                             var total = tokenBalance / 10;
                             if (total >= rate && fuelBalance > fee)
                             {

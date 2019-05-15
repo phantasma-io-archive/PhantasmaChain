@@ -145,7 +145,7 @@ namespace Phantasma.Blockchain.Contracts
             return _methodTable.ContainsKey(methodName);
         }
 
-        internal object CallInternalMethod(string name, object[] args)
+        internal object CallInternalMethod(RuntimeVM runtime, string name, object[] args)
         {
             Throw.If(!_methodTable.ContainsKey(name), "unknowm internal method");
 
@@ -155,20 +155,79 @@ namespace Phantasma.Blockchain.Contracts
             var parameters = method.GetParameters();
             for (int i = 0; i < parameters.Length; i++)
             {
-                var p = parameters[i];
-                if (p.ParameterType.IsEnum)
-                {
-                    var receivedType = args[i].GetType();
-                    if (!receivedType.IsEnum)
-                    {
-                        var val = Enum.Parse(p.ParameterType, args[i].ToString());
-                        args[i] = val;
-                    }
-                }
+                args[i] = CastArgument(runtime, args[i], parameters[i].ParameterType);
             }
 
             return method.Invoke(this, args);
         }
+
+        private object CastArgument(RuntimeVM runtime, object arg, Type expectedType)
+        {
+            var receivedType = arg.GetType();
+
+            if (expectedType.IsArray)
+            {
+                var dic = (Dictionary<VMObject, VMObject>)arg;
+                var elementType = expectedType.GetElementType();
+                var array = Array.CreateInstance(elementType, dic.Count);
+                for (int i=0; i<array.Length; i++)
+                {
+                    var key = new VMObject();
+                    key.SetValue(i);
+
+                    var val = dic[key].Data;
+                    val = CastArgument(runtime, val, elementType);
+                    array.SetValue(val, i);
+                }
+                return array;
+            }
+            
+            if (expectedType.IsEnum)
+            {
+                if (!receivedType.IsEnum)
+                {
+                    arg = Enum.Parse(expectedType, arg.ToString());
+                    return arg;
+                }
+            }
+
+            if (expectedType == typeof(Address))
+            {
+                if (receivedType == typeof(string))
+                {
+                    // when a string is passed instead of an address we do an automatic lookup and replace
+                    var name = (string)arg;
+                    var address = runtime.Nexus.LookUpName(name);
+                    return address;
+                }
+            }
+
+            /*
+            if (expectedType == typeof(BigInteger))
+            {
+                if (receivedType == typeof(string))
+                {
+                    var value = (string)arg;
+                    if (BigInteger.TryParse(value, out BigInteger number))
+                    {
+                        arg = number;
+                    }
+                }
+            }*/
+            
+            if (typeof(ISerializable).IsAssignableFrom(expectedType))
+            {
+                if (receivedType == typeof(byte[]))
+                {
+                    var bytes = (byte[])arg;
+                    arg = Serialization.Unserialize(bytes, expectedType);
+                    return arg;
+                }
+            }
+
+            return arg;
+        }
+
         #endregion
 
         #region SIDE CHAINS

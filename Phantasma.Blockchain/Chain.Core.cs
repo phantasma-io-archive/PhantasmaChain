@@ -42,6 +42,7 @@ namespace Phantasma.Blockchain
         private KeyValueStore<Hash, Block> _blocks;
         private KeyValueStore<Hash, Hash> _transactionBlockMap;
         private KeyValueStore<Hash, Epoch> _epochMap;
+        private KeyValueStore<string, bool> _contracts;
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
@@ -51,7 +52,6 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
-        private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
         #endregion
 
@@ -95,25 +95,27 @@ namespace Phantasma.Blockchain
             _blocks = new KeyValueStore<Hash, Block>(Nexus.CreateKeyStoreAdapter(this.Address, "blocks"));
             _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
             _epochMap = new KeyValueStore<Hash, Epoch>(Nexus.CreateKeyStoreAdapter(this.Address, "epoch"));
+            _contracts = new KeyValueStore<string, bool>(Nexus.CreateKeyStoreAdapter(this.Address, "contracts"));
 
             this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
 
             this.Log = Logger.Init(log);
         }
 
-        internal void Initialize(IEnumerable<SmartContract> contracts)
+        public bool HasContract(string contractName)
         {
-            Throw.If(contracts == null || !contracts.Any(), "contracts required");
+            return _contracts.ContainsKey(contractName);
+        }
 
-            foreach (var contract in contracts)
+        internal void DeployContracts(HashSet<string> contractNames)
+        {
+            Throw.If(contractNames == null || !contractNames.Any(), "contracts required");
+            Throw.If(!contractNames.Contains(Nexus.GasContractName), "gas contract required");
+            Throw.If(!contractNames.Contains(Nexus.TokenContractName), "token contract required");
+
+            foreach (var contractName in contractNames)
             {
-                if (this._contracts.ContainsKey(contract.Name))
-                {
-                    throw new ChainException("Duplicated contract name: " + contract.Name);
-                }
-
-                this._contracts[contract.Name] = contract;
-                this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
+                this._contracts[contractName] = true;
             }
         }
 
@@ -314,10 +316,6 @@ namespace Phantasma.Blockchain
             }
 
             var parentChainName = Nexus.GetParentChainByName(this.Name);
-            var parentChain = Nexus.FindChainByName(parentChainName);
-            Throw.If(parentChain == null, "supply sheet not created");
-
-            var parentSupplies = parentChain.GetTokenSupplies(tokenSymbol);
 
             var sheet = new SupplySheet(tokenSymbol, parentChainName, this.Name, tokenInfo.MaxSupply);
             _tokenSupplies[tokenSymbol] = sheet;
@@ -430,23 +428,19 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public T FindContract<T>(string contractName) where T : SmartContract
-        {
-            Throw.IfNullOrEmpty(contractName, nameof(contractName));
-
-            if (_contracts.ContainsKey(contractName))
-            {
-                return (T)_contracts[contractName];
-            }
-
-            return null;
-        }
-
         internal ExecutionContext GetContractContext(SmartContract contract)
         {
             if (_contractContexts.ContainsKey(contract.Name))
             {
                 return _contractContexts[contract.Name];
+            }
+
+            if (HasContract(contract.Name))
+            {
+                // TODO this needs to suport non-native contexts too..
+                var context = new NativeExecutionContext(contract);
+                this._contractContexts[contract.Name] = context;
+                return context;
             }
 
             return null;
@@ -455,7 +449,7 @@ namespace Phantasma.Blockchain
 
         public object InvokeContract(string contractName, string methodName, params object[] args)
         {
-            var contract = FindContract<SmartContract>(contractName);
+            var contract = Nexus.FindContract(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();

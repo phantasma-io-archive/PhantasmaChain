@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(owner), "invalid witness");
 
-            var chain = this.Runtime.Nexus.CreateChain(owner, name, Runtime.Chain, Runtime.Block);
+            var chain = this.Runtime.Nexus.CreateChain(owner, name, Runtime.Chain, Runtime.Block, new string[] {/*TODO*/ });
             var app = new AppInfo()
             {
                 id = name,

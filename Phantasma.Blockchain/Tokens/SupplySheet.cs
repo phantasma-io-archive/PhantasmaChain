@@ -3,6 +3,7 @@ using Phantasma.Core;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using System;
 using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
@@ -29,6 +30,12 @@ namespace Phantasma.Blockchain.Tokens
         private byte[] GetKeyForChain(string name)
         {
             return ByteArrayUtils.ConcatBytes(_prefix, Encoding.UTF8.GetBytes(name));
+        }
+
+        private StorageList GetChildList(StorageContext storage)
+        {
+            var key = ByteArrayUtils.ConcatBytes(_prefix, Encoding.UTF8.GetBytes(".children"));
+            return new StorageList(key, storage);
         }
 
         private BigInteger Get(StorageContext storage, string name)
@@ -110,6 +117,24 @@ namespace Phantasma.Blockchain.Tokens
             localBalance -= amount;
             Set(storage, _localName, localBalance);
 
+            var childList = GetChildList(storage);
+            int childIndex = -1;
+            var childCount = childList.Count();
+            for (int i=0; i<childCount; i++)
+            {
+                var temp = childList.Get<string>(i);
+                if (temp == childChainName)
+                {
+                    childIndex = i;
+                    break;
+                }
+            }
+
+            if (childIndex == -1)
+            {
+                childList.Add(childChainName);
+            }
+
             var childBalance = GetChildBalance(storage, childChainName);
             childBalance += amount;
             Set(storage, childChainName, childBalance);
@@ -155,12 +180,21 @@ namespace Phantasma.Blockchain.Tokens
 
         public bool Mint(StorageContext storage, BigInteger amount)
         {
-            throw new System.NotImplementedException();
-            /*
-            BigInteger existingSupply = ParentBalance + LocalBalance;
-
-            foreach (var childBalance in _childBalances.Values)
+            if (!string.IsNullOrEmpty(this._parentName))
             {
+                throw new Exception("Minting only allowed in root chain");
+            }
+
+            var localBalance = Get(storage, _localName);
+
+            BigInteger existingSupply = localBalance;
+
+            var childList = GetChildList(storage);
+            var childCount = childList.Count();
+            for (int i = 0; i < childCount; i++)
+            {
+                var childName = childList.Get<string>(i);
+                var childBalance = Get(storage, childName);
                 existingSupply += childBalance;
             }
 
@@ -171,8 +205,10 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            LocalBalance += amount;
-            return true;*/
+            localBalance += amount;
+            Set(storage, _localName, localBalance);
+
+            return true;
         }
 
     }

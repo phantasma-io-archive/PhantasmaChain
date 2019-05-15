@@ -16,9 +16,6 @@ namespace Phantasma.Blockchain
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
 
-            vm.RegisterMethod("Address()", Constructor_Address);
-            vm.RegisterMethod("Hash()", Constructor_Hash);
-            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
             vm.RegisterMethod("ABI()", Constructor_ABI);
 
             vm.RegisterMethod("Oracle.Read", Oracle_Read);
@@ -46,6 +43,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        /*
         private static ExecutionState Constructor_Address(RuntimeVM vm)
         {
             return Constructor_Object<byte[], Address>(vm, bytes =>
@@ -71,7 +69,7 @@ namespace Phantasma.Blockchain
                 Throw.If(val < 0, "invalid number");
                 return new Timestamp((uint)val);
             });
-        }
+        }*/
 
         private static ExecutionState Constructor_ABI(RuntimeVM vm)
         {

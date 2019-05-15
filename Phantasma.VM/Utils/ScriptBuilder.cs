@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Phantasma.Core.Types;
 using Phantasma.IO;
 using Phantasma.Numerics;
 
@@ -94,6 +95,28 @@ namespace Phantasma.VM.Utils
             var bytes = BitConverter.GetBytes(temp);
             EmitLoad(reg, bytes, VMType.Enum);
             return this;
+        }
+
+        public ScriptBuilder EmitLoad(byte reg, Timestamp val)
+        {
+            var bytes = BitConverter.GetBytes(val.Value);
+            EmitLoad(reg, bytes, VMType.Timestamp);
+            return this;
+        }
+
+        public ScriptBuilder EmitLoad(byte reg, ISerializable val)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    val.SerializeData(writer);
+                }
+
+                var bytes = stream.ToArray();
+                EmitLoad(reg, bytes, VMType.Bytes);
+                return this;
+            }
         }
 
         public ScriptBuilder EmitMove(byte src_reg, byte dst_reg)

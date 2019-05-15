@@ -36,11 +36,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (IsAddressOfParentChain(targetChain))
                 {
-                    Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
+                    Runtime.Expect(sourceSupplies.MoveToParent(this.Storage, amount), "source supply check failed");
                 }
                 else // child chain
                 {
-                    Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, amount), "source supply check failed");
+                    Runtime.Expect(sourceSupplies.MoveToChild(this.Storage, this.Runtime.Chain.Name, amount), "source supply check failed");
                 }
             }
             else
@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (tokenInfo.IsCapped)
             {
                 supplies = this.Runtime.Chain.GetTokenSupplies(symbol);
-                Runtime.Expect(supplies.Mint(amount), "increasing supply failed");
+                Runtime.Expect(supplies.Mint(this.Storage, amount), "increasing supply failed");
             }
             else
             {
@@ -96,7 +96,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (tokenInfo.IsCapped)
             {
                 supplies = this.Runtime.Chain.GetTokenSupplies(symbol);
-                Runtime.Expect(supplies.Burn(amount), "decreasing supply failed");
+                Runtime.Expect(supplies.Burn(this.Storage, amount), "decreasing supply failed");
             }
             else
             {
@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (tokenInfo.IsCapped)
             {
                 var supplies = this.Runtime.Chain.GetTokenSupplies(symbol);
-                Runtime.Expect(supplies.Mint(1), "increasing supply failed");
+                Runtime.Expect(supplies.Mint(this.Storage, 1), "increasing supply failed");
             }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(symbol);
@@ -188,7 +188,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (tokenInfo.IsCapped)
             {
                 var supplies = this.Runtime.Chain.GetTokenSupplies(symbol);
-                Runtime.Expect(supplies.Burn(1), "decreasing supply failed");
+                Runtime.Expect(supplies.Burn(this.Storage, 1), "decreasing supply failed");
             }
 
             var ownerships = this.Runtime.Chain.GetTokenOwnerships(symbol);
@@ -241,11 +241,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (IsAddressOfParentChain(targetChain))
                 {
-                    Runtime.Expect(sourceSupplies.MoveToParent(amount), "source supply check failed");
+                    Runtime.Expect(sourceSupplies.MoveToParent(this.Storage, amount), "source supply check failed");
                 }
                 else // child chain
                 {
-                    Runtime.Expect(sourceSupplies.MoveToChild(this.Runtime.Chain, amount), "source supply check failed");
+                    Runtime.Expect(sourceSupplies.MoveToChild(this.Storage, this.Runtime.Chain.Name, amount), "source supply check failed");
                 }
             }
 
@@ -290,11 +290,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (IsAddressOfParentChain(sourceChain.Address))
                 {
-                    Runtime.Expect(targetSupplies.MoveFromParent(value), "target supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromParent(this.Storage, value), "target supply check failed");
                 }
                 else // child chain
                 {
-                    Runtime.Expect(targetSupplies.MoveFromChild(this.Runtime.Chain, value), "target supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromChild(this.Storage, this.Runtime.Chain.Name, value), "target supply check failed");
                 }
             }
 
