@@ -260,7 +260,7 @@ namespace Phantasma.Tests
             var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(owner, () =>
                 ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
                     .CallContract("token", "TransferTokens", owner.Address, targetName, token.Symbol, transferAmount)
                     .SpendGas(owner.Address).EndScript());
@@ -580,7 +580,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, nftSymbol, nftName, 0, 0, Blockchain.Tokens.TokenFlags.None);
+            simulator.GenerateToken(owner, nftSymbol, nftName, 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nftSymbol);
@@ -654,7 +654,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, nftSymbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
+            simulator.GenerateToken(owner, nftSymbol, "CoolToken", 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nftSymbol);
