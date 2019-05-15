@@ -44,13 +44,12 @@ namespace Phantasma.Blockchain.Tokens
             {
                 var ownerKey = GetKeyForOwner(tokenID);
 
-                var temp = storage.Get(ownerKey);
-                if (temp == null || temp.Length != Address.PublicKeyLength)
+                if (storage.Has(ownerKey))
                 {
-                    return Address.Null;
+                    return storage.Get<Address>(ownerKey);
                 }
 
-                return new Address(temp);
+                return Address.Null;
             }
         }
 
