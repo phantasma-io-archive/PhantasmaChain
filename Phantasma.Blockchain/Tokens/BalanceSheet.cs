@@ -6,11 +6,11 @@ using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public class BalanceSheet
+    public struct BalanceSheet
     {
         private byte[] _prefix;
 
-        public BalanceSheet(string symbol, StorageContext storage)
+        public BalanceSheet(string symbol)
         {
             symbol = symbol + ".";
             this._prefix = Encoding.ASCII.GetBytes(symbol);

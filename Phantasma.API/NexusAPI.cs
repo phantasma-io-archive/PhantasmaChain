@@ -12,6 +12,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
@@ -276,7 +277,7 @@ namespace Phantasma.API
         private TokenResult FillToken(string tokenSymbol)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            var currentSupply = Nexus.GetTokenSupply(tokenSymbol);
+            var currentSupply = Nexus.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
             var metadata = (TokenMetadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol);
             var metadataResults = new List<TokenMetadataResult>();
@@ -456,7 +457,8 @@ namespace Phantasma.API
 
                         if (!token.IsFungible)
                         {
-                            var idList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, address);
+                            var ownerships = new OwnershipSheet(symbol);
+                            var idList =  ownerships.Get(chain.Storage, address);
                             if (idList != null && idList.Any())
                             {
                                 balanceEntry.ids = idList.Select(x => x.ToString()).ToArray();
@@ -1113,7 +1115,8 @@ namespace Phantasma.API
 
             if (!tokenInfo.IsFungible)
             {
-                var idList = chain.GetTokenOwnerships(tokenSymbol).Get(chain.Storage, address);
+                var ownerships = new OwnershipSheet(tokenSymbol);
+                var idList = ownerships.Get(chain.Storage, address);
                 if (idList != null && idList.Any())
                 {
                     result.ids = idList.Select(x => x.ToString()).ToArray();

@@ -5,6 +5,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Numerics;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -2193,9 +2194,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var tokenSymbol = Nexus.StakingTokenSymbol;
-            var balances = Runtime.Chain.GetTokenBalances(tokenSymbol);
-
-            return Runtime.Nexus.TransferTokens(tokenSymbol, this.Storage, balances, address, DevelopersAddress, amount);
+            return Runtime.Nexus.TransferTokens(tokenSymbol, this.Storage, Runtime.Chain, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)
@@ -2542,7 +2541,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), Constants.WRESTLER_SYMBOL + " token not found");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
         }
@@ -2551,7 +2550,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), Constants.ITEM_SYMBOL + " token not found");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
 
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
@@ -2673,7 +2672,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasItem(Address address, BigInteger itemID)
         {
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             return ownerships.GetOwner(this.Storage, itemID) == address;
         }
 
@@ -2690,7 +2689,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.location = ItemLocation.None;
             item.owner = Address.Null;
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
             //token.Burn(balances, from,) TODO how to burn NFT?
 
@@ -2913,7 +2912,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasWrestler(Address address, BigInteger wrestlerID)
         {
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
             return ownerships.GetOwner(this.Storage, wrestlerID) == address;
         }
 

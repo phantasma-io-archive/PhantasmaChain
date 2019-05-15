@@ -55,9 +55,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(!_matchMap.ContainsKey<Address>(from), "already in match");
 
-            var balances = Runtime.Chain.GetTokenBalances(token.Symbol);
             var fee = GetTableFee(tableID);
-            Runtime.Expect(Runtime.Nexus.TransferTokens(token.Symbol, this.Storage, balances, from, Runtime.Chain.Address, fee), "fee transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(token.Symbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, fee), "fee transfer failed");
 
             int queueIndex = -1;
             var count = _queue.Count();

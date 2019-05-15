@@ -64,18 +64,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "base token must be non-fungible");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(baseSymbol);
+            var ownerships = new OwnershipSheet(baseSymbol);
             var owner = ownerships.GetOwner(this.Storage, tokenID);
             Runtime.Expect(owner == from, "invalid owner");
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(baseToken.Symbol, this.Storage, ownerships, from, Runtime.Chain.Address, tokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(baseToken.Symbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
             var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
             _auctionMap.Set(auctionID, auction);
             _auctionIDs.Add(auctionID);
-
-            this.Runtime.Nexus.EditNFTLocation(baseSymbol, tokenID, Runtime.Chain.Address, Runtime.Chain.Address);
 
             Runtime.Notify(EventKind.AuctionCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price });
         }
@@ -93,7 +91,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var baseToken = Runtime.Nexus.GetTokenInfo(auction.BaseSymbol);
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(baseToken.Symbol);
+            var ownerships = new OwnershipSheet(baseToken.Symbol);
             var owner = ownerships.GetOwner(this.Storage, auction.TokenID);
             Runtime.Expect(owner == Runtime.Chain.Address, "invalid owner");
 
@@ -103,19 +101,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var quoteToken = Runtime.Nexus.GetTokenInfo(auction.QuoteSymbol);
                 Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "quote token must be fungible");
 
-                var balances = Runtime.Chain.GetTokenBalances(quoteToken.Symbol);
+                var balances = new BalanceSheet(quoteToken.Symbol);
                 var balance = balances.Get(this.Storage, from);
                 Runtime.Expect(balance >= auction.Price, "not enough balance");
 
-                Runtime.Expect(Runtime.Nexus.TransferTokens(quoteToken.Symbol, this.Storage, balances, from, auction.Creator, auction.Price), "payment failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(quoteToken.Symbol, this.Storage, Runtime.Chain, from, auction.Creator, auction.Price), "payment failed");
             }
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(baseToken.Symbol, this.Storage, ownerships, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(baseToken.Symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
 
             _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);
-
-            this.Runtime.Nexus.EditNFTLocation(baseToken.Symbol, tokenID, Runtime.Chain.Address, from);
 
             if (auction.Creator == from)
             {

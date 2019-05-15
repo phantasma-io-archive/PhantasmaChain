@@ -87,7 +87,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
+            var balances = new BalanceSheet(symbol);
             var balance = balances.Get(this.Storage, from);
             Runtime.Expect(balance >= TransferAmount, "not enough balance");
 
@@ -100,6 +100,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(address != from, "address already in queue");
             }
 
+            // TODO it is wrong to do this in current codebase...
             balances.Subtract(this.Storage, from, TransferAmount);
             queue.addresses.Add(from);
 
@@ -135,7 +136,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             queue.signatures.Add(signature);
 
-            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
+            // TODO this is wrong
+            var balances = new BalanceSheet(symbol);
             balances.Add(this.Storage, to, TransferAmount);
         }
     }

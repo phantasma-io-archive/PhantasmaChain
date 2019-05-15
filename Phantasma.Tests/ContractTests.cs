@@ -13,6 +13,7 @@ using Phantasma.Numerics;
 using static Phantasma.Blockchain.Contracts.Native.EnergyContract;
 using Phantasma.VM;
 using Phantasma.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Tests
 {
@@ -43,7 +44,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.TokenExists(nftSymbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, testUser.Address);
+            var ownerships = new OwnershipSheet(nftSymbol);
+            var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
@@ -51,14 +53,14 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, chain, nftSymbol, tokenROM, tokenRAM);
+            simulator.GenerateNft(owner, testUser.Address, nftSymbol, tokenROM, tokenRAM);
             simulator.EndBlock();
 
             var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract("market", "GetAuctions");
             var previousAuctionCount = auctions.Length;
 
             // verify nft presence on the user post-mint
-            ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, testUser.Address);
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
             var tokenID = ownedTokenList.First();
 
@@ -95,10 +97,10 @@ namespace Phantasma.Tests
             Assert.IsTrue(auctions.Length == previousAuctionCount, "auction ids should be empty at this point");
 
             // verify that the nft was really moved
-            ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, testUser.Address);
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 0, "How does the seller still have one?");
 
-            ownedTokenList = chain.GetTokenOwnerships(nftSymbol).Get(chain.Storage, owner.Address);
+            ownedTokenList = ownerships.Get(chain.Storage, owner.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the buyer does not have what he bought?");
         }
 

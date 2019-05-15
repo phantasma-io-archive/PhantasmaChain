@@ -12,7 +12,6 @@ using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Storage.Utils;
 using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain
@@ -395,7 +394,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CHAINS
-        internal Chain CreateChain(Address owner, string name, Chain parentChain, Block parentBlock, IEnumerable<string> contractNames)
+        internal Chain CreateChain(StorageContext storage, Address owner, string name, Chain parentChain, Block parentBlock, IEnumerable<string> contractNames)
         {
             if (name != RootChainName)
             {
@@ -444,6 +443,15 @@ namespace Phantasma.Blockchain
 
                 var childrenList = GetChildrenListOfChain(parentChain.Name);
                 childrenList.Add<string>(chain.Name);
+
+                var tokenList = this.Tokens;
+                // copy each token current supply relative to parent to the chain new
+                foreach (var tokenSymbol in tokenList)
+                {
+                    var parentSupply = new SupplySheet(tokenSymbol, parentChain, this);
+                    var localSupply = new SupplySheet(tokenSymbol, chain, this);
+                    localSupply.Init(chain.Storage, storage, parentSupply);
+                }
             }
             else
             {
@@ -622,6 +630,11 @@ namespace Phantasma.Blockchain
             var tokenInfo = new TokenInfo(owner, symbol, name, maxSupply, decimals, flags);
             EditToken(symbol, tokenInfo);
 
+            // add to persistent list of tokens
+            var tokenList = this.Tokens.ToList();
+            tokenList.Add(symbol);
+            this.Tokens = tokenList;
+
             return true;
         }
 
@@ -655,60 +668,18 @@ namespace Phantasma.Blockchain
             throw new ChainException($"Token does not exist ({symbol})");
         }
 
-        public BigInteger GetTokenSupply(string symbol)
+        public BigInteger GetTokenSupply(StorageContext storage, string symbol)
         {
             if (!TokenExists(symbol))
             {
                 throw new ChainException($"Token does not exist ({symbol})");
             }
 
-            return EditTokenSupply(symbol, 0);
+            var supplies = new SupplySheet(symbol, RootChain, this);
+            return supplies.GetTotal(storage);
         }
 
-        private BigInteger EditTokenSupply(string symbol, BigInteger change)
-        {
-            if (!TokenExists(symbol))
-            {
-                throw new ChainException($"Token does not exist ({symbol})");
-            }
-
-            var tokenInfo = GetTokenInfo(symbol);
-
-            var key = "supply:" + symbol;
-
-            BigInteger currentSupply;
-            byte[] bytes;
-            if (_vars.ContainsKey(key))
-            {
-                bytes = _vars.Get(key);
-                currentSupply = Serialization.Unserialize<BigInteger>(bytes);
-            }
-            else {
-                currentSupply = 0;
-            }
-
-            currentSupply += change;
-
-            if (currentSupply<0)
-            {
-                throw new ChainException("Invalid negative supply");
-            }
-            else
-            if (tokenInfo.IsCapped && currentSupply > tokenInfo.MaxSupply)
-            {
-                throw new ChainException("Exceeded max supply");
-            }
-
-            if (change != 0)
-            {
-                bytes = Serialization.Serialize(currentSupply);
-                _vars.Set(key, bytes);
-            }
-
-            return currentSupply;
-        }
-
-        internal bool MintTokens(string symbol, StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
+        internal bool MintTokens(string symbol, StorageContext storage, Chain chain, Address target, BigInteger amount)
         {
             if (!TokenExists(symbol))
             {
@@ -727,25 +698,23 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (tokenInfo.IsCapped)
+            var supply = new SupplySheet(symbol, chain, this);
+            if (!supply.Mint(storage, amount, tokenInfo.MaxSupply))
             {
-                if (!supply.Mint(storage, amount))
-                {
-                    return false;
-                }
+                return false;
             }
 
+            var balances = new BalanceSheet(symbol);
             if (!balances.Add(storage, target, amount))
             {
                 return false;
             }
 
-            EditTokenSupply(symbol, amount);
             return true;
         }
 
         // NFT version
-        internal bool MintToken(string symbol)
+        internal bool MintToken(string symbol, StorageContext storage, Chain chain, Address target, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -759,12 +728,23 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            EditTokenSupply(symbol, 1);
+            var supply = new SupplySheet(symbol, chain, this);
+            if (!supply.Mint(storage, 1, tokenInfo.MaxSupply))
+            {
+                return false;
+            }
 
+            var ownerships = new OwnershipSheet(symbol);
+            if (!ownerships.Give(storage, target, tokenID))
+            {
+                return false;
+            }
+
+            EditNFTLocation(symbol, tokenID, chain.Address, target);
             return true;
         }
 
-        internal bool BurnTokens(string symbol, StorageContext storage, BalanceSheet balances, SupplySheet supply, Address target, BigInteger amount)
+        internal bool BurnTokens(string symbol, StorageContext storage, Chain chain, Address target, BigInteger amount)
         {
             if (!TokenExists(symbol))
             {
@@ -782,23 +762,25 @@ namespace Phantasma.Blockchain
             {
                 return false;
             }
+
+            var supply = new SupplySheet(symbol, chain, this);
 
             if (tokenInfo.IsCapped && !supply.Burn(storage, amount))
             {
                 return false;
             }
 
+            var balances = new BalanceSheet(symbol);
             if (!balances.Subtract(storage, target, amount))
             {
                 return false;
             }
 
-            EditTokenSupply(symbol, -amount);
             return true;
         }
 
         // NFT version
-        internal bool BurnToken(string symbol)
+        internal bool BurnToken(string symbol, StorageContext storage, Address target, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -812,11 +794,24 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            EditTokenSupply(symbol, -1);
+            var chain = RootChain;
+            var supply = new SupplySheet(symbol, chain, this);
+
+            if (!supply.Burn(storage, 1))
+            {
+                return false;
+            }
+
+            var ownerships = new OwnershipSheet(symbol);
+            if (!ownerships.Take(storage, target, tokenID))
+            {
+                return false;
+            }
+
             return true;
         }
 
-        internal bool TransferTokens(string symbol, StorageContext storage, BalanceSheet balances, Address source, Address destination, BigInteger amount)
+        internal bool TransferTokens(string symbol, StorageContext storage, Chain chain, Address source, Address destination, BigInteger amount)
         {
             if (!TokenExists(symbol))
             {
@@ -840,6 +835,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            var balances = new BalanceSheet(symbol);
             if (!balances.Subtract(storage, source, amount))
             {
                 return false;
@@ -853,7 +849,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool TransferToken(string symbol, StorageContext storage, OwnershipSheet ownerships, Address source, Address destination, BigInteger ID)
+        internal bool TransferToken(string symbol, StorageContext storage, Chain chain, Address source, Address destination, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -872,21 +868,23 @@ namespace Phantasma.Blockchain
                 throw new Exception("Should be non-fungible");
             }
 
-            if (ID <= 0)
+            if (tokenID <= 0)
             {
                 return false;
             }
 
-            if (!ownerships.Take(storage, source, ID))
+            var ownerships = new OwnershipSheet(symbol);
+            if (!ownerships.Take(storage, source, tokenID))
             {
                 return false;
             }
 
-            if (!ownerships.Give(storage, destination, ID))
+            if (!ownerships.Give(storage, destination, tokenID))
             {
                 return false;
             }
 
+            EditNFTLocation(symbol, tokenID, chain.Address, destination);
             return true;
         }
 
@@ -920,7 +918,7 @@ namespace Phantasma.Blockchain
             return tokenID;
         }
 
-        internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, Address ownerAddress, byte[] rom, byte[] ram)
+        internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, byte[] rom, byte[] ram)
         {
             lock (_tokenContents)
             {
@@ -940,7 +938,7 @@ namespace Phantasma.Blockchain
 
                 var tokenID = GenerateIDForNFT(tokenSymbol);
 
-                var content = new TokenContent(chainAddress, ownerAddress, rom, ram);
+                var content = new TokenContent(chainAddress, chainAddress, rom, ram);
                 contents[tokenID] = content;
 
                 return tokenID;
@@ -966,7 +964,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        internal bool EditNFTLocation(string tokenSymbol, BigInteger tokenID, Address chainAddress, Address owner)
+        private bool EditNFTLocation(string tokenSymbol, BigInteger tokenID, Address chainAddress, Address owner)
         {
             lock (_tokenContents)
             {
@@ -1038,34 +1036,15 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenCreateTx(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, bool useGas)
+        private Transaction TokenInitTx(KeyPair owner)
         {
             var sb = ScriptUtils.BeginScript();
 
-            if (useGas)
-            {
-                sb.AllowGas(owner.Address, Address.Null, 1, 9999);
-            }
-
-            sb.CallContract(ScriptBuilderExtensions.NexusContract, "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags);
-
-            if (symbol == StakingTokenSymbol)
-            {
-                sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, symbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
-            }
-            else
-            if (symbol == FuelTokenSymbol)
-            {
-                // requires staking token to be created previously
-                // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
-                sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
-                sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
-            }
-
-            if (useGas)
-            {
-                sb.SpendGas(owner.Address);
-            }
+            sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
+            // requires staking token to be created previously
+            // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
+            sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
+            sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
 
             var script = sb.EndScript();
 
@@ -1129,14 +1108,20 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy"});
+
+            CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External);
+            CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel);
+            CreateToken(owner.Address, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable);
+
+            CreateToken(owner.Address, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
+            CreateToken(owner.Address, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
+            CreateToken(owner.Address, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
             // create genesis transactions
             var transactions = new List<Transaction>
             {
-                TokenCreateTx(owner, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, false),
-                TokenCreateTx(owner, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, false),
-                TokenCreateTx(owner, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, true),
+                TokenInitTx(owner),
 
                 ChainCreateTx(owner, "privacy"),
                 ChainCreateTx(owner, "vault"),
@@ -1149,10 +1134,6 @@ namespace Phantasma.Blockchain
                 // TODO remove those from here, theyare here just for testing
                 ChainCreateTx(owner, "nacho"),
                 ChainCreateTx(owner, "casino"),
-
-                TokenCreateTx(owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, true),
-                TokenCreateTx(owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, true),
-                TokenCreateTx(owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, true),
 
                 ConsensusStakeCreateTx(owner)
             };

@@ -46,10 +46,6 @@ namespace Phantasma.Blockchain
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
-        private Dictionary<string, BalanceSheet> _tokenBalances = new Dictionary<string, BalanceSheet>();
-        private Dictionary<string, OwnershipSheet> _tokenOwnerships = new Dictionary<string, OwnershipSheet>();
-        private Dictionary<string, SupplySheet> _tokenSupplies = new Dictionary<string, SupplySheet>();
-
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
@@ -263,64 +259,18 @@ namespace Phantasma.Blockchain
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
-        public BalanceSheet GetTokenBalances(string tokenSymbol)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(!tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
-
-            if (_tokenBalances.ContainsKey(tokenSymbol))
-            {
-                return _tokenBalances[tokenSymbol];
-            }
-
-            var sheet = new BalanceSheet(tokenSymbol, this.Storage);
-            _tokenBalances[tokenSymbol] = sheet;
-            return sheet;
-        }
-
-        internal SupplySheet GetTokenSupplies(string tokenSymbol)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(!tokenInfo.IsCapped, "should be capped");
-
-            if (_tokenSupplies.ContainsKey(tokenSymbol))
-            {
-                return _tokenSupplies[tokenSymbol];
-            }
-
-            var parentChainName = Nexus.GetParentChainByName(this.Name);
-
-            var sheet = new SupplySheet(tokenSymbol, parentChainName, this.Name, tokenInfo.MaxSupply);
-            _tokenSupplies[tokenSymbol] = sheet;
-            return sheet;
-        }
-
-        public OwnershipSheet GetTokenOwnerships(string tokenSymbol)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "cannot be fungible");
-
-            if (_tokenOwnerships.ContainsKey(tokenSymbol))
-            {
-                return _tokenOwnerships[tokenSymbol];
-            }
-
-            var sheet = new OwnershipSheet(tokenSymbol);
-            _tokenOwnerships[tokenSymbol] = sheet;
-            return sheet;
-        }
-
+        // NOTE should never be used directly from a contract!
         public BigInteger GetTokenBalance(string tokenSymbol, Address address)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
-                var balances = GetTokenBalances(tokenSymbol);
+                var balances = new BalanceSheet(tokenSymbol);
                 return balances.Get(Storage, address);
             }
             else
             {
-                var ownerships = GetTokenOwnerships(tokenSymbol);
+                var ownerships = new OwnershipSheet(tokenSymbol);
                 var items = ownerships.Get(this.Storage, address);
                 return items.Count();
             }
@@ -332,14 +282,14 @@ namespace Phantasma.Blockchain
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             Throw.If(tokenInfo.IsFungible, "non fungible required");
 
-            var ownerships = GetTokenOwnerships(tokenSymbol);
+            var ownerships = new OwnershipSheet(tokenSymbol);
             return ownerships.GetOwner(this.Storage, tokenID);
         }
 
         // NOTE this lists only nfts owned in this chain
         public IEnumerable<BigInteger> GetOwnedTokens(string tokenSymbol, Address address)
         {
-            var ownership = GetTokenOwnerships(tokenSymbol);
+            var ownership = new OwnershipSheet(tokenSymbol);
             return ownership.Get(this.Storage, address);
         }
 

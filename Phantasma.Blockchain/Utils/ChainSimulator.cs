@@ -214,7 +214,7 @@ namespace Phantasma.Blockchain.Utils
             };
             
             var wrestlerBytes = newWrestler.Serialize();
-            GenerateNft(_owner, nachoAddress, nachoChain, nachoSymbol, new byte[0], wrestlerBytes);
+            GenerateNft(_owner, nachoAddress, nachoSymbol, new byte[0], wrestlerBytes);
 
             EndBlock();
         }
@@ -230,7 +230,7 @@ namespace Phantasma.Blockchain.Utils
                 var nftKey = KeyPair.Generate();
                 _keys.Add(nftKey);
                 var data = new SimNFTData() { A = (byte)_rnd.Next(), B = (byte)_rnd.Next(), C = (byte)_rnd.Next() };
-                GenerateNft(_owner, nftKey.Address, Nexus.RootChain, tokenSymbol, Serialization.Serialize(data), new byte[0]);
+                GenerateNft(_owner, nftKey.Address, tokenSymbol, Serialization.Serialize(data), new byte[0]);
             }
         }
 
@@ -524,9 +524,10 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateChain(KeyPair source, Chain parentchain, string name)
         {
+            var contracts = new string[] { name };
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).
-                CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name).
+                CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name, contracts).
                 SpendGas(source.Address).
                 EndScript();
             var tx = MakeTransaction(source, Nexus.RootChain, script);
@@ -574,8 +575,9 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
-        public Transaction GenerateNft(KeyPair source, Address destAddress, Chain chain, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction GenerateNft(KeyPair source, Address destAddress, string tokenSymbol, byte[] rom, byte[] ram)
         {
+            var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).

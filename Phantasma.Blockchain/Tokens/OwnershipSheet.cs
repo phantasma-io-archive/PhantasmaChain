@@ -7,7 +7,7 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public class OwnershipSheet
+    public struct OwnershipSheet
     {
         private byte[] _prefixItems;
         private byte[] _prefixOwner;

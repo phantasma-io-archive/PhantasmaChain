@@ -9,8 +9,6 @@ namespace Phantasma.Blockchain.Tokens
 {
     public class SupplySheet
     {
-        private BigInteger _maxBalance;
-
         private byte[] _prefix;
 
         //private Dictionary<Address, BigInteger> _childBalances = new Dictionary<Address, BigInteger>();
@@ -18,11 +16,11 @@ namespace Phantasma.Blockchain.Tokens
         private string _localName;
         private string _parentName;
 
-        public SupplySheet(string symbol, string parentName, string localName, BigInteger maxBalance)
+        public SupplySheet(string symbol, Chain chain, Nexus nexus)
         {
+            var parentName = nexus.GetParentChainByName(chain.Name);
             this._parentName = parentName;
-            this._localName = localName;
-            this._maxBalance = maxBalance;
+            this._localName = chain.Name;
             this._prefix = Encoding.ASCII.GetBytes(symbol);
         }
 
@@ -162,28 +160,8 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        // TODO only can be done in rootchain
-        public bool Burn(StorageContext storage, BigInteger amount)
+        public BigInteger GetTotal(StorageContext storage)
         {
-            var localBalance = Get(storage, _localName);
-            if (localBalance < amount)
-            {
-                return false;
-            }
-
-            localBalance -= amount;
-            Set(storage, _localName, localBalance);
-
-            return true;
-        }
-
-        public bool Mint(StorageContext storage, BigInteger amount)
-        {
-            if (!string.IsNullOrEmpty(this._parentName))
-            {
-                throw new Exception("Minting only allowed in root chain");
-            }
-
             var localBalance = Get(storage, _localName);
 
             BigInteger existingSupply = localBalance;
@@ -197,18 +175,57 @@ namespace Phantasma.Blockchain.Tokens
                 existingSupply += childBalance;
             }
 
-            var expectedSupply = existingSupply + amount;
+            return existingSupply;
+        }
 
-            if (expectedSupply > _maxBalance)
+        // NOTE if not capped supply, then pass 0 or negative number to maxBalance
+        public bool Mint(StorageContext storage, BigInteger amount, BigInteger maxBalance)
+        {
+            if (amount <= 0)
             {
                 return false;
             }
 
+            if (maxBalance > 0)
+            {
+                var existingSupply = GetTotal(storage);
+                var expectedSupply = existingSupply + amount;
+                if (expectedSupply > maxBalance)
+                {
+                    return false;
+                }
+            }
+
+            var localBalance = Get(storage, _localName);
             localBalance += amount;
             Set(storage, _localName, localBalance);
 
             return true;
         }
 
+        public bool Burn(StorageContext storage, BigInteger amount)
+        {
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            var localBalance = Get(storage, _localName);
+            if (localBalance < amount)
+            {
+                return false;
+            }
+
+            localBalance -= amount;
+            Set(storage, _localName, localBalance);
+
+            return true;
+        }
+
+        internal void Init(StorageContext localStorage, StorageContext parentStorage, SupplySheet parentSupply)
+        {
+            var parentBalance = parentSupply.Get(parentStorage, parentSupply._localName);
+            Set(localStorage, _parentName, parentBalance);
+        }
     }
 }

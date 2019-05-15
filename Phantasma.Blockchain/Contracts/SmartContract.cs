@@ -164,7 +164,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             var receivedType = arg.GetType();
 
-            if (expectedType.IsArray)
+            if (expectedType.IsArray && expectedType != typeof(byte[]))
             {
                 var dic = (Dictionary<VMObject, VMObject>)arg;
                 var elementType = expectedType.GetElementType();

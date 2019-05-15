@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
@@ -36,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //Runtime.Expect(token != null, "invalid token");
             //Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
 
-            var balances = this.Runtime.Chain.GetTokenBalances(Nexus.FuelTokenSymbol);
+            var balances = new BalanceSheet(Nexus.FuelTokenSymbol);
             var maxAmount = price * limit;
 
             var balance = balances.Get(this.Storage, from);
@@ -78,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
             */
 
-            var balances = this.Runtime.Chain.GetTokenBalances(Nexus.FuelTokenSymbol);
+            var balances = new BalanceSheet(Nexus.FuelTokenSymbol);
 
             var leftoverAmount = availableAmount - requiredAmount;
 
