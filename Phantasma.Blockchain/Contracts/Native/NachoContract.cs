@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Phantasma.Blockchain.Storage;
-using Phantasma.Core.Utils;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.IO;
 using Phantasma.Numerics;
@@ -1839,7 +1839,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public int turn;
         public BigInteger lastTurnHash;
         public BattleState state;
-        public uint timestamp;
+        public Timestamp time;
         public int[] counters;
     }
 
@@ -1854,9 +1854,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public string nickname;
         public int battleCount;
         public PraticeLevel praticeLevel;
-        public uint mojoTime;
-        public uint gymTime;
-        public uint perfumeTime;
+        public Timestamp mojoTime;
+        public Timestamp gymTime;
+        public Timestamp perfumeTime;
         public WrestlerLocation location;
         public StatKind trainingStat;
         public byte gymBoostStamina;
@@ -1873,7 +1873,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte maskOverrideCheck;
         public BigInteger itemID;
         public string[] comments;
-        public uint roomTime;
+        public Timestamp roomTime;
         public byte[] moveOverrides;
         public BigInteger auctionID;
         public WrestlerFlags flags;
@@ -1904,7 +1904,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoSale
     {
-        public uint time;
+        public Timestamp time;
         public BigInteger auctionID;
         public BigInteger price;
         public Address buyer;
@@ -1912,7 +1912,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoAccount
     {
-        public uint creationTime;
+        public Timestamp creationTime;
         public BigInteger battleID;
         public string unused;
         public string neoAddress;
@@ -1920,14 +1920,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         public int[] counters;
         public string comment;
         public Address referal;
-        public uint lastTime;
+        public Timestamp lastTime;
         public TrophyFlag trophies;
         public int ELO;
 
         public BattleMode queueMode;
         public BigInteger queueBet;
-        public uint queueJoinTime;
-        public uint queueUpdateTime;
+        public Timestamp queueJoinTime;
+        public Timestamp queueUpdateTime;
         public Address queueVersus;
         public PraticeLevel queueLevel;
         public BigInteger[] queueWrestlerIDs;
@@ -1942,16 +1942,16 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoReferral
     {
         public Address address;
-        public uint referalTime;
+        public Timestamp referalTime;
         public BigInteger bonusAmount;
-        public uint stakeTime;
+        public Timestamp stakeTime;
         public BigInteger stakeAmount;
         public int bonusPercentage;
     }
 
     public struct NachoPotEntry
     {
-        public uint timestamp;
+        public Timestamp timestamp;
         public Address address;
         public uint wins;
     }
@@ -1961,7 +1961,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger currentBalance;
         public BigInteger lastBalance;
         public Address[] lastWinners;
-        public uint timestamp;
+        public Timestamp timestamp;
         public bool claimed;
         public NachoPotEntry[] entries;
     }
@@ -1976,14 +1976,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoConfig
     {
-        public uint time;
-        public bool suspendedTransfers;
+        public Timestamp    time;
+        public bool         suspendedTransfers;
     }
 
     public struct NachoVersusInfo
     {
         public Address challenger;
-        public uint timestamp;
+        public Timestamp time;
         public BigInteger bet;
         public byte[] levels;
     }
@@ -3777,7 +3777,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(SpendFromAccountBalance(from, stakeAmount, wrestlerID), "not enough funds");
             }
 
-            BigInteger last_time = wrestler.roomTime;
+            Timestamp last_time = wrestler.roomTime;
             var current_time = GetCurrentTime();
 
             var diff = current_time - last_time;
@@ -3932,7 +3932,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.None, "location failed");
 
-            BigInteger last_time = wrestler.gymTime;
+            Timestamp last_time = wrestler.gymTime;
             var current_time = GetCurrentTime();
 
             var diff = current_time - last_time;
@@ -6373,7 +6373,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return false;
             }
 
-            var diff = GetCurrentTime() - battle.timestamp;
+            var diff = GetCurrentTime() - battle.time;
             if (diff < 0 || diff >= Constants.SECONDS_PER_HOUR)
             {
                 return true;
@@ -8699,9 +8699,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region PROTOCOL
-        private uint GetCurrentTime()
+        private Timestamp GetCurrentTime()
         {
-            return Runtime.Time.Value;
+            return Runtime.Time;
         }
         #endregion
 
