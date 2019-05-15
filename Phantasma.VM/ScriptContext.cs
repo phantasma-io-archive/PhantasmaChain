@@ -187,7 +187,8 @@ namespace Phantasma.VM
                             Expect(src < frame.Registers.Length);
                             Expect(dst < frame.Registers.Length);
 
-                            var val = VMObject.CastTo(frame.Registers[src], type);
+                            var val = frame.Registers[src];
+                            val = VMObject.CastTo(val, type);
 
                             frame.Registers[dst] = val;
                             break;
@@ -627,7 +628,7 @@ namespace Phantasma.VM
 
                             if (val == 0)
                             {
-                                frame.Registers[dst].SetValue(0);
+                                frame.Registers[dst].SetValue(BigInteger.Zero);
                             }
                             else
                             {

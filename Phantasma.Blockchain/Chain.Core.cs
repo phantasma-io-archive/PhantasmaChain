@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain
 
         public StorageContext Storage { get; private set; }
 
-        public uint TransactionCount => _transactions.Count;
+        public uint TransactionCount => (uint)_transactions.Count;
 
         public bool IsRoot => this.Name == Nexus.RootChainName;
         #endregion

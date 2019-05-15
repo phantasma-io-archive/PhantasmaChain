@@ -1158,8 +1158,7 @@ namespace Phantasma.Blockchain
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(Name);
-            writer.WriteAddress(GenesisAddress);
-            writer.WriteHash(GenesisHash);
+            GenesisAddress.SerializeData(writer);
 
             int chainCount = _chainMap.Count;
             writer.WriteVarInt(chainCount);
