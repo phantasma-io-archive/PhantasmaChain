@@ -758,7 +758,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int BaseStatSplit = MaxBaseStat / 3;
         public const int MaxTrainStat = 256; // this is the total for all 3 stats together!
 
-        public static int CalculateWrestlerStat(uint level, int baseStat, int trainStat)
+        public static int CalculateWrestlerStat(int level, int baseStat, int trainStat)
         {
             level *= 6; // 16 * 6.25 = 100
             var result = (baseStat + 100) * 2;
@@ -781,7 +781,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return finalPercent;
         }
 
-        public static uint CalculateWrestlerLevel(uint XP)
+        public static int CalculateWrestlerLevel(int XP)
         {
             return 1 + (Sqrt(XP) / 61);
         }
@@ -795,7 +795,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return (int)((levelXp * 100) / requiredXp);
         }
 
-        public static int CalculateDamage(uint level, int atk, int def, int rnd, int power)
+        public static int CalculateDamage(int level, int atk, int def, int rnd, int power)
         {
             var result = (int)((2 * level) / 5) + 2;
             result = (result * (power * atk) / def);
@@ -816,9 +816,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // calculates integer approximation of Sqrt(n)
-        public static uint Sqrt(uint n)
+        public static int Sqrt(int n)
         {
-            return (uint)System.Math.Sqrt(n);
+            return (int)Math.Sqrt(n);
             /*int root = n / 2;
 
             while (n < root * root)
@@ -948,10 +948,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const decimal NEOPurchaseFee = 0.15m;
 
         // minimum XP to reach each level. where the level = index of array
-        public static readonly uint[] EXPERIENCE_MAP = new uint[] { 0, 0, 3721, 14884, 33489, 59536, 93025, 133956, 182329, 238144, 301401, 372100, 450241, 535824, 628849, 729316, 837225, 952576, 1075369, 1205604, 1343281 };
+        public static readonly int[] EXPERIENCE_MAP = new int[] { 0, 0, 3721, 14884, 33489, 59536, 93025, 133956, 182329, 238144, 301401, 372100, 450241, 535824, 628849, 729316, 837225, 952576, 1075369, 1205604, 1343281 };
 
         // minimum vip points to reach each vip level. where the level = index of array
-        public static readonly uint[] VIP_LEVEL_POINTS = new uint[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
+        public static readonly int[] VIP_LEVEL_POINTS = new int[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
 
         public static readonly Dictionary<int, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<int, DailyRewards>()
         {
@@ -1009,11 +1009,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const uint MAX_LEVEL = 16;
 
         // average expected XP per battle (taking account all battles from lv 1 to max level)
-        public const uint AVERAGE_XP_GAIN = 4372;
+        public const int AVERAGE_XP_GAIN = 4372;
 
-        public const uint BOT_EXPERIENCE_PERCENT = 80;
+        public const int BOT_EXPERIENCE_PERCENT = 80;
 
-        public static uint WRESTLER_MAX_XP => EXPERIENCE_MAP[MAX_LEVEL];
+        public static int WRESTLER_MAX_XP => EXPERIENCE_MAP[MAX_LEVEL];
 
         // minimum XP that a luchador can receive per battle
         public const int MINIMUM_XP_PER_BATTLE = 20;
@@ -1245,8 +1245,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         // default ELO rating of a player
         public const int DEFAULT_SCORE = 1000;
 
-        public static readonly uint SECONDS_PER_DAY = 86400;
-        public static readonly uint SECONDS_PER_HOUR = 3600;
+        public static readonly int SECONDS_PER_DAY = 86400;
+        public static readonly int SECONDS_PER_HOUR = 3600;
 
         public const int MAX_GYM_BOOST = 255;
         public const int PILL_GYM_BOOST = 16;
@@ -1849,7 +1849,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Address owner;
         public int currentMojo;
         public int maxMojo;
-        public uint experience;
+        public int experience;
         public int score;
         public string nickname;
         public int battleCount;
@@ -1953,7 +1953,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public Timestamp timestamp;
         public Address address;
-        public uint wins;
+        public int wins;
     }
 
     public struct NachoPot
@@ -2017,7 +2017,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public int initialAtk;
         public int initialDef;
         public int maxStamina;
-        public uint level;
+        public int level;
         public BigInteger seed;
         public int power;
         public ItemKind item;
@@ -3948,7 +3948,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetWrestler(wrestlerID, wrestler);
         }
 
-        private uint GetMaxGymXPForWrestler(NachoWrestler wrestler, ItemKind itemKind)
+        private int GetMaxGymXPForWrestler(NachoWrestler wrestler, ItemKind itemKind)
         {
             var maxXPPerSession = Constants.SECONDS_PER_DAY;
 
@@ -3960,12 +3960,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return maxXPPerSession;
         }
 
-        private uint GetObtainedGymXP(NachoWrestler wrestler, uint maxXPPerSession, ItemKind itemKind)
+        private int GetObtainedGymXP(NachoWrestler wrestler, int maxXPPerSession, ItemKind itemKind)
         {
             var start_time = wrestler.gymTime;
             var current_time = GetCurrentTime();
 
-            uint diff = (current_time - start_time);
+            int diff = (int)(current_time.Value - start_time.Value);
             if (diff < Constants.SECONDS_PER_HOUR)
             {
                 return 0;
@@ -5905,7 +5905,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             TerminateMatch(battleID, battle, state_A, state_B, avgLevel);
         }
 
-        private void TerminateMatch(BigInteger battleID, NachoBattle battle, LuchadorBattleState state_A, LuchadorBattleState state_B, uint avgLevel)
+        private void TerminateMatch(BigInteger battleID, NachoBattle battle, LuchadorBattleState state_A, LuchadorBattleState state_B, int avgLevel)
         {
             if (battle.bet > 0)
             {
@@ -6016,12 +6016,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (battle.mode != BattleMode.Versus)
             {
-                uint factor = (100 * avgLevel) / 4; // apply a curve
-                uint receivedXP = Constants.AVERAGE_XP_GAIN * factor;
+                int factor = (100 * avgLevel) / 4; // apply a curve
+                int receivedXP = Constants.AVERAGE_XP_GAIN * factor;
                 receivedXP = receivedXP / 100;
                 if (receivedXP < Constants.MINIMUM_XP_PER_BATTLE) receivedXP = Constants.MINIMUM_XP_PER_BATTLE;
 
-                var XP = new uint[2];
+                var XP = new int[2];
                 var mojo_change = new int[2];
 
                 switch (battle.state)
