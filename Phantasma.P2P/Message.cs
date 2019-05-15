@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Phantasma.Core;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Network.P2P.Messages;
 
 namespace Phantasma.Network.P2P

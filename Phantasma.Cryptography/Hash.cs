@@ -1,9 +1,10 @@
 ﻿using System;
+using System.IO;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using Phantasma.IO;
-using System.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Cryptography
 {

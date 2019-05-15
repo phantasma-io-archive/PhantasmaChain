@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
-using Phantasma.IO;
-using Phantasma.Blockchain.Storage;
 using Phantasma.Core;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
+using Phantasma.Storage.Context;
+using Phantasma.Storage;
 
 namespace Phantasma.Blockchain.Contracts
 {

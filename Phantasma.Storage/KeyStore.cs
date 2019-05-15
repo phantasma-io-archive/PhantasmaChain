@@ -1,11 +1,12 @@
 ﻿using Phantasma.Core;
 using Phantasma.Core.Utils;
+using Phantasma.Storage.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Phantasma.IO
+namespace Phantasma.Storage
 {
     public interface IKeyValueStoreAdapter
     {
@@ -158,14 +159,14 @@ namespace Phantasma.IO
     {
         public readonly string Name;
 
-        private IKeyValueStoreAdapter _adapter;
+        public readonly IKeyValueStoreAdapter Adapter;
 
-        public uint Count => _adapter.Count;
+        public uint Count => Adapter.Count;
 
         // TODO increase default size
         public KeyValueStore(IKeyValueStoreAdapter adapter)
         {
-            _adapter = adapter;
+            Adapter = adapter;
         }
 
         public V this[K key]
@@ -178,13 +179,13 @@ namespace Phantasma.IO
         {
             var keyBytes = Serialization.Serialize(key);
             var valBytes = Serialization.Serialize(value);
-            _adapter.SetValue(keyBytes, valBytes);
+            Adapter.SetValue(keyBytes, valBytes);
         }
 
         public V Get(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            var bytes = _adapter.GetValue(keyBytes);
+            var bytes = Adapter.GetValue(keyBytes);
             if (bytes == null)
             {
                 Throw.If(bytes == null, "item not found in keystore");
@@ -196,18 +197,18 @@ namespace Phantasma.IO
         public bool ContainsKey(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            return _adapter.ContainsKey(keyBytes);
+            return Adapter.ContainsKey(keyBytes);
         }
 
         public bool Remove(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            return _adapter.Remove(keyBytes);
+            return Adapter.Remove(keyBytes);
         }
 
         public void Visit(Action<K, V> visitor)
         {
-            _adapter.Visit((keyBytes, valBytes) =>
+            Adapter.Visit((keyBytes, valBytes) =>
             {
                 var key = Serialization.Unserialize<K>(keyBytes);
                 var val = Serialization.Unserialize<V>(valBytes);

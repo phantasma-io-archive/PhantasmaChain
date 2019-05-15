@@ -1,5 +1,5 @@
 ﻿using LunarLabs.Parser;
-using Phantasma.IO;
+using Phantasma.Storage;
 using System;
 
 namespace Phantasma.API

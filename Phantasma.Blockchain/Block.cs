@@ -5,8 +5,9 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Core;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Blockchain
 {

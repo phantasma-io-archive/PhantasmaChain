@@ -8,7 +8,6 @@
     <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
-    <ProjectReference Include="..\Phantasma.IO\Phantasma.IO.csproj" />
   </ItemGroup>
 
 </Project>

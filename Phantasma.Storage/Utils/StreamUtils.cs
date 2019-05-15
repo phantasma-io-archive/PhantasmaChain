@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Phantasma.IO
+namespace Phantasma.Storage.Utils
 {
     public static class StreamExtensions
     {

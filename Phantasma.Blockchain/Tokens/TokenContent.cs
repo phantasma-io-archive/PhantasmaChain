@@ -1,7 +1,8 @@
 ﻿using System.IO;
 using Phantasma.Core;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Blockchain.Tokens
 {

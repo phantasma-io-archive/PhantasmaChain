@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace Phantasma.Storage
+namespace Phantasma.Storage.Sharding
 {
     public class StorageBlock
     {

@@ -3,14 +3,10 @@ using System.Text;
 using Phantasma.Core;
 using Phantasma.Numerics;
 
-/**
- * A matrix over the 8-bit Galois field.
- *
- * This class is not performance-critical, so the implementations
- * are simple and straightforward.
- */
+// A matrix over the 8-bit Galois field.
+// This class is not performance-critical, so the implementation is simple and straightforward
 
-namespace Phantasma.Storage
+namespace Phantasma.Storage.Sharding
 {
     public class Matrix
     {

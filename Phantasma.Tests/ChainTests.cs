@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Tokens;
+using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Utils;
@@ -66,7 +66,9 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(rootChain != null);
             Assert.IsTrue(rootChain.BlockHeight > 0);
-            Assert.IsTrue(rootChain.ChildChains.Any());
+
+            var children = nexus.GetChildChainsByName(rootChain.Name);
+            Assert.IsTrue(children.Any());
 
             Assert.IsTrue(nexus.IsValidator(owner.Address));
 

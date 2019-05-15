@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
-using Phantasma.IO;
-using System.IO;
 using Phantasma.Core.Types;
+using Phantasma.Storage.Utils;
+using Phantasma.Storage;
 
 namespace Phantasma.VM
 {

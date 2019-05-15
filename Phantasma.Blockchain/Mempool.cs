@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
 
 namespace Phantasma.Blockchain
 {

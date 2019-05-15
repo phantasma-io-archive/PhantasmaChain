@@ -5,7 +5,8 @@ using System.Text;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Cryptography.Ring
 {

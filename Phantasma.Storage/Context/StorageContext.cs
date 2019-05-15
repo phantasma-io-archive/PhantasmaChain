@@ -1,11 +1,8 @@
 ﻿using System.Text;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Cryptography;
-using Phantasma.IO;
 using Phantasma.Numerics;
-using Phantasma.VM.Utils;
+using Phantasma.Storage.Utils;
 
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public abstract class StorageContext
     {

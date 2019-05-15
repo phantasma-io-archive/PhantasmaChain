@@ -1,8 +1,7 @@
 ﻿using Phantasma.Core;
-using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public struct StorageChangeSetEntry
     {

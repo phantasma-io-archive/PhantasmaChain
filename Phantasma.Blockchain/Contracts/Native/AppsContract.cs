@@ -1,5 +1,5 @@
-﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {

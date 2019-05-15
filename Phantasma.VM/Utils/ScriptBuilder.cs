@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Phantasma.Core.Types;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Numerics;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.VM.Utils
 {

@@ -1,9 +1,10 @@
 ﻿using Phantasma.Core;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Cryptography;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Network.P2P.Messages
 {

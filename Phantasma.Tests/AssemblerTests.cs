@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
 using Phantasma.Core.Log;
 using Phantasma.Cryptography;
-using Phantasma.VM.Utils;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
 using Phantasma.VM;

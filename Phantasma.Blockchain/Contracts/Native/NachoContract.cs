@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Phantasma.Blockchain.Storage;
-using Phantasma.Core.Utils;
+using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native

@@ -6,13 +6,14 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Storage;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Storage.Utils;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain
 {
@@ -23,6 +24,7 @@ namespace Phantasma.Blockchain
         private static readonly string ChainAddressMapKey = "chain.addr.";
         private static readonly string ChainParentNameKey = "chain.parent.";
         private static readonly string ChainParentBlockKey = "chain.block.";
+        private static readonly string ChainChildrenBlockKey = "chain.children.";
 
         public static readonly string GasContractName = "gas";
         public static readonly string TokenContractName = "token";
@@ -351,7 +353,6 @@ namespace Phantasma.Blockchain
                 case "governance":  contract = new GovernanceContract(); break;
                 case "account":  contract  = new AccountContract(); break;
                 case "friends": contract  = new FriendContract(); break;
-                case "oracle": contract  = new OracleContract(); break;
                 case "exchange": contract  = new ExchangeContract(); break;
                 case "market":    contract  = new MarketContract(); break;
                 case "energy":   contract  = new EnergyContract(); break;
@@ -440,6 +441,9 @@ namespace Phantasma.Blockchain
             {
                 this._vars.Set(ChainParentNameKey + chain.Name, Encoding.UTF8.GetBytes(parentChain.Name));
                 this._vars.Set(ChainParentBlockKey + chain.Name, parentBlock.Hash.ToByteArray());
+
+                var childrenList = GetChildrenListOfChain(parentChain.Name);
+                childrenList.Add<string>(chain.Name);
             }
             else
             {
@@ -502,6 +506,37 @@ namespace Phantasma.Blockchain
             }
 
             throw new Exception("Parent name not found for chain: " + chainName);
+        }
+
+        public IEnumerable<string> GetChildChainsByAddress(Address chainAddress)
+        {
+            var chain = FindChainByAddress(chainAddress);
+            if (chain == null)
+            {
+                return null;
+            }
+
+            return GetChildChainsByName(chain.Name);
+        }
+
+        public IEnumerable<string> GetChildChainsByName(string chainName)
+        {
+            var list = GetChildrenListOfChain(chainName);
+            var count = (int)list.Count();
+            var names = new string[count];
+            for (int i=0; i<count; i++)
+            {
+                names[i] = list.Get<string>(i);
+            }
+
+            return names;
+        }
+
+        private StorageList GetChildrenListOfChain(string chainName)
+        {
+            var key = Encoding.UTF8.GetBytes(ChainChildrenBlockKey + chainName);
+            var list = new StorageList(key, new KeyStoreStorage(_vars.Adapter));
+            return list;
         }
 
         public Hash GetParentBlockByName(string chainName)

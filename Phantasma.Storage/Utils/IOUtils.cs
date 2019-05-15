@@ -1,10 +1,9 @@
-﻿using Phantasma.Core;
-using Phantasma.Numerics;
+﻿using Phantasma.Numerics;
 using System;
 using System.IO;
 using System.Text;
 
-namespace Phantasma.IO
+namespace Phantasma.Storage.Utils
 {
     public static class IOUtils
     {

@@ -7,9 +7,9 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.IO;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
+using Phantasma.Storage;
 
 namespace Phantasma.Blockchain.Utils
 {

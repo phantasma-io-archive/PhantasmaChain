@@ -5,8 +5,9 @@ using System;
 using Phantasma.Numerics;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Core.Utils;
-using Phantasma.IO;
+using Phantasma.Storage;
 using System.IO;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Cryptography
 {

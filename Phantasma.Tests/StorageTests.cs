@@ -1,17 +1,9 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
-using System.Reflection;
 using System.Collections.Generic;
-using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
-using Phantasma.VM.Contracts;
-using Phantasma.Core.Utils;
-using Phantasma.Blockchain.Storage;
-using Phantasma.VM;
-using Phantasma.VM.Utils;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Tests
 {

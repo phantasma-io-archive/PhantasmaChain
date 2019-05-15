@@ -2,7 +2,8 @@
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.VM.Utils
 {

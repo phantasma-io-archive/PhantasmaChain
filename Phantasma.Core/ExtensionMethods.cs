@@ -8,6 +8,10 @@ namespace Phantasma.Core
 {
     public static class ExtensionMethods
     {
+        public static byte[] AsByteArray(this string source) { return Encoding.UTF8.GetBytes(source); }
+
+        public static string AsString(this byte[] source) { return Encoding.UTF8.GetString(source); }
+
         public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
         {
             foreach (var item in collection)

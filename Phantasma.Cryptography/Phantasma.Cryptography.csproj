@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Phantasma.IO\Phantasma.IO.csproj" />
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
+    <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
   </ItemGroup>
 
 </Project>

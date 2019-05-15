@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
@@ -13,7 +13,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Storage;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain
 {
@@ -225,33 +225,6 @@ namespace Phantasma.Blockchain
             }
 
             Nexus.PluginTriggerBlock(this, block);
-        }
-
-        private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();
-        public IEnumerable<Chain> ChildChains => _childChains.Values;
-
-        public Chain FindChildChain(Address address)
-        {
-            Throw.If(address == Address.Null, "invalid address");
-
-            foreach (var childChain in _childChains.Values)
-            {
-                if (childChain.Address == address)
-                {
-                    return childChain;
-                }
-            }
-
-            foreach (var childChain in _childChains.Values)
-            {
-                var result = childChain.FindChildChain(address);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
-            return null;
         }
 
         public bool ContainsTransaction(Hash hash)

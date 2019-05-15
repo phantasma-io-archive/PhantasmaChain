@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Blockchain.Contracts
 {

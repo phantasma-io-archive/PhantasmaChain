@@ -1,4 +1,4 @@
-﻿namespace Phantasma.Storage
+﻿namespace Phantasma.Storage.Sharding
 {
     public struct Shard
     {

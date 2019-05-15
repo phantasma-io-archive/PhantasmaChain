@@ -8,11 +8,10 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Storage;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.VM;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.API
 {

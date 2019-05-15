@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using Phantasma.API;
-using Phantasma.Blockchain.Storage;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Utils;
@@ -12,8 +11,8 @@ using Phantasma.Blockchain;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
 using static Phantasma.Blockchain.Contracts.Native.EnergyContract;
-using Phantasma.IO;
 using Phantasma.VM;
+using Phantasma.Storage;
 
 namespace Phantasma.Tests
 {
