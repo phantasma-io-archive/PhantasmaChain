@@ -1987,5 +1987,65 @@ namespace Phantasma.Tests
             Assert.IsTrue(userConfig.time > 0);
             Assert.IsTrue(userConfig.suspendedTransfers == false);
         }
+
+        public struct NachoAccountTestStruct
+        {
+            public Timestamp creationTime;
+            public BigInteger battleID;
+            public string unused;
+            public string neoAddress;
+            public AccountFlags flags;
+            public int[] counters;
+            public string comment;
+            public Address referal;
+            public Timestamp lastTime;
+            public TrophyFlag trophies;
+            public int ELO;
+
+            public BattleMode queueMode;
+            public BigInteger queueBet;
+            public Timestamp queueJoinTime;
+            public Timestamp queueUpdateTime;
+            public Address queueVersus;
+            public PraticeLevel queueLevel;
+            public BigInteger[] queueWrestlerIDs;
+            public Address lastOpponent;
+
+            public BigInteger vipPoints;
+            public Faction faction;
+
+            //public BigInteger avatarID;
+        }
+
+        [TestMethod]
+        public void TestGetNachoAccount()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, 100000000);
+            simulator.EndBlock();
+
+            var script = ScriptUtils.BeginScript().CallContract("nacho", "GetAccount", new object[] { testUser.Address }).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
+
+            var api = new NexusAPI(nexus);
+            var apiResult = (ScriptResult)api.InvokeRawScript("nacho", Base16.Encode(script));
+
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytes = Base16.Decode(apiResult.result);
+            var resultObj = Serialization.Unserialize<VMObject>(objBytes);
+
+            // finally as last step, convert it to a C# struct
+            var userAccount = resultObj.ToStruct<NachoAccountTestStruct>();
+
+            Assert.IsTrue(userAccount.ELO == 0);
+            Assert.IsTrue(userAccount.creationTime > 0);
+        }
     }
 }
