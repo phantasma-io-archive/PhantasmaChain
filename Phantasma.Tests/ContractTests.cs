@@ -805,6 +805,10 @@ namespace Phantasma.Tests
             proxyList = (EnergyProxy[])simulator.Nexus.RootChain.InvokeContract("energy", "GetProxies", testUser.Address);
             Assert.IsTrue(proxyList.Length == 0);
 
+            var api = new NexusAPI(nexus);
+            var script = ScriptUtils.BeginScript().CallContract("energy", "GetProxies", testUser.Address).EndScript();
+            var apiResult = api.InvokeRawScript("main", Base16.Encode(script));
+
             //-----------
             //Add and remove 90% proxy: should pass
             simulator.BeginBlock();
@@ -817,6 +821,8 @@ namespace Phantasma.Tests
             proxyList = (EnergyProxy[])simulator.Nexus.RootChain.InvokeContract("energy", "GetProxies", testUser.Address);
             Assert.IsTrue(proxyList.Length == 1);
             Assert.IsTrue(proxyList[0].percentage == 90);
+
+            apiResult = api.InvokeRawScript("main", Base16.Encode(script));
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>

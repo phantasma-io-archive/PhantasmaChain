@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct EnergyProxy
     {
         public Address address;
-        public byte percentage;
+        public BigInteger percentage;
     }
 
     public struct EnergyMaster

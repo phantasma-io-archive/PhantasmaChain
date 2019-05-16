@@ -868,9 +868,13 @@ namespace Phantasma.VM
             }
             else
             {
+                var targetType = VMObject.GetVMType(srcType);
+
                 VMObject result;
 
-                if (level == 0 && srcType.IsStructOrClass())
+                bool isKnownType = typeof(BigInteger)== srcType || typeof(ISerializable).IsAssignableFrom(srcType);
+
+                if (srcType.IsStructOrClass() && !isKnownType)
                 {
                     var children = new Dictionary<VMObject, VMObject>();
 
@@ -890,10 +894,6 @@ namespace Phantasma.VM
                         result = new VMObject();
                         result.SetValue(children);
                         return result;
-                    }
-                    else
-                    {
-                        throw new Exception("Invalid cast, no fields available");
                     }
                 }
 
