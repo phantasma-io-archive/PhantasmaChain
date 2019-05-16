@@ -109,15 +109,15 @@ namespace Phantasma.Blockchain.Utils
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
 
-            GenerateToken(_owner, Constants.NACHO_SYMBOL, "Nachomen", 0, 0, TokenFlags.Transferable);
-            GenerateToken(_owner, Constants.WRESTLER_SYMBOL, "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
-            GenerateToken(_owner, Constants.ITEM_SYMBOL, "Nachomen Item", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, NachoConstants.NACHO_SYMBOL, "Nachomen", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, NachoConstants.WRESTLER_SYMBOL, "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, NachoConstants.ITEM_SYMBOL, "Nachomen Item", 0, 0, TokenFlags.Transferable);
             EndBlock();
 
             var market = Nexus.FindChainByName("market");
             BeginBlock();
 
-            var nachoToken = Nexus.FindTokenBySymbol(Constants.NACHO_SYMBOL);
+            var nachoToken = Nexus.FindTokenBySymbol(NachoConstants.NACHO_SYMBOL);
             RandomSpreadNFT(nachoToken, 150);
 
             GenerateSetTokenMetadata(_owner, nachoToken, "details", "https://nacho.men/luchador/*");
@@ -172,7 +172,7 @@ namespace Phantasma.Blockchain.Utils
 
             BeginBlock();
 
-            var wrestlerToken = Nexus.FindTokenBySymbol(Constants.WRESTLER_SYMBOL);
+            var wrestlerToken = Nexus.FindTokenBySymbol(NachoConstants.WRESTLER_SYMBOL);
 
             var newWrestler = new NachoWrestler()
             {

@@ -1949,12 +1949,6 @@ namespace Phantasma.Tests
             Assert.IsTrue(tempB[1].address == testUserC.Address);
         }
 
-        public struct NachoConfigTestStruct
-        {
-            public Timestamp time;
-            public bool suspendedTransfers;
-        }
-
         [TestMethod]
         public void TestGetNachoConfig()
         {
@@ -1982,40 +1976,12 @@ namespace Phantasma.Tests
             var resultObj = Serialization.Unserialize<VMObject>(objBytes);
 
             // finally as last step, convert it to a C# struct
-            var userConfig = resultObj.ToStruct<NachoConfigTestStruct>();
+            var userConfig = resultObj.ToStruct<NachoConfig>();
 
             Assert.IsTrue(userConfig.time > 0);
             Assert.IsTrue(userConfig.suspendedTransfers == false);
         }
 
-        public struct NachoAccountTestStruct
-        {
-            public Timestamp creationTime;
-            public BigInteger battleID;
-            public string unused;
-            public string neoAddress;
-            public AccountFlags flags;
-            public int[] counters;
-            public string comment;
-            public Address referal;
-            public Timestamp lastTime;
-            public TrophyFlag trophies;
-            public int ELO;
-
-            public BattleMode queueMode;
-            public BigInteger queueBet;
-            public Timestamp queueJoinTime;
-            public Timestamp queueUpdateTime;
-            public Address queueVersus;
-            public PraticeLevel queueLevel;
-            public BigInteger[] queueWrestlerIDs;
-            public Address lastOpponent;
-
-            public BigInteger vipPoints;
-            public Faction faction;
-
-            //public BigInteger avatarID;
-        }
 
         [TestMethod]
         public void TestGetNachoAccount()
@@ -2042,10 +2008,9 @@ namespace Phantasma.Tests
             var resultObj = Serialization.Unserialize<VMObject>(objBytes);
 
             // finally as last step, convert it to a C# struct
-            var userAccount = resultObj.ToStruct<NachoAccountTestStruct>();
+            var userAccount = resultObj.ToStruct<NachoAccount>();
 
-            Assert.IsTrue(userAccount.ELO == 0);
-            Assert.IsTrue(userAccount.creationTime > 0);
+            Assert.IsTrue(userAccount.ELO == NachoConstants.DEFAULT_ELO);
         }
     }
 }

@@ -642,7 +642,7 @@ namespace Phantasma.VM
                 return VMType.Bytes;
             }
 
-            if (type == typeof(BigInteger))
+            if (type == typeof(BigInteger) || type== typeof(int))
             {
                 return VMType.Number;
             }
@@ -673,7 +673,8 @@ namespace Phantasma.VM
 
         public static VMObject FromObject(object obj)
         {
-            var type = GetVMType(obj.GetType());
+            var objType = obj.GetType();
+            var type = GetVMType(objType);
             Throw.If(type == VMType.None, "not a valid object");
 
             var result = new VMObject();
@@ -683,7 +684,14 @@ namespace Phantasma.VM
                 case VMType.Bool: result.SetValue((bool)obj); break;
                 case VMType.Bytes: result.SetValue((byte[])obj, VMType.Bytes); break;
                 case VMType.String: result.SetValue((string)obj); break;
-                case VMType.Number: result.SetValue((BigInteger)obj); break;
+                case VMType.Number:
+                    if (obj.GetType() == typeof(int))
+                    {
+                        obj = new BigInteger((int)obj); // HACK
+                    }
+                    result.SetValue((BigInteger)obj);
+                    break;
+
                 case VMType.Enum: result.SetValue((Enum)obj); break;
                 case VMType.Object: result.SetValue(obj); break;
                 case VMType.Timestamp:
@@ -807,7 +815,7 @@ namespace Phantasma.VM
                 // here we check if the types mismatch
                 // in case of getting a byte[] instead of an object, we try unserializing the bytes in a different approach
                 // NOTE this should not be necessary often, but is already getting into black magic territory...
-                if (field.FieldType != typeof(byte[]) && val.GetType() == typeof(byte[]))
+                if (val != null && field.FieldType != typeof(byte[]) && val.GetType() == typeof(byte[]))
                 {
                     if (typeof(ISerializable).IsAssignableFrom(field.FieldType))
                     {
@@ -822,6 +830,12 @@ namespace Phantasma.VM
                         }
                         val = temp;
                     }
+                }
+
+                // HACK allows treating uints as enums, without this it is impossible to transform between C# objects and VM objects
+                if (field.FieldType.IsEnum && !val.GetType().IsEnum)
+                {
+                    val = Enum.Parse(field.FieldType, val.ToString()); 
                 }
 
                 field.SetValue(boxed, val);
@@ -896,6 +910,7 @@ namespace Phantasma.VM
         public void SerializeData(BinaryWriter writer)
         {
             writer.Write((byte)this.Type);
+            var dataType = this.Data.GetType();
 
             if (this.Type == VMType.Struct)
             {
@@ -911,6 +926,7 @@ namespace Phantasma.VM
             if (this.Type == VMType.Object)
             {
                 var obj = this.Data as ISerializable;
+
                 if (obj != null)
                 {
                     var bytes = Serialization.Serialize(obj);
@@ -918,7 +934,6 @@ namespace Phantasma.VM
                 }
                 else
                 {
-                    var dataType = this.Data.GetType();
                     throw new Exception($"Objects of type {dataType.Name} cannot be serialized");
                 }
             }
@@ -977,7 +992,11 @@ namespace Phantasma.VM
                     this.Data = reader.ReadByteArray();
                     break;
 
-                case VMType.Enum: // TODO
+                case VMType.Enum:
+                    this.Type = VMType.Enum;
+                    this.Data = (uint)reader.ReadVarInt();
+                    break;
+
                 default:
                     throw new Exception($"invalid unserialize: type {this.Type}");
             }
