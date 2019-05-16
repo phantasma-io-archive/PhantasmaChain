@@ -920,6 +920,9 @@ namespace Phantasma.Blockchain
 
         internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, byte[] rom, byte[] ram)
         {
+            Throw.IfNull(rom, nameof(rom));
+            Throw.IfNull(ram, nameof(ram));
+
             lock (_tokenContents)
             {
                 KeyValueStore<BigInteger, TokenContent> contents;
