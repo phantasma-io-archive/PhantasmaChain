@@ -1829,6 +1829,69 @@ namespace Phantasma.Tests
             public Address address;
         }
 
+        private byte[] GetScriptForFriends(Address target)
+        {
+            var scriptString = new string[]
+            {
+                "load r0 \"friends\"",
+                "ctx r0 r1",
+
+                $"load r0 0x{Base16.Encode( target.PublicKey)}",
+                "push r0",
+                "extcall \"Address()\"",
+
+                "load r0 \"GetFriends\"",
+                "push r0",
+                "switch r1",
+
+                "alias r4 $friends",
+                "alias r5 $address",
+                "alias r6 $name",
+                "alias r7 $i",
+                "alias r8 $count",
+                "alias r9 $loopflag",
+                "alias r10 $friendname",
+                "alias r11 $friendnamelist",
+
+                "pop r0",
+                "cast r0 $friends #Struct",
+                "count $friends $count",
+
+                "load $i 0",
+                "@loop: ",
+                "lt $i $count $loopflag",
+                "jmpnot $loopflag @finish",
+
+                "get $friends $address $i",
+                "push $address",
+                "call @lookup",
+                "pop $name",
+
+                "load r0 \"name\"",
+                "load r1 \"address\"",
+                "put $name $friendname[r0]",
+                "put $address $friendname[r1]",
+
+                "put $friendname $friendnamelist $i",
+
+                "inc $i",
+                "jmp @loop",
+                "@finish: push $friendnamelist",
+                "ret",
+
+                "@lookup: load r0 \"account\"",
+                "ctx r0 r1",
+                "load r0 \"LookUpAddress\"",
+                "push r0",
+                "switch r1",
+                "ret"
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            return script;
+        }
+
         [TestMethod]
         public void TestFriendArray()
         {
@@ -1868,75 +1931,18 @@ namespace Phantasma.Tests
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
-            var scriptString = new string[]
-            {
-                "load r0 \"friends\"",
-                "ctx r0 r1",
+            var scriptA = GetScriptForFriends(testUserA.Address);
+            var resultA = nexus.RootChain.InvokeScript(scriptA);
+            Assert.IsTrue(resultA != null);
 
-                $"load r0 0x{Base16.Encode( testUserA.Address.PublicKey)}",
-                "push r0",
-                "extcall \"Address()\"",
-
-                "load r0 \"GetFriends\"",
-                "push r0",
-                "switch r1",
-
-                "alias r4 $friends",
-                "alias r5 $address",
-                "alias r6 $name",
-                "alias r7 $i",
-                "alias r8 $count",
-                "alias r9 $loopflag",
-                "alias r10 $friendname",
-                "alias r11 $friendnamelist",
-
-                "pop r0",
-                "cast r0 $friends #Struct",
-                "count $friends $count",
-
-                "load $i 0",
-                "@loop: ",
-                "lt $i $count $loopflag",
-                "jmpnot $loopflag @finish",
-
-                "get $friends $address $i",
-                "push $address",
-                "call @lookup",
-                "pop $name",
-
-                "load r0 \"name\"",
-                "load r1 \"address\"",
-
-                "put $name $friendname[r0]",
-                "put $address $friendname[r1]",
-
-                "put $friendname $friendnamelist $i",
-
-                "inc $i",
-                "jmp @loop",
-                "@finish: push $friendnamelist",
-                "ret",
-
-                "@lookup: load r0 \"account\"",
-                "ctx r0 r1",
-                "load r0 \"LookUpAddress\"",
-                "push r0",
-                "switch r1",
-                "ret"
-            };
-
-            var script = AssemblerUtils.BuildScript(scriptString);
-            var result = nexus.RootChain.InvokeScript(script);
-            Assert.IsTrue(result != null);
-
-            var tempA = result.ToArray<FriendTestStruct>();
+            var tempA = resultA.ToArray<FriendTestStruct>();
             Assert.IsTrue(tempA.Length == 2);
             Assert.IsTrue(tempA[0].address == testUserB.Address);
             Assert.IsTrue(tempA[1].address == testUserC.Address);
 
             // we also test that the API can handle complex return types
             var api = new NexusAPI(nexus);
-            var apiResult = (ScriptResult) api.InvokeRawScript("main", Base16.Encode(script));
+            var apiResult = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(scriptA));
 
             // NOTE objBytes will contain a serialized VMObject
             var objBytes = Base16.Decode(apiResult.result);
@@ -1947,7 +1953,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(tempB.Length == 2);
             Assert.IsTrue(tempB[0].address == testUserB.Address);
             Assert.IsTrue(tempB[1].address == testUserC.Address);
+
+            // check what happens when no friends available
+            var scriptB = GetScriptForFriends(testUserB.Address);
+            var apiResultB = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(scriptB));
+
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytesB = Base16.Decode(apiResultB.result);
+            var resultEmpty = Serialization.Unserialize<VMObject>(objBytesB);
+            Assert.IsTrue(resultEmpty != null);
         }
+
 
         [TestMethod]
         public void TestGetNachoConfig()

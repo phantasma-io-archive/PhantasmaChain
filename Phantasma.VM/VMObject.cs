@@ -910,6 +910,11 @@ namespace Phantasma.VM
         public void SerializeData(BinaryWriter writer)
         {
             writer.Write((byte)this.Type);
+            if (this.Type == VMType.None)
+            {
+                return;
+            }
+
             var dataType = this.Data.GetType();
 
             if (this.Type == VMType.Struct)
@@ -995,6 +1000,11 @@ namespace Phantasma.VM
                 case VMType.Enum:
                     this.Type = VMType.Enum;
                     this.Data = (uint)reader.ReadVarInt();
+                    break;
+
+                case VMType.None:
+                    this.Type = VMType.None;
+                    this.Data = null;
                     break;
 
                 default:
