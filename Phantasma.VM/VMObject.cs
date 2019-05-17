@@ -835,7 +835,7 @@ namespace Phantasma.VM
                 // HACK allows treating uints as enums, without this it is impossible to transform between C# objects and VM objects
                 if (field.FieldType.IsEnum && !val.GetType().IsEnum)
                 {
-                    val = Enum.Parse(field.FieldType, val.ToString()); 
+                    val = Enum.Parse(field.FieldType, val.ToString());
                 }
 
                 field.SetValue(boxed, val);
@@ -872,7 +872,7 @@ namespace Phantasma.VM
 
                 VMObject result;
 
-                bool isKnownType = typeof(BigInteger)== srcType || typeof(ISerializable).IsAssignableFrom(srcType);
+                bool isKnownType = typeof(BigInteger) == srcType || typeof(Timestamp) == srcType || typeof(ISerializable).IsAssignableFrom(srcType);
 
                 if (srcType.IsStructOrClass() && !isKnownType)
                 {
