@@ -109,9 +109,9 @@ namespace Phantasma.Blockchain.Utils
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
 
-            GenerateToken(_owner, Constants.NACHO_SYMBOL, "Nachomen", 0, 0, TokenFlags.Transferable);
-            GenerateToken(_owner, Constants.WRESTLER_SYMBOL, "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
-            GenerateToken(_owner, Constants.ITEM_SYMBOL, "Nachomen Item", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, NachoConstants.NACHO_SYMBOL, "Nachomen", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, NachoConstants.WRESTLER_SYMBOL, "Nachomen Luchador", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, NachoConstants.ITEM_SYMBOL, "Nachomen Item", 0, 0, TokenFlags.Transferable);
             EndBlock();
 
             var market = Nexus.FindChainByName("market");
