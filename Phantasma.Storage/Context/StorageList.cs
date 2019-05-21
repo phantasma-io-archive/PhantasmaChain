@@ -1,10 +1,10 @@
-﻿using Phantasma.Core.Utils;
-using Phantasma.IO;
+﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Numerics;
-using Phantasma.VM.Utils;
+using Phantasma.Storage.Utils;
 using System;
 
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public struct StorageList : IStorageCollection
     {
@@ -56,7 +56,7 @@ namespace Phantasma.Blockchain.Storage
 
         public static BigInteger Count(this StorageList list)
         {
-            var result = list.Context.Get(CountKey(list.BaseKey)).AsLargeInteger();
+            var result = list.Context.Get(CountKey(list.BaseKey)).AsBigInteger();
             return result;
         }
 
@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Storage
             var size = list.Count();
             if (index < 0 || index >= size)
             {
-                throw new ContractException("outside of range");
+                throw new StorageException("outside of range");
             }
 
             var key = ElementKey(list.BaseKey, index);
@@ -97,7 +97,7 @@ namespace Phantasma.Blockchain.Storage
             var size = list.Count();
             if (index < 0 || index >= size)
             {
-                throw new ContractException("outside of range");
+                throw new StorageException("outside of range");
             }
 
             var key = ElementKey(list.BaseKey, index);
@@ -120,7 +120,7 @@ namespace Phantasma.Blockchain.Storage
             var size = list.Count();
             if (index < 0 || index >= size)
             {
-                throw new ContractException("outside of range");
+                throw new StorageException("outside of range");
             }
 
             var indexKey = ElementKey(list.BaseKey, index);
@@ -144,7 +144,7 @@ namespace Phantasma.Blockchain.Storage
         {
             if (minIndex > maxIndex)
             {
-                throw new ContractException("outside of range");
+                throw new StorageException("outside of range");
             }
 
             int total = 1 + (int)(maxIndex - minIndex);

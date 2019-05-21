@@ -1,14 +1,13 @@
-﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Core.Utils;
+﻿using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System.Text;
 using System.Linq;
-using System.Collections.Generic;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public class OwnershipSheet
+    public struct OwnershipSheet
     {
         private byte[] _prefixItems;
         private byte[] _prefixOwner;
@@ -45,13 +44,12 @@ namespace Phantasma.Blockchain.Tokens
             {
                 var ownerKey = GetKeyForOwner(tokenID);
 
-                var temp = storage.Get(ownerKey);
-                if (temp == null || temp.Length != Address.PublicKeyLength)
+                if (storage.Has(ownerKey))
                 {
-                    return Address.Null;
+                    return storage.Get<Address>(ownerKey);
                 }
 
-                return new Address(temp);
+                return Address.Null;
             }
         }
 

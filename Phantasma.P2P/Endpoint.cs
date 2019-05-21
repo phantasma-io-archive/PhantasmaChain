@@ -2,7 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Network.P2P
 {

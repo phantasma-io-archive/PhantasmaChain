@@ -8,9 +8,10 @@ using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Storage;
-using Phantasma.IO;
 using Phantasma.Core.Types;
+using Phantasma.Storage.Utils;
+using Phantasma.Storage.Context;
+using Phantasma.Storage;
 
 namespace Phantasma.Blockchain
 {
@@ -72,11 +73,12 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, out byte[] result)
+        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReaderDelegate oracleReader, out byte[] result)
         {
             result = null;
 
             var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet, false);
+            runtime.OracleReader = oracleReader;
 
             var state = runtime.Execute();
 

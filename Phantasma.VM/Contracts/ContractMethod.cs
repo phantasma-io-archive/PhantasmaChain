@@ -1,7 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
 using Phantasma.Core;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.VM.Contracts
 {

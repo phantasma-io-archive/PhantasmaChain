@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.IO.Compression;
 
-namespace Phantasma.IO
+namespace Phantasma.Storage.Utils
 {
 	public static class Compression
 	{

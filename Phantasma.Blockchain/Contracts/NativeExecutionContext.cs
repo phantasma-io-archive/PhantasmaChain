@@ -111,36 +111,10 @@ namespace Phantasma.Blockchain.Contracts
             for (int i = 0; i < args.Length; i++)
             {
                 var arg = stack.Pop();
-
-                var temp = arg.Data;
-
-                if (temp is string)
-                {
-                    switch (method.parameters[i])
-                    {
-                        // TODO this currently is casting any type of object, not just addresses!
-                        // when a string is passed instead of an address we do an automatic lookup and replace
-                        case VMType.Object:
-                            var name = (string)temp;
-                            var runtime = (RuntimeVM)frame.VM;
-                            var address = runtime.Nexus.LookUpName(name);
-                            temp = address;
-                            break;
-
-                        case VMType.Number:
-                            var value = (string)temp;
-                            if (BigInteger.TryParse(value, out BigInteger number))
-                            {
-                                temp = number;
-                            }
-                            break;
-                    }
-                }
-                
-                args[i] = temp;
+                args[i] = arg.Data;
             }
 
-            var result = this.Contract.CallInternalMethod(method.name, args);
+            var result = this.Contract.CallInternalMethod((RuntimeVM) frame.VM, method.name, args);
 
             if (method.returnType != VMType.None)
             {

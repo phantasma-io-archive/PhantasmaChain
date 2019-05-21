@@ -1,8 +1,6 @@
 ﻿using System;
-using Phantasma.IO;
 
-
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public class KeyStoreStorage : StorageContext
     {

@@ -1,12 +1,12 @@
 ﻿using Phantasma.Core;
 using Phantasma.Core.Utils;
-using Phantasma.Cryptography;
+using Phantasma.Storage.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Phantasma.IO
+namespace Phantasma.Storage
 {
     public interface IKeyValueStoreAdapter
     {
@@ -15,13 +15,14 @@ namespace Phantasma.IO
         bool ContainsKey(byte[] key);
         bool Remove(byte[] key);
         uint Count { get; }
+        void Visit(Action<byte[], byte[]> visitor);
     }
 
     public class MemoryStore : IKeyValueStoreAdapter
     {
-        private Dictionary<byte[], byte[]> _cache = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
+        private Dictionary<byte[], byte[]> _entries = new Dictionary<byte[], byte[]>(new ByteArrayComparer());
 
-        public uint Count => (uint)_cache.Count;
+        public uint Count => (uint)_entries.Count;
 
         public MemoryStore()
         {
@@ -35,14 +36,14 @@ namespace Phantasma.IO
                 return;
             }
 
-            _cache[key] = value;
+            _entries[key] = value;
         }
 
         public byte[] GetValue(byte[] key)
         {
             if (ContainsKey(key))
             {
-                return _cache[key];
+                return _entries[key];
             }
 
             return null;
@@ -50,7 +51,7 @@ namespace Phantasma.IO
 
         public bool ContainsKey(byte[] key)
         {
-            var result = _cache.ContainsKey(key);
+            var result = _entries.ContainsKey(key);
             return result;
         }
 
@@ -58,12 +59,20 @@ namespace Phantasma.IO
         {
             if (ContainsKey(key))
             {
-                _cache.Remove(key);
+                _entries.Remove(key);
                 return true;
             }
             else
             {
                 return false;
+            }
+        }
+
+        public void Visit(Action<byte[], byte[]> visitor)
+        {
+            foreach (var entry in _entries)
+            {
+                visitor(entry.Key, entry.Value);
             }
         }
     }
@@ -74,20 +83,14 @@ namespace Phantasma.IO
 
         public uint Count => (uint)_cache.Count;
 
-        private string fileName;
+        private string path;
 
-        public BasicDiskStore(string fileName)
+        public BasicDiskStore(string path)
         {
-            var path = Path.GetDirectoryName(fileName);
-            if (!Directory.Exists(path))
+            this.path = path;
+            if (File.Exists(path))
             {
-                Directory.CreateDirectory(path);
-            }
-
-            this.fileName = fileName;
-            if (File.Exists(fileName))
-            {
-                var lines = File.ReadAllLines(fileName);
+                var lines = File.ReadAllLines(path);
                 foreach (var line in lines)
                 {
                     var temp = line.Split(',');
@@ -95,6 +98,14 @@ namespace Phantasma.IO
                     var val = Convert.FromBase64String(temp[1]);
                     _cache[key] = val;
                 }
+            }
+        }
+
+        public void Visit(Action<byte[], byte[]> visitor)
+        {
+            foreach (var entry in _cache)
+            {
+                visitor(entry.Key, entry.Value);
             }
         }
 
@@ -111,7 +122,7 @@ namespace Phantasma.IO
                 _cache[key] = value;
             }
 
-            File.WriteAllLines(fileName, _cache.Select(x => Convert.ToBase64String(x.Key) + ","+ Convert.ToBase64String(x.Value)));
+            File.WriteAllLines(path, _cache.Select(x => Convert.ToBase64String(x.Key) + "," + Convert.ToBase64String(x.Value)));
         }
 
         public byte[] GetValue(byte[] key)
@@ -144,18 +155,18 @@ namespace Phantasma.IO
         }
     }
 
-    public class KeyValueStore<K, V> 
+    public class KeyValueStore<K, V>
     {
         public readonly string Name;
 
-        private IKeyValueStoreAdapter _adapter;
+        public readonly IKeyValueStoreAdapter Adapter;
 
-        public uint Count => _adapter.Count;
+        public uint Count => Adapter.Count;
 
         // TODO increase default size
         public KeyValueStore(IKeyValueStoreAdapter adapter)
         {
-            _adapter = adapter;
+            Adapter = adapter;
         }
 
         public V this[K key]
@@ -168,13 +179,13 @@ namespace Phantasma.IO
         {
             var keyBytes = Serialization.Serialize(key);
             var valBytes = Serialization.Serialize(value);
-            _adapter.SetValue(keyBytes, valBytes);
+            Adapter.SetValue(keyBytes, valBytes);
         }
 
         public V Get(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            var bytes = _adapter.GetValue(keyBytes);
+            var bytes = Adapter.GetValue(keyBytes);
             if (bytes == null)
             {
                 Throw.If(bytes == null, "item not found in keystore");
@@ -186,13 +197,23 @@ namespace Phantasma.IO
         public bool ContainsKey(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            return _adapter.ContainsKey(keyBytes);
+            return Adapter.ContainsKey(keyBytes);
         }
 
         public bool Remove(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            return _adapter.Remove(keyBytes);
+            return Adapter.Remove(keyBytes);
         }
-    }
+
+        public void Visit(Action<K, V> visitor)
+        {
+            Adapter.Visit((keyBytes, valBytes) =>
+            {
+                var key = Serialization.Unserialize<K>(keyBytes);
+                var val = Serialization.Unserialize<V>(valBytes);
+                visitor(key, val);
+            });
+        }
+}
 }

@@ -1255,4 +1255,10 @@ public void SetBit(uint bitNum)
             return this ^ (One << bit);
         }
     }
+
+    public static class BigIntegerExtensions
+    {
+        public static BigInteger AsBigInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
+        public static byte[] AsByteArray(this BigInteger source) { return source.ToByteArray(); }
+    }
 }

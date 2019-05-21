@@ -1,8 +1,8 @@
-﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
+﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -62,7 +62,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakeAmount = GetRequiredStake();
 
             var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
-            var balances = Runtime.Chain.GetTokenBalances(token.Symbol);
+            var balances = new BalanceSheet(token.Symbol);
             var balance = balances.Get(this.Storage, address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
@@ -97,7 +97,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var stakeAmount = entry.stake;
             var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
-            var balances = Runtime.Chain.GetTokenBalances(token.Symbol);
+            var balances = new BalanceSheet(token.Symbol);
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 

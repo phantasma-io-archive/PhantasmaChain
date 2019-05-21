@@ -1,7 +1,7 @@
-﻿using Phantasma.IO;
+﻿using Phantasma.Storage.Utils;
 using System;
 
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public struct StorageValue : IStorageCollection
     {

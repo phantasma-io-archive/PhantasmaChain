@@ -177,14 +177,33 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    // args: byte src_reg, dst_reg, byte type
+                    case Opcode.CAST:
+                        {
+                            var src = Read8();
+                            var dst = Read8();
+                            var type = (VMType)Read8();
+
+                            Expect(src < frame.Registers.Length);
+                            Expect(dst < frame.Registers.Length);
+
+                            var val = frame.Registers[src];
+                            val = VMObject.CastTo(val, type);
+
+                            frame.Registers[dst] = val;
+                            break;
+                        }
+
                     // args: byte src_reg
                     case Opcode.PUSH:   
                         {
                             var src = Read8();
                             Expect(src < frame.Registers.Length);
 
+                            var val = frame.Registers[src];
+
                             var temp = new VMObject();
-                            temp.Copy(frame.Registers[src]);
+                            temp.Copy(val);
                             stack.Push(temp);
                             break;
                         }
@@ -314,9 +333,8 @@ namespace Phantasma.VM
 
                                 if (temp.Context == this)
                                 {
-                                    frame.VM.PopFrame();
                                     InstructionPointer = frame.VM.PopFrame();
-                                    Expect(InstructionPointer == this.Script.Length);
+                                    //Expect(InstructionPointer == this.Script.Length);
                                 }
                                 else
                                 { 
@@ -439,6 +457,34 @@ namespace Phantasma.VM
 
                             var src_array = frame.Registers[src].AsByteArray();
                             frame.Registers[dst].SetValue(src_array.Length);
+                            break;
+                        }
+
+                    // args: byte src_reg, byte dest_reg
+                    case Opcode.COUNT:
+                        {
+                            var src = Read8();
+                            var dst = Read8();
+
+                            Expect(src < frame.Registers.Length);
+                            Expect(dst < frame.Registers.Length);
+
+                            var val = frame.Registers[src];
+                            int count;
+
+                            switch (val.Type)
+                            {
+                                case VMType.Struct:
+                                    {
+                                        var children = val.GetChildren();
+                                        count = children.Count;
+                                        break;
+                                    }
+
+                                default: count = 1; break;
+                            }
+
+                            frame.Registers[dst].SetValue(count);
                             break;
                         }
 
@@ -582,7 +628,7 @@ namespace Phantasma.VM
 
                             if (val == 0)
                             {
-                                frame.Registers[dst].SetValue(0);
+                                frame.Registers[dst].SetValue(BigInteger.Zero);
                             }
                             else
                             {
@@ -677,7 +723,7 @@ namespace Phantasma.VM
                             Expect(dst < frame.Registers.Length);
                             Expect(keyReg < frame.Registers.Length);
 
-                            var key = frame.Registers[keyReg].AsString();
+                            var key = frame.Registers[keyReg];
                             var value = frame.Registers[src];
 
                             frame.Registers[dst].SetKey(key, value);
@@ -690,13 +736,16 @@ namespace Phantasma.VM
                         {
                             var src = Read8();
                             var dst = Read8();
-                            var key = Read8();
+                            var keyReg = Read8();
 
                             Expect(src < frame.Registers.Length);
                             Expect(dst < frame.Registers.Length);
-                            Expect(key < frame.Registers.Length);
+                            Expect(keyReg < frame.Registers.Length);
 
-                            frame.Registers[dst] = frame.Registers[src].GetKey(frame.Registers[key].AsString());
+                            var key = frame.Registers[keyReg];
+                            var val = frame.Registers[src].GetKey(key);
+
+                            frame.Registers[dst] = val;
 
                             break;
                         }

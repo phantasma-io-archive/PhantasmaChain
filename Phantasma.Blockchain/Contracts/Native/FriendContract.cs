@@ -1,11 +1,12 @@
-﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class FriendContract : SmartContract
     {
+        public static readonly int FRIEND_LIMIT_PER_ACCOUNT = 100;
+
         public override string Name => "friends";
         internal StorageMap _friendMap;
 
@@ -18,6 +19,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(friend != target, "friend must be different from target address");
 
             var friendList = _friendMap.Get<Address, StorageList>(target);
+            Runtime.Expect(friendList.Count() < FRIEND_LIMIT_PER_ACCOUNT, "friend limit reached");
             Runtime.Expect(!friendList.Contains(friend), "already is friend");
 
             friendList.Add(friend);

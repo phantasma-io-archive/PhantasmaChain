@@ -7,7 +7,7 @@ using Phantasma.Numerics;
  * https://www.backblaze.com/open-source-reed-solomon.html
  */
 
-namespace Phantasma.Storage
+namespace Phantasma.Storage.Sharding
 {
     public class ReedSolomon
     {

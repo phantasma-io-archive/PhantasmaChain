@@ -1,8 +1,9 @@
 using System;
-using Phantasma.Blockchain.Storage;
+using Phantasma.Storage.Context;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -140,11 +141,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var symbol = Nexus.StakingTokenSymbol;
             var token = Runtime.Nexus.GetTokenInfo(symbol);
-            var stakeBalances = Runtime.Chain.GetTokenBalances(token.Symbol);
-            var stakeSupplies = Runtime.Chain.GetTokenSupplies(token.Symbol);
 
             var totalAmount = MasterClaimGlobalAmount;
-            Runtime.Expect(Runtime.Nexus.MintTokens(token.Symbol, Runtime.ChangeSet, stakeBalances, stakeSupplies, Runtime.Chain.Address, totalAmount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(token.Symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, totalAmount), "mint failed");
 
             var listSize = _mastersList.Count();
 
@@ -166,7 +165,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     transferAmount += leftovers;
                 }
 
-                Runtime.Expect(Runtime.Nexus.TransferTokens(token.Symbol, Runtime.ChangeSet, stakeBalances, Runtime.Chain.Address, targetMaster.address, transferAmount), "transfer failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(token.Symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, targetMaster.address, transferAmount), "transfer failed");
 
                 totalAmount -= transferAmount;
 
@@ -187,7 +186,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(StakeToFuel(stakeAmount) >= 1, "invalid amount");
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var stakeBalances = Runtime.Chain.GetTokenBalances(Nexus.StakingTokenSymbol);
+            var stakeBalances = new BalanceSheet(Nexus.StakingTokenSymbol);
             var balance = stakeBalances.Get(this.Storage, from);
 
             var currentStake = _stakes.Get<Address, EnergyAction>(from);
@@ -220,7 +219,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var nextClaim = GetMasterClaimDate(2);
 
-                _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim});
+                _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim });
                 Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
             }
 
@@ -249,7 +248,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(days >= 1, "waiting period required");
 
             var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
-            var balances = Runtime.Chain.GetTokenBalances(token.Symbol);
+            var balances = new BalanceSheet(token.Symbol);
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= amount, "not enough balance");
 
@@ -380,7 +379,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
 
-            var fuelBalances = Runtime.Chain.GetTokenBalances(Nexus.FuelTokenSymbol);
             var fuelAmount = unclaimedAmount;
 
             // distribute to proxy list
@@ -405,7 +403,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             BigInteger sum = 0;
             BigInteger availableAmount = fuelAmount;
-            var fuelSupplies = Runtime.Chain.GetTokenSupplies(Nexus.FuelTokenSymbol);
+            
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
@@ -415,13 +413,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, fuelBalances, fuelSupplies, proxy.address, proxyAmount), "proxy fuel minting failed");
+                    Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, proxy.address, proxyAmount), "proxy fuel minting failed");
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, fuelBalances, fuelSupplies, stakeAddress, availableAmount), "fuel minting failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, stakeAddress, availableAmount), "fuel minting failed");
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
@@ -579,7 +577,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var entry = votingLogbook.Get<VotingLogEntry>(i);
 
                 if (i > 0)
-                    Runtime.Expect(votingLogbook.Get<VotingLogEntry>(i-1).timestamp <= entry.timestamp, "Voting list became unsorted!");
+                    Runtime.Expect(votingLogbook.Get<VotingLogEntry>(i - 1).timestamp <= entry.timestamp, "Voting list became unsorted!");
 
                 power += CalculateEntryVotingPower(entry, time);
             }
@@ -592,7 +590,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             BigInteger baseMultiplier = 100;
 
             BigInteger votingMultiplier = baseMultiplier;
-            var diff = (currentTime - entry.timestamp)/86400;
+            var diff = (currentTime - entry.timestamp) / 86400;
 
             var votingBonus = diff < MaxVotingPowerBonus ? diff : MaxVotingPowerBonus;
 
@@ -613,7 +611,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 genesisTimestamp = genesisBlock.Timestamp;
             }
-           
+
             if (StakeToFuel(totalStake + unclaimedPartials) <= 0)
                 return 0;
 
@@ -651,7 +649,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         currentDate = endDate.AddDays(1);   //to force the while to break on next condition evaluation
                     }
 
-                    reward += StakeToFuel(totalStake) * daysInCurrentHalving / halvingAmount ;
+                    reward += StakeToFuel(totalStake) * daysInCurrentHalving / halvingAmount;
                 }
 
                 nextHalvingDate = nextHalvingDate.AddYears(2);

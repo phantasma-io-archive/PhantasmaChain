@@ -1,21 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
-using Phantasma.Core.Utils;
 using Phantasma.Core.Log;
 using Phantasma.Cryptography;
-using Phantasma.VM.Utils;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Storage;
-using Phantasma.Core;
-using Phantasma.CodeGen;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
 using Phantasma.VM;
@@ -26,6 +15,28 @@ namespace Phantasma.Tests
     public class AssemblerTests
     {
 
+        [TestMethod]
+        public void Alias()
+        {
+            string[] scriptString;
+            TestVM vm;
+
+            scriptString = new string[]
+            {
+                $"alias r1, $hello",
+                $"alias r2, $world",
+                $"load $hello, 3",
+                $"load $world, 2",
+                $"add r1, r2, r3",
+                $"push r3",
+                $"ret"
+            };
+
+            vm = ExecuteScript(scriptString);
+
+            var result = vm.Stack.Pop().AsNumber();
+            Assert.IsTrue(result == 5);
+        }
 
         #region RegisterOps
 
@@ -230,37 +241,25 @@ namespace Phantasma.Tests
         [TestMethod]
         public void Call()
         {
-            string[] scriptString;
-            TestVM vm;
+            var initVal = 2;
+            var targetVal = initVal + 1;
 
-            var args = new List<List<int>>()
+            var scriptString = new string[]
             {
-                new List<int>() {1, 2},
+                $@"load r1, {initVal}",
+                @"call @label",
+                @"push r1",
+                @"ret",
+                $"@label: inc r1",
+                $"ret"
             };
 
-            for (int i = 0; i < args.Count; i++)
-            {
-                var argsLine = args[i];
-                var r1 = argsLine[0];
-                var target = argsLine[1];
+            var vm = ExecuteScript(scriptString);
 
-                scriptString = new string[]
-                {
-                    $@"load r1, {r1}",
-                    @"call @label",
-                    @"push r1",
-                    @"ret",
-                    $"@label: inc r1",
-                    $"ret"
-                };
+            Assert.IsTrue(vm.Stack.Count == 1);
 
-                vm = ExecuteScript(scriptString);
-
-                Assert.IsTrue(vm.Stack.Count == 1);
-
-                var result = vm.Stack.Pop().AsNumber();
-                Assert.IsTrue(result == target);
-            }
+            var result = vm.Stack.Pop().AsNumber();
+            Assert.IsTrue(result == targetVal);
         }
 
         [TestMethod]
@@ -1891,6 +1890,35 @@ namespace Phantasma.Tests
             Assert.IsTrue(demoValue.address == result.address);
         }
 
+        [TestMethod]
+        public void ArrayInterop()
+        {
+            TestVM vm;
+
+            var demoArray = new BigInteger[] { 1, 42, 1024 };
+
+            var script = new List<string>();
+
+            for (int i=0; i<demoArray.Length; i++)
+            {
+                script.Add($"load r1 {i}");
+                script.Add($"load r2 {demoArray[i]}");
+                script.Add($"put r2 r3 r1");
+            }
+            script.Add("push r3");
+            script.Add("ret");
+
+            vm = ExecuteScript(script);
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var temp = vm.Stack.Pop();
+            Assert.IsTrue(temp != null);
+
+            var result = temp.ToArray<BigInteger>();
+            Assert.IsTrue(result.Length == demoArray.Length);
+        }
+
         #endregion
 
         #region Data
@@ -2159,9 +2187,9 @@ namespace Phantasma.Tests
         #endregion
 
         #region AuxFunctions
-        private TestVM ExecuteScript(string[] scriptString, Action<TestVM> beforeExecute = null)
+        private TestVM ExecuteScript(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
         {
-            var script = BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString);
 
             var keys = KeyPair.Generate();
             var nexus = new Nexus(new ConsoleLogger());
@@ -2178,37 +2206,6 @@ namespace Phantasma.Tests
         }
 
 
-        private byte[] BuildScript(string[] lines)
-        {
-            IEnumerable<Semanteme> semantemes = null;
-            try
-            {
-                semantemes = Semanteme.ProcessLines(lines);
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error parsing the script");
-            }
-
-            var sb = new ScriptBuilder();
-            byte[] script = null;
-
-            try
-            {
-                foreach (var entry in semantemes)
-                {
-                    Trace.WriteLine($"{entry}");
-                    entry.Process(sb);
-                }
-                script = sb.ToScript();
-            }
-            catch (Exception e)
-            {
-                throw new InternalTestFailureException("Error assembling the script: "+e.ToString());
-            }
-
-            return script;
-        }
         #endregion
 
     }

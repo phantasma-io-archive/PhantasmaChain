@@ -1,12 +1,11 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Core.Utils;
-using Phantasma.VM.Utils;
-using Phantasma.IO;
-using Phantasma.Cryptography.Hashing;
 using System.Text;
 using System;
+using Phantasma.Storage.Utils;
+using Phantasma.Core;
 
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public struct StorageMap : IStorageCollection
     {
@@ -53,7 +52,7 @@ namespace Phantasma.Blockchain.Storage
 
         public static BigInteger Count(this StorageMap map)
         {
-            return map.Context.Get(CountKey(map.BaseKey)).AsLargeInteger();
+            return map.Context.Get(CountKey(map.BaseKey)).AsBigInteger();
         }
 
         public static bool ContainsKey<K>(this StorageMap map, K key)

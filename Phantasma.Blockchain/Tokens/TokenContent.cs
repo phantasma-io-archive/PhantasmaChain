@@ -1,15 +1,16 @@
 ﻿using System.IO;
-using Phantasma.Core;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Blockchain.Tokens
 {
     public struct TokenContent: ISerializable
     {
         // sizes in bytes
-        public static readonly int MaxROMSize = 64;
-        public static readonly int MaxRAMSize = 96;
+        // TODO find optimal values for this
+        public static readonly int MaxROMSize = 256;
+        public static readonly int MaxRAMSize = 256;
 
         public TokenContent(Address currentChain, Address currentOwner, byte[] ROM, byte[] RAM) : this()
         {

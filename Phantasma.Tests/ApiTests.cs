@@ -25,7 +25,7 @@ namespace Phantasma.Tests
         private TestData CreateAPI()
         {
             var owner = KeyPair.FromWIF(testWIF);
-            var sim = new ChainSimulator(owner, 1234, -1);
+            var sim = new ChainSimulator(owner, 1234);
             var api = new NexusAPI(sim.Nexus);
 
             var data = new TestData()
@@ -81,7 +81,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             test.simulator.BeginBlock();
-            test.simulator.GenerateNft(test.owner, testUser.Address, chain, nftSymbol, tokenData, new byte[0]);
+            test.simulator.GenerateNft(test.owner, testUser.Address, nftSymbol, tokenData, new byte[0]);
             test.simulator.EndBlock();
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);

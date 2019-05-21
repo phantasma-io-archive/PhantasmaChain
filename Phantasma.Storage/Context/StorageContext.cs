@@ -1,11 +1,9 @@
-﻿using System.Text;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Cryptography;
-using Phantasma.IO;
+﻿using System;
+using System.Text;
 using Phantasma.Numerics;
-using Phantasma.VM.Utils;
+using Phantasma.Storage.Utils;
 
-namespace Phantasma.Blockchain.Storage
+namespace Phantasma.Storage.Context
 {
     public abstract class StorageContext
     {
@@ -40,9 +38,20 @@ namespace Phantasma.Blockchain.Storage
             return Has(Encoding.UTF8.GetBytes(key));
         }
 
-        public byte[] Get(string key)
+        public T Get<T>(byte[] key)
         {
-            return Get(Encoding.UTF8.GetBytes(key));
+            return (T)Get(key, typeof(T));
+        }
+
+        public T Get<T>(string key)
+        {
+            return (T)Get(Encoding.UTF8.GetBytes(key), typeof(T));
+        }
+
+        public object Get(byte[] key, Type type)
+        {
+            var bytes = Get(key);
+            return Serialization.Unserialize(bytes, type);
         }
 
         public void Put(byte[] key, BigInteger value) { Put(key, value.ToByteArray()); }

@@ -4,7 +4,12 @@ namespace Phantasma.CodeGen.Assembler
 {
     internal class Label : Semanteme
     {
-        public string Name;
+        public readonly string Name;
+
+        public Label(uint lineNumber, string name) : base(lineNumber)
+        {
+            this.Name = name;
+        }
 
         public override void Process(ScriptBuilder sb)
         {

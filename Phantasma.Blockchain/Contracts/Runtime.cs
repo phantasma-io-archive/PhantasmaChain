@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
-using Phantasma.IO;
-using Phantasma.Blockchain.Storage;
 using Phantasma.Core;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
+using Phantasma.Storage.Context;
+using Phantasma.Storage;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -17,6 +17,7 @@ namespace Phantasma.Blockchain.Contracts
     {
         public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
+        public Chain ParentChain { get; private set; }
         public Block Block { get; private set; }
         public Nexus Nexus => Chain.Nexus;
         public Timestamp Time => Block != null ? Block.Timestamp : Timestamp.Now;
@@ -31,6 +32,8 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
         public readonly bool readOnlyMode;
+
+        public OracleReaderDelegate OracleReader = null;
 
         private BigInteger seed;
 
@@ -53,6 +56,16 @@ namespace Phantasma.Blockchain.Contracts
             this.Transaction = transaction;
             this.ChangeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
+
+            if (this.Chain != null && !Chain.IsRoot)
+            {
+                var parentName = chain.Nexus.GetParentChainByName(chain.Name);
+                this.ParentChain = chain.Nexus.FindChainByName(parentName);
+            }
+            else
+            {
+                this.ParentChain = null;
+            }
 
             Chain.RegisterInterop(this);
         }
@@ -92,7 +105,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
                 }
                 else
-                if (PaidGas < UsedGas && Nexus.GenesisHash != null)
+                if (PaidGas < UsedGas && Nexus.Ready)
                 {
 #if DEBUG
                     throw new VMDebugException(this, "VM unpaid gas");
@@ -112,7 +125,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(string contextName)
         {
-            var contract = this.Chain.FindContract<SmartContract>(contextName);
+            var contract = this.Nexus.FindContract(contextName);
             if (contract != null)
             {
                 contract.SetRuntimeData(this);
@@ -193,7 +206,7 @@ namespace Phantasma.Blockchain.Contracts
         public override ExecutionState ValidateOpcode(Opcode opcode)
         {
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || !Nexus.Ready || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
+            if (readOnlyMode || !Nexus.Ready)
             {
                 return ExecutionState.Running;
             }
@@ -215,7 +228,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || !Nexus.Ready || Nexus.GetTokenSupply(Nexus.FuelTokenSymbol) == 0)
+            if (readOnlyMode || !Nexus.Ready)
             {
                 return ExecutionState.Running;
             }

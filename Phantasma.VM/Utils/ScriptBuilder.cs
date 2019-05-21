@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Phantasma.IO;
+using Phantasma.Core.Types;
+using Phantasma.Storage;
 using Phantasma.Numerics;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.VM.Utils
 {
@@ -21,7 +23,7 @@ namespace Phantasma.VM.Utils
             this.writer = new BinaryWriter(stream);
         }
 
-        public void Emit(Opcode opcode, byte[] bytes = null)
+        public ScriptBuilder Emit(Opcode opcode, byte[] bytes = null)
         {
             //var ofs = (int)stream.Position;
             writer.Write((byte)opcode);
@@ -30,22 +32,33 @@ namespace Phantasma.VM.Utils
             {
                 writer.Write(bytes);
             }
+
+            return this;
         }
 
-        public void EmitPush(byte reg)
+        public ScriptBuilder EmitPush(byte reg)
         {
             Emit(Opcode.PUSH);
             writer.Write((byte)reg);
+            return this;
         }
 
-        public void EmitExtCall(string method, byte reg = 0)
+        public ScriptBuilder EmitPop(byte reg)
+        {
+            Emit(Opcode.POP);
+            writer.Write((byte)reg);
+            return this;
+        }
+
+        public ScriptBuilder EmitExtCall(string method, byte reg = 0)
         {
             EmitLoad(reg, method);
             Emit(Opcode.EXTCALL);
             writer.Write((byte)reg);
+            return this;
         }
 
-        public void EmitLoad(byte reg, byte[] bytes, VMType type = VMType.Bytes)
+        public ScriptBuilder EmitLoad(byte reg, byte[] bytes, VMType type = VMType.Bytes)
         {
             Emit(Opcode.LOAD);
             writer.Write((byte)reg);
@@ -53,54 +66,84 @@ namespace Phantasma.VM.Utils
 
             writer.WriteVarInt(bytes.Length);
             writer.Write(bytes);
+            return this;
         }
 
-        public void EmitLoad(byte reg, string val)
+        public ScriptBuilder EmitLoad(byte reg, string val)
         {
             var bytes = Encoding.UTF8.GetBytes(val);
             EmitLoad(reg, bytes, VMType.String);
+            return this;
         }
 
-        public void EmitLoad(byte reg, BigInteger val)
+        public ScriptBuilder EmitLoad(byte reg, BigInteger val)
         {
             var bytes = val.ToByteArray(includeSignInArray: true);
             EmitLoad(reg, bytes, VMType.Number);
+            return this;
         }
 
-        public void EmitLoad(byte reg, bool val)
+        public ScriptBuilder EmitLoad(byte reg, bool val)
         {
             var bytes = new byte[1] { (byte)(val ? 1 : 0) };
             EmitLoad(reg, bytes, VMType.Bool);
+            return this;
         }
 
-        public void EmitLoad(byte reg, Enum val)
+        public ScriptBuilder EmitLoad(byte reg, Enum val)
         {
             var temp = Convert.ToUInt32(val);
             var bytes = BitConverter.GetBytes(temp);
             EmitLoad(reg, bytes, VMType.Enum);
+            return this;
         }
 
-        public void EmitMove(byte src_reg, byte dst_reg)
+        public ScriptBuilder EmitLoad(byte reg, Timestamp val)
+        {
+            var bytes = BitConverter.GetBytes(val.Value);
+            EmitLoad(reg, bytes, VMType.Timestamp);
+            return this;
+        }
+
+        public ScriptBuilder EmitLoad(byte reg, ISerializable val)
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    val.SerializeData(writer);
+                }
+
+                var bytes = stream.ToArray();
+                EmitLoad(reg, bytes, VMType.Bytes);
+                return this;
+            }
+        }
+
+        public ScriptBuilder EmitMove(byte src_reg, byte dst_reg)
         {
             Emit(Opcode.MOVE);
             writer.Write((byte)src_reg);
             writer.Write((byte)dst_reg);
+            return this;
         }
 
-        public void EmitCopy(byte src_reg, byte dst_reg)
+        public ScriptBuilder EmitCopy(byte src_reg, byte dst_reg)
         {
             Emit(Opcode.COPY);
             writer.Write((byte)src_reg);
             writer.Write((byte)dst_reg);
+            return this;
         }
 
-        public void EmitLabel(string label)
+        public ScriptBuilder EmitLabel(string label)
         {
             Emit(Opcode.NOP);
             _labelLocations[label] = (int)stream.Position;
+            return this;
         }
 
-        public void EmitJump(Opcode opcode, string label, byte reg = 0)
+        public ScriptBuilder EmitJump(Opcode opcode, string label, byte reg = 0)
         {
             switch (opcode)
             {
@@ -122,9 +165,10 @@ namespace Phantasma.VM.Utils
             var ofs = (int)stream.Position;
             writer.Write((ushort)0);
             _jumpLocations[ofs] = label;
+            return this;
         }
 
-        public void EmitCall(string label, byte regCount)
+        public ScriptBuilder EmitCall(string label, byte regCount)
         {
             if (regCount<1 || regCount > VirtualMachine.MaxRegisterCount)
             {
@@ -138,9 +182,10 @@ namespace Phantasma.VM.Utils
             writer.Write((ushort)0);
 
             _jumpLocations[ofs] = label;
+            return this;
         }
 
-        public void EmitConditionalJump(Opcode opcode, byte src_reg, string label)
+        public ScriptBuilder EmitConditionalJump(Opcode opcode, byte src_reg, string label)
         {
             if (opcode != Opcode.JMPIF && opcode != Opcode.JMPNOT)
             {
@@ -154,6 +199,19 @@ namespace Phantasma.VM.Utils
             writer.Write((byte)src_reg);
             writer.Write((ushort)0);
             _jumpLocations[ofs] = label;
+            return this;
+        }
+
+        public ScriptBuilder EmitVarBytes(long value)
+        {
+            writer.WriteVarInt(value);
+            return this;
+        }
+
+        public ScriptBuilder EmitRaw(byte[] bytes)
+        {
+            writer.Write(bytes);
+            return this;
         }
 
         public byte[] ToScript()
@@ -175,16 +233,6 @@ namespace Phantasma.VM.Utils
             }
 
             return script;
-        }
-
-        public void EmitVarBytes(long value)
-        {
-            writer.WriteVarInt(value);
-        }
-
-        public void EmitRaw(byte[] bytes)
-        {
-            writer.Write(bytes);
         }
     }
 }

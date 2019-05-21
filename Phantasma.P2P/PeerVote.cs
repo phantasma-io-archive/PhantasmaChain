@@ -1,5 +1,6 @@
 ﻿using System.IO;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Network.P2P
 {

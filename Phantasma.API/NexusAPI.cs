@@ -8,11 +8,11 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Storage;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.VM;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Context;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.API
 {
@@ -277,7 +277,7 @@ namespace Phantasma.API
         private TokenResult FillToken(string tokenSymbol)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            var currentSupply = Nexus.GetTokenSupply(tokenSymbol);
+            var currentSupply = Nexus.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
             var metadata = (TokenMetadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol);
             var metadataResults = new List<TokenMetadataResult>();
@@ -387,12 +387,17 @@ namespace Phantasma.API
 
         private ChainResult FillChain(Chain chain)
         {
+            Throw.IfNull(chain, nameof(chain));
+
+            var parentName = Nexus.GetParentChainByName(chain.Name);
+            var parentChain = Nexus.FindChainByName(parentName);
+
             var result = new ChainResult
             {
                 name = chain.Name,
                 address = chain.Address.Text,
                 height = chain.BlockHeight,
-                parentAddress = chain.ParentChain != null ? chain.ParentChain.Address.ToString() : ""
+                parentAddress = parentChain != null ? parentChain.Address.ToString() : ""
             };
 
             return result;
@@ -452,7 +457,8 @@ namespace Phantasma.API
 
                         if (!token.IsFungible)
                         {
-                            var idList = chain.GetTokenOwnerships(symbol).Get(chain.Storage, address);
+                            var ownerships = new OwnershipSheet(symbol);
+                            var idList =  ownerships.Get(chain.Storage, address);
                             if (idList != null && idList.Any())
                             {
                                 balanceEntry.ids = idList.Select(x => x.ToString()).ToArray();
@@ -830,8 +836,7 @@ namespace Phantasma.API
             }
             else
             {
-                var temp = vm.Stack.Pop();
-                var result = temp.ToObject();
+                var result = vm.Stack.Pop();
                 var resultBytes = Serialization.Serialize(result);
                 encodedResult = Base16.Encode(resultBytes);
             }
@@ -1110,7 +1115,8 @@ namespace Phantasma.API
 
             if (!tokenInfo.IsFungible)
             {
-                var idList = chain.GetTokenOwnerships(tokenSymbol).Get(chain.Storage, address);
+                var ownerships = new OwnershipSheet(tokenSymbol);
+                var idList = ownerships.Get(chain.Storage, address);
                 if (idList != null && idList.Any())
                 {
                     result.ids = idList.Select(x => x.ToString()).ToArray();

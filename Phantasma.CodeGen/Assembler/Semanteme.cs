@@ -9,13 +9,20 @@ namespace Phantasma.CodeGen.Assembler
 {
     public abstract class Semanteme
     {
-        public uint LineNumber;
+        public readonly uint LineNumber;
         public uint BaseAddress;
 
         public abstract void Process(ScriptBuilder sb);
 
+        public Semanteme(uint lineNumber)
+        {
+            this.LineNumber = lineNumber;
+        }
+
         public static IEnumerable<Semanteme> ProcessLines(IEnumerable<string> lines)
         {
+            ArgumentUtils.ClearAlias();
+
             bool isInComment = false;
             uint lineNumber = 0;
             foreach (string line in lines)
@@ -52,25 +59,16 @@ namespace Phantasma.CodeGen.Assembler
                 index = pline.IndexOf(':');
                 if (index >= 0)
                 {
-                    yield return new Label
-                    {
-                        LineNumber = lineNumber,
-                        Name = pline.Substring(0, index).AsLabel()
-                    };
+                    yield return new Label(lineNumber, pline.Substring(0, index).AsLabel());
                     pline = pline.Substring(index + 1).Trim();
                 }
                 if (!string.IsNullOrEmpty(pline))
                 {
                     //string[] words = pline.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
                     string[] words = SplitWords(pline);
-                    if (!Enum.TryParse(words[0], true, out Opcode name))
-                        throw new CompilerException(lineNumber, "syntax error");
-                    yield return new Instruction
-                    {
-                        LineNumber = lineNumber,
-                        Opcode = name,
-                        Arguments = words.Skip(1).ToArray()
-                    };
+                    var name = words[0];
+                    var args = words.Skip(1).ToArray();
+                    yield return new Instruction(lineNumber, name, args);
                 }
             }
         }
@@ -78,8 +76,9 @@ namespace Phantasma.CodeGen.Assembler
         private static string[] SplitWords(string line)
         {
             bool insideQuotes = false;
+            bool escaped = false;
             List<string> words = new List<string>();
-            StringBuilder currentWord = new StringBuilder();
+            var currentWord = new StringBuilder();
 
             for (int i = 0; i < line.Length; i++)
             {
@@ -88,6 +87,8 @@ namespace Phantasma.CodeGen.Assembler
                 switch (c)
                 {
                     case ',':
+                    case '[':
+                    case ']':
                     case ' ':
                         if (insideQuotes)
                             goto default;
@@ -104,43 +105,19 @@ namespace Phantasma.CodeGen.Assembler
                         if (i + 1 >= line.Length)
                             throw new Exception("Escaping character not followed by an escapee");
 
-                        i++;
-                        var c2 = line[i];
-
-                        switch (c2)
-                        {
-                            case '\"':
-                                currentWord.Append(c2);
-
-                                if (!insideQuotes)
-                                    insideQuotes = true;
-                                else
-                                {
-                                    
-                                    words.Add(currentWord.ToString());
-                                    currentWord.Clear();
-                                    insideQuotes = false;
-                                }
-                                break;
-
-                            default:
-                                if (!insideQuotes)
-                                    goto default;
-                                break;
-                        }
-                        
+                        escaped = true;                        
                         break;
 
                     case '\"':
-                        if (!insideQuotes)
+                        if (!escaped)
                         {
-                            throw new Exception(
-                                $"Badly escaped string argument delimiters on:\n{line}\nStrings should be delimited with \\\"");
-                            break;
+                            insideQuotes = !insideQuotes;
                         }
-                            
                         else
-                            goto default;
+                        {
+                            escaped = true;
+                        }
+                        goto default;
 
                     default:
                         currentWord.Append(c);

@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
+    <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
   </ItemGroup>
 
 </Project>

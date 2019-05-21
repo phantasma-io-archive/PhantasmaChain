@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Phantasma.Blockchain.Storage;
-using Phantasma.Core.Utils;
+using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
-using Phantasma.IO;
+using Phantasma.Storage;
 using Phantasma.Numerics;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -931,6 +931,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int DEFAULT_AVATARS = 10;
 
+        public const int RANKED_BATTLE_ENTRY_COST       = 5;
+        public const int RANKED_BATTLE_WINNER_PRIZE     = 10;
+        public const int RANKED_BATTLE_DRAW_PRIZE       = 6;
+        public const int RANKED_BATTLE_LOSER_PRIZE      = 2;
+
+        public const int UNRANKED_BATTLE_WINNER_PRIZE   = 5;
+        public const int UNRANKED_BATTLE_DRAW_PRIZE     = 3;
+        public const int UNRANKED_BATTLE_LOSER_PRIZE    = 1;
+
         public const decimal DOLLAR_NACHOS_RATE = 100; // 1 USD = 100 NACHOS //TODO set this with the in-apps conversion rate
 
         public const string PHANTASMA_DEV_ADDRESS = "PGUHKgY6o72fTQCBHstFcBNwqfaFKMFAEGDr2pfxWg5bV";
@@ -940,6 +949,58 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         // minimum XP to reach each level. where the level = index of array
         public static readonly uint[] EXPERIENCE_MAP = new uint[] { 0, 0, 3721, 14884, 33489, 59536, 93025, 133956, 182329, 238144, 301401, 372100, 450241, 535824, 628849, 729316, 837225, 952576, 1075369, 1205604, 1343281 };
+
+        // minimum vip points to reach each vip level. where the level = index of array
+        public static readonly uint[] VIP_LEVEL_POINTS = new uint[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
+
+        public static readonly Dictionary<int, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<int, DailyRewards>()
+        {
+            { 0,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 0} },
+            { 1,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 0, vipMakeUpReward = 1} },
+            { 2,    new DailyRewards {vipWrestlerReward = 0, vipItemReward = 1, vipMakeUpReward = 1} },
+            { 3,    new DailyRewards {vipWrestlerReward = 1, vipItemReward = 1, vipMakeUpReward = 1} },
+            { 4,    new DailyRewards {vipWrestlerReward = 1, vipItemReward = 1, vipMakeUpReward = 3} },
+            { 5,    new DailyRewards {vipWrestlerReward = 2, vipItemReward = 2, vipMakeUpReward = 3} },
+            { 6,    new DailyRewards {vipWrestlerReward = 3, vipItemReward = 3, vipMakeUpReward = 3} },
+            { 7,    new DailyRewards {vipWrestlerReward = 3, vipItemReward = 3, vipMakeUpReward = 4} },
+            { 8,    new DailyRewards {vipWrestlerReward = 3, vipItemReward = 3, vipMakeUpReward = 5} },
+            { 9,    new DailyRewards {vipWrestlerReward = 4, vipItemReward = 4, vipMakeUpReward = 5} },
+            { 10,   new DailyRewards {vipWrestlerReward = 5, vipItemReward = 5, vipMakeUpReward = 5} },
+        };
+
+        public static readonly Dictionary<ELOOT_BOX_TYPE, int> LOOT_BOX_NACHOS_PRICE = new Dictionary<ELOOT_BOX_TYPE, int>()
+        {
+            { ELOOT_BOX_TYPE.WRESTLER,  50 },
+            { ELOOT_BOX_TYPE.ITEM,      25 },
+            { ELOOT_BOX_TYPE.MAKE_UP,   10 },
+            //{ ELOOT_BOX_TYPE.AVATAR,    10 },
+        };
+
+        public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
+        {
+            { 0,    1 },
+            { 1,    2 },
+            { 2,    5 },
+            { 3,    10 },
+            { 4,    20 },
+            { 5,    50 },
+            { 6,    100 },
+            { 7,    150 }
+        };
+
+        public static readonly Dictionary<int, int> IN_APPS_NACHOS = new Dictionary<int, int>()
+        {
+            { 0,    100 },
+            { 1,    250 },
+            { 2,    600 },
+            { 3,    1300 },
+            { 4,    2750 },
+            { 5,    7500 },
+            { 6,    17500 },
+            { 7,    30000 }
+        };
+
+        public const int CHANGE_FACTION_COST = 500;
 
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
@@ -1211,7 +1272,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static int LUCHADOR_COMMENT_REVERSAL = 8;
         public static int LUCHADOR_COMMENT_MAX = 9;
 
-        public static int POT_FEE_PERCENTAGE = 10;
+        public static int LOOT_BOX_POT_NACHOS_PERCENTAGE                = 5;
+        public static int LOOT_BOX_FACTION_REWARD_NACHOS_PERCENTAGE     = 20;
+        public static int NACHOS_IN_APPS_SOUL_REWARD_SOUL_PERCENTAGE    = 25;
 
         public static int REFERRAL_STAKE_AMOUNT = 100;
         public static int REFERRAL_MINIMUM_DAYS = 30;
@@ -1225,14 +1288,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly int[] POT_PERCENTAGES = new int[]
         {
             50,
-            25,
+            20,
             10,
-            4,
-            3,
-            3,
+            5,
+            5,
             2,
             2,
-            1
+            2,
+            2,
+            2
         };
 
         public static readonly Dictionary<LuchadorHoroscope, byte[]> horoscopeStats = new Dictionary<LuchadorHoroscope, byte[]>()
@@ -1269,6 +1333,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         Equipment = 2,
     }
 
+    public enum Faction
+    {
+        None,
+        Latinos,
+        Gringos
+    }
+
     public enum Gender
     {
         Male,
@@ -1291,6 +1362,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         Decoration,
         //Avatar,
         Other
+    }
+
+    public enum ELOOT_BOX_TYPE
+    {
+        WRESTLER,
+        ITEM,
+        MAKE_UP,
+        //AVATAR
     }
 
     public enum AuctionCurrency
@@ -1801,6 +1880,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger stakeAmount;
     }
 
+    public struct DailyRewards
+    {
+        public BigInteger factionReward;
+        public BigInteger championshipReward;
+        public BigInteger vipWrestlerReward;
+        public BigInteger vipItemReward;
+        public BigInteger vipMakeUpReward;
+    }
+
     //public struct NachoAuction
     //{
     //    public uint startTime;
@@ -1844,6 +1932,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public PraticeLevel queueLevel;
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
+
+        public BigInteger vipPoints;
+        public Faction faction;
 
         //public BigInteger avatarID;
     }
@@ -1996,6 +2087,35 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         #region ACCOUNT API
+
+        public void SetPlayerFaction(Address address, Faction faction)
+        {
+            // TODO finish implementation
+
+            Runtime.Expect(faction != Faction.None, "Faction not valid");
+
+            var account = GetAccount(address);
+
+            Runtime.Expect(account.faction != faction, "Player is already in this faction");
+
+            if (account.faction == Faction.None)
+            {
+                account.faction = faction;
+
+                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+            }
+            else
+            {
+                // charge change faction cost
+
+                var changeFactionCost = Constants.CHANGE_FACTION_COST;
+
+                // todo
+
+                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+            }
+        }
+
         /* TODO LATER
         public void TransferWrestler(Address from, Address to, BigInteger wrestlerID)
         {
@@ -2074,9 +2194,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var tokenSymbol = Nexus.StakingTokenSymbol;
-            var balances = Runtime.Chain.GetTokenBalances(tokenSymbol);
-
-            return Runtime.Nexus.TransferTokens(tokenSymbol, this.Storage, balances, address, DevelopersAddress, amount);
+            return Runtime.Nexus.TransferTokens(tokenSymbol, this.Storage, Runtime.Chain, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)
@@ -2423,7 +2541,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), Constants.WRESTLER_SYMBOL + " token not found");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
         }
@@ -2432,7 +2550,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), Constants.ITEM_SYMBOL + " token not found");
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
 
             var ownerIDs = ownerships.Get(this.Storage, address);
             return ownerIDs.ToArray();
@@ -2554,7 +2672,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasItem(Address address, BigInteger itemID)
         {
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             return ownerships.GetOwner(this.Storage, itemID) == address;
         }
 
@@ -2571,7 +2689,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.location = ItemLocation.None;
             item.owner = Address.Null;
 
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.ITEM_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
             //token.Burn(balances, from,) TODO how to burn NFT?
 
@@ -2794,7 +2912,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasWrestler(Address address, BigInteger wrestlerID)
         {
-            var ownerships = Runtime.Chain.GetTokenOwnerships(Constants.WRESTLER_SYMBOL);
+            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
             return ownerships.GetOwner(this.Storage, wrestlerID) == address;
         }
 
@@ -5773,49 +5891,82 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (battle.bet > 0)
             {
-                BigInteger winnerAmount = battle.bet * 2;
-                BigInteger potAmount;
+                BigInteger winnerAmount = 0;
+                BigInteger loserAmount  = 0;
+                BigInteger drawAmount   = 0;
 
-                if (battle.mode == BattleMode.Ranked)
+                switch (battle.mode)
                 {
-                    potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
-                    winnerAmount -= potAmount;
+                    case BattleMode.Academy:
+                    case BattleMode.Pratice:
+                        // Battles against bots do not give nacho prizes
+                        break;
+                    case BattleMode.Unranked:
+                        winnerAmount    = Constants.UNRANKED_BATTLE_WINNER_PRIZE;
+                        loserAmount     = Constants.UNRANKED_BATTLE_LOSER_PRIZE;
+                        drawAmount      = Constants.UNRANKED_BATTLE_DRAW_PRIZE;
+                        break;
+                    case BattleMode.Ranked:
+                        winnerAmount    = Constants.RANKED_BATTLE_WINNER_PRIZE;
+                        loserAmount     = Constants.RANKED_BATTLE_LOSER_PRIZE;
+                        drawAmount      = Constants.RANKED_BATTLE_DRAW_PRIZE;
+                        break;
+                    case BattleMode.Versus:
+                        winnerAmount    = battle.bet * 2;
+                        loserAmount     = 0;
+                        drawAmount      = battle.bet;
+                        break;
                 }
-                else
-                {
-                    potAmount = 0;
-                }
+
+                // Ranked battle fees do not go to the pot anymore
+                //BigInteger potAmount;
+                //if (battle.mode == BattleMode.Ranked)
+                //{
+                //    potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
+                //    winnerAmount -= potAmount;
+                //}
+                //else
+                //{
+                //    potAmount = 0;
+                //}
 
                 int winnerSide;
+                int loserSide;
 
                 switch (battle.state)
                 {
                     case BattleState.WinA:
                     case BattleState.ForfeitB:
-                        winnerSide = 0;
+                        winnerSide  = 0;
+                        loserSide   = 1;
                         break;
 
                     case BattleState.WinB:
                     case BattleState.ForfeitA:
-                        winnerSide = 1;
+                        winnerSide  = 1;
+                        loserSide   = 0;
                         break;
 
                     default:
-                        winnerSide = -1;
+                        winnerSide  = -1;
+                        loserSide   = -1;
                         break;
                 }
 
                 if (winnerSide != -1)
                 {
-                    if (potAmount > 0)
-                    {
-                        AddToPot(battle.sides[winnerSide].address, potAmount);
-                    }
+                    //if (potAmount > 0)
+                    //{
+                    //    AddToPot(battle.sides[winnerSide].address, potAmount);
+                    //}
+
+                    //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
 
                     //TODO LATER
                     Runtime.Expect(false, "not implemented, read code yrrytr");
                     /*Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
-
+                    
                     var other = 1 - winnerSide;
 
                     Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
@@ -5823,13 +5974,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else
                 {
-                    // refund both
-                    var refundAmount = winnerAmount / 2;
+                    // refund bothy
+                    var refundAmount = drawAmount;
 
-                    if (potAmount > 0)
-                    {
-                        AddToPot(Address.Null, potAmount);
-                    }
+                    //if (potAmount > 0)
+                    //{
+                    //    AddToPot(Address.Null, potAmount);
+                    //}
 
                     /* TODO LATER
                     for (var i = 0; i < 2; i++)
@@ -8336,6 +8487,124 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         #endregion
 
+        #region Daily Rewards
+
+        public DailyRewards GetDailyRewards(Address address)
+        {
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var vipPoints = account.vipPoints;
+
+            var vipLevel = 0;
+
+            for (int i = Constants.VIP_LEVEL_POINTS.Length - 1; i >= 0; i--)
+            {
+                if (vipPoints >= Constants.VIP_LEVEL_POINTS[i])
+                {
+                    vipLevel = i;
+                    break;
+                }
+            }
+
+            var rewards = Constants.VIP_DAILY_LOOT_BOX_REWARDS[vipLevel];
+
+            var nachosReward    = 10; // Player Nb of Battles / Total Nb of Battles of All Players ) * Amount of Nachos to distribute
+            var soulReward      = 10; // Player Nb of Battles / Total Nb of Battles of All Players ) * Amount of Nachos to distribute
+            
+            rewards.factionReward       = nachosReward;
+            rewards.championshipReward  = soulReward;
+
+            return rewards;
+        }
+
+        public void CollectFactionReward(Address address)
+        {
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.factionReward > 0, "no faction reward");
+
+            rewards.factionReward = 0;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
+
+            Runtime.Notify(EventKind.CollectFactionReward, address, 1);
+        }
+
+        private void CollectChampionshipReward(Address address)
+        {
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.championshipReward > 0, "no championship reward");
+
+            rewards.championshipReward = 0;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
+
+            Runtime.Notify(EventKind.CollectChampionshipReward, address, 1);
+        }
+
+        private void CollectVipWrestlerReward(Address address)
+        {
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipWrestlerReward > 0, "no vip wrestler reward");
+
+            rewards.vipWrestlerReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
+
+            Runtime.Notify(EventKind.CollectVipWrestlerReward, address, 1);
+        }
+
+        private void CollectVipItemReward(Address address)
+        {
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipItemReward > 0, "no vip item reward");
+
+            rewards.vipItemReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
+
+            Runtime.Notify(EventKind.CollectVipItemReward, address, 1);
+        }
+
+        private void CollectVipMakeUpReward(Address address)
+        {
+            // TODO finish implementation
+
+            var account = GetAccount(address);
+
+            var rewards = GetDailyRewards(address);
+
+            Runtime.Expect(rewards.vipMakeUpReward > 0, "no vip make up reward");
+
+            rewards.vipMakeUpReward--;
+
+            // save current rewards left somewhere. Add NachoRewards to NachoAccount?
+
+            Runtime.Notify(EventKind.CollectVipMakeUpReward, address, 1);
+        }
+
+        #endregion
 
         #region SOUL API
         /*
@@ -8447,13 +8716,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public string GetMOTD()
         {
-            var motd = Storage.Get(MOTD_KEY);
+            var motd = Storage.Get<string>(MOTD_KEY);
             if (motd == null || motd.Length == 0)
             {
                 return "Welcome to the oficial public release of Nacho Men!";
             }
 
-            return System.Text.Encoding.UTF8.GetString(motd);
+            return motd;
         }
 
         public void SetMOTD(string motd)

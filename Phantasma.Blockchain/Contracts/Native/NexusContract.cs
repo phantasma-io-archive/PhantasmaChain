@@ -1,7 +1,7 @@
-﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
+﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Storage.Context;
 using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -74,17 +74,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             symbol = symbol.ToUpperInvariant();
 
             Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags), "token creation failed");
-
-            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
-            if (tokenInfo.IsCapped)
-            {
-                Runtime.Chain.InitSupplySheet(symbol, maxSupply);
-            }
-
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
 
-        public void CreateChain(Address owner, string name, string parentName)
+        public void CreateChain(Address owner, string name, string parentName, string[] contracts)
         {
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
@@ -97,7 +90,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var parent = this.Runtime.Nexus.FindChainByName(parentName);
             Runtime.Expect(parent != null, "invalid parent");
 
-            var chain = this.Runtime.Nexus.CreateChain(owner, name, parent, this.Runtime.Block);
+            var chain = this.Runtime.Nexus.CreateChain(this.Storage, owner, name, parent, this.Runtime.Block, contracts);
             Runtime.Expect(chain != null, "chain creation failed");
 
             Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);

@@ -1,7 +1,8 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.EdDSA;
-using Phantasma.IO;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
 

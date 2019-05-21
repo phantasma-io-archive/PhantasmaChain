@@ -1,19 +1,9 @@
 ﻿using Phantasma.Numerics;
-using System;
-using System.Text;
 
 namespace Phantasma.VM.Utils
 {
     public static class VMUtils
     {
-        public static BigInteger AsLargeInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
-
-        public static byte[] AsByteArray(this BigInteger source) { return source.ToByteArray(); }
-
-        public static byte[] AsByteArray(this string source) { return Encoding.UTF8.GetBytes(source); }
-
-        public static string AsString(this byte[] source) { return Encoding.UTF8.GetString(source); }
-
         public static object InvokeScript(byte[] script, object[] args)
         {
             var vm = new InvokeVM(script);

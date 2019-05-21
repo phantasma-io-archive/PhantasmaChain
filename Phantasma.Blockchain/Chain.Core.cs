@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Cryptography;
-using Phantasma.Numerics;
+using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Storage;
+using Phantasma.Storage;
+using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain.Consensus;
-using System;
-using Phantasma.IO;
-using System.IO;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Cryptography;
+using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain
 {
@@ -36,35 +35,25 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public partial class Chain : ISerializable
+    public partial class Chain 
     {
         #region PRIVATE
         private KeyValueStore<Hash, Transaction> _transactions;
         private KeyValueStore<Hash, Block> _blocks;
         private KeyValueStore<Hash, Hash> _transactionBlockMap;
         private KeyValueStore<Hash, Epoch> _epochMap;
+        private KeyValueStore<string, bool> _contracts;
 
         private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
 
-        private Dictionary<string, BalanceSheet> _tokenBalances = new Dictionary<string, BalanceSheet>();
-        private Dictionary<string, OwnershipSheet> _tokenOwnerships = new Dictionary<string, OwnershipSheet>();
-        private Dictionary<string, SupplySheet> _tokenSupplies = new Dictionary<string, SupplySheet>();
-
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
-        private Dictionary<string, SmartContract> _contracts = new Dictionary<string, SmartContract>();
         private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
-
-        private int _level;
         #endregion
 
         #region PUBLIC
         public static readonly uint InitialHeight = 1;
 
-        public int Level => _level;
-
-        public Chain ParentChain { get; private set; }
-        public Block ParentBlock { get; private set; }
         public Nexus Nexus { get; private set; }
 
         public string Name { get; private set; }
@@ -74,34 +63,20 @@ namespace Phantasma.Blockchain
 
         public uint BlockHeight => (uint)_blocks.Count;
 
-        public Block LastBlock { get; private set; }
+        public Block LastBlock => FindBlockByHeight(BlockHeight);
 
         public readonly Logger Log;
 
         public StorageContext Storage { get; private set; }
 
-        public uint TransactionCount => _transactions.Count;
+        public uint TransactionCount => (uint)_transactions.Count;
 
-        public bool IsRoot => this.ParentChain == null;
+        public bool IsRoot => this.Name == Nexus.RootChainName;
         #endregion
 
-        // required for serialization
-        public Chain()
-        {
-
-        }
-
-        public Chain(Nexus nexus, string name, IEnumerable<SmartContract> contracts, Logger log = null, Chain parentChain = null, Block parentBlock = null)
+        public Chain(Nexus nexus, string name, Logger log = null)
         {
             Throw.IfNull(nexus, "nexus required");
-            Throw.If(contracts == null || !contracts.Any(), "contracts required");
-
-            if (parentChain != null)
-            {
-                Throw.IfNull(parentBlock, "parent block required");
-                Throw.IfNot(nexus.ChainExists(parentChain.Name), "invalid chain");
-                //Throw.IfNot(parentChain.ContainsBlock(parentBlock), "invalid block"); // TODO should this be required? 
-            }
 
             this.Name = name;
             this.Nexus = nexus;
@@ -116,33 +91,27 @@ namespace Phantasma.Blockchain
             _blocks = new KeyValueStore<Hash, Block>(Nexus.CreateKeyStoreAdapter(this.Address, "blocks"));
             _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
             _epochMap = new KeyValueStore<Hash, Epoch>(Nexus.CreateKeyStoreAdapter(this.Address, "epoch"));
-
-            foreach (var contract in contracts)
-            {
-                if (this._contracts.ContainsKey(contract.Name))
-                {
-                    throw new ChainException("Duplicated contract name: " + contract.Name);
-                }
-
-                this._contracts[contract.Name] = contract;
-                this._contractContexts[contract.Name] = new NativeExecutionContext(contract);
-            }
-
-            this.ParentChain = parentChain;
-            this.ParentBlock = parentBlock;
+            _contracts = new KeyValueStore<string, bool>(Nexus.CreateKeyStoreAdapter(this.Address, "contracts"));
 
             this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
 
             this.Log = Logger.Init(log);
+        }
 
-            if (parentChain != null)
+        public bool HasContract(string contractName)
+        {
+            return _contracts.ContainsKey(contractName);
+        }
+
+        internal void DeployContracts(HashSet<string> contractNames)
+        {
+            Throw.If(contractNames == null || !contractNames.Any(), "contracts required");
+            Throw.If(!contractNames.Contains(Nexus.GasContractName), "gas contract required");
+            Throw.If(!contractNames.Contains(Nexus.TokenContractName), "token contract required");
+
+            foreach (var contractName in contractNames)
             {
-                parentChain._childChains[name] = this;
-                _level = ParentChain.Level + 1;
-            }
-            else
-            {
-                _level = 1;
+                this._contracts[contractName] = true;
             }
         }
 
@@ -166,7 +135,7 @@ namespace Phantasma.Blockchain
             return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
         }
 
-        public void AddBlock(Block block, IEnumerable<Transaction> transactions)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions, OracleReaderDelegate oracleReader)
         {
             /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
             {
@@ -217,7 +186,7 @@ namespace Phantasma.Blockchain
             foreach (var tx in transactions)
             {
                 byte[] result;
-                if (tx.Execute(this, block, changeSet, block.Notify, out result))
+                if (tx.Execute(this, block, changeSet, block.Notify, oracleReader, out result))
                 {
                     if (result != null)
                     {
@@ -245,8 +214,6 @@ namespace Phantasma.Blockchain
             CurrentEpoch.AddBlockHash(block.Hash);
             CurrentEpoch.UpdateHash();
 
-            LastBlock = block;
-
             foreach (Transaction tx in transactions)
             {
                 _transactions[tx.Hash] = tx;
@@ -254,44 +221,6 @@ namespace Phantasma.Blockchain
             }
 
             Nexus.PluginTriggerBlock(this, block);
-        }
-
-        private Dictionary<string, Chain> _childChains = new Dictionary<string, Chain>();
-        public IEnumerable<Chain> ChildChains => _childChains.Values;
-
-        public Chain FindChildChain(Address address)
-        {
-            Throw.If(address == Address.Null, "invalid address");
-
-            foreach (var childChain in _childChains.Values)
-            {
-                if (childChain.Address == address)
-                {
-                    return childChain;
-                }
-            }
-
-            foreach (var childChain in _childChains.Values)
-            {
-                var result = childChain.FindChildChain(address);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
-            return null;
-        }
-
-        public Chain GetRoot()
-        {
-            var result = this;
-            while (result.ParentChain != null)
-            {
-                result = result.ParentChain;
-            }
-
-            return result;
         }
 
         public bool ContainsTransaction(Hash hash)
@@ -330,77 +259,18 @@ namespace Phantasma.Blockchain
             return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
         }
 
-        public BalanceSheet GetTokenBalances(string tokenSymbol)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(!tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "should be fungible");
-
-            if (_tokenBalances.ContainsKey(tokenSymbol))
-            {
-                return _tokenBalances[tokenSymbol];
-            }
-
-            var sheet = new BalanceSheet(tokenSymbol, this.Storage);
-            _tokenBalances[tokenSymbol] = sheet;
-            return sheet;
-        }
-
-        // TODO investigate the necessity of having this method
-        internal void InitSupplySheet(string tokenSymbol, BigInteger maxSupply)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(!tokenInfo.IsCapped, "should be capped");
-            Throw.If(_tokenSupplies.ContainsKey(tokenSymbol), "supply sheet already created");
-
-            var sheet = new SupplySheet(0, 0, maxSupply);
-            _tokenSupplies[tokenSymbol] = sheet;
-        }
-
-        internal SupplySheet GetTokenSupplies(string tokenSymbol)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(!tokenInfo.IsCapped, "should be capped");
-
-            if (_tokenSupplies.ContainsKey(tokenSymbol))
-            {
-                return _tokenSupplies[tokenSymbol];
-            }
-
-            Throw.If(this.ParentChain == null, "supply sheet not created");
-
-            var parentSupplies = this.ParentChain.GetTokenSupplies(tokenSymbol);
-
-            var sheet = new SupplySheet(parentSupplies.LocalBalance, 0, tokenInfo.MaxSupply);
-            _tokenSupplies[tokenSymbol] = sheet;
-            return sheet;
-        }
-
-        public OwnershipSheet GetTokenOwnerships(string tokenSymbol)
-        {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "cannot be fungible");
-
-            if (_tokenOwnerships.ContainsKey(tokenSymbol))
-            {
-                return _tokenOwnerships[tokenSymbol];
-            }
-
-            var sheet = new OwnershipSheet(tokenSymbol);
-            _tokenOwnerships[tokenSymbol] = sheet;
-            return sheet;
-        }
-
+        // NOTE should never be used directly from a contract!
         public BigInteger GetTokenBalance(string tokenSymbol, Address address)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
-                var balances = GetTokenBalances(tokenSymbol);
+                var balances = new BalanceSheet(tokenSymbol);
                 return balances.Get(Storage, address);
             }
             else
             {
-                var ownerships = GetTokenOwnerships(tokenSymbol);
+                var ownerships = new OwnershipSheet(tokenSymbol);
                 var items = ownerships.Get(this.Storage, address);
                 return items.Count();
             }
@@ -412,17 +282,18 @@ namespace Phantasma.Blockchain
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             Throw.If(tokenInfo.IsFungible, "non fungible required");
 
-            var ownerships = GetTokenOwnerships(tokenSymbol);
+            var ownerships = new OwnershipSheet(tokenSymbol);
             return ownerships.GetOwner(this.Storage, tokenID);
         }
 
         // NOTE this lists only nfts owned in this chain
         public IEnumerable<BigInteger> GetOwnedTokens(string tokenSymbol, Address address)
         {
-            var ownership = GetTokenOwnerships(tokenSymbol);
+            var ownership = new OwnershipSheet(tokenSymbol);
             return ownership.Get(this.Storage, address);
         }
 
+        // TODO move this along with other name validations to a common file
         public static bool ValidateName(string name)
         {
             if (name == null)
@@ -472,25 +343,12 @@ namespace Phantasma.Blockchain
                 _blocks.Remove(currentBlock.Hash);
 
                 currentBlock = FindBlockByHash(currentBlock.PreviousHash);
-                this.LastBlock = currentBlock;
 
                 if (currentBlock.PreviousHash == targetHash)
                 {
                     break;
                 }
             }
-        }
-
-        public T FindContract<T>(string contractName) where T : SmartContract
-        {
-            Throw.IfNullOrEmpty(contractName, nameof(contractName));
-
-            if (_contracts.ContainsKey(contractName))
-            {
-                return (T)_contracts[contractName];
-            }
-
-            return null;
         }
 
         internal ExecutionContext GetContractContext(SmartContract contract)
@@ -500,25 +358,45 @@ namespace Phantasma.Blockchain
                 return _contractContexts[contract.Name];
             }
 
+            if (HasContract(contract.Name))
+            {
+                // TODO this needs to suport non-native contexts too..
+                var context = new NativeExecutionContext(contract);
+                this._contractContexts[contract.Name] = context;
+                return context;
+            }
+
             return null;
         }
 
+
         public object InvokeContract(string contractName, string methodName, params object[] args)
         {
-            var contract = FindContract<SmartContract>(contractName);
+            var contract = Nexus.FindContract(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
+
+            var result = InvokeScript(script);
+
+            if (result == null)
+            {
+                throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed");
+            }
+
+            return result.ToObject(); // TODO remove ToObject and let the callers convert as they want
+        }
+
+        public VMObject InvokeScript(byte[] script)
+        {
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, this.LastBlock, null, changeSet, true);
-
-            contract.SetRuntimeData(vm);
 
             var state = vm.Execute();
 
             if (state != ExecutionState.Halt)
             {
-                throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed with state: " + state);
+                return null;
             }
 
             if (vm.Stack.Count == 0)
@@ -528,7 +406,7 @@ namespace Phantasma.Blockchain
 
             var result = vm.Stack.Pop();
 
-            return result.ToObject();
+            return result;
         }
 
         #region FEES 
@@ -626,15 +504,5 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-
-        public void SerializeData(BinaryWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UnserializeData(BinaryReader reader)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

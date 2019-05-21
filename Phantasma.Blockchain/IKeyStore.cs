@@ -1,4 +1,4 @@
-﻿namespace Phantasma.IO
+﻿namespace Phantasma.Storage
 {
     public interface IKeyStore
     {

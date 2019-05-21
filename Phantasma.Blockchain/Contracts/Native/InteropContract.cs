@@ -1,7 +1,7 @@
-﻿using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
+﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -38,18 +38,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var source = Address.Null;
 
-            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
-            var supplies = token.IsCapped ? Runtime.Chain.GetTokenSupplies(symbol) : null;
-            Runtime.Expect(Runtime.Nexus.MintTokens(symbol, this.Storage, balances, supplies, destination, amount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(symbol, this.Storage, Runtime.Chain, destination, amount), "mint failed");
 
             if (symbol == Nexus.StableTokenSymbol)
             {
                 var feeAmount = minimumAmount / 10;
-                Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, balances, destination, Runtime.Chain.Address, feeAmount), "fee transfer failed");
-
-                var fuelBalances = this.Runtime.Chain.GetTokenBalances(Nexus.FuelTokenSymbol);
-                var fuelSupplies = token.IsCapped ? Runtime.Chain.GetTokenSupplies(Nexus.FuelTokenSymbol) : null;
-                Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, fuelBalances, fuelSupplies, destination, feeAmount), "fee mint failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, Runtime.Chain, destination, Runtime.Chain.Address, feeAmount), "fee transfer failed");
+                Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, destination, feeAmount), "fee mint failed");
                 // TODO this mint can only be done if the maximum supply was not reached yet
             }
 
@@ -71,9 +66,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var source = Address.Null;
 
-            var balances = this.Runtime.Chain.GetTokenBalances(symbol);
-            var supplies = token.IsCapped ? Runtime.Chain.GetTokenSupplies(symbol) : null;
-            Runtime.Expect(Runtime.Nexus.BurnTokens(symbol, this.Storage, balances, supplies, destination, amount), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnTokens(symbol, this.Storage, Runtime.Chain, destination, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenSend, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
         }
