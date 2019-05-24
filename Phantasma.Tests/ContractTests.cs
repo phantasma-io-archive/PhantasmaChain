@@ -1960,8 +1960,8 @@ namespace Phantasma.Tests
             var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var fuelToken = simulator.Nexus.FuelToken;
-            var stakeToken = simulator.Nexus.StakingToken;
+            var fuelToken = Nexus.FuelTokenSymbol;
+            var stakingToken = Nexus.StakingTokenSymbol;
 
             //Let A be an address
             var testUserA = KeyPair.Generate();
@@ -1969,12 +1969,12 @@ namespace Phantasma.Tests
             var testUserC = KeyPair.Generate();
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, nexus.FuelToken, 100000000);
-            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, nexus.StakingToken, 100000000);
-            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, nexus.FuelToken, 100000000);
-            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, nexus.StakingToken, 100000000);
-            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, nexus.FuelToken, 100000000);
-            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, nexus.StakingToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, fuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, stakingToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, fuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, stakingToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, fuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, stakingToken, 100000000);
             simulator.EndBlock();
 
             simulator.BeginBlock();
@@ -2073,8 +2073,8 @@ namespace Phantasma.Tests
             var testUser = KeyPair.Generate();
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.FuelToken, 100000000);
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, nexus.StakingToken, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, 100000000);
             simulator.EndBlock();
 
             var script = ScriptUtils.BeginScript().CallContract("nacho", "GetAccount", new object[] { testUser.Address }).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
@@ -2089,7 +2089,7 @@ namespace Phantasma.Tests
             // finally as last step, convert it to a C# struct
             var userAccount = resultObj.ToStruct<NachoAccount>();
 
-            Assert.IsTrue(userAccount.ELO == NachoConstants.DEFAULT_ELO);
+            Assert.IsTrue(userAccount.ELO == Constants.DEFAULT_ELO);
         }
     }
 }

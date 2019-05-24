@@ -9,6 +9,7 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using System.Linq;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {
