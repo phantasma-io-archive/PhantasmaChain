@@ -6,6 +6,7 @@ using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -758,7 +759,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int BaseStatSplit = MaxBaseStat / 3;
         public const int MaxTrainStat = 256; // this is the total for all 3 stats together!
 
-        public static int CalculateWrestlerStat(uint level, int baseStat, int trainStat)
+        public static int CalculateWrestlerStat(int level, int baseStat, int trainStat)
         {
             level *= 6; // 16 * 6.25 = 100
             var result = (baseStat + 100) * 2;
@@ -781,12 +782,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return finalPercent;
         }
 
-        public static uint CalculateWrestlerLevel(uint XP)
+        public static int CalculateWrestlerLevel(int XP)
         {
             return 1 + (Sqrt(XP) / 61);
         }
 
-        public static int CalculateXpPercentage(uint currentXp, uint currentLevel)
+        public static int CalculateXpPercentage(int currentXp, int currentLevel)
         {
             if (currentLevel == Constants.MAX_LEVEL) return 100;
 
@@ -795,7 +796,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return (int)((levelXp * 100) / requiredXp);
         }
 
-        public static int CalculateDamage(uint level, int atk, int def, int rnd, int power)
+        public static int CalculateDamage(int level, int atk, int def, int rnd, int power)
         {
             var result = (int)((2 * level) / 5) + 2;
             result = (result * (power * atk) / def);
@@ -816,9 +817,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // calculates integer approximation of Sqrt(n)
-        public static uint Sqrt(uint n)
+        public static int Sqrt(int n)
         {
-            return (uint)System.Math.Sqrt(n);
+            return (int)Math.Sqrt(n);
             /*int root = n / 2;
 
             while (n < root * root)
@@ -948,10 +949,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const decimal NEOPurchaseFee = 0.15m;
 
         // minimum XP to reach each level. where the level = index of array
-        public static readonly uint[] EXPERIENCE_MAP = new uint[] { 0, 0, 3721, 14884, 33489, 59536, 93025, 133956, 182329, 238144, 301401, 372100, 450241, 535824, 628849, 729316, 837225, 952576, 1075369, 1205604, 1343281 };
+        public static readonly int[] EXPERIENCE_MAP = new int[] { 0, 0, 3721, 14884, 33489, 59536, 93025, 133956, 182329, 238144, 301401, 372100, 450241, 535824, 628849, 729316, 837225, 952576, 1075369, 1205604, 1343281 };
 
         // minimum vip points to reach each vip level. where the level = index of array
-        public static readonly uint[] VIP_LEVEL_POINTS = new uint[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
+        public static readonly int[] VIP_LEVEL_POINTS = new int[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
 
         public static readonly Dictionary<int, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<int, DailyRewards>()
         {
@@ -1004,16 +1005,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
 
-        public const uint MIN_LEVEL = 1;
+        public const int MIN_LEVEL = 1;
         // max level than a luchador can reach
-        public const uint MAX_LEVEL = 16;
+        public const int MAX_LEVEL = 16;
 
         // average expected XP per battle (taking account all battles from lv 1 to max level)
-        public const uint AVERAGE_XP_GAIN = 4372;
+        public const int AVERAGE_XP_GAIN = 4372;
 
-        public const uint BOT_EXPERIENCE_PERCENT = 80;
+        public const int BOT_EXPERIENCE_PERCENT = 80;
 
-        public static uint WRESTLER_MAX_XP => EXPERIENCE_MAP[MAX_LEVEL];
+        public static int WRESTLER_MAX_XP => EXPERIENCE_MAP[MAX_LEVEL];
 
         // minimum XP that a luchador can receive per battle
         public const int MINIMUM_XP_PER_BATTLE = 20;
@@ -1245,8 +1246,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         // default ELO rating of a player
         public const int DEFAULT_SCORE = 1000;
 
-        public static readonly uint SECONDS_PER_DAY = 86400;
-        public static readonly uint SECONDS_PER_HOUR = 3600;
+        public static readonly int SECONDS_PER_DAY = 86400;
+        public static readonly int SECONDS_PER_HOUR = 3600;
 
         public const int MAX_GYM_BOOST = 255;
         public const int PILL_GYM_BOOST = 16;
@@ -1804,9 +1805,9 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct LuchadorBattleState
     {
         public BigInteger wrestlerID;
-        public int currentStamina;
-        public int boostAtk;
-        public int boostDef;
+        public BigInteger currentStamina;
+        public BigInteger boostAtk;
+        public BigInteger boostDef;
         public BattleStatus status;
         public ItemKind itemKind;
         public WrestlingMove learnedMove;
@@ -1821,12 +1822,12 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public LuchadorBattleState[] wrestlers;
         public Address address;
-        public int current; // index of current wrestlers
-        public int previousDirectDamage;
-        public int previousIndirectDamage;
-        public int previousRecover;
+        public BigInteger current; // index of current wrestlers
+        public BigInteger previousDirectDamage;
+        public BigInteger previousIndirectDamage;
+        public BigInteger previousRecover;
         public WrestlingMove move;
-        public int turn;
+        public BigInteger turn;
         public bool auto; // if true, uses random move without requiring user action
     }
 
@@ -1836,27 +1837,27 @@ namespace Phantasma.Blockchain.Contracts.Native
         public ushort version;
         public BattleMode mode;
         public BigInteger bet;
-        public int turn;
+        public BigInteger turn;
         public BigInteger lastTurnHash;
         public BattleState state;
-        public uint timestamp;
-        public int[] counters;
+        public Timestamp time;
+        public BigInteger[] counters;
     }
 
     public struct NachoWrestler
     {
         public byte[] genes;
         public Address owner;
-        public int currentMojo;
-        public int maxMojo;
-        public uint experience;
-        public int score;
+        public BigInteger currentMojo;
+        public BigInteger maxMojo;
+        public BigInteger experience;
+        public BigInteger score;
         public string nickname;
-        public int battleCount;
+        public BigInteger battleCount;
         public PraticeLevel praticeLevel;
-        public uint mojoTime;
-        public uint gymTime;
-        public uint perfumeTime;
+        public Timestamp mojoTime;
+        public Timestamp gymTime;
+        public Timestamp perfumeTime;
         public WrestlerLocation location;
         public StatKind trainingStat;
         public byte gymBoostStamina;
@@ -1873,7 +1874,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte maskOverrideCheck;
         public BigInteger itemID;
         public string[] comments;
-        public uint roomTime;
+        public Timestamp roomTime;
         public byte[] moveOverrides;
         public BigInteger auctionID;
         public WrestlerFlags flags;
@@ -1904,7 +1905,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoSale
     {
-        public uint time;
+        public Timestamp time;
         public BigInteger auctionID;
         public BigInteger price;
         public Address buyer;
@@ -1912,22 +1913,22 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoAccount
     {
-        public uint creationTime;
+        public Timestamp creationTime;
         public BigInteger battleID;
         public string unused;
         public string neoAddress;
         public AccountFlags flags;
-        public int[] counters;
+        public BigInteger[] counters;
         public string comment;
         public Address referal;
-        public uint lastTime;
+        public Timestamp lastTime;
         public TrophyFlag trophies;
-        public int ELO;
+        public BigInteger ELO;
 
         public BattleMode queueMode;
         public BigInteger queueBet;
-        public uint queueJoinTime;
-        public uint queueUpdateTime;
+        public Timestamp queueJoinTime;
+        public Timestamp queueUpdateTime;
         public Address queueVersus;
         public PraticeLevel queueLevel;
         public BigInteger[] queueWrestlerIDs;
@@ -1942,18 +1943,18 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoReferral
     {
         public Address address;
-        public uint referalTime;
+        public Timestamp referalTime;
         public BigInteger bonusAmount;
-        public uint stakeTime;
+        public Timestamp stakeTime;
         public BigInteger stakeAmount;
-        public int bonusPercentage;
+        public BigInteger bonusPercentage;
     }
 
     public struct NachoPotEntry
     {
-        public uint timestamp;
+        public Timestamp timestamp;
         public Address address;
-        public uint wins;
+        public BigInteger wins;
     }
 
     public struct NachoPot
@@ -1961,7 +1962,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger currentBalance;
         public BigInteger lastBalance;
         public Address[] lastWinners;
-        public uint timestamp;
+        public Timestamp timestamp;
         public bool claimed;
         public NachoPotEntry[] entries;
     }
@@ -1976,14 +1977,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoConfig
     {
-        public uint time;
-        public bool suspendedTransfers;
+        public Timestamp    time;
+        public bool         suspendedTransfers;
     }
 
     public struct NachoVersusInfo
     {
         public Address challenger;
-        public uint timestamp;
+        public Timestamp time;
         public BigInteger bet;
         public byte[] levels;
     }
@@ -1993,7 +1994,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public string name;
         public BigInteger contentID;
         public BigInteger price;
-        public int nachos;
+        public BigInteger nachos;
     }
 
     public struct Friend
@@ -2001,7 +2002,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public string name;
         public Address address;
         //public int avatarID;
-        public int ELO;
+        public BigInteger ELO;
     }
 
     #endregion
@@ -2011,21 +2012,21 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Address address;
         public WrestlingMove move;
         public WrestlingMove lastMove;
-        public int currentAtk;
-        public int currentDef;
-        public int currentStamina;
-        public int initialAtk;
-        public int initialDef;
-        public int maxStamina;
-        public uint level;
+        public BigInteger currentAtk;
+        public BigInteger currentDef;
+        public BigInteger currentStamina;
+        public BigInteger initialAtk;
+        public BigInteger initialDef;
+        public BigInteger maxStamina;
+        public BigInteger level;
         public BigInteger seed;
-        public int power;
+        public BigInteger power;
         public ItemKind item;
         public BattleStatus status;
         public BattleStance stance;
         public BattleStance lastStance;
-        public int lastDamage;
-        public int chance;
+        public BigInteger lastDamage;
+        public BigInteger chance;
         public bool itemActivated;
     }
 
@@ -2237,7 +2238,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     neoAddress = "",
                     creationTime = 0,
                     flags = AccountFlags.None,
-                    counters = new int[Constants.ACCOUNT_COUNTER_MAX],
+                    counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX],
                     comment = "",
                     referal = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
@@ -2268,12 +2269,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             // this allows us to add new counters later while keeping binary compatibility
             if (account.counters == null)
             {
-                account.counters = new int[Constants.ACCOUNT_COUNTER_MAX];
+                account.counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
             }
             else
             if (account.counters.Length < Constants.ACCOUNT_COUNTER_MAX)
             {
-                var temp = new int[Constants.ACCOUNT_COUNTER_MAX];
+                var temp = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
                 for (int i = 0; i < account.counters.Length; i++)
                 {
                     temp[i] = account.counters[i];
@@ -2783,7 +2784,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 case ItemKind.Rare_Taco:
                     {
-                        var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                        var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                         Runtime.Expect(level < Constants.MAX_LEVEL, "reached maximum level");
 
                         wrestler.experience = Constants.EXPERIENCE_MAP[level + 1];
@@ -3759,7 +3760,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(SpendFromAccountBalance(from, stakeAmount, wrestlerID), "not enough funds");
             }
 
-            BigInteger last_time = wrestler.roomTime;
+            Timestamp last_time = wrestler.roomTime;
             var current_time = GetCurrentTime();
 
             var diff = current_time - last_time;
@@ -3914,7 +3915,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.None, "location failed");
 
-            BigInteger last_time = wrestler.gymTime;
+            Timestamp last_time = wrestler.gymTime;
             var current_time = GetCurrentTime();
 
             var diff = current_time - last_time;
@@ -3930,7 +3931,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetWrestler(wrestlerID, wrestler);
         }
 
-        private uint GetMaxGymXPForWrestler(NachoWrestler wrestler, ItemKind itemKind)
+        private int GetMaxGymXPForWrestler(NachoWrestler wrestler, ItemKind itemKind)
         {
             var maxXPPerSession = Constants.SECONDS_PER_DAY;
 
@@ -3942,12 +3943,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return maxXPPerSession;
         }
 
-        private uint GetObtainedGymXP(NachoWrestler wrestler, uint maxXPPerSession, ItemKind itemKind)
+        private int GetObtainedGymXP(NachoWrestler wrestler, int maxXPPerSession, ItemKind itemKind)
         {
             var start_time = wrestler.gymTime;
             var current_time = GetCurrentTime();
 
-            uint diff = (current_time - start_time);
+            int diff = (int)(current_time.Value - start_time.Value);
             if (diff < Constants.SECONDS_PER_HOUR)
             {
                 return 0;
@@ -3968,7 +3969,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (wrestler.experience + obtainedXP > Constants.WRESTLER_MAX_XP)
             {
-                obtainedXP = Constants.WRESTLER_MAX_XP - wrestler.experience;
+                obtainedXP = Constants.WRESTLER_MAX_XP - (int)wrestler.experience;
             }
 
             return obtainedXP;
@@ -4619,7 +4620,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(wrestler.owner == from, "invalid owner");
                 Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo");
 
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
                 if (mode == BattleMode.Ranked)
                 {
@@ -5094,7 +5095,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 case WrestlingMove.Smash:
                     {
-                        var power = Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_SMASH_POWER);
+                        var power = Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_SMASH_POWER);
                         if (attacker.item == ItemKind.Wood_Chair && defender.item != ItemKind.Wood_Potato)
                         {
                             power = (power * Constants.DAMAGE_CHAIR_PERCENTAGE) / 100;
@@ -5103,19 +5104,19 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                 case WrestlingMove.Chop:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_CHOP_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_CHOP_POWER);
 
                 case WrestlingMove.Avalanche:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_AVALANCHE_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_AVALANCHE_POWER);
 
                 case WrestlingMove.Corkscrew:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_CORKSCREW_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_CORKSCREW_POWER);
 
                 case WrestlingMove.Mega_Chop:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_MEGA_CHOP_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_MEGA_CHOP_POWER);
 
                 case WrestlingMove.Knock_Off:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_KNOCK_OFF_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_KNOCK_OFF_POWER);
 
                 case WrestlingMove.Armlock:
                     {
@@ -5129,11 +5130,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                             power = Constants.DAMAGE_ARMLOCK_NORMAL_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Spinning_Crane:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_SPINNING_CRANE_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_SPINNING_CRANE_POWER);
 
                 case WrestlingMove.Butterfly_Kick:
                     {
@@ -5147,7 +5148,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             baseDamage = Constants.DAMAGE_GOOD_CHOP_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, baseDamage);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, baseDamage);
                     }
 
                 case WrestlingMove.Moth_Drill:
@@ -5162,59 +5163,59 @@ namespace Phantasma.Blockchain.Contracts.Native
                             baseDamage = Constants.DAMAGE_BAD_CHOP_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, baseDamage);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, baseDamage);
                     }
 
                 case WrestlingMove.Gutbuster:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_GUTBUSTER_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_GUTBUSTER_POWER);
 
                 case WrestlingMove.Takedown:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_TAKEDOWN_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_TAKEDOWN_POWER);
 
                 case WrestlingMove.Fart:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_FART_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_FART_POWER);
 
                 case WrestlingMove.Needle_Sting:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_NEEDLE_STING_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_NEEDLE_STING_POWER);
 
                 case WrestlingMove.Leg_Twister:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_LEG_TWISTER_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_LEG_TWISTER_POWER);
 
                 case WrestlingMove.Wolf_Claw:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_WOLF_CLAW_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_WOLF_CLAW_POWER);
 
                 case WrestlingMove.Flying_Kick:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_FLYING_KICK_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_FLYING_KICK_POWER);
 
                 case WrestlingMove.Octopus_Arm:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_OCTOPUS_ARM_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_OCTOPUS_ARM_POWER);
 
                 case WrestlingMove.Iron_Fist:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_IRON_FIST_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_IRON_FIST_POWER);
 
                 case WrestlingMove.Chomp:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_CHOMP_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_CHOMP_POWER);
 
                 case WrestlingMove.Burning_Tart:
                 case WrestlingMove.Tart_Throw:
                 case WrestlingMove.Tart_Splash:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_TART_THROW_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_TART_THROW_POWER);
 
                 case WrestlingMove.Fire_Breath:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_FIRE_BREATH_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_FIRE_BREATH_POWER);
 
                 case WrestlingMove.Flame_Fang:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_FIRE_FANG_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_FIRE_FANG_POWER);
 
                 case WrestlingMove.Headspin:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_HEAD_SPIN_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_HEAD_SPIN_POWER);
 
                 case WrestlingMove.Palm_Strike:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.initialDef, rnd, Constants.DAMAGE_PALM_STRIKE_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.initialDef, rnd, Constants.DAMAGE_PALM_STRIKE_POWER);
 
                 case WrestlingMove.Sick_Sock:
                     {
-                        var damage = Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_SICK_SOCK_POWER);
+                        var damage = Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_SICK_SOCK_POWER);
                         var extra = Formulas.CountNumberOfStatus(attacker.status);
 
                         damage += (damage * Constants.SICK_SOCK_DAMAGE_PERCENT * extra) / 100;
@@ -5222,14 +5223,14 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                 case WrestlingMove.Psy_Strike:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.initialDef, rnd, Constants.DAMAGE_PSY_STRIKE_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.initialDef, rnd, Constants.DAMAGE_PSY_STRIKE_POWER);
 
                 case WrestlingMove.Bizarre_Ball:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, Formulas.BaseStatSplit, rnd, Constants.DAMAGE_BIZARRE_BALL_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, Formulas.BaseStatSplit, rnd, Constants.DAMAGE_BIZARRE_BALL_POWER);
 
                 case WrestlingMove.Torpedo:
                     {
-                        int add = attacker.chance / 4;
+                        int add = (int)attacker.chance / 4;
 
                         if (attacker.status.HasFlag(BattleStatus.Drunk))
                         {
@@ -5242,13 +5243,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                         }
 
                         var basePower = 7 + add;
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, basePower);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, basePower);
                     }
 
                 case WrestlingMove.Pain_Release:
                     {
                         // calculate the original damage without reduction
-                        var power = attacker.lastDamage + ((attacker.lastDamage * Constants.ZEN_CHARGE_PERCENTAGE) / 100);
+                        var power = (int)attacker.lastDamage + (((int)attacker.lastDamage * Constants.ZEN_CHARGE_PERCENTAGE) / 100);
 
                         // augmentate the damage
                         power = (power * Constants.ZEN_RELEASE_PERCENTAGE) / 100;
@@ -5257,13 +5258,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 case WrestlingMove.Rage_Punch:
                     {
-                        var power = Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_RAGE_PUNCH_POWER);
+                        var power = Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_RAGE_PUNCH_POWER);
                         return power;
                     }
 
                 case WrestlingMove.Ultra_Punch:
                     {
-                        var power = Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_RAGE_PUNCH_POWER);
+                        var power = Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_RAGE_PUNCH_POWER);
                         return power * 2;
                     }
 
@@ -5275,9 +5276,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                         var diff = Constants.DAMAGE_BOOMERANG_MAX_POWER - Constants.DAMAGE_BOOMERANG_NORMAL_POWER;
                         var power = Constants.DAMAGE_BOOMERANG_NORMAL_POWER;
-                        power += (diff * percent) / 100;
+                        power += (int)(diff * percent) / 100;
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Bash:
@@ -5287,9 +5288,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                         var diff = Constants.DAMAGE_BASH_MAX_POWER - Constants.DAMAGE_BASH_NORMAL_POWER;
                         var power = Constants.DAMAGE_BASH_NORMAL_POWER;
-                        power += (diff * percent) / 100;
+                        power += (int)(diff * percent) / 100;
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Flailing_Arms:
@@ -5305,29 +5306,29 @@ namespace Phantasma.Blockchain.Contracts.Native
                             power = Constants.DAMAGE_FLAILING_ARMS_POWER_WEAK;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Rhino_Rush:
                     {
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_RHINO_CHARGE_POWER);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_RHINO_CHARGE_POWER);
                     }
 
                 case WrestlingMove.Hyper_Slam:
                     {
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_HYPER_SLAM);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_HYPER_SLAM);
                     }
 
                 case WrestlingMove.Gorilla_Cannon:
                     {
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_GORILLA_CANNON_POWER);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_GORILLA_CANNON_POWER);
                     }
 
                 case WrestlingMove.Mind_Slash:
                     {
                         if (attacker.status != BattleStatus.None)
                         {
-                            return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_MIND_SLASH);
+                            return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_MIND_SLASH);
                         }
                         else
                         {
@@ -5336,19 +5337,19 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                 case WrestlingMove.Drunken_Fist:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_DRUKEN_FIST_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_DRUKEN_FIST_POWER);
 
                 case WrestlingMove.Razor_Jab:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_RAZOR_JAB_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_RAZOR_JAB_POWER);
 
                 case WrestlingMove.Hammerhead:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_HAMMERHEAD_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_HAMMERHEAD_POWER);
 
                 case WrestlingMove.Knee_Bomb:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_KNEE_BOMB_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_KNEE_BOMB_POWER);
 
                 case WrestlingMove.Chicken_Wing:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_CHICKEN_WING_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_CHICKEN_WING_POWER);
 
                 case WrestlingMove.Smile_Crush:
                     {
@@ -5358,7 +5359,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         if (atkPercentage < defPercentage)
                         {
                             var diff = defPercentage - atkPercentage;
-                            var power = (Constants.DAMAGE_SMILE_CRUSH_POWER * diff) / 100;
+                            var power = (int)(Constants.DAMAGE_SMILE_CRUSH_POWER * diff) / 100;
                             if (power < 2)
                             {
                                 power = 2;
@@ -5369,7 +5370,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 power *= 2;
                             }
 
-                            return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                            return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                         }
                         else
                             return 0;
@@ -5384,7 +5385,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             power = Constants.DAMAGE_HEART_PUNCH_MAX_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Back_Slap:
@@ -5396,7 +5397,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             power = Constants.DAMAGE_BACK_SLAP_MAX_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Rehab:
@@ -5408,7 +5409,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             power = Constants.DAMAGE_REHAB_MAX_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Monkey_Slap:
@@ -5424,11 +5425,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                             power = Constants.DAMAGE_GOOD_CHOP_POWER;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, power);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, power);
                     }
 
                 case WrestlingMove.Side_Hook:
-                    return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, Constants.DAMAGE_SIDE_HOOK_POWER);
+                    return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, Constants.DAMAGE_SIDE_HOOK_POWER);
 
                 case WrestlingMove.Slingshot:
                     if (attacker.item != ItemKind.None)
@@ -5461,7 +5462,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             default: baseDamage = Constants.DAMAGE_SLINGSHOT_MIN; break;
                         }
 
-                        return Formulas.CalculateDamage(attacker.level, attacker.currentAtk, defender.currentDef, rnd, baseDamage);
+                        return Formulas.CalculateDamage((int)attacker.level, (int)attacker.currentAtk, (int)defender.currentDef, rnd, baseDamage);
                     }
                     else
                         return 0;
@@ -5477,7 +5478,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (Rules.IsCounter(defender.move, defender.item, attacker.move, attacker.item))
             {
                 var percentage = defender.item == ItemKind.Gyroscope ? 100 : 150;
-                damage = (defender.power * percentage) / 100;
+                damage = (int)(defender.power * percentage) / 100;
             }
             else
             if (Rules.IsCounter(attacker.move, attacker.item, defender.move, defender.item))
@@ -5490,7 +5491,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     case WrestlingMove.Block:
                         if (defender.power > 0)
                         {
-                            var power = defender.power / 2;
+                            var power = (int)defender.power / 2;
                             if (power < 1)
                             {
                                 power = 1;
@@ -5554,15 +5555,15 @@ namespace Phantasma.Blockchain.Contracts.Native
                     case WrestlingMove.Sick_Sock:
                     case WrestlingMove.Psy_Strike:
                     case WrestlingMove.Mind_Slash:
-                        damage = attacker.power;
+                        damage = (int)attacker.power;
                         break;
 
                     case WrestlingMove.Gutbuster:
-                        damage = (defender.move == defender.lastMove) ? attacker.power : 0;
+                        damage = (defender.move == defender.lastMove) ? (int)attacker.power : 0;
                         break;
 
                     case WrestlingMove.Side_Hook:
-                        damage = (Rules.IsStanceMove(defender.move)) ? attacker.power : 0;
+                        damage = (Rules.IsStanceMove(defender.move)) ? (int)attacker.power : 0;
                         break;
 
                     default:
@@ -5610,7 +5611,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private WrestlerTurnInfo CalculateTurnInfo(BattleSide side, NachoWrestler wrestler, WrestlingMove move, WrestlingMove lastMove, LuchadorBattleState state, BigInteger seed)
         {
-            var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+            var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
             var genes = wrestler.genes;
 
@@ -5876,8 +5877,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var state_B = battle.sides[1].wrestlers[(uint)battle.sides[1].current];
             var wrestler_B = GetWrestler(state_B.wrestlerID);
 
-            var level_A = Formulas.CalculateWrestlerLevel(wrestler_A.experience);
-            var level_B = Formulas.CalculateWrestlerLevel(wrestler_B.experience);
+            var level_A = Formulas.CalculateWrestlerLevel((int)wrestler_A.experience);
+            var level_B = Formulas.CalculateWrestlerLevel((int)wrestler_B.experience);
 
             // TODO ver código repetido
 
@@ -5887,7 +5888,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             TerminateMatch(battleID, battle, state_A, state_B, avgLevel);
         }
 
-        private void TerminateMatch(BigInteger battleID, NachoBattle battle, LuchadorBattleState state_A, LuchadorBattleState state_B, uint avgLevel)
+        private void TerminateMatch(BigInteger battleID, NachoBattle battle, LuchadorBattleState state_A, LuchadorBattleState state_B, int avgLevel)
         {
             if (battle.bet > 0)
             {
@@ -5998,12 +5999,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (battle.mode != BattleMode.Versus)
             {
-                uint factor = (100 * avgLevel) / 4; // apply a curve
-                uint receivedXP = Constants.AVERAGE_XP_GAIN * factor;
+                int factor = (100 * avgLevel) / 4; // apply a curve
+                int receivedXP = Constants.AVERAGE_XP_GAIN * factor;
                 receivedXP = receivedXP / 100;
                 if (receivedXP < Constants.MINIMUM_XP_PER_BATTLE) receivedXP = Constants.MINIMUM_XP_PER_BATTLE;
 
-                var XP = new uint[2];
+                var XP = new int[2];
                 var mojo_change = new int[2];
 
                 switch (battle.state)
@@ -6079,7 +6080,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         var side = battle.sides[winningSide];
 
-                        if (side.wrestlers[side.current].stance == BattleStance.Clown)
+                        if (side.wrestlers[(int)side.current].stance == BattleStance.Clown)
                         {
                             AddTrophy(battle.sides[1].address, TrophyFlag.Clown);
                         }
@@ -6088,7 +6089,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
 
                 var wrestlers = new NachoWrestler[2];
-                var currentELOs = new int[2];
+                var currentELOs = new BigInteger[2];
 
                 // TODO FIXME does not support tag team yet
                 for (int i = 0; i < 2; i++)
@@ -6230,7 +6231,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             var sideAddress = battle.sides[sideIndex].address;
                             var account = GetAccount(sideAddress);
-                            account.ELO = CalculateELO(currentELOs[sideIndex], currentELOs[other], sideIndex, battle.state);
+                            account.ELO = CalculateELO((int)currentELOs[sideIndex], (int)currentELOs[other], sideIndex, battle.state);
                             if (account.ELO != currentELOs[sideIndex])
                             {
                                 SetAccount(sideAddress, account);
@@ -6355,7 +6356,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return false;
             }
 
-            var diff = GetCurrentTime() - battle.timestamp;
+            var diff = GetCurrentTime() - battle.time;
             if (diff < 0 || diff >= Constants.SECONDS_PER_HOUR)
             {
                 return true;
@@ -6373,7 +6374,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (index < battle.counters.Length)
             {
-                return battle.counters[index];
+                return (int)battle.counters[index];
             }
 
             return 0;
@@ -8681,9 +8682,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region PROTOCOL
-        private uint GetCurrentTime()
+        private Timestamp GetCurrentTime()
         {
-            return Runtime.Time.Value;
+            return Runtime.Time;
         }
         #endregion
 

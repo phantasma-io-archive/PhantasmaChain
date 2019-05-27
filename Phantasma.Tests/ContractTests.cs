@@ -794,6 +794,10 @@ namespace Phantasma.Tests
             proxyList = (EnergyProxy[])simulator.Nexus.RootChain.InvokeContract("energy", "GetProxies", testUser.Address);
             Assert.IsTrue(proxyList.Length == 0);
 
+            var api = new NexusAPI(nexus);
+            var script = ScriptUtils.BeginScript().CallContract("energy", "GetProxies", testUser.Address).EndScript();
+            var apiResult = api.InvokeRawScript("main", Base16.Encode(script));
+
             //-----------
             //Add and remove 90% proxy: should pass
             simulator.BeginBlock();
@@ -806,6 +810,8 @@ namespace Phantasma.Tests
             proxyList = (EnergyProxy[])simulator.Nexus.RootChain.InvokeContract("energy", "GetProxies", testUser.Address);
             Assert.IsTrue(proxyList.Length == 1);
             Assert.IsTrue(proxyList[0].percentage == 90);
+
+            apiResult = api.InvokeRawScript("main", Base16.Encode(script));
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -1847,8 +1853,7 @@ namespace Phantasma.Tests
             public Address address;
         }
 
-        [TestMethod]
-        public void TestFriendArray()
+        private byte[] GetScriptForFriends(Address target)
         {
             var owner = KeyPair.Generate();
 
@@ -1891,7 +1896,7 @@ namespace Phantasma.Tests
                 "load r0 \"friends\"",
                 "ctx r0 r1",
 
-                $"load r0 0x{Base16.Encode( testUserA.Address.PublicKey)}",
+                $"load r0 0x{Base16.Encode( target.PublicKey)}",
                 "push r0",
                 "extcall \"Address()\"",
 
@@ -1924,7 +1929,6 @@ namespace Phantasma.Tests
 
                 "load r0 \"name\"",
                 "load r1 \"address\"",
-
                 "put $name $friendname[r0]",
                 "put $address $friendname[r1]",
 
@@ -1944,17 +1948,61 @@ namespace Phantasma.Tests
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
-            var result = nexus.RootChain.InvokeScript(script);
-            Assert.IsTrue(result != null);
 
-            var tempA = result.ToArray<FriendTestStruct>();
+            return script;
+        }
+
+        [TestMethod]
+        public void TestFriendArray()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var fuelToken = Nexus.FuelTokenSymbol;
+            var stakingToken = Nexus.StakingTokenSymbol;
+
+            //Let A be an address
+            var testUserA = KeyPair.Generate();
+            var testUserB = KeyPair.Generate();
+            var testUserC = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, fuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, stakingToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, fuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, stakingToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, fuelToken, 100000000);
+            simulator.GenerateTransfer(owner, testUserC.Address, nexus.RootChain, stakingToken, 100000000);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("friends", "AddFriend", testUserA.Address, testUserB.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("friends", "AddFriend", testUserA.Address, testUserC.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var scriptA = GetScriptForFriends(testUserA.Address);
+            var resultA = nexus.RootChain.InvokeScript(scriptA);
+            Assert.IsTrue(resultA != null);
+
+            var tempA = resultA.ToArray<FriendTestStruct>();
             Assert.IsTrue(tempA.Length == 2);
             Assert.IsTrue(tempA[0].address == testUserB.Address);
             Assert.IsTrue(tempA[1].address == testUserC.Address);
 
             // we also test that the API can handle complex return types
             var api = new NexusAPI(nexus);
-            var apiResult = (ScriptResult) api.InvokeRawScript("main", Base16.Encode(script));
+            var apiResult = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(scriptA));
 
             // NOTE objBytes will contain a serialized VMObject
             var objBytes = Base16.Decode(apiResult.result);
@@ -1965,13 +2013,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(tempB.Length == 2);
             Assert.IsTrue(tempB[0].address == testUserB.Address);
             Assert.IsTrue(tempB[1].address == testUserC.Address);
+
+            // check what happens when no friends available
+            var scriptB = GetScriptForFriends(testUserB.Address);
+            var apiResultB = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(scriptB));
+
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytesB = Base16.Decode(apiResultB.result);
+            var resultEmpty = Serialization.Unserialize<VMObject>(objBytesB);
+            Assert.IsTrue(resultEmpty != null);
         }
 
-        public struct NachoConfigTestStruct
-        {
-            public Timestamp time;
-            public bool suspendedTransfers;
-        }
 
         [TestMethod]
         public void TestGetNachoConfig()
@@ -2003,10 +2055,41 @@ namespace Phantasma.Tests
             var resultObj = Serialization.Unserialize<VMObject>(objBytes);
 
             // finally as last step, convert it to a C# struct
-            var userConfig = resultObj.ToStruct<NachoConfigTestStruct>();
+            var userConfig = resultObj.ToStruct<NachoConfig>();
 
             Assert.IsTrue(userConfig.time > 0);
             Assert.IsTrue(userConfig.suspendedTransfers == false);
+        }
+
+
+        [TestMethod]
+        public void TestGetNachoAccount()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, 100000000);
+            simulator.EndBlock();
+
+            var script = ScriptUtils.BeginScript().CallContract("nacho", "GetAccount", new object[] { testUser.Address }).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
+
+            var api = new NexusAPI(nexus);
+            var apiResult = (ScriptResult)api.InvokeRawScript("nacho", Base16.Encode(script));
+
+            // NOTE objBytes will contain a serialized VMObject
+            var objBytes = Base16.Decode(apiResult.result);
+            var resultObj = Serialization.Unserialize<VMObject>(objBytes);
+
+            // finally as last step, convert it to a C# struct
+            var userAccount = resultObj.ToStruct<NachoAccount>();
+
+            Assert.IsTrue(userAccount.ELO == Constants.DEFAULT_ELO);
         }
     }
 }

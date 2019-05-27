@@ -837,6 +837,12 @@ namespace Phantasma.API
             else
             {
                 var result = vm.Stack.Pop();
+
+                if (result.Type == VMType.Object)
+                {
+                    result = VMObject.CastTo(result, VMType.Struct);
+                }
+
                 var resultBytes = Serialization.Serialize(result);
                 encodedResult = Base16.Encode(resultBytes);
             }

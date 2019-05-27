@@ -8,6 +8,8 @@ using Phantasma.Cryptography;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
 using Phantasma.VM;
+using System.Linq;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {
@@ -2183,6 +2185,27 @@ namespace Phantasma.Tests
             }
 
             throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
+        }
+        #endregion
+
+        #region Disassembler
+        [TestMethod]
+        public void MethodExtract()
+        {
+            var methodName = "MyCustomMethod";
+
+            string[] scriptString = new string[]
+            {
+                $"extcall \"{methodName}\"",
+                $"ret"
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            var calls = DisasmUtils.ExtractMethodCalls(script);
+
+            Assert.IsTrue(calls.Count() == 1);
+            Assert.IsTrue(calls.First().MethodName == methodName);
         }
         #endregion
 
