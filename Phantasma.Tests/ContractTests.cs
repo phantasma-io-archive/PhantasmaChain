@@ -66,7 +66,7 @@ namespace Phantasma.Tests
 
             var price = 1000;
 
-            Timestamp endDate = Timestamp.Now + TimeSpan.FromDays(2);
+            Timestamp endDate = simulator.CurrentTime + TimeSpan.FromDays(2);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>

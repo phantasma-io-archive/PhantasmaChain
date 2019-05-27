@@ -429,8 +429,16 @@ namespace Phantasma.Tests
 
             // we cant transfer the full side amount due to fees
             // TODO  calculate the proper fee values instead of this
-            sideAmount /= 2;
+            var txCostA = simulator.Nexus.RootChain.GetTransactionFee(txA);
+            var txCostB = appsChain.GetTransactionFee(txB);
+            sideAmount = sideAmount - txCostB;
+
+            balance = appsChain.GetTokenBalance(symbol, sender.Address);
+            Assert.IsTrue(balance == sideAmount);
+
             var extraFree = UnitConversion.ToBigInteger(0.01m, token.Decimals);
+
+            sideAmount -= extraFree*10;
 
             // do another side chain send using test user balance from apps to target chain
             simulator.BeginBlock();

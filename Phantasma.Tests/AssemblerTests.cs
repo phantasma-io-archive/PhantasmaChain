@@ -6,6 +6,7 @@ using Phantasma.Blockchain;
 using Phantasma.Core.Log;
 using Phantasma.Cryptography;
 using Phantasma.CodeGen.Assembler;
+using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using System.Linq;
@@ -1938,8 +1939,9 @@ namespace Phantasma.Tests
             for (int i = 0; i < args.Count; i++)
             {
                 var argsLine = args[i];
-                string r1 = argsLine[0] == null ? null : $"\\\"{argsLine[0]}\\\"";
-                string r2 = argsLine[1] == null ? null : $"\\\"{argsLine[1]}\\\"";
+                string r1 = argsLine[0] == null ? null : $"\"{argsLine[0]}\"";
+                //string r2 = argsLine[1] == null ? null : $"\\\"{argsLine[1]}\\\"";
+                string r2 = argsLine[1] == null ? null : $"\"{argsLine[1]}\"";
 
                 var scriptString = new string[1];
 
@@ -2035,7 +2037,7 @@ namespace Phantasma.Tests
 
                 scriptString = new string[]
                 {
-                    $"load r1, \\\"{r1}\\\"",
+                    $"load r1, \"{r1}\"",
                     $"left r1, r2, {len}",
                     @"push r2",
                     @"ret"
@@ -2093,7 +2095,7 @@ namespace Phantasma.Tests
 
                 scriptString = new string[]
                 {
-                    $"load r1, \\\"{r1}\\\"",
+                    $"load r1, \"{r1}\"",
                     $"right r1, r2, {len}",
                     @"push r2",
                     @"ret"
@@ -2150,7 +2152,7 @@ namespace Phantasma.Tests
 
                 scriptString = new string[]
                 {
-                    $"load r1, \\\"{r1}\\\"",
+                    $"load r1, \"{r1}\"",
                     $"size r1, r2",
                     @"push r2",
                     @"ret"
@@ -2212,10 +2214,12 @@ namespace Phantasma.Tests
         #region AuxFunctions
         private TestVM ExecuteScript(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
         {
+            var owner = KeyPair.Generate();
             var script = AssemblerUtils.BuildScript(scriptString);
 
             var keys = KeyPair.Generate();
             var nexus = new Nexus(new ConsoleLogger());
+            nexus.CreateGenesisBlock("asmnet", owner, Timestamp.Now);
             var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
 
             var vm = new TestVM(tx.Script);
