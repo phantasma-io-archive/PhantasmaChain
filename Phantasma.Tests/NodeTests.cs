@@ -46,7 +46,7 @@ namespace Phantasma.Tests
             var masterKeys = KeyPair.FromWIF(nexusWif);
             //Trace.Message($"Connecting to host: {host} with address {masterKeys.Address.Text}");
 
-            var amount = UnitConversion.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
+            var amount = UnitConversion.ToBigInteger(1000000, Nexus.StakingTokenDecimals);
             var hash = SendTransfer(host, masterKeys, currentKey.Value.Address, amount);
             if (hash == Hash.Null)
             {
@@ -59,6 +59,9 @@ namespace Phantasma.Tests
             int okTxs = 0;
 
             BigInteger currentKeyBalance = GetBalance(currentKey.Value.Address);
+
+            amount = UnitConversion.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
+            SendTransfer(host, masterKeys, currentKey.Value.Address, amount, "KCAL");
 
             //while (currentKeyBalance > 9999)
             while (totalTxs < 10)
@@ -101,7 +104,7 @@ namespace Phantasma.Tests
             
             var currentKey = KeyPair.Generate();
 
-            var amount = UnitConversion.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
+            var amount = UnitConversion.ToBigInteger(1000000, Nexus.StakingTokenDecimals);
             var hash = SendTransfer(host, masterKeys, currentKey.Address, amount);
             if (hash == Hash.Null)
             {
@@ -149,9 +152,9 @@ namespace Phantasma.Tests
             node.Stop();
         }
 
-        private Hash SendTransfer(string host, KeyPair from, Address to, BigInteger amount)
+        private Hash SendTransfer(string host, KeyPair from, Address to, BigInteger amount, string tokenSymbol = "SOUL")
         {
-            var script = ScriptUtils.BeginScript().AllowGas(from.Address, Address.Null, 1, 9999).TransferTokens("SOUL", from.Address, to, amount).SpendGas(from.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(from.Address, Address.Null, 1, 9999).TransferTokens(tokenSymbol, from.Address, to, amount).SpendGas(from.Address).EndScript();
             return SendTransaction(host, from, script);
         }
 
