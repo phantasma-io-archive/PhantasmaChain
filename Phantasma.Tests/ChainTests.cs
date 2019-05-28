@@ -421,6 +421,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, sender.Address, appsChain, sideAmount, 0);
             var blockA = simulator.EndBlock().FirstOrDefault();
+            var evtsA = blockA.GetEventsForTransaction(txA.Hash);
 
             // finish the chain transfer
             simulator.BeginBlock();
@@ -445,9 +446,15 @@ namespace Phantasma.Tests
             var txC = simulator.GenerateSideChainSend(sender, symbol, appsChain, receiver.Address, targetChain, sideAmount, extraFree);
             var blockC = simulator.EndBlock().FirstOrDefault();
 
+            var evtsC = blockC.GetEventsForTransaction(txC.Hash);
+
+            var appSupplies = new SupplySheet(symbol, appsChain, nexus);
+            var childBalance = appSupplies.GetChildBalance(appsChain.Storage, targetChain.Name);
+            var expectedChildBalance = sideAmount + extraFree;
+            
             // finish the chain transfer
             simulator.BeginBlock();
-            var txD = simulator.GenerateSideChainSettlement(sender, appsChain, targetChain, blockC.Hash);
+            var txD = simulator.GenerateSideChainSettlement(receiver, appsChain, targetChain, blockC.Hash);
             Assert.IsTrue(simulator.EndBlock().Any());
 
             // TODO  verify balances

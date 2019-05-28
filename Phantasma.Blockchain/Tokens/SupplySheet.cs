@@ -104,6 +104,8 @@ namespace Phantasma.Blockchain.Tokens
         public bool MoveToChild(StorageContext storage, string childChainName, BigInteger amount)
         {
             Throw.IfNull(childChainName, nameof(childChainName));
+            Throw.If(childChainName == _localName, "invalid child, received local instead");
+            Throw.If(childChainName == _parentName, "invalid child, received parent instead");
 
             var localBalance = Get(storage, _localName);
             if (localBalance < amount)
@@ -142,6 +144,8 @@ namespace Phantasma.Blockchain.Tokens
         public bool MoveFromChild(StorageContext storage, string childChainName, BigInteger amount)
         {
             Throw.IfNull(childChainName, nameof(childChainName));
+            Throw.If(childChainName == _localName, "invalid child, received local instead");
+            Throw.If(childChainName == _parentName, "invalid child, received parent instead");
 
             var childBalance = GetChildBalance(storage, childChainName);
 

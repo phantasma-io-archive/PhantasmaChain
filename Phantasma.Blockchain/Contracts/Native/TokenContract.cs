@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else // child chain
                 {
-                    Runtime.Expect(sourceSupplies.MoveToChild(this.Storage, this.Runtime.Chain.Name, amount), "source supply check failed");
+                    Runtime.Expect(sourceSupplies.MoveToChild(this.Storage, targetChain.Name, amount), "source supply check failed");
                 }
             }
 
