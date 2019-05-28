@@ -114,7 +114,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // TODO minting a NFT will require a certain amount of KCAL that is released upon burning
-        public BigInteger MintToken(Address to, string symbol, byte[] ram, byte[] rom)
+        public BigInteger MintToken(Address to, string symbol, byte[] rom, byte[] ram)
         {
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -126,7 +126,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, ram, rom);
+            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             Runtime.Expect(Runtime.Nexus.MintToken(symbol, this.Storage, Runtime.Chain, to, tokenID), "minting failed");

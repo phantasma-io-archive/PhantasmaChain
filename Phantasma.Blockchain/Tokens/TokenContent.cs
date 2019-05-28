@@ -37,8 +37,12 @@ namespace Phantasma.Blockchain.Tokens
         {
             CurrentChain = reader.ReadAddress();
             CurrentOwner = reader.ReadAddress();
+
             ROM = reader.ReadByteArray();
+            ROM = ROM ?? new byte[0];
+
             RAM = reader.ReadByteArray();
+            RAM = RAM ?? new byte[0];
         }
     }
 }
