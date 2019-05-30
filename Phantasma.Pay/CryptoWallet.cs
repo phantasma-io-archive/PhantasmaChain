@@ -6,19 +6,30 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.Pay
 {
+    [Flags]
+    public enum CryptoCurrencyCaps
+    {
+        None = 0,
+        Balance = 0x1,
+        Transfer = 0x2,
+        Stake = 0x4,
+    }
+
     public struct CryptoCurrencyInfo
     {
         public readonly string Symbol;
         public readonly string Name;
         public readonly int Decimals;
         public readonly WalletKind Kind;
+        public readonly CryptoCurrencyCaps Caps;
 
-        public CryptoCurrencyInfo(string symbol, string name, int decimals, WalletKind kind)
+        public CryptoCurrencyInfo(string symbol, string name, int decimals, WalletKind kind, CryptoCurrencyCaps caps)
         {
             Symbol = symbol;
             Name = name;
             Decimals = decimals;
             Kind = kind;
+            Caps = caps;
         }
     }
 

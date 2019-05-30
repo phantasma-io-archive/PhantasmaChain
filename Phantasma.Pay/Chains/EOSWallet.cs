@@ -45,7 +45,7 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("EOS", "EOS", 18, WalletKind.EOS);
+            yield return new CryptoCurrencyInfo("EOS", "EOS", 18, WalletKind.EOS, CryptoCurrencyCaps.Balance);
             yield break;
         }
 

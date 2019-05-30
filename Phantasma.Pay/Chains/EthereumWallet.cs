@@ -54,7 +54,7 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("ETH", "Ether", 8, WalletKind.Ethereum);
+            yield return new CryptoCurrencyInfo("ETH", "Ether", 8, WalletKind.Ethereum, CryptoCurrencyCaps.Balance);
             yield break;
         }
     }

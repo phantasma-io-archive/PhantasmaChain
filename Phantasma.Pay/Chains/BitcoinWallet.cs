@@ -128,7 +128,7 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("BTC", "Bitcoin", 8, WalletKind.Bitcoin);
+            yield return new CryptoCurrencyInfo("BTC", "Bitcoin", 8, WalletKind.Bitcoin, CryptoCurrencyCaps.Balance);
             yield break;
         }
     }

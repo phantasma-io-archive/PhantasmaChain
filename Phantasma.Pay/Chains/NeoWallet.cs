@@ -67,9 +67,9 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("NEO", "NEO", 0, WalletKind.Neo); // TODO check if 1 or 0
-            yield return new CryptoCurrencyInfo("GAS", "GAS", 8, WalletKind.Neo);
-            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Neo);
+            yield return new CryptoCurrencyInfo("NEO", "NEO", 0, WalletKind.Neo, CryptoCurrencyCaps.Balance); // TODO check if 1 or 0
+            yield return new CryptoCurrencyInfo("GAS", "GAS", 8, WalletKind.Neo, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Neo, CryptoCurrencyCaps.Balance);
             yield break;
         }
 
