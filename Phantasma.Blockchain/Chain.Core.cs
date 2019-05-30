@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using Phantasma.Core;
@@ -407,6 +408,18 @@ namespace Phantasma.Blockchain
             var result = vm.Stack.Pop();
 
             return result;
+        }
+
+        public BigInteger GenerateUID(StorageContext storage)
+        {
+            var key = Encoding.ASCII.GetBytes("_uid");
+
+            var lastID = storage.Has(key) ? storage.Get<BigInteger>(key) : 0;
+
+            lastID++;
+            storage.Put<BigInteger>(key, lastID);
+
+            return lastID;
         }
 
         #region FEES 
