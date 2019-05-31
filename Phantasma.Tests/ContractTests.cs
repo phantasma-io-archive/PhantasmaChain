@@ -208,7 +208,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == desiredStakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StableTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(desiredStakeAmount == startingSoulBalance - finalSoulBalance);
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
