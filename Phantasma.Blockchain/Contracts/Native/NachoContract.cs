@@ -8717,11 +8717,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public string GetMOTD()
         {
-            var motd = Storage.Get<string>(MOTD_KEY);
-            if (motd == null || motd.Length == 0)
-            {
-                return "Welcome to the oficial public release of Nacho Men!";
-            }
+            //var motd = Storage.Get<string>(MOTD_KEY);
+            //if (motd == null || motd.Length == 0)
+            //{
+            //    return "Welcome to the oficial public release of Nacho Men!";
+            //}
+
+            var motd = Storage.Has(MOTD_KEY) ? "Welcome to the oficial public release of Nacho Men!" : null;
 
             return motd;
         }
