@@ -8723,7 +8723,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //    return "Welcome to the oficial public release of Nacho Men!";
             //}
 
-            var motd = Storage.Has(MOTD_KEY) ? "Welcome to the oficial public release of Nacho Men!" : null;
+            var motd = Storage.Has(MOTD_KEY) ? "Welcome to the oficial public release of Nacho Men!" : string.Empty	;
 
             return motd;
         }
