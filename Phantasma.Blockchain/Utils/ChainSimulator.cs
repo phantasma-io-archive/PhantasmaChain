@@ -55,18 +55,26 @@ namespace Phantasma.Blockchain.Utils
 
         public readonly Logger Logger;
 
-        public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null)
+        public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null) : this(new Nexus(), ownerKey, seed, logger)
+        {
+
+        }
+
+        public ChainSimulator(Nexus nexus, KeyPair ownerKey, int seed, Logger logger = null)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
 
             _owner = ownerKey;
-            this.Nexus = new Nexus();
+            this.Nexus = nexus;
 
             CurrentTime = new DateTime(2018, 8, 26);
 
-            if (!Nexus.CreateGenesisBlock("simnet", _owner, CurrentTime))
+            if (!Nexus.Ready)
             {
-                throw new ChainException("Genesis block failure");
+                if (!Nexus.CreateGenesisBlock("simnet", _owner, CurrentTime))
+                {
+                    throw new ChainException("Genesis block failure");
+                }
             }
 
             this.bankChain = Nexus.FindChainByName("bank");
