@@ -306,6 +306,8 @@ namespace Phantasma.API
 
         private AuctionResult FillAuction(MarketAuction auction)
         {
+            var nft = Nexus.GetNFT(auction.BaseSymbol, auction.TokenID);
+
             return new AuctionResult
             {
                 baseSymbol = auction.BaseSymbol,
@@ -314,7 +316,9 @@ namespace Phantasma.API
                 creatorAddress = auction.Creator.Text,
                 price = auction.Price.ToString(),
                 startDate = auction.StartDate.Value,
-                endDate = auction.EndDate.Value
+                endDate = auction.EndDate.Value,
+                ram = Base16.Encode(nft.RAM),
+                rom = Base16.Encode(nft.ROM),
             };
         }
 

@@ -219,6 +219,9 @@ namespace Phantasma.API
         public string quoteSymbol;
         public string tokenId;
         public string price;
+
+        public string rom;
+        public string ram;
     }
 
     public struct ScriptResult : IAPIResult
