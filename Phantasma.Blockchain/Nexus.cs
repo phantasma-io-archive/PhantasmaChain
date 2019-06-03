@@ -577,6 +577,11 @@ namespace Phantasma.Blockchain
 
         public Chain FindChainByName(string name)
         {
+            if (string.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+
             if (_chainCache.ContainsKey(name))
             {
                 return _chainCache[name];
