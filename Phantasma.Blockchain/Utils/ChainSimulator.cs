@@ -181,50 +181,6 @@ namespace Phantasma.Blockchain.Utils
                 GenerateNftSale(sale.Key, Nexus.RootChain, nachoSymbol, sale.Value, UnitConversion.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
             }
             EndBlock();
-
-            BeginBlock();
-
-            var newWrestler = new NachoWrestler()
-            {
-                auctionID = 0,
-                battleCount = 0,
-                comments = new string[0],
-                currentMojo = 10,
-                experience = 10000,
-                flags = WrestlerFlags.None,
-                genes = new byte[] { 115, 169, 73, 21, 111, 3, 174, 90, 137, 58 }, //"Piece, 115, 169, 73, 21, 111, 3, 174, 90, 137, 58"
-                gymBoostAtk = byte.MaxValue,
-                gymBoostDef = byte.MaxValue,
-                gymBoostStamina = byte.MaxValue,
-                gymTime = 0,
-                itemID = 0,
-                location = WrestlerLocation.None,
-                maskOverrideCheck = byte.MaxValue,
-                maskOverrideID = byte.MaxValue,
-                maskOverrideRarity = byte.MaxValue,
-                maxMojo = 10,
-                mojoTime = 0,
-                moveOverrides = new byte[0],
-                nickname = "testname",
-                owner = nachoAddress,
-                perfumeTime = 0,
-                praticeLevel = PraticeLevel.Gold,
-                roomTime = 0,
-                score = 0,
-                stakeAmount = 0,
-                trainingStat = StatKind.None,
-                ua1 = byte.MaxValue,
-                ua2 = byte.MaxValue,
-                ua3 = byte.MaxValue,
-                us1 = byte.MaxValue,
-                us2 = byte.MaxValue,
-                us3 = byte.MaxValue
-            };
-            
-            var wrestlerBytes = newWrestler.Serialize();
-            GenerateNft(_owner, nachoAddress, nachoSymbol, new byte[0], wrestlerBytes);
-
-            EndBlock();
         }
 
         private void RandomSpreadNFT(string tokenSymbol, int amount)
