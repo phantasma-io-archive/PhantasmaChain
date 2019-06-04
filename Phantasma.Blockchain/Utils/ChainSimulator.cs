@@ -102,7 +102,6 @@ namespace Phantasma.Blockchain.Utils
             GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
 
             GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
-            GenerateSideChainSend(_owner, Constants.NACHO_SYMBOL, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
@@ -120,9 +119,13 @@ namespace Phantasma.Blockchain.Utils
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
 
-            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", 0, 0, TokenFlags.Transferable);
+            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", UnitConversion.ToBigInteger(10000, 18), 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
             GenerateToken(_owner, Constants.WRESTLER_SYMBOL, "NachomenWrestlerToken", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, Constants.ITEM_SYMBOL, "NachomenItemToken", 0, 0, TokenFlags.Transferable);
+            EndBlock();
+
+            BeginBlock();
+            GenerateSideChainSend(_owner, Constants.NACHO_SYMBOL, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, 1000, 1);
             EndBlock();
 
             var market = Nexus.FindChainByName("market");
