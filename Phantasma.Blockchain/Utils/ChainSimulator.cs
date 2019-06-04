@@ -98,8 +98,11 @@ namespace Phantasma.Blockchain.Utils
 
             BeginBlock();
             GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
-            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
             GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
+            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
+
+            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
+            GenerateSideChainSend(_owner, Constants.NACHO_SYMBOL, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
