@@ -215,13 +215,80 @@ namespace Phantasma.Blockchain
             CurrentEpoch.AddBlockHash(block.Hash);
             CurrentEpoch.UpdateHash();
 
+            Dictionary<string, BigInteger> synchMap = null;
+
             foreach (Transaction tx in transactions)
             {
                 _transactions[tx.Hash] = tx;
                 _transactionBlockMap[tx.Hash] = block.Hash;
+
+                var evts = block.GetEventsForTransaction(tx.Hash);
+                foreach (var evt in evts)
+                {
+                    if (evt.Kind == EventKind.TokenMint || evt.Kind == EventKind.TokenBurn)
+                    {
+                        if (synchMap == null)
+                        {
+                            synchMap = new Dictionary<string, BigInteger>();
+
+                            var eventData = evt.GetContent<TokenEventData>();
+                            var balance = synchMap.ContainsKey(eventData.symbol) ? synchMap[eventData.symbol] : 0;
+
+                            if (evt.Kind == EventKind.TokenBurn)
+                            {
+                                balance -= eventData.value;
+                            }
+                            else
+                            {
+                                balance += eventData.value;
+                            }
+
+                            synchMap[eventData.symbol] = balance;
+                        }
+                    }
+                }
+            }
+
+            if (synchMap != null)
+            {
+                SynchronizeSupplies(synchMap);
             }
 
             Nexus.PluginTriggerBlock(this, block);
+        }
+
+        private void SynchronizeSupplies(Dictionary<string, BigInteger> synchMap)
+        {
+            foreach (var entry in synchMap)
+            {
+                var symbol = entry.Key;
+                var balance = entry.Value;
+
+                var token = Nexus.GetTokenInfo(symbol);
+
+                if (!token.IsFungible)
+                {
+                    // TODO support this
+                    continue;
+                }
+
+                var parentName = Nexus.GetParentChainByName(this.Name);
+                var parentChain = Nexus.FindChainByName(parentName);
+                if (parentChain != null)
+                {
+                    var parentSupplies = new SupplySheet(symbol, parentChain, Nexus);
+                    parentSupplies.Synch(parentChain.Storage, this.Name, balance);
+                }
+
+                var childrenNames = this.Nexus.GetChildChainsByName(this.Name);
+                foreach (var childName in childrenNames)
+                {
+                    var childChain = Nexus.FindChainByName(childName);
+                    var childSupplies = new SupplySheet(symbol, childChain, Nexus);
+                    childSupplies.Synch(childChain.Storage, this.Name, balance);
+                }
+            }
+
         }
 
         public bool ContainsTransaction(Hash hash)

@@ -231,5 +231,12 @@ namespace Phantasma.Blockchain.Tokens
             var parentBalance = parentSupply.Get(parentStorage, parentSupply._localName);
             Set(localStorage, _parentName, parentBalance);
         }
+
+        internal void Synch(StorageContext storage, string chainName, BigInteger amountChanged)
+        {
+            var chainBalance = this.Get(storage, chainName);
+            chainBalance += amountChanged;
+            Set(storage, chainName, chainBalance);
+        }
     }
 }

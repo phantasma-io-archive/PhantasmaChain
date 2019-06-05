@@ -424,7 +424,7 @@ namespace Phantasma.Blockchain.Utils
 
             if (targetAddress != source.Address)
             {
-                sb.CallContract("token", "SendTokens", targetChain.Address, source.Address, source.Address, tokenSymbol, fee);
+                sb.CallContract("token", "SendTokens", targetChain.Address, source.Address, source.Address, Nexus.FuelTokenSymbol, fee);
             }
 
             var script =
