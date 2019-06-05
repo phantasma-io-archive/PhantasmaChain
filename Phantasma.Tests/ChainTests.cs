@@ -379,11 +379,10 @@ namespace Phantasma.Tests
             var targetChain = nexus.FindChainByName("privacy");
 
             var symbol = Nexus.FuelTokenSymbol;
-            var token = nexus.GetTokenInfo(symbol);
 
             var sender = KeyPair.Generate();
-            var receiver = sender;
 
+            var token = nexus.GetTokenInfo(symbol);
             var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
@@ -391,7 +390,7 @@ namespace Phantasma.Tests
 
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, sideAmount);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
             simulator.EndBlock();
 
             // verify test user balance
@@ -400,7 +399,7 @@ namespace Phantasma.Tests
 
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, receiver.Address, targetChain, sideAmount, 0);
+            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, sender.Address, targetChain, sideAmount, 0);
             simulator.EndBlock();
             var blockA = nexus.RootChain.LastBlock;
 
@@ -411,7 +410,7 @@ namespace Phantasma.Tests
 
             // verify balances
             var feeB = targetChain.GetTransactionFee(txB);
-            balance = targetChain.GetTokenBalance(symbol, receiver.Address);
+            balance = targetChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == sideAmount - feeB);
 
             var feeA = sourceChain.GetTransactionFee(txA);
