@@ -129,6 +129,10 @@ namespace Phantasma.Blockchain.Utils
 
             BeginBlock();
             GenerateSideChainSend(_owner, Constants.NACHO_SYMBOL, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, 1000, 1);
+            blockTx = EndBlock().First();
+
+            BeginBlock();
+            GenerateSideChainSettlement(_owner, Nexus.RootChain, nachoChain, blockTx.Hash);
             EndBlock();
 
             BeginBlock();
