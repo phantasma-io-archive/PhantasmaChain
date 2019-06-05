@@ -119,8 +119,8 @@ namespace Phantasma.Blockchain.Utils
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
 
-            var nachoSupply = UnitConversion.ToBigInteger(10000, 18);
-            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", nachoSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            var nachoSupply = UnitConversion.ToBigInteger(10000, 10);
+            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", nachoSupply, 10, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
             MintTokens(_owner, Constants.NACHO_SYMBOL, nachoSupply);
 
             GenerateToken(_owner, Constants.WRESTLER_SYMBOL, "NachomenWrestlerToken", 0, 0, TokenFlags.Transferable);
