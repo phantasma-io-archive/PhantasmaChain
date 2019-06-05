@@ -649,6 +649,12 @@ namespace Phantasma.Numerics
             rem = new BigInteger(remArray);
         }
 
+        public static BigInteger DivideAndRoundToClosest(BigInteger numerator, BigInteger denominator)
+        {
+            //from https://stackoverflow.com/a/2422723
+            return (numerator + (denominator / 2)) / denominator;
+        }
+
         public static BigInteger operator >>(BigInteger n, int bits)
         {
             bits = bits < 0 ? -bits : bits;
