@@ -119,7 +119,10 @@ namespace Phantasma.Blockchain.Utils
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
 
-            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", UnitConversion.ToBigInteger(10000, 18), 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            var nachoSupply = UnitConversion.ToBigInteger(10000, 18);
+            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", nachoSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            MintTokens(_owner, Constants.NACHO_SYMBOL, nachoSupply);
+
             GenerateToken(_owner, Constants.WRESTLER_SYMBOL, "NachomenWrestlerToken", 0, 0, TokenFlags.Transferable);
             GenerateToken(_owner, Constants.ITEM_SYMBOL, "NachomenItemToken", 0, 0, TokenFlags.Transferable);
             EndBlock();
@@ -128,16 +131,13 @@ namespace Phantasma.Blockchain.Utils
             GenerateSideChainSend(_owner, Constants.NACHO_SYMBOL, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, 1000, 1);
             EndBlock();
 
-            var market = Nexus.FindChainByName("market");
             BeginBlock();
-
-            var nachoSymbol = "NACHO";
-            RandomSpreadNFT(nachoSymbol, 150);
-
-            GenerateSetTokenMetadata(_owner, nachoSymbol, "details", "https://nacho.men/luchador/*");
-            GenerateSetTokenMetadata(_owner, nachoSymbol, "viewer", "https://nacho.men/luchador/body/*");
+            GenerateSetTokenMetadata(_owner, Constants.WRESTLER_SYMBOL, "details", "https://nacho.men/luchador/*");
+            GenerateSetTokenMetadata(_owner, Constants.WRESTLER_SYMBOL, "viewer", "https://nacho.men/luchador/body/*");
             EndBlock();
 
+            /*
+            var market = Nexus.FindChainByName("market");
             var nftSales = new List<KeyValuePair<KeyPair, BigInteger>>();
 
             BeginBlock();
@@ -187,6 +187,7 @@ namespace Phantasma.Blockchain.Utils
                 GenerateNftSale(sale.Key, Nexus.RootChain, nachoSymbol, sale.Value, UnitConversion.ToBigInteger(100 + 5 * _rnd.Next() % 50, Nexus.FuelTokenDecimals));
             }
             EndBlock();
+            */
         }
 
         private void RandomSpreadNFT(string tokenSymbol, int amount)
@@ -401,6 +402,23 @@ namespace Phantasma.Blockchain.Utils
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("nexus", "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = MakeTransaction(owner, chain, script);
+            tx.Sign(owner);
+
+            return tx;
+        }
+
+        public Transaction MintTokens(KeyPair owner, string symbol, BigInteger amount)
+        {
+            var chain = Nexus.RootChain;
+
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract("token", "MintTokens", owner.Address, symbol, amount).
                 SpendGas(owner.Address).
                 EndScript();
 
