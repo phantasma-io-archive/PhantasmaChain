@@ -115,6 +115,46 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void CreateToken()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var accountChain = nexus.FindChainByName("account");
+            var symbol = "BLA";
+
+            var tokenSupply = UnitConversion.ToBigInteger(10000, 18);
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            simulator.MintTokens(owner, symbol, tokenSupply);
+            simulator.EndBlock();
+
+            var token = nexus.GetTokenInfo(symbol);
+
+            var testUser = KeyPair.Generate();
+
+            var amount = UnitConversion.ToBigInteger(2, token.Decimals);
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+
+            Assert.IsTrue(oldBalance > amount);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
+            Assert.IsTrue(transferBalance == amount);
+
+            var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+
+            Assert.IsTrue(transferBalance + newBalance == oldBalance);
+        }
+
+        [TestMethod]
         public void AccountRegister()
         {
             var owner = KeyPair.Generate();
