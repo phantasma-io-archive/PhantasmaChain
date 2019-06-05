@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Utils
         public Nexus Nexus { get; private set; }
         public DateTime CurrentTime;
 
-        private System.Random _rnd;
+        private Random _rnd;
         private List<KeyPair> _keys = new List<KeyPair>();
         private KeyPair _owner;
 
@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain.Utils
 
             this.bankChain = Nexus.FindChainByName("bank");
 
-            _rnd = new System.Random(seed);
+            _rnd = new Random(seed);
             _keys.Add(_owner);
 
             var oneFuel = UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals);
@@ -90,23 +90,14 @@ namespace Phantasma.Blockchain.Utils
                 throw new Exception("Funds missing oops");
             }
 
-            var nachoAddress = Address.FromText("PGasVpbFYdu7qERihCsR22nTDQp1JwVAjfuJ38T8NtrCB");
-            var nachoFuel = UnitConversion.ToBigInteger(5, Nexus.FuelTokenDecimals);
-            var nachoChain = Nexus.FindChainByName("nacho");
-
             var appsChain = Nexus.FindChainByName("apps");
 
             BeginBlock();
             GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
-            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
-            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, nachoAddress, nachoChain, nachoFuel, 9999);
-
-            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, nachoFuel, 9999);
             var blockTx = EndBlock().First();
 
             BeginBlock();
             GenerateSideChainSettlement(_owner, Nexus.RootChain, appsChain, blockTx.Hash);
-            GenerateSideChainSettlement(_owner, Nexus.RootChain, nachoChain, blockTx.Hash);
             EndBlock();
 
             BeginBlock();
@@ -115,29 +106,7 @@ namespace Phantasma.Blockchain.Utils
             EndBlock();
 
             BeginBlock();
-            GenerateAppRegistration(_owner, "nachomen", "https://nacho.men", "Collect, train and battle against other players in Nacho Men!");
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
-            GenerateAppRegistration(_owner, "nftbazar", "https://nft.bazar", "A decentralized NFT market");
-
-            var nachoSupply = UnitConversion.ToBigInteger(10000, 10);
-            GenerateToken(_owner, Constants.NACHO_SYMBOL, "NachoToken", nachoSupply, 10, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
-            MintTokens(_owner, Constants.NACHO_SYMBOL, nachoSupply);
-
-            GenerateToken(_owner, Constants.WRESTLER_SYMBOL, "NachomenWrestlerToken", 0, 0, TokenFlags.Transferable);
-            GenerateToken(_owner, Constants.ITEM_SYMBOL, "NachomenItemToken", 0, 0, TokenFlags.Transferable);
-            EndBlock();
-
-            BeginBlock();
-            GenerateSideChainSend(_owner, Constants.NACHO_SYMBOL, Nexus.RootChain, Address.FromText("P27j1vgY1cjVYPnPDqjAVvqtxMmK9qjYvqz99EFp8vrPQ"), nachoChain, 1000, 1);
-            blockTx = EndBlock().First();
-
-            BeginBlock();
-            GenerateSideChainSettlement(_owner, Nexus.RootChain, nachoChain, blockTx.Hash);
-            EndBlock();
-
-            BeginBlock();
-            GenerateSetTokenMetadata(_owner, Constants.WRESTLER_SYMBOL, "details", "https://nacho.men/luchador/*");
-            GenerateSetTokenMetadata(_owner, Constants.WRESTLER_SYMBOL, "viewer", "https://nacho.men/luchador/body/*");
             EndBlock();
 
             /*
