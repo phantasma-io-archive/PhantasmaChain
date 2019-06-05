@@ -225,7 +225,7 @@ namespace Phantasma.Blockchain
                 var evts = block.GetEventsForTransaction(tx.Hash);
                 foreach (var evt in evts)
                 {
-                    if (evt.Kind == EventKind.TokenMint || evt.Kind == EventKind.TokenBurn)
+                    if (evt.Kind == EventKind.TokenMint || evt.Kind == EventKind.TokenBurn || evt.Kind == EventKind.TokenReceive || evt.Kind == EventKind.TokenSend)
                     {
                         if (synchMap == null)
                         {
@@ -234,7 +234,7 @@ namespace Phantasma.Blockchain
                             var eventData = evt.GetContent<TokenEventData>();
                             var balance = synchMap.ContainsKey(eventData.symbol) ? synchMap[eventData.symbol] : 0;
 
-                            if (evt.Kind == EventKind.TokenBurn)
+                            if (evt.Kind == EventKind.TokenBurn || evt.Kind == EventKind.TokenSend)
                             {
                                 balance -= eventData.value;
                             }
@@ -263,6 +263,11 @@ namespace Phantasma.Blockchain
             {
                 var symbol = entry.Key;
                 var balance = entry.Value;
+
+                if (balance == 0) // usually will happen due to token receive and send in same transaction
+                {
+                    continue;
+                }
 
                 var token = Nexus.GetTokenInfo(symbol);
 

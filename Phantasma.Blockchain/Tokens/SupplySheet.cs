@@ -236,6 +236,7 @@ namespace Phantasma.Blockchain.Tokens
         {
             var chainBalance = this.Get(storage, chainName);
             chainBalance += amountChanged;
+            Throw.If(chainBalance < 0, "something went wrong, invalid balance found");
             Set(storage, chainName, chainBalance);
         }
     }
