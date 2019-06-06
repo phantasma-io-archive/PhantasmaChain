@@ -25,6 +25,8 @@ namespace Phantasma.Blockchain.Contracts
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
 
+        public Address FeeTargetAddress { get; private set; }
+
         public StorageChangeSetContext ChangeSet { get; private set; }
 
         public BigInteger UsedGas { get; private set; }
@@ -56,6 +58,8 @@ namespace Phantasma.Blockchain.Contracts
             this.Transaction = transaction;
             this.ChangeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
+
+            this.FeeTargetAddress = Address.Null;
 
             if (this.Chain != null && !Chain.IsRoot)
             {
@@ -153,6 +157,12 @@ namespace Phantasma.Blockchain.Contracts
                     {
                         var gasInfo = (GasEventData)(object)content;
                         this.PaidGas += gasInfo.amount;
+
+                        if (address != this.Chain.Address)
+                        {
+                            this.FeeTargetAddress = address;
+                        }
+
                         break;
                     }
             }

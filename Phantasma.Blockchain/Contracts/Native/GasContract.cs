@@ -95,6 +95,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 targetGas = 0;
             }
 
+            // TODO the transfers around here should pass through Nexus.TransferTokens!!
             // return unused gas to transaction creator
             if (leftoverAmount > 0)
             {

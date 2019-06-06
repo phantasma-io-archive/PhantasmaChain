@@ -5,6 +5,7 @@ using Phantasma.Cryptography.EdDSA;
 using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -20,30 +21,27 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly Timestamp Timestamp;
         public readonly Address Creator;
 
-        public readonly BigInteger OrderSize;
+        public readonly BigInteger Amount;
         public readonly string BaseSymbol;
 
-        public readonly BigInteger OrderPrice;
+        public readonly BigInteger Price;
         public readonly string QuoteSymbol;
 
         public readonly ExchangeOrderSide Side;
 
-        public readonly bool IoC;
-
-        public ExchangeOrder(BigInteger uid, Timestamp timestamp, Address creator, BigInteger orderSize, string baseSymbol, BigInteger orderPrice, string quoteSymbol, ExchangeOrderSide side, bool ioC)
+        public ExchangeOrder(BigInteger uid, Timestamp timestamp, Address creator, BigInteger amount, string baseSymbol, BigInteger price, string quoteSymbol, ExchangeOrderSide side)
         {
             Uid = uid;
             Timestamp = timestamp;
             Creator = creator;
 
-            OrderSize = orderSize;
+            Amount = amount;
             BaseSymbol = baseSymbol;
 
-            OrderPrice = orderPrice;
+            Price = price;
             QuoteSymbol = quoteSymbol;
 
             Side = side;
-            IoC = ioC;
         }
 
         public ExchangeOrder(ExchangeOrder order, BigInteger newOrderSize, Timestamp newTimestamp)
@@ -52,32 +50,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             Timestamp = newTimestamp;
             Creator = order.Creator;
 
-            OrderSize = newOrderSize;
+            Amount = newOrderSize;
             BaseSymbol = order.BaseSymbol;
 
-            OrderPrice = order.OrderPrice;
+            Price = order.Price;
             QuoteSymbol = order.QuoteSymbol;
 
             Side = order.Side;
-            IoC = order.IoC;
         }
-    }
-
-    public struct OrderBook
-    {
-        public StorageMap OpenBuyOrders;            //<BigInteger, ExchangeOrder>
-        public StorageMap BuyOrderLinkedList;       //<BigInteger, BigInteger>, sorted by ascending price of the corresponding orders
-        public BigInteger BuyOrderListHead;
-
-        public StorageMap OpenSellOrders;           //<BigInteger, ExchangeOrder>
-        public StorageMap SellOrderLinkedList;      //<BigInteger, BigInteger>, sorted by ascending price of the corresponding orders
-        public BigInteger SellOrderListHead;
-    }
-
-    public struct OrderBookHistory
-    {
-        public StorageMap FilledOrders;             //<BigInteger, ExchangeOrder>
-        public StorageMap FilledOrderLinkedList;    //<BigInteger, BigInteger>
     }
 
     public struct TokenSwap
@@ -92,25 +72,19 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class ExchangeContract : SmartContract
     {
-        private struct TokenPriceRatio
-        {
-            public readonly bool IsNumerator; //true if the ratio represents the numerator
-            public readonly BigInteger Ratio;
-
-            public TokenPriceRatio(BigInteger ratio, bool isNumerator)
-            {
-                Ratio = ratio;
-                IsNumerator = isNumerator;
-            }
-        }
-
         public override string Name => "exchange";
 
-        internal StorageMap _orders; //<string, OrderBook>
+        internal StorageList _availableBases; // string
+        internal StorageList _availableQuotes; // string
+        internal StorageMap _orders; //<string, List<Order>>
+        internal StorageMap _orderMap; //<uid, string> // maps orders ids to pairs
+        internal StorageMap _fills; //<uid, BigInteger>
 
         public ExchangeContract() : base()
         {
         }
+
+        private string BuildOrderKey(ExchangeOrderSide side, string baseSymbol, string quoteSymbol) => $"{side}_{baseSymbol}_{quoteSymbol}";
 
         private BigInteger GetMinimumSymbolQuantity(TokenInfo token) => BigInteger.Pow(10, token.Decimals / 2);
 
@@ -120,26 +94,29 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <param name="from"></param>
         /// <param name="baseSymbol">For SOUL/KCAL pair, SOUL would be the base symbol</param>
         /// <param name="quoteSymbol">For SOUL/KCAL pair, KCAL would be the quote symbol</param>
-        /// <param name="orderSize">Amount of base symbol tokens the user wants to buy/sell</param>
-        /// <param name="orderPrice">Amount of quote symbol tokens the user wants to pay/receive per unit of base symbol tokens</param>
+        /// <param name="amount">Amount of base symbol tokens the user wants to buy/sell</param>
+        /// <param name="price">Amount of quote symbol tokens the user wants to pay/receive per unit of base symbol tokens</param>
         /// <param name="side">If the order is a buy or sell order</param>
         /// <param name="IoC">"Immediate or Cancel" flag: if true, requires any unfulfilled parts of the order to be cancelled immediately after a single attempt at fulfilling it.</param>
-        public void OpenOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, BigInteger orderPrice, ExchangeOrderSide side, bool IoC)
+        public void OpenOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger amount, BigInteger price, ExchangeOrderSide side, bool IoC)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(orderSize >= GetMinimumSymbolQuantity(baseToken), "order size is not sufficient");
+            Runtime.Expect(amount >= GetMinimumSymbolQuantity(baseToken), "order size is not sufficient");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(quoteSymbol), "invalid quote token");
             var quoteToken = Runtime.Nexus.GetTokenInfo(quoteSymbol);
             Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(orderPrice >= GetMinimumSymbolQuantity(quoteToken), "order price is not sufficient");
+            Runtime.Expect(price >= GetMinimumSymbolQuantity(quoteToken), "order price is not sufficient");
 
             //var tokenABI = Chain.FindABI(NativeABI.Token);
             //Runtime.Expect(baseTokenContract.ABI.Implements(tokenABI));
+
+            var uid = Runtime.Chain.GenerateUID(this.Storage);
+            Runtime.Expect(uid >= 0, "Generated an invalid UID");
 
             switch (side)
             {
@@ -147,9 +124,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         var balances = new BalanceSheet(baseSymbol);
                         var balance = balances.Get(this.Storage, from);
-                        Runtime.Expect(balance >= orderSize, "not enough balance");
+                        Runtime.Expect(balance >= amount, "not enough balance");
 
-                        Runtime.Expect(Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, orderSize), "transfer failed");
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, amount), "transfer failed");
 
                         break;
                     }
@@ -158,202 +135,158 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         var balances = new BalanceSheet(quoteSymbol);
                         var balance = balances.Get(this.Storage, from);
-                        Runtime.Expect(balance >= orderPrice, "not enough balance");
+                        var total = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(amount, baseToken.Decimals)  * UnitConversion.ToDecimal(amount, quoteToken.Decimals), quoteToken.Decimals);
+                        Runtime.Expect(balance >= total, "not enough balance");
 
-                        // TODO check this. If order price is not the total amount of tokens to pay/charge, this needs to change
-                        Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, orderPrice), "transfer failed");
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, total), "transfer failed");
                         break;
                     }
 
                 default: throw new ContractException("invalid order side");
             }
 
-            var uid = Runtime.Chain.GenerateUID(this.Storage);
-            Runtime.Expect(uid >= 0, "Generated a negative UID");
+            var order = new ExchangeOrder(uid, Runtime.Time, from, amount, baseSymbol, price, quoteSymbol, side);
 
-            var order = new ExchangeOrder(uid, Runtime.Time, from, orderSize, baseSymbol, orderPrice, quoteSymbol, side, IoC);
+            var key = BuildOrderKey(side, quoteSymbol, baseSymbol);
+            StorageList orderList = _orders.Get<string, StorageList>(key);
+            var orderIndex = orderList.Add<ExchangeOrder>(order);
+            _orderMap.Set<BigInteger, string>(uid, key);
 
-            var isOrderFulfilled = AttemptOrderFulfill(order);
+            BigInteger orderUnfilled = amount;
+            var otherSide = side == ExchangeOrderSide.Buy ? ExchangeOrderSide.Sell : ExchangeOrderSide.Buy;
+            var otherKey = BuildOrderKey(otherSide, quoteSymbol, baseSymbol);
+            var otherOrders = _orders.Get<string, StorageList>(otherKey);
 
-            if (isOrderFulfilled == false && IoC == false) //if order isn't completely fulfilled immediately and it isn't an IOC order, add it to the orderbook
+            do
             {
-                AddToOrderBook(order);
-            }
-            else if(isOrderFulfilled)   //if it is completely fulfilled, add it to fulfilled order log
-            {
-                MoveToFulfilledLog(order);
-            }
+                int bestIndex = -1;
+                BigInteger bestPrice = 0;
 
-            //TODO: ADD FEES, SEND THEM TO Runtime.Chain.Address FOR NOW
-        }
-
-        private void MoveToFulfilledLog(ExchangeOrder order)
-        {
-            
-        }
-
-        private void AddToOrderBook(ExchangeOrder newOrder)
-        {
-            var pair = BuildPairName(newOrder);
-            var orderBook = _orders.Get<string, OrderBook>(pair);
-            StorageMap keys;
-            StorageMap orders;
-
-            BigInteger start;
-
-            switch (newOrder.Side)
-            {
-                case ExchangeOrderSide.Buy:
-                    keys = orderBook.BuyOrderLinkedList;
-                    orders = orderBook.OpenBuyOrders;
-                    start = orderBook.BuyOrderListHead;
-                    break;
-
-                case ExchangeOrderSide.Sell:
-                    keys = orderBook.SellOrderLinkedList;
-                    orders = orderBook.OpenSellOrders;
-                    start = orderBook.SellOrderListHead;
-                    break;
-
-                default:
-                    throw new ContractException("invalid order side");
-            }
-            
-            var currentOrder = orders.Get<BigInteger, ExchangeOrder>(start);
-            var previousOrder = currentOrder;
-            var size = keys.Count();
-
-            for (var i = new BigInteger(0); i < size; i++)
-            {
-                if (IsOrderBefore(newOrder, currentOrder))  //check if "new order" should be inserted before "current order"
+                var otherCount = otherOrders.Count();
+                for (int i=0; i<otherCount; i++)
                 {
-                    if (i == 0)     //if the current order is the first one, update the head of the list
-                        start = newOrder.Uid;   //TODO: VERIFY "start" IS A REFERENCE TO THE LISTHEAD FIELD OF THE STRUCT
-                    else            //otherwise, update the previous node to point to the current node
-                        keys.Set(previousOrder.Uid, newOrder.Uid);
+                    var other = otherOrders.Get<ExchangeOrder>(i);
 
-                    keys.Set(newOrder.Uid, currentOrder.Uid);   //but always set the pointer of the new order to the current order
+                    if (side == ExchangeOrderSide.Buy)
+                    {
+                        if (other.Price > order.Price) // too expensive, we wont buy at this price
+                        {
+                            continue;
+                        }
 
-                    break;
+                        if (bestIndex == -1 || other.Price < bestPrice)
+                        {
+                            bestIndex = i;
+                            bestPrice = other.Price;
+                        }
+                    }
+                    else
+                    {
+                        if (other.Price < order.Price) // too cheap, we wont sell at this price
+                        {
+                            continue;
+                        }
+
+                        if (bestIndex == -1 || other.Price > bestPrice)
+                        {
+                            bestIndex = i;
+                            bestPrice = other.Price;
+                        }
+                    }
+                }
+
+                if (bestIndex >= 0)
+                {
+                    var other = otherOrders.Get<ExchangeOrder>(bestIndex);
+                    var otherFilled = _fills.Get<BigInteger, BigInteger>(other.Uid);
+                    var otherUnfilled = other.Amount - otherFilled;
+
+                    // pick the smallest of both unfilled amounts
+                    BigInteger filledAmount = otherUnfilled < orderUnfilled ? otherUnfilled : orderUnfilled;
+
+                    orderUnfilled -= filledAmount;
+                    otherFilled += filledAmount;
+
+                    var quoteAmount = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(filledAmount, baseToken.Decimals) * UnitConversion.ToDecimal(other.Price, quoteToken.Decimals), quoteToken.Decimals);
+
+                    if (side == ExchangeOrderSide.Sell)
+                    {
+                        Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, other.Creator, filledAmount);
+                        Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, quoteAmount);
+
+                        Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = filledAmount });
+                        Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = quoteAmount });
+                    }
+                    else
+                    {
+                        Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, filledAmount);
+                        Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, other.Creator, quoteAmount);
+
+                        Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = filledAmount });
+                        Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = quoteAmount });
+                    }
+
+                    Runtime.Notify(EventKind.OrderFilled, order.Creator, uid);
+                    Runtime.Notify(EventKind.OrderFilled, other.Creator, other.Uid);
+
+                    if (otherFilled >= other.Amount)
+                    {
+                        otherOrders.RemoveAt<ExchangeOrder>(bestIndex);
+                        _orderMap.Remove<BigInteger>(uid);
+                        _fills.Remove<BigInteger>(uid);
+                    }
+                    else
+                    {
+                        _fills.Set<BigInteger, BigInteger>(other.Uid, otherFilled);
+                        // TODO optimization, if filledAmount = orderUnfilled break here, would this be correct?
+                    }
                 }
                 else
                 {
-                    if (i == size - 1)  //if we reached the end of the list without finding an insert point, insert at the end of the list
-                    {
-                        keys.Set(currentOrder.Uid, newOrder.Uid);
-                        keys.Set(newOrder.Uid, new BigInteger(-1));     //the tail of the linked list is -1 as the order UID's are always positive
-                        break;
-                    }
-
-                    //otherwise, simply update the iterators and have another go at this
-                    previousOrder = currentOrder;
-                    var nextOrderUid = keys.Get<BigInteger, BigInteger>(currentOrder.Uid);
-                    currentOrder = orders.Get<BigInteger, ExchangeOrder>(nextOrderUid);
+                    break;
                 }
-            }
 
-            orders.Set(newOrder.Uid, newOrder);
-        }
+            } while (orderUnfilled > 0);
 
-        /// <summary>
-        /// Checks if the source order has a higher price per token than the target order
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
-        /// <returns>Returns true if the source order should come before the given target order</returns>
-        private bool IsOrderBefore(ExchangeOrder source, ExchangeOrder target)
-        {
-            Runtime.Expect(source.Side == target.Side, "Attempt at comparing orders from different orderbook sides");
-
-            switch (source.Side)
+            if (orderUnfilled == 0)
             {
-                case ExchangeOrderSide.Buy:
-                    return source.OrderPrice > target.OrderPrice;
-
-                case ExchangeOrderSide.Sell:
-                    return source.OrderPrice < target.OrderPrice;
-
-                default:
-                    throw new ContractException("invalid order side");
-            }
-        }
-
-
-        /*
-         ****
-         * This won't be necessary if we implement the BigRational class
-         ****
-        private ExchangeOrder FixPriceRatio(ExchangeOrder order)
-        {
-            if (order.OrderSize % order.OrderPrice == 0)
-                return order;
-
-            BigInteger numerator, denominator;
-            bool isNumerator = order.OrderSize > order.OrderPrice;
-
-            numerator = isNumerator ? order.OrderSize : order.OrderPrice;
-            denominator = isNumerator ? order.OrderPrice : order.OrderSize;
-
-            var flooredRatio = numerator / denominator;
-            var roundedRatio = BigInteger.DivideAndRoundToClosest(numerator, denominator);
-
-            if (isNumerator)
-            {
-                
+                orderList.RemoveAt<ExchangeOrder>(orderIndex);
+                _orderMap.Remove<BigInteger>(uid);
             }
             else
             {
+                Runtime.Expect(!IoC, "ioc cancellation");
 
+                var filled = amount - orderUnfilled;
+                _fills.Set<BigInteger, BigInteger>(uid, filled);
             }
-        }
-        */
-
-        private TokenPriceRatio GetPricePerToken(ExchangeOrder order)
-        {
-            BigInteger numerator, denominator;
-            bool isNumerator = order.OrderSize > order.OrderPrice;
-
-            numerator = isNumerator ? order.OrderSize : order.OrderPrice;
-            denominator = isNumerator ? order.OrderPrice : order.OrderSize;
-
-            var ratio = BigInteger.DivideAndRoundToClosest(numerator, denominator);
-
-            return new TokenPriceRatio(ratio, isNumerator);
-        }
-
-        /// <summary>
-        /// Returns true if order was completely fulfilled, false otherwise
-        /// </summary>
-        /// <param name="order"></param>
-        /// <returns></returns>
-        private bool AttemptOrderFulfill(ExchangeOrder order)
-        {
-            /*
-            var pair = BuildPairName(order);
-            var orderBook = _orders.Get<string, OrderBook>(pair);
-            string[] keys;
-            OrderBook[] orders;
-
-            switch (order.Side)
-            {
-                case ExchangeOrderSide.Sell:
-                    keys = orderBook.BuyOrderLinkedList.All<string>();
-                    orders = orderBook.OpenBuyOrders.All<string, OrderBook>(keys);
-                    break;
-
-                case ExchangeOrderSide.Buy:
-                    keys = orderBook.SellOrderLinkedList.All<string>();
-                    orders = orderBook.OpenSellOrders.All<string, OrderBook>(keys);
-                    break;
-
-                default:
-                    throw new ContractException("invalid order side");
-            }
-            */
 
             //TODO: ADD FEES, SEND THEM TO Runtime.Chain.Address FOR NOW
+        }
 
-            return true;
+        public void CancelOrder(BigInteger uid)
+        {
+            Runtime.Expect(_orderMap.ContainsKey<BigInteger>(uid), "order not found");
+            var key = _orderMap.Get<BigInteger, string>(uid);
+            StorageList orderList = _orders.Get<string, StorageList>(key);
+
+            var count = orderList.Count();
+            for (int i=0; i<count; i++)
+            {
+                var order = orderList.Get<ExchangeOrder>(i);
+                if (order.Uid == uid)
+                {
+                    Runtime.Expect(IsWitness(order.Creator), "invalid witness");
+
+                    orderList.RemoveAt<ExchangeOrder>(i);
+                    _orderMap.Remove<BigInteger>(uid);
+                    _fills.Remove<BigInteger>(uid);
+                    return;
+                }
+            }
+
+            // if it reaches here, it means it not found nothing in previous part
+            throw new Exception("order not found");
         }
 
         /*
@@ -364,7 +297,6 @@ namespace Phantasma.Blockchain.Contracts.Native
          TODO: implement code for trail stops and a method to allow a 3rd party to update the trail stop, without revealing user or order info
          */
 
-        private string BuildPairName(ExchangeOrder order) => order.BaseSymbol + "_" + order.QuoteSymbol;
 
         #region OTC TRADES
         public void SwapTokens(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger amount, BigInteger price, byte[] signature)

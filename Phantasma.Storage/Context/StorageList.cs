@@ -60,12 +60,13 @@ namespace Phantasma.Storage.Context
             return result;
         }
 
-        public static void Add<T>(this StorageList list, T element)
+        public static BigInteger Add<T>(this StorageList list, T element)
         {
-            var count = list.Count();
-            list.Context.Put(CountKey(list.BaseKey), count + 1);
+            var index = list.Count();
+            list.Context.Put(CountKey(list.BaseKey), index + 1);
 
-            list.Replace(count, element);
+            list.Replace(index, element);
+            return index;
         }
 
         public static void Replace<T>(this StorageList list, BigInteger index, T element)
