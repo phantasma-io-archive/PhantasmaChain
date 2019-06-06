@@ -14,12 +14,22 @@ using static Phantasma.Blockchain.Contracts.Native.EnergyContract;
 using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Tests
 {
     [TestClass]
     public class ContractTests
     {
+        [TestMethod]
+        public void CustomEvents()
+        {
+            var A = NachoEvent.Buff;
+            EventKind evt = EventKindExtensions.EncodeCustomEvent(A);
+            var B = evt.DecodeCustomEvent<NachoEvent>();
+            Assert.IsTrue(A == B);
+        }
+
         [TestMethod]
         public void TestMarketContract()
         {

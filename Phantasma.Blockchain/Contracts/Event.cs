@@ -77,7 +77,7 @@ namespace Phantasma.Blockchain.Contracts
 
     public static class EventKindExtensions
     {
-        public static T CastEvent<T>(this EventKind kind)
+        public static T DecodeCustomEvent<T>(this EventKind kind)
         {
             if (kind < EventKind.Custom)
             {
@@ -92,6 +92,12 @@ namespace Phantasma.Blockchain.Contracts
 
             var intVal = ((int)kind - (int)EventKind.Custom);
             var temp = (T)Enum.Parse(type, intVal.ToString());
+            return temp;
+        }
+
+        public static EventKind EncodeCustomEvent(Enum kind)
+        {
+            var temp = (EventKind)((int)Convert.ChangeType(kind, kind.GetTypeCode()) + (int)EventKind.Custom);
             return temp;
         }
     }
