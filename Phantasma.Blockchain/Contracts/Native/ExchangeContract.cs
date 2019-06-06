@@ -234,6 +234,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                         otherOrders.RemoveAt<ExchangeOrder>(bestIndex);
                         _orderMap.Remove<BigInteger>(uid);
                         _fills.Remove<BigInteger>(uid);
+
+                        Runtime.Notify(EventKind.OrderClosed, other.Creator, other.Uid);
                     }
                     else
                     {

@@ -5,6 +5,15 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public enum CasinoEvents
+    {
+        TableQueued = 60,
+        TableStart = 61,
+        TableCard = 62,
+        TableTurn = 63,
+        TableResult = 64,
+    }
+
     public struct CasinoQueue
     {
         public Address player;
@@ -79,8 +88,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 _matchMap.Set<Address, BigInteger>(from, _matchCount);
                 _matchMap.Set<Address, BigInteger>(other.player, _matchCount);
 
-                Runtime.Notify(EventKind.CasinoTableStart, from, other.player);
-                Runtime.Notify(EventKind.CasinoTableStart, other.player, from);
+                Runtime.Notify(CasinoEvents.TableStart, from, other.player);
+                Runtime.Notify(CasinoEvents.TableStart, other.player, from);
 
                 var match = new CasinoMatch()
                 {
@@ -100,7 +109,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         var card = DrawCard(match.cards, (byte)(i+1));
                         Runtime.Expect(card >= 0, "card draw failed");
-                        Runtime.Notify(EventKind.CasinoTableCard, i == 0 ? match.host : match.opponent, i);
+                        Runtime.Notify(CasinoEvents.TableCard, i == 0 ? match.host : match.opponent, i);
                     }
                 }
 
@@ -110,7 +119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var entry = new CasinoQueue() { player = from, amount = fee, symbol = symbol, table = tableID };
                 _queue.Add<CasinoQueue>(entry);
-                Runtime.Notify(EventKind.CasinoTableQueued, from, tableID);
+                Runtime.Notify(CasinoEvents.TableQueued, from, tableID);
             }
         }
 
@@ -218,8 +227,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (match.opponentTurn == match.hostTurn)
             {
                 match.matchTurn++;
-                Runtime.Notify(EventKind.CasinoTableTurn, match.host, match.matchTurn);
-                Runtime.Notify(EventKind.CasinoTableTurn, match.opponent, match.matchTurn);
+                Runtime.Notify(CasinoEvents.TableTurn, match.host, match.matchTurn);
+                Runtime.Notify(CasinoEvents.TableTurn, match.opponent, match.matchTurn);
             }
         }
 

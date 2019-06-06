@@ -2007,6 +2007,42 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     #endregion
 
+
+    public enum NachoEvent
+    {
+        Purchase,
+        ItemAdded,
+        ItemRemoved,
+        ItemReceived,
+        ItemSent,
+        ItemSpent,
+        ItemActivated,
+        ItemUnwrapped,
+        Stance,
+        StatusAdded,
+        StatusRemoved,
+        Buff,
+        Debuff,
+        Experience,
+        Unlock,
+        Rename,
+        Auto,
+        PotPrize,
+        Referral,
+        Trophy,
+        Confusion,
+        MoveMiss,
+        SelectAvatar,
+        CollectFactionReward ,
+        CollectChampionshipReward,
+        CollectVipWrestlerReward,
+        CollectVipItemReward,
+        CollectVipMakeUpReward,
+        PlayerJoinFaction,
+        MysteryStake,
+        MysteryUnstake,
+    }
+
     public struct WrestlerTurnInfo
     {
         public Address address;
@@ -2103,7 +2139,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 account.faction = faction;
 
-                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+                Runtime.Notify(NachoEvent.PlayerJoinFaction, address, faction);
             }
             else
             {
@@ -2113,7 +2149,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 // todo
 
-                Runtime.Notify(EventKind.PlayerJoinFaction, address, faction);
+                Runtime.Notify(NachoEvent.PlayerJoinFaction, address, faction);
             }
         }
 
@@ -2716,7 +2752,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.flags ^= ItemFlags.Wrapped;
 
             SetItem(itemID, item);
-            Runtime.Notify(EventKind.ItemUnwrapped, from, itemID);
+            Runtime.Notify(NachoEvent.ItemUnwrapped, from, itemID);
         }
 
 
@@ -2824,7 +2860,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             SetWrestler(wrestlerID, wrestler);
 
-            Runtime.Notify(EventKind.ItemSpent, from, itemID);
+            Runtime.Notify(NachoEvent.ItemSpent, from, itemID);
 
             // TransferItem(from, DevelopersAddress, itemID); TODO LATER
         }
@@ -2976,7 +3012,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             wrestler.nickname = name;
             SetWrestler(wrestlerID, wrestler);
 
-            Runtime.Notify(EventKind.Rename, from, wrestlerID);
+            Runtime.Notify(NachoEvent.Rename, from, wrestlerID);
         }
 
         /* TODO LATER
@@ -3682,7 +3718,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.locationID = wrestlerID;
             SetItem(itemID, item);
 
-            Runtime.Notify(EventKind.ItemAdded, from, itemID);
+            Runtime.Notify(NachoEvent.ItemAdded, from, itemID);
         }
 
         public void UnequipItem(Address from, BigInteger wrestlerID)
@@ -3716,7 +3752,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.locationID = 0;
             SetItem(itemID, item);
 
-            Runtime.Notify(EventKind.ItemRemoved, from, itemID);
+            Runtime.Notify(NachoEvent.ItemRemoved, from, itemID);
         }
         #endregion
 
@@ -3742,7 +3778,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             item.locationID = 0;
             SetItem(itemID, item);
 
-            Runtime.Notify(EventKind.ItemAdded, from, itemID);
+            Runtime.Notify(NachoEvent.ItemAdded, from, itemID);
         }
 
         public void JoinMysteryRoom(Address from, BigInteger wrestlerID, BigInteger stakeAmount)
@@ -6196,7 +6232,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                             if (state.itemKind == ItemKind.Wrist_Weights)
                             {
-                                Runtime.Notify(EventKind.ItemActivated, battle.sides[sideIndex].address, state.itemKind);
+                                Runtime.Notify(NachoEvent.ItemActivated, battle.sides[sideIndex].address, state.itemKind);
                                 addXP *= 2;
                             }
 
@@ -6210,7 +6246,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             var diff = (uint)(wrestler.experience - oldXP);
                             if (diff > 0)
                             {
-                                Runtime.Notify(EventKind.Experience, battle.sides[sideIndex].address, diff);
+                                Runtime.Notify(NachoEvent.Experience, battle.sides[sideIndex].address, diff);
                             }
                         }
 
@@ -6223,7 +6259,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         if (sideIndex == 1 && nextPraticeLevel > 0 && nextPraticeLevel > (int)wrestler.praticeLevel)
                         {
                             wrestler.praticeLevel = (PraticeLevel)nextPraticeLevel;
-                            Runtime.Notify(EventKind.Unlock, battle.sides[sideIndex].address, wrestler.praticeLevel);
+                            Runtime.Notify(NachoEvent.Unlock, battle.sides[sideIndex].address, wrestler.praticeLevel);
                         }
 
                         if (Rules.IsModeWithMatchMaker(battle.mode))
@@ -6315,7 +6351,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.trophies |= trophy;
                 SetAccount(address, account);
 
-                Runtime.Notify(EventKind.Trophy, address, trophy);
+                Runtime.Notify(NachoEvent.Trophy, address, trophy);
             }
         }
 
@@ -8291,7 +8327,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (states[target].status.HasFlag(BattleStatus.Diseased))
             {
                 states[target].stance = BattleStance.Zombie;
-                Runtime.Notify(EventKind.Stance, info[target].address, states[target].stance);
+                Runtime.Notify(NachoEvent.Stance, info[target].address, states[target].stance);
                 return true;
             }
 
@@ -8327,7 +8363,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             states[target].stance = next;
-            Runtime.Notify(EventKind.Stance, info[target].address, states[target].stance);
+            Runtime.Notify(NachoEvent.Stance, info[target].address, states[target].stance);
             return true;
         }
 
@@ -8337,13 +8373,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (states[other].itemKind == ItemKind.Nullifier)
             {
-                Runtime.Notify(EventKind.ItemActivated, info[other].address, states[other].itemKind);
+                Runtime.Notify(NachoEvent.ItemActivated, info[other].address, states[other].itemKind);
                 return false;
             }
 
             if (shouldNotify)
             {
-                Runtime.Notify(shouldConsume ? EventKind.ItemSpent : EventKind.ItemActivated, info[target].address, states[target].itemKind);
+                Runtime.Notify(shouldConsume ? NachoEvent.ItemSpent : NachoEvent.ItemActivated, info[target].address, states[target].itemKind);
             }
 
             if (shouldConsume)
@@ -8360,7 +8396,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (states[target].status.HasFlag(status))
             {
                 states[target].status &= ~status; // clear flag 
-                Runtime.Notify(EventKind.StatusRemoved, info[target].address, status);
+                Runtime.Notify(NachoEvent.StatusRemoved, info[target].address, status);
             }
         }
 
@@ -8398,7 +8434,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (status == BattleStatus.Diseased)
                 {
                     states[target].stance = BattleStance.Zombie;
-                    Runtime.Notify(EventKind.Stance, info[target].address, states[target].stance);
+                    Runtime.Notify(NachoEvent.Stance, info[target].address, states[target].stance);
                 }
             }
 
@@ -8426,7 +8462,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             states[target].status |= status;
-            Runtime.Notify(EventKind.Stance, info[target].address, status);
+            Runtime.Notify(NachoEvent.Stance, info[target].address, status);
             return true;
         }
 
@@ -8467,7 +8503,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 ApplyStatBoost(ref info, ref states, other, stat, boost, false);
             }
 
-            Runtime.Notify(boost > 0 ? EventKind.Buff : EventKind.Debuff, info[target].address, stat);
+            Runtime.Notify(boost > 0 ? NachoEvent.Buff : NachoEvent.Debuff, info[target].address, stat);
 
             return true;
         }
@@ -8534,7 +8570,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
-            Runtime.Notify(EventKind.CollectFactionReward, address, 1);
+            Runtime.Notify(NachoEvent.CollectFactionReward, address, 1);
         }
 
         private void CollectChampionshipReward(Address address)
@@ -8551,7 +8587,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
-            Runtime.Notify(EventKind.CollectChampionshipReward, address, 1);
+            Runtime.Notify(NachoEvent.CollectChampionshipReward, address, 1);
         }
 
         private void CollectVipWrestlerReward(Address address)
@@ -8568,7 +8604,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
-            Runtime.Notify(EventKind.CollectVipWrestlerReward, address, 1);
+            Runtime.Notify(NachoEvent.CollectVipWrestlerReward, address, 1);
         }
 
         private void CollectVipItemReward(Address address)
@@ -8585,7 +8621,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
-            Runtime.Notify(EventKind.CollectVipItemReward, address, 1);
+            Runtime.Notify(NachoEvent.CollectVipItemReward, address, 1);
         }
 
         private void CollectVipMakeUpReward(Address address)
@@ -8602,7 +8638,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // save current rewards left somewhere. Add NachoRewards to NachoAccount?
 
-            Runtime.Notify(EventKind.CollectVipMakeUpReward, address, 1);
+            Runtime.Notify(NachoEvent.CollectVipMakeUpReward, address, 1);
         }
 
         #endregion

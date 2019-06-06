@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
@@ -7,77 +8,31 @@ namespace Phantasma.Blockchain.Contracts
 {
     public enum EventKind
     {
-        ChainCreate         = 0,
-        TokenCreate         = 1,
-        TokenSend           = 2,
-        TokenReceive        = 3,
-        TokenMint           = 4,
-        TokenBurn           = 5,
-        TokenEscrow         = 6,
-        TokenStake          = 7,
-        TokenUnstake        = 8,
-        TokenClaim          = 9,
-        MasterDemote        = 10,
-        MasterPromote       = 11,
-        AddressRegister     = 12,
-        AddressAdd          = 13,
-        AddressRemove       = 14,
-        GasEscrow           = 15,
-        GasPayment          = 16,
-        OrderCreated        = 17,
-        OrderCancelled      = 18,
-        OrderFilled         = 19,
-        OrderClosed         = 20,
-        Metadata            = 21,
-        AddFriend           = 22,
-        RemoveFriend        = 23,
-
-        // Nachomen Events -> Remover later
-        Transfer                    = 24,
-        Deposit                     = 25,
-        Withdraw                    = 26,
-        WrestlerReceived            = 27,
-        WrestlerSent                = 28,
-        Purchase                    = 29,
-        ItemAdded                   = 29,
-        ItemRemoved                 = 30,
-        ItemReceived                = 31,
-        ItemSent                    = 32,
-        ItemSpent                   = 33,
-        ItemActivated               = 34,
-        ItemUnwrapped               = 35,
-        Stance                      = 36,
-        StatusAdded                 = 37,
-        StatusRemoved               = 38,
-        Buff                        = 39,
-        Debuff                      = 40,
-        Experience                  = 41,
-        Unlock                      = 42,
-        Rename                      = 43,
-        Auto                        = 44,
-        PotPrize                    = 45,
-        Referral                    = 46,
-        //ReferralStake =
-        //ReferralUnstake = 
-        Trophy                      = 47,
-        Confusion                   = 48,
-        MoveMiss                    = 49,
-        SelectAvatar                = 50,
-        CollectFactionReward        = 51,
-        CollectChampionshipReward   = 52,
-        CollectVipWrestlerReward    = 53,
-        CollectVipItemReward        = 54,
-        CollectVipMakeUpReward      = 55,
-        PlayerJoinFaction           = 56,
-        MysteryStake                = 57,
-        MysteryUnstake              = 58,
-
-        // casino => REMOVE LATER
-        CasinoTableQueued   = 60,
-        CasinoTableStart    = 61,
-        CasinoTableCard     = 62,
-        CasinoTableTurn     = 63,
-        CasinoTableResult   = 64,
+        ChainCreate = 0,
+        TokenCreate = 1,
+        TokenSend = 2,
+        TokenReceive = 3,
+        TokenMint = 4,
+        TokenBurn = 5,
+        TokenEscrow = 6,
+        TokenStake = 7,
+        TokenUnstake = 8,
+        TokenClaim = 9,
+        MasterDemote = 10,
+        MasterPromote = 11,
+        AddressRegister = 12,
+        AddressAdd = 13,
+        AddressRemove = 14,
+        GasEscrow = 15,
+        GasPayment = 16,
+        OrderCreated = 17,
+        OrderCancelled = 18,
+        OrderFilled = 19,
+        OrderClosed = 20,
+        AddFriend = 21,
+        RemoveFriend = 22,
+        Metadata = 23,
+        Custom = 24,
     }
 
     public class Event
@@ -117,6 +72,27 @@ namespace Phantasma.Blockchain.Contracts
             var address = reader.ReadAddress();
             var data = reader.ReadByteArray();
             return new Event(kind, address, data);
+        }
+    }
+
+    public static class EventKindExtensions
+    {
+        public static T CastEvent<T>(this EventKind kind)
+        {
+            if (kind < EventKind.Custom)
+            {
+                throw new Exception("Cannot cast system event");
+            }
+
+            var type = typeof(T);
+            if (!type.IsEnum)
+            {
+                throw new Exception("Can only cast event to other enum");
+            }
+
+            var intVal = ((int)kind - (int)EventKind.Custom);
+            var temp = (T)Enum.Parse(type, intVal.ToString());
+            return temp;
         }
     }
 }

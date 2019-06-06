@@ -139,6 +139,12 @@ namespace Phantasma.Blockchain.Contracts
             return null;
         }
 
+        public void Notify<T>(Enum kind, Address address, T content)
+        {
+            var intVal = (int)(object)kind;
+            Notify<T>((EventKind)(EventKind.Custom + intVal), address, content);
+        }
+
         public void Notify<T>(EventKind kind, Address address, T content)
         {
             var bytes = content == null ? new byte[0]: Serialization.Serialize(content);
