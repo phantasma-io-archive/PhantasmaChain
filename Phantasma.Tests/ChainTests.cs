@@ -784,7 +784,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
             var receiver = KeyPair.Generate();
 
-            var amount = UnitConversion.ToBigInteger(400, token.Decimals);
+            var amount = UnitConversion.ToBigInteger(1, token.Decimals);
 
             var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
 
