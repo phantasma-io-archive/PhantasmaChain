@@ -146,6 +146,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var order = new ExchangeOrder(uid, Runtime.Time, from, amount, baseSymbol, price, quoteSymbol, side);
+            Runtime.Notify(EventKind.OrderCreated, from, uid);
 
             var key = BuildOrderKey(side, quoteSymbol, baseSymbol);
             StorageList orderList = _orders.Get<string, StorageList>(key);
