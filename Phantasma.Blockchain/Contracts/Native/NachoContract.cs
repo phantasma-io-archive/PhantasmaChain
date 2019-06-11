@@ -925,6 +925,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const string WRESTLER_SYMBOL = "LUCHA";
         public const string ITEM_SYMBOL = "ITEMS"; // TODO later combine both items and wrestlers into a single token
 
+        public const int NACHO_TOKEN_DECIMALS = 10;
+
         public const int LOOTBOX_SALE_RANKED_POT_FEE = 10; // 10%
 
         public const uint NEO_TICKER = 1376;
