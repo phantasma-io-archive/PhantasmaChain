@@ -6,6 +6,7 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System;
+using static Phantasma.Blockchain.Contracts.Native.ExchangeOrderSide;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -86,7 +87,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private string BuildOrderKey(ExchangeOrderSide side, string baseSymbol, string quoteSymbol) => $"{side}_{baseSymbol}_{quoteSymbol}";
 
-        private BigInteger GetMinimumSymbolQuantity(TokenInfo token) => BigInteger.Pow(10, token.Decimals / 2);
+        public BigInteger GetMinimumSymbolQuantity(TokenInfo token) => BigInteger.Pow(10, token.Decimals / 2);
 
         /// <summary>
         /// Creates a limit order on the exchange
@@ -120,7 +121,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             switch (side)
             {
-                case ExchangeOrderSide.Sell:
+                case Sell:
                     {
                         var balances = new BalanceSheet(baseSymbol);
                         var balance = balances.Get(this.Storage, from);
@@ -131,11 +132,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                         break;
                     }
 
-                case ExchangeOrderSide.Buy:
+                case Buy:
                     {
                         var balances = new BalanceSheet(quoteSymbol);
                         var balance = balances.Get(this.Storage, from);
-                        var total = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(amount, baseToken.Decimals)  * UnitConversion.ToDecimal(amount, quoteToken.Decimals), quoteToken.Decimals);
+                        var total = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(amount, baseToken.Decimals)  * UnitConversion.ToDecimal(price, quoteToken.Decimals), quoteToken.Decimals);
                         Runtime.Expect(balance >= total, "not enough balance");
 
                         Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, total), "transfer failed");
@@ -154,7 +155,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _orderMap.Set<BigInteger, string>(uid, key);
 
             BigInteger orderUnfilled = amount;
-            var otherSide = side == ExchangeOrderSide.Buy ? ExchangeOrderSide.Sell : ExchangeOrderSide.Buy;
+            var otherSide = side == Buy ? Sell : Buy;
             var otherKey = BuildOrderKey(otherSide, quoteSymbol, baseSymbol);
             var otherOrders = _orders.Get<string, StorageList>(otherKey);
 
@@ -168,7 +169,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 {
                     var other = otherOrders.Get<ExchangeOrder>(i);
 
-                    if (side == ExchangeOrderSide.Buy)
+                    if (side == Buy)
                     {
                         if (other.Price > order.Price) // too expensive, we wont buy at this price
                         {
@@ -210,7 +211,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     var quoteAmount = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(filledAmount, baseToken.Decimals) * UnitConversion.ToDecimal(other.Price, quoteToken.Decimals), quoteToken.Decimals);
 
-                    if (side == ExchangeOrderSide.Sell)
+                    if (side == Sell)
                     {
                         Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, other.Creator, filledAmount);
                         Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, quoteAmount);
@@ -251,15 +252,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             } while (orderUnfilled > 0);
 
-            if (orderUnfilled == 0)
+            if (orderUnfilled == 0 || IoC)
             {
                 orderList.RemoveAt<ExchangeOrder>(orderIndex);
                 _orderMap.Remove<BigInteger>(uid);
+
+                Runtime.Notify(IoC ? EventKind.OrderCancelled : EventKind.OrderClosed, order.Creator, order.Uid);
             }
             else
             {
-                Runtime.Expect(!IoC, "ioc cancellation");
-
                 var filled = amount - orderUnfilled;
                 _fills.Set<BigInteger, BigInteger>(uid, filled);
             }
@@ -299,6 +300,71 @@ namespace Phantasma.Blockchain.Contracts.Native
         /*
          TODO: implement code for trail stops and a method to allow a 3rd party to update the trail stop, without revealing user or order info
          */
+
+        public ExchangeOrder GetExchangeOrder(BigInteger uid)
+        {
+            Runtime.Expect(_orderMap.ContainsKey<BigInteger>(uid), "order not found");
+
+            var key = _orderMap.Get<BigInteger, string>(uid);
+            StorageList orderList = _orders.Get<string, StorageList>(key);
+
+            var count = orderList.Count();
+            var order = new ExchangeOrder();
+            for (int i = 0; i < count; i++)
+            {
+                order = orderList.Get<ExchangeOrder>(i);
+                if (order.Uid == uid)
+                {
+                    //Runtime.Expect(IsWitness(order.Creator), "invalid witness");
+                    break;
+                }
+            }
+
+            return order;
+        }
+
+        public BigInteger GetOrderFilledAmount(BigInteger uid)
+        {
+            Runtime.Expect(_fills.ContainsKey(uid), "order not found");
+
+            return _fills.Get<BigInteger, BigInteger>(uid);
+        }
+
+        public ExchangeOrder[] GetOrderBook(string baseSymbol, string quoteSymbol)
+        {
+            return GetOrderBook(baseSymbol, quoteSymbol, false);
+        }
+
+        public ExchangeOrder[] GetOrderBook(string baseSymbol, string quoteSymbol, ExchangeOrderSide side)
+        {
+            return GetOrderBook(baseSymbol, quoteSymbol, true, side);
+        }
+
+        private ExchangeOrder[] GetOrderBook(string baseSymbol, string quoteSymbol, bool oneSideFlag, ExchangeOrderSide side = Buy)
+        {
+            var buyKey = BuildOrderKey(Buy, quoteSymbol, baseSymbol);
+            var sellKey = BuildOrderKey(Sell, quoteSymbol, baseSymbol);
+
+            var buyOrders = ((oneSideFlag && side == Buy) || !oneSideFlag) ? _orders.Get<string, StorageList>(buyKey) : new StorageList();
+            var sellOrders = ((oneSideFlag && side == Sell) || !oneSideFlag) ? _orders.Get<string, StorageList>(sellKey) : new StorageList();
+
+            var buyCount = buyOrders.Count();
+            var sellCount = sellOrders.Count();
+
+            ExchangeOrder[] orderbook = new ExchangeOrder[(long) (buyCount + sellCount)];
+
+            for (long i = 0; i < buyCount; i++)
+            {
+                orderbook[i] = buyOrders.Get<ExchangeOrder>(i);
+            }
+
+            for (long i = (long) buyCount; i < orderbook.Length; i++)
+            {
+                orderbook[i] = sellOrders.Get<ExchangeOrder>(i);
+            }
+
+            return orderbook;
+        }
 
 
         #region OTC TRADES

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using System.Threading;
 using Phantasma.API;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts.Native;
@@ -126,7 +128,7 @@ namespace Phantasma.Tests
             var testUser = KeyPair.Generate();
             var stakeAmount = BaseEnergyRatioDivisor;
             double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -Nexus.StakingTokenDecimals);
-            double realExpectedUnclaimedAmount = ((double) (StakeToFuel(stakeAmount))) * Math.Pow(10, -Nexus.FuelTokenDecimals);
+            double realExpectedUnclaimedAmount = ((double)(StakeToFuel(stakeAmount))) * Math.Pow(10, -Nexus.FuelTokenDecimals);
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
@@ -145,7 +147,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(realUnclaimedAmount == realExpectedUnclaimedAmount);
 
-            BigInteger actualEnergyRatio = (BigInteger) (realStakeAmount / realUnclaimedAmount);
+            BigInteger actualEnergyRatio = (BigInteger)(realStakeAmount / realUnclaimedAmount);
             Assert.IsTrue(actualEnergyRatio == BaseEnergyRatioDivisor);
         }
 
@@ -267,7 +269,7 @@ namespace Phantasma.Tests
             //-----------
             //Time skip 1 day
             simulator.TimeSkipDays(1);
-            
+
             //-----------
             //Try a partial unstake: should pass
             initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
@@ -286,7 +288,7 @@ namespace Phantasma.Tests
 
             finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(initialStakedAmount - finalStakedAmount == stakeReduction);
-            
+
             //-----------
             //Try a full unstake: should fail, didnt wait 24h
             initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
@@ -472,7 +474,7 @@ namespace Phantasma.Tests
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             Assert.IsTrue(unclaimedAmount == 0);
-            
+
             //-----------
             //Perform another claim call: should fail, not enough time passed between claim calls
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
@@ -690,7 +692,7 @@ namespace Phantasma.Tests
 
             //Time skip over 4 years and 8 days
             var startDate = simulator.CurrentTime;
-            simulator.CurrentTime = ((DateTime) nexus.RootChain.FindBlockByHeight(1).Timestamp).AddYears(2);
+            simulator.CurrentTime = ((DateTime)nexus.RootChain.FindBlockByHeight(1).Timestamp).AddYears(2);
             simulator.TimeSkipDays(0);
             var firstHalvingDate = simulator.CurrentTime;
             var firstHalvingDayCount = (firstHalvingDate - startDate).Days;
@@ -1094,7 +1096,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(proxyQuota == 0);
             Assert.IsTrue(leftover == 1);
 
-            Assert.IsTrue(finalMainFuelBalance == (startingMainFuelBalance + leftover ));
+            Assert.IsTrue(finalMainFuelBalance == (startingMainFuelBalance + leftover));
             Assert.IsTrue(finalProxyFuelBalance == (startingProxyFuelBalance + proxyQuota - txCost));
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -1103,7 +1105,7 @@ namespace Phantasma.Tests
             //-----------
             //Increase the staked amount
             var addedStake = FuelToStake(3);
-            var desiredFuelClaim = StakeToFuel(initialStake + addedStake*2);
+            var desiredFuelClaim = StakeToFuel(initialStake + addedStake * 2);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
@@ -1142,7 +1144,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(proxyQuota == proxyAPercentage * desiredFuelClaim / 100);
             Assert.IsTrue(desiredFuelClaim == unclaimedAmount);
 
-            Assert.IsTrue(finalMainFuelBalance == (startingMainFuelBalance + leftover ));
+            Assert.IsTrue(finalMainFuelBalance == (startingMainFuelBalance + leftover));
             Assert.IsTrue(finalProxyFuelBalance == (startingProxyFuelBalance + proxyQuota - txCost));
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -1460,7 +1462,7 @@ namespace Phantasma.Tests
 
             BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == initialStake);
-            
+
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
             Assert.IsTrue(unclaimedAmount == StakeToFuel(stakedAmount));
@@ -1613,7 +1615,7 @@ namespace Phantasma.Tests
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
-            
+
             var expectedBalance = startingBalance + (MasterClaimGlobalAmount / claimMasterCount) + (MasterClaimGlobalAmount % claimMasterCount);
             finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
@@ -1746,16 +1748,16 @@ namespace Phantasma.Tests
             //----------
             //Confirm that B and C should only receive master claim rewards on the 2nd closest claim date
 
-            var closeClaimDate = (Timestamp) simulator.Nexus.RootChain.InvokeContract("energy", "GetMasterClaimDate", 1);
-            var farClaimDate = (Timestamp) simulator.Nexus.RootChain.InvokeContract("energy", "GetMasterClaimDate", 2);
+            var closeClaimDate = (Timestamp)simulator.Nexus.RootChain.InvokeContract("energy", "GetMasterClaimDate", 1);
+            var farClaimDate = (Timestamp)simulator.Nexus.RootChain.InvokeContract("energy", "GetMasterClaimDate", 2);
 
-            var closeClaimMasters = (BigInteger) simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", closeClaimDate);
+            var closeClaimMasters = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", closeClaimDate);
             var farClaimMasters = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", farClaimDate);
             Assert.IsTrue(closeClaimMasters == 1 && farClaimMasters == 3);
 
             //----------
             //Confirm in fact that only A receives rewards on the closeClaimDate
-            
+
             missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month, 1).AddMonths(1) - simulator.CurrentTime).Days;
             simulator.TimeSkipDays(missingDays, true);
 
@@ -1831,7 +1833,7 @@ namespace Phantasma.Tests
             var testUser = KeyPair.Generate();
             var stakeAmount = BaseEnergyRatioDivisor;
             double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -Nexus.StakingTokenDecimals);
-            double realExpectedUnclaimedAmount = ((double) (StakeToFuel(stakeAmount))) * Math.Pow(10, -Nexus.FuelTokenDecimals);
+            double realExpectedUnclaimedAmount = ((double)(StakeToFuel(stakeAmount))) * Math.Pow(10, -Nexus.FuelTokenDecimals);
 
             var fuelToken = Nexus.FuelTokenSymbol;
             var stakingToken = Nexus.StakingTokenSymbol;
@@ -1853,7 +1855,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(realUnclaimedAmount == realExpectedUnclaimedAmount);
 
-            BigInteger actualEnergyRatio = (BigInteger) (realStakeAmount / realUnclaimedAmount);
+            BigInteger actualEnergyRatio = (BigInteger)(realStakeAmount / realUnclaimedAmount);
             Assert.IsTrue(actualEnergyRatio == BaseEnergyRatioDivisor);
         }
 
@@ -2056,7 +2058,7 @@ namespace Phantasma.Tests
             var script = ScriptUtils.BeginScript().CallContract("nacho", "GetConfig", new object[0]).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
             //var result = nexus.RootChain.InvokeScript(script);
             //Assert.IsTrue(result != null);
-            
+
             var api = new NexusAPI(nexus);
             var apiResult = (ScriptResult)api.InvokeRawScript("nacho", Base16.Encode(script));
 
@@ -2100,6 +2102,255 @@ namespace Phantasma.Tests
             var userAccount = resultObj.ToStruct<NachoAccount>();
 
             Assert.IsTrue(userAccount.ELO == Constants.DEFAULT_ELO);
+        }
+
+        [TestMethod]
+        public void TestExchangeContract()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var seller = KeyPair.Generate();
+            var buyer = KeyPair.Generate();
+
+            string baseSymbol = Nexus.StakingTokenSymbol;
+            int baseDecimals = Nexus.StakingTokenDecimals;
+            BigInteger baseUnit = UnitConversion.ToBigInteger(1, baseDecimals);
+
+            string quoteSymbol = Nexus.FuelTokenSymbol;
+            int quoteDecimals = Nexus.FuelTokenDecimals;
+            BigInteger quoteUnit = UnitConversion.ToBigInteger(1, quoteDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, seller.Address, nexus.RootChain, Nexus.FuelTokenSymbol, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals));
+            simulator.GenerateTransfer(owner, buyer.Address, nexus.RootChain, Nexus.FuelTokenSymbol, UnitConversion.ToBigInteger(1, Nexus.FuelTokenDecimals));
+
+            simulator.GenerateTransfer(owner, seller.Address, nexus.RootChain, baseSymbol, 10 * baseUnit);
+            simulator.GenerateTransfer(owner, buyer.Address, nexus.RootChain, quoteSymbol, 10 * quoteUnit);
+            simulator.EndBlock();
+
+            void OpenOrder(KeyPair orderOpener, decimal orderSize, decimal orderPrice, ExchangeOrderSide side, bool IoC = false)
+            {
+                var orderSizeBigint = UnitConversion.ToBigInteger(orderSize, baseDecimals);
+                var orderPriceBigint = UnitConversion.ToBigInteger(orderPrice, quoteDecimals);
+
+                var OpenerBaseTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(baseSymbol, orderOpener.Address);
+                var OpenerQuoteTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(quoteSymbol, orderOpener.Address);
+
+                BigInteger OpenerBaseTokensDelta = 0;
+                BigInteger OpenerQuoteTokensDelta = 0;
+
+                //get the starting balance for every address on the opposite side of the orderbook, so we can compare it to the final balance of each of those addresses
+                var otherSide = side == ExchangeOrderSide.Buy ? ExchangeOrderSide.Sell : ExchangeOrderSide.Buy;
+                var startingOppositeOrderbook = (ExchangeOrder[]) simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderBook", baseSymbol, quoteSymbol, otherSide);
+                var OtherAddressesTokensInitial = new Dictionary<Address, BigInteger>();
+
+                //*******************************************************************************************************************************************************************************
+                //*** the following method to check token balance state only works for the scenario of a single new exchange order per block that triggers other pre-existing exchange orders ***
+                //*******************************************************************************************************************************************************************************
+
+                foreach (var oppositeOrder in startingOppositeOrderbook)
+                {
+                    if (OtherAddressesTokensInitial.ContainsKey(oppositeOrder.Creator) == false)
+                    {
+                        var targetSymbol = otherSide == ExchangeOrderSide.Buy ? baseSymbol : quoteSymbol;
+                        OtherAddressesTokensInitial.Add(oppositeOrder.Creator, simulator.Nexus.RootChain.GetTokenBalance(targetSymbol, oppositeOrder.Creator));
+                    }
+                }
+
+
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(orderOpener, () =>
+                    ScriptUtils.BeginScript().AllowGas(orderOpener.Address, Address.Null, 1, 9999)
+                        .CallContract("exchange", "OpenOrder", orderOpener.Address, baseSymbol, quoteSymbol, orderSizeBigint, orderPriceBigint, side, IoC).
+                        SpendGas(orderOpener.Address).EndScript());
+                simulator.EndBlock();
+
+                var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+                BigInteger escrowedAmount = 0;
+
+                //take into account the transfer of the owner's wallet to the chain address
+                if (side == ExchangeOrderSide.Buy)
+                {
+                    //*** THIS ESCROWED AMOUNT CALCULATION IS VERY FISHY!!! ALSO ON LINE 138 OF EXCHANGECONTRACT
+                    escrowedAmount = UnitConversion.ToBigInteger(orderSize * orderPrice, quoteDecimals);
+                    OpenerQuoteTokensDelta -= escrowedAmount;
+                }
+                else if (side == ExchangeOrderSide.Sell)
+                {
+                    escrowedAmount = orderSizeBigint;
+                    OpenerBaseTokensDelta -= escrowedAmount;
+                }
+
+                //take into account tx cost in case one of the symbols is the FuelToken
+                if (baseSymbol == Nexus.FuelTokenSymbol)
+                {
+                    OpenerBaseTokensDelta -= txCost;
+                }
+                else
+                if (quoteSymbol == Nexus.FuelTokenSymbol)
+                {
+                    OpenerQuoteTokensDelta -= txCost;
+                }
+
+                var events = nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+
+                var wasNewOrderCreated = events.Count(x => x.Kind == EventKind.OrderCreated && x.Address == orderOpener.Address) == 1;
+                Assert.IsTrue(wasNewOrderCreated, "Order was not created");
+
+                var wasNewOrderClosed = events.Count(x => x.Kind == EventKind.OrderClosed && x.Address == orderOpener.Address) == 1;
+                var wasNewOrderCancelled = events.Count(x => x.Kind == EventKind.OrderCancelled && x.Address == orderOpener.Address) == 1;
+
+                Assert.IsTrue(wasNewOrderCancelled, "IoC Order was not cancelled despite not getting filled");
+
+                var createdOrderEvent = events.First(x => x.Kind == EventKind.OrderCreated);
+                var createdOrderUid = Serialization.Unserialize<BigInteger>(createdOrderEvent.Data);
+                ExchangeOrder createdOrderPostFill = new ExchangeOrder();
+
+                //----------------
+                //verify the order is still in the orderbook according to each case
+
+                //in case the new order was IoC and it wasnt closed, order should have been cancelled
+                if (wasNewOrderClosed == false && IoC)
+                {
+                    Assert.IsTrue(wasNewOrderCancelled, "Non closed IoC order did not get cancelled");
+                }
+                else
+                //if the new order was closed
+                if (wasNewOrderClosed)
+                {
+                    //and check that the order no longer exists on the orderbook
+                    try
+                    {
+                        simulator.Nexus.RootChain.InvokeContract("exchange", "GetExchangeOrder", createdOrderUid);
+                        Assert.IsTrue(false, "Closed order exists on the orderbooks");
+                    }
+                    catch (Exception e)
+                    {
+                        //purposefully empty, this is the expected code-path
+                    }
+                }
+                else //if the order was not IoC and it wasn't closed, then:
+                {
+                    Assert.IsTrue(IoC == false, "All IoC orders should have been triggered by the previous ifs");
+
+                    //check that it still exists on the orderbook
+                    try
+                    {
+                        createdOrderPostFill = (ExchangeOrder)simulator.Nexus.RootChain.InvokeContract("exchange", "GetExchangeOrder", createdOrderUid);
+                    }
+                    catch (Exception e)
+                    {
+                        Assert.IsTrue(false, "Non-IoC unclosed order does not exist on the orderbooks");
+                    }
+                }
+                //------------------
+
+                //------------------
+                //validate that everyone received their tokens appropriately
+
+                BigInteger escrowedUsage = 0;   //this will hold the amount of the escrowed amount that was actually used in the filling of the order
+                //for IoC orders, we need to make sure that what wasn't used gets returned properly
+                //for non IoC orders, we need to make sure that what wasn't used stays on the orderbook
+
+                var OtherAddressesTokensDelta = new Dictionary<Address, BigInteger>();
+
+                //*******************************************************************************************************************************************************************************
+                //*** the following method to check token balance state only works for the scenario of a single new exchange order per block that triggers other pre-existing exchange orders ***
+                //*******************************************************************************************************************************************************************************
+
+                //calculate the expected delta of the balances of all addresses involved
+                var tokenExchangeEvents = events.Where(x => x.Kind == EventKind.TokenReceive);
+
+                foreach (var tokenExchangeEvent in tokenExchangeEvents)
+                {
+                    var eventData = Serialization.Unserialize<TokenEventData>(tokenExchangeEvent.Data);
+
+                    if (tokenExchangeEvent.Address == orderOpener.Address)
+                    {
+                        switch (side)
+                        {
+                            case ExchangeOrderSide.Buy:
+                                OpenerBaseTokensDelta += eventData.value;
+                                break;
+                            case ExchangeOrderSide.Sell:
+                                OpenerQuoteTokensDelta += eventData.value;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Assert.IsTrue(OtherAddressesTokensInitial.ContainsKey(tokenExchangeEvent.Address), "Address that was not on this orderbook received tokens");
+                        Assert.IsTrue(OtherAddressesTokensDelta.ContainsKey(tokenExchangeEvent.Address) == false, "Order opener tried to fill the same order more than once, should not be possible");
+
+                        OtherAddressesTokensDelta.Add(tokenExchangeEvent.Address, eventData.value);
+                        escrowedUsage += eventData.value;   //the tokens other addresses receive come from the escrowed amount of the order opener
+                    }
+                }
+
+                var leftOver = escrowedAmount - escrowedUsage;
+
+                if (wasNewOrderClosed)
+                {
+                    Assert.IsTrue(leftOver == 0);
+                }
+                else if (IoC)
+                {
+                    switch (side)
+                    {
+                        case ExchangeOrderSide.Buy:
+                            OpenerQuoteTokensDelta += leftOver;
+                            break;
+
+                        case ExchangeOrderSide.Sell:
+                            OpenerBaseTokensDelta += leftOver;
+                            break;
+                    }
+                }
+                else //if the user order was not closed and it wasnt IoC, it should have the correct unfilled amount
+                {
+                    Assert.IsTrue(leftOver == createdOrderPostFill.Amount);
+                }
+
+
+                //get the actual final balance of all addresses involved and make sure it matches the expected deltas
+                var OpenerBaseTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(baseSymbol, orderOpener.Address);
+                var OpenerQuoteTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(quoteSymbol, orderOpener.Address);
+
+                Assert.IsTrue(OpenerBaseTokensFinal == OpenerBaseTokensDelta + OpenerBaseTokensInitial);
+                Assert.IsTrue(OpenerQuoteTokensFinal == OpenerQuoteTokensDelta + OpenerQuoteTokensInitial);
+
+                foreach (var entry in OtherAddressesTokensInitial)
+                {
+                    var otherAddressInitialTokens = entry.Value;
+                    BigInteger delta = 0;
+
+                    if (OtherAddressesTokensDelta.ContainsKey(entry.Key))
+                        delta = OtherAddressesTokensDelta[entry.Key];
+
+                    var targetSymbol = otherSide == ExchangeOrderSide.Buy ? baseSymbol : quoteSymbol;
+
+                    var otherAddressFinalTokens = simulator.Nexus.RootChain.GetTokenBalance(targetSymbol, entry.Key);
+
+                    Assert.IsTrue(otherAddressFinalTokens == delta + otherAddressInitialTokens);
+                }
+
+            }
+
+            OpenOrder(buyer, 0.123M, 0.3M, ExchangeOrderSide.Buy, true);
+
+            OpenOrder(seller, 2.5M, 0.2M, ExchangeOrderSide.Sell);
+            OpenOrder(seller, 2.5M, 0.7M, ExchangeOrderSide.Sell);
+            OpenOrder(seller, 5, 1.1M, ExchangeOrderSide.Sell);
+
+            OpenOrder(buyer, 0.345M, 0.1M, ExchangeOrderSide.Buy, true);
+            OpenOrder(buyer, 0.655M, 0.2M, ExchangeOrderSide.Buy);
+            OpenOrder(buyer, 2, 0.2M, ExchangeOrderSide.Buy);
+
+            //TODO: test multiple IoC orders against each other on the same block!
         }
     }
 }
