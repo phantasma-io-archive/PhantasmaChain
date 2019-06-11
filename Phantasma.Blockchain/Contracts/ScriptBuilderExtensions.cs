@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain.Contracts
             return sb.CallContract(TokenContract, "MintTokens", tokenSymbol, target, amount);
         }
 
-        public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, string from, string to, BigInteger amount)
+        public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, string to, BigInteger amount)
         {
             return sb.CallContract(TokenContract, "TransferTokens", from, to, tokenSymbol, amount);
         }
@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts
             return sb.CallContract(TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
         }
 
-        public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, string from, string to, BigInteger tokenId)//todo check if this is valid
+        public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, string to, BigInteger tokenId)//todo check if this is valid
         {
             return sb.CallContract(TokenContract, "TransferToken", from, to, tokenSymbol, tokenId);
         }
@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Contracts
             return sb.CallContract(TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
-        public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, string from, string to, BigInteger amount)
+        public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, string to, BigInteger amount)
         {
             return sb.CallContract(TokenContract, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
@@ -52,7 +52,7 @@ namespace Phantasma.Blockchain.Contracts
             return sb.CallContract(TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
 
-        public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, string from, string to, BigInteger tokenId)
+        public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, string to, BigInteger tokenId)
         {
             return sb.CallContract(TokenContract, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
