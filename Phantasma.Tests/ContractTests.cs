@@ -2204,8 +2204,6 @@ namespace Phantasma.Tests
                 var wasNewOrderClosed = events.Count(x => x.Kind == EventKind.OrderClosed && x.Address == orderOpener.Address) == 1;
                 var wasNewOrderCancelled = events.Count(x => x.Kind == EventKind.OrderCancelled && x.Address == orderOpener.Address) == 1;
 
-                Assert.IsTrue(wasNewOrderCancelled, "IoC Order was not cancelled despite not getting filled");
-
                 var createdOrderEvent = events.First(x => x.Kind == EventKind.OrderCreated);
                 var createdOrderUid = Serialization.Unserialize<BigInteger>(createdOrderEvent.Data);
                 ExchangeOrder createdOrderPostFill = new ExchangeOrder();

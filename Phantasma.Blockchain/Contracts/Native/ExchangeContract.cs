@@ -348,8 +348,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var buyOrders = ((oneSideFlag && side == Buy) || !oneSideFlag) ? _orders.Get<string, StorageList>(buyKey) : new StorageList();
             var sellOrders = ((oneSideFlag && side == Sell) || !oneSideFlag) ? _orders.Get<string, StorageList>(sellKey) : new StorageList();
 
-            var buyCount = buyOrders.Count();
-            var sellCount = sellOrders.Count();
+            var buyCount = buyOrders.Context == null ? 0 : buyOrders.Count();
+            var sellCount = sellOrders.Context == null ? 0 : sellOrders.Count();
 
             ExchangeOrder[] orderbook = new ExchangeOrder[(long) (buyCount + sellCount)];
 
