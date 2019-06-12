@@ -100,6 +100,9 @@ namespace Phantasma.API
 
         [APIDescription("Result of the transaction, if any. Serialized, in hexadecimal format")]
         public string result;
+
+        [APIDescription("Fee of the transaction, in KCAL, fixed point")]
+        public string fee;
     }
 
     public struct AccountTransactionsResult : IAPIResult

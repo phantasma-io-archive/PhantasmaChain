@@ -335,7 +335,8 @@ namespace Phantasma.API
                 blockHeight = block.Height,
                 blockHash = block.Hash.ToString(),
                 confirmations = Nexus.GetConfirmationsOfBlock(block),
-                script = tx.Script.Encode()
+                script = tx.Script.Encode(),
+                fee = chain.GetTransactionFee(tx.Hash).ToString()
             };
 
             var eventList = new List<EventResult>();
