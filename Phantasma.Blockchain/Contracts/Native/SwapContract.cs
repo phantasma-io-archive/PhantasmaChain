@@ -21,16 +21,27 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
-            //Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
+            Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
             Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
 
             var fromBalance = _balances.Get<string, BigInteger>(fromSymbol);
             var toBalance = _balances.Get<string, BigInteger>(toSymbol);
 
-            Runtime.Expect(fromSymbol == Nexus.StakingTokenSymbol, "only SOUL accepted for now");
-            Runtime.Expect(toSymbol == Nexus.FuelTokenSymbol, "only KCAL accepted for now");
+            var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
+            Runtime.Expect(fromInfo.IsFungible, "must be fungible");
 
-            var total = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(amount, Nexus.FuelTokenDecimals) * 0.01m, Nexus.StakingTokenDecimals);
+            var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
+            Runtime.Expect(toInfo.IsFungible, "must be fungible");
+            BigInteger total;
+
+            if (fromBalance < toBalance)
+            {
+                total = UnitConversion.ToBigInteger((UnitConversion.ToDecimal(amount, fromInfo.Decimals) / UnitConversion.ToDecimal(toBalance, toInfo.Decimals)) * UnitConversion.ToDecimal(fromBalance, fromInfo.Decimals), toInfo.Decimals);
+            }
+            else
+            {
+                total = UnitConversion.ToBigInteger((UnitConversion.ToDecimal(amount, fromInfo.Decimals) * UnitConversion.ToDecimal(fromBalance, fromInfo.Decimals)) / UnitConversion.ToDecimal(toBalance, toInfo.Decimals), toInfo.Decimals);
+            }
 
             return total;
         }
@@ -42,8 +53,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var info = Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(info.IsFungible, "must be fungible");
-
-            Runtime.Expect(symbol == Nexus.FuelTokenSymbol, "cannot deposit this token");
 
             _total += amount;
 
