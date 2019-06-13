@@ -249,6 +249,34 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void SimpleSwap()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+
+            var testUserA = KeyPair.Generate();
+
+            var fuelAmount = UnitConversion.ToBigInteger(10, Nexus.FuelTokenDecimals);
+            var transferAmount = UnitConversion.ToBigInteger(10, Nexus.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
+
+            var swapAmount = transferAmount / 2;
+            simulator.BeginBlock();
+            simulator.GenerateSwap(testUserA, nexus.RootChain, Nexus.StakingTokenSymbol, Nexus.FuelTokenSymbol, swapAmount);
+            simulator.EndBlock();
+
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
+            Assert.IsTrue(finalBalance > originalBalance);
+        }
+
+        [TestMethod]
         public void TransferToAccountName()
         {
             var owner = KeyPair.Generate();

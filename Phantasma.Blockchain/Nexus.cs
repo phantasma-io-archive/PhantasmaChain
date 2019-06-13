@@ -1083,7 +1083,7 @@ namespace Phantasma.Blockchain
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("consensus", "Stake", owner.Address).
-                CallContract(ScriptBuilderExtensions.SwapContract, "Deposit", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
+                CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 SpendGas(owner.Address).
                 EndScript();
 

@@ -21,8 +21,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
-            Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + "not available in pot");
-            Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + "not available in pot");
+            //Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
+            Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
 
             var fromBalance = _balances.Get<string, BigInteger>(fromSymbol);
             var toBalance = _balances.Get<string, BigInteger>(toSymbol);
@@ -35,11 +35,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             return total;
         }
 
-        public void Deposit(Address from, string symbol, BigInteger amount)
+        public void DepositTokens(Address from, string symbol, BigInteger amount)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(amount > 0, "invalid amount");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, amount), "tokens transfer failed");
+
+            var info = Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(info.IsFungible, "must be fungible");
 
             Runtime.Expect(symbol == Nexus.FuelTokenSymbol, "cannot deposit this token");
 
@@ -49,15 +51,22 @@ namespace Phantasma.Blockchain.Contracts.Native
             balance += amount;
             _balances.Set<string, BigInteger>(symbol, balance);
 
+            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, amount), "tokens transfer failed");
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = symbol, value = amount });
         }
 
-        public void Swap(Address from, string fromSymbol, string toSymbol, BigInteger amount)
+        public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(amount > 0, "invalid amount");
 
-            Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + "not available in pot");
+            var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
+            Runtime.Expect(fromInfo.IsFungible, "must be fungible");
+
+            var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
+            Runtime.Expect(toInfo.IsFungible, "must be fungible");
+
+            Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
 
             var total = GetRate(fromSymbol, toSymbol, amount);
             var balance = _balances.Get<string, BigInteger>(toSymbol);

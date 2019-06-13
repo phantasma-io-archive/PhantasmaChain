@@ -506,6 +506,17 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
+        public Transaction GenerateSwap(KeyPair source, Chain chain, string fromSymbol, string toSymbol, BigInteger amount)
+        {
+            var script = ScriptUtils.BeginScript().
+                CallContract("swap", "SwapTokens", source.Address, fromSymbol, toSymbol, amount).
+                AllowGas(source.Address, Address.Null, 1, 9999).
+                SpendGas(source.Address).
+                EndScript();
+            var tx = MakeTransaction(source, chain, script);
+            return tx;
+        }
+
         public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
