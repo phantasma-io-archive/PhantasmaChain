@@ -73,5 +73,10 @@ namespace Phantasma.Numerics
 
             return output;
         }
+
+        public static BigInteger GetUnitValue(int decimals)
+        {
+            return ToBigInteger(1, decimals);
+        }
     }
 }
