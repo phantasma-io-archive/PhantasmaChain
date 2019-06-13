@@ -230,7 +230,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (tokenInfo.IsCapped)
             {
-                var sourceSupplies = new SupplySheet(symbol, sourceChain, Runtime.Nexus);
                 var targetSupplies = new SupplySheet(symbol, this.Runtime.Chain, Runtime.Nexus);
                 
                 if (IsAddressOfParentChain(sourceChain.Address))
@@ -239,7 +238,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else // child chain
                 {
-                    Runtime.Expect(targetSupplies.MoveFromChild(this.Storage, this.Runtime.Chain.Name, value), "target supply check failed");
+                    Runtime.Expect(targetSupplies.MoveFromChild(this.Storage, sourceChain.Name, value), "target supply check failed");
                 }
             }
 

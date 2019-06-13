@@ -428,12 +428,12 @@ namespace Phantasma.Tests
             // do a side chain send using test user balance from root to account chain
             simulator.BeginBlock();
             var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, sender.Address, targetChain, sideAmount, 0);
-            simulator.EndBlock();
-            var blockA = nexus.RootChain.LastBlock;
+            var blockA = simulator.EndBlock().FirstOrDefault();
+            Assert.IsTrue(blockA != null);
 
-            // finish the chain transfer
+            // finish the chain transfer from parent to child
             simulator.BeginBlock();
-            var txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, targetChain, blockA.Hash);
+            var txB = simulator.GenerateSideChainSettlement(sender, sourceChain, targetChain, blockA.Hash);
             Assert.IsTrue(simulator.EndBlock().Any());
 
             // verify balances
@@ -446,6 +446,17 @@ namespace Phantasma.Tests
 
             balance = sourceChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
+
+            sideAmount /= 2;
+            simulator.BeginBlock();
+            var txC = simulator.GenerateSideChainSend(sender, symbol, targetChain, sender.Address, sourceChain, sideAmount, 0);
+            var blockC = simulator.EndBlock().FirstOrDefault();
+            Assert.IsTrue(blockC != null);
+
+            // finish the chain transfer from child to parent
+            simulator.BeginBlock();
+            var txD = simulator.GenerateSideChainSettlement(sender, targetChain, sourceChain, blockC.Hash);
+            Assert.IsTrue(simulator.EndBlock().Any());
         }
 
         [TestMethod]
