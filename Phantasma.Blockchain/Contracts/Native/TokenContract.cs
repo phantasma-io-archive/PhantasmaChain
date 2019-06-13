@@ -180,18 +180,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (tokenInfo.IsCapped)
             {
-                var sourceSupplies = new SupplySheet(symbol, this.Runtime.Chain, Runtime.Nexus);
-                var targetSupplies = new SupplySheet(symbol, targetChain, Runtime.Nexus);
+                var supplies = new SupplySheet(symbol, this.Runtime.Chain, Runtime.Nexus);
 
                 BigInteger amount = 1;
 
                 if (IsAddressOfParentChain(targetChainAddress))
                 {
-                    Runtime.Expect(sourceSupplies.MoveToParent(this.Storage, amount), "source supply check failed");
+                    Runtime.Expect(supplies.MoveToParent(this.Storage, amount), "source supply check failed");
                 }
                 else // child chain
                 {
-                    Runtime.Expect(sourceSupplies.MoveToChild(this.Storage, this.Runtime.Chain.Name, amount), "source supply check failed");
+                    Runtime.Expect(supplies.MoveToChild(this.Storage, this.Runtime.Chain.Name, amount), "source supply check failed");
                 }
             }
 
@@ -230,15 +229,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (tokenInfo.IsCapped)
             {
-                var targetSupplies = new SupplySheet(symbol, this.Runtime.Chain, Runtime.Nexus);
+                var supplies = new SupplySheet(symbol, this.Runtime.Chain, Runtime.Nexus);
                 
                 if (IsAddressOfParentChain(sourceChain.Address))
                 {
-                    Runtime.Expect(targetSupplies.MoveFromParent(this.Storage, value), "target supply check failed");
+                    Runtime.Expect(supplies.MoveFromParent(this.Storage, value), "target supply check failed");
                 }
                 else // child chain
                 {
-                    Runtime.Expect(targetSupplies.MoveFromChild(this.Storage, sourceChain.Name, value), "target supply check failed");
+                    Runtime.Expect(supplies.MoveFromChild(this.Storage, sourceChain.Name, value), "target supply check failed");
                 }
             }
 
