@@ -79,7 +79,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var total = GetRate(fromSymbol, toSymbol, amount);
             var balance = _balances.Get<string, BigInteger>(toSymbol);
-            Runtime.Expect(total <= balance, "insuficient balance in pot");
+            var halfBalance = balance / 2; 
+            Runtime.Expect(total < halfBalance, "insuficient balance in pot"); // here should be < instead of <= because we can take more than half of the pot at once
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(fromSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, amount), "source tokens transfer failed");
             Runtime.Expect(Runtime.Nexus.TransferTokens(toSymbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, from, total), "target tokens transfer failed");
