@@ -69,6 +69,16 @@ namespace Phantasma.Blockchain
             this.BlockTime = blockTime;
         }
 
+        private void RejectTransaction(Transaction tx, string reason)
+        {
+            lock (_rejections)
+            {
+                _rejections[tx.Hash] = reason;
+            }
+
+            throw new MempoolSubmissionException(reason);
+        }
+
         public bool Submit(Transaction tx)
         {
             if (this.CurrentState != State.Running)
@@ -89,18 +99,18 @@ namespace Phantasma.Blockchain
             var currentTime = Timestamp.Now;
             if (tx.Expiration <= currentTime)
             {
-                throw new MempoolSubmissionException("already expired");
+                RejectTransaction(tx, "already expired");
             }
 
             var diff = tx.Expiration - currentTime;
             if (diff > MaxExpirationTimeDifferenceInSeconds)
             {
-                throw new MempoolSubmissionException("expire date too big");
+                RejectTransaction(tx, "expire date too big");
             }
 
             if (tx.NexusName != this.Nexus.Name)
             {
-                throw new MempoolSubmissionException("invalid nexus name");
+                RejectTransaction(tx, "invalid nexus name");
             }
 
             var entry = new MempoolEntry() { transaction = tx, timestamp = Timestamp.Now };

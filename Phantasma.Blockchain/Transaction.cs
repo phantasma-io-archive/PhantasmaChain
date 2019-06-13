@@ -78,6 +78,7 @@ namespace Phantasma.Blockchain
             result = null;
 
             var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet, false);
+            runtime.ThrowOnFault = true;
             runtime.OracleReader = oracleReader;
 
             var state = runtime.Execute();

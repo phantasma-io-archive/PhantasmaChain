@@ -187,16 +187,23 @@ namespace Phantasma.Blockchain
             foreach (var tx in transactions)
             {
                 byte[] result;
-                if (tx.Execute(this, block, changeSet, block.Notify, oracleReader, out result))
+                try
                 {
-                    if (result != null)
+                    if (tx.Execute(this, block, changeSet, block.Notify, oracleReader, out result))
                     {
-                        block.SetResultForHash(tx.Hash, result);
+                        if (result != null)
+                        {
+                            block.SetResultForHash(tx.Hash, result);
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidTransactionException(tx.Hash, $"execution failed");
                     }
                 }
-                else
+                catch (Exception e)
                 {
-                    throw new InvalidTransactionException(tx.Hash, $"transaction execution failed with hash {tx.Hash}");
+                    throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
             }
 

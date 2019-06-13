@@ -5,6 +5,10 @@ using Phantasma.Blockchain;
 using Phantasma.Blockchain.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.VM.Utils;
+using Phantasma.Blockchain.Contracts;
+using System;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Tests
 {
@@ -22,11 +26,12 @@ namespace Phantasma.Tests
         private static readonly string testWIF = "Kx9Kr8MwQ9nAJbHEYNAjw5n99B2GpU6HQFf75BGsC3hqB1ZoZm5W";
         private static readonly string testAddress = "P9dKgENhREKbRNsecvVeyPLvrMVJJqDHSWBwFZPyEJjSy";
 
-        private TestData CreateAPI()
+        private TestData CreateAPI(bool useMempool = false)
         {
             var owner = KeyPair.FromWIF(testWIF);
             var sim = new ChainSimulator(owner, 1234);
-            var api = new NexusAPI(sim.Nexus);
+            var mempool = useMempool? new Mempool(owner, sim.Nexus, 2) : null;
+            var api = new NexusAPI(sim.Nexus, mempool);
 
             var data = new TestData()
             {
@@ -35,6 +40,8 @@ namespace Phantasma.Tests
                 nexus = sim.Nexus,
                 api = api
             };
+
+            mempool?.Start();
 
             return data;
         }
@@ -57,6 +64,47 @@ namespace Phantasma.Tests
 
             var result = (ErrorResult)test.api.GetAccount("blabla");
             Assert.IsTrue(!string.IsNullOrEmpty(result.error));
+        }
+
+        [TestMethod]
+        public void TestTransactionError()
+        {
+            var test = CreateAPI(true);
+
+            var contractName = "blabla";
+            var script = new ScriptBuilder().CallContract(contractName, "bleble", 123).ToScript();
+
+            var chainName = Nexus.RootChainName;
+            test.simulator.CurrentTime = Timestamp.Now;
+            var tx = new Transaction("simnet", chainName, script, test.simulator.CurrentTime + TimeSpan.FromHours(1));
+            var txBytes = tx.ToByteArray(true);
+            var temp = test.api.SendRawTransaction(Base16.Encode(txBytes));
+            var result = (SingleResult)temp;
+            Assert.IsTrue(result.value != null);
+            var hash = result.value.ToString();
+            Assert.IsTrue(hash == tx.Hash.ToString());
+
+            var startTime = DateTime.Now;
+            do
+            {
+                var timeDiff = DateTime.Now - startTime;
+                if (timeDiff.Seconds > 20)
+                {
+                    throw new Exception("Test timeout");
+                }
+
+                var status = test.api.GetTransaction(hash);
+                if (status is ErrorResult)
+                {
+                    var error = (ErrorResult)status;
+                    var msg = error.error.ToLower();
+                    if (msg != "pending" && msg !="transaction not found")
+                    {
+                        Assert.IsTrue(msg.Contains(contractName));
+                        break;
+                    }
+                }
+            } while (true);
         }
 
         [TestMethod]
