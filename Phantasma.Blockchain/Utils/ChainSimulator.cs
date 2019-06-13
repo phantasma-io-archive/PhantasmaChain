@@ -174,7 +174,7 @@ namespace Phantasma.Blockchain.Utils
                 var nftKey = KeyPair.Generate();
                 _keys.Add(nftKey);
                 var data = new SimNFTData() { A = (byte)_rnd.Next(), B = (byte)_rnd.Next(), C = (byte)_rnd.Next() };
-                GenerateNft(_owner, nftKey.Address, tokenSymbol, Serialization.Serialize(data), new byte[0]);
+                MintNonFungibleToken(_owner, nftKey.Address, tokenSymbol, Serialization.Serialize(data), new byte[0], 0);
             }
         }
 
@@ -547,13 +547,13 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
-        public Transaction GenerateNft(KeyPair source, Address destAddress, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction MintNonFungibleToken(KeyPair source, Address destAddress, string tokenSymbol, byte[] rom, byte[] ram, BigInteger value)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).
-                CallContract("token", "MintToken", destAddress, tokenSymbol, rom, ram).
+                CallContract("token", "MintToken", destAddress, tokenSymbol, rom, ram, value).
                 SpendGas(source.Address).
                 EndScript();
 

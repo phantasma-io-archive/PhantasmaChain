@@ -68,6 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(tokenInfo.IsBurnable, "token must be burnable");
 
             Runtime.Expect(this.Runtime.Nexus.BurnTokens(symbol, this.Storage, Runtime.Chain, from, amount), "burning failed");
 
@@ -114,7 +115,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // TODO minting a NFT will require a certain amount of KCAL that is released upon burning
-        public BigInteger MintToken(Address to, string symbol, byte[] rom, byte[] ram)
+        public BigInteger MintToken(Address to, string symbol, byte[] rom, byte[] ram, BigInteger value)
         {
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -126,12 +127,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram);
+            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram, value);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             Runtime.Expect(Runtime.Nexus.MintToken(symbol, this.Storage, Runtime.Chain, to, tokenID), "minting failed");
 
-            Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = tokenID });
+            if (tokenInfo.IsBurnable)
+            {
+                Runtime.Expect(value > 0, "token must have value");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, tokenInfo.Owner, Runtime.Chain.Address, tokenID), "minting escrow failed");
+                Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = value, chainAddress = Runtime.Chain.Address });
+            }
+            else
+            {
+                Runtime.Expect(value == 0, "non-burnable must have value zero");
+            }
+
+            Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
             return tokenID;
         }
 
@@ -142,12 +154,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(!tokenInfo.IsFungible, "token must be non-fungible");
+            Runtime.Expect(tokenInfo.IsBurnable, "token must be burnable");
+
+            var nft = Runtime.Nexus.GetNFT(symbol, tokenID);
 
             Runtime.Expect(Runtime.Nexus.BurnToken(symbol, this.Storage, from, tokenID), "burn failed");
 
             Runtime.Expect(this.Runtime.Nexus.DestroyNFT(symbol, tokenID), "destroy token failed");
 
-            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID });
+            Runtime.Expect(this.Runtime.Nexus.TransferTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, from, nft.Value), "energy claim failed");
+
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
+            Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { symbol = Nexus.FuelTokenName, value = nft.Value, chainAddress = Runtime.Chain.Address });
         }
 
         public void TransferToken(Address source, Address destination, string symbol, BigInteger tokenID)

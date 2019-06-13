@@ -129,7 +129,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             test.simulator.BeginBlock();
-            test.simulator.GenerateNft(test.owner, testUser.Address, nftSymbol, tokenData, new byte[0]);
+            test.simulator.MintNonFungibleToken(test.owner, testUser.Address, nftSymbol, tokenData, new byte[0], 0);
             test.simulator.EndBlock();
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);

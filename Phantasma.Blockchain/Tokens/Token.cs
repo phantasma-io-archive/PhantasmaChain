@@ -20,6 +20,7 @@ namespace Phantasma.Blockchain.Tokens
         Stakable = 1 << 5,
         Stable = 1 << 6,
         External = 1 << 7,
+        Burnable = 1 << 8,
     }
 
     public struct TokenInfo : ISerializable
@@ -32,6 +33,7 @@ namespace Phantasma.Blockchain.Tokens
         public BigInteger MaxSupply { get; private set; }
 
         public bool IsFungible => Flags.HasFlag(TokenFlags.Fungible);
+        public bool IsBurnable => Flags.HasFlag(TokenFlags.Burnable);
         public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
 
         public Address Owner { get; private set; }

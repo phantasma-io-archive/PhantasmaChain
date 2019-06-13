@@ -65,7 +65,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, nftSymbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(owner, testUser.Address, nftSymbol, tokenROM, tokenRAM, 0);
             simulator.EndBlock();
 
             var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract("market", "GetAuctions");

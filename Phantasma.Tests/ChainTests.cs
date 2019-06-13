@@ -570,7 +570,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, symbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
@@ -604,7 +604,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Blockchain.Tokens.TokenFlags.None);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable);
             simulator.EndBlock();
 
             // Send some SOUL to the test user (required for gas used in "burn" transaction)
@@ -623,7 +623,8 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, testUser.Address, symbol, tokenData, new byte[0]);
+            BigInteger tokenKCALWorth = 100;
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenData, new byte[0], tokenKCALWorth);
             simulator.EndBlock();
 
             // verify nft presence on the user post-mint
@@ -687,7 +688,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the sender
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, sender.Address, nftSymbol, tokenData, new byte[0]);
+            simulator.MintNonFungibleToken(owner, sender.Address, nftSymbol, tokenData, new byte[0], 0);
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint
@@ -761,7 +762,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the sender
             simulator.BeginBlock();
-            simulator.GenerateNft(owner, sender.Address, nftSymbol, tokenData, new byte[0]);
+            simulator.MintNonFungibleToken(owner, sender.Address, nftSymbol, tokenData, new byte[0], 0);
             simulator.EndBlock();
 
             // verify nft presence on the sender post-mint

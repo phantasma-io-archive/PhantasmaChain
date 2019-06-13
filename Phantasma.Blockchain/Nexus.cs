@@ -924,7 +924,7 @@ namespace Phantasma.Blockchain
             return tokenID;
         }
 
-        internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, byte[] rom, byte[] ram)
+        internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, byte[] rom, byte[] ram, BigInteger value)
         {
             Throw.IfNull(rom, nameof(rom));
             Throw.IfNull(ram, nameof(ram));
@@ -947,7 +947,7 @@ namespace Phantasma.Blockchain
 
                 var tokenID = GenerateIDForNFT(tokenSymbol);
 
-                var content = new TokenContent(chainAddress, chainAddress, rom, ram);
+                var content = new TokenContent(chainAddress, chainAddress, rom, ram, value);
                 contents[tokenID] = content;
 
                 return tokenID;
@@ -984,7 +984,7 @@ namespace Phantasma.Blockchain
                     if (contents.ContainsKey(tokenID))
                     {
                         var content = contents[tokenID];
-                        content = new TokenContent(chainAddress, owner, content.ROM, content.RAM);
+                        content = new TokenContent(chainAddress, owner, content.ROM, content.RAM, content.Value);
                         contents.Set(tokenID, content);
                         return true;
                     }
@@ -1014,7 +1014,7 @@ namespace Phantasma.Blockchain
                         {
                             ram = content.RAM;
                         }
-                        content = new TokenContent(content.CurrentChain, content.CurrentOwner, content.ROM, ram);
+                        content = new TokenContent(content.CurrentChain, content.CurrentOwner, content.ROM, ram, content.Value);
                         contents.Set(tokenID, content);
                         return true;
                     }
