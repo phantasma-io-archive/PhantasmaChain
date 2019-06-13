@@ -355,7 +355,8 @@ namespace Phantasma.Blockchain
                 case "exchange": contract  = new ExchangeContract(); break;
                 case "market":    contract  = new MarketContract(); break;
                 case "energy":   contract  = new EnergyContract(); break;
-                case "token": contract  = new TokenContract(); break;
+                case "token": contract = new TokenContract(); break;
+                case "swap": contract = new SwapContract(); break;
                 case "gas":  contract  = new GasContract(); break;
                 case "privacy": contract  = new PrivacyContract(); break;
                 case "storage": contract  = new StorageContract(); break;
@@ -1082,6 +1083,7 @@ namespace Phantasma.Blockchain
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("consensus", "Stake", owner.Address).
+                CallContract(ScriptBuilderExtensions.SwapContract, "Deposit", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -1116,7 +1118,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap"});
 
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External);
             CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel);
