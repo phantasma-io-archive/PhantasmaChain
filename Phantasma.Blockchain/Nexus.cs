@@ -1063,12 +1063,12 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction ChainCreateTx(KeyPair owner, string name)
+        private Transaction ChainCreateTx(KeyPair owner, string name, params string[] contracts)
         {
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name, new string[] { name}).
+                CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name, contracts).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -1134,15 +1134,14 @@ namespace Phantasma.Blockchain
             {
                 TokenInitTx(owner),
 
-                ChainCreateTx(owner, "privacy"),
-                ChainCreateTx(owner, "vault"),
-                ChainCreateTx(owner, "bank"),
+                ChainCreateTx(owner, "privacy", "privacy"),
+                ChainCreateTx(owner, "bank", "bank", "vault"),
                 // ChainCreateTx(owner, "market"), TODO
 
                 // TODO remove those from here, theyare here just for testing
-                ChainCreateTx(owner, "apps"),
-                ChainCreateTx(owner, "nacho"),
-                ChainCreateTx(owner, "casino"),
+                ChainCreateTx(owner, "apps", "apps"),
+                ChainCreateTx(owner, "nacho", "nacho", "market"),
+                ChainCreateTx(owner, "casino", "casino"),
 
                 ConsensusStakeCreateTx(owner)
             };
