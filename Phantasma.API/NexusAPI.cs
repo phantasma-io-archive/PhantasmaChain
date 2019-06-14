@@ -304,7 +304,7 @@ namespace Phantasma.API
             };
         }
 
-        private AuctionResult FillAuction(MarketAuction auction)
+        private AuctionResult FillAuction(MarketAuction auction, Address chainAddress)
         {
             var nft = Nexus.GetNFT(auction.BaseSymbol, auction.TokenID);
 
@@ -314,6 +314,7 @@ namespace Phantasma.API
                 quoteSymbol = auction.QuoteSymbol,
                 tokenId = auction.TokenID.ToString(),
                 creatorAddress = auction.Creator.Text,
+                chainAddress = chainAddress.Text,
                 price = auction.Price.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value,
@@ -986,10 +987,10 @@ namespace Phantasma.API
 
             var info = Nexus.GetNFT(symbol, ID);
 
-            var chain = GetMarketChain();
+            var chain = Nexus.FindChainByAddress(info.CurrentChain);
             bool forSale;
 
-            if (chain != null)
+            if (chain != null && chain.HasContract("market"))
             {
                 forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
             }
@@ -1137,17 +1138,17 @@ namespace Phantasma.API
             return result;
         }
 
-        private Chain GetMarketChain()
-        {
-            return Nexus.RootChain; // TODO change later
-        }
-
         [APIInfo(typeof(int), "Returns the number of active auctions.")]
-        public IAPIResult GetAuctionsCount([APIParameter("Token symbol used as filter", "NACHO")]
+        public IAPIResult GetAuctionsCount([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName = null, [APIParameter("Token symbol used as filter", "NACHO")]
             string symbol = null)
         {
-            var chain = GetMarketChain();
+            var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
+            {
+                return new ErrorResult { error = "Chain not found" };
+            }
+
+            if (!chain.HasContract("market"))
             {
                 return new ErrorResult { error = "Market not available" };
             }
@@ -1163,12 +1164,17 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(AuctionResult[]), "Returns the auctions available in the market.", true)]
-        public IAPIResult GetAuctions([APIParameter("Token symbol used as filter", "NACHO")] string symbol = null,
+        public IAPIResult GetAuctions([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName, [APIParameter("Token symbol used as filter", "NACHO")] string symbol = null,
             [APIParameter("Index of page to return", "5")] uint page = 1,
             [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
         {
-            var chain = GetMarketChain();
+            var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
+            {
+                return new ErrorResult { error = "Chain not found" };
+            }
+
+            if (!chain.HasContract("market"))
             {
                 return new ErrorResult { error = "Market not available" };
             }
@@ -1206,13 +1212,13 @@ namespace Phantasma.API
             paginatedResult.total = numberRecords;
             paginatedResult.page = page;
 
-            paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x)).ToArray() };
+            paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x, chain.Address)).ToArray() };
 
             return paginatedResult;
         }
 
         [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false)]
-        public IAPIResult GetAuction([APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
+        public IAPIResult GetAuction([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName, [APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
         {
             if (!Nexus.TokenExists(symbol))
             {
@@ -1227,8 +1233,13 @@ namespace Phantasma.API
 
             var info = Nexus.GetNFT(symbol, ID);
 
-            var chain = GetMarketChain();
+            var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
+            {
+                return new ErrorResult { error = "Chain not found" };
+            }
+
+            if (!chain.HasContract("market"))
             {
                 return new ErrorResult { error = "Market not available" };
             }

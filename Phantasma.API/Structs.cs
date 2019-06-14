@@ -215,6 +215,9 @@ namespace Phantasma.API
         [APIDescription("Address of auction creator")]
         public string creatorAddress;
 
+        [APIDescription("Address of auction chain")]
+        public string chainAddress;
+
         public uint startDate;
         public uint endDate;
 
