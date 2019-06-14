@@ -1119,7 +1119,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop"});
 
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External);
             CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel);
@@ -1137,12 +1137,10 @@ namespace Phantasma.Blockchain
                 ChainCreateTx(owner, "privacy"),
                 ChainCreateTx(owner, "vault"),
                 ChainCreateTx(owner, "bank"),
-                ChainCreateTx(owner, "interop"),
                 // ChainCreateTx(owner, "market"), TODO
-                ChainCreateTx(owner, "apps"),
-                ChainCreateTx(owner, "energy"),
 
                 // TODO remove those from here, theyare here just for testing
+                ChainCreateTx(owner, "apps"),
                 ChainCreateTx(owner, "nacho"),
                 ChainCreateTx(owner, "casino"),
 
