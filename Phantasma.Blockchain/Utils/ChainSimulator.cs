@@ -357,8 +357,11 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateCustomTransaction(KeyPair owner, Func<byte[]> scriptGenerator)
         {
-            var chain = Nexus.RootChain;
+            return GenerateCustomTransaction(owner, Nexus.RootChain, scriptGenerator);
+        }
 
+        public Transaction GenerateCustomTransaction(KeyPair owner, Chain chain, Func<byte[]> scriptGenerator)
+        {
             var script = scriptGenerator();
 
             var tx = MakeTransaction(owner, chain, script);
