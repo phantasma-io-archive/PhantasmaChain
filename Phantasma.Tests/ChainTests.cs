@@ -805,6 +805,7 @@ namespace Phantasma.Tests
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
             nft = nexus.GetNFT(nftSymbol, tokenId);
+            Assert.IsTrue(nft.CurrentOwner == receiver.Address);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
