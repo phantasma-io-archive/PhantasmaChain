@@ -29,7 +29,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "nexus";
 
-        public const int MAX_TOKEN_DECIMALS = 20;
+        public const int MAX_TOKEN_DECIMALS = 18;
 
         private StorageMap _tokenMetadata;
 

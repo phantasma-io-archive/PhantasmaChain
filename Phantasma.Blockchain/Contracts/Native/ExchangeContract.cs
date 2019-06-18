@@ -118,6 +118,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
+            Runtime.Expect(baseSymbol != quoteSymbol, "invalid base/quote pair");
+
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
@@ -257,8 +259,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     if (otherFilled >= other.Amount)
                     {
                         otherOrders.RemoveAt<ExchangeOrder>(bestIndex);
-                        _orderMap.Remove<BigInteger>(uid);
-                        _fills.Remove<BigInteger>(uid);
+                        _orderMap.Remove<BigInteger>(other.Uid);
+                        _fills.Remove<BigInteger>(other.Uid);
 
                         Runtime.Notify(EventKind.OrderClosed, other.Creator, other.Uid);
                     }
@@ -275,24 +277,22 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             } while (baseTokensUnfilled > 0);
 
-            if (baseTokensUnfilled == 0)
+            if (baseTokensUnfilled == 0 || IoC)
             {
                 orderList.RemoveAt<ExchangeOrder>(orderIndex);
                 _orderMap.Remove<BigInteger>(uid);
 
-                Runtime.Notify(EventKind.OrderClosed, order.Creator, order.Uid);
-            }
-            else if (IoC)   //if an IoC order wasn't completely filled, then cancel it and return the escrow
-            {
-                orderList.RemoveAt<ExchangeOrder>(orderIndex);
-                _orderMap.Remove<BigInteger>(uid);
+                if (IoC)
+                {
+                    var leftoverEscrow = escrowAmount - escrowUsage;
 
-                var leftoverEscrow = escrowAmount - escrowUsage;
+                    Runtime.Nexus.TransferTokens(escrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
+                    Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = escrowSymbol, value = leftoverEscrow });
 
-                Runtime.Nexus.TransferTokens(escrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
-                Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = escrowSymbol, value = leftoverEscrow });
-
-                Runtime.Notify(EventKind.OrderCancelled, order.Creator, order.Uid);
+                    Runtime.Notify(EventKind.OrderCancelled, order.Creator, order.Uid);
+                }
+                else
+                    Runtime.Notify(EventKind.OrderClosed, order.Creator, order.Uid);
             }
             else
             {
