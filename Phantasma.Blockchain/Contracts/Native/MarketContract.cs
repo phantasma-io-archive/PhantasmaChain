@@ -76,6 +76,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _auctionIDs.Add(auctionID);
 
             Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.BaseSymbol, value = tokenID });
         }
 
         public void BuyToken(Address from, string symbol, BigInteger tokenID)
@@ -121,6 +122,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
             }
+
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.QuoteSymbol, value = auction.Price });
+            Runtime.Notify(EventKind.TokenReceive, auction.Creator, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.QuoteSymbol, value = auction.Price });
+            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.BaseSymbol, value = auction.TokenID });
         }
 
         public MarketAuction[] GetAuctions()
