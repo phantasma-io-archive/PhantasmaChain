@@ -99,6 +99,18 @@ namespace Phantasma.Blockchain
             this.Log = Logger.Init(log);
         }
 
+        public string[] GetContracts()
+        {
+            var list = new string[(int)_contracts.Count];
+            int index = 0;
+            _contracts.Visit((contract, _) =>
+            {
+                list[index] = contract;
+                index++;
+            });
+            return list;
+        }
+
         public bool HasContract(string contractName)
         {
             return _contracts.ContainsKey(contractName);

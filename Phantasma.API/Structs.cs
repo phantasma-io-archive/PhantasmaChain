@@ -48,6 +48,9 @@ namespace Phantasma.API
 
         [APIDescription("Current chain height")]
         public uint height;
+
+        [APIDescription("Contracts deployed in the chain")]
+        public string[] contracts;
     }
 
     public struct AppResult : IAPIResult

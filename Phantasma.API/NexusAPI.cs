@@ -403,7 +403,8 @@ namespace Phantasma.API
                 name = chain.Name,
                 address = chain.Address.Text,
                 height = chain.BlockHeight,
-                parentAddress = parentChain != null ? parentChain.Address.ToString() : ""
+                parentAddress = parentChain != null ? parentChain.Address.ToString() : "",
+                contracts = chain.GetContracts()                
             };
 
             return result;
