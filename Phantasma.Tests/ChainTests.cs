@@ -155,6 +155,46 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void CreateNonDivisibleToken()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var accountChain = nexus.FindChainByName("account");
+            var symbol = "BLA";
+
+            var tokenSupply = UnitConversion.ToBigInteger(100000000, 18);
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 0, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
+            simulator.MintTokens(owner, symbol, tokenSupply);
+            simulator.EndBlock();
+
+            var token = nexus.GetTokenInfo(symbol);
+
+            var testUser = KeyPair.Generate();
+
+            var amount = UnitConversion.ToBigInteger(2, token.Decimals);
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+
+            Assert.IsTrue(oldBalance > amount);
+
+            // Send from Genesis address to test user
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
+            simulator.EndBlock();
+
+            // verify test user balance
+            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
+            Assert.IsTrue(transferBalance == amount);
+
+            var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+
+            Assert.IsTrue(transferBalance + newBalance == oldBalance);
+        }
+
+        [TestMethod]
         public void AccountRegister()
         {
             var owner = KeyPair.Generate();
@@ -805,7 +845,6 @@ namespace Phantasma.Tests
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
             nft = nexus.GetNFT(nftSymbol, tokenId);
-            Assert.IsTrue(nft.CurrentOwner == receiver.Address);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenData) || nft.RAM.SequenceEqual(tokenData),
                 "And why is this NFT different than expected? Not the same data");
         }
