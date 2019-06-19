@@ -2574,88 +2574,88 @@ namespace Phantasma.Blockchain.Contracts.Native
     }*/
 
         // get how many wrestlers in an account
-        public BigInteger[] GetAccountWrestlers(Address address)
-        {
-            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), Constants.WRESTLER_SYMBOL + " token not found");
+        //public BigInteger[] GetAccountWrestlers(Address address)
+        //{
+        //    Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), Constants.WRESTLER_SYMBOL + " token not found");
 
-            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
-            var ownerIDs = ownerships.Get(this.Storage, address);
-            return ownerIDs.ToArray();
-        }
+        //    var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
+        //    var ownerIDs = ownerships.Get(this.Storage, address);
+        //    return ownerIDs.ToArray();
+        //}
 
-        public BigInteger[] GetAccountItems(Address address)
-        {
-            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), Constants.ITEM_SYMBOL + " token not found");
+        //public BigInteger[] GetAccountItems(Address address)
+        //{
+        //    Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), Constants.ITEM_SYMBOL + " token not found");
 
-            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
+        //    var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
 
-            var ownerIDs = ownerships.Get(this.Storage, address);
-            return ownerIDs.ToArray();
-            /*
-            var items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, address);
-            var result = items.All();
+        //    var ownerIDs = ownerships.Get(this.Storage, address);
+        //    return ownerIDs.ToArray();
+        //    /*
+        //    var items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, address);
+        //    var result = items.All();
 
-            var wrestlers = GetAccountWrestlers(address);
-            var auctions = GetActiveAuctions();
+        //    var wrestlers = GetAccountWrestlers(address);
+        //    var auctions = GetActiveAuctions();
 
-            for (int i = 0; i < result.Length; i++)
-            {
-                var itemID = result[i];
-                var item = GetItem(itemID);
+        //    for (int i = 0; i < result.Length; i++)
+        //    {
+        //        var itemID = result[i];
+        //        var item = GetItem(itemID);
 
-                bool changed = false;
+        //        bool changed = false;
 
-                if (item.owner == Address.Null)
-                {
-                    item.owner = address;
-                    changed = true;
-                }
+        //        if (item.owner == Address.Null)
+        //        {
+        //            item.owner = address;
+        //            changed = true;
+        //        }
 
-                if (item.location == ItemLocation.Unknown)
-                {
-                    foreach (var ID in wrestlers)
-                    {
-                        var wrestler = GetWrestler(ID);
-                        if (wrestler.itemID == itemID)
-                        {
-                            item.location = ItemLocation.Wrestler;
-                            item.locationID = ID;
-                            changed = true;
-                            break;
-                        }
-                    }
-                }
+        //        if (item.location == ItemLocation.Unknown)
+        //        {
+        //            foreach (var ID in wrestlers)
+        //            {
+        //                var wrestler = GetWrestler(ID);
+        //                if (wrestler.itemID == itemID)
+        //                {
+        //                    item.location = ItemLocation.Wrestler;
+        //                    item.locationID = ID;
+        //                    changed = true;
+        //                    break;
+        //                }
+        //            }
+        //        }
 
-                if (item.location == ItemLocation.Unknown)
-                {
-                    foreach (var ID in auctions)
-                    {
-                        var auction = GetAuction(ID);
-                        if (auction.kind == AuctionKind.Equipment && auction.creator == address && auction.contentID == itemID)
-                        {
-                            item.location = ItemLocation.Market;
-                            item.locationID = ID;
-                            changed = true;
-                            break;
-                        }
-                    }
-                }
+        //        if (item.location == ItemLocation.Unknown)
+        //        {
+        //            foreach (var ID in auctions)
+        //            {
+        //                var auction = GetAuction(ID);
+        //                if (auction.kind == AuctionKind.Equipment && auction.creator == address && auction.contentID == itemID)
+        //                {
+        //                    item.location = ItemLocation.Market;
+        //                    item.locationID = ID;
+        //                    changed = true;
+        //                    break;
+        //                }
+        //            }
+        //        }
 
-                if (item.location == ItemLocation.Unknown)
-                {
-                    item.location = ItemLocation.None;
-                    item.locationID = 0;
-                    changed = true;
-                }
+        //        if (item.location == ItemLocation.Unknown)
+        //        {
+        //            item.location = ItemLocation.None;
+        //            item.locationID = 0;
+        //            changed = true;
+        //        }
 
-                if (changed)
-                {
-                    SetItem(itemID, item);
-                }
-            }
+        //        if (changed)
+        //        {
+        //            SetItem(itemID, item);
+        //        }
+        //    }
 
-            return result;*/
-        }
+        //    return result;*/
+        //}
 
         #endregion
 
