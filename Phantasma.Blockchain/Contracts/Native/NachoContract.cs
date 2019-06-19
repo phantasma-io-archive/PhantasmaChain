@@ -1972,7 +1972,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoItem
     {
         public Address owner;
-        public BigInteger locationID;
+        public BigInteger wrestlerID;
         public ItemLocation location;
         public ItemFlags flags;
     }
@@ -2679,9 +2679,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (item.location == ItemLocation.Wrestler)
             {
-                if (item.locationID != 0)
+                if (item.wrestlerID != 0)
                 {
-                    var wrestler = GetWrestler(item.locationID);
+                    var wrestler = GetWrestler(item.wrestlerID);
                     if (wrestler.itemID != ID)
                     {
                         item.location = ItemLocation.None;
@@ -3715,7 +3715,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetWrestler(wrestlerID, wrestler);
 
             item.location = ItemLocation.Wrestler;
-            item.locationID = wrestlerID;
+            item.wrestlerID = wrestlerID;
             SetItem(itemID, item);
 
             Runtime.Notify(NachoEvent.ItemAdded, from, itemID);
@@ -3749,7 +3749,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetWrestler(wrestlerID, wrestler);
 
             item.location = ItemLocation.None;
-            item.locationID = 0;
+            item.wrestlerID = 0;
             SetItem(itemID, item);
 
             Runtime.Notify(NachoEvent.ItemRemoved, from, itemID);
@@ -3775,7 +3775,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
             item.location = ItemLocation.Room;
-            item.locationID = 0;
+            item.wrestlerID = 0;
             SetItem(itemID, item);
 
             Runtime.Notify(NachoEvent.ItemAdded, from, itemID);
