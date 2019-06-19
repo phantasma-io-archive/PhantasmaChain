@@ -27,7 +27,7 @@ namespace Phantasma.Cryptography.ECC
         public static int CalculateBitLength(this BigInteger i)
         {
             byte[] b = i.ToByteArray();
-            return (b.Length - 1) * 8 + BitLen(i.Sign() > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
+            return (b.Length - 1) * 8 + BitLen(i.Sign> 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
         }
     }
 
@@ -347,7 +347,7 @@ namespace Phantasma.Cryptography.ECC
         {
             if (this.IsInfinity)
                 return this;
-            if (this.Y.Value.Sign() == 0)
+            if (this.Y.Value.Sign== 0)
                 return Curve.Infinity;
             ECFieldElement TWO = new ECFieldElement(2, Curve);
             ECFieldElement THREE = new ECFieldElement(3, Curve);
@@ -363,7 +363,7 @@ namespace Phantasma.Cryptography.ECC
             short pow2wB = (short)(1 << width);
             int i = 0;
             int length = 0;
-            while (k.Sign() > 0)
+            while (k.Sign> 0)
             {
                 if (!k.IsEven)
                 {
@@ -406,7 +406,7 @@ namespace Phantasma.Cryptography.ECC
             if (p.IsInfinity)
                 return p;
             BigInteger k = new BigInteger(n.Reverse().Concat(new byte[1]).ToArray());
-            if (k.Sign() == 0)
+            if (k.Sign== 0)
                 return p.Curve.Infinity;
             return Multiply(p, k);
         }

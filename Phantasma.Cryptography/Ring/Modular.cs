@@ -225,10 +225,10 @@ namespace Phantasma.Cryptography.Ring
 
         public BigInteger Pow(BigInteger number, BigInteger exponent)
         {
-            if (exponent.Sign() == 0)
+            if (exponent.Sign== 0)
                 return BigInteger.One;
 
-            if (number.Sign() == 0)
+            if (number.Sign== 0)
                 return BigInteger.Zero;
 
             // zVal = number * R mod m
@@ -295,7 +295,7 @@ namespace Phantasma.Cryptography.Ring
 
             BigInteger result = FromData(yVal);
 
-            return exponent.Sign() > 0 ? result : Inverse(result);
+            return exponent.Sign> 0 ? result : Inverse(result);
         }
 
         public BigInteger Inverse(BigInteger number)
@@ -306,7 +306,7 @@ namespace Phantasma.Cryptography.Ring
             if (gcd != 1)
                 throw new ArithmeticException("Numbers not relatively prime.");
 
-            if (x.Sign() < 0)
+            if (x.Sign< 0)
             {
                 var magnitude = doSubBigLil(modulusMagnitude, GetData(x));
                 x = FromData(magnitude);
@@ -345,7 +345,7 @@ namespace Phantasma.Cryptography.Ring
             BigInteger v1 = BigInteger.Zero;
             BigInteger v3 = b;
 
-            while (v3.Sign() > 0)
+            while (v3.Sign> 0)
             {
                 BigInteger remainder = u3 % v3;
                 BigInteger quotient = u3/ v3;

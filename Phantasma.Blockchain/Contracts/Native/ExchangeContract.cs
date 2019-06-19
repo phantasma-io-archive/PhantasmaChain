@@ -89,6 +89,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _orders; //<string, List<Order>>
         internal StorageMap _orderMap; //<uid, string> // maps orders ids to pairs
         internal StorageMap _fills; //<uid, BigInteger>
+        internal StorageMap _leftovers; //<uid, BigInteger>
 
         public ExchangeContract() : base()
         {
@@ -117,6 +118,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void OpenLimitOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, BigInteger price, ExchangeOrderSide side, bool IoC)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+
+            Runtime.Expect(baseSymbol != quoteSymbol, "invalid base/quote pair");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
@@ -257,14 +260,25 @@ namespace Phantasma.Blockchain.Contracts.Native
                     if (otherFilled >= other.Amount)
                     {
                         otherOrders.RemoveAt<ExchangeOrder>(bestIndex);
-                        _orderMap.Remove<BigInteger>(uid);
-                        _fills.Remove<BigInteger>(uid);
+                        _orderMap.Remove<BigInteger>(other.Uid);
+                        _fills.Remove<BigInteger>(other.Uid);
+
+                        if (_leftovers.ContainsKey<BigInteger>(other.Uid))
+                        {
+                            var otherEscrow = _leftovers.Get<BigInteger, BigInteger>(other.Uid);
+                            var otherEscrowSymbol = side == Sell ? quoteSymbol : baseSymbol;
+                            Runtime.Nexus.TransferTokens(otherEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, otherEscrow);
+                            Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = otherEscrowSymbol, value = otherEscrow});
+                        }
 
                         Runtime.Notify(EventKind.OrderClosed, other.Creator, other.Uid);
                     }
                     else
                     {
                         _fills.Set<BigInteger, BigInteger>(other.Uid, otherFilled);
+
+                        //TODO calculate how much escrow changed and update _leftovers with other.uid as key
+
                         // TODO optimization, if filledAmount = orderUnfilled break here, would this be correct?
                     }
                 }
@@ -275,29 +289,31 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             } while (baseTokensUnfilled > 0);
 
-            if (baseTokensUnfilled == 0)
+            var leftoverEscrow = escrowAmount - escrowUsage;
+
+            if (baseTokensUnfilled == 0 || IoC)
             {
                 orderList.RemoveAt<ExchangeOrder>(orderIndex);
                 _orderMap.Remove<BigInteger>(uid);
 
-                Runtime.Notify(EventKind.OrderClosed, order.Creator, order.Uid);
-            }
-            else if (IoC)   //if an IoC order wasn't completely filled, then cancel it and return the escrow
-            {
-                orderList.RemoveAt<ExchangeOrder>(orderIndex);
-                _orderMap.Remove<BigInteger>(uid);
+                if (leftoverEscrow > 0)
+                {
+                    Runtime.Nexus.TransferTokens(escrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
+                    Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = escrowSymbol, value = leftoverEscrow });
+                }
 
-                var leftoverEscrow = escrowAmount - escrowUsage;
-
-                Runtime.Nexus.TransferTokens(escrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
-                Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = escrowSymbol, value = leftoverEscrow });
-
-                Runtime.Notify(EventKind.OrderCancelled, order.Creator, order.Uid);
+                if (IoC)
+                {
+                    Runtime.Notify(EventKind.OrderCancelled, order.Creator, order.Uid);
+                }
+                else
+                    Runtime.Notify(EventKind.OrderClosed, order.Creator, order.Uid);
             }
             else
             {
                 var filled = orderSize - baseTokensUnfilled;
                 _fills.Set<BigInteger, BigInteger>(uid, filled);
+                _leftovers.Set<BigInteger, BigInteger>(uid, leftoverEscrow);
             }
 
             //TODO: ADD FEES, SEND THEM TO Runtime.Chain.Address FOR NOW
@@ -320,6 +336,18 @@ namespace Phantasma.Blockchain.Contracts.Native
                     orderList.RemoveAt<ExchangeOrder>(i);
                     _orderMap.Remove<BigInteger>(uid);
                     _fills.Remove<BigInteger>(uid);
+
+                    if (_leftovers.ContainsKey<BigInteger>(uid))
+                    {
+                        var leftoverEscrow = _leftovers.Get<BigInteger, BigInteger>(uid);
+                        if (leftoverEscrow > 0)
+                        {
+                            var escrowSymbol = order.Side == ExchangeOrderSide.Sell ? order.QuoteSymbol : order.BaseSymbol;
+                            Runtime.Nexus.TransferTokens(escrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
+                            Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = escrowSymbol, value = leftoverEscrow });
+                        }
+                    }
+
                     return;
                 }
             }

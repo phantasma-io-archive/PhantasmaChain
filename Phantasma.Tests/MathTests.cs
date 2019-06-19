@@ -373,8 +373,8 @@ namespace Phantasma.Tests
 
             var negBigInt = new BigInteger(negArray, twosComplementFormatFlag: true);
 
-            Assert.IsTrue(posBigint.Sign() == 1);
-            Assert.IsTrue(negBigInt.Sign() == -1);
+            Assert.IsTrue(posBigint.Sign== 1);
+            Assert.IsTrue(negBigInt.Sign== -1);
             Assert.IsTrue(negBigInt.ToByteArray(includeSignInArray: false).SequenceEqual(posBigint.ToByteArray(includeSignInArray: false)));
         }
         #endregion

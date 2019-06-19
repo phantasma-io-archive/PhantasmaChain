@@ -22,6 +22,12 @@ namespace Phantasma.Numerics
             set => _data = value;
         }
 
+        public int Sign
+        {
+            get => _sign;
+            private set => _sign = value;
+        }
+
         private const int _Base = sizeof(uint) * 8;    //number of bits required for shift operations
 
         private static uint _MaxVal => (uint)Math.Pow(2, _Base) - 1;
@@ -30,6 +36,7 @@ namespace Phantasma.Numerics
 
         public static readonly BigInteger One = new BigInteger(1L);
         private int dataLength => _data?.Length ?? 0;
+
 
         public BigInteger(BigInteger other)
         {
@@ -191,11 +198,6 @@ namespace Phantasma.Numerics
         public static BigInteger FromHex(string p0)
         {
             return new BigInteger(p0, 16);
-        }
-
-        public int Sign()
-        {
-            return _sign;
         }
 
         public static explicit operator int(BigInteger value)
@@ -1035,7 +1037,7 @@ namespace Phantasma.Numerics
 
         public int GetLowestSetBit()
         {
-            if (this.Sign() == 0)
+            if (this.Sign== 0)
                 return -1;
 
             byte[] b = this.ToByteArray();

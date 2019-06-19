@@ -50,25 +50,25 @@ namespace Phantasma.Cryptography.ECC
                     {
                         k = rng.NextBigInteger(curve.N.GetBitLength());
                     }
-                    while (k.Sign() == 0 || k.CompareTo(curve.N) >= 0);
+                    while (k.Sign== 0 || k.CompareTo(curve.N) >= 0);
                     ECPoint p = ECPoint.Multiply(curve.G, k);
                     BigInteger x = p.X.Value;
                     r = x.Mod(curve.N);
                 }
-                while (r.Sign() == 0);
+                while (r.Sign== 0);
                 s = (k.ModInverse(curve.N) * (e + d * r)).Mod(curve.N);
                 if (s > curve.N / 2)
                 {
                     s = curve.N - s;
                 }
             }
-            while (s.Sign() == 0);
+            while (s.Sign== 0);
             return EncodeSignatureDER(r, s);
         }
 
         private byte[] EncodeSignatureDER(BigInteger r, BigInteger s)
         {
-            if (r.Sign() < 1 || s.Sign() < 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
+            if (r.Sign< 1 || s.Sign< 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
             {
                 return null;
             }
@@ -155,7 +155,7 @@ namespace Phantasma.Cryptography.ECC
 
         public static bool VerifySignature(byte[] message, BigInteger r, BigInteger s, ECCurve curve, ECPoint publicKey)
         {
-            if (r.Sign() < 1 || s.Sign() < 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
+            if (r.Sign< 1 || s.Sign< 1 || r.CompareTo(curve.N) >= 0 || s.CompareTo(curve.N) >= 0)
                 return false;
             BigInteger e = CalculateE(curve.N, message);
             BigInteger c = s.ModInverse(curve.N);
