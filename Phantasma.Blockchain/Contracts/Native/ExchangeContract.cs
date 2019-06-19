@@ -266,7 +266,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         if (_leftovers.ContainsKey<BigInteger>(other.Uid))
                         {
                             var otherEscrow = _leftovers.Get<BigInteger, BigInteger>(other.Uid);
-                            var otherEscrowSymbol = ???; //TODO symbol
+                            var otherEscrowSymbol = side == Sell ? quoteSymbol : baseSymbol;
                             Runtime.Nexus.TransferTokens(otherEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, otherEscrow);
                             Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = otherEscrowSymbol, value = otherEscrow});
                         }
