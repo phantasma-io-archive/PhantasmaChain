@@ -98,7 +98,7 @@ namespace Phantasma.Tests
                 {
                     var error = (ErrorResult)status;
                     var msg = error.error.ToLower();
-                    if (msg != "pending" && msg !="transaction not found")
+                    if (msg != "pending")
                     {
                         Assert.IsTrue(msg.Contains(contractName));
                         break;

@@ -39,6 +39,7 @@ namespace Phantasma.Blockchain
         public static readonly int MaxTransactionsPerBlock = 5000;
 
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
+        private HashSet<Hash> _pendingSet = new HashSet<Hash>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
 
         // TODO this dictionary should not accumulate stuff forever, we need to have it cleaned once in a while
@@ -188,6 +189,7 @@ namespace Phantasma.Blockchain
             return result;
         }
 
+        // NOTE this is called inside a lock(_entries) block
         private List<Transaction> GetNextTransactions(Chain chain)
         {
             var list = _entries[chain.Name];
@@ -208,6 +210,7 @@ namespace Phantasma.Blockchain
                 var tx = entry.transaction;
                 transactions.Add(tx);
                 _hashMap.Remove(tx.Hash);
+                _pendingSet.Add(tx.Hash);
             }
 
             return transactions;
@@ -299,6 +302,14 @@ namespace Phantasma.Blockchain
                     continue;
                 }
 
+                lock (_entries)
+                {
+                    foreach (var tx in transactions)
+                    {
+                        _pendingSet.Remove(tx.Hash);
+                    }
+                }
+
                 foreach (var tx in transactions)
                 {
                     Interlocked.Decrement(ref _size);
@@ -324,10 +335,13 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            if (_hashMap.ContainsKey(hash))
+            lock (_entries)
             {
-                reason = null;
-                return MempoolTransactionStatus.Pending;
+                if (_hashMap.ContainsKey(hash) || _pendingSet.Contains(hash))
+                {
+                    reason = null;
+                    return MempoolTransactionStatus.Pending;
+                }
             }
 
             reason = null;
