@@ -87,7 +87,7 @@ namespace Phantasma.Storage
 
         public BasicDiskStore(string fileName)
         {
-            this.fileName = fileName;
+            this.fileName = fileName.Replace("\\", "/");
 
             var path = Path.GetDirectoryName(fileName);
             if (!Directory.Exists(path))
