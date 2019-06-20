@@ -41,9 +41,9 @@ namespace Phantasma.Network.P2P
         public readonly static int MaxActiveConnections = 64;
 
         public readonly int Port;
-        public Address Address => keys.Address;
+        public Address Address => Keys.Address;
 
-        public readonly KeyPair keys;
+        public readonly KeyPair Keys;
         public readonly Logger Logger;
 
         public IEnumerable<Peer> Peers => _peers;
@@ -68,7 +68,7 @@ namespace Phantasma.Network.P2P
 
             this.Nexus = nexus;
             this.Port = port;
-            this.keys = keys;
+            this.Keys = keys;
 
             this.Logger = Logger.Init(log);
 
@@ -235,21 +235,21 @@ namespace Phantasma.Network.P2P
 
                     var result = client.BeginConnect(target.endpoint.Host, target.endpoint.Port, null, null);
 
-                    var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1));
+                    var signal = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(3));
 
-                    if (!success)
+                    if (signal && client.Client != null && client.Client.Connected)
                     {
-                        Logger.Debug("Could not reach peer: " + target.endpoint);
-                        target.status = EndpointStatus.Disabled;
+                        Logger.Debug("Connected to peer: " + target.endpoint);
+                        target.status = EndpointStatus.Connected;
+
+                        client.EndConnect(result);
+                        Task.Run(() => { HandleConnection(client.Client); });
                         return;
                     }
                     else
                     {
-                        Logger.Debug("Connected to peer: " + target.endpoint);
-                        client.EndConnect(result);
-                        target.status = EndpointStatus.Connected;
-
-                        Task.Run(() => { HandleConnection(client.Client); });
+                        Logger.Debug("Could not reach peer: " + target.endpoint);
+                        target.status = EndpointStatus.Disabled;
                         return;
                     }
                 }
@@ -304,7 +304,7 @@ namespace Phantasma.Network.P2P
 
             Logger.Debug("Sending "+msg.GetType().Name+" to  " + peer.Endpoint);
 
-            msg.Sign(this.keys);
+            msg.Sign(this.Keys);
 
             try
             {
