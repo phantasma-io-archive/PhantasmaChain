@@ -207,7 +207,7 @@ namespace Phantasma.Blockchain
 
         internal IKeyValueStoreAdapter CreateKeyStoreAdapter(Address address, string name)
         {
-            return CreateKeyStoreAdapter(address.Text + "_ " + name);
+            return CreateKeyStoreAdapter(address.Text + "_" + name);
         }
 
         internal IKeyValueStoreAdapter CreateKeyStoreAdapter(string name)
