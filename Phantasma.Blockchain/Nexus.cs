@@ -1240,6 +1240,11 @@ namespace Phantasma.Blockchain
                 return -1;
             }
 
+            if (RootChain == null)
+            {
+                return -1;
+            }
+
             var result = (int)(BigInteger)RootChain.InvokeContract("consensus", "GetIndexOfValidator", address);
             return result;
         }
