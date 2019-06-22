@@ -72,10 +72,10 @@ Platform 		| Status
 :---------------------- | :------------
 .NET Framework 		| Working
 .NET Core 		| Working
+Unity 			| Working
+Xamarin / Mobile 	| Working
+Mono 			| Working
 UWP 			| Untested
-Mono 			| Untested
-Xamarin / Mobile 	| Untested
-Unity 			| Untested
 
 ## Installation
 
