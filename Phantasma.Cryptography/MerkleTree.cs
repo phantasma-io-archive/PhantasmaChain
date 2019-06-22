@@ -1,128 +1,151 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Cryptography
 {
-    public class MerkleTree
+    // Merkle tree implemented as a binary heap
+    public class MerkleTree: ISerializable
     {
-        private MerkleTreeNode root;
+        private Hash[] _tree;
 
-        public int Depth { get; private set; }
+        public Hash Root => _tree[_tree.Length - 1];
 
-        internal MerkleTree(Hash[] hashes)
+        private MerkleTree()
         {
-            Throw.If(hashes == null || hashes.Length == 0, "hashes cant be empty list");
 
-            this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
-
-            int depth = 1;
-            for (MerkleTreeNode i = root; i.LeftChild != null; i = i.LeftChild)
-            {
-                depth++;
-            }
-
-            this.Depth = depth;
         }
 
-        private static MerkleTreeNode Build(MerkleTreeNode[] leaves)
+        // TODO move this to a bette place, check if not duplicated
+        //https://stackoverflow.com/questions/1322510/given-an-integer-how-do-i-find-the-next-largest-power-of-two-using-bit-twiddlin/1322548#1322548
+        public static int NextPowerOf2(int n)
         {
-            Throw.If(leaves.Length == 0, "leaves cant be empty list");
+            n--;
+            n |= n >> 1;   // Divide by 2^k for consecutive doublings of k up to 32,
+            n |= n >> 2;   // and then or the results.
+            n |= n >> 4;
+            n |= n >> 8;
+            n |= n >> 16;
+            n++;           // The result is a number of 1 bits equal to the number of bits in the original number, plus 1
+            return n;
+        }
 
-            if (leaves.Length == 1)
+        // chunkSize must be a power of 2
+        internal MerkleTree(byte[] content, uint chunkSize)
+        {
+            Throw.If(content == null || content.Length < chunkSize, "invalid content");
+
+            var chunkCount = (int)(content.Length / chunkSize);
+            if (chunkCount * chunkSize < content.Length)
             {
-                return leaves[0];
+                chunkCount++;
             }
 
-            MerkleTreeNode[] parents = new MerkleTreeNode[(leaves.Length + 1) / 2];
-            for (int i = 0; i < parents.Length; i++)
-            {
-                parents[i] = new MerkleTreeNode();
-                parents[i].LeftChild = leaves[i * 2];
-                leaves[i * 2].Parent = parents[i];
+            chunkCount = NextPowerOf2(chunkCount);
 
-                if (i * 2 + 1 == leaves.Length)
+            int maxLevel = 1;
+            var temp = chunkCount;
+            var nodeCount = 0;
+
+            while (temp > 0)
+            {
+                nodeCount += temp;
+                temp /= 2;
+                maxLevel++;
+            }
+
+            _tree = new Hash[nodeCount];
+
+            for (int i=0; i< chunkCount; i++)
+            {
+                Hash hash;
+
+                var ofs = (uint)(i * chunkSize);
+                if (ofs < content.Length)
                 {
-                    parents[i].RightChild = parents[i].LeftChild;
+                    var length = chunkSize;
+                    if (ofs+length > content.Length)
+                    {
+                        length = (uint)(content.Length - ofs);
+                    }
+                    hash = new Hash(CryptoExtensions.Sha256(content, ofs, length));
                 }
                 else
                 {
-                    parents[i].RightChild = leaves[i * 2 + 1];
-                    leaves[i * 2 + 1].Parent = parents[i];
+                    hash = Hash.Null;
                 }
 
-                var temp = ByteArrayUtils.ConcatBytes(parents[i].LeftChild.Hash.ToByteArray(), parents[i].RightChild.Hash.ToByteArray());
-                parents[i].Hash = new Hash(CryptoExtensions.Hash256(temp));
+                _tree[i] = hash;
             }
 
-            return Build(parents); 
-        }
+            int prevOffset = 0;
+            int prevRows = chunkCount;
 
-        public static Hash ComputeRoot(Hash[] hashes)
-        {
-            if (hashes.Length == 0) throw new ArgumentException();
-            if (hashes.Length == 1) return hashes[0];
-            MerkleTree tree = new MerkleTree(hashes);
-            return tree.root.Hash;
-        }
-
-        private static void DepthFirstSearch(MerkleTreeNode node, IList<Hash> hashes)
-        {
-            if (node.LeftChild == null)
+            while (true)
             {
-                // if left is null, then right must be null
-                hashes.Add(node.Hash);
-            }
-            else
-            {
-                DepthFirstSearch(node.LeftChild, hashes);
-                DepthFirstSearch(node.RightChild, hashes);
-            }
-        }
-
-        // depth-first order
-        public Hash[] ToHashArray()
-        {
-            var hashes = new List<Hash>();
-            DepthFirstSearch(root, hashes);
-            return hashes.ToArray();
-        }
-
-        public void Trim(BitArray flags)
-        {
-            flags = new BitArray(flags);
-            flags.Length = 1 << (Depth - 1);
-            Trim(root, 0, Depth, flags);
-        }
-
-        private static void Trim(MerkleTreeNode node, int index, int depth, BitArray flags)
-        {
-            if (depth == 1) return;
-
-            if (node.LeftChild == null) return; // if left is null, then right must be null
-
-            if (depth == 2)
-            {
-                if (!flags.Get(index * 2) && !flags.Get(index * 2 + 1))
+                int rows = prevRows / 2;
+                if (rows <= 0)
                 {
-                    node.LeftChild = null;
-                    node.RightChild = null;
+                    break;
                 }
-            }
-            else
-            {
-                Trim(node.LeftChild, index * 2, depth - 1, flags);
-                Trim(node.RightChild, index * 2 + 1, depth - 1, flags);
-                if (node.LeftChild.LeftChild == null && node.RightChild.RightChild == null)
+
+                int offset = prevOffset + prevRows;
+
+                for (int i=0; i<rows; i++)
                 {
-                    node.LeftChild = null;
-                    node.RightChild = null;
+                    int childIndex = prevOffset + (i * 2);
+                    var left = _tree[childIndex];
+                    var right = _tree[childIndex + 1];
+                    _tree[offset + i] = Hash.MerkleCombine(left, right);
+                }
+
+                prevOffset = offset;
+                prevRows = rows;
+            }
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarInt(_tree.Length);
+            for (int i = 0; i < _tree.Length; i++)
+            {
+                writer.WriteHash(_tree[i]);
+            }
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            var len = (int)reader.ReadVarInt();
+            _tree = new Hash[len];
+            for (int i = 0; i < len; i++)
+            {
+                _tree[i] = reader.ReadHash();
+            }
+        }
+
+        public static MerkleTree FromBytes(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    var tree = new MerkleTree();
+                    tree.UnserializeData(reader);
+                    return tree;
                 }
             }
+        }
+
+
+        public static MerkleTree Unserialize(BinaryReader reader)
+        {
+            var tree = new MerkleTree();
+            tree.UnserializeData(reader);
+            return tree;
         }
     }
 }

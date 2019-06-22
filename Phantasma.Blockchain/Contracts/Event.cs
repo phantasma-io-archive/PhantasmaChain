@@ -31,8 +31,10 @@ namespace Phantasma.Blockchain.Contracts
         OrderClosed = 20,
         AddFriend = 21,
         RemoveFriend = 22,
-        Metadata = 23,
-        Custom = 24,
+        FileCreate = 23,
+        FileDelete = 24,
+        Metadata = 31,
+        Custom = 32,
     }
 
     public class Event

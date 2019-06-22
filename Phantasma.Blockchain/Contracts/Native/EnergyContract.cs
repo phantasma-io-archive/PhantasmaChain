@@ -252,7 +252,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
             Runtime.Expect(balance >= amount, "not enough balance");
 
-            Runtime.Expect(stake.totalAmount >= amount, "tried to unstake more than what was staked");
+            var availableStake = stake.totalAmount;
+            availableStake -= GetStorageStake(from);
+            Runtime.Expect(availableStake >= amount, "tried to unstake more than what was staked");
 
             Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, amount), "balance subtract failed");
             Runtime.Expect(balances.Add(this.Storage, from, amount), "balance add failed");
@@ -260,7 +262,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             stake.totalAmount -= amount;
 
             var unclaimedPartials = GetLastAction(from).unclaimedPartials;
-
 
             if (stake.totalAmount == 0 && unclaimedPartials == 0)
             {
@@ -445,9 +446,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             BigInteger stake = 0;
 
             if (_stakes.ContainsKey(address))
+            {
                 stake = _stakes.Get<Address, EnergyAction>(address).totalAmount;
+            }
 
             return stake;
+        }
+
+        public BigInteger GetStorageStake(Address address)
+        {
+            var temp = Runtime.CallContext("storage", "GetUsedSpace", address);
+            var usedStorageSize = (BigInteger)temp;
+            var usedStake = UnitConversion.ToBigInteger((long)usedStorageSize / StorageContract.KilobytesPerStake, Nexus.StakingTokenDecimals);
+            return usedStake;
         }
 
         public EnergyProxy[] GetProxies(Address address)

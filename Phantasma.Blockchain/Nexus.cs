@@ -1093,6 +1093,22 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
+        private Transaction TokenMetadataTx(KeyPair owner, string symbol, string field, object val)
+        {
+            var bytes = Serialization.Serialize(val);
+
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract("nexus", "SetTokenMetadata", symbol, field, bytes).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            tx.Sign(owner);
+            return tx;
+        }
+
         public const string FuelTokenSymbol = "KCAL";
         public const string FuelTokenName = "Phantasma Energy";
         public const int FuelTokenDecimals = 10;
@@ -1119,13 +1135,14 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "storage", "apps"});
 
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External);
             CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel);
             CreateToken(owner.Address, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable);
 
             CreateToken(owner.Address, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
+            CreateToken(owner.Address, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External);
             CreateToken(owner.Address, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
             CreateToken(owner.Address, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
@@ -1138,10 +1155,9 @@ namespace Phantasma.Blockchain
                 ChainCreateTx(owner, "bank", "bank", "vault"),
                 // ChainCreateTx(owner, "market"), TODO
 
-                // TODO remove those from here, theyare here just for testing
-                ChainCreateTx(owner, "apps", "apps"),
-                ChainCreateTx(owner, "nacho", "nacho", "market"),
-                ChainCreateTx(owner, "casino", "casino"),
+                TokenMetadataTx(owner, StakingTokenSymbol, "interop.neo", "ed07cffad18f1308db51920d99a2af60ac66a7b3"),
+                TokenMetadataTx(owner, "NEO", "interop.neo", "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"),
+                TokenMetadataTx(owner, "GAS", "interop.neo", "602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"),
 
                 ConsensusStakeCreateTx(owner)
             };
@@ -1260,6 +1276,35 @@ namespace Phantasma.Blockchain
 
             var result = (Address)RootChain.InvokeContract("consensus", "GetValidatorByIndex", (BigInteger)index);
             return result;
+        }
+        #endregion
+
+        #region STORAGE
+        public Archive FindArchive(Hash hash)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Archive CreateArchive(MerkleTree merkleTree, ArchiveFlags flags)
+        {
+            var archive = FindArchive(merkleTree.Root);
+            if (archive != null)
+            {
+                return archive;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public bool DeleteArchive(Hash hash)
+        {
+            var archive = FindArchive(hash);
+            if (archive == null)
+            {
+                return false;
+            }
+
+            throw new NotImplementedException();
         }
         #endregion
 

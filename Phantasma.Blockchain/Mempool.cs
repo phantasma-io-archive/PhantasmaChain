@@ -267,7 +267,7 @@ namespace Phantasma.Blockchain
         }
 
         // TODO add
-        private byte[] ReadFromOracle(Hash hash, string url)
+        private byte[] ReadFromOracle(/*Hash hash, */string url)
         {
             throw new NotImplementedException();
         }

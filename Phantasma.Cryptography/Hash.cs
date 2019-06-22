@@ -12,10 +12,10 @@ namespace Phantasma.Cryptography
     {
         public const int Length = 32;
 
-        public static readonly Hash Null = new Hash(new byte[Length]);
+        public static readonly Hash Null = Hash.FromBytes(new byte[Length]);
 
         private byte[] _data;
-
+    
         public int Size => _data.Length;
 
         public override bool Equals(object obj)
@@ -209,6 +209,14 @@ namespace Phantasma.Cryptography
         public static implicit operator BigInteger(Hash val)
         {
             return new BigInteger(val.ToByteArray());
+        }
+
+        public static Hash MerkleCombine(Hash A, Hash B)
+        {
+            var bytes = new byte[Hash.Length * 2];
+            ByteArrayUtils.CopyBytes(A._data, 0, bytes, 0, Hash.Length);
+            ByteArrayUtils.CopyBytes(B._data, 0, bytes, Hash.Length, Hash.Length);
+            return Hash.FromBytes(bytes);
         }
     }
 }

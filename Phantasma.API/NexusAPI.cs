@@ -1009,8 +1009,8 @@ namespace Phantasma.API
         {
             var appList = new List<object>();
 
-            var appChain = Nexus.FindChainByName("apps");
-            var apps = (AppInfo[])appChain.InvokeContract("apps", "GetApps", new string[] { });
+            var chain = Nexus.RootChain;
+            var apps = (AppInfo[])chain.InvokeContract("apps", "GetApps", new string[] { });
 
             foreach (var appInfo in apps)
             {

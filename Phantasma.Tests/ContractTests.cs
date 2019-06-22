@@ -2036,75 +2036,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(resultEmpty != null);
         }
 
-
-        [TestMethod]
-        public void TestGetNachoConfig()
-        {
-            var owner = KeyPair.Generate();
-
-            var simulator = new ChainSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
-
-            var testUser = KeyPair.Generate();
-
-            var fuelToken = Nexus.FuelTokenSymbol;
-            var stakingToken = Nexus.StakingTokenSymbol;
-
-            simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, fuelToken, 100000000);
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, stakingToken, 100000000);
-            simulator.EndBlock();
-
-            var script = ScriptUtils.BeginScript().CallContract("nacho", "GetConfig", new object[0]).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
-            //var result = nexus.RootChain.InvokeScript(script);
-            //Assert.IsTrue(result != null);
-
-            var api = new NexusAPI(nexus);
-            var apiResult = (ScriptResult)api.InvokeRawScript("nacho", Base16.Encode(script));
-
-            // NOTE objBytes will contain a serialized VMObject
-            var objBytes = Base16.Decode(apiResult.result);
-            var resultObj = Serialization.Unserialize<VMObject>(objBytes);
-
-            // finally as last step, convert it to a C# struct
-            var userConfig = resultObj.ToStruct<NachoConfig>();
-
-            Assert.IsTrue(userConfig.time > 0);
-            Assert.IsTrue(userConfig.suspendedTransfers == false);
-        }
-
-
-        [TestMethod]
-        public void TestGetNachoAccount()
-        {
-            var owner = KeyPair.Generate();
-
-            var simulator = new ChainSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
-
-            var testUser = KeyPair.Generate();
-
-            simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, 100000000);
-            simulator.EndBlock();
-
-            var script = ScriptUtils.BeginScript().CallContract("nacho", "GetAccount", new object[] { testUser.Address }).EmitPop(0).Emit(Opcode.CAST, new byte[] { 0, 0, (byte)VMType.Struct }).EmitPush(0).EndScript();
-
-            var api = new NexusAPI(nexus);
-            var apiResult = (ScriptResult)api.InvokeRawScript("nacho", Base16.Encode(script));
-
-            // NOTE objBytes will contain a serialized VMObject
-            var objBytes = Base16.Decode(apiResult.result);
-            var resultObj = Serialization.Unserialize<VMObject>(objBytes);
-
-            // finally as last step, convert it to a C# struct
-            var userAccount = resultObj.ToStruct<NachoAccount>();
-
-            Assert.IsTrue(userAccount.ELO == Constants.DEFAULT_ELO);
-        }
-
-        
+           
     }
 }
 

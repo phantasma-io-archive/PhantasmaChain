@@ -508,7 +508,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var appsChain = nexus.FindChainByName("apps");
+            var sideChain = nexus.FindChainByName("bank");
 
             var symbol = Nexus.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);
@@ -526,7 +526,7 @@ namespace Phantasma.Tests
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
-            simulator.GenerateChain(owner, appsChain, newChainName);
+            simulator.GenerateChain(owner, sideChain, newChainName);
             simulator.EndBlock();
 
             var targetChain = nexus.FindChainByName(newChainName);
@@ -537,22 +537,22 @@ namespace Phantasma.Tests
 
             // do a side chain send using test user balance from root to apps chain
             simulator.BeginBlock();
-            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, sender.Address, appsChain, sideAmount, 0);
+            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, sender.Address, sideChain, sideAmount, 0);
             var blockA = simulator.EndBlock().FirstOrDefault();
             var evtsA = blockA.GetEventsForTransaction(txA.Hash);
 
             // finish the chain transfer
             simulator.BeginBlock();
-            var txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, appsChain, blockA.Hash);
+            var txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, sideChain, blockA.Hash);
             Assert.IsTrue(simulator.EndBlock().Any());
 
             // we cant transfer the full side amount due to fees
             // TODO  calculate the proper fee values instead of this
             var txCostA = simulator.Nexus.RootChain.GetTransactionFee(txA);
-            var txCostB = appsChain.GetTransactionFee(txB);
+            var txCostB = sideChain.GetTransactionFee(txB);
             sideAmount = sideAmount - txCostB;
 
-            balance = appsChain.GetTokenBalance(symbol, sender.Address);
+            balance = sideChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(balance == sideAmount);
 
             var extraFree = UnitConversion.ToBigInteger(0.01m, token.Decimals);
@@ -561,18 +561,18 @@ namespace Phantasma.Tests
 
             // do another side chain send using test user balance from apps to target chain
             simulator.BeginBlock();
-            var txC = simulator.GenerateSideChainSend(sender, symbol, appsChain, receiver.Address, targetChain, sideAmount, extraFree);
+            var txC = simulator.GenerateSideChainSend(sender, symbol, sideChain, receiver.Address, targetChain, sideAmount, extraFree);
             var blockC = simulator.EndBlock().FirstOrDefault();
 
             var evtsC = blockC.GetEventsForTransaction(txC.Hash);
 
-            var appSupplies = new SupplySheet(symbol, appsChain, nexus);
-            var childBalance = appSupplies.GetChildBalance(appsChain.Storage, targetChain.Name);
+            var appSupplies = new SupplySheet(symbol, sideChain, nexus);
+            var childBalance = appSupplies.GetChildBalance(sideChain.Storage, targetChain.Name);
             var expectedChildBalance = sideAmount + extraFree;
             
             // finish the chain transfer
             simulator.BeginBlock();
-            var txD = simulator.GenerateSideChainSettlement(receiver, appsChain, targetChain, blockC.Hash);
+            var txD = simulator.GenerateSideChainSettlement(receiver, sideChain, targetChain, blockC.Hash);
             Assert.IsTrue(simulator.EndBlock().Any());
 
             // TODO  verify balances

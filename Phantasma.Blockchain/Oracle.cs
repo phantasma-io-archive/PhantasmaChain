@@ -4,7 +4,7 @@ using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain
 {
-    public delegate byte[] OracleReaderDelegate(Hash hash, string url);
+    public delegate byte[] OracleReaderDelegate(string url);
 
     public struct OracleEntry
     {

@@ -55,16 +55,16 @@ To learn more about Phantasma, please read the [White Paper](https://phantasma.i
 Component	| Description	| Status	| Percentage
 :---------------------- | :------------ | :------------  | :------------ 
 Chain Core 		| eg: accounts, transactions, blocks | In development | 90%
-Wallet | CLI wallet | In development | 80%
+Wallet | CLI wallet | In development | 85%
 VM 		| Virtual machine to run smart contracts | In development | 90%
-Smart Contracts | eg: language features, compilers | In development | 30%
-Economy | Tokens / NFT | In development | 80%
-Network 			| P2P communication | In development | 75%
-Consensus | Distributed consensus for nodes | In development | 40%
+Smart Contracts | eg: language features, compilers | In development | 40%
+Economy | Tokens / NFT | In development | 90%
+Network 			| P2P communication | In development | 80%
+Consensus | Distributed consensus for nodes | In development | 70%
 Scalabilty | Side-chains / Channels | In development | 75%
-Relay | Off-chain relay | In development | 30%
-Storage | Distributed storage | In development| 50%
-API 			| RPC api for nodes | In development | 80%
+Relay | Off-chain relay | In development | 40%
+Storage | Distributed storage | In development| 70%
+API 			| RPC api for nodes | In development | 85%
 
 ## Compatibility
 

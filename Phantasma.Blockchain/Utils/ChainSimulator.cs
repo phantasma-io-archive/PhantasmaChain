@@ -90,21 +90,6 @@ namespace Phantasma.Blockchain.Utils
                 throw new Exception("Funds missing oops");
             }
 
-            var appsChain = Nexus.FindChainByName("apps");
-
-            BeginBlock();
-            GenerateSideChainSend(_owner, Nexus.FuelTokenSymbol, Nexus.RootChain, _owner.Address, appsChain, oneFuel, 0);
-            var blockTx = EndBlock().First();
-
-            BeginBlock();
-            GenerateSideChainSettlement(_owner, Nexus.RootChain, appsChain, blockTx.Hash);
-            EndBlock();
-
-            BeginBlock();
-            GenerateChain(_owner, Nexus.RootChain, "dex");
-            GenerateChain(_owner, Nexus.RootChain, "market");
-            EndBlock();
-
             BeginBlock();
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             EndBlock();
@@ -486,9 +471,8 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
-        public Transaction GenerateChain(KeyPair source, Chain parentchain, string name)
+        public Transaction GenerateChain(KeyPair source, Chain parentchain, string name, params string[] contracts)
         {
-            var contracts = new string[] { name };
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name, contracts).
@@ -568,7 +552,7 @@ namespace Phantasma.Blockchain.Utils
         {
             var contract = "apps";
 
-            var chain = Nexus.FindChainByName("apps");
+            var chain = Nexus.RootChain;
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "RegisterApp", source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
 

@@ -126,7 +126,7 @@ namespace Phantasma.Blockchain
                 return ExecutionState.Fault;
             }
 
-            var result = vm.OracleReader(vm.Transaction.Hash, url);
+            var result = vm.OracleReader(/*vm.Transaction.Hash, */url);
 
             return ExecutionState.Running;
         }

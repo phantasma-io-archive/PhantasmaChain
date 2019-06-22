@@ -41,7 +41,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "market";
 
-        internal StorageMap _auctionMap; //<string, Collection<MarketAuction>>
+        internal StorageMap _auctionMap; //<string, MarketAuction>
         internal StorageList _auctionIDs;
 
         public MarketContract() : base()

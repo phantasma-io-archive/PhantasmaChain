@@ -139,6 +139,26 @@ namespace Phantasma.Blockchain.Contracts
             return null;
         }
 
+        public object CallContext(string contextName, string methodName, params object[] args)
+        {
+            var context = LoadContext(contextName);
+            Expect(context != null, "could not call context: " + contextName);
+
+            for (int i= args.Length - 1; i>=0; i--)
+            {
+                var obj = VMObject.FromObject(args[i]);
+                this.Stack.Push(obj);
+            }
+
+            this.Stack.Push(VMObject.FromObject(methodName));
+
+            var temp = context.Execute(this.CurrentFrame, this.Stack);
+            Expect(temp == ExecutionState.Halt, "expected call success");
+
+            Expect(this.Stack.Count > 0, "expected result on stack");
+            return this.Stack.Pop().ToObject();
+        }
+
         public void Notify<T>(Enum kind, Address address, T content)
         {
             var intVal = (int)(object)kind;
