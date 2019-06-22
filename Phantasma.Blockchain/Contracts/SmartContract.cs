@@ -162,6 +162,17 @@ namespace Phantasma.Blockchain.Contracts
 
         private object CastArgument(RuntimeVM runtime, object arg, Type expectedType)
         {
+            if (arg == null)
+            {
+                if (expectedType.IsArray)
+                {
+                    var elementType = expectedType.GetElementType();
+                    var result = Array.CreateInstance(elementType, 0);
+                    return result;
+                }
+                throw new Exception("Invalid cast for null VM object");
+            }
+
             var receivedType = arg.GetType();
 
             if (expectedType.IsArray && expectedType != typeof(byte[]))
