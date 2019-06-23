@@ -1285,6 +1285,11 @@ namespace Phantasma.Blockchain
             throw new NotImplementedException();
         }
 
+        public bool ArchiveExists(Hash hash)
+        {
+            return FindArchive(hash) != null;
+        }
+
         public Archive CreateArchive(MerkleTree merkleTree, ArchiveFlags flags)
         {
             var archive = FindArchive(merkleTree.Root);

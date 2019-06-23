@@ -15,7 +15,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "storage";
 
-        public const int MinimumFileSize = 1024;
         public const int KilobytesPerStake = 40 * 1024;
 
         internal StorageMap _storageMap; //<string, Collection<StorageEntry>>
@@ -28,7 +27,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void UploadFile(Address from, string name, int contentSize, byte[] contentMerkle, ArchiveFlags flags)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(contentSize >= MinimumFileSize, "file too small");
+            Runtime.Expect(contentSize >= Archive.MinSize, "file too small");
+            Runtime.Expect(contentSize >= Archive.MaxSize, "file too big");
 
             int requiredSize = contentSize + Hash.Length + name.Length;
 
