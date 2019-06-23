@@ -242,4 +242,22 @@ namespace Phantasma.API
         public string result;
     }
 
+    public struct ArchiveResult: IAPIResult
+    {
+        [APIDescription("Archive hash")]
+        public string hash;
+
+        [APIDescription("Size of archive in bytes")]
+        public uint size;
+
+        [APIDescription("Archive flags")]
+        public string flags;
+
+        [APIDescription("Encryption public key")]
+        public string key;
+
+        [APIDescription("Metadata")]
+        public string[] metadata;
+    }
+
 }

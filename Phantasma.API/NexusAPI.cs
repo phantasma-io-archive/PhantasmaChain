@@ -1253,7 +1253,8 @@ namespace Phantasma.API
 
             var auction = (MarketAuction)chain.InvokeContract("market", "GetAuction", ID);
 
-            return new AuctionResult() {
+            return new AuctionResult()
+            {
                 baseSymbol = auction.BaseSymbol,
                 quoteSymbol = auction.QuoteSymbol,
                 creatorAddress = auction.Creator.Text,
@@ -1261,6 +1262,32 @@ namespace Phantasma.API
                 price = auction.Price.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value
+            };
+        }
+
+        [APIInfo(typeof(ArchiveResult), "Returns info about a specific archive.", false)]
+        public IAPIResult GetArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        {
+            Hash hash;
+
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult() { error = "invalid hash" };
+            }
+
+            var archive = Nexus.FindArchive(hash);
+            if (archive == null)
+            {
+                return new ErrorResult() { error = "archive not found" };
+            }
+
+            return new ArchiveResult()
+            {
+                hash = hashText,
+                size = (uint)archive.Size,
+                flags = archive.Flags.ToString(),
+                key = Base16.Encode(archive.Key),
+                metadata = archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
             };
         }
     }
