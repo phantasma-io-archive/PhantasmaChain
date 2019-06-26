@@ -28,9 +28,9 @@ namespace Phantasma.Tests
         private const string nonDivisibleTokenSymbol = "NDT";
 
         [TestMethod]
-        public void TestImmediateOrCancelLimitOrder()
+        public void TestIoCLimitMinimumQuantity()
         {
-            CreateTokens();
+            InitExchange();
 
             var baseSymbol = Nexus.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
@@ -40,7 +40,7 @@ namespace Phantasma.Tests
 
             buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
             seller.FundBaseToken(quantity: 2m, fundFuel: true);
-            
+
             //-----------------------------------------
             //test order amount and prices at the limit
 
@@ -49,6 +49,21 @@ namespace Phantasma.Tests
 
             buyer.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Buy, IoC: true);
             seller.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Sell, IoC: true);
+        }
+
+        [TestMethod]
+        public void TestIoCLimitOrderUnmatched()
+        {
+            InitExchange();
+
+            var baseSymbol = Nexus.StakingTokenSymbol;
+            var quoteSymbol = maxDivTokenSymbol;
+
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+
+            buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
+            seller.FundBaseToken(quantity: 2m, fundFuel: true);
 
             //-----------------------------------------
             //test unmatched IoC orders 
@@ -56,7 +71,22 @@ namespace Phantasma.Tests
             buyer.OpenLimitOrder(0.01m, 0.1m, Buy);
             Assert.IsTrue(buyer.OpenLimitOrder(0.123m, 0.3m, Buy, IoC: true) == 0, "Shouldn't have filled any part of the order");
             Assert.IsTrue(seller.OpenLimitOrder(0.123m, 0.3m, Sell, IoC: true) == 0, "Shouldn't have filled any part of the order");
-            
+        }
+
+        [TestMethod]
+        public void TestIoCLimitOrderCompleteFulfilment()
+        {
+            InitExchange();
+
+            var baseSymbol = Nexus.StakingTokenSymbol;
+            var quoteSymbol = maxDivTokenSymbol;
+
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+
+            buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
+            seller.FundBaseToken(quantity: 2m, fundFuel: true);
+
             //-----------------------------------------
             //test fully matched IoC orders
             buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: false);
@@ -64,6 +94,21 @@ namespace Phantasma.Tests
 
             seller.OpenLimitOrder(0.1m, 1m, Sell, IoC: false);
             Assert.IsTrue(buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: true) == 0.1m, "Unexpected amount of tokens received");
+        }
+
+        [TestMethod]
+        public void TestIoCLimitOrderPartialFulfilment()
+        {
+            InitExchange();
+
+            var baseSymbol = Nexus.StakingTokenSymbol;
+            var quoteSymbol = maxDivTokenSymbol;
+
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+
+            buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
+            seller.FundBaseToken(quantity: 2m, fundFuel: true);
 
             //-----------------------------------------
             //test partially matched IoC orders
@@ -72,6 +117,21 @@ namespace Phantasma.Tests
 
             seller.OpenLimitOrder(0.05m, 1m, Sell, IoC: false);
             Assert.IsTrue(buyer.OpenLimitOrder(0.1m, 1m, Buy, IoC: true) == 0.05m, "Unexpected amount of tokens received");
+        }
+
+        [TestMethod]
+        public void TestIoCLimitOrderMultipleFulfilsPerOrder()
+        {
+            InitExchange();
+
+            var baseSymbol = Nexus.StakingTokenSymbol;
+            var quoteSymbol = maxDivTokenSymbol;
+
+            var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
+            var seller = new ExchangeUser(baseSymbol, quoteSymbol);
+
+            buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
+            seller.FundBaseToken(quantity: 2m, fundFuel: true);
 
             //-----------------------------------------
             //test multiple fills per order
@@ -81,11 +141,15 @@ namespace Phantasma.Tests
             buyer.OpenLimitOrder(0.05m, 0.5m, Buy, IoC: false);
             Assert.IsTrue(seller.OpenLimitOrder(0.15m, 1m, Sell, IoC: true) == 0.3m, "Unexpected amount of tokens received");
 
+            InitExchange();
+            buyer.FundQuoteToken(quantity: 2m, fundFuel: true);
+            seller.FundBaseToken(quantity: 2m, fundFuel: true);
+
             seller.OpenLimitOrder(0.05m, 1m, Sell, IoC: false);
             seller.OpenLimitOrder(0.05m, 2m, Sell, IoC: false);
             seller.OpenLimitOrder(0.05m, 3m, Sell, IoC: false);
             seller.OpenLimitOrder(0.05m, 0.5m, Sell, IoC: false);
-            Assert.IsTrue(buyer.OpenLimitOrder(0.15m, 3m, Buy, IoC: true) == 0.15m, "Unexpected amount of tokens received");
+            Assert.IsTrue(buyer.OpenLimitOrder(0.15m, 3m, Buy, IoC: true) == 0.2m, "Unexpected amount of tokens received");
 
             //TODO: test multiple IoC orders against each other on the same block!
         }
@@ -93,7 +157,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestFailedIOC()
         {
-            CreateTokens();
+            InitExchange();
 
             var baseSymbol = Nexus.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
@@ -175,6 +239,13 @@ namespace Phantasma.Tests
             }
 
             simulator.EndBlock();
+        }
+
+        private void InitExchange()
+        {
+            simulatorOwner = KeyPair.Generate();
+            simulator = new ChainSimulator(simulatorOwner, 1234);
+            CreateTokens();
         }
 
         class ExchangeUser
@@ -381,13 +452,7 @@ namespace Phantasma.Tests
                 }
                 else //if the user order was not closed and it wasnt IoC, it should have the correct unfilled amount
                 {
-                    BigInteger actualRemainingEscrow = (BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderFilledAmount", createdOrderUid);
-
-                    if (side == Buy)
-                        actualRemainingEscrow = UnitConversion.ToBigInteger(
-                            UnitConversion.ToDecimal(actualRemainingEscrow, baseToken.Decimals) *
-                            UnitConversion.ToDecimal(createdOrderPostFill.Price, quoteToken.Decimals),
-                            quoteToken.Decimals);
+                    BigInteger actualRemainingEscrow = (BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderLeftoverEscrow", createdOrderUid);
 
                     Assert.IsTrue(expectedRemainingEscrow == actualRemainingEscrow);
                 }
