@@ -215,6 +215,10 @@ namespace Phantasma.Blockchain
                 }
                 catch (Exception e)
                 {
+                    if (e.InnerException != null)
+                    {
+                        e = e.InnerException;
+                    }
                     throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
             }
