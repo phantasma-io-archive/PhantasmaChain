@@ -2,7 +2,7 @@
 
 namespace Phantasma.Core.Types
 {
-    public struct Timestamp
+    public struct Timestamp : IComparable<Timestamp>
     {
         public readonly uint Value;
 
@@ -17,6 +17,21 @@ namespace Phantasma.Core.Types
         }
 
         public static Timestamp Now => DateTime.UtcNow;
+
+        public int CompareTo(Timestamp other)
+        {
+            if (other.Value.Equals(this.Value))
+            {
+                return 0;
+            }
+
+            if (this.Value < other.Value)
+            {
+                return -1;
+            }
+
+            return 1;
+        }
 
         public override bool Equals(object obj)
         {
