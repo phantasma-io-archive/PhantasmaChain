@@ -1878,7 +1878,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public string[] comments;
         public Timestamp roomTime;
         public byte[] moveOverrides;
-        public BigInteger auctionID;
         public WrestlerFlags flags;
         public BigInteger stakeAmount;
     }
@@ -3189,7 +3188,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 itemID = botItemID,
                 comments = new string[Constants.LUCHADOR_COMMENT_MAX],
                 moveOverrides = new byte[Constants.MOVE_OVERRIDE_COUNT],
-                auctionID = 0
             };
 
             bot.comments[Constants.LUCHADOR_COMMENT_INTRO] = introText;
@@ -3232,9 +3230,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            if (wrestler.auctionID == null)
+            if (nft.CurrentOwner == nft.CurrentChain)
             {
-                wrestler.auctionID = 0;
+                wrestler.location = WrestlerLocation.Market;
             }
 
             if (wrestler.genes == null || wrestler.genes.Length == 0)
@@ -3345,22 +3343,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return currentPrice;
         }
 
-        public BigInteger SellWrestler(Address from, BigInteger wrestlerID, BigInteger startPrice, BigInteger endPrice, AuctionCurrency currency, uint duration, string comment)
+        public BigInteger SellWrestler(Address from, BigInteger wrestlerID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            Runtime.Expect(startPrice >= Constants.MINIMUM_AUCTION_PRICE, "start price failed");
-            Runtime.Expect(endPrice >= Constants.MINIMUM_AUCTION_PRICE, "end price failed");
+            var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, wrestlerID);
 
-            Runtime.Expect(startPrice <= Constants.MAXIMUM_AUCTION_PRICE, "start price failed");
-            Runtime.Expect(endPrice <= Constants.MAXIMUM_AUCTION_PRICE, "end price failed");
-
-            Runtime.Expect(duration >= Constants.MINIMUM_AUCTION_DURATION, "duration failed");
-            Runtime.Expect(comment != null, "invalid comment");
-            Runtime.Expect(comment.Length < Constants.MAX_COMMENT_LENGTH, "comment too large");
-
-            var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            Runtime.Expect(team.Contains(wrestlerID), "wrestler invalid");
 
             var wrestler = GetWrestler(wrestlerID);
 
