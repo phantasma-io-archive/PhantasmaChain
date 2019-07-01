@@ -2074,7 +2074,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string ACCOUNT_WRESTLERS = "team";
         public static readonly string ACCOUNT_ITEMS = "items";
         public static readonly string ACCOUNT_HISTORY = "history";
-        public static readonly string ACCOUNT_CHALLENGES = "versus";
+        //public static readonly string ACCOUNT_CHALLENGES = "versus"; //todo check
 
         public static readonly string ACTIVE_AUCTIONS_LIST = "active";
         public static readonly string GLOBAL_AUCTIONS_LIST = "auctions";
@@ -2083,7 +2083,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         //  public static readonly string GLOBAL_TOURNEY_LIST = "tourneys";
         //public static readonly string GLOBAL_WRESTLERS_LIST = "wrestlers";
         public static readonly string GLOBAL_ITEM_LIST = "objs";
-        public static readonly string GLOBAL_MATCHMAKER_LIST = "matcher";
+        //public static readonly string GLOBAL_MATCHMAKER_LIST = "matcher";
 
         public static readonly string QUEUE_MAP = "queues";
         public static readonly string NAME_MAP = "names";
@@ -2104,6 +2104,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Action<string> systemEvent = null;
         public Action<Address, string> singleEvent = null;
         public Action<Address, Address, string> pairEvent = null;
+
+        internal StorageList _globalMatchmakerList;
+
+        internal StorageMap _playerVersusChallengesList;
+        internal StorageMap _globalBattlesList;
+        //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
         public Address DevelopersAddress => Runtime.Nexus.GenesisAddress;
@@ -4086,22 +4092,28 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region MATCHMAKING
-        /* TODO LATER
+        
         private void DeleteChallengers(Address address)
         {
-            var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, address);
+            //var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, address);
+            var list = _playerVersusChallengesList.Get<Address, StorageList>(address);
+
             list.Clear();
         }
-
+        
         public NachoVersusInfo[] GetVersusChallengers(Address from)
         {
-            var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, from);
-            int count = list.Count();
+            //var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, from);
+            var list = _playerVersusChallengesList.Get<Address, StorageList>(from);
+
+            //int count = list.Count();
+            var count = list.Count();
             int i = 0;
             while (i < count)
             {
                 // TODO fix às vezes quando entra aqui o list count = 1, fazemos o get do primeiro elemento get(0) e no get dá out of range pq diz que o count = 0
-                var entry = list.Get(i);
+                //var entry = list.Get(i);
+                var entry = list.Get<NachoVersusInfo>(i);
                 bool discard = false;
                 var otherAccount = GetAccount(entry.challenger);
 
@@ -4111,16 +4123,18 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else
                 {
-                    var diff = GetCurrentTime() - entry.timestamp;
-                    if (diff > 60 * 5)
-                    {
-                        discard = true;
-                    }
+                    // TODO fix
+                    //var diff = GetCurrentTime() - entry.timestamp;
+                    //if (diff > 60 * 5)
+                    //{
+                    //    discard = true;
+                    //}
                 }
 
                 if (discard)
                 {
-                    list.RemoveAt(i);
+                    //list.RemoveAt(i);
+                    list.RemoveAt<NachoVersusInfo>(i);
                 }
                 else
                 {
@@ -4128,17 +4142,21 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            return list.All();
+            //return list.All();
+            return list.All<NachoVersusInfo>();
         }
-
+        
         public int GetMatchMakerCount(BattleMode mode)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            
             int total = 0;
-            int count = list.Count();
+            //int count = list.Count();
+            var count = _globalMatchmakerList.Count();
             for (int i = 0; i < count; i++)
             {
-                var address = list.Get(i);
+                //var address = list.Get(i);
+                var address = _globalMatchmakerList.Get<Address>(i);
                 var account = GetAccount(address);
                 if (account.queueMode == mode)
                 {
@@ -4147,29 +4165,38 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             return total;
         }
-
+        
         public bool IsAddressInMatchMaker(Address address)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
-            return list.Contains(address);
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            //return list.Contains(address);
+
+            return _globalMatchmakerList.Contains(address);
         }
 
         private void InsertIntoMatchMaker(Address address)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
-            if (list.Contains(address))
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            
+            //if (list.Contains(address))
+            if (_globalMatchmakerList.Contains(address))
             {
                 return;
             }
-            list.Add(address);
+
+            //list.Add(address);
+            _globalMatchmakerList.Add(address);
         }
 
         private void RemoveFromMatchMaker(Address address)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
-            if (list.Contains(address))
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+
+            //if (list.Contains(address))
+            if (_globalMatchmakerList.Contains(address))
             {
-                list.Remove(address);
+                //list.Remove(address);
+                _globalMatchmakerList.Remove(address);
             }
         }
 
@@ -4189,10 +4216,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var wrestlerA = GetWrestler(accountA.queueWrestlerIDs[0]);
-            var levelA = Formulas.CalculateWrestlerLevel(wrestlerA.experience);
+            var levelA = Formulas.CalculateWrestlerLevel((int)wrestlerA.experience);
 
             var wrestlerB = GetWrestler(accountB.queueWrestlerIDs[0]);
-            var levelB = Formulas.CalculateWrestlerLevel(wrestlerB.experience);
+            var levelB = Formulas.CalculateWrestlerLevel((int)wrestlerB.experience);
 
             var levelDiff = Math.Abs(levelA - levelB);
 
@@ -4206,7 +4233,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 default: return -1;
             }
 
-            var eloDiff = Math.Abs(accountA.ELO - accountB.ELO) / 32;
+            //var eloDiff = Math.Abs(accountA.ELO - accountB.ELO) / 32;
+            var eloDiff = Math.Abs((decimal) (accountA.ELO - accountB.ELO)) / 32;
 
             switch (eloDiff)
             {
@@ -4227,11 +4255,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private bool MatchMakerFindMatch(Address targetAddress)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
 
             bool foundOwn = false;
 
-            var count = list.Count();
+            //var count = list.Count();
+            var count = _globalMatchmakerList.Count();
 
             Address bestAddress = Address.Null;
             int bestScore = -1;
@@ -4245,7 +4274,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             for (int i = 0; i < count; i++)
             {
-                var otherAddress = list.Get(i);
+                //var otherAddress = list.Get(i);
+                var otherAddress = _globalMatchmakerList.Get<Address>(i);
 
                 if (otherAddress == targetAddress)
                 {
@@ -4303,7 +4333,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return false;
-        }*/
+        }
 
         private int CalculateELO(int currentELO, int opponentELO, int side, BattleState result)
         {
@@ -4343,7 +4373,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region QUEUE API
-        /* TODO LATER
+       
         private void SpendBet(Address from, BigInteger bet, BattleMode mode, Address address)
         {
             Runtime.Expect(bet > 0, "invalid bet");
@@ -4355,7 +4385,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(bet == GetRankedBet(), "invalid bet");
                 Runtime.Expect(account.queueBet == bet, "bets differ");
 
-                var fee = (bet * Constants.POT_FEE_PERCENTAGE) / 100;
+                var fee = new BigInteger(5); // (bet * Constants.POT_FEE_PERCENTAGE) / 100; TODO fix
                 var split = bet - fee;
 
                 Runtime.Expect(SpendFromAccountBalance(from, split, 0), "balance failed for bet");
@@ -4377,7 +4407,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private BigInteger GetRankedBet()
         {
-            return GetConfig().rankedFee;
+            return new BigInteger(2); // GetConfig().rankedFee; TODO fix
         }
 
         public void JoinPraticeQueue(Address from, BigInteger wrestlerID, PraticeLevel level)
@@ -4422,6 +4452,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             JoinQueue(from, wrestlerIDs, bet, BattleMode.Ranked, Address.Null, PraticeLevel.None);
         }
 
+        /*
         public void JoinDoubleVersusQueue(Address from, BigInteger[] wrestlerIDs, Address other, BigInteger bet)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -4431,7 +4462,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             JoinQueue(from, wrestlerIDs, bet, BattleMode.Versus, other, PraticeLevel.None);
         }
         */
-
+        
         private void SetAccountBattle(Address address, BigInteger battleID, NachoBattle battle, int sideIndex)
         {
             var account = GetAccount(address);
@@ -4567,21 +4598,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetAccount(address, account);
         }
 
-        /* TODO LATER
         private void StartBotMatch(Address from, BigInteger botID)
         {
             var botAccount = GetAccount(DevelopersAddress);
             botAccount.queueJoinTime = GetCurrentTime();
             botAccount.queueUpdateTime = GetCurrentTime();
             botAccount.queueBet = 0;
-            botAccount.queueWrestlerIDs = new BigInteger[] { botID };
+            botAccount.queueWrestlerIDs = new BigInteger[] {botID};
             botAccount.queueVersus = Address.Null;
             botAccount.queueMode = BattleMode.Pratice;
             SetAccount(DevelopersAddress, botAccount);
 
             PrepareMatch(DevelopersAddress, from);
         }
-        */
 
         // NOTE - bet parameter is hijacked for JoinPratice, who passes level of bot inside bet arg
         private void JoinQueue(Address from, BigInteger[] wrestlerIDs, BigInteger bet, BattleMode mode, Address versus, PraticeLevel praticeLevel)
@@ -4785,7 +4814,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
 
-        /* TODO LATER
         private void PrepareMatch(Address addressA, Address addressB)
         {
             // cant battle against itself
@@ -4808,8 +4836,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             DeleteChallengers(addressB);
 
             // get last battle ID, increment and update
-            var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
-            var battle_id = battles.Count() + 1;
+            //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
+
+            //var battle_id = battles.Count() + 1;
+            var battle_id = _globalBattlesList.Count() + 1;
 
             if (mode == BattleMode.Ranked)
             {
@@ -4826,7 +4856,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var wrestler = GetWrestler(accountA.queueWrestlerIDs[i]);
                 var item = Formulas.GetItemKind(wrestler.itemID);
 
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
                 var base_stamina = Formulas.CalculateBaseStat(genes, StatKind.Stamina);
 
@@ -4851,7 +4881,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var wrestler = GetWrestler(accountB.queueWrestlerIDs[i]);
                 var item = Formulas.GetItemKind(wrestler.itemID);
 
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
                 var base_stamina = Formulas.CalculateBaseStat(genes, StatKind.Stamina);
 
@@ -4902,7 +4932,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         if (sides[i].wrestlers[0].itemKind == ItemKind.Yo_Yo)
                         {
-                            Runtime.Notify(sides[i].address, NachoEvent.ItemActivated, ItemKind.Yo_Yo);
+                            //Runtime.Notify(sides[i].address, NachoEvent.ItemActivated, ItemKind.Yo_Yo); // TODO fix
                         }
                     }
                 }
@@ -4947,7 +4977,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     bet = accountA.queueBet;
                 }
 
-                Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
+                //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed"); // TODO fix
             }
             else
             {
@@ -4964,19 +4994,22 @@ namespace Phantasma.Blockchain.Contracts.Native
                 bet = bet,
                 lastTurnHash = 0,
                 state = BattleState.Active,
-                timestamp = GetCurrentTime(),
-                counters = new int[Constants.BATTLE_COUNTER_MAX]
+                time = GetCurrentTime(),
+                counters = new BigInteger[Constants.BATTLE_COUNTER_MAX]
             };
 
-            battle.counters[Constants.BATTLE_COUNTER_START_TIME] = (int)GetCurrentTime();
+            //battle.counters[Constants.BATTLE_COUNTER_START_TIME] = (int)GetCurrentTime();
+            battle.counters[Constants.BATTLE_COUNTER_START_TIME] = (int)GetCurrentTime().Value;
 
             // save battle info
-            battles.Set(battle_id, battle);
+            //battles.Set(battle_id, battle);
+            _globalBattlesList.Set(battle_id, battle);
 
             SetAccountBattle(addressA, battle_id, battle, 0);
             SetAccountBattle(addressB, battle_id, battle, 1);
         }
 
+            
         public void UpdateQueue(Address from)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -5005,7 +5038,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 var wrestlerID = account.queueWrestlerIDs[0];
                 var wrestler = GetWrestler(wrestlerID);
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
                 switch (level)
                 {
@@ -5045,7 +5078,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             RemoveAccountFromQueue(from);
         }
-
+        
         private void RemoveAccountFromQueue(Address from)
         {
             var account = GetAccount(from);
@@ -5061,31 +5094,33 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (bet > 0)
                 {
-                    Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
+                    //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed"); // TODO fix
                 }
             }
 
             RemoveFromMatchMaker(from);
         }
-        */
+        
         #endregion
 
         #region BATTLE API
-        /* TODO LATER
+        
         public NachoBattle GetBattle(BigInteger battleID)
         {
-            var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
-            var battle = battles.Get(battleID);
+            //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
+
+            //var battle = battles.Get(battleID);
+            var battle = _globalBattlesList.Get<BigInteger, NachoBattle>(battleID);
 
             // this allows us to add new counters later while keeping binary compatibility
             if (battle.counters == null)
             {
-                battle.counters = new int[Constants.ACCOUNT_COUNTER_MAX];
+                battle.counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
             }
             else
             if (battle.counters.Length < Constants.ACCOUNT_COUNTER_MAX)
             {
-                var temp = new int[Constants.ACCOUNT_COUNTER_MAX];
+                var temp = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
                 for (int i = 0; i < battle.counters.Length; i++)
                 {
                     temp[i] = battle.counters[i];
@@ -5105,10 +5140,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void SetBattle(BigInteger battleID, NachoBattle battle)
         {
-            var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
-            battles.Set(battleID, battle);
+            //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
+            //battles.Set(battleID, battle);
+
+            _globalBattlesList.Set(battleID, battle);
         }
-        */
 
         // this is the calculate damage if the move hits, ignoring the move of the opponent, which is taken into account in CalculateMoveResult()
         private int CalculateMoveDamage(NachoBattle battle, WrestlerTurnInfo attacker, WrestlerTurnInfo defender)
@@ -5693,7 +5729,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             return info;
         }
 
-        /* TODO LATER
         public bool CancelMatch(Address from, BigInteger battleID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -5702,7 +5737,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(battle.state == BattleState.Active, "battle failed");
 
-            var timeDiff = (GetCurrentTime() - battle.timestamp) / 60;
+            var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_CANCEL;
 
             int localIndex = -1;
@@ -5728,8 +5763,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             TerminateMatchWithResult(battleID, battle, BattleState.Cancelled);
             return true;
         }
-        */
-
+        
         private void InitPot()
         {
             //Runtime.Expect(IsWitness(DevelopersAddress), "developer only");
