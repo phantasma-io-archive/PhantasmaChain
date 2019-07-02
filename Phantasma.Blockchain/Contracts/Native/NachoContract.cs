@@ -2248,7 +2248,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account = _accounts.Get<Address, NachoAccount>(address);
                 account.unused = "";
 
-                /* TODO LATER
                 if (account.battleID != 0)
                 {
                     var battle = GetBattle(account.battleID);
@@ -2256,17 +2255,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         account.battleID = 0;
                     }
-                }*/
+                }
 
-                //if (account.ELO == 0)
-                //{
-                //    account.ELO = Constants.DEFAULT_ELO;
-                //}
+                if (account.ELO == 0)
+                {
+                    account.ELO = Constants.DEFAULT_ELO;
+                }
 
-                //if (account.queueBet == 0)
-                //{
-                //    account.queueBet = 0;
-                //}
+                if (account.queueBet == 0)
+                {
+                    account.queueBet = 0;
+                }
             }
             else
             {
@@ -2392,7 +2391,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         SetWrestler(wrestlerID, wrestler);
 
         Runtime.Notify(EventKind.Referal, from, target);
-    }*/
+    }
 
         private int FindReferalIndex(Address from, StorageList referals)
         {
@@ -3178,7 +3177,15 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case 62: level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
 
                         default:
-                            throw new ContractException("invalid bot");
+                            // todo remove this hack. implement for bot id = [63,99] ?
+                            if (botID < 100)
+                            {
+                                level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
+                            }
+                            else
+                            {
+                                throw new ContractException("invalid bot");
+                            }
                     }
                     break;
             }
@@ -4671,7 +4678,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var wrestler = GetWrestler(ID);
                 Runtime.Expect(wrestler.location == WrestlerLocation.None, "invalid location");
                 Runtime.Expect(wrestler.owner == from, "invalid owner");
-                Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo");
+                //Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo"); // todo fix
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
@@ -4759,8 +4766,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                             Runtime.Expect(praticeLevel <= maxPraticeLevelAllowed, "locked bot");
                         }
 
-                        Runtime.Expect(false, "not implemented, read the code fdgds");
-                        //StartBotMatch(from, (int)praticeLevel);
+                        //Runtime.Expect(false, "not implemented, read the code fdgds");
+                        StartBotMatch(from, (int)praticeLevel);
 
                         return;
                     }
@@ -4817,7 +4824,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private void PrepareMatch(Address addressA, Address addressB)
         {
             // cant battle against itself
-            Runtime.Expect(addressA != addressB, "same address failed");
+            //Runtime.Expect(addressA != addressB, "same address failed"); //todo uncomment
 
             var accountA = GetAccount(addressA);
             var accountB = GetAccount(addressB);
