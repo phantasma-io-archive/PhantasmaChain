@@ -6509,7 +6509,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_IDLE;
 
-            BigInteger seed = new BigInteger(0); // TODO fix Randomize(battleID.ToByteArray());
+            BigInteger seed = Runtime.Randomize(battleID.ToByteArray());
 
             int localIndex = -1;
 
@@ -6553,7 +6553,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var aiWrestler = GetWrestler(aiWrestlerID);
                 var aiMove = Rules.GetMoveFromMoveset(aiWrestler.genes, aiSlot, aiStance);
 
-                seed = new BigInteger(0); // TODO fix NextRandom(seed);
+                seed = Runtime.NextRandom();
 
                 if (battle.mode == BattleMode.Pratice)
                 {
@@ -6567,7 +6567,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     var chance = (int)(seed % 100);
-                    seed = new BigInteger(0); // TODO fix NextRandom(seed);
+                    seed = Runtime.NextRandom();
 
                     smartness -= chance;
 
@@ -6926,7 +6926,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
                     info[i] = CalculateTurnInfo(battle.sides[i], wrestlers[i], battle.sides[i].move, states[i].lastMove, states[i], seed);
 
-                    seed = new BigInteger(0); // TODO fix NextRandom(seed);
+                    seed = Runtime.NextRandom();
 
                     if (info[i].move == WrestlingMove.Tart_Throw && info[i].item != ItemKind.Cooking_Hat && !Rules.IsSucessful((int)info[i].chance, Constants.TART_THROW_ACCURACY))
                     {
@@ -7553,7 +7553,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
 
                     var dmg = CalculateMoveResult(info[other], info[i], seed);
-                    seed = new BigInteger(0); // TODO fix NextRandom(seed);
+                    seed = Runtime.NextRandom();
 
                     if (dmg > 0)
                     {
