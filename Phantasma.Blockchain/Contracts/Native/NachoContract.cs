@@ -5049,22 +5049,22 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 switch (level)
                 {
-                    case 1: minID = -12; maxID = -9; break;   // case 1: minID = 9; maxID = 12; break;
-                    case 2: minID = -14; maxID = -11; break;  // case 2: minID = 11; maxID = 14; break;
-                    case 3: minID = -18; maxID = -12; break;  // case 3: minID = 12; maxID = 18; break;
-                    case 4: minID = -21; maxID = -17; break;  // case 4: minID = 17; maxID = 21; break;
-                    case 5: minID = -24; maxID = -20; break;  // case 5: minID = 20; maxID = 24; break; 
-                    case 6: minID = -27; maxID = -23; break;  // case 6: minID = 23; maxID = 27; break;
-                    case 7: minID = -32; maxID = -26; break;  // case 7: minID = 26; maxID = 32; break;  
-                    case 8: minID = -33; maxID = -29; break;  // case 8: minID = 29; maxID = 33; break;
-                    case 9: minID = -36; maxID = -31; break;  // case 9: minID = 31; maxID = 36; break; 
-                    case 10: minID = -38; maxID = -35; break; // case 10: minID = 35; maxID = 38; break;
-                    case 11: minID = -40; maxID = -36; break; // case 11: minID = 36; maxID = 40; break; 
-                    case 12: minID = -43; maxID = -39; break; // case 12: minID = 39; maxID = 43; break; 
-                    case 13: minID = -46; maxID = -42; break; // case 13: minID = 42; maxID = 46; break; 
-                    case 14: minID = -49; maxID = -45; break; // case 14: minID = 45; maxID = 49; break; 
-                    case 15: minID = -53; maxID = -48; break; // case 15: minID = 48; maxID = 53; break; 
-                    default: minID = -62; maxID = -53; break; // default: minID = 53; maxID = 62; break; 
+                    case 1: minID = 9; maxID = 12; break;
+                    case 2: minID = 11; maxID = 14; break;
+                    case 3: minID = 12; maxID = 18; break;
+                    case 4: minID = 17; maxID = 21; break;
+                    case 5: minID = 20; maxID = 24; break;
+                    case 6: minID = 23; maxID = 27; break;
+                    case 7: minID = 26; maxID = 32; break;
+                    case 8: minID = 29; maxID = 33; break;
+                    case 9: minID = 31; maxID = 36; break;
+                    case 10: minID = 35; maxID = 38; break;
+                    case 11: minID = 36; maxID = 40; break;
+                    case 12: minID = 39; maxID = 43; break;
+                    case 13: minID = 42; maxID = 46; break;
+                    case 14: minID = 45; maxID = 49; break;
+                    case 15: minID = 48; maxID = 53; break;
+                    default: minID = 53; maxID = 62; break;
                 }
 
                 account.queueMode = BattleMode.Pratice;
