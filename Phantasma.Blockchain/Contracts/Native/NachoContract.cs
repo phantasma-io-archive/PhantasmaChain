@@ -1921,7 +1921,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public AccountFlags flags;
         public BigInteger[] counters;
         public string comment;
-        public Address referal;
+        public Address referral;
         public Timestamp lastTime;
         public TrophyFlag trophies;
         public BigInteger ELO;
@@ -2280,7 +2280,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     flags = AccountFlags.None,
                     counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX],
                     comment = "",
-                    referal = Address.Null,
+                    referral = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     //avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                 };
@@ -2296,9 +2296,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.flags |= AccountFlags.Admin;
             }
 
-            if (account.referal == Address.Null)
+            if (account.referral == Address.Null)
             {
-                account.referal = Address.Null;
+                account.referral = Address.Null;
             }
 
             if (account.creationTime == 0)
@@ -2331,14 +2331,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             return referrals.All<NachoReferral>();
         }
 
-        /* TODO LATER
     public void RegisterReferral(Address from, Address target)
     {
         Runtime.Expect(IsWitness(from), "witness failed");
 
         var fromAccount = GetAccount(from);
         Runtime.Expect(fromAccount.creationTime > 0, "invalid account");
-        Runtime.Expect(fromAccount.referal == Address.Null, "already has referal");
+        Runtime.Expect(fromAccount.referral == Address.Null, "already has referal");
 
         var targetAccount = GetAccount(target);
 
@@ -2353,7 +2352,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         var count = referrals.Count(); 
         for (int i=0; i<count; i++) // no breaks here, we need to check every referal to make sure we're not registering the same guy twice
         { 
-            referral = referals.Get<NachoReferral>(i);
+            referral = referrals.Get<NachoReferral>(i);
             Runtime.Expect(referral.address != from, "already referral");
 
             if (referral.address == Address.Null && referral.stakeAmount> 0)
@@ -2373,6 +2372,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         var rnd = new Random();
 
+        /* TODO fix 
         byte[] genes = Luchador.MineGenes(rnd, (x) =>
         {
             if (x.Rarity != Rarity.Common)
@@ -2390,7 +2390,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         wrestler.flags |= WrestlerFlags.Locked;
         SetWrestler(wrestlerID, wrestler);
 
-        Runtime.Notify(EventKind.Referal, from, target);
+        //Runtime.Notify(EventKind.Referal, from, target); // todo fix
+        */
     }
 
         private int FindReferalIndex(Address from, StorageList referals)
@@ -2411,12 +2412,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         private BigInteger RegisterReferalPurchase(Address from, BigInteger totalAmount, BigInteger auctionID)
         {
             var fromAccount = GetAccount(from);
-            if (fromAccount.referal == Address.Null)
+            if (fromAccount.referral == Address.Null)
             {
                 return 0;
             }
 
-            var target = fromAccount.referal;
+            var target = fromAccount.referral;
 
             var referals = _referrals.Get<Address, StorageList>(target);
             var referalIndex = FindReferalIndex(from, referals);
@@ -2527,7 +2528,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenStake, from, referralIndex);
         }
 
-        /* TODO LATER
         public void UnstakeReferral(Address from, int referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -2545,11 +2545,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (referral.stakeAmount > 0)
             {
                 var diff = Runtime.Time.Value - referral.stakeTime;
-                diff = diff / Constants.SECONDS_PER_DAY; // convert to days
+                //diff = diff / Constants.SECONDS_PER_DAY; // convert to days // TODO fix
                 Runtime.Expect(diff >= Constants.REFERRAL_MINIMUM_DAYS, "too soon");
             }
 
-            Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
+            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed"); // TODO fix
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -2558,9 +2558,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             AddTrophy(from, TrophyFlag.Referral);
 
             Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
-        }*/
+        }
 
-        /* TODO LATER
+        /*
     public void DeleteWrestler(Address from, BigInteger wrestlerID)
     {
         Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
@@ -2575,7 +2575,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         wrestler.owner = Address.Null;
 
         wrestlers.Remove(wrestlerID);
-    }*/
+    }
 
         // get how many wrestlers in an account
         //public BigInteger[] GetAccountWrestlers(Address address)
@@ -4130,12 +4130,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else
                 {
-                    // TODO fix
-                    //var diff = GetCurrentTime() - entry.timestamp;
-                    //if (diff > 60 * 5)
-                    //{
-                    //    discard = true;
-                    //}
+                    var diff = GetCurrentTime() - entry.time;
+                    if (diff > 60 * 5)
+                    {
+                        discard = true;
+                    }
                 }
 
                 if (discard)
