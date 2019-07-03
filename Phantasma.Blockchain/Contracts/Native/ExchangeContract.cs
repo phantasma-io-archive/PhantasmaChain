@@ -251,6 +251,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(takerEscrowUsage <= takerAvailableEscrow, "Taker tried to use more escrow than available");
                     Runtime.Expect(makerEscrowUsage <= makerEscrow, "Maker tried to use more escrow than available");
 
+                    if (takerEscrowUsage < GetMinimumSymbolQuantity(takerEscrowSymbol) ||
+                        makerEscrowUsage < GetMinimumSymbolQuantity(makerEscrowSymbol))
+                    {
+
+                        break;
+                    }
+
                     Runtime.Nexus.TransferTokens(takerEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, makerOrder.Creator, takerEscrowUsage);
                     Runtime.Nexus.TransferTokens(makerEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, takerOrder.Creator, makerEscrowUsage);
 
