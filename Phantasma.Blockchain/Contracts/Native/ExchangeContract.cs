@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.EdDSA;
@@ -7,6 +7,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System;
 using static Phantasma.Blockchain.Contracts.Native.ExchangeOrderSide;
+using static Phantasma.Blockchain.Contracts.Native.ExchangeOrderType;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -16,12 +17,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         Sell
     }
 
-    [Flags]
     public enum ExchangeOrderType
     {
-        Limit = 0,              //normal limit order
-        ImmediateOrCancel = 1,  //any unfulfilled part of the order gets cancelled if not immediately fulfilled
-        Market = 2,             //an IoC order that has no boundaries 
+        Limit,              //normal limit order
+        ImmediateOrCancel,  //special limit order, any unfulfilled part of the order gets cancelled if not immediately fulfilled
+        Market,             //normal market order
         //TODO: FillOrKill = 4,         //Either gets 100% fulfillment or it gets cancelled , no partial fulfillments like in IoC order types
     }
 
@@ -38,8 +38,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly string QuoteSymbol;
 
         public readonly ExchangeOrderSide Side;
+        public readonly ExchangeOrderType Type;
 
-        public ExchangeOrder(BigInteger uid, Timestamp timestamp, Address creator, BigInteger amount, string baseSymbol, BigInteger price, string quoteSymbol, ExchangeOrderSide side)
+        public ExchangeOrder(BigInteger uid, Timestamp timestamp, Address creator, BigInteger amount, string baseSymbol, BigInteger price, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType type)
         {
             Uid = uid;
             Timestamp = timestamp;
@@ -52,21 +53,24 @@ namespace Phantasma.Blockchain.Contracts.Native
             QuoteSymbol = quoteSymbol;
 
             Side = side;
+            Type = type;
         }
 
-        public ExchangeOrder(ExchangeOrder order, BigInteger newOrderSize, Timestamp newTimestamp)
+        public ExchangeOrder(ExchangeOrder order, BigInteger newPrice, BigInteger newOrderSize)
         {
             Uid = order.Uid;
-            Timestamp = newTimestamp;
+            Timestamp = order.Timestamp;
             Creator = order.Creator;
 
             Amount = newOrderSize;
             BaseSymbol = order.BaseSymbol;
 
-            Price = order.Price;
+            Price = newOrderSize;
             QuoteSymbol = order.QuoteSymbol;
 
             Side = order.Side;
+            Type = order.Type;
+
         }
     }
 
@@ -97,25 +101,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private string BuildOrderKey(ExchangeOrderSide side, string baseSymbol, string quoteSymbol) => $"{side}_{baseSymbol}_{quoteSymbol}";
 
-        public BigInteger GetMinimumSymbolQuantity(BigInteger tokenDecimals) => BigInteger.Pow(10, tokenDecimals / 2);
-        private BigInteger GetMinimumSymbolQuantity(TokenInfo token) => GetMinimumSymbolQuantity(token.Decimals);
+        public BigInteger GetMinimumQuantity(BigInteger tokenDecimals) => BigInteger.Pow(10, tokenDecimals / 2);
+        public BigInteger GetMinimumTokenQuantity(TokenInfo token) => GetMinimumQuantity(token.Decimals);
 
-        public void OpenMarketOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, ExchangeOrderSide side)
+        public BigInteger GetMinimumSymbolQuantity(string symbol)
         {
-            //OpenLimitOrder(from, baseSymbol, quoteSymbol, orderSize, );
+            var token = Runtime.Nexus.GetTokenInfo(symbol);
+            return GetMinimumQuantity(token.Decimals);
         }
 
-        /// <summary>
-        /// Creates a limit order on the exchange
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="baseSymbol">For SOUL/KCAL pair, SOUL would be the base symbol</param>
-        /// <param name="quoteSymbol">For SOUL/KCAL pair, KCAL would be the quote symbol</param>
-        /// <param name="orderSize">Amount of base symbol tokens the user wants to buy/sell</param>
-        /// <param name="price">Amount of quote symbol tokens the user wants to pay/receive per unit of base symbol tokens</param>
-        /// <param name="side">If the order is a buy or sell order</param>
-        /// <param name="IoC">"Immediate or Cancel" flag: if true, requires any unfulfilled parts of the order to be cancelled immediately after a single attempt at fulfilling it.</param>
-        public void OpenLimitOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, BigInteger price, ExchangeOrderSide side, bool IoC)
+        private void OpenOrder(Address from, string baseSymbol, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType orderType, BigInteger orderSize, BigInteger price)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -124,27 +119,37 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(orderSize >= GetMinimumSymbolQuantity(baseToken), "order size is not sufficient");
-
+            
             Runtime.Expect(Runtime.Nexus.TokenExists(quoteSymbol), "invalid quote token");
             var quoteToken = Runtime.Nexus.GetTokenInfo(quoteSymbol);
             Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(price >= GetMinimumSymbolQuantity(quoteToken), "order price is not sufficient");
 
-            //var tokenABI = Chain.FindABI(NativeABI.Token);
-            //Runtime.Expect(baseTokenContract.ABI.Implements(tokenABI));
+            if (orderType != Market)
+            {
+                Runtime.Expect(orderSize >= GetMinimumTokenQuantity(baseToken), "order size is not sufficient");
+                Runtime.Expect(price >= GetMinimumTokenQuantity(quoteToken), "order price is not sufficient");
+            }
 
             var uid = Runtime.Chain.GenerateUID(this.Storage);
-            Runtime.Expect(uid >= 0, "Generated an invalid UID");
 
             //--------------
-            //perform escrow
+            //perform escrow for non-market orders
             string orderEscrowSymbol = CalculateEscrowSymbol(baseToken, quoteToken, side);
-            BigInteger orderEscrowAmount = CalculateEscrowAmount(orderSize, price, baseToken, quoteToken, side);
+            TokenInfo orderEscrowToken = orderEscrowSymbol == baseSymbol ? baseToken : quoteToken;
+            BigInteger orderEscrowAmount;
             BigInteger orderEscrowUsage = 0;
 
-            //BigInteger baseTokensUnfilled = orderSize;
+            if (orderType == Market)
+            {
+                orderEscrowAmount = orderSize;
+                Runtime.Expect(orderEscrowAmount >= GetMinimumTokenQuantity(orderEscrowToken), "market order size is not sufficient");
+            }
+            else
+            {
+                orderEscrowAmount = CalculateEscrowAmount(orderSize, price, baseToken, quoteToken, side);
+            }
 
+            //BigInteger baseTokensUnfilled = orderSize;
 
             var balances = new BalanceSheet(orderEscrowSymbol);
             var balance = balances.Get(this.Storage, from);
@@ -153,15 +158,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.Nexus.TransferTokens(orderEscrowSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, orderEscrowAmount), "transfer failed");
             //------------
 
-            var order = new ExchangeOrder(uid, Runtime.Time, from, orderSize, baseSymbol, price, quoteSymbol, side);
+            var thisOrder = new ExchangeOrder();
+            StorageList orderList;
+            BigInteger orderIndex = 0;
+
+            thisOrder = new ExchangeOrder(uid, Runtime.Time, from, orderSize, baseSymbol, price, quoteSymbol, side, orderType);
             Runtime.Notify(EventKind.OrderCreated, from, uid);
 
             var key = BuildOrderKey(side, quoteSymbol, baseSymbol);
-            StorageList orderList = _orders.Get<string, StorageList>(key);
-            var orderIndex = orderList.Add<ExchangeOrder>(order);
+            
+            orderList = _orders.Get<string, StorageList>(key);
+            orderIndex = orderList.Add<ExchangeOrder>(thisOrder);
             _orderMap.Set<BigInteger, string>(uid, key);
 
-            
             var makerSide = side == Buy ? Sell : Buy;
             var makerKey = BuildOrderKey(makerSide, quoteSymbol, baseSymbol);
             var makerOrders = _orders.Get<string, StorageList>(makerKey);
@@ -172,14 +181,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                 BigInteger bestPrice = 0;
                 Timestamp bestPriceTimestamp = 0;
 
+                ExchangeOrder takerOrder = thisOrder;
+
                 var makerOrdersCount = makerOrders.Count();
-                for (int i=0; i<makerOrdersCount; i++)
+                for (int i = 0; i < makerOrdersCount; i++)
                 {
                     var makerOrder = makerOrders.Get<ExchangeOrder>(i);
 
                     if (side == Buy)
                     {
-                        if (makerOrder.Price > order.Price) // too expensive, we wont buy at this price
+                        if (makerOrder.Price > takerOrder.Price && orderType != Market) // too expensive, we wont buy at this price
                         {
                             continue;
                         }
@@ -193,7 +204,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
                     else
                     {
-                        if (makerOrder.Price < order.Price) // too cheap, we wont sell at this price
+                        if (makerOrder.Price < takerOrder.Price && orderType != Market) // too cheap, we wont sell at this price
                         {
                             continue;
                         }
@@ -209,76 +220,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (bestIndex >= 0)
                 {
-
-                    /*
-                    var other = otherOrders.Get<ExchangeOrder>(bestIndex);
-                    var otherFilled = _fills.Get<BigInteger, BigInteger>(other.Uid);
-                    var otherUnfilled = other.Amount - otherFilled;
-                    
-                    // pick the smallest of both unfilled amounts
-                    BigInteger filledAmount = otherUnfilled < baseTokensUnfilled ? otherUnfilled : baseTokensUnfilled;
-
-                    baseTokensUnfilled -= filledAmount;
-                    otherFilled += filledAmount;
-
-                    var quoteAmount = UnitConversion.ToBigInteger(UnitConversion.ToDecimal(filledAmount, baseToken.Decimals) * UnitConversion.ToDecimal(other.Price, quoteToken.Decimals), quoteToken.Decimals);
-
-                    if (side == Sell)
-                    {
-                        Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, other.Creator, filledAmount);
-                        Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, quoteAmount);
-
-                        Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = filledAmount });
-                        Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = quoteAmount });
-
-                        escrowUsage += filledAmount;
-                    }
-                    else
-                    {
-                        Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, filledAmount);
-                        Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, other.Creator, quoteAmount);
-
-                        Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = filledAmount });
-                        Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = quoteAmount });
-
-                        escrowUsage += quoteAmount;
-                    }
-
-                    Runtime.Notify(EventKind.OrderFilled, order.Creator, uid);
-                    Runtime.Notify(EventKind.OrderFilled, other.Creator, other.Uid);
-
-                    if (otherFilled >= other.Amount)
-                    {
-                        otherOrders.RemoveAt<ExchangeOrder>(bestIndex);
-                        _orderMap.Remove<BigInteger>(other.Uid);
-                        _fills.Remove<BigInteger>(other.Uid);
-
-                        Runtime.Expect(_escrows.ContainsKey<BigInteger>(other.Uid), "An orderbook entry must have registered escrow");
-
-                        var otherEscrow = _escrows.Get<BigInteger, BigInteger>(other.Uid);
-                        var otherEscrowSymbol = side == Sell ? quoteSymbol : baseSymbol;
-                        Runtime.Nexus.TransferTokens(otherEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, otherEscrow);
-                        Runtime.Notify(EventKind.TokenReceive, other.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = otherEscrowSymbol, value = otherEscrow});
-
-                        Runtime.Notify(EventKind.OrderClosed, other.Creator, other.Uid);
-                    }
-                    else
-                    {
-                        _fills.Set<BigInteger, BigInteger>(other.Uid, otherFilled);
-
-                        //TODO calculate how much escrow changed and update _escrows with other.uid as key
-
-                        //TODO optimization, if filledAmount = orderUnfilled break here, would this be correct?
-                    }
-                    */
                     //since order "uid" has found a match, the creator of this order will be a taker as he will remove liquidity from the market
                     //and the creator of the "bestIndex" order is the maker as he is providing liquidity to the taker
-                    var takerOrder = order;
                     var takerAvailableEscrow = orderEscrowAmount - orderEscrowUsage;
                     var takerEscrowUsage = BigInteger.Zero;
                     var takerEscrowSymbol = orderEscrowSymbol;
 
-                    var makerOrder = makerOrders.Get<ExchangeOrder>(bestIndex);  
+                    var makerOrder = makerOrders.Get<ExchangeOrder>(bestIndex);
                     var makerEscrow = _escrows.Get<BigInteger, BigInteger>(makerOrder.Uid);
                     var makerEscrowUsage = BigInteger.Zero; ;
                     var makerEscrowSymbol = orderEscrowSymbol == baseSymbol ? quoteSymbol : baseSymbol;
@@ -289,7 +237,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         var makerEscrowBaseEquivalent = ConvertQuoteToBase(makerEscrow, makerOrder.Price, baseToken, quoteToken);
                         takerEscrowUsage = takerAvailableEscrow < makerEscrowBaseEquivalent ? takerAvailableEscrow : makerEscrowBaseEquivalent;
-                        
+
                         makerEscrowUsage = CalculateEscrowAmount(takerEscrowUsage, makerOrder.Price, baseToken, quoteToken, Buy);
                     }
                     else
@@ -300,8 +248,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                         takerEscrowUsage = CalculateEscrowAmount(makerEscrowUsage, makerOrder.Price, baseToken, quoteToken, Buy);
                     }
 
-                    Runtime.Expect(takerEscrowUsage <= takerAvailableEscrow, "Tried to escrow more than available");
-                    Runtime.Expect(makerEscrowUsage <= makerEscrow, "Tried to escrow more than available");
+                    Runtime.Expect(takerEscrowUsage <= takerAvailableEscrow, "Taker tried to use more escrow than available");
+                    Runtime.Expect(makerEscrowUsage <= makerEscrow, "Maker tried to use more escrow than available");
 
                     Runtime.Nexus.TransferTokens(takerEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, makerOrder.Creator, takerEscrowUsage);
                     Runtime.Nexus.TransferTokens(makerEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, takerOrder.Creator, makerEscrowUsage);
@@ -326,30 +274,29 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
                     else
                         _escrows.Set(makerOrder.Uid, makerEscrow - makerEscrowUsage);
+
                 }
                 else
-                {
                     break;
-                }
 
             } while (orderEscrowUsage < orderEscrowAmount);
 
             var leftoverEscrow = orderEscrowAmount - orderEscrowUsage;
 
-            if (leftoverEscrow == 0 || IoC)
+            if (leftoverEscrow == 0 || orderType != Limit)
             {
                 orderList.RemoveAt<ExchangeOrder>(orderIndex);
-                _orderMap.Remove(uid);
-                _escrows.Remove(uid);
+                _orderMap.Remove(thisOrder.Uid);
+                _escrows.Remove(thisOrder.Uid);
 
                 if (leftoverEscrow > 0)
                 {
-                    Runtime.Nexus.TransferTokens(orderEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
-                    Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = orderEscrowSymbol, value = leftoverEscrow });
-                    Runtime.Notify(EventKind.OrderCancelled, order.Creator, order.Uid);
+                    Runtime.Nexus.TransferTokens(orderEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, thisOrder.Creator, leftoverEscrow);
+                    Runtime.Notify(EventKind.TokenReceive, thisOrder.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = orderEscrowSymbol, value = leftoverEscrow });
+                    Runtime.Notify(EventKind.OrderCancelled, thisOrder.Creator, thisOrder.Uid);
                 }
                 else
-                    Runtime.Notify(EventKind.OrderClosed, order.Creator, order.Uid);
+                    Runtime.Notify(EventKind.OrderClosed, thisOrder.Creator, thisOrder.Uid);
             }
             else
             {
@@ -357,6 +304,26 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             //TODO: ADD FEES, SEND THEM TO Runtime.Chain.Address FOR NOW
+        }
+
+        public void OpenMarketOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, ExchangeOrderSide side)
+        {
+            OpenOrder(from, baseSymbol, quoteSymbol, side, Market, orderSize, 0);
+        }
+
+        /// <summary>
+        /// Creates a limit order on the exchange
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="baseSymbol">For SOUL/KCAL pair, SOUL would be the base symbol</param>
+        /// <param name="quoteSymbol">For SOUL/KCAL pair, KCAL would be the quote symbol</param>
+        /// <param name="orderSize">Amount of base symbol tokens the user wants to buy/sell</param>
+        /// <param name="price">Amount of quote symbol tokens the user wants to pay/receive per unit of base symbol tokens</param>
+        /// <param name="side">If the order is a buy or sell order</param>
+        /// <param name="IoC">"Immediate or Cancel" flag: if true, requires any unfulfilled parts of the order to be cancelled immediately after a single attempt at fulfilling it.</param>
+        public void OpenLimitOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, BigInteger price, ExchangeOrderSide side, bool IoC)
+        {
+            OpenOrder(from, baseSymbol, quoteSymbol, side, IoC ? ImmediateOrCancel : Limit, orderSize, price);
         }
 
         public void CancelOrder(BigInteger uid)
