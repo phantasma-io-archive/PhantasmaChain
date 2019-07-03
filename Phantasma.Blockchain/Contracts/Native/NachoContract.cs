@@ -3078,42 +3078,42 @@ namespace Phantasma.Blockchain.Contracts.Native
             var botLevel = (PraticeLevel)(botID);
             switch (botLevel)
             {
-                case PraticeLevel.Wood:
+                case PraticeLevel.Wood - (int)PraticeLevel.Wood * 2: // PraticeLevel.Wood = -1
                     level = 1; botItemID = 0; genes = new byte[] { 120, 46, 40, 40, 131, 93, 80, 221, 68, 155, };
                     introText = "Beep boop... amigo, entrena conmigo!";
                     break;
 
-                case PraticeLevel.Iron:
+                case PraticeLevel.Iron - (int)PraticeLevel.Iron * 2: // PraticeLevel.Iron = -2
                     level = 4; botItemID = 0; genes = new byte[] { 222, 50, 52, 48, 131, 88, 144, 8, 51, 104, };
                     introText = "I'm made from iron and because of that, I'm stronger than my wood brother!";
                     break;
 
-                case PraticeLevel.Steel:
+                case PraticeLevel.Steel - (int)PraticeLevel.Steel * 2: // PraticeLevel.Steel = -3
                     level = 6; botItemID = 0; genes = new byte[] { 114, 50, 53, 59, 131, 123, 122, 223, 181, 184, };
                     introText = "Get ready.. because I'm faster and stronger than my iron brother!";
                     break;
 
-                case PraticeLevel.Silver:
+                case PraticeLevel.Silver - (int)PraticeLevel.Silver * 2: // PraticeLevel.Silver = -4
                     level = 8; botItemID = 0; genes = new byte[] { 72, 59, 61, 64, 131, 115, 18, 108, 11, 195, };
                     introText = "Counters are for plebs!";
                     break;
 
-                case PraticeLevel.Gold:
+                case PraticeLevel.Gold - (int)PraticeLevel.Gold * 2: // PraticeLevel.Gold = -5
                     level = 10; botItemID = 0; genes = new byte[] { 138, 66, 65, 61, 131, 51, 148, 143, 99, 55, };
                     introText = "Luchador... My congratulations for getting so far!";
                     break;
 
-                case PraticeLevel.Ruby:
+                case PraticeLevel.Ruby - (int)PraticeLevel.Ruby * 2: // PraticeLevel.Ruby = -6
                     level = 13; botItemID = 0; genes = new byte[] { 12, 65, 68, 65, 131, 110, 146, 11, 100, 111 };
                     introText = "Amigo... I'm too strong to fail!";
                     break;
 
-                case PraticeLevel.Emerald:
+                case PraticeLevel.Emerald - (int)PraticeLevel.Emerald * 2: // PraticeLevel.Emerald = -7
                     level = 16; botItemID = 329390; genes = new byte[] { 240, 76, 73, 79, 131, 68, 218, 145, 232, 20 };
                     introText = "Beep...Beep...My hobby is wasting time in asian basket weaving foruns...";
                     break;
 
-                case PraticeLevel.Diamond:
+                case PraticeLevel.Diamond - (int)PraticeLevel.Diamond * 2: // PraticeLevel.Diamond = -8
                     level = 20; botItemID = 35808; genes = new byte[] { 144, 76, 77, 76, 131, 46, 168, 202, 141, 188, };
                     introText = "Beep... boop... I am become Death, the destroyer of worlds!";
                     break;
@@ -3121,60 +3121,60 @@ namespace Phantasma.Blockchain.Contracts.Native
                 default:
                     switch (botID)
                     {
-                        case 9: level = 1; botItemID = 0; genes = new byte[] { 169, 149, 19, 125, 210, 41, 238, 87, 66, 103, }; break;
-                        case 10: level = 1; botItemID = 0; genes = new byte[] { 229, 67, 21, 113, 126, 40, 125, 193, 141, 185, }; break;
-                        case 11: level = 1; botItemID = 0; introText = "you should give me your coins if you lose..."; genes = new byte[] { 157, 46, 74, 54, 216, 55, 81, 190, 42, 81, }; break;
-                        case 12: level = 2; botItemID = 0; genes = new byte[] { 253, 187, 122, 153, 122, 254, 115, 83, 50, 56, }; break;
-                        case 13: level = 2; botItemID = 0; introText = "To hold or no?"; genes = new byte[] { 139, 255, 58, 213, 143, 24, 97, 217, 108, 210, }; break;
-                        case 14: level = 3; botItemID = 0; genes = new byte[] { 169, 249, 77, 77, 75, 64, 166, 137, 85, 165, }; break;
-                        case 15: level = 3; botItemID = 96178; genes = new byte[] { 187, 61, 210, 174, 9, 149, 2, 180, 127, 46, }; break;
-                        case 16: level = 3; botItemID = 0; introText = "I like potatoes with burgers"; genes = new byte[] { 145, 219, 94, 119, 72, 246, 162, 232, 47, 182, }; break;
-                        case 17: level = 3; botItemID = 0; genes = new byte[] { 86, 57, 97, 203, 29, 225, 123, 174, 239, 104, }; break;
-                        case 18: level = 4; botItemID = 0; genes = new byte[] { 139, 16, 224, 44, 177, 157, 131, 245, 82, 179, }; break;
-                        case 19: level = 4; botItemID = 0; introText = "Im all in neo since antshares lol"; genes = new byte[] { 31, 235, 54, 221, 2, 248, 247, 165, 216, 148, }; break;
-                        case 20: level = 4; botItemID = 0; genes = new byte[] { 68, 40, 37, 184, 149, 169, 67, 163, 104, 242, }; break;
-                        case 21: level = 5; botItemID = 0; introText = "Derp derp derp.."; genes = new byte[] { 115, 24, 16, 61, 155, 239, 232, 59, 116, 109, }; break;
-                        case 22: level = 5; botItemID = 0; genes = new byte[] { 73, 79, 227, 227, 138, 103, 98, 1, 255, 106, }; break;
-                        case 23: level = 5; botItemID = 0; genes = new byte[] { 134, 103, 6, 7, 106, 172, 149, 135, 18, 36, }; break;
-                        case 24: level = 6; botItemID = 30173; genes = new byte[] { 31, 85, 236, 135, 191, 87, 212, 70, 139, 202, }; break;
-                        case 25: level = 6; botItemID = 0; introText = "Fugg you mann"; genes = new byte[] { 79, 171, 219, 185, 190, 234, 170, 161, 223, 103, }; break;
-                        case 26: level = 6; botItemID = 0; genes = new byte[] { 32, 85, 113, 69, 127, 170, 193, 248, 233, 245, }; break;
-                        case 27: level = 7; botItemID = 84882; introText = "Self proclaimed bitcoin maximalist"; genes = new byte[] { 115, 43, 166, 208, 198, 146, 2, 130, 231, 31, }; break;
-                        case 28: level = 7; botItemID = 138905; genes = new byte[] { 169, 0, 145, 179, 144, 214, 165, 83, 22, 218, }; break;
-                        case 29: level = 7; botItemID = 0; genes = new byte[] { 67, 33, 45, 42, 168, 35, 94, 3, 34, 237, }; break;
-                        case 30: level = 7; botItemID = 32478; genes = new byte[] { 169, 172, 84, 63, 74, 69, 60, 65, 15, 20, }; break;
-                        case 31: level = 8; botItemID = 0; introText = "SOUL goes 100x if I win"; genes = new byte[] { 235, 14, 247, 227, 158, 106, 178, 5, 25, 240, }; break;
-                        case 32: level = 8; botItemID = 0; genes = new byte[] { 73, 204, 196, 177, 33, 2, 87, 242, 33, 219, }; break;
-                        case 33: level = 9; botItemID = 329390; introText = "Bantasma fan number one!!"; genes = new byte[] { 25, 188, 160, 127, 57, 106, 143, 248, 79, 84, }; break;
-                        case 34: level = 9; botItemID = 0; genes = new byte[] { 121, 215, 5, 48, 178, 2, 231, 109, 183, 226, }; break;
-                        case 35: level = 9; botItemID = 63217; genes = new byte[] { 7, 156, 157, 29, 234, 28, 226, 214, 29, 191, }; break;
-                        case 36: level = 10; botItemID = 0; introText = "How is babby formed?"; genes = new byte[] { 49, 251, 234, 105, 253, 80, 196, 238, 220, 153, }; break;
-                        case 37: level = 10; botItemID = 0; genes = new byte[] { 229, 130, 158, 161, 191, 170, 82, 147, 21, 163, }; break;
-                        case 38: level = 11; botItemID = 56842; introText = "Show bobs pls"; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
-                        case 39: level = 11; botItemID = 0; genes = new byte[] { 224, 238, 2, 27, 102, 10, 250, 125, 225, 252, }; break;
-                        case 40: level = 12; botItemID = 110988; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
-                        case 41: level = 12; botItemID = 0; genes = new byte[] { 145, 129, 73, 79, 223, 110, 69, 225, 50, 177 }; break;
-                        case 42: level = 12; botItemID = 0; genes = new byte[] { 75, 189, 32, 0, 161, 182, 202, 214, 66, 70, }; break;
-                        case 43: level = 13; botItemID = 0; introText = "Hey hey hey"; genes = new byte[] { 145, 203, 122, 65, 201, 98, 29, 100, 247, 240 }; break;
-                        case 44: level = 13; botItemID = 0; genes = new byte[] { 135, 51, 219, 37, 241, 111, 81, 148, 183, 245, }; break;
-                        case 45: level = 13; botItemID = 0; genes = new byte[] { 21, 27, 0, 194, 231, 32, 19, 240, 72, 250, }; break;
-                        case 46: level = 14; botItemID = 0; genes = new byte[] { 55, 246, 253, 29, 244, 91, 52, 229, 33, 242, }; break;
-                        case 47: level = 14; botItemID = 0; introText = "My wife still doest not believe me"; genes = new byte[] { 235, 125, 252, 144, 205, 158, 37, 109, 95, 0, }; break;
-                        case 48: level = 14; botItemID = 0; genes = new byte[] { 14, 14, 153, 133, 202, 193, 247, 77, 226, 24, }; break;
-                        case 49: level = 15; botItemID = 0; introText = "Wasasasa wasa wasa"; genes = new byte[] { 97, 186, 117, 13, 47, 141, 188, 190, 231, 98, }; break;
-                        case 50: level = 15; botItemID = 0; genes = new byte[] { 187, 85, 182, 157, 197, 58, 43, 171, 14, 148, }; break;
-                        case 51: level = 15; botItemID = 0; genes = new byte[] { 61, 214, 97, 16, 173, 52, 55, 218, 218, 23, }; break;
-                        case 52: level = 15; botItemID = 0; introText = "PM me for nachos"; genes = new byte[] { 21, 43, 3, 20, 205, 239, 157, 121, 148, 200, }; break;
-                        case 53: level = 16; botItemID = 0; genes = new byte[] { 122, 126, 4, 86, 138, 161, 173, 188, 217, 9, }; break;
-                        case 54: level = 16; botItemID = 0; genes = new byte[] { 31, 178, 25, 47, 197, 24, 91, 18, 36, 165, }; break;
-                        case 55: level = 16; botItemID = 0; introText = "Cold nachos or hot nachos?"; genes = new byte[] { 236, 166, 41, 184, 74, 99, 53, 178, 237, 145, }; break;
-                        case 56: level = 16; botItemID = 0; genes = new byte[] { 181, 62, 101, 177, 50, 199, 105, 21, 5, 215 }; break;
-                        case 57: level = 16; botItemID = 0; introText = "Just get rekt man"; genes = new byte[] { 218, 98, 58, 113, 15, 35, 6, 184, 0, 52, }; break;
-                        case 58: level = 16; botItemID = 0; genes = new byte[] { 218, 224, 182, 214, 13, 108, 167, 3, 114, 109, }; break;
-                        case 59: level = 16; botItemID = 0; genes = new byte[] { 226, 50, 168, 123, 194, 11, 117, 193, 18, 5, }; break;
-                        case 60: level = 16; botItemID = 0; genes = new byte[] { 25, 119, 165, 120, 137, 252, 108, 184, 63, 154, }; break;
-                        case 61: level = 16; botItemID = 0; genes = new byte[] { 235, 82, 164, 247, 121, 136, 242, 77, 222, 251, }; break;
-                        case 62: level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
+                        case -9: level = 1; botItemID = 0; genes = new byte[] { 169, 149, 19, 125, 210, 41, 238, 87, 66, 103, }; break;
+                        case -10: level = 1; botItemID = 0; genes = new byte[] { 229, 67, 21, 113, 126, 40, 125, 193, 141, 185, }; break;
+                        case -11: level = 1; botItemID = 0; introText = "you should give me your coins if you lose..."; genes = new byte[] { 157, 46, 74, 54, 216, 55, 81, 190, 42, 81, }; break;
+                        case -12: level = 2; botItemID = 0; genes = new byte[] { 253, 187, 122, 153, 122, 254, 115, 83, 50, 56, }; break;
+                        case -13: level = 2; botItemID = 0; introText = "To hold or no?"; genes = new byte[] { 139, 255, 58, 213, 143, 24, 97, 217, 108, 210, }; break;
+                        case -14: level = 3; botItemID = 0; genes = new byte[] { 169, 249, 77, 77, 75, 64, 166, 137, 85, 165, }; break;
+                        case -15: level = 3; botItemID = 96178; genes = new byte[] { 187, 61, 210, 174, 9, 149, 2, 180, 127, 46, }; break;
+                        case -16: level = 3; botItemID = 0; introText = "I like potatoes with burgers"; genes = new byte[] { 145, 219, 94, 119, 72, 246, 162, 232, 47, 182, }; break;
+                        case -17: level = 3; botItemID = 0; genes = new byte[] { 86, 57, 97, 203, 29, 225, 123, 174, 239, 104, }; break;
+                        case -18: level = 4; botItemID = 0; genes = new byte[] { 139, 16, 224, 44, 177, 157, 131, 245, 82, 179, }; break;
+                        case -19: level = 4; botItemID = 0; introText = "Im all in neo since antshares lol"; genes = new byte[] { 31, 235, 54, 221, 2, 248, 247, 165, 216, 148, }; break;
+                        case -20: level = 4; botItemID = 0; genes = new byte[] { 68, 40, 37, 184, 149, 169, 67, 163, 104, 242, }; break;
+                        case -21: level = 5; botItemID = 0; introText = "Derp derp derp.."; genes = new byte[] { 115, 24, 16, 61, 155, 239, 232, 59, 116, 109, }; break;
+                        case -22: level = 5; botItemID = 0; genes = new byte[] { 73, 79, 227, 227, 138, 103, 98, 1, 255, 106, }; break;
+                        case -23: level = 5; botItemID = 0; genes = new byte[] { 134, 103, 6, 7, 106, 172, 149, 135, 18, 36, }; break;
+                        case -24: level = 6; botItemID = 30173; genes = new byte[] { 31, 85, 236, 135, 191, 87, 212, 70, 139, 202, }; break;
+                        case -25: level = 6; botItemID = 0; introText = "Fugg you mann"; genes = new byte[] { 79, 171, 219, 185, 190, 234, 170, 161, 223, 103, }; break;
+                        case -26: level = 6; botItemID = 0; genes = new byte[] { 32, 85, 113, 69, 127, 170, 193, 248, 233, 245, }; break;
+                        case -27: level = 7; botItemID = 84882; introText = "Self proclaimed bitcoin maximalist"; genes = new byte[] { 115, 43, 166, 208, 198, 146, 2, 130, 231, 31, }; break;
+                        case -28: level = 7; botItemID = 138905; genes = new byte[] { 169, 0, 145, 179, 144, 214, 165, 83, 22, 218, }; break;
+                        case -29: level = 7; botItemID = 0; genes = new byte[] { 67, 33, 45, 42, 168, 35, 94, 3, 34, 237, }; break;
+                        case -30: level = 7; botItemID = 32478; genes = new byte[] { 169, 172, 84, 63, 74, 69, 60, 65, 15, 20, }; break;
+                        case -31: level = 8; botItemID = 0; introText = "SOUL goes 100x if I win"; genes = new byte[] { 235, 14, 247, 227, 158, 106, 178, 5, 25, 240, }; break;
+                        case -32: level = 8; botItemID = 0; genes = new byte[] { 73, 204, 196, 177, 33, 2, 87, 242, 33, 219, }; break;
+                        case -33: level = 9; botItemID = 329390; introText = "Bantasma fan number one!!"; genes = new byte[] { 25, 188, 160, 127, 57, 106, 143, 248, 79, 84, }; break;
+                        case -34: level = 9; botItemID = 0; genes = new byte[] { 121, 215, 5, 48, 178, 2, 231, 109, 183, 226, }; break;
+                        case -35: level = 9; botItemID = 63217; genes = new byte[] { 7, 156, 157, 29, 234, 28, 226, 214, 29, 191, }; break;
+                        case -36: level = 10; botItemID = 0; introText = "How is babby formed?"; genes = new byte[] { 49, 251, 234, 105, 253, 80, 196, 238, 220, 153, }; break;
+                        case -37: level = 10; botItemID = 0; genes = new byte[] { 229, 130, 158, 161, 191, 170, 82, 147, 21, 163, }; break;
+                        case -38: level = 11; botItemID = 56842; introText = "Show bobs pls"; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
+                        case -39: level = 11; botItemID = 0; genes = new byte[] { 224, 238, 2, 27, 102, 10, 250, 125, 225, 252, }; break;
+                        case -40: level = 12; botItemID = 110988; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
+                        case -41: level = 12; botItemID = 0; genes = new byte[] { 145, 129, 73, 79, 223, 110, 69, 225, 50, 177 }; break;
+                        case -42: level = 12; botItemID = 0; genes = new byte[] { 75, 189, 32, 0, 161, 182, 202, 214, 66, 70, }; break;
+                        case -43: level = 13; botItemID = 0; introText = "Hey hey hey"; genes = new byte[] { 145, 203, 122, 65, 201, 98, 29, 100, 247, 240 }; break;
+                        case -44: level = 13; botItemID = 0; genes = new byte[] { 135, 51, 219, 37, 241, 111, 81, 148, 183, 245, }; break;
+                        case -45: level = 13; botItemID = 0; genes = new byte[] { 21, 27, 0, 194, 231, 32, 19, 240, 72, 250, }; break;
+                        case -46: level = 14; botItemID = 0; genes = new byte[] { 55, 246, 253, 29, 244, 91, 52, 229, 33, 242, }; break;
+                        case -47: level = 14; botItemID = 0; introText = "My wife still doest not believe me"; genes = new byte[] { 235, 125, 252, 144, 205, 158, 37, 109, 95, 0, }; break;
+                        case -48: level = 14; botItemID = 0; genes = new byte[] { 14, 14, 153, 133, 202, 193, 247, 77, 226, 24, }; break;
+                        case -49: level = 15; botItemID = 0; introText = "Wasasasa wasa wasa"; genes = new byte[] { 97, 186, 117, 13, 47, 141, 188, 190, 231, 98, }; break;
+                        case -50: level = 15; botItemID = 0; genes = new byte[] { 187, 85, 182, 157, 197, 58, 43, 171, 14, 148, }; break;
+                        case -51: level = 15; botItemID = 0; genes = new byte[] { 61, 214, 97, 16, 173, 52, 55, 218, 218, 23, }; break;
+                        case -52: level = 15; botItemID = 0; introText = "PM me for nachos"; genes = new byte[] { 21, 43, 3, 20, 205, 239, 157, 121, 148, 200, }; break;
+                        case -53: level = 16; botItemID = 0; genes = new byte[] { 122, 126, 4, 86, 138, 161, 173, 188, 217, 9, }; break;
+                        case -54: level = 16; botItemID = 0; genes = new byte[] { 31, 178, 25, 47, 197, 24, 91, 18, 36, 165, }; break;
+                        case -55: level = 16; botItemID = 0; introText = "Cold nachos or hot nachos?"; genes = new byte[] { 236, 166, 41, 184, 74, 99, 53, 178, 237, 145, }; break;
+                        case -56: level = 16; botItemID = 0; genes = new byte[] { 181, 62, 101, 177, 50, 199, 105, 21, 5, 215 }; break;
+                        case -57: level = 16; botItemID = 0; introText = "Just get rekt man"; genes = new byte[] { 218, 98, 58, 113, 15, 35, 6, 184, 0, 52, }; break;
+                        case -58: level = 16; botItemID = 0; genes = new byte[] { 218, 224, 182, 214, 13, 108, 167, 3, 114, 109, }; break;
+                        case -59: level = 16; botItemID = 0; genes = new byte[] { 226, 50, 168, 123, 194, 11, 117, 193, 18, 5, }; break;
+                        case -60: level = 16; botItemID = 0; genes = new byte[] { 25, 119, 165, 120, 137, 252, 108, 184, 63, 154, }; break;
+                        case -61: level = 16; botItemID = 0; genes = new byte[] { 235, 82, 164, 247, 121, 136, 242, 77, 222, 251, }; break;
+                        case -62: level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
 
                         default:
                             // todo remove this hack. implement for bot id = [63,99] ?
@@ -4767,7 +4767,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         }
 
                         //Runtime.Expect(false, "not implemented, read the code fdgds");
-                        StartBotMatch(from, (int)praticeLevel);
+                        StartBotMatch(from, -(int)praticeLevel);
 
                         return;
                     }
@@ -5049,29 +5049,29 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 switch (level)
                 {
-                    case 1: minID = 9; maxID = 12; break;
-                    case 2: minID = 11; maxID = 14; break;
-                    case 3: minID = 12; maxID = 18; break;
-                    case 4: minID = 17; maxID = 21; break;
-                    case 5: minID = 20; maxID = 24; break;
-                    case 6: minID = 23; maxID = 27; break;
-                    case 7: minID = 26; maxID = 32; break;
-                    case 8: minID = 29; maxID = 33; break;
-                    case 9: minID = 31; maxID = 36; break;
-                    case 10: minID = 35; maxID = 38; break;
-                    case 11: minID = 36; maxID = 40; break;
-                    case 12: minID = 39; maxID = 43; break;
-                    case 13: minID = 42; maxID = 46; break;
-                    case 14: minID = 45; maxID = 49; break;
-                    case 15: minID = 48; maxID = 53; break;
-                    default: minID = 53; maxID = 62; break;
+                    case 1: minID = -12; maxID = -9; break;   // case 1: minID = 9; maxID = 12; break;
+                    case 2: minID = -14; maxID = -11; break;  // case 2: minID = 11; maxID = 14; break;
+                    case 3: minID = -18; maxID = -12; break;  // case 3: minID = 12; maxID = 18; break;
+                    case 4: minID = -21; maxID = -17; break;  // case 4: minID = 17; maxID = 21; break;
+                    case 5: minID = -24; maxID = -20; break;  // case 5: minID = 20; maxID = 24; break; 
+                    case 6: minID = -27; maxID = -23; break;  // case 6: minID = 23; maxID = 27; break;
+                    case 7: minID = -32; maxID = -26; break;  // case 7: minID = 26; maxID = 32; break;  
+                    case 8: minID = -33; maxID = -29; break;  // case 8: minID = 29; maxID = 33; break;
+                    case 9: minID = -36; maxID = -31; break;  // case 9: minID = 31; maxID = 36; break; 
+                    case 10: minID = -38; maxID = -35; break; // case 10: minID = 35; maxID = 38; break;
+                    case 11: minID = -40; maxID = -36; break; // case 11: minID = 36; maxID = 40; break; 
+                    case 12: minID = -43; maxID = -39; break; // case 12: minID = 39; maxID = 43; break; 
+                    case 13: minID = -46; maxID = -42; break; // case 13: minID = 42; maxID = 46; break; 
+                    case 14: minID = -49; maxID = -45; break; // case 14: minID = 45; maxID = 49; break; 
+                    case 15: minID = -53; maxID = -48; break; // case 15: minID = 48; maxID = 53; break; 
+                    default: minID = -62; maxID = -53; break; // default: minID = 53; maxID = 62; break; 
                 }
 
                 account.queueMode = BattleMode.Pratice;
                 SetAccount(from, account);
 
                 int botID = (int)(minID + Runtime.Time.Value % (1 + maxID - minID));
-                StartBotMatch(from, botID);
+                StartBotMatch(from, -botID);
                 return;
             }
         }
