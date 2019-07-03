@@ -4939,7 +4939,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         if (sides[i].wrestlers[0].itemKind == ItemKind.Yo_Yo)
                         {
-                            //Runtime.Notify(sides[i].address, NachoEvent.ItemActivated, ItemKind.Yo_Yo); // TODO fix
+                            Runtime.Notify(NachoEvent.ItemActivated, sides[i].address, ItemKind.Yo_Yo);
                         }
                     }
                 }
@@ -5922,7 +5922,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 // TODO LATER
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
-                //Runtime.Notify(target, NachoEvent.Deposit, amount);
+                //Runtime.Notify(NachoEvent.Deposit, target, amount); //todo fix no event Deposit anymore
             }
 
             var leftovers = _pot.lastBalance - distributedTotal;
@@ -6903,7 +6903,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 battle.sides[i].move = targetMove;
                                 states[i].itemKind = ItemKind.None;
-                                //Runtime.Notify(from, NachoEvent.ItemActivated, ItemKind.Golden_Bullet); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemActivated, from, ItemKind.Golden_Bullet);
                             }
                         }
                     }
@@ -6976,7 +6976,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case WrestlingMove.Scream:
                             if (!ApplyStatBoost(ref info, ref states, i, StatKind.Attack, Constants.BIG_BOOST_CHANGE * multiplier))
                             {
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); //TODO fix
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             buff = true;
                             break;
@@ -6984,7 +6984,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case WrestlingMove.Bulk:
                             if (!ApplyStatBoost(ref info, ref states, i, StatKind.Defense, Constants.BIG_BOOST_CHANGE * multiplier))
                             {
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             buff = true;
                             break;
@@ -7017,7 +7017,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     if (multiplier > 1 && buff)
                     {
-                        //Runtime.Notify(info[i].address, NachoEvent.ItemActivated, states[i].itemKind); // TODO fix
+                        Runtime.Notify(NachoEvent.ItemActivated, info[i].address, states[i].itemKind);
                     }
 
                     // first turn item-activations
@@ -7042,7 +7042,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 // do nothing besides "activation"
                                 ActivateItem(ref states, ref info, i, false, false);
-                                //Runtime.Notify(info[i].address, NachoEvent.ItemActivated, states[i].itemKind); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemActivated, info[i].address, states[i].itemKind);
                                 break;
                             }
 
@@ -7050,7 +7050,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 if (ActivateItem(ref states, ref info, i, true, true))
                                 {
-                                    seed = new BigInteger(0); // TODO fix NextRandom(seed);
+                                    seed = Runtime.NextRandom();
                                     var roll = seed % 6;
 
                                     int target = roll < 4 ? i : 1 - i;
@@ -7141,7 +7141,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 if (states[other].itemKind != ItemKind.Wood_Potato)
                                 {
-                                    //Runtime.Notify(info[i].address, NachoEvent.ItemSpent, states[i].itemKind); // TODO fix
+                                    Runtime.Notify(NachoEvent.ItemSpent, info[i].address, states[i].itemKind);
                                 }
 
                                 states[i].itemKind = ItemKind.None;
@@ -7170,7 +7170,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (states[i].itemKind == ItemKind.None && wrestlers[i].itemID != 0)
                             {
                                 states[i].itemKind = Formulas.GetItemKind(wrestlers[i].itemID);
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.ItemAdded, states[i].itemKind); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemAdded, battle.sides[i].address, states[i].itemKind);
                             }
 
                             ChangeStance(ref states, ref info, i, false);
@@ -7347,7 +7347,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (states[i].itemKind == ItemKind.None && states[other].itemKind != ItemKind.Nullifier)
                             {
                                 states[i].itemKind = ItemKind.Wood_Chair;
-                                //Runtime.Notify(info[i].address, NachoEvent.ItemAdded, states[i].itemKind); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemAdded, info[i].address, states[i].itemKind);
                             }
                             break;
 
@@ -7436,7 +7436,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                             if (states[other].itemKind == ItemKind.None)
                                             {
                                                 states[other].itemKind = states[i].itemKind;
-                                                //Runtime.Notify(info[other].address, NachoEvent.ItemAdded, states[i].itemKind); // TODO fix
+                                                Runtime.Notify(NachoEvent.ItemAdded, info[other].address, states[i].itemKind);
                                             }
                                             break;
                                         }
@@ -7444,7 +7444,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                                 // we notify here even if we lose the item to show the opponent what was throw
                                 // this does not count as an "item activation"                            
-                                //Runtime.Notify(info[i].address, NachoEvent.ItemSpent, states[i].itemKind); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemSpent, info[i].address, states[i].itemKind);
                                 states[i].itemKind = ItemKind.None;
                             }
                             break;
@@ -7468,8 +7468,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
 
                                 // does not count as "item activation"
-                                //Runtime.Notify(info[i].address, NachoEvent.ItemAdded, states[i].itemKind); //TODO fix
-                                //Runtime.Notify(info[other].address, NachoEvent.ItemAdded, states[other].itemKind); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemAdded, info[i].address, states[i].itemKind);
+                                Runtime.Notify(NachoEvent.ItemAdded, info[other].address, states[other].itemKind);
                             }
                             break;
 
@@ -7477,7 +7477,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (Rules.IsSucessful((int)info[i].chance, 50))
                             {
                                 states[i].stance = BattleStance.Main;
-                                //Runtime.Notify(info[i].address, NachoEvent.Stance, states[i].stance); // TODO fix
+                                Runtime.Notify(NachoEvent.Stance, info[i].address, states[i].stance);
                             }
                             else
                             {
@@ -7505,7 +7505,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                                 states[i].itemKind = summon;
                                 // does not count as "item activation"
-                                //Runtime.Notify(info[i].address, NachoEvent.ItemAdded, states[i].itemKind); // TODO fix
+                                Runtime.Notify(NachoEvent.ItemAdded, info[i].address, states[i].itemKind);
                                 break;
                             }
 
@@ -7616,7 +7616,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     if (misses[i] && dmg > 0)
                     {
-                        //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                        Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                         dmg = 0;
                     }
 
@@ -7685,7 +7685,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             case WrestlingMove.Gutbuster:
                             case WrestlingMove.Side_Hook:
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, info[i].move); // TODO fix
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, info[i].move);
                                 break;
                         }
                     }
@@ -7780,7 +7780,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
                                 else
                                 {
-                                    //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                                    Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                                 }
                                 break;
                             }
@@ -7795,7 +7795,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
                                 else
                                 {
-                                    //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                                    Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                                 }
 
                                 break;
@@ -7821,7 +7821,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             }
                             else
                             {
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             break;
 
@@ -8048,7 +8048,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         indirect_damage[i] += direct_damage[other];
                         direct_damage[other] = 0;
-                        //Runtime.Notify(info[i].address, NachoEvent.Confusion); // TODO fix
+                        //Runtime.Notify(info[i].address, NachoEvent.Confusion);
+                        Runtime.Notify(NachoEvent.Confusion, info[i].address, 0); // todo check this event
                     }
                 }
 
@@ -8217,7 +8218,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             }
                             else
                             {
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             break;
 
@@ -8232,7 +8233,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (states[other].itemKind != ItemKind.None)
                             {
                                 states[other].itemKind = ItemKind.None;
-                                //Runtime.Notify(info[other].address, NachoEvent.ItemRemoved); // TODO fix
+                                //Runtime.Notify(info[other].address, NachoEvent.ItemRemoved);
+                                Runtime.Notify(NachoEvent.ItemRemoved, info[other].address, 0); // todo check this event
                             }
                             break;
 
@@ -8243,7 +8245,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             }
                             else
                             {
-                                //Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move); // TODO fix
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             break;
                     }
@@ -8259,7 +8261,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             RemoveStatusEffect(ref battle, ref states, ref info, i, BattleStatus.Smiling);
                             states[i].stance = BattleStance.Clown;
-                            //Runtime.Notify(info[i].address, NachoEvent.Stance, states[i].stance); // TODO fix
+                            Runtime.Notify(NachoEvent.Stance, info[i].address, states[i].stance);
                         }
                     }
 
