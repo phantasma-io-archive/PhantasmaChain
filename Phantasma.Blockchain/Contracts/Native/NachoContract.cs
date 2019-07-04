@@ -831,17 +831,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             return root;*/
         }
 
-        public static ItemKind GetItemKind(BigInteger itemID)
-        {
-            if (itemID <= 0)
-            {
-                return ItemKind.None;
-            }
+        //public static ItemKind GetItemKind(BigInteger itemID)
+        //{
+        //    if (itemID <= 0)
+        //    {
+        //        return ItemKind.None;
+        //    }
 
-            var bytes = CryptoExtensions.Sha256(itemID.ToByteArray());
-            var num = 1 + bytes[0] + bytes[1] * 256;
-            return (ItemKind)num;
-        }
+        //    var bytes = CryptoExtensions.Sha256(itemID.ToByteArray());
+        //    var num = 1 + bytes[0] + bytes[1] * 256;
+        //    return (ItemKind)num;
+        //}
 
         public static int GetAvatarID(BigInteger itemID)
         {
@@ -1972,6 +1972,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public Address owner;
         public BigInteger wrestlerID;
+        public ItemKind kind;
         public ItemLocation location;
         public ItemFlags flags;
     }
@@ -2760,14 +2761,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
 
-        public void UseItem(Address from, BigInteger wrestlerID, BigInteger itemID)
+        public void UseItem(Address from, BigInteger wrestlerID, BigInteger itemID, ItemKind itemKind)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
             Runtime.Expect(from != DevelopersAddress, "no items for developers");
 
-            var kind = Formulas.GetItemKind(itemID);
-            var category = Rules.GetItemCategory(kind);
+            //var itemKind = Formulas.GetItemKind(itemID);
+            var category = Rules.GetItemCategory(itemKind);
             Runtime.Expect(category == ItemCategory.Consumable, "not consumable");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
@@ -2786,7 +2787,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-            switch (kind)
+            switch (itemKind)
             {
                 case ItemKind.Dev_Badge:
                     {
@@ -3260,9 +3261,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (wrestler.itemID != 0)
             {
-                var kind = Formulas.GetItemKind(wrestler.itemID);
+                //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+                var itemKind = GetItem(wrestler.itemID).kind;
+
+                // todo confirmar. este tryparse já não sentido acho eu
                 int n;
-                if (int.TryParse(kind.ToString(), out n))
+                if (int.TryParse(itemKind.ToString(), out n))
                 {
                     wrestler.itemID = 0;
                 }
@@ -4017,7 +4021,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
-            var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            var itemKind = GetItem(wrestler.itemID).kind;
+
             var maxXP = GetMaxGymXPForWrestler(wrestler, itemKind);
             var obtainedXP = GetObtainedGymXP(wrestler, maxXP, itemKind);
             return obtainedXP < maxXP;
@@ -4033,7 +4039,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
-            var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            var itemKind = GetItem(wrestler.itemID).kind;
 
             var maxXPPerSession = GetMaxGymXPForWrestler(wrestler, itemKind);
 
@@ -4860,7 +4867,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (var i = 0; i < stateA.Length; i++)
             {
                 var wrestler = GetWrestler(accountA.queueWrestlerIDs[i]);
-                var item = Formulas.GetItemKind(wrestler.itemID);
+
+                //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+                var itemKind = GetItem(wrestler.itemID).kind;
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
@@ -4872,12 +4881,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                     boostAtk = 100,
                     boostDef = 100,
                     status = BattleStatus.None,
-                    itemKind = item,
+                    itemKind = itemKind,
                     lastMove = WrestlingMove.Idle,
                     disabledMove = WrestlingMove.Unknown,
                     riggedMove = WrestlingMove.Unknown,
                     learnedMove = WrestlingMove.Unknown,
-                    stance = (item == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
+                    stance = (itemKind == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
                     currentStamina = Formulas.CalculateWrestlerStat(level, base_stamina, wrestler.gymBoostStamina)
                 };
             }
@@ -4885,7 +4894,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (var i = 0; i < stateB.Length; i++)
             {
                 var wrestler = GetWrestler(accountB.queueWrestlerIDs[i]);
-                var item = Formulas.GetItemKind(wrestler.itemID);
+
+                //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+                var itemKind = GetItem(wrestler.itemID).kind;
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
@@ -4897,12 +4908,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                     boostAtk = 100,
                     boostDef = 100,
                     status = BattleStatus.None,
-                    itemKind = item,
+                    itemKind = itemKind,
                     lastMove = WrestlingMove.Idle,
                     disabledMove = WrestlingMove.Unknown,
                     riggedMove = WrestlingMove.Unknown,
                     learnedMove = WrestlingMove.Unknown,
-                    stance = (item == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
+                    stance = (itemKind == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
                     currentStamina = Formulas.CalculateWrestlerStat(level, base_stamina, wrestler.gymBoostStamina)
                 };
             }
@@ -7168,7 +7179,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case WrestlingMove.Recycle:
                             if (states[i].itemKind == ItemKind.None && wrestlers[i].itemID != 0)
                             {
-                                states[i].itemKind = Formulas.GetItemKind(wrestlers[i].itemID);
+                                //states[i].itemKind = Formulas.GetItemKind(wrestlers[i].itemID);
+                                states[i].itemKind = GetItem(wrestlers[i].itemID).kind;
                                 Runtime.Notify(NachoEvent.ItemAdded, battle.sides[i].address, states[i].itemKind);
                             }
 
