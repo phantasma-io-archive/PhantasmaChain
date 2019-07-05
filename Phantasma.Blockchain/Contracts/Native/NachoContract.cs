@@ -1033,7 +1033,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static int MAX_PRATICE_LEVEL = 8;
 
-        public const uint BASE_LUCHADOR_ID = 100;
+        public const uint BASE_LUCHADOR_ID = 1; // Bot Ids = [-1, -99]
         public const uint LUCHADOR_GENERATION_SIZE = 1000;
 
         public const int MINIMUM_SOUL_TRANSFER_AMOUNT = 1;
@@ -3264,12 +3264,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
                 var itemKind = GetItem(wrestler.itemID).kind;
 
-                // todo confirmar. este tryparse já não sentido acho eu
-                int n;
-                if (int.TryParse(itemKind.ToString(), out n))
-                {
-                    wrestler.itemID = 0;
-                }
+                // todo confirmar apagar este código. este tryparse já não sentido acho eu
+                //int n;
+                //if (int.TryParse(itemKind.ToString(), out n))
+                //{
+                //    wrestler.itemID = 0;
+                //}
             }
 
             if (wrestler.us1 > 0 || wrestler.us2 > 0 || wrestler.us3 > 0)
@@ -4830,7 +4830,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private void PrepareMatch(Address addressA, Address addressB)
         {
             // cant battle against itself
-            //Runtime.Expect(addressA != addressB, "same address failed"); //todo uncomment
+            //Runtime.Expect(addressA != addressB, "same address failed"); //todo uncomment after testing
 
             var accountA = GetAccount(addressA);
             var accountB = GetAccount(addressB);
@@ -8245,7 +8245,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 states[other].itemKind = ItemKind.None;
                                 //Runtime.Notify(info[other].address, NachoEvent.ItemRemoved);
-                                Runtime.Notify(NachoEvent.ItemRemoved, info[other].address, 0); // todo check this event
+                                Runtime.Notify(NachoEvent.ItemRemoved, info[other].address, 0); // todo check this event arg = 0
                             }
                             break;
 
