@@ -167,7 +167,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Notify<T>(EventKind kind, Address address, T content)
         {
-            var bytes = content == null ? new byte[0]: Serialization.Serialize(content);
+            var bytes = content == null ? new byte[0] : Serialization.Serialize(content);
 
             switch (kind)
             {
@@ -193,6 +193,11 @@ namespace Phantasma.Blockchain.Contracts
                     }
             }
 
+            Notify(kind, address, bytes);
+        }
+
+        public void Notify(EventKind kind, Address address, byte[] bytes)
+        {
             var evt = new Event(kind, address, bytes);
             _events.Add(evt);
         }

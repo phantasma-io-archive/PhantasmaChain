@@ -40,7 +40,9 @@ namespace Phantasma.Blockchain.Tokens
 
         public int Decimals { get; private set; }
 
-        internal TokenInfo(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        public byte[] Script { get; private set; }
+
+        internal TokenInfo(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             this.Owner = owner;
             this.Symbol = symbol;
@@ -48,6 +50,7 @@ namespace Phantasma.Blockchain.Tokens
             this.Flags = flags;
             this.Decimals = decimals;
             this.MaxSupply = maxSupply;
+            this.Script = script;
         }
 
         public override string ToString()
@@ -63,6 +66,7 @@ namespace Phantasma.Blockchain.Tokens
             writer.Write((uint)Flags);
             writer.Write(Decimals);
             writer.WriteBigInteger(MaxSupply);
+            writer.WriteByteArray(Script);
         }
 
         public void UnserializeData(BinaryReader reader)
@@ -73,6 +77,7 @@ namespace Phantasma.Blockchain.Tokens
             Flags = (TokenFlags)reader.ReadUInt32();
             Decimals = reader.ReadInt32();
             MaxSupply = reader.ReadBigInteger();
+            Script = reader.ReadByteArray();
         }
     }
 }

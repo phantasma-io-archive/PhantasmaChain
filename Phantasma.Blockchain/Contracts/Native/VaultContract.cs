@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, Runtime.Chain.Address, amount), "transfer failed");
 
             List<VaultEntry> list;
 
@@ -88,7 +88,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 _entries.Remove(from);
             }
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, from, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, Runtime.Chain.Address, from, amount), "transfer failed");
         }
     }
 }

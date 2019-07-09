@@ -441,7 +441,7 @@ namespace Phantasma.API
             var result = new AccountResult();
             var address = Address.FromText(addressText);
             result.address = address.Text;
-            result.name = Nexus.LookUpAddress(address);
+            result.name = Nexus.LookUpAddressName(address);
 
             var balanceList = new List<BalanceResult>();
             foreach (var symbol in Nexus.Tokens)
@@ -484,7 +484,7 @@ namespace Phantasma.API
         [APIFailCase("address is invalid", "ABCD123")]
         public IAPIResult LookUpName([APIParameter("Name of account", "blabla")] string name)
         {
-            if (!AccountContract.ValidateAddressName(name))
+            if (!AccountContract.ValidateName(name))
             {
                 return new ErrorResult { error = "invalid name" };
             }

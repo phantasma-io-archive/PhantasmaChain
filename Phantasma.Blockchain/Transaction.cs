@@ -90,12 +90,6 @@ namespace Phantasma.Blockchain
 
             var cost = runtime.UsedGas;
 
-            // fee distribution TODO
-            //            if (chain.NativeTokenAddress != null && cost > 0)
-            {
-                //chain.TransferToken(this.PublicKey, chain.DistributionPubKey, cost);
-            }
-
             foreach (var evt in runtime.Events)
             {
                 onNotify(this.Hash, evt);

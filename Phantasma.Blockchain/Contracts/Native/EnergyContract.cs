@@ -143,7 +143,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = Runtime.Nexus.GetTokenInfo(symbol);
 
             var totalAmount = MasterClaimGlobalAmount;
-            Runtime.Expect(Runtime.Nexus.MintTokens(token.Symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, totalAmount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, token.Symbol, Runtime.Chain.Address, totalAmount), "mint failed");
 
             var listSize = _mastersList.Count();
 
@@ -165,7 +165,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     transferAmount += leftovers;
                 }
 
-                Runtime.Expect(Runtime.Nexus.TransferTokens(token.Symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, targetMaster.address, transferAmount), "transfer failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, token.Symbol, Runtime.Chain.Address, targetMaster.address, transferAmount), "transfer failed");
 
                 totalAmount -= transferAmount;
 
@@ -414,13 +414,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, proxy.address, proxyAmount), "proxy fuel minting failed");
+                    Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Nexus.FuelTokenSymbol, proxy.address, proxyAmount), "proxy fuel minting failed");
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.Expect(Runtime.Nexus.MintTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, stakeAddress, availableAmount), "fuel minting failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Nexus.FuelTokenSymbol, stakeAddress, availableAmount), "fuel minting failed");
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);

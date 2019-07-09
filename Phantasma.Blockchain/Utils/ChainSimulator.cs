@@ -187,7 +187,7 @@ namespace Phantasma.Blockchain.Utils
             var readyNames = new List<Address>();
             foreach (var address in pendingNames)
             {
-                var currentName = Nexus.LookUpAddress(address);
+                var currentName = Nexus.LookUpAddressName(address);
                 if (currentName != AccountContract.ANONYMOUS)
                 {
                     readyNames.Add(address);
@@ -359,10 +359,12 @@ namespace Phantasma.Blockchain.Utils
         {
             var chain = Nexus.RootChain;
 
+            var tokenScript = new byte[0];
+
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("nexus", "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags).
+                CallContract("nexus", "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -463,8 +465,9 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
+            var accountScript = new byte[0];
             var sourceChain = this.Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("account", "Register", source.Address, name).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("account", "Register", source.Address, name, accountScript).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);
@@ -745,7 +748,7 @@ namespace Phantasma.Blockchain.Utils
                                         break;
                                 }
 
-                                var currentName = Nexus.LookUpAddress(source.Address);
+                                var currentName = Nexus.LookUpAddressName(source.Address);
                                 if (currentName == AccountContract.ANONYMOUS)
                                 {
                                     var lookup = Nexus.LookUpName(randomName);

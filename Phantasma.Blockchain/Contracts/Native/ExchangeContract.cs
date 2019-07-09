@@ -150,7 +150,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balance = balances.Get(this.Storage, from);
             Runtime.Expect(balance >= orderEscrowAmount, "not enough balance");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(orderEscrowSymbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, orderEscrowAmount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, orderEscrowSymbol, from, Runtime.Chain.Address, orderEscrowAmount), "transfer failed");
             //------------
 
             var order = new ExchangeOrder(uid, Runtime.Time, from, orderSize, baseSymbol, price, quoteSymbol, side);
@@ -303,8 +303,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(takerEscrowUsage <= takerAvailableEscrow, "Tried to escrow more than available");
                     Runtime.Expect(makerEscrowUsage <= makerEscrow, "Tried to escrow more than available");
 
-                    Runtime.Nexus.TransferTokens(takerEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, makerOrder.Creator, takerEscrowUsage);
-                    Runtime.Nexus.TransferTokens(makerEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, takerOrder.Creator, makerEscrowUsage);
+                    Runtime.Nexus.TransferTokens(Runtime, takerEscrowSymbol, this.Runtime.Chain.Address, makerOrder.Creator, takerEscrowUsage);
+                    Runtime.Nexus.TransferTokens(Runtime, makerEscrowSymbol, this.Runtime.Chain.Address, takerOrder.Creator, makerEscrowUsage);
 
                     Runtime.Notify(EventKind.TokenReceive, makerOrder.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = takerEscrowSymbol, value = takerEscrowUsage });
                     Runtime.Notify(EventKind.TokenReceive, takerOrder.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = makerEscrowSymbol, value = makerEscrowUsage });
@@ -344,7 +344,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (leftoverEscrow > 0)
                 {
-                    Runtime.Nexus.TransferTokens(orderEscrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
+                    Runtime.Nexus.TransferTokens(Runtime, orderEscrowSymbol, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
                     Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = orderEscrowSymbol, value = leftoverEscrow });
                     Runtime.Notify(EventKind.OrderCancelled, order.Creator, order.Uid);
                 }
@@ -383,7 +383,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         if (leftoverEscrow > 0)
                         {
                             var escrowSymbol = order.Side == ExchangeOrderSide.Sell ? order.QuoteSymbol : order.BaseSymbol;
-                            Runtime.Nexus.TransferTokens(escrowSymbol, this.Storage, this.Runtime.Chain, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
+                            Runtime.Nexus.TransferTokens(Runtime, escrowSymbol, this.Runtime.Chain.Address, order.Creator, leftoverEscrow);
                             Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = escrowSymbol, value = leftoverEscrow });
                         }
                     }
@@ -526,8 +526,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var quoteBalance = quoteBalances.Get(this.Storage, buyer);
             Runtime.Expect(quoteBalance >= price, "invalid balance");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, Runtime.Chain, buyer, seller, price), "payment failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(baseSymbol, this.Storage, Runtime.Chain, seller, buyer, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, quoteSymbol, buyer, seller, price), "payment failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, baseSymbol, seller, buyer, amount), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = amount });
             Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });
@@ -570,8 +570,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var balance = balances.Get(this.Storage, buyer);
             Runtime.Expect(balance >= price, "invalid balance");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(quoteSymbol, this.Storage, Runtime.Chain, buyer, owner, price), "payment failed");
-            Runtime.Expect(Runtime.Nexus.TransferToken(baseSymbol, this.Storage, Runtime.Chain, owner, buyer, tokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, quoteSymbol, buyer, owner, price), "payment failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseSymbol, owner, buyer, tokenID), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = baseSymbol, value = tokenID });
             Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = quoteSymbol, value = price });

@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var owner = ownerships.GetOwner(this.Storage, tokenID);
             Runtime.Expect(owner == from, "invalid owner");
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(baseToken.Symbol, this.Storage, Runtime.Chain, from, Runtime.Chain.Address, tokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, from, Runtime.Chain.Address, tokenID), "transfer failed");
 
             var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
@@ -106,10 +106,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var balance = balances.Get(this.Storage, from);
                 Runtime.Expect(balance >= auction.Price, "not enough balance");
 
-                Runtime.Expect(Runtime.Nexus.TransferTokens(quoteToken.Symbol, this.Storage, Runtime.Chain, from, auction.Creator, auction.Price), "payment failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, quoteToken.Symbol, from, auction.Creator, auction.Price), "payment failed");
             }
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(baseToken.Symbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
 
             _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);

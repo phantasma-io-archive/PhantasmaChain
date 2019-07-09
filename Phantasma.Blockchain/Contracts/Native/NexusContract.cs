@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags)
+        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags, byte[] script)
         {
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
             Runtime.Expect(!string.IsNullOrEmpty(name), "token name required");
@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             symbol = symbol.ToUpperInvariant();
 
-            Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags), "token creation failed");
+            Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags, script), "token creation failed");
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
 

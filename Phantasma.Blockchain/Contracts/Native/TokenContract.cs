@@ -5,11 +5,23 @@ using Phantasma.Numerics;
 using System.Linq;
 using Phantasma.Storage.Context;
 
+/*
+ * Token script triggers
+ * OnMint(address, amount)
+ * OnBurn(address, amount)
+ * OnSend(address, amount)
+ * OnReceive(address, amount)
+*/
 namespace Phantasma.Blockchain.Contracts.Native
 {
     public class TokenContract : SmartContract
     {
         public override string Name => "token";
+
+        public static readonly string TriggerMint = "OnMint";
+        public static readonly string TriggerBurn = "OnBurn";
+        public static readonly string TriggerSend = "OnSend";
+        public static readonly string TriggerReceive = "OnReceive";
 
         #region FUNGIBLE TOKENS
         public void SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount)
@@ -39,7 +51,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Expect(Runtime.Nexus.BurnTokens(symbol, this.Storage, this.Runtime.Chain, from, amount), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChainAddress });
@@ -55,7 +67,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
 
-            Runtime.Expect(Runtime.Nexus.MintTokens(symbol, this.Storage, Runtime.Chain, to, amount), "minting failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, to, amount), "minting failed");
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
         }
@@ -70,7 +82,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(tokenInfo.IsBurnable, "token must be burnable");
 
-            Runtime.Expect(this.Runtime.Nexus.BurnTokens(symbol, this.Storage, Runtime.Chain, from, amount), "burning failed");
+            Runtime.Expect(this.Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount), "burning failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount });
         }
@@ -86,7 +98,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(symbol, this.Storage, Runtime.Chain, source, destination, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
@@ -130,12 +142,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram, value);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
-            Runtime.Expect(Runtime.Nexus.MintToken(symbol, this.Storage, Runtime.Chain, to, tokenID), "minting failed");
+            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, symbol, to, tokenID), "minting failed");
 
             if (tokenInfo.IsBurnable)
             {
                 Runtime.Expect(value > 0, "token must have value");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, tokenInfo.Owner, Runtime.Chain.Address, tokenID), "minting escrow failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, tokenInfo.Owner, Runtime.Chain.Address, tokenID), "minting escrow failed");
                 Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = value, chainAddress = Runtime.Chain.Address });
             }
             else
@@ -158,11 +170,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var nft = Runtime.Nexus.GetNFT(symbol, tokenID);
 
-            Runtime.Expect(Runtime.Nexus.BurnToken(symbol, this.Storage, from, tokenID), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, symbol, from, tokenID), "burn failed");
 
             Runtime.Expect(this.Runtime.Nexus.DestroyNFT(symbol, tokenID), "destroy token failed");
 
-            Runtime.Expect(this.Runtime.Nexus.TransferTokens(Nexus.FuelTokenSymbol, this.Storage, Runtime.Chain, Runtime.Chain.Address, from, nft.Value), "energy claim failed");
+            Runtime.Expect(this.Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, from, nft.Value), "energy claim failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { symbol = Nexus.FuelTokenName, value = nft.Value, chainAddress = Runtime.Chain.Address });
@@ -178,7 +190,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(!tokenInfo.IsFungible, "token must be non-fungible");
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(symbol, this.Storage, Runtime.Chain, source, destination, tokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, symbol, source, destination, tokenID), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = tokenID, symbol = symbol });
@@ -212,7 +224,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(symbol, this.Storage, Runtime.Chain, from, targetChainAddress, tokenID), "take token failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, symbol, from, targetChainAddress, tokenID), "take token failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = targetChainAddress });
@@ -261,11 +273,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
-                Runtime.Expect(Runtime.Nexus.MintTokens(symbol, this.Storage, Runtime.Chain, targetAddress, value), "mint failed");
+                Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, targetAddress, value), "mint failed");
             }
             else
             {
-                Runtime.Expect(Runtime.Nexus.MintToken(symbol, this.Storage, Runtime.Chain, targetAddress, value), "mint failed");
+                Runtime.Expect(Runtime.Nexus.MintToken(Runtime, symbol, targetAddress, value), "mint failed");
             }
 
             Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = sourceChain.Address });

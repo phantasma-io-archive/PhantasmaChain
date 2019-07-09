@@ -251,7 +251,7 @@ namespace Phantasma.Tests
             Assert.IsFalse(registerName(testUser, targetName + "!"));
             Assert.IsTrue(registerName(testUser, targetName));
 
-            var currentName = nexus.LookUpAddress(testUser.Address);
+            var currentName = nexus.LookUpAddressName(testUser.Address);
             Assert.IsTrue(currentName == targetName);
 
             var someAddress = nexus.LookUpName(targetName);

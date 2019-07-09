@@ -290,5 +290,54 @@ namespace Phantasma.Blockchain.Contracts
             return parent.Address == this.Runtime.Chain.Address;
         }
         #endregion
+
+        #region TRIGGERS
+        public static bool InvokeTrigger(RuntimeVM runtimeVM, byte[] script, string triggerName, params object[] args)
+        {
+            if (script == null || script.Length == 0)
+            {
+                return true;
+            }
+
+            var runtime = new RuntimeVM(script, runtimeVM.Chain, runtimeVM.Block, runtimeVM.Transaction, runtimeVM.ChangeSet, false);
+            runtime.ThrowOnFault = true;
+            runtime.OracleReader = runtimeVM.OracleReader;
+
+            runtime.Stack.Push(VMObject.FromObject(triggerName));
+            for (int i=args.Length - 1; i>=0; i--)
+            {
+                var obj = VMObject.FromObject(args[i]);
+                runtime.Stack.Push(obj);
+            }
+
+            var state = runtime.Execute();
+
+            if (state == ExecutionState.Halt)
+            {
+                if (runtime.Stack.Count != 1)
+                {
+                    return false;
+                }
+
+                var result = runtime.Stack.Pop();
+
+                // propagate events to the other runtime
+                foreach (var evt in runtime.Events)
+                {
+                    runtimeVM.Notify(evt.Kind, evt.Address, evt.Data);
+                }
+
+                // propagate gas consumption
+                // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
+                runtimeVM.ConsumeGas(runtime.UsedGas);
+
+                return result.AsBool();
+            }
+            else
+            {
+                return false;
+            }
+        }
+        #endregion
     }
 }

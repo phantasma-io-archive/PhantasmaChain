@@ -316,7 +316,7 @@ namespace Phantasma.Blockchain
         #region NAME SERVICE
         public Address LookUpName(string name)
         { 
-            if (!AccountContract.ValidateAddressName(name))
+            if (!AccountContract.ValidateName(name))
             {
                 return Address.Null;
             }
@@ -325,10 +325,16 @@ namespace Phantasma.Blockchain
             return (Address)chain.InvokeContract("account", "LookUpName", name);
         }
 
-        public string LookUpAddress(Address address)
+        public string LookUpAddressName(Address address)
         {
             var chain = RootChain;
             return (string)chain.InvokeContract("account", "LookUpAddress", address);
+        }
+
+        public byte[] LookUpAddressScript(Address address)
+        {
+            var chain = RootChain;
+            return (byte[])chain.InvokeContract("account", "LookUpScript", address);
         }
         #endregion
 
@@ -602,7 +608,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal bool CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags)
+        internal bool CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -633,7 +639,7 @@ namespace Phantasma.Blockchain
                 Throw.If(decimals > 0, "indivisible token can't have decimals");
             }
 
-            var tokenInfo = new TokenInfo(owner, symbol, name, maxSupply, decimals, flags);
+            var tokenInfo = new TokenInfo(owner, symbol, name, maxSupply, decimals, flags, script);
             EditToken(symbol, tokenInfo);
 
             // add to persistent list of tokens
@@ -685,7 +691,7 @@ namespace Phantasma.Blockchain
             return supplies.GetTotal(storage);
         }
 
-        internal bool MintTokens(string symbol, StorageContext storage, Chain chain, Address target, BigInteger amount)
+        internal bool MintTokens(RuntimeVM runtimeVM, string symbol, Address target, BigInteger amount)
         {
             if (!TokenExists(symbol))
             {
@@ -704,14 +710,27 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var supply = new SupplySheet(symbol, chain, this);
-            if (!supply.Mint(storage, amount, tokenInfo.MaxSupply))
+            var supply = new SupplySheet(symbol, runtimeVM.Chain, this);
+            if (!supply.Mint(runtimeVM.ChangeSet, amount, tokenInfo.MaxSupply))
             {
                 return false;
             }
 
             var balances = new BalanceSheet(symbol);
-            if (!balances.Add(storage, target, amount))
+            if (!balances.Add(runtimeVM.ChangeSet, target, amount))
+            {
+                return false;
+            }
+
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, target, amount);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            var accountScript = this.LookUpAddressScript(target);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerMint, target, amount);
+            if (!accountTriggerResult)
             {
                 return false;
             }
@@ -720,7 +739,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal bool MintToken(string symbol, StorageContext storage, Chain chain, Address target, BigInteger tokenID)
+        internal bool MintToken(RuntimeVM runtimeVM, string symbol, Address target, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -734,23 +753,36 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var supply = new SupplySheet(symbol, chain, this);
-            if (!supply.Mint(storage, 1, tokenInfo.MaxSupply))
+            var supply = new SupplySheet(symbol, runtimeVM.Chain, this);
+            if (!supply.Mint(runtimeVM.ChangeSet, 1, tokenInfo.MaxSupply))
             {
                 return false;
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Give(storage, target, tokenID))
+            if (!ownerships.Give(runtimeVM.ChangeSet, target, tokenID))
             {
                 return false;
             }
 
-            EditNFTLocation(symbol, tokenID, chain.Address, target);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, target, tokenID);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            var accountScript = this.LookUpAddressScript(target);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerMint, target, tokenID);
+            if (!accountTriggerResult)
+            {
+                return false;
+            }
+
+            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Address, target);
             return true;
         }
 
-        internal bool BurnTokens(string symbol, StorageContext storage, Chain chain, Address target, BigInteger amount)
+        internal bool BurnTokens(RuntimeVM runtimeVM, string symbol, Address target, BigInteger amount)
         {
             if (!TokenExists(symbol))
             {
@@ -769,15 +801,28 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var supply = new SupplySheet(symbol, chain, this);
+            var supply = new SupplySheet(symbol, runtimeVM.Chain, this);
 
-            if (tokenInfo.IsCapped && !supply.Burn(storage, amount))
+            if (tokenInfo.IsCapped && !supply.Burn(runtimeVM.ChangeSet, amount))
             {
                 return false;
             }
 
             var balances = new BalanceSheet(symbol);
-            if (!balances.Subtract(storage, target, amount))
+            if (!balances.Subtract(runtimeVM.ChangeSet, target, amount))
+            {
+                return false;
+            }
+
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, target, amount);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            var accountScript = this.LookUpAddressScript(target);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerBurn, target, amount);
+            if (!accountTriggerResult)
             {
                 return false;
             }
@@ -786,7 +831,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal bool BurnToken(string symbol, StorageContext storage, Address target, BigInteger tokenID)
+        internal bool BurnToken(RuntimeVM runtimeVM, string symbol, Address target, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -803,21 +848,33 @@ namespace Phantasma.Blockchain
             var chain = RootChain;
             var supply = new SupplySheet(symbol, chain, this);
 
-            if (!supply.Burn(storage, 1))
+            if (!supply.Burn(runtimeVM.ChangeSet, 1))
             {
                 return false;
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Take(storage, target, tokenID))
+            if (!ownerships.Take(runtimeVM.ChangeSet, target, tokenID))
             {
                 return false;
             }
 
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, target, tokenID);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            var accountScript = this.LookUpAddressScript(target);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerBurn, target, tokenID);
+            if (!accountTriggerResult)
+            {
+                return false;
+            }
             return true;
         }
 
-        internal bool TransferTokens(string symbol, StorageContext storage, Chain chain, Address source, Address destination, BigInteger amount)
+        internal bool TransferTokens(RuntimeVM runtimeVM, string symbol, Address source, Address destination, BigInteger amount)
         {
             if (!TokenExists(symbol))
             {
@@ -842,12 +899,38 @@ namespace Phantasma.Blockchain
             }
 
             var balances = new BalanceSheet(symbol);
-            if (!balances.Subtract(storage, source, amount))
+            if (!balances.Subtract(runtimeVM.ChangeSet, source, amount))
             {
                 return false;
             }
 
-            if (!balances.Add(storage, destination, amount))
+            if (!balances.Add(runtimeVM.ChangeSet, destination, amount))
+            {
+                return false;
+            }
+
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, source, amount);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, destination, amount);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            var accountScript = this.LookUpAddressScript(source);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, source, amount);
+            if (!accountTriggerResult)
+            {
+                return false;
+            }
+
+            accountScript = this.LookUpAddressScript(destination);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, destination, amount);
+            if (!accountTriggerResult)
             {
                 return false;
             }
@@ -855,7 +938,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool TransferToken(string symbol, StorageContext storage, Chain chain, Address source, Address destination, BigInteger tokenID)
+        internal bool TransferToken(RuntimeVM runtimeVM, string symbol, Address source, Address destination, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -880,17 +963,43 @@ namespace Phantasma.Blockchain
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Take(storage, source, tokenID))
+            if (!ownerships.Take(runtimeVM.ChangeSet, source, tokenID))
             {
                 return false;
             }
 
-            if (!ownerships.Give(storage, destination, tokenID))
+            if (!ownerships.Give(runtimeVM.ChangeSet, destination, tokenID))
             {
                 return false;
             }
 
-            EditNFTLocation(symbol, tokenID, chain.Address, destination);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, source, tokenID);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, destination, tokenID);
+            if (!tokenTriggerResult)
+            {
+                return false;
+            }
+
+            var accountScript = this.LookUpAddressScript(source);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, source, tokenID);
+            if (!accountTriggerResult)
+            {
+                return false;
+            }
+
+            accountScript = this.LookUpAddressScript(destination);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, destination, tokenID);
+            if (!accountTriggerResult)
+            {
+                return false;
+            }
+
+            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Address, destination);
             return true;
         }
 
@@ -1137,14 +1246,15 @@ namespace Phantasma.Blockchain
 
             var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "storage", "apps"});
 
-            CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External);
-            CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel);
-            CreateToken(owner.Address, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable);
+            var tokenScript = new byte[0];
+            CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
+            CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
+            CreateToken(owner.Address, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, tokenScript);
 
-            CreateToken(owner.Address, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
-            CreateToken(owner.Address, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External);
-            CreateToken(owner.Address, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
-            CreateToken(owner.Address, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
+            CreateToken(owner.Address, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, tokenScript);
+            CreateToken(owner.Address, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External, tokenScript);
+            CreateToken(owner.Address, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External, tokenScript);
+            CreateToken(owner.Address, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, tokenScript);
 
             // create genesis transactions
             var transactions = new List<Transaction>

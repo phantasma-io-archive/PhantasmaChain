@@ -4,15 +4,28 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    /*
+     * Account script triggers
+     * OnMint(symbol, amount)
+     * OnBurn(symbol, amount)
+     * OnSend(symbol, amount)
+     * OnReceive(symbol, amount)
+    */
     public sealed class AccountContract : SmartContract
     {
         public override string Name => "account";
+
+        public static readonly string TriggerMint = "OnMint";
+        public static readonly string TriggerBurn = "OnBurn";
+        public static readonly string TriggerSend = "OnSend";
+        public static readonly string TriggerReceive = "OnReceive";
 
         public static readonly string ANONYMOUS = "anonymous";
         public static readonly string GENESIS = "genesis";
 
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 
+        internal StorageMap _scriptMap; //<Address, byte[]> 
 
         public static readonly BigInteger RegistrationCost = UnitConversion.ToBigInteger(0.1m, Nexus.FuelTokenDecimals);
 
@@ -20,17 +33,20 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void Register(Address target, string name)
+        public void Register(Address target, string name, byte[] script)
         {
             Runtime.Expect(target != Address.Null, "address must not be null");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(IsWitness(target), "invalid witness");
-            Runtime.Expect(ValidateAddressName(name), "invalid name");
+            Runtime.Expect(ValidateName(name), "invalid name");
+
+            Runtime.Expect(script.Length < 1024, "invalid script length");
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used");
 
             _addressMap.Set(target, name);
+            _scriptMap.Set(target, script);
             _nameMap.Set(name, target);
 
             Runtime.Notify(EventKind.AddressRegister, target, name);
@@ -49,6 +65,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return ANONYMOUS;
+        }
+
+        public byte[] LookUpScript(Address target)
+        {
+            if (_scriptMap.ContainsKey(target))
+            {
+                return _scriptMap.Get<Address, byte[]>(target);
+            }
+
+            return new byte[0];
         }
 
         public Address LookUpName(string name)
@@ -71,7 +97,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return Address.Null;
         }
 
-        public static bool ValidateAddressName(string name)
+        public static bool ValidateName(string name)
         {
             if (name == null)
             {

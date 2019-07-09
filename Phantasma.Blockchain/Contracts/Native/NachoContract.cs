@@ -2230,7 +2230,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var tokenSymbol = Nexus.StakingTokenSymbol;
-            return Runtime.Nexus.TransferTokens(tokenSymbol, this.Storage, Runtime.Chain, address, DevelopersAddress, amount);
+            return Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)

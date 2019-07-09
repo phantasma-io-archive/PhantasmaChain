@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     var source = Address.Null;
 
-                    Runtime.Expect(Runtime.Nexus.MintTokens(transfer.symbol, this.Storage, Runtime.Chain, destination, transfer.value), "mint failed");
+                    Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = transfer.value, symbol = transfer.symbol});
                 }
             }
@@ -81,7 +81,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var source = Address.Null;
 
-            Runtime.Expect(Runtime.Nexus.BurnTokens(symbol, this.Storage, Runtime.Chain, destination, amount), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, destination, amount), "burn failed");
 
             Runtime.Notify(EventKind.TokenSend, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
         }
