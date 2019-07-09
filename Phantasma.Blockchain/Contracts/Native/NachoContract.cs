@@ -3259,7 +3259,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 wrestler.stakeAmount = 0;
             }
 
-            if (wrestler.itemID != 0)
+            //if (wrestler.itemID != 0)
+            if (wrestler.itemID > 0)
             {
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
                 var itemKind = GetItem(wrestler.itemID).kind;
