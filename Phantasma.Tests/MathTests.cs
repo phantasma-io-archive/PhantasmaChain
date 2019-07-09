@@ -42,6 +42,44 @@ namespace Phantasma.Tests
         #endregion
 
         #region BIG INT
+
+        [TestMethod]
+        public void BigIntZeroComparison()
+        {
+            BigInteger a = 0;
+            Assert.IsTrue((a != 0) == false);
+            Assert.IsTrue(a == 0);
+            Assert.IsTrue((a > 0) == false);
+            Assert.IsTrue((a < 0) == false);
+        }
+
+
+        struct BigIntStruct
+        {
+            public BigInteger a;
+        }
+        [TestMethod]
+        public void BigIntStructComparisonExplicitInit()
+        {
+            BigIntStruct s = new BigIntStruct() {a = 0};
+
+            Assert.IsTrue((s.a != 0) == false);
+            Assert.IsTrue(s.a == 0);
+            Assert.IsTrue((s.a > 0) == false);
+            Assert.IsTrue((s.a < 0) == false);
+        }
+
+        [TestMethod]
+        public void BigIntStructComparisonImplicitInit()
+        {
+            BigIntStruct s = new BigIntStruct();
+
+            Assert.IsTrue((s.a != 0) == false);
+            Assert.IsTrue(s.a == 0);
+            Assert.IsTrue((s.a > 0) == false);
+            Assert.IsTrue((s.a < 0) == false);
+        }
+
         [TestMethod]
         public void BigIntAdd()
         {

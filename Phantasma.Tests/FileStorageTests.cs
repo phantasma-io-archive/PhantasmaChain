@@ -415,10 +415,98 @@ namespace Phantasma.Tests
             Assert.IsTrue(usedSpace == oldSpace);
         }
 
+        //upload a duplicate of an already uploaded file but by a different owner
+        [TestMethod]
+        public void UploadDuplicateFileDifferentOwner()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUserA = KeyPair.Generate();
+            var testUserB = KeyPair.Generate();
+
+            var accountBalance = BaseEnergyRatioDivisor * 100;
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, accountBalance);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, accountBalance);
+            simulator.EndBlock();
+
+            //-----------
+            //Perform a valid Stake call for userA
+            var stakeAmount = BaseEnergyRatioDivisor * 2;
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserA.Address, stakeAmount).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUserA.Address);
+            Assert.IsTrue(stakedAmount == stakeAmount);
+
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
+            Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            //----------
+            //Perform a valid Stake call for userB
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserA.Address, stakeAmount).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUserA.Address);
+            Assert.IsTrue(stakedAmount == stakeAmount);
+
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
+            Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            //-----------
+            //User A uploads a file: should succeed
+            var filename = "notAVirus.exe";
+            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
+            var content = new byte[contentSize];
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, content, ArchiveFlags.None).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUserA.Address);
+
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
+
+            //----------
+            //User B uploads the same file: should succeed
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, content, ArchiveFlags.None).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
+        }
         #endregion
 
         #region FailureTests
 
+        //try unstaking below required space for currently uploaded files
         [TestMethod]
         public void UnstakeWithStoredFilesFailure()
         {
@@ -455,7 +543,7 @@ namespace Phantasma.Tests
             var filename = "notAVirus.exe";
 
             var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
-            var contentSize = (long)(BaseEnergyRatioDivisor * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
             simulator.BeginBlock();
@@ -495,8 +583,9 @@ namespace Phantasma.Tests
             usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
         }
 
+        //try to upload a single file beyond available space
         [TestMethod]
-        public void UploadMoreThanAvailable()
+        public void UploadBeyondAvailableSpace()
         {
             var owner = KeyPair.Generate();
 
@@ -554,6 +643,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(usedSpace == 0);
         }
 
+        //try to upload multiple files that individually dont go above available space, but that cumulatively do so
         [TestMethod]
         public void CumulativeUploadMoreThanAvailable()
         {
@@ -595,7 +685,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
-            var contentSize = (long)(BaseEnergyRatioDivisor * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
             simulator.BeginBlock();
@@ -615,7 +705,7 @@ namespace Phantasma.Tests
 
             filename = "giftFromTroia.exe";
             headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
-            contentSize = (long)(BaseEnergyRatioDivisor * KilobytesPerStake * 1024) - (long)headerSize;
+            contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             content = new byte[contentSize];
 
             Assert.ThrowsException<Exception>(() =>
@@ -632,8 +722,79 @@ namespace Phantasma.Tests
             Assert.IsTrue(usedSpace == oldSpace);
         }
 
+        //upload a file with the same name as an already uploaded file
+        [TestMethod]
+        public void UploadDuplicateFilename()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+
+            var accountBalance = BaseEnergyRatioDivisor * 100;
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, accountBalance);
+            simulator.EndBlock();
+
+            //-----------
+            //Perform a valid Stake call
+            var stakeAmount = BaseEnergyRatioDivisor * 2;
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == stakeAmount);
+
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
+            Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            //-----------
+            //Upload a file: should succeed
+            var filename = "notAVirus.exe";
+            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
+            var content = new byte[contentSize];
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
+
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
+
+            var oldSpace = contentSize + headerSize;
+
+            //----------
+            //Upload a file with the same name: should fail
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            Assert.IsTrue(usedSpace == oldSpace);
+        }
+
+
         #endregion
 
-        
+
     }
 }

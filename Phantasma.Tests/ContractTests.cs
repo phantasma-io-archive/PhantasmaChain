@@ -17,6 +17,7 @@ using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts;
+using static Phantasma.Blockchain.Contracts.Native.StorageContract;
 
 namespace Phantasma.Tests
 {
@@ -1297,7 +1298,7 @@ namespace Phantasma.Tests
             var initialStake = 10;
 
             //-----------
-            //Try a partial unstake
+            //Perform stake operation
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
@@ -1308,6 +1309,8 @@ namespace Phantasma.Tests
             actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
             Assert.IsTrue(actualVotingPower == initialStake);
 
+            //-----------
+            //Perform stake operation
             var addedStake = 20;
 
             simulator.BeginBlock();
@@ -1320,15 +1323,21 @@ namespace Phantasma.Tests
             actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
             Assert.IsTrue(actualVotingPower == initialStake + addedStake);
 
+            //-----------
+            //Skip 10 days
             var firstWait = 10;
             simulator.TimeSkipDays(firstWait);
 
+            //-----------
+            //Check current voting power
             BigInteger expectedVotingPower = ((initialStake + addedStake) * (100 + firstWait));
             expectedVotingPower = expectedVotingPower / 100;
             actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
 
             Assert.IsTrue(actualVotingPower == expectedVotingPower);
 
+            //------------
+            //Perform stake operation
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
@@ -1336,9 +1345,13 @@ namespace Phantasma.Tests
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
+            //-----------
+            //Skip 5 days
             var secondWait = 5;
             simulator.TimeSkipDays(secondWait);
 
+            //-----------
+            //Check current voting power
             expectedVotingPower = ((initialStake + addedStake) * (100 + firstWait + secondWait)) + (addedStake * (100 + secondWait));
             expectedVotingPower = expectedVotingPower / 100;
             actualVotingPower = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", testUser.Address);
