@@ -18,7 +18,7 @@ namespace Phantasma.Numerics
 
         private uint[] Data
         {
-            get => _data ?? (_data = new uint[0]);
+            get => _data ?? (_data = new uint[1]);
             set => _data = value;
         }
 
@@ -307,8 +307,8 @@ namespace Phantasma.Numerics
 
         private static uint[] Add(uint[] X, uint[] Y)
         {
-            X = X ?? new uint[0];
-            Y = Y ?? new uint[0];
+            X = X ?? new uint[1];
+            Y = Y ?? new uint[1];
 
             var longest = Math.Max(X.Length, Y.Length);
             var r = new uint[longest + 1];
@@ -330,8 +330,8 @@ namespace Phantasma.Numerics
 
         private static uint[] Subtract(uint[] X, uint[] Y)
         {
-            X = X ?? new uint[0];
-            Y = Y ?? new uint[0];
+            X = X ?? new uint[1];
+            Y = Y ?? new uint[1];
 
             var longest = X.Length > Y.Length ? X.Length : Y.Length;
             var r = new uint[longest];
@@ -352,8 +352,8 @@ namespace Phantasma.Numerics
 
         private static uint[] Multiply(uint[] X, uint[] Y)
         {
-            X = X ?? new uint[0];
-            Y = Y ?? new uint[0];
+            X = X ?? new uint[1];
+            Y = Y ?? new uint[1];
 
             uint[] output = new uint[X.Length + Y.Length + 1];
 
@@ -662,7 +662,7 @@ namespace Phantasma.Numerics
             bits = bits < 0 ? -bits : bits;
 
             if (n._data == null)
-                n._data = new uint[0];
+                n._data = new uint[1];
 
             ShiftRight(ref n._data, bits);
 
@@ -722,7 +722,7 @@ namespace Phantasma.Numerics
         {
             bits = bits < 0 ? -bits : bits;
             if (n._data == null)
-                n._data = new uint[0];
+                n._data = new uint[1];
             ShiftLeft(ref n._data, bits);
             return n;
         }

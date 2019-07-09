@@ -206,7 +206,7 @@ namespace Phantasma.Blockchain.Contracts
         public static readonly uint RND_M = 2147483647;
 
         // returns a first initial pseudo random number
-        private BigInteger Randomize(byte[] init)
+        public BigInteger Randomize(byte[] init)
         {
             byte[] temp;
 

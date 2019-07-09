@@ -52,6 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
 
         public readonly static BigInteger BaseEnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
+        public static BigInteger MinimumValidStake => FuelToStake(1);
 
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
@@ -226,7 +227,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = newStake });
         }
 
-        public BigInteger Unstake(Address from, BigInteger amount)
+        public BigInteger Unstake(Address from, BigInteger unstakeAmount)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
@@ -250,16 +251,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
             var balances = new BalanceSheet(token.Symbol);
             var balance = balances.Get(this.Storage, Runtime.Chain.Address);
-            Runtime.Expect(balance >= amount, "not enough balance");
+            Runtime.Expect(balance >= unstakeAmount, "not enough balance");
 
             var availableStake = stake.totalAmount;
             availableStake -= GetStorageStake(from);
-            Runtime.Expect(availableStake >= amount, "tried to unstake more than what was staked");
+            Runtime.Expect(availableStake >= unstakeAmount, "tried to unstake more than what was staked");
 
-            Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, amount), "balance subtract failed");
-            Runtime.Expect(balances.Add(this.Storage, from, amount), "balance add failed");
+            //if this is a partial unstake
+            if(availableStake - unstakeAmount > 0)
+                Runtime.Expect(availableStake - unstakeAmount >= MinimumValidStake, "leftover stake would be below minimum staking amount" );
 
-            stake.totalAmount -= amount;
+            Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, unstakeAmount), "balance subtract failed");
+            Runtime.Expect(balances.Add(this.Storage, from, unstakeAmount), "balance add failed");
+
+            stake.totalAmount -= unstakeAmount;
 
             var unclaimedPartials = GetLastAction(from).unclaimedPartials;
 
@@ -279,7 +284,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 _stakes.Set(from, entry);
 
-                RemoveVotingPower(from, amount);
+                RemoveVotingPower(from, unstakeAmount);
             }
 
             if (stake.totalAmount < MasterAccountThreshold)
@@ -305,9 +310,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = amount });
+            Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = unstakeAmount });
 
-            return amount;
+            return unstakeAmount;
         }
 
         private void RemoveVotingPower(Address from, BigInteger amount)

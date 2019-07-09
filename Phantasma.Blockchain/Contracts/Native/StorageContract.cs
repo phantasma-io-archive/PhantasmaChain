@@ -2,6 +2,7 @@
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System;
+using System.Runtime.InteropServices;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -32,16 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             int requiredSize = contentSize + Hash.Length + name.Length;
 
-            var list = _storageMap.Get<Address, StorageList>(from);
-            int usedSize = 0;
-            var count = list.Count();
-            for (int i=0; i<count; i++)
-            {
-                var entry = list.Get<StorageEntry>(i);
-                var archive = Runtime.Nexus.FindArchive(entry.hash);
-                Runtime.Expect(archive != null, "missing archive");
-                usedSize += archive.Size;
-            }
+            var usedSize = GetUsedSpace(from);
 
             var temp = Runtime.CallContext("energy", "GetStake", from);
             var totalStaked = (BigInteger)temp;
@@ -60,6 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 hash = hashes.Root,
             };
 
+            var list = _storageMap.Get<Address, StorageList>(from);
             list.Add<StorageEntry>(newEntry);
 
             Runtime.Notify(EventKind.FileCreate, from, name);
@@ -99,12 +92,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var list = _storageMap.Get<Address, StorageList>(from);
-            int usedSize = 0;
-            var count = list.Count();
+            var list = GetFiles(from);
+            BigInteger usedSize = 0;
+            var count = list.Length;
             for (int i = 0; i < count; i++)
             {
-                var entry = list.Get<StorageEntry>(i);
+                var entry = list[i];
                 var archive = Runtime.Nexus.FindArchive(entry.hash);
                 Runtime.Expect(archive != null, "missing archive");
                 usedSize += archive.Size;
@@ -121,5 +114,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = _storageMap.Get<Address, StorageList>(from);
             return list.All<StorageEntry>();
         }
+
+        public BigInteger CalculateRequiredSize(string name, int contentSize) => contentSize + Hash.Length + name.Length;
     }
 }

@@ -831,17 +831,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             return root;*/
         }
 
-        public static ItemKind GetItemKind(BigInteger itemID)
-        {
-            if (itemID <= 0)
-            {
-                return ItemKind.None;
-            }
+        //public static ItemKind GetItemKind(BigInteger itemID)
+        //{
+        //    if (itemID <= 0)
+        //    {
+        //        return ItemKind.None;
+        //    }
 
-            var bytes = CryptoExtensions.Sha256(itemID.ToByteArray());
-            var num = 1 + bytes[0] + bytes[1] * 256;
-            return (ItemKind)num;
-        }
+        //    var bytes = CryptoExtensions.Sha256(itemID.ToByteArray());
+        //    var num = 1 + bytes[0] + bytes[1] * 256;
+        //    return (ItemKind)num;
+        //}
 
         public static int GetAvatarID(BigInteger itemID)
         {
@@ -1033,7 +1033,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static int MAX_PRATICE_LEVEL = 8;
 
-        public const uint BASE_LUCHADOR_ID = 100;
+        public const uint BASE_LUCHADOR_ID = 1; // Bot Ids = [-1, -99]
         public const uint LUCHADOR_GENERATION_SIZE = 1000;
 
         public const int MINIMUM_SOUL_TRANSFER_AMOUNT = 1;
@@ -1921,7 +1921,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public AccountFlags flags;
         public BigInteger[] counters;
         public string comment;
-        public Address referal;
+        public Address referral;
         public Timestamp lastTime;
         public TrophyFlag trophies;
         public BigInteger ELO;
@@ -1972,6 +1972,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public Address owner;
         public BigInteger wrestlerID;
+        public ItemKind kind;
         public ItemLocation location;
         public ItemFlags flags;
     }
@@ -2074,7 +2075,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string ACCOUNT_WRESTLERS = "team";
         public static readonly string ACCOUNT_ITEMS = "items";
         public static readonly string ACCOUNT_HISTORY = "history";
-        public static readonly string ACCOUNT_CHALLENGES = "versus";
+        //public static readonly string ACCOUNT_CHALLENGES = "versus"; //todo check
 
         public static readonly string ACTIVE_AUCTIONS_LIST = "active";
         public static readonly string GLOBAL_AUCTIONS_LIST = "auctions";
@@ -2083,7 +2084,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         //  public static readonly string GLOBAL_TOURNEY_LIST = "tourneys";
         //public static readonly string GLOBAL_WRESTLERS_LIST = "wrestlers";
         public static readonly string GLOBAL_ITEM_LIST = "objs";
-        public static readonly string GLOBAL_MATCHMAKER_LIST = "matcher";
+        //public static readonly string GLOBAL_MATCHMAKER_LIST = "matcher";
 
         public static readonly string QUEUE_MAP = "queues";
         public static readonly string NAME_MAP = "names";
@@ -2104,6 +2105,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Action<string> systemEvent = null;
         public Action<Address, string> singleEvent = null;
         public Action<Address, Address, string> pairEvent = null;
+
+        internal StorageList _globalMatchmakerList;
+
+        internal StorageMap _playerVersusChallengesList;
+        internal StorageMap _globalBattlesList;
+        //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
         public Address DevelopersAddress => Runtime.Nexus.GenesisAddress;
@@ -2242,7 +2249,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account = _accounts.Get<Address, NachoAccount>(address);
                 account.unused = "";
 
-                /* TODO LATER
                 if (account.battleID != 0)
                 {
                     var battle = GetBattle(account.battleID);
@@ -2250,17 +2256,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         account.battleID = 0;
                     }
-                }*/
+                }
 
-                //if (account.ELO == 0)
-                //{
-                //    account.ELO = Constants.DEFAULT_ELO;
-                //}
+                if (account.ELO == 0)
+                {
+                    account.ELO = Constants.DEFAULT_ELO;
+                }
 
-                //if (account.queueBet == 0)
-                //{
-                //    account.queueBet = 0;
-                //}
+                if (account.queueBet == 0)
+                {
+                    account.queueBet = 0;
+                }
             }
             else
             {
@@ -2275,7 +2281,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     flags = AccountFlags.None,
                     counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX],
                     comment = "",
-                    referal = Address.Null,
+                    referral = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     //avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                 };
@@ -2291,9 +2297,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.flags |= AccountFlags.Admin;
             }
 
-            if (account.referal == Address.Null)
+            if (account.referral == Address.Null)
             {
-                account.referal = Address.Null;
+                account.referral = Address.Null;
             }
 
             if (account.creationTime == 0)
@@ -2326,14 +2332,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             return referrals.All<NachoReferral>();
         }
 
-        /* TODO LATER
     public void RegisterReferral(Address from, Address target)
     {
         Runtime.Expect(IsWitness(from), "witness failed");
 
         var fromAccount = GetAccount(from);
         Runtime.Expect(fromAccount.creationTime > 0, "invalid account");
-        Runtime.Expect(fromAccount.referal == Address.Null, "already has referal");
+        Runtime.Expect(fromAccount.referral == Address.Null, "already has referal");
 
         var targetAccount = GetAccount(target);
 
@@ -2348,7 +2353,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         var count = referrals.Count(); 
         for (int i=0; i<count; i++) // no breaks here, we need to check every referal to make sure we're not registering the same guy twice
         { 
-            referral = referals.Get<NachoReferral>(i);
+            referral = referrals.Get<NachoReferral>(i);
             Runtime.Expect(referral.address != from, "already referral");
 
             if (referral.address == Address.Null && referral.stakeAmount> 0)
@@ -2368,6 +2373,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         var rnd = new Random();
 
+        /* TODO fix 
         byte[] genes = Luchador.MineGenes(rnd, (x) =>
         {
             if (x.Rarity != Rarity.Common)
@@ -2385,8 +2391,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         wrestler.flags |= WrestlerFlags.Locked;
         SetWrestler(wrestlerID, wrestler);
 
-        Runtime.Notify(EventKind.Referal, from, target);
-    }*/
+        //Runtime.Notify(EventKind.Referal, from, target); // todo fix
+        */
+    }
 
         private int FindReferalIndex(Address from, StorageList referals)
         {
@@ -2406,12 +2413,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         private BigInteger RegisterReferalPurchase(Address from, BigInteger totalAmount, BigInteger auctionID)
         {
             var fromAccount = GetAccount(from);
-            if (fromAccount.referal == Address.Null)
+            if (fromAccount.referral == Address.Null)
             {
                 return 0;
             }
 
-            var target = fromAccount.referal;
+            var target = fromAccount.referral;
 
             var referals = _referrals.Get<Address, StorageList>(target);
             var referalIndex = FindReferalIndex(from, referals);
@@ -2522,7 +2529,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenStake, from, referralIndex);
         }
 
-        /* TODO LATER
         public void UnstakeReferral(Address from, int referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -2540,11 +2546,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (referral.stakeAmount > 0)
             {
                 var diff = Runtime.Time.Value - referral.stakeTime;
-                diff = diff / Constants.SECONDS_PER_DAY; // convert to days
+                //diff = diff / Constants.SECONDS_PER_DAY; // convert to days // TODO fix
                 Runtime.Expect(diff >= Constants.REFERRAL_MINIMUM_DAYS, "too soon");
             }
 
-            Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
+            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed"); // TODO fix
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -2553,9 +2559,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             AddTrophy(from, TrophyFlag.Referral);
 
             Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
-        }*/
+        }
 
-        /* TODO LATER
+        /*
     public void DeleteWrestler(Address from, BigInteger wrestlerID)
     {
         Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
@@ -2570,7 +2576,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         wrestler.owner = Address.Null;
 
         wrestlers.Remove(wrestlerID);
-    }*/
+    }
 
         // get how many wrestlers in an account
         //public BigInteger[] GetAccountWrestlers(Address address)
@@ -2678,7 +2684,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (item.location == ItemLocation.Wrestler)
             {
-                if (item.wrestlerID != 0)
+                if (item.wrestlerID != 0) // TODO confirmar se o operador != dos BigInteger já foi corrigido. Alternativa => ID > 0
                 {
                     var wrestler = GetWrestler(item.wrestlerID);
                     if (wrestler.itemID != ID)
@@ -2755,14 +2761,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
 
-        public void UseItem(Address from, BigInteger wrestlerID, BigInteger itemID)
+        public void UseItem(Address from, BigInteger wrestlerID, BigInteger itemID, ItemKind itemKind)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
             Runtime.Expect(from != DevelopersAddress, "no items for developers");
 
-            var kind = Formulas.GetItemKind(itemID);
-            var category = Rules.GetItemCategory(kind);
+            //var itemKind = Formulas.GetItemKind(itemID);
+            var category = Rules.GetItemCategory(itemKind);
             Runtime.Expect(category == ItemCategory.Consumable, "not consumable");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
@@ -2781,7 +2787,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-            switch (kind)
+            switch (itemKind)
             {
                 case ItemKind.Dev_Badge:
                     {
@@ -3073,42 +3079,42 @@ namespace Phantasma.Blockchain.Contracts.Native
             var botLevel = (PraticeLevel)(botID);
             switch (botLevel)
             {
-                case PraticeLevel.Wood:
+                case PraticeLevel.Wood - (int)PraticeLevel.Wood * 2: // PraticeLevel.Wood = -1
                     level = 1; botItemID = 0; genes = new byte[] { 120, 46, 40, 40, 131, 93, 80, 221, 68, 155, };
                     introText = "Beep boop... amigo, entrena conmigo!";
                     break;
 
-                case PraticeLevel.Iron:
+                case PraticeLevel.Iron - (int)PraticeLevel.Iron * 2: // PraticeLevel.Iron = -2
                     level = 4; botItemID = 0; genes = new byte[] { 222, 50, 52, 48, 131, 88, 144, 8, 51, 104, };
                     introText = "I'm made from iron and because of that, I'm stronger than my wood brother!";
                     break;
 
-                case PraticeLevel.Steel:
+                case PraticeLevel.Steel - (int)PraticeLevel.Steel * 2: // PraticeLevel.Steel = -3
                     level = 6; botItemID = 0; genes = new byte[] { 114, 50, 53, 59, 131, 123, 122, 223, 181, 184, };
                     introText = "Get ready.. because I'm faster and stronger than my iron brother!";
                     break;
 
-                case PraticeLevel.Silver:
+                case PraticeLevel.Silver - (int)PraticeLevel.Silver * 2: // PraticeLevel.Silver = -4
                     level = 8; botItemID = 0; genes = new byte[] { 72, 59, 61, 64, 131, 115, 18, 108, 11, 195, };
                     introText = "Counters are for plebs!";
                     break;
 
-                case PraticeLevel.Gold:
+                case PraticeLevel.Gold - (int)PraticeLevel.Gold * 2: // PraticeLevel.Gold = -5
                     level = 10; botItemID = 0; genes = new byte[] { 138, 66, 65, 61, 131, 51, 148, 143, 99, 55, };
                     introText = "Luchador... My congratulations for getting so far!";
                     break;
 
-                case PraticeLevel.Ruby:
+                case PraticeLevel.Ruby - (int)PraticeLevel.Ruby * 2: // PraticeLevel.Ruby = -6
                     level = 13; botItemID = 0; genes = new byte[] { 12, 65, 68, 65, 131, 110, 146, 11, 100, 111 };
                     introText = "Amigo... I'm too strong to fail!";
                     break;
 
-                case PraticeLevel.Emerald:
+                case PraticeLevel.Emerald - (int)PraticeLevel.Emerald * 2: // PraticeLevel.Emerald = -7
                     level = 16; botItemID = 329390; genes = new byte[] { 240, 76, 73, 79, 131, 68, 218, 145, 232, 20 };
                     introText = "Beep...Beep...My hobby is wasting time in asian basket weaving foruns...";
                     break;
 
-                case PraticeLevel.Diamond:
+                case PraticeLevel.Diamond - (int)PraticeLevel.Diamond * 2: // PraticeLevel.Diamond = -8
                     level = 20; botItemID = 35808; genes = new byte[] { 144, 76, 77, 76, 131, 46, 168, 202, 141, 188, };
                     introText = "Beep... boop... I am become Death, the destroyer of worlds!";
                     break;
@@ -3116,63 +3122,71 @@ namespace Phantasma.Blockchain.Contracts.Native
                 default:
                     switch (botID)
                     {
-                        case 9: level = 1; botItemID = 0; genes = new byte[] { 169, 149, 19, 125, 210, 41, 238, 87, 66, 103, }; break;
-                        case 10: level = 1; botItemID = 0; genes = new byte[] { 229, 67, 21, 113, 126, 40, 125, 193, 141, 185, }; break;
-                        case 11: level = 1; botItemID = 0; introText = "you should give me your coins if you lose..."; genes = new byte[] { 157, 46, 74, 54, 216, 55, 81, 190, 42, 81, }; break;
-                        case 12: level = 2; botItemID = 0; genes = new byte[] { 253, 187, 122, 153, 122, 254, 115, 83, 50, 56, }; break;
-                        case 13: level = 2; botItemID = 0; introText = "To hold or no?"; genes = new byte[] { 139, 255, 58, 213, 143, 24, 97, 217, 108, 210, }; break;
-                        case 14: level = 3; botItemID = 0; genes = new byte[] { 169, 249, 77, 77, 75, 64, 166, 137, 85, 165, }; break;
-                        case 15: level = 3; botItemID = 96178; genes = new byte[] { 187, 61, 210, 174, 9, 149, 2, 180, 127, 46, }; break;
-                        case 16: level = 3; botItemID = 0; introText = "I like potatoes with burgers"; genes = new byte[] { 145, 219, 94, 119, 72, 246, 162, 232, 47, 182, }; break;
-                        case 17: level = 3; botItemID = 0; genes = new byte[] { 86, 57, 97, 203, 29, 225, 123, 174, 239, 104, }; break;
-                        case 18: level = 4; botItemID = 0; genes = new byte[] { 139, 16, 224, 44, 177, 157, 131, 245, 82, 179, }; break;
-                        case 19: level = 4; botItemID = 0; introText = "Im all in neo since antshares lol"; genes = new byte[] { 31, 235, 54, 221, 2, 248, 247, 165, 216, 148, }; break;
-                        case 20: level = 4; botItemID = 0; genes = new byte[] { 68, 40, 37, 184, 149, 169, 67, 163, 104, 242, }; break;
-                        case 21: level = 5; botItemID = 0; introText = "Derp derp derp.."; genes = new byte[] { 115, 24, 16, 61, 155, 239, 232, 59, 116, 109, }; break;
-                        case 22: level = 5; botItemID = 0; genes = new byte[] { 73, 79, 227, 227, 138, 103, 98, 1, 255, 106, }; break;
-                        case 23: level = 5; botItemID = 0; genes = new byte[] { 134, 103, 6, 7, 106, 172, 149, 135, 18, 36, }; break;
-                        case 24: level = 6; botItemID = 30173; genes = new byte[] { 31, 85, 236, 135, 191, 87, 212, 70, 139, 202, }; break;
-                        case 25: level = 6; botItemID = 0; introText = "Fugg you mann"; genes = new byte[] { 79, 171, 219, 185, 190, 234, 170, 161, 223, 103, }; break;
-                        case 26: level = 6; botItemID = 0; genes = new byte[] { 32, 85, 113, 69, 127, 170, 193, 248, 233, 245, }; break;
-                        case 27: level = 7; botItemID = 84882; introText = "Self proclaimed bitcoin maximalist"; genes = new byte[] { 115, 43, 166, 208, 198, 146, 2, 130, 231, 31, }; break;
-                        case 28: level = 7; botItemID = 138905; genes = new byte[] { 169, 0, 145, 179, 144, 214, 165, 83, 22, 218, }; break;
-                        case 29: level = 7; botItemID = 0; genes = new byte[] { 67, 33, 45, 42, 168, 35, 94, 3, 34, 237, }; break;
-                        case 30: level = 7; botItemID = 32478; genes = new byte[] { 169, 172, 84, 63, 74, 69, 60, 65, 15, 20, }; break;
-                        case 31: level = 8; botItemID = 0; introText = "SOUL goes 100x if I win"; genes = new byte[] { 235, 14, 247, 227, 158, 106, 178, 5, 25, 240, }; break;
-                        case 32: level = 8; botItemID = 0; genes = new byte[] { 73, 204, 196, 177, 33, 2, 87, 242, 33, 219, }; break;
-                        case 33: level = 9; botItemID = 329390; introText = "Bantasma fan number one!!"; genes = new byte[] { 25, 188, 160, 127, 57, 106, 143, 248, 79, 84, }; break;
-                        case 34: level = 9; botItemID = 0; genes = new byte[] { 121, 215, 5, 48, 178, 2, 231, 109, 183, 226, }; break;
-                        case 35: level = 9; botItemID = 63217; genes = new byte[] { 7, 156, 157, 29, 234, 28, 226, 214, 29, 191, }; break;
-                        case 36: level = 10; botItemID = 0; introText = "How is babby formed?"; genes = new byte[] { 49, 251, 234, 105, 253, 80, 196, 238, 220, 153, }; break;
-                        case 37: level = 10; botItemID = 0; genes = new byte[] { 229, 130, 158, 161, 191, 170, 82, 147, 21, 163, }; break;
-                        case 38: level = 11; botItemID = 56842; introText = "Show bobs pls"; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
-                        case 39: level = 11; botItemID = 0; genes = new byte[] { 224, 238, 2, 27, 102, 10, 250, 125, 225, 252, }; break;
-                        case 40: level = 12; botItemID = 110988; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
-                        case 41: level = 12; botItemID = 0; genes = new byte[] { 145, 129, 73, 79, 223, 110, 69, 225, 50, 177 }; break;
-                        case 42: level = 12; botItemID = 0; genes = new byte[] { 75, 189, 32, 0, 161, 182, 202, 214, 66, 70, }; break;
-                        case 43: level = 13; botItemID = 0; introText = "Hey hey hey"; genes = new byte[] { 145, 203, 122, 65, 201, 98, 29, 100, 247, 240 }; break;
-                        case 44: level = 13; botItemID = 0; genes = new byte[] { 135, 51, 219, 37, 241, 111, 81, 148, 183, 245, }; break;
-                        case 45: level = 13; botItemID = 0; genes = new byte[] { 21, 27, 0, 194, 231, 32, 19, 240, 72, 250, }; break;
-                        case 46: level = 14; botItemID = 0; genes = new byte[] { 55, 246, 253, 29, 244, 91, 52, 229, 33, 242, }; break;
-                        case 47: level = 14; botItemID = 0; introText = "My wife still doest not believe me"; genes = new byte[] { 235, 125, 252, 144, 205, 158, 37, 109, 95, 0, }; break;
-                        case 48: level = 14; botItemID = 0; genes = new byte[] { 14, 14, 153, 133, 202, 193, 247, 77, 226, 24, }; break;
-                        case 49: level = 15; botItemID = 0; introText = "Wasasasa wasa wasa"; genes = new byte[] { 97, 186, 117, 13, 47, 141, 188, 190, 231, 98, }; break;
-                        case 50: level = 15; botItemID = 0; genes = new byte[] { 187, 85, 182, 157, 197, 58, 43, 171, 14, 148, }; break;
-                        case 51: level = 15; botItemID = 0; genes = new byte[] { 61, 214, 97, 16, 173, 52, 55, 218, 218, 23, }; break;
-                        case 52: level = 15; botItemID = 0; introText = "PM me for nachos"; genes = new byte[] { 21, 43, 3, 20, 205, 239, 157, 121, 148, 200, }; break;
-                        case 53: level = 16; botItemID = 0; genes = new byte[] { 122, 126, 4, 86, 138, 161, 173, 188, 217, 9, }; break;
-                        case 54: level = 16; botItemID = 0; genes = new byte[] { 31, 178, 25, 47, 197, 24, 91, 18, 36, 165, }; break;
-                        case 55: level = 16; botItemID = 0; introText = "Cold nachos or hot nachos?"; genes = new byte[] { 236, 166, 41, 184, 74, 99, 53, 178, 237, 145, }; break;
-                        case 56: level = 16; botItemID = 0; genes = new byte[] { 181, 62, 101, 177, 50, 199, 105, 21, 5, 215 }; break;
-                        case 57: level = 16; botItemID = 0; introText = "Just get rekt man"; genes = new byte[] { 218, 98, 58, 113, 15, 35, 6, 184, 0, 52, }; break;
-                        case 58: level = 16; botItemID = 0; genes = new byte[] { 218, 224, 182, 214, 13, 108, 167, 3, 114, 109, }; break;
-                        case 59: level = 16; botItemID = 0; genes = new byte[] { 226, 50, 168, 123, 194, 11, 117, 193, 18, 5, }; break;
-                        case 60: level = 16; botItemID = 0; genes = new byte[] { 25, 119, 165, 120, 137, 252, 108, 184, 63, 154, }; break;
-                        case 61: level = 16; botItemID = 0; genes = new byte[] { 235, 82, 164, 247, 121, 136, 242, 77, 222, 251, }; break;
-                        case 62: level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
+                        case -9: level = 1; botItemID = 0; genes = new byte[] { 169, 149, 19, 125, 210, 41, 238, 87, 66, 103, }; break;
+                        case -10: level = 1; botItemID = 0; genes = new byte[] { 229, 67, 21, 113, 126, 40, 125, 193, 141, 185, }; break;
+                        case -11: level = 1; botItemID = 0; introText = "you should give me your coins if you lose..."; genes = new byte[] { 157, 46, 74, 54, 216, 55, 81, 190, 42, 81, }; break;
+                        case -12: level = 2; botItemID = 0; genes = new byte[] { 253, 187, 122, 153, 122, 254, 115, 83, 50, 56, }; break;
+                        case -13: level = 2; botItemID = 0; introText = "To hold or no?"; genes = new byte[] { 139, 255, 58, 213, 143, 24, 97, 217, 108, 210, }; break;
+                        case -14: level = 3; botItemID = 0; genes = new byte[] { 169, 249, 77, 77, 75, 64, 166, 137, 85, 165, }; break;
+                        case -15: level = 3; botItemID = 96178; genes = new byte[] { 187, 61, 210, 174, 9, 149, 2, 180, 127, 46, }; break;
+                        case -16: level = 3; botItemID = 0; introText = "I like potatoes with burgers"; genes = new byte[] { 145, 219, 94, 119, 72, 246, 162, 232, 47, 182, }; break;
+                        case -17: level = 3; botItemID = 0; genes = new byte[] { 86, 57, 97, 203, 29, 225, 123, 174, 239, 104, }; break;
+                        case -18: level = 4; botItemID = 0; genes = new byte[] { 139, 16, 224, 44, 177, 157, 131, 245, 82, 179, }; break;
+                        case -19: level = 4; botItemID = 0; introText = "Im all in neo since antshares lol"; genes = new byte[] { 31, 235, 54, 221, 2, 248, 247, 165, 216, 148, }; break;
+                        case -20: level = 4; botItemID = 0; genes = new byte[] { 68, 40, 37, 184, 149, 169, 67, 163, 104, 242, }; break;
+                        case -21: level = 5; botItemID = 0; introText = "Derp derp derp.."; genes = new byte[] { 115, 24, 16, 61, 155, 239, 232, 59, 116, 109, }; break;
+                        case -22: level = 5; botItemID = 0; genes = new byte[] { 73, 79, 227, 227, 138, 103, 98, 1, 255, 106, }; break;
+                        case -23: level = 5; botItemID = 0; genes = new byte[] { 134, 103, 6, 7, 106, 172, 149, 135, 18, 36, }; break;
+                        case -24: level = 6; botItemID = 30173; genes = new byte[] { 31, 85, 236, 135, 191, 87, 212, 70, 139, 202, }; break;
+                        case -25: level = 6; botItemID = 0; introText = "Fugg you mann"; genes = new byte[] { 79, 171, 219, 185, 190, 234, 170, 161, 223, 103, }; break;
+                        case -26: level = 6; botItemID = 0; genes = new byte[] { 32, 85, 113, 69, 127, 170, 193, 248, 233, 245, }; break;
+                        case -27: level = 7; botItemID = 84882; introText = "Self proclaimed bitcoin maximalist"; genes = new byte[] { 115, 43, 166, 208, 198, 146, 2, 130, 231, 31, }; break;
+                        case -28: level = 7; botItemID = 138905; genes = new byte[] { 169, 0, 145, 179, 144, 214, 165, 83, 22, 218, }; break;
+                        case -29: level = 7; botItemID = 0; genes = new byte[] { 67, 33, 45, 42, 168, 35, 94, 3, 34, 237, }; break;
+                        case -30: level = 7; botItemID = 32478; genes = new byte[] { 169, 172, 84, 63, 74, 69, 60, 65, 15, 20, }; break;
+                        case -31: level = 8; botItemID = 0; introText = "SOUL goes 100x if I win"; genes = new byte[] { 235, 14, 247, 227, 158, 106, 178, 5, 25, 240, }; break;
+                        case -32: level = 8; botItemID = 0; genes = new byte[] { 73, 204, 196, 177, 33, 2, 87, 242, 33, 219, }; break;
+                        case -33: level = 9; botItemID = 329390; introText = "Bantasma fan number one!!"; genes = new byte[] { 25, 188, 160, 127, 57, 106, 143, 248, 79, 84, }; break;
+                        case -34: level = 9; botItemID = 0; genes = new byte[] { 121, 215, 5, 48, 178, 2, 231, 109, 183, 226, }; break;
+                        case -35: level = 9; botItemID = 63217; genes = new byte[] { 7, 156, 157, 29, 234, 28, 226, 214, 29, 191, }; break;
+                        case -36: level = 10; botItemID = 0; introText = "How is babby formed?"; genes = new byte[] { 49, 251, 234, 105, 253, 80, 196, 238, 220, 153, }; break;
+                        case -37: level = 10; botItemID = 0; genes = new byte[] { 229, 130, 158, 161, 191, 170, 82, 147, 21, 163, }; break;
+                        case -38: level = 11; botItemID = 56842; introText = "Show bobs pls"; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
+                        case -39: level = 11; botItemID = 0; genes = new byte[] { 224, 238, 2, 27, 102, 10, 250, 125, 225, 252, }; break;
+                        case -40: level = 12; botItemID = 110988; genes = new byte[] { 205, 45, 173, 101, 40, 78, 165, 195, 56, 37, }; break;
+                        case -41: level = 12; botItemID = 0; genes = new byte[] { 145, 129, 73, 79, 223, 110, 69, 225, 50, 177 }; break;
+                        case -42: level = 12; botItemID = 0; genes = new byte[] { 75, 189, 32, 0, 161, 182, 202, 214, 66, 70, }; break;
+                        case -43: level = 13; botItemID = 0; introText = "Hey hey hey"; genes = new byte[] { 145, 203, 122, 65, 201, 98, 29, 100, 247, 240 }; break;
+                        case -44: level = 13; botItemID = 0; genes = new byte[] { 135, 51, 219, 37, 241, 111, 81, 148, 183, 245, }; break;
+                        case -45: level = 13; botItemID = 0; genes = new byte[] { 21, 27, 0, 194, 231, 32, 19, 240, 72, 250, }; break;
+                        case -46: level = 14; botItemID = 0; genes = new byte[] { 55, 246, 253, 29, 244, 91, 52, 229, 33, 242, }; break;
+                        case -47: level = 14; botItemID = 0; introText = "My wife still doest not believe me"; genes = new byte[] { 235, 125, 252, 144, 205, 158, 37, 109, 95, 0, }; break;
+                        case -48: level = 14; botItemID = 0; genes = new byte[] { 14, 14, 153, 133, 202, 193, 247, 77, 226, 24, }; break;
+                        case -49: level = 15; botItemID = 0; introText = "Wasasasa wasa wasa"; genes = new byte[] { 97, 186, 117, 13, 47, 141, 188, 190, 231, 98, }; break;
+                        case -50: level = 15; botItemID = 0; genes = new byte[] { 187, 85, 182, 157, 197, 58, 43, 171, 14, 148, }; break;
+                        case -51: level = 15; botItemID = 0; genes = new byte[] { 61, 214, 97, 16, 173, 52, 55, 218, 218, 23, }; break;
+                        case -52: level = 15; botItemID = 0; introText = "PM me for nachos"; genes = new byte[] { 21, 43, 3, 20, 205, 239, 157, 121, 148, 200, }; break;
+                        case -53: level = 16; botItemID = 0; genes = new byte[] { 122, 126, 4, 86, 138, 161, 173, 188, 217, 9, }; break;
+                        case -54: level = 16; botItemID = 0; genes = new byte[] { 31, 178, 25, 47, 197, 24, 91, 18, 36, 165, }; break;
+                        case -55: level = 16; botItemID = 0; introText = "Cold nachos or hot nachos?"; genes = new byte[] { 236, 166, 41, 184, 74, 99, 53, 178, 237, 145, }; break;
+                        case -56: level = 16; botItemID = 0; genes = new byte[] { 181, 62, 101, 177, 50, 199, 105, 21, 5, 215 }; break;
+                        case -57: level = 16; botItemID = 0; introText = "Just get rekt man"; genes = new byte[] { 218, 98, 58, 113, 15, 35, 6, 184, 0, 52, }; break;
+                        case -58: level = 16; botItemID = 0; genes = new byte[] { 218, 224, 182, 214, 13, 108, 167, 3, 114, 109, }; break;
+                        case -59: level = 16; botItemID = 0; genes = new byte[] { 226, 50, 168, 123, 194, 11, 117, 193, 18, 5, }; break;
+                        case -60: level = 16; botItemID = 0; genes = new byte[] { 25, 119, 165, 120, 137, 252, 108, 184, 63, 154, }; break;
+                        case -61: level = 16; botItemID = 0; genes = new byte[] { 235, 82, 164, 247, 121, 136, 242, 77, 222, 251, }; break;
+                        case -62: level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
 
                         default:
-                            throw new ContractException("invalid bot");
+                            // todo remove this hack. implement for bot id = [63,99] ?
+                            if (botID < 100)
+                            {
+                                level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
+                            }
+                            else
+                            {
+                                throw new ContractException("invalid bot");
+                            }
                     }
                     break;
             }
@@ -3245,14 +3259,19 @@ namespace Phantasma.Blockchain.Contracts.Native
                 wrestler.stakeAmount = 0;
             }
 
-            if (wrestler.itemID != 0)
+            // TODO fix -> por alguma razão o itemID não está inicializado mas quando se cria um novo lutador no server, o itemID é inicializado com 0
+            //if (wrestler.itemID != 0) // TODO podemos por este if outra vez dps dos operadores do big int estarem corrigidos
+            if (wrestler.itemID > 0)
             {
-                var kind = Formulas.GetItemKind(wrestler.itemID);
-                int n;
-                if (int.TryParse(kind.ToString(), out n))
-                {
-                    wrestler.itemID = 0;
-                }
+                //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+                var itemKind = GetItem(wrestler.itemID).kind;
+
+                // todo confirmar apagar este código. este tryparse já não sentido acho eu
+                //int n;
+                //if (int.TryParse(itemKind.ToString(), out n))
+                //{
+                //    wrestler.itemID = 0;
+                //}
             }
 
             if (wrestler.us1 > 0 || wrestler.us2 > 0 || wrestler.us3 > 0)
@@ -4004,7 +4023,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
-            var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            var itemKind = GetItem(wrestler.itemID).kind;
+
             var maxXP = GetMaxGymXPForWrestler(wrestler, itemKind);
             var obtainedXP = GetObtainedGymXP(wrestler, maxXP, itemKind);
             return obtainedXP < maxXP;
@@ -4020,7 +4041,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
-            var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+            var itemKind = GetItem(wrestler.itemID).kind;
 
             var maxXPPerSession = GetMaxGymXPForWrestler(wrestler, itemKind);
 
@@ -4086,22 +4108,28 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region MATCHMAKING
-        /* TODO LATER
+        
         private void DeleteChallengers(Address address)
         {
-            var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, address);
+            //var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, address);
+            var list = _playerVersusChallengesList.Get<Address, StorageList>(address);
+
             list.Clear();
         }
-
+        
         public NachoVersusInfo[] GetVersusChallengers(Address from)
         {
-            var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, from);
-            int count = list.Count();
+            //var list = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, from);
+            var list = _playerVersusChallengesList.Get<Address, StorageList>(from);
+
+            //int count = list.Count();
+            var count = list.Count();
             int i = 0;
             while (i < count)
             {
                 // TODO fix às vezes quando entra aqui o list count = 1, fazemos o get do primeiro elemento get(0) e no get dá out of range pq diz que o count = 0
-                var entry = list.Get(i);
+                //var entry = list.Get(i);
+                var entry = list.Get<NachoVersusInfo>(i);
                 bool discard = false;
                 var otherAccount = GetAccount(entry.challenger);
 
@@ -4111,7 +4139,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else
                 {
-                    var diff = GetCurrentTime() - entry.timestamp;
+                    var diff = GetCurrentTime() - entry.time;
                     if (diff > 60 * 5)
                     {
                         discard = true;
@@ -4120,7 +4148,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (discard)
                 {
-                    list.RemoveAt(i);
+                    //list.RemoveAt(i);
+                    list.RemoveAt<NachoVersusInfo>(i);
                 }
                 else
                 {
@@ -4128,17 +4157,21 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            return list.All();
+            //return list.All();
+            return list.All<NachoVersusInfo>();
         }
-
+        
         public int GetMatchMakerCount(BattleMode mode)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            
             int total = 0;
-            int count = list.Count();
+            //int count = list.Count();
+            var count = _globalMatchmakerList.Count();
             for (int i = 0; i < count; i++)
             {
-                var address = list.Get(i);
+                //var address = list.Get(i);
+                var address = _globalMatchmakerList.Get<Address>(i);
                 var account = GetAccount(address);
                 if (account.queueMode == mode)
                 {
@@ -4147,29 +4180,38 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             return total;
         }
-
+        
         public bool IsAddressInMatchMaker(Address address)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
-            return list.Contains(address);
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            //return list.Contains(address);
+
+            return _globalMatchmakerList.Contains(address);
         }
 
         private void InsertIntoMatchMaker(Address address)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
-            if (list.Contains(address))
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            
+            //if (list.Contains(address))
+            if (_globalMatchmakerList.Contains(address))
             {
                 return;
             }
-            list.Add(address);
+
+            //list.Add(address);
+            _globalMatchmakerList.Add(address);
         }
 
         private void RemoveFromMatchMaker(Address address)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
-            if (list.Contains(address))
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+
+            //if (list.Contains(address))
+            if (_globalMatchmakerList.Contains(address))
             {
-                list.Remove(address);
+                //list.Remove(address);
+                _globalMatchmakerList.Remove(address);
             }
         }
 
@@ -4189,10 +4231,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var wrestlerA = GetWrestler(accountA.queueWrestlerIDs[0]);
-            var levelA = Formulas.CalculateWrestlerLevel(wrestlerA.experience);
+            var levelA = Formulas.CalculateWrestlerLevel((int)wrestlerA.experience);
 
             var wrestlerB = GetWrestler(accountB.queueWrestlerIDs[0]);
-            var levelB = Formulas.CalculateWrestlerLevel(wrestlerB.experience);
+            var levelB = Formulas.CalculateWrestlerLevel((int)wrestlerB.experience);
 
             var levelDiff = Math.Abs(levelA - levelB);
 
@@ -4206,7 +4248,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 default: return -1;
             }
 
-            var eloDiff = Math.Abs(accountA.ELO - accountB.ELO) / 32;
+            //var eloDiff = Math.Abs(accountA.ELO - accountB.ELO) / 32;
+            var eloDiff = Math.Abs((decimal) (accountA.ELO - accountB.ELO)) / 32;
 
             switch (eloDiff)
             {
@@ -4227,11 +4270,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private bool MatchMakerFindMatch(Address targetAddress)
         {
-            var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
+            //var list = Storage.FindCollectionForContract<Address>(GLOBAL_MATCHMAKER_LIST);
 
             bool foundOwn = false;
 
-            var count = list.Count();
+            //var count = list.Count();
+            var count = _globalMatchmakerList.Count();
 
             Address bestAddress = Address.Null;
             int bestScore = -1;
@@ -4245,7 +4289,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             for (int i = 0; i < count; i++)
             {
-                var otherAddress = list.Get(i);
+                //var otherAddress = list.Get(i);
+                var otherAddress = _globalMatchmakerList.Get<Address>(i);
 
                 if (otherAddress == targetAddress)
                 {
@@ -4303,7 +4348,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return false;
-        }*/
+        }
 
         private int CalculateELO(int currentELO, int opponentELO, int side, BattleState result)
         {
@@ -4343,7 +4388,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #endregion
 
         #region QUEUE API
-        /* TODO LATER
+       
         private void SpendBet(Address from, BigInteger bet, BattleMode mode, Address address)
         {
             Runtime.Expect(bet > 0, "invalid bet");
@@ -4355,7 +4400,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(bet == GetRankedBet(), "invalid bet");
                 Runtime.Expect(account.queueBet == bet, "bets differ");
 
-                var fee = (bet * Constants.POT_FEE_PERCENTAGE) / 100;
+                var fee = new BigInteger(5); // (bet * Constants.POT_FEE_PERCENTAGE) / 100; TODO fix
                 var split = bet - fee;
 
                 Runtime.Expect(SpendFromAccountBalance(from, split, 0), "balance failed for bet");
@@ -4377,7 +4422,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private BigInteger GetRankedBet()
         {
-            return GetConfig().rankedFee;
+            return new BigInteger(2); // GetConfig().rankedFee; TODO fix
         }
 
         public void JoinPraticeQueue(Address from, BigInteger wrestlerID, PraticeLevel level)
@@ -4422,6 +4467,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             JoinQueue(from, wrestlerIDs, bet, BattleMode.Ranked, Address.Null, PraticeLevel.None);
         }
 
+        /*
         public void JoinDoubleVersusQueue(Address from, BigInteger[] wrestlerIDs, Address other, BigInteger bet)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -4431,7 +4477,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             JoinQueue(from, wrestlerIDs, bet, BattleMode.Versus, other, PraticeLevel.None);
         }
         */
-
+        
         private void SetAccountBattle(Address address, BigInteger battleID, NachoBattle battle, int sideIndex)
         {
             var account = GetAccount(address);
@@ -4567,21 +4613,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetAccount(address, account);
         }
 
-        /* TODO LATER
         private void StartBotMatch(Address from, BigInteger botID)
         {
             var botAccount = GetAccount(DevelopersAddress);
             botAccount.queueJoinTime = GetCurrentTime();
             botAccount.queueUpdateTime = GetCurrentTime();
             botAccount.queueBet = 0;
-            botAccount.queueWrestlerIDs = new BigInteger[] { botID };
+            botAccount.queueWrestlerIDs = new BigInteger[] {botID};
             botAccount.queueVersus = Address.Null;
             botAccount.queueMode = BattleMode.Pratice;
             SetAccount(DevelopersAddress, botAccount);
 
             PrepareMatch(DevelopersAddress, from);
         }
-        */
 
         // NOTE - bet parameter is hijacked for JoinPratice, who passes level of bot inside bet arg
         private void JoinQueue(Address from, BigInteger[] wrestlerIDs, BigInteger bet, BattleMode mode, Address versus, PraticeLevel praticeLevel)
@@ -4636,13 +4680,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (int i = 0; i < wrestlerIDs.Length; i++)
             {
                 var ID = wrestlerIDs[i];
-
+                
                 Runtime.Expect(HasWrestler(from, ID), "invalid wrestler");
 
                 var wrestler = GetWrestler(ID);
                 Runtime.Expect(wrestler.location == WrestlerLocation.None, "invalid location");
                 Runtime.Expect(wrestler.owner == from, "invalid owner");
-                Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo");
+                //Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo"); // todo fix
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
@@ -4730,8 +4774,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                             Runtime.Expect(praticeLevel <= maxPraticeLevelAllowed, "locked bot");
                         }
 
-                        Runtime.Expect(false, "not implemented, read the code fdgds");
-                        //StartBotMatch(from, (int)praticeLevel);
+                        //Runtime.Expect(false, "not implemented, read the code fdgds");
+                        StartBotMatch(from, -(int)praticeLevel);
 
                         return;
                     }
@@ -4785,11 +4829,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
 
-        /* TODO LATER
         private void PrepareMatch(Address addressA, Address addressB)
         {
             // cant battle against itself
-            Runtime.Expect(addressA != addressB, "same address failed");
+            //Runtime.Expect(addressA != addressB, "same address failed"); //todo uncomment after testing
 
             var accountA = GetAccount(addressA);
             var accountB = GetAccount(addressB);
@@ -4808,8 +4851,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             DeleteChallengers(addressB);
 
             // get last battle ID, increment and update
-            var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
-            var battle_id = battles.Count() + 1;
+            //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
+
+            //var battle_id = battles.Count() + 1;
+            var battle_id = _globalBattlesList.Count() + 1;
 
             if (mode == BattleMode.Ranked)
             {
@@ -4824,9 +4869,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (var i = 0; i < stateA.Length; i++)
             {
                 var wrestler = GetWrestler(accountA.queueWrestlerIDs[i]);
-                var item = Formulas.GetItemKind(wrestler.itemID);
 
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+                var itemKind = GetItem(wrestler.itemID).kind;
+
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
                 var base_stamina = Formulas.CalculateBaseStat(genes, StatKind.Stamina);
 
@@ -4836,12 +4883,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                     boostAtk = 100,
                     boostDef = 100,
                     status = BattleStatus.None,
-                    itemKind = item,
+                    itemKind = itemKind,
                     lastMove = WrestlingMove.Idle,
                     disabledMove = WrestlingMove.Unknown,
                     riggedMove = WrestlingMove.Unknown,
                     learnedMove = WrestlingMove.Unknown,
-                    stance = (item == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
+                    stance = (itemKind == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
                     currentStamina = Formulas.CalculateWrestlerStat(level, base_stamina, wrestler.gymBoostStamina)
                 };
             }
@@ -4849,9 +4896,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (var i = 0; i < stateB.Length; i++)
             {
                 var wrestler = GetWrestler(accountB.queueWrestlerIDs[i]);
-                var item = Formulas.GetItemKind(wrestler.itemID);
 
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                //var itemKind = Formulas.GetItemKind(wrestler.itemID);
+                var itemKind = GetItem(wrestler.itemID).kind;
+
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
                 var base_stamina = Formulas.CalculateBaseStat(genes, StatKind.Stamina);
 
@@ -4861,12 +4910,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                     boostAtk = 100,
                     boostDef = 100,
                     status = BattleStatus.None,
-                    itemKind = item,
+                    itemKind = itemKind,
                     lastMove = WrestlingMove.Idle,
                     disabledMove = WrestlingMove.Unknown,
                     riggedMove = WrestlingMove.Unknown,
                     learnedMove = WrestlingMove.Unknown,
-                    stance = (item == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
+                    stance = (itemKind == ItemKind.Ignition_Chip ? BattleStance.Alternative : BattleStance.Main),
                     currentStamina = Formulas.CalculateWrestlerStat(level, base_stamina, wrestler.gymBoostStamina)
                 };
             }
@@ -4902,7 +4951,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         if (sides[i].wrestlers[0].itemKind == ItemKind.Yo_Yo)
                         {
-                            Runtime.Notify(sides[i].address, NachoEvent.ItemActivated, ItemKind.Yo_Yo);
+                            Runtime.Notify(NachoEvent.ItemActivated, sides[i].address, ItemKind.Yo_Yo);
                         }
                     }
                 }
@@ -4947,7 +4996,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     bet = accountA.queueBet;
                 }
 
-                Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
+                //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed"); // TODO fix
             }
             else
             {
@@ -4964,19 +5013,22 @@ namespace Phantasma.Blockchain.Contracts.Native
                 bet = bet,
                 lastTurnHash = 0,
                 state = BattleState.Active,
-                timestamp = GetCurrentTime(),
-                counters = new int[Constants.BATTLE_COUNTER_MAX]
+                time = GetCurrentTime(),
+                counters = new BigInteger[Constants.BATTLE_COUNTER_MAX]
             };
 
-            battle.counters[Constants.BATTLE_COUNTER_START_TIME] = (int)GetCurrentTime();
+            //battle.counters[Constants.BATTLE_COUNTER_START_TIME] = (int)GetCurrentTime();
+            battle.counters[Constants.BATTLE_COUNTER_START_TIME] = (int)GetCurrentTime().Value;
 
             // save battle info
-            battles.Set(battle_id, battle);
+            //battles.Set(battle_id, battle);
+            _globalBattlesList.Set(battle_id, battle);
 
             SetAccountBattle(addressA, battle_id, battle, 0);
             SetAccountBattle(addressB, battle_id, battle, 1);
         }
 
+            
         public void UpdateQueue(Address from)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -5005,7 +5057,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 var wrestlerID = account.queueWrestlerIDs[0];
                 var wrestler = GetWrestler(wrestlerID);
-                var level = Formulas.CalculateWrestlerLevel(wrestler.experience);
+                var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
                 switch (level)
                 {
@@ -5031,7 +5083,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 SetAccount(from, account);
 
                 int botID = (int)(minID + Runtime.Time.Value % (1 + maxID - minID));
-                StartBotMatch(from, botID);
+                StartBotMatch(from, -botID);
                 return;
             }
         }
@@ -5045,7 +5097,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             RemoveAccountFromQueue(from);
         }
-
+        
         private void RemoveAccountFromQueue(Address from)
         {
             var account = GetAccount(from);
@@ -5061,31 +5113,33 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (bet > 0)
                 {
-                    Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
+                    //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed"); // TODO fix
                 }
             }
 
             RemoveFromMatchMaker(from);
         }
-        */
+        
         #endregion
 
         #region BATTLE API
-        /* TODO LATER
+        
         public NachoBattle GetBattle(BigInteger battleID)
         {
-            var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
-            var battle = battles.Get(battleID);
+            //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
+
+            //var battle = battles.Get(battleID);
+            var battle = _globalBattlesList.Get<BigInteger, NachoBattle>(battleID);
 
             // this allows us to add new counters later while keeping binary compatibility
             if (battle.counters == null)
             {
-                battle.counters = new int[Constants.ACCOUNT_COUNTER_MAX];
+                battle.counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
             }
             else
             if (battle.counters.Length < Constants.ACCOUNT_COUNTER_MAX)
             {
-                var temp = new int[Constants.ACCOUNT_COUNTER_MAX];
+                var temp = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
                 for (int i = 0; i < battle.counters.Length; i++)
                 {
                     temp[i] = battle.counters[i];
@@ -5105,10 +5159,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void SetBattle(BigInteger battleID, NachoBattle battle)
         {
-            var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
-            battles.Set(battleID, battle);
+            //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
+            //battles.Set(battleID, battle);
+
+            _globalBattlesList.Set(battleID, battle);
         }
-        */
 
         // this is the calculate damage if the move hits, ignoring the move of the opponent, which is taken into account in CalculateMoveResult()
         private int CalculateMoveDamage(NachoBattle battle, WrestlerTurnInfo attacker, WrestlerTurnInfo defender)
@@ -5693,7 +5748,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             return info;
         }
 
-        /* TODO LATER
         public bool CancelMatch(Address from, BigInteger battleID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -5702,7 +5756,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(battle.state == BattleState.Active, "battle failed");
 
-            var timeDiff = (GetCurrentTime() - battle.timestamp) / 60;
+            var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_CANCEL;
 
             int localIndex = -1;
@@ -5728,8 +5782,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             TerminateMatchWithResult(battleID, battle, BattleState.Cancelled);
             return true;
         }
-        */
-
+        
         private void InitPot()
         {
             //Runtime.Expect(IsWitness(DevelopersAddress), "developer only");
@@ -5881,7 +5934,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 // TODO LATER
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
-                //Runtime.Notify(target, NachoEvent.Deposit, amount);
+                //Runtime.Notify(NachoEvent.Deposit, target, amount); //todo fix no event Deposit anymore
             }
 
             var leftovers = _pot.lastBalance - distributedTotal;
@@ -6461,7 +6514,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetBattleCounter(ref battle, index, val);
         }
 
-        /* TODO LATER
         public bool PlayTurn(Address from, BigInteger battleID, int turn, byte slot)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -6473,10 +6525,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(turn == battle.turn, "turn failed");
 
-            var timeDiff = (GetCurrentTime() - battle.timestamp) / 60;
+            var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_IDLE;
 
-            BigInteger seed = Randomize(battleID.ToByteArray());
+            BigInteger seed = Runtime.Randomize(battleID.ToByteArray());
 
             int localIndex = -1;
 
@@ -6494,8 +6546,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             int opponentIndex = 1 - localIndex;
 
             var localSide = battle.sides[localIndex];
-            var localWrestler = GetWrestler(localSide.wrestlers[localSide.current].wrestlerID);
-            var move = Rules.GetMoveFromMoveset(localWrestler.genes, slot, localSide.wrestlers[localSide.current].stance);
+            var localWrestler = GetWrestler(localSide.wrestlers[(int)localSide.current].wrestlerID);
+            var move = Rules.GetMoveFromMoveset(localWrestler.genes, slot, localSide.wrestlers[(int)localSide.current].stance);
 
             if (battle.sides[localIndex].turn == turn && battle.sides[localIndex].move != move)
             {
@@ -6520,13 +6572,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var aiWrestler = GetWrestler(aiWrestlerID);
                 var aiMove = Rules.GetMoveFromMoveset(aiWrestler.genes, aiSlot, aiStance);
 
-                seed = NextRandom(seed);
+                seed = Runtime.NextRandom();
 
                 if (battle.mode == BattleMode.Pratice)
                 {
                     // BOTs AI
 
-                    var aiLevel = Formulas.CalculateWrestlerLevel(aiWrestler.experience);
+                    var aiLevel = Formulas.CalculateWrestlerLevel((int)aiWrestler.experience);
                     int smartness = (int)((aiLevel * 100) / Constants.MAX_LEVEL);
                     if (smartness > 100)
                     {
@@ -6534,7 +6586,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     var chance = (int)(seed % 100);
-                    seed = NextRandom(seed);
+                    seed = Runtime.NextRandom();
 
                     smartness -= chance;
 
@@ -6863,7 +6915,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 battle.sides[i].move = targetMove;
                                 states[i].itemKind = ItemKind.None;
-                                Runtime.Notify(from, NachoEvent.ItemActivated, ItemKind.Golden_Bullet);
+                                Runtime.Notify(NachoEvent.ItemActivated, from, ItemKind.Golden_Bullet);
                             }
                         }
                     }
@@ -6893,9 +6945,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
                     info[i] = CalculateTurnInfo(battle.sides[i], wrestlers[i], battle.sides[i].move, states[i].lastMove, states[i], seed);
 
-                    seed = NextRandom(seed);
+                    seed = Runtime.NextRandom();
 
-                    if (info[i].move == WrestlingMove.Tart_Throw && info[i].item != ItemKind.Cooking_Hat && !Rules.IsSucessful(info[i].chance, Constants.TART_THROW_ACCURACY))
+                    if (info[i].move == WrestlingMove.Tart_Throw && info[i].item != ItemKind.Cooking_Hat && !Rules.IsSucessful((int)info[i].chance, Constants.TART_THROW_ACCURACY))
                     {
                         info[i].move = WrestlingMove.Tart_Splash;
                         battle.sides[i].move = info[i].move;
@@ -6907,7 +6959,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     // confusion setup
                     if (states[i].status.HasFlag(BattleStatus.Confused))
                     {
-                        confusion[i] = !Rules.IsSucessful(info[i].chance, Constants.CONFUSION_ACCURACY);
+                        confusion[i] = !Rules.IsSucessful((int)info[i].chance, Constants.CONFUSION_ACCURACY);
                     }
                     else
                     {
@@ -6936,7 +6988,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case WrestlingMove.Scream:
                             if (!ApplyStatBoost(ref info, ref states, i, StatKind.Attack, Constants.BIG_BOOST_CHANGE * multiplier))
                             {
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             buff = true;
                             break;
@@ -6944,7 +6996,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case WrestlingMove.Bulk:
                             if (!ApplyStatBoost(ref info, ref states, i, StatKind.Defense, Constants.BIG_BOOST_CHANGE * multiplier))
                             {
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             buff = true;
                             break;
@@ -6977,7 +7029,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     if (multiplier > 1 && buff)
                     {
-                        Runtime.Notify(info[i].address, NachoEvent.ItemActivated, states[i].itemKind);
+                        Runtime.Notify(NachoEvent.ItemActivated, info[i].address, states[i].itemKind);
                     }
 
                     // first turn item-activations
@@ -7002,7 +7054,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 // do nothing besides "activation"
                                 ActivateItem(ref states, ref info, i, false, false);
-                                Runtime.Notify(info[i].address, NachoEvent.ItemActivated, states[i].itemKind);
+                                Runtime.Notify(NachoEvent.ItemActivated, info[i].address, states[i].itemKind);
                                 break;
                             }
 
@@ -7010,7 +7062,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 if (ActivateItem(ref states, ref info, i, true, true))
                                 {
-                                    seed = NextRandom(seed);
+                                    seed = Runtime.NextRandom();
                                     var roll = seed % 6;
 
                                     int target = roll < 4 ? i : 1 - i;
@@ -7053,7 +7105,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     // clamp the damage, this makes possible to survive a counter in some situations
                     if (power > info[other].currentStamina)
                     {
-                        power = info[other].currentStamina;
+                        power = (int)info[other].currentStamina;
                     }
 
                     if (power > 0)
@@ -7101,7 +7153,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 if (states[other].itemKind != ItemKind.Wood_Potato)
                                 {
-                                    Runtime.Notify(info[i].address, NachoEvent.ItemSpent, states[i].itemKind);
+                                    Runtime.Notify(NachoEvent.ItemSpent, info[i].address, states[i].itemKind);
                                 }
 
                                 states[i].itemKind = ItemKind.None;
@@ -7129,8 +7181,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case WrestlingMove.Recycle:
                             if (states[i].itemKind == ItemKind.None && wrestlers[i].itemID != 0)
                             {
-                                states[i].itemKind = Formulas.GetItemKind(wrestlers[i].itemID);
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.ItemAdded, states[i].itemKind);
+                                //states[i].itemKind = Formulas.GetItemKind(wrestlers[i].itemID);
+                                states[i].itemKind = GetItem(wrestlers[i].itemID).kind;
+                                Runtime.Notify(NachoEvent.ItemAdded, battle.sides[i].address, states[i].itemKind);
                             }
 
                             ChangeStance(ref states, ref info, i, false);
@@ -7161,7 +7214,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             break;
 
                         case WrestlingMove.Chilli_Dance:
-                            if (Rules.IsSucessful(info[i].chance, Constants.BIG_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.BIG_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Burned, false);
                             }
@@ -7170,7 +7223,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             break;
 
                         case WrestlingMove.Poison_Ivy:
-                            if (Rules.IsSucessful(info[i].chance, Constants.BIG_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.BIG_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Poisoned, false);
                             }
@@ -7205,7 +7258,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                         case WrestlingMove.Spinning_Crane:
 
-                            if (Rules.IsSucessful(info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Bleeding, false);
                             }
@@ -7214,7 +7267,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             break;
 
                         case WrestlingMove.Fart:
-                            if (Rules.IsSucessful(info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Poisoned, false);
                             }
@@ -7225,7 +7278,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             int victimIndex;
                             BattleStatus victimStatus;
 
-                            switch (info[i].chance % 4)
+                            switch ((int)info[i].chance % 4)
                             {
                                 case 0:
                                     victimIndex = i;
@@ -7307,7 +7360,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (states[i].itemKind == ItemKind.None && states[other].itemKind != ItemKind.Nullifier)
                             {
                                 states[i].itemKind = ItemKind.Wood_Chair;
-                                Runtime.Notify(info[i].address, NachoEvent.ItemAdded, states[i].itemKind);
+                                Runtime.Notify(NachoEvent.ItemAdded, info[i].address, states[i].itemKind);
                             }
                             break;
 
@@ -7316,21 +7369,21 @@ namespace Phantasma.Blockchain.Contracts.Native
                             break;
 
                         case WrestlingMove.Flying_Kick:
-                            if (Rules.IsSucessful(info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Flinched, false);
                             }
                             break;
 
                         case WrestlingMove.Wolf_Claw:
-                            if (Rules.IsSucessful(info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Bleeding, false);
                             }
                             break;
 
                         case WrestlingMove.Razor_Jab:
-                            if (Rules.IsSucessful(info[i].chance, Constants.BIG_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.BIG_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Bleeding, false);
                             }
@@ -7341,7 +7394,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             break;
 
                         case WrestlingMove.Flame_Fang:
-                            if (Rules.IsSucessful(info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
+                            if (Rules.IsSucessful((int)info[i].chance, Constants.SMALL_SIDE_EFFECT_ACCURACY))
                             {
                                 ApplyStatusEffect(ref battle, ref states, ref info, other, BattleStatus.Burned, false);
                             }
@@ -7396,7 +7449,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                             if (states[other].itemKind == ItemKind.None)
                                             {
                                                 states[other].itemKind = states[i].itemKind;
-                                                Runtime.Notify(info[other].address, NachoEvent.ItemAdded, states[i].itemKind);
+                                                Runtime.Notify(NachoEvent.ItemAdded, info[other].address, states[i].itemKind);
                                             }
                                             break;
                                         }
@@ -7404,7 +7457,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                                 // we notify here even if we lose the item to show the opponent what was throw
                                 // this does not count as an "item activation"                            
-                                Runtime.Notify(info[i].address, NachoEvent.ItemSpent, states[i].itemKind);
+                                Runtime.Notify(NachoEvent.ItemSpent, info[i].address, states[i].itemKind);
                                 states[i].itemKind = ItemKind.None;
                             }
                             break;
@@ -7428,16 +7481,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
 
                                 // does not count as "item activation"
-                                Runtime.Notify(info[i].address, NachoEvent.ItemAdded, states[i].itemKind);
-                                Runtime.Notify(info[other].address, NachoEvent.ItemAdded, states[other].itemKind);
+                                Runtime.Notify(NachoEvent.ItemAdded, info[i].address, states[i].itemKind);
+                                Runtime.Notify(NachoEvent.ItemAdded, info[other].address, states[other].itemKind);
                             }
                             break;
 
                         case WrestlingMove.Joker:
-                            if (Rules.IsSucessful(info[i].chance, 50))
+                            if (Rules.IsSucessful((int)info[i].chance, 50))
                             {
                                 states[i].stance = BattleStance.Main;
-                                Runtime.Notify(info[i].address, NachoEvent.Stance, states[i].stance);
+                                Runtime.Notify(NachoEvent.Stance, info[i].address, states[i].stance);
                             }
                             else
                             {
@@ -7465,7 +7518,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                                 states[i].itemKind = summon;
                                 // does not count as "item activation"
-                                Runtime.Notify(info[i].address, NachoEvent.ItemAdded, states[i].itemKind);
+                                Runtime.Notify(NachoEvent.ItemAdded, info[i].address, states[i].itemKind);
                                 break;
                             }
 
@@ -7520,7 +7573,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
 
                     var dmg = CalculateMoveResult(info[other], info[i], seed);
-                    seed = NextRandom(seed);
+                    seed = Runtime.NextRandom();
 
                     if (dmg > 0)
                     {
@@ -7576,7 +7629,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     if (misses[i] && dmg > 0)
                     {
-                        Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                        Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                         dmg = 0;
                     }
 
@@ -7624,7 +7677,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         if (states[i].currentStamina > sum)
                         {
                             var diff = states[i].currentStamina - sum;
-                            dmg += diff;
+                            dmg += (int)diff;
                         }
                         else
                         if (states[i].currentStamina < sum)
@@ -7634,7 +7687,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 diff++;
                             }
-                            recover_damage[i] += diff;
+                            recover_damage[i] += (int)diff;
                         }
                     }
 
@@ -7645,7 +7698,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             case WrestlingMove.Gutbuster:
                             case WrestlingMove.Side_Hook:
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, info[i].move);
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, info[i].move);
                                 break;
                         }
                     }
@@ -7700,7 +7753,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             amount = info[i].maxStamina - info[i].currentStamina;
                         }
-                        recover += amount;
+                        recover += (int)amount;
                     }
 
                     if (info[other].move == WrestlingMove.Tart_Splash)
@@ -7711,13 +7764,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             amount = info[i].maxStamina - info[i].currentStamina;
                         }
-                        recover += amount;
+                        recover += (int)amount;
                     }
 
                     if (states[i].stance != states[i].lastStance && states[i].itemKind == ItemKind.Meat_Snack &&
                         (info[i].currentStamina < info[i].maxStamina || direct_damage[i] > 0 || indirect_damage[i] > 0) && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        recover += (info[i].maxStamina * Constants.MEAT_SNACK_RECOVER_PERCENT) / 100;
+                        recover += (int)(info[i].maxStamina * Constants.MEAT_SNACK_RECOVER_PERCENT) / 100;
                     }
 
                     var needsRecover = (states[i].currentStamina < info[i].maxStamina || direct_damage[i] > 0 || indirect_damage[i] > 0);
@@ -7736,11 +7789,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                                         amount = info[i].maxStamina - info[i].currentStamina;
                                     }
 
-                                    recover += amount;
+                                    recover += (int)amount;
                                 }
                                 else
                                 {
-                                    Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                    Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                                 }
                                 break;
                             }
@@ -7751,11 +7804,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 {
                                     var amount = (info[i].maxStamina * Constants.REFRESH_RECOVER_PERCENT) / 100;
                                     if (amount < 1) amount = 1;
-                                    recover += amount;
+                                    recover += (int)amount;
                                 }
                                 else
                                 {
-                                    Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                    Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                                 }
 
                                 break;
@@ -7777,11 +7830,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (needsRecover)
                             {
                                 IncreaseDrinkingCounter(ref battle, i, ref states, ref info);
-                                recover += (info[i].maxStamina * Constants.BOTTLE_SIP_RECOVER_PERCENT) / 100;
+                                recover += (int)(info[i].maxStamina * Constants.BOTTLE_SIP_RECOVER_PERCENT) / 100;
                             }
                             else
                             {
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             break;
 
@@ -7789,14 +7842,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                             if (needsRecover)
                             {
-                                recover += (info[i].maxStamina * Constants.GOBBLE_RECOVER_PERCENT) / 100;
+                                recover += (int)(info[i].maxStamina * Constants.GOBBLE_RECOVER_PERCENT) / 100;
                             }
                             break;
 
                         case WrestlingMove.Mantra:
                             if (needsRecover)
                             {
-                                recover += (info[i].maxStamina * Constants.MANTRA_RECOVER_PERCENT) / 100;
+                                recover += (int)(info[i].maxStamina * Constants.MANTRA_RECOVER_PERCENT) / 100;
                             }
 
                             break;
@@ -7805,25 +7858,25 @@ namespace Phantasma.Blockchain.Contracts.Native
                     // only works if user is poisoned
                     if (states[i].itemKind == ItemKind.Nanobots && states[i].status.HasFlag(BattleStatus.Poisoned) && needsRecover && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        recover += (info[i].maxStamina * (Constants.POISON_DAMAGE_PERCENT / 2)) / 100;
+                        recover += (int)(info[i].maxStamina * (Constants.POISON_DAMAGE_PERCENT / 2)) / 100;
                     }
 
                     if (states[i].itemKind == ItemKind.Tequilla && needsRecover && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        recover += (info[i].maxStamina * Constants.TEQUILLA_RECOVER_PERCENT) / 100;
+                        recover += (int)(info[i].maxStamina * Constants.TEQUILLA_RECOVER_PERCENT) / 100;
                         IncreaseDrinkingCounter(ref battle, i, ref states, ref info);
                     }
 
                     // NOTE Wood Potato can recover stamina in 2 different cases
                     if (battle.sides[i].move == WrestlingMove.Wood_Work && states[i].itemKind == ItemKind.Wood_Potato && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        recover += (info[i].maxStamina * Constants.WOOD_POTATO_RECOVER_PERCENT) / 100;
+                        recover += (int)(info[i].maxStamina * Constants.WOOD_POTATO_RECOVER_PERCENT) / 100;
                     }
 
                     if (battle.sides[other].move == WrestlingMove.Smash && states[other].itemKind == ItemKind.Wood_Chair
                         && states[i].itemKind == ItemKind.Wood_Potato && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        recover += (info[i].maxStamina * Constants.WOOD_POTATO_RECOVER_PERCENT) / 100;
+                        recover += (int)(info[i].maxStamina * Constants.WOOD_POTATO_RECOVER_PERCENT) / 100;
                     }
 
                     var isGoingToDie = (direct_damage[i] + indirect_damage[i]) >= states[i].currentStamina;
@@ -7844,22 +7897,22 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     if (states[i].riggedMove == battle.sides[i].move)
                     {
-                        extra += (info[i].maxStamina * Constants.DYNAMITE_RIG_PERCENT) / 100;
+                        extra += (int)(info[i].maxStamina * Constants.DYNAMITE_RIG_PERCENT) / 100;
                     }
 
                     if (states[i].itemKind == ItemKind.Nails && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        extra += (info[i].maxStamina * Constants.NAILS_DAMAGE_PERCENT) / 100;
+                        extra += (int)(info[i].maxStamina * Constants.NAILS_DAMAGE_PERCENT) / 100;
                     }
 
                     if (states[i].status.HasFlag(BattleStatus.Bleeding))
                     {
-                        extra += (info[i].maxStamina * Constants.BLEEDING_DAMAGE_PERCENT) / 100;
+                        extra += (int)(info[i].maxStamina * Constants.BLEEDING_DAMAGE_PERCENT) / 100;
                     }
 
                     if (states[i].status.HasFlag(BattleStatus.Burned))
                     {
-                        extra += (info[i].maxStamina * Constants.BURNING_DAMAGE_PERCENT) / 100;
+                        extra += (int)(info[i].maxStamina * Constants.BURNING_DAMAGE_PERCENT) / 100;
                     }
 
                     if (states[i].status.HasFlag(BattleStatus.Poisoned))
@@ -7884,18 +7937,18 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
                             }
 
-                            extra += (info[i].maxStamina * poisonDamagePercent) / 100;
+                            extra += (int)(info[i].maxStamina * poisonDamagePercent) / 100;
                         }
                     }
 
                     if (originalItems[i] != ItemKind.Bomb && states[i].itemKind == ItemKind.Bomb && ActivateItem(ref states, ref info, i, true, true))
                     {
-                        extra += (info[i].maxStamina * Constants.BOMB_DAMAGE_PERCENT) / 100;
+                        extra += (int)(info[i].maxStamina * Constants.BOMB_DAMAGE_PERCENT) / 100;
                     }
 
                     if (states[i].itemKind == ItemKind.Fork && states[i].stance != states[i].lastStance && ActivateItem(ref states, ref info, i, true, false))
                     {
-                        extra += (info[i].maxStamina * Constants.FORK_DAMAGE_PERCENT) / 100;
+                        extra += (int)(info[i].maxStamina * Constants.FORK_DAMAGE_PERCENT) / 100;
                     }
 
                     indirect_damage[i] += extra;
@@ -8008,7 +8061,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         indirect_damage[i] += direct_damage[other];
                         direct_damage[other] = 0;
-                        Runtime.Notify(info[i].address, NachoEvent.Confusion);
+                        //Runtime.Notify(info[i].address, NachoEvent.Confusion);
+                        Runtime.Notify(NachoEvent.Confusion, info[i].address, 0); // todo check this event
                     }
                 }
 
@@ -8027,7 +8081,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
                     if (states[i].itemKind == ItemKind.Shock_Chip && info[other].itemActivated)
                     {
-                        indirect_damage[other] += (Constants.SHOCK_CHIP_DAMAGE_PERCENT * info[other].maxStamina) / 100;
+                        indirect_damage[other] += (int)(Constants.SHOCK_CHIP_DAMAGE_PERCENT * info[other].maxStamina) / 100;
                     }
                 }
 
@@ -8065,7 +8119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         target_stamina = 0;
                         // clamp the direct damage
-                        direct_damage[i] = states[i].currentStamina - indirect_damage[i];
+                        direct_damage[i] = (int)states[i].currentStamina - indirect_damage[i];
 
                         if (states[i].itemKind == ItemKind.Focus_Banana && ActivateItem(ref states, ref info, i, true, true))
                         {
@@ -8078,7 +8132,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         // clamp recover amount
                         var diff = target_stamina - info[i].maxStamina;
-                        recover_damage[i] -= diff;
+                        recover_damage[i] -= (int)diff;
                         if (recover_damage[i] < 0)
                         {
                             recover_damage[i] = 0;
@@ -8119,7 +8173,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                         var recoverAmount = (info[i].maxStamina * Constants.TRAINER_SPEAKER_RECOVER_PERCENT) / 100;
                                         if (recoverAmount < 1) recoverAmount = 1;
 
-                                        recover_damage[i] += recoverAmount;
+                                        recover_damage[i] += (int)recoverAmount;
                                     }
                                     break;
                                 }
@@ -8131,7 +8185,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                         var recoverAmount = (info[i].maxStamina * Constants.LEMON_SHAKE_RECOVER_PERCENT) / 100;
                                         states[i].currentStamina += recoverAmount;
 
-                                        recover_damage[i] += recoverAmount;
+                                        recover_damage[i] += (int)recoverAmount;
 
                                         ApplyStatusEffect(ref battle, ref states, ref info, i, BattleStatus.Poisoned, true);
 
@@ -8177,7 +8231,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             }
                             else
                             {
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             break;
 
@@ -8192,7 +8246,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                             if (states[other].itemKind != ItemKind.None)
                             {
                                 states[other].itemKind = ItemKind.None;
-                                Runtime.Notify(info[other].address, NachoEvent.ItemRemoved);
+                                //Runtime.Notify(info[other].address, NachoEvent.ItemRemoved);
+                                Runtime.Notify(NachoEvent.ItemRemoved, info[other].address, 0); // todo check this event arg = 0
                             }
                             break;
 
@@ -8203,7 +8258,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             }
                             else
                             {
-                                Runtime.Notify(battle.sides[i].address, NachoEvent.MoveMiss, battle.sides[i].move);
+                                Runtime.Notify(NachoEvent.MoveMiss, battle.sides[i].address, battle.sides[i].move);
                             }
                             break;
                     }
@@ -8219,7 +8274,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         {
                             RemoveStatusEffect(ref battle, ref states, ref info, i, BattleStatus.Smiling);
                             states[i].stance = BattleStance.Clown;
-                            Runtime.Notify(info[i].address, NachoEvent.Stance, states[i].stance);
+                            Runtime.Notify(NachoEvent.Stance, info[i].address, states[i].stance);
                         }
                     }
 
@@ -8279,8 +8334,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             battle.turn++;
-            battle.timestamp = GetCurrentTime();
-            battle.lastTurnHash = Transaction != null ? Transaction.Hash : BigInteger.Zero;
+            battle.time = GetCurrentTime();
+            //battle.lastTurnHash = Transaction != null ? Transaction.Hash : BigInteger.Zero; // TODO fix
 
             if (battle.state != BattleState.Active)
             {
@@ -8300,7 +8355,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 // calculate average levels and terminate match
                 var avgLevel = (info[0].level + info[1].level) / 2;
-                TerminateMatch(battleID, battle, states[0], states[1], avgLevel);
+                TerminateMatch(battleID, battle, states[0], states[1], (int)avgLevel);
             }
             else
             {
@@ -8308,7 +8363,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return true;
-        }*/
+        }
 
         private bool ChangeStance(ref LuchadorBattleState[] states, ref WrestlerTurnInfo[] info, int target, bool forced)
         {
