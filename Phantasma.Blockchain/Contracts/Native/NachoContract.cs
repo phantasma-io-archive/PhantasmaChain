@@ -2684,7 +2684,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (item.location == ItemLocation.Wrestler)
             {
-                if (item.wrestlerID != 0)
+                if (item.wrestlerID != 0) // TODO confirmar se o operador != dos BigInteger já foi corrigido. Alternativa => ID > 0
                 {
                     var wrestler = GetWrestler(item.wrestlerID);
                     if (wrestler.itemID != ID)
@@ -3259,7 +3259,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 wrestler.stakeAmount = 0;
             }
 
-            //if (wrestler.itemID != 0)
+            // TODO fix -> por alguma razão o itemID não está inicializado mas quando se cria um novo lutador no server, o itemID é inicializado com 0
+            //if (wrestler.itemID != 0) // TODO podemos por este if outra vez dps dos operadores do big int estarem corrigidos
             if (wrestler.itemID > 0)
             {
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
@@ -4679,7 +4680,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (int i = 0; i < wrestlerIDs.Length; i++)
             {
                 var ID = wrestlerIDs[i];
-
+                
                 Runtime.Expect(HasWrestler(from, ID), "invalid wrestler");
 
                 var wrestler = GetWrestler(ID);
