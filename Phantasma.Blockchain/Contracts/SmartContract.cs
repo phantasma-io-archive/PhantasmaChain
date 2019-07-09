@@ -311,15 +311,14 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var state = runtime.Execute();
+            // TODO catch VM exceptions?
 
             if (state == ExecutionState.Halt)
             {
-                if (runtime.Stack.Count != 1)
+                if (runtime.Stack.Count != 0)
                 {
                     return false;
                 }
-
-                var result = runtime.Stack.Pop();
 
                 // propagate events to the other runtime
                 foreach (var evt in runtime.Events)
@@ -331,7 +330,7 @@ namespace Phantasma.Blockchain.Contracts
                 // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
                 runtimeVM.ConsumeGas(runtime.UsedGas);
 
-                return result.AsBool();
+                return true;
             }
             else
             {
