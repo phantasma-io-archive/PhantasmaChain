@@ -465,9 +465,8 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
-            var accountScript = new byte[0];
             var sourceChain = this.Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("account", "Register", source.Address, name, accountScript).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("account", "RegisterName", source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);

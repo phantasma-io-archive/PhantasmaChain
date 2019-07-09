@@ -33,23 +33,35 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void Register(Address target, string name, byte[] script)
+        public void RegisterName(Address target, string name)
         {
             Runtime.Expect(target != Address.Null, "address must not be null");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(IsWitness(target), "invalid witness");
             Runtime.Expect(ValidateName(name), "invalid name");
 
-            Runtime.Expect(script.Length < 1024, "invalid script length");
-
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used");
 
             _addressMap.Set(target, name);
-            _scriptMap.Set(target, script);
             _nameMap.Set(name, target);
 
             Runtime.Notify(EventKind.AddressRegister, target, name);
+        }
+
+        public void RegisterScript(Address target, byte[] script)
+        {
+            Runtime.Expect(target != Address.Null, "address must not be null");
+            Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
+            Runtime.Expect(IsWitness(target), "invalid witness");
+
+            Runtime.Expect(script.Length < 1024, "invalid script length");
+
+            Runtime.Expect(!_scriptMap.ContainsKey(target), "address already has a script");
+
+            _scriptMap.Set(target, script);
+
+           // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
         }
 
         public string LookUpAddress(Address target)
