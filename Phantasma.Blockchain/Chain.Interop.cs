@@ -15,6 +15,7 @@ namespace Phantasma.Blockchain
         internal static void RegisterInterop(RuntimeVM vm)
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
+            vm.RegisterMethod("Runtime.Event", Runtime_Event);
 
             vm.RegisterMethod("ABI()", Constructor_ABI);
 
@@ -96,6 +97,16 @@ namespace Phantasma.Blockchain
             var text = vm.Stack.Pop().AsString();
             //this.Log.Write(Core.Log.LogEntryKind.Message, text);
             Console.WriteLine(text); // TODO fixme
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_Event(RuntimeVM vm)
+        {
+            var bytes = vm.Stack.Pop().AsByteArray();
+            var address = vm.Stack.Pop().AsInterop<Address>();
+            var kind = vm.Stack.Pop().AsEnum<EventKind>();
+
+            vm.Notify(kind, address, bytes);
             return ExecutionState.Running;
         }
 
