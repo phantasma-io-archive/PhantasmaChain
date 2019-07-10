@@ -304,15 +304,19 @@ namespace Phantasma.Blockchain.Contracts
             runtime.ThrowOnFault = true;
             runtime.OracleReader = runtimeVM.OracleReader;
 
-            runtime.Stack.Push(VMObject.FromObject(triggerName));
             for (int i=args.Length - 1; i>=0; i--)
             {
                 var obj = VMObject.FromObject(args[i]);
                 runtime.Stack.Push(obj);
             }
+            runtime.Stack.Push(VMObject.FromObject(triggerName));
 
             var state = runtime.Execute();
             // TODO catch VM exceptions?
+
+            // propagate gas consumption
+            // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
+            runtimeVM.ConsumeGas(runtime.UsedGas);
 
             if (state == ExecutionState.Halt)
             {
@@ -327,9 +331,7 @@ namespace Phantasma.Blockchain.Contracts
                     runtimeVM.Notify(evt.Kind, evt.Address, evt.Data);
                 }
 
-                // propagate gas consumption
-                // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
-                runtimeVM.ConsumeGas(runtime.UsedGas);
+                
 
                 return true;
             }

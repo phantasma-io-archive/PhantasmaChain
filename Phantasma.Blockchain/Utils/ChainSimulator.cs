@@ -355,11 +355,11 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
-        public Transaction GenerateToken(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags)
+        public Transaction GenerateToken(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
         {
             var chain = Nexus.RootChain;
 
-            var tokenScript = new byte[0];
+            tokenScript = tokenScript ?? new byte[0];
 
             var script = ScriptUtils.
                 BeginScript().

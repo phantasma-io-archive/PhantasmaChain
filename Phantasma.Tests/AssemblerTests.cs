@@ -10,7 +10,12 @@ using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using System.Linq;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Utils;
+using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
+using static Phantasma.Blockchain.Contracts.Native.TokenContract;
 
 namespace Phantasma.Tests
 {
@@ -39,6 +44,83 @@ namespace Phantasma.Tests
 
             var result = vm.Stack.Pop().AsNumber();
             Assert.IsTrue(result == 5);
+        }
+
+        [TestMethod]
+        public void TokenTriggers()
+        {
+            string[] scriptString;
+            //TestVM vm;
+
+            scriptString = new string[]
+            {
+                $"alias r1, $triggerSend",
+                $"alias r2, $triggerReceive",
+                $"alias r3, $triggerBurn",
+                $"alias r4, $triggerMint",
+                $"alias r5, $currentTrigger",
+                $"alias r6, $comparisonResult",
+
+                $@"load $triggerSend, ""{TriggerSend}""",
+                $@"load $triggerReceive, ""{TriggerReceive}""",
+                $@"load $triggerBurn, ""{TriggerBurn}""",
+                $@"load $triggerMint, ""{TriggerMint}""",
+                $"pop $currentTrigger",
+
+                $"equal $triggerSend, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @sendHandler",
+
+                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @receiveHandler",
+
+                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @burnHandler",
+
+                $"equal $triggerMint, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @mintHandler",
+
+                $"jmp @return",
+
+                $"@sendHandler: throw",
+
+                $"@receiveHandler: throw",
+
+                $"@burnHandler: throw",
+
+                $"@mintHandler: throw",
+
+                $"@return: ret",
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            /*
+            vm = ExecuteScript(scriptString);
+
+            Assert.IsTrue(vm.Stack.Count == 1);
+
+            var result = vm.Stack.Pop().AsString();
+            Assert.IsTrue(result == target);
+            */
+
+            var owner = KeyPair.Generate();
+            var target = KeyPair.Generate();
+            var symbol = "debugNFT";
+            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var chain = simulator.Nexus.RootChain;
+
+            var changeSet = new StorageChangeSetContext(chain.Storage);
+            var vm = new RuntimeVM(script, chain, chain.LastBlock, null, changeSet, true);
+
+            var state = vm.Execute();
+
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
+            simulator.MintTokens(owner, symbol, 1000);
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+            simulator.EndBlock();
         }
 
         #region RegisterOps
