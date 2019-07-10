@@ -320,11 +320,6 @@ namespace Phantasma.Blockchain.Contracts
 
             if (state == ExecutionState.Halt)
             {
-                if (runtime.Stack.Count != 0)
-                {
-                    return false;
-                }
-
                 // propagate events to the other runtime
                 foreach (var evt in runtime.Events)
                 {
