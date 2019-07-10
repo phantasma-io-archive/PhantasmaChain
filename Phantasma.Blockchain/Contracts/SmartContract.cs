@@ -299,7 +299,8 @@ namespace Phantasma.Blockchain.Contracts
                 return true;
             }
 
-            var runtime = new RuntimeVM(script, runtimeVM.Chain, runtimeVM.Block, runtimeVM.Transaction, runtimeVM.ChangeSet, false);
+            var leftOverGas = (uint)(runtimeVM.MaxGas - runtimeVM.UsedGas);
+            var runtime = new RuntimeVM(script, runtimeVM.Chain, runtimeVM.Block, runtimeVM.Transaction, runtimeVM.ChangeSet, false, leftOverGas);
             runtime.ThrowOnFault = true;
             runtime.OracleReader = runtimeVM.OracleReader;
 

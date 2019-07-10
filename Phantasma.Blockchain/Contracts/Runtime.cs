@@ -39,7 +39,7 @@ namespace Phantasma.Blockchain.Contracts
 
         private BigInteger seed;
 
-        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode) : base(script)
+        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode, uint initialMaxGas = 10000) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -51,7 +51,7 @@ namespace Phantasma.Blockchain.Contracts
             this.GasPrice = 0;
             this.UsedGas = 0;
             this.PaidGas = 0;
-            this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
+            this.MaxGas = initialMaxGas;  // a minimum amount required for allowing calls to Gas contract etc
 
             this.Chain = chain;
             this.Block = block;
