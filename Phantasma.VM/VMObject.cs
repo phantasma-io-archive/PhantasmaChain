@@ -100,7 +100,7 @@ namespace Phantasma.VM
 
         public T AsEnum<T>() where T: struct, IConvertible
         {
-            if (this.Type != VMType.Enum)
+            if (this.Type != VMType.Enum && this.Type != VMType.Number)
             {
                 throw new Exception("Invalid cast");
             }
@@ -109,6 +109,9 @@ namespace Phantasma.VM
             {
                 throw new ArgumentException("T must be an enumerated type");
             }
+
+            if (this.Type == VMType.Number)
+                Data = (int)((BigInteger) Data);
 
             return (T)Data;
         }
