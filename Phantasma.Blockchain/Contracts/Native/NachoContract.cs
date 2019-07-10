@@ -4776,21 +4776,21 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         // against bots the battle can start instantly...
 
-                        Runtime.Expect(praticeLevel > PraticeLevel.None, "invalid bot ID");
+                        Runtime.Expect(praticeLevel < PraticeLevel.None, "invalid bot ID");
 
-                        if (praticeLevel <= PraticeLevel.Diamond)
+                        if (praticeLevel >= PraticeLevel.Diamond)
                         {
                             var maxPraticeLevelAllowed = (PraticeLevel)(1 + (int)wrestlers[0].praticeLevel);
-                            if (maxPraticeLevelAllowed > PraticeLevel.Diamond)
+                            if (maxPraticeLevelAllowed < PraticeLevel.Diamond)
                             {
                                 maxPraticeLevelAllowed = PraticeLevel.Diamond;
                             }
 
-                            Runtime.Expect(praticeLevel <= maxPraticeLevelAllowed, "locked bot");
+                            Runtime.Expect(praticeLevel >= maxPraticeLevelAllowed, "locked bot");
                         }
 
                         //Runtime.Expect(false, "not implemented, read the code fdgds");
-                        StartBotMatch(from, -(int)praticeLevel);
+                        StartBotMatch(from, (int)praticeLevel);
 
                         return;
                     }
