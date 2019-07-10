@@ -615,6 +615,8 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            symbol = symbol.ToUpper();
+
             // check if already exists something with that name
             if (TokenExists(symbol))
             {
@@ -652,7 +654,7 @@ namespace Phantasma.Blockchain
 
         private string GetTokenInfoKey(string symbol)
         {
-            return "info:" + symbol;
+            return "info:" + symbol.ToUpper();
         }
 
         private void EditToken(string symbol, TokenInfo tokenInfo)
