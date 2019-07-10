@@ -52,6 +52,16 @@ namespace Phantasma.Tests
             string[] scriptString;
             //TestVM vm;
 
+
+            var owner = KeyPair.Generate();
+            var target = KeyPair.Generate();
+            var symbol = "debugNFT";
+            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+            var simulator = new ChainSimulator(owner, 1234);
+
+            string message = "customEvent";
+            var addressStr = Base16.Encode(owner.Address.PublicKey);
+
             scriptString = new string[]
             {
                 $"alias r1, $triggerSend",
@@ -87,27 +97,26 @@ namespace Phantasma.Tests
 
                 $"@burnHandler: throw",
 
-                $"@mintHandler: ret",
+                $"@mintHandler: load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop r11",
+
+                $"load r10, {(int)EventKind.Custom}",
+                $@"load r12, ""{message}""",
+
+                $"push r10",
+                $"push r11",
+                $"push r12",
+                $@"extcall ""Runtime.Event""",
+                "ret",
 
                 $"@return: ret",
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
 
-            /*
-            vm = ExecuteScript(scriptString);
-
-            Assert.IsTrue(vm.Stack.Count == 1);
-
-            var result = vm.Stack.Pop().AsString();
-            Assert.IsTrue(result == target);
-            */
-
-            var owner = KeyPair.Generate();
-            var target = KeyPair.Generate();
-            var symbol = "debugNFT";
-            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-            var simulator = new ChainSimulator(owner, 1234);
+            
 
             var chain = simulator.Nexus.RootChain;
 
@@ -118,9 +127,30 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
-            simulator.MintTokens(owner, symbol, 1000);
-            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+            var tx = simulator.MintTokens(owner, symbol, 1000);
+            //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
+
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+
+            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+            Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
+
+            var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
+            var eventMessage = Encoding.UTF8.GetString(eventData);
+
+            Assert.IsTrue(eventMessage == message);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+                simulator.EndBlock();
+            });
+
+            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
         }
 
         #region RegisterOps
