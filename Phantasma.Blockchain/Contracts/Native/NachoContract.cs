@@ -1849,7 +1849,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoWrestler
     {
         public byte[] genes;
-        public Address owner;
         public BigInteger currentMojo;
         public BigInteger maxMojo;
         public BigInteger experience;
@@ -1970,7 +1969,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoItem
     {
-        public Address owner;
         public BigInteger wrestlerID;
         public ItemKind kind;
         public ItemLocation location;
@@ -2729,7 +2727,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.location != ItemLocation.Market, "in auction");
 
             item.location = ItemLocation.None;
-            item.owner = Address.Null;
+            //item.owner = Address.Null;
 
             var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
@@ -2746,16 +2744,19 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
+
             Runtime.Expect(item.flags.HasFlag(ItemFlags.Wrapped), "unwrapped item");
             item.flags ^= ItemFlags.Wrapped;
 
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
+            
             SetItem(itemID, item);
             Runtime.Notify(NachoEvent.ItemUnwrapped, from, itemID);
         }
@@ -2778,14 +2779,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             switch (itemKind)
             {
@@ -3069,6 +3072,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         //    return wrestlers;
         //}
 
+        /// <summary>
+        /// Bot ids = [-100 ; -1]
+        /// </summary>
+        /// <param name="botID"></param>
+        /// <returns></returns>
         public NachoWrestler GetBot(int botID)
         {
             byte[] genes;
@@ -3178,7 +3186,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         case -62: level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
 
                         default:
-                            // todo remove this hack. implement for bot id = [63,99] ?
+                            // todo remove this hack. implement for bot id = [-63,-99] ?
                             if (botID < 100)
                             {
                                 level = 16; botItemID = 0; genes = new byte[] { 163, 32, 214, 236, 118, 198, 228, 182, 98, 125 }; break;
@@ -3193,7 +3201,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var bot = new NachoWrestler()
             {
-                owner = DevelopersAddress,
                 genes = genes,
                 experience = Constants.EXPERIENCE_MAP[level],
                 nickname = "",
@@ -3708,14 +3715,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             var wrestler = GetWrestler(wrestlerID);
             wrestler.itemID = itemID;
@@ -3741,16 +3750,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             /* TODO add later           
-                      Runtime.Expect(item.location == ItemLocation.Wrestler, "invalid location");
-                       Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler");
-           */
-            Runtime.Expect(item.owner == from, "invalid owner");
+            Runtime.Expect(item.location == ItemLocation.Wrestler, "invalid location");
+            Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler");
+            */
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             wrestler.itemID = 0;
             SetWrestler(wrestlerID, wrestler);
@@ -3772,14 +3783,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             item.location = ItemLocation.Room;
             item.wrestlerID = 0;
@@ -4680,14 +4693,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (int i = 0; i < wrestlerIDs.Length; i++)
             {
                 var ID = wrestlerIDs[i];
-                
+
                 Runtime.Expect(HasWrestler(from, ID), "invalid wrestler");
 
                 var wrestler = GetWrestler(ID);
                 Runtime.Expect(wrestler.location == WrestlerLocation.None, "invalid location");
-                Runtime.Expect(wrestler.owner == from, "invalid owner");
-                //Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo"); // todo fix
+                //Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo"); // TODO fix
 
+                var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, ID);
+                Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
+                
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
                 if (mode == BattleMode.Ranked)
@@ -5688,7 +5703,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return damage;
         }
 
-        private WrestlerTurnInfo CalculateTurnInfo(BattleSide side, NachoWrestler wrestler, WrestlingMove move, WrestlingMove lastMove, LuchadorBattleState state, BigInteger seed)
+        private WrestlerTurnInfo CalculateTurnInfo(BattleSide side, NachoWrestler wrestler, BigInteger wrestlerID, WrestlingMove move, WrestlingMove lastMove, LuchadorBattleState state, BigInteger seed)
         {
             var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
 
@@ -5724,9 +5739,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var base_stamina = Formulas.CalculateBaseStat(genes, StatKind.Stamina);
             var maxStamina = Formulas.CalculateWrestlerStat(level, base_stamina, wrestler.gymBoostStamina);
 
+            var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, wrestlerID);
+
             var info = new WrestlerTurnInfo()
             {
-                address = wrestler.owner,
+                address = nft.CurrentOwner,
                 level = level,
                 seed = seed,
                 initialAtk = initialAtk,
@@ -6943,7 +6960,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 for (var i = 0; i < 2; i++)
                 {
                     var other = 1 - i;
-                    info[i] = CalculateTurnInfo(battle.sides[i], wrestlers[i], battle.sides[i].move, states[i].lastMove, states[i], seed);
+                    info[i] = CalculateTurnInfo(battle.sides[i], wrestlers[i], battle.sides[i].wrestlers[0].wrestlerID, battle.sides[i].move, states[i].lastMove, states[i], seed);
 
                     seed = Runtime.NextRandom();
 
