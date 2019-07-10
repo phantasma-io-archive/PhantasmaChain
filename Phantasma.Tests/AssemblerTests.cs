@@ -87,7 +87,7 @@ namespace Phantasma.Tests
 
                 $"@burnHandler: throw",
 
-                $"@mintHandler: throw",
+                $"@mintHandler: ret",
 
                 $"@return: ret",
             };

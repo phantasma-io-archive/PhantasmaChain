@@ -34,12 +34,13 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
         public readonly bool readOnlyMode;
+        public readonly bool DelayPayment;
 
         public OracleReaderDelegate OracleReader = null;
 
         private BigInteger seed;
 
-        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode, uint initialMaxGas = 10000) : base(script)
+        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -51,7 +52,8 @@ namespace Phantasma.Blockchain.Contracts
             this.GasPrice = 0;
             this.UsedGas = 0;
             this.PaidGas = 0;
-            this.MaxGas = initialMaxGas;  // a minimum amount required for allowing calls to Gas contract etc
+            this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
+            this.DelayPayment = delayPayment;
 
             this.Chain = chain;
             this.Block = block;
@@ -109,7 +111,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
                 }
                 else
-                if (PaidGas < UsedGas && Nexus.Ready)
+                if (PaidGas < UsedGas && Nexus.Ready && !DelayPayment)
                 {
 #if DEBUG
                     throw new VMDebugException(this, "VM unpaid gas");
