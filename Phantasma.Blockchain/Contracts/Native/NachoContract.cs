@@ -1969,7 +1969,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoItem
     {
-        public Address owner;
         public BigInteger wrestlerID;
         public ItemKind kind;
         public ItemLocation location;
@@ -2728,7 +2727,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.location != ItemLocation.Market, "in auction");
 
             item.location = ItemLocation.None;
-            item.owner = Address.Null;
+            //item.owner = Address.Null;
 
             var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
@@ -2745,16 +2744,19 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
+
             Runtime.Expect(item.flags.HasFlag(ItemFlags.Wrapped), "unwrapped item");
             item.flags ^= ItemFlags.Wrapped;
 
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
+            
             SetItem(itemID, item);
             Runtime.Notify(NachoEvent.ItemUnwrapped, from, itemID);
         }
@@ -2777,14 +2779,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             switch (itemKind)
             {
@@ -3711,14 +3715,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             var wrestler = GetWrestler(wrestlerID);
             wrestler.itemID = itemID;
@@ -3744,16 +3750,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             /* TODO add later           
-                      Runtime.Expect(item.location == ItemLocation.Wrestler, "invalid location");
-                       Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler");
-           */
-            Runtime.Expect(item.owner == from, "invalid owner");
+            Runtime.Expect(item.location == ItemLocation.Wrestler, "invalid location");
+            Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler");
+            */
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             wrestler.itemID = 0;
             SetWrestler(wrestlerID, wrestler);
@@ -3775,14 +3783,16 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var item = GetItem(itemID);
 
-            if (item.owner == Address.Null)
-            {
-                item.owner = from;
-            }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-            Runtime.Expect(item.owner == from, "invalid owner");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+
+            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             item.location = ItemLocation.Room;
             item.wrestlerID = 0;
