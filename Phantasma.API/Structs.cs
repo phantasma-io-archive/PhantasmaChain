@@ -34,6 +34,9 @@ namespace Phantasma.API
         public string address;
         public string name;
 
+        [APIDescription("Amount of staked SOUL")]
+        public string stake;
+
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
     }

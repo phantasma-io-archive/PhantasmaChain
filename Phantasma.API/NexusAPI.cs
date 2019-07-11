@@ -443,6 +443,9 @@ namespace Phantasma.API
             result.address = address.Text;
             result.name = Nexus.LookUpAddressName(address);
 
+            var stake = (BigInteger)Nexus.RootChain.InvokeContract("energy", "GetStake", address);
+            result.stake = stake.ToString();
+
             var balanceList = new List<BalanceResult>();
             foreach (var symbol in Nexus.Tokens)
             {
