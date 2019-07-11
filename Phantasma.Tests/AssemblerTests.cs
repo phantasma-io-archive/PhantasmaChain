@@ -89,6 +89,134 @@ namespace Phantasma.Tests
                 $"equal $triggerMint, $currentTrigger, $comparisonResult",
                 $"jmpif $comparisonResult, @mintHandler",
 
+                $"ret",
+
+                $"@sendHandler: throw",
+
+                $"@receiveHandler: throw",
+
+                $"@burnHandler: throw",
+
+                $"@mintHandler: ret",
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
+            var tx = simulator.MintTokens(owner, symbol, 1000);
+            //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+            simulator.EndBlock();
+
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+                simulator.EndBlock();
+            });
+
+            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+        }
+
+        [TestMethod]
+        public void EventNotify()
+        {
+            string[] scriptString;
+
+            var owner = KeyPair.Generate();
+            var addressStr = Base16.Encode(owner.Address.PublicKey);
+
+            var simulator = new ChainSimulator(owner, 1234);
+
+            string message = "customEvent";
+
+            scriptString = new string[]
+            {
+                $"load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop r11",
+
+                $"load r10, {(int)EventKind.Custom}",
+                $@"load r12, ""{message}""",
+
+                $"push r10",
+                $"push r11",
+                $"push r12",
+                $@"extcall ""Runtime.Event""",
+                "ret",
+
+                $"@return: ret",
+            };
+
+            
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(owner, (() => 
+                ScriptUtils.BeginScript().
+                    AllowGas(owner.Address, Address.Null, 1, 9999).
+                    EmitRaw(AssemblerUtils.BuildScript(scriptString)).
+                    SpendGas(owner.Address).
+                    EndScript()));
+            simulator.EndBlock();
+
+
+            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+            Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
+
+            var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
+            var eventMessage = Encoding.UTF8.GetString(eventData);
+
+            Assert.IsTrue(eventMessage == message);
+        }
+
+        [TestMethod]
+        public void TokenTriggersEventPropagation()
+        {
+            string[] scriptString;
+            //TestVM vm;
+
+
+            var owner = KeyPair.Generate();
+            var target = KeyPair.Generate();
+            var symbol = "debugNFT";
+            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+            var simulator = new ChainSimulator(owner, 1234);
+
+            string message = "customEvent";
+            var addressStr = Base16.Encode(owner.Address.PublicKey);
+
+            scriptString = new string[]
+            {
+                $"alias r1, $triggerSend",
+                $"alias r2, $triggerReceive",
+                $"alias r3, $triggerBurn",
+                $"alias r4, $triggerMint",
+                $"alias r5, $currentTrigger",
+                $"alias r6, $comparisonResult",
+
+                $@"load $triggerSend, ""{TriggerSend}""",
+                $@"load $triggerReceive, ""{TriggerReceive}""",
+                $@"load $triggerBurn, ""{TriggerBurn}""",
+                $@"load $triggerMint, ""{TriggerMint}""",
+                $"pop $currentTrigger",
+
+                $"equal $triggerSend, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @sendHandler",
+
+                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @receiveHandler",
+
+                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @burnHandler",
+
+                $"equal $triggerMint, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @mintHandler",
+
                 $"jmp @return",
 
                 $"@sendHandler: throw",
@@ -115,15 +243,6 @@ namespace Phantasma.Tests
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
-
-            
-
-            var chain = simulator.Nexus.RootChain;
-
-            var changeSet = new StorageChangeSetContext(chain.Storage);
-            var vm = new RuntimeVM(script, chain, chain.LastBlock, null, changeSet, true);
-
-            var state = vm.Execute();
 
             simulator.BeginBlock();
             simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
@@ -2344,6 +2463,25 @@ namespace Phantasma.Tests
             return vm;
         }
 
+        private TestVM ExecuteScript(IEnumerable<string> scriptString, out Transaction tx, Action<TestVM> beforeExecute = null)
+        {
+            var owner = KeyPair.Generate();
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            var keys = KeyPair.Generate();
+            var nexus = new Nexus(new ConsoleLogger());
+            nexus.CreateGenesisBlock("asmnet", owner, Timestamp.Now);
+            tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
+
+            var vm = new TestVM(tx.Script);
+            vm.ThrowOnFault = true;
+
+            beforeExecute?.Invoke(vm);
+
+            vm.Execute();
+
+            return vm;
+        }
 
         #endregion
 
