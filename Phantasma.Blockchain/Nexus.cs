@@ -731,7 +731,7 @@ namespace Phantasma.Blockchain
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerMint, target, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, target, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -774,7 +774,7 @@ namespace Phantasma.Blockchain
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerMint, target, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, target, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -823,7 +823,7 @@ namespace Phantasma.Blockchain
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerBurn, target, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, target, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -868,7 +868,7 @@ namespace Phantasma.Blockchain
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerBurn, target, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, target, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -924,14 +924,14 @@ namespace Phantasma.Blockchain
             }
 
             var accountScript = this.LookUpAddressScript(source);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, source, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, source, amount);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
             accountScript = this.LookUpAddressScript(destination);
-            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, destination, amount);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, destination, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -988,14 +988,14 @@ namespace Phantasma.Blockchain
             }
 
             var accountScript = this.LookUpAddressScript(source);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, source, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, source, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
             accountScript = this.LookUpAddressScript(destination);
-            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, AccountContract.TriggerSend, destination, tokenID);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, destination, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
