@@ -139,6 +139,9 @@ namespace Phantasma.CodeGen.Assembler
                         ProcessCall(sb);
                         break;
 
+                    case Opcode.NOP:
+                        break;
+
                     default:
                         throw new CompilerException(LineNumber, ERR_NOT_IMPLEMENTED);
                 }
