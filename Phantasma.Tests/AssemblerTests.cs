@@ -11,6 +11,7 @@ using Phantasma.Numerics;
 using Phantasma.VM;
 using System.Linq;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Utils;
 using Phantasma.Storage.Context;
@@ -47,6 +48,52 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void EventNotify()
+        {
+            string[] scriptString;
+
+            var owner = KeyPair.Generate();
+            var addressStr = Base16.Encode(owner.Address.PublicKey);
+
+            var simulator = new ChainSimulator(owner, 1234);
+
+            string message = "customEvent";
+
+            scriptString = new string[]
+            {
+                $"load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop r11",
+
+                $"load r10, {(int)EventKind.Custom}",
+                $@"load r12, ""{message}""",
+
+                $"push r10",
+                $"push r11",
+                $"push r12",
+                $@"extcall ""Runtime.Event""",
+            };
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(owner, (() =>
+                ScriptUtils.BeginScript().
+                    AllowGas(owner.Address, Address.Null, 1, 9999).
+                    EmitRaw(AssemblerUtils.BuildScript(scriptString)).
+                    SpendGas(owner.Address).
+                    EndScript()));
+            simulator.EndBlock();
+
+            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+            Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
+
+            var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
+            var eventMessage = Encoding.UTF8.GetString(eventData);
+
+            Assert.IsTrue(eventMessage == message);
+        }
+
+        [TestMethod]
         public void TokenTriggers()
         {
             string[] scriptString;
@@ -71,10 +118,10 @@ namespace Phantasma.Tests
                 $"alias r5, $currentTrigger",
                 $"alias r6, $comparisonResult",
 
-                $@"load $triggerSend, ""{TriggerSend}""",
-                $@"load $triggerReceive, ""{TriggerReceive}""",
-                $@"load $triggerBurn, ""{TriggerBurn}""",
-                $@"load $triggerMint, ""{TriggerMint}""",
+                $@"load $triggerSend, ""{TokenContract.TriggerSend}""",
+                $@"load $triggerReceive, ""{TokenContract.TriggerReceive}""",
+                $@"load $triggerBurn, ""{TokenContract.TriggerBurn}""",
+                $@"load $triggerMint, ""{TokenContract.TriggerMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",
@@ -123,58 +170,6 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void EventNotify()
-        {
-            string[] scriptString;
-
-            var owner = KeyPair.Generate();
-            var addressStr = Base16.Encode(owner.Address.PublicKey);
-
-            var simulator = new ChainSimulator(owner, 1234);
-
-            string message = "customEvent";
-
-            scriptString = new string[]
-            {
-                $"load r11 0x{addressStr}",
-                $"push r11",
-                $@"extcall ""Address()""",
-                $"pop r11",
-
-                $"load r10, {(int)EventKind.Custom}",
-                $@"load r12, ""{message}""",
-
-                $"push r10",
-                $"push r11",
-                $"push r12",
-                $@"extcall ""Runtime.Event""",
-                "ret",
-
-                $"@return: ret",
-            };
-
-            
-
-            simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(owner, (() => 
-                ScriptUtils.BeginScript().
-                    AllowGas(owner.Address, Address.Null, 1, 9999).
-                    EmitRaw(AssemblerUtils.BuildScript(scriptString)).
-                    SpendGas(owner.Address).
-                    EndScript()));
-            simulator.EndBlock();
-
-
-            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
-            Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
-
-            var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
-            var eventMessage = Encoding.UTF8.GetString(eventData);
-
-            Assert.IsTrue(eventMessage == message);
-        }
-
-        [TestMethod]
         public void TokenTriggersEventPropagation()
         {
             string[] scriptString;
@@ -199,10 +194,10 @@ namespace Phantasma.Tests
                 $"alias r5, $currentTrigger",
                 $"alias r6, $comparisonResult",
 
-                $@"load $triggerSend, ""{TriggerSend}""",
-                $@"load $triggerReceive, ""{TriggerReceive}""",
-                $@"load $triggerBurn, ""{TriggerBurn}""",
-                $@"load $triggerMint, ""{TriggerMint}""",
+                $@"load $triggerSend, ""{TokenContract.TriggerSend}""",
+                $@"load $triggerReceive, ""{TokenContract.TriggerReceive}""",
+                $@"load $triggerBurn, ""{TokenContract.TriggerBurn}""",
+                $@"load $triggerMint, ""{TokenContract.TriggerMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",
@@ -248,6 +243,184 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
             var tx = simulator.MintTokens(owner, symbol, 1000);
             //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+            simulator.EndBlock();
+
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+
+            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+            Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
+
+            var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
+            var eventMessage = Encoding.UTF8.GetString(eventData);
+
+            Assert.IsTrue(eventMessage == message);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+                simulator.EndBlock();
+            });
+
+            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+        }
+
+        [TestMethod]
+        public void AccountTriggers()
+        {
+            string[] scriptString;
+
+            var owner = KeyPair.Generate();
+            var target = KeyPair.Generate();
+            var symbol = "debugNFT";
+            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+            var simulator = new ChainSimulator(owner, 1234);
+
+            scriptString = new string[]
+            {
+                $"alias r1, $triggerSend",
+                $"alias r2, $triggerReceive",
+                $"alias r3, $triggerBurn",
+                $"alias r4, $triggerMint",
+                $"alias r5, $currentTrigger",
+                $"alias r6, $comparisonResult",
+
+                $@"load $triggerSend, ""{AccountContract.TriggerSend}""",
+                $@"load $triggerReceive, ""{AccountContract.TriggerReceive}""",
+                $@"load $triggerBurn, ""{AccountContract.TriggerBurn}""",
+                $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
+                $"pop $currentTrigger",
+
+                $"equal $triggerSend, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @sendHandler",
+
+                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @receiveHandler",
+
+                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @burnHandler",
+
+                $"equal $triggerMint, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @mintHandler",
+
+                $"jmp @end",
+
+                $"@sendHandler: throw",
+
+                $"@receiveHandler: throw",
+
+                $"@burnHandler: throw",
+
+                $"@mintHandler: nop",
+
+                $"@end: nop"
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
+            simulator.GenerateCustomTransaction(target,
+                () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
+                    .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
+                    .EndScript());
+
+                simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags);
+            var tx = simulator.MintTokens(owner, symbol, 1000);
+            simulator.EndBlock();
+
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+
+            Assert.ThrowsException<Exception>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+                simulator.EndBlock();
+            });
+
+            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            Assert.IsTrue(balance == 1000);
+        }
+
+        [TestMethod]
+        public void AccountTriggersEventPropagation()
+        {
+            string[] scriptString;
+
+            var owner = KeyPair.Generate();
+            var target = KeyPair.Generate();
+            var symbol = "debugNFT";
+            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+            var simulator = new ChainSimulator(owner, 1234);
+
+            string message = "customEvent";
+            var addressStr = Base16.Encode(owner.Address.PublicKey);
+
+            scriptString = new string[]
+            {
+                $"alias r1, $triggerSend",
+                $"alias r2, $triggerReceive",
+                $"alias r3, $triggerBurn",
+                $"alias r4, $triggerMint",
+                $"alias r5, $currentTrigger",
+                $"alias r6, $comparisonResult",
+
+                $@"load $triggerSend, ""{AccountContract.TriggerSend}""",
+                $@"load $triggerReceive, ""{AccountContract.TriggerReceive}""",
+                $@"load $triggerBurn, ""{AccountContract.TriggerBurn}""",
+                $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
+                $"pop $currentTrigger",
+
+                $"equal $triggerSend, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @sendHandler",
+
+                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @receiveHandler",
+
+                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @burnHandler",
+
+                $"equal $triggerMint, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @mintHandler",
+
+                $"jmp @end",
+
+                $"@sendHandler: throw",
+
+                $"@receiveHandler: throw",
+
+                $"@burnHandler: throw",
+
+                $"@mintHandler: load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop r11",
+
+                $"load r10, {(int)EventKind.Custom}",
+                $@"load r12, ""{message}""",
+
+                $"push r10",
+                $"push r11",
+                $"push r12",
+                $@"extcall ""Runtime.Event""",
+
+                $"@end: nop"
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
+            simulator.GenerateCustomTransaction(target,
+                () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
+                    .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
+                    .EndScript());
+
+            simulator.GenerateToken(target, symbol, $"{symbol}Token", 1000000000, 3, flags);
+            var tx = simulator.MintTokens(target, symbol, 1000);
             simulator.EndBlock();
 
             var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
