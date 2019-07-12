@@ -423,6 +423,9 @@ namespace Phantasma.Tests
             var tx = simulator.MintTokens(target, symbol, 1000);
             simulator.EndBlock();
 
+            var accountScript = simulator.Nexus.LookUpAddressScript(target.Address);
+            Assert.IsTrue(accountScript != null && accountScript.Length > 0);
+
             var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
 
