@@ -315,7 +315,7 @@ namespace Phantasma.Tests
 
                 $"@mintHandler: nop",
 
-                $"@end: nop"
+                $"@end: ret"
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
@@ -326,8 +326,10 @@ namespace Phantasma.Tests
                 () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
                     .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
                     .EndScript());
+            simulator.EndBlock();
 
-                simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags);
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags);
             var tx = simulator.MintTokens(owner, symbol, 1000);
             simulator.EndBlock();
 
@@ -407,7 +409,7 @@ namespace Phantasma.Tests
                 $"push r12",
                 $@"extcall ""Runtime.Event""",
 
-                $"@end: nop"
+                $"@end: ret"
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
@@ -418,7 +420,9 @@ namespace Phantasma.Tests
                 () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
                     .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
                     .EndScript());
+            simulator.EndBlock();
 
+            simulator.BeginBlock();
             simulator.GenerateToken(target, symbol, $"{symbol}Token", 1000000000, 3, flags);
             var tx = simulator.MintTokens(target, symbol, 1000);
             simulator.EndBlock();
@@ -426,7 +430,7 @@ namespace Phantasma.Tests
             var accountScript = simulator.Nexus.LookUpAddressScript(target.Address);
             Assert.IsTrue(accountScript != null && accountScript.Length > 0);
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, target.Address);
             Assert.IsTrue(balance == 1000);
 
             var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
@@ -444,7 +448,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, target.Address);
             Assert.IsTrue(balance == 1000);
         }
 
