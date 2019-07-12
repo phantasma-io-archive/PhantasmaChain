@@ -15,6 +15,8 @@ namespace Phantasma.Cryptography
 
         public Hash Root => _tree[_tree.Length - 1];
 
+        public uint MaxDepthLeafCount { get; private set; }
+
         private MerkleTree()
         {
 
@@ -22,7 +24,7 @@ namespace Phantasma.Cryptography
 
         // TODO move this to a bette place, check if not duplicated
         //https://stackoverflow.com/questions/1322510/given-an-integer-how-do-i-find-the-next-largest-power-of-two-using-bit-twiddlin/1322548#1322548
-        public static int NextPowerOf2(int n)
+        public static uint NextPowerOf2(uint n)
         {
             n--;
             n |= n >> 1;   // Divide by 2^k for consecutive doublings of k up to 32,
@@ -35,32 +37,33 @@ namespace Phantasma.Cryptography
         }
 
         // chunkSize must be a power of 2
-        internal MerkleTree(byte[] content, uint chunkSize)
+        public MerkleTree(byte[] content, uint chunkSize)
         {
             Throw.If(content == null || content.Length < chunkSize, "invalid content");
 
-            var chunkCount = (int)(content.Length / chunkSize);
+            var chunkCount = (uint)(content.Length / chunkSize);
             if (chunkCount * chunkSize < content.Length)
             {
                 chunkCount++;
             }
 
-            chunkCount = NextPowerOf2(chunkCount);
+            MaxDepthLeafCount = NextPowerOf2(chunkCount);
 
-            int maxLevel = 1;
-            var temp = chunkCount;
-            var nodeCount = 0;
+            //int maxLevel = 1;
+            var temp = MaxDepthLeafCount;
+            uint nodeCount = 0;
 
             while (temp > 0)
             {
                 nodeCount += temp;
                 temp /= 2;
-                maxLevel++;
+                //maxLevel++;
             }
 
             _tree = new Hash[nodeCount];
 
-            for (int i=0; i< chunkCount; i++)
+            //hash the maximum depth leaves of the tree
+            for (int i=0; i< MaxDepthLeafCount; i++)
             {
                 Hash hash;
 
@@ -82,22 +85,23 @@ namespace Phantasma.Cryptography
                 _tree[i] = hash;
             }
 
-            int prevOffset = 0;
-            int prevRows = chunkCount;
+            //and how combine the leaf hashes in the branches
+            uint prevOffset = 0;
+            uint prevRows = MaxDepthLeafCount;
 
             while (true)
             {
-                int rows = prevRows / 2;
+                uint rows = prevRows / 2;
                 if (rows <= 0)
                 {
                     break;
                 }
 
-                int offset = prevOffset + prevRows;
+                uint offset = prevOffset + prevRows;
 
-                for (int i=0; i<rows; i++)
+                for (uint i=0; i<rows; i++)
                 {
-                    int childIndex = prevOffset + (i * 2);
+                    uint childIndex = prevOffset + (i * 2);
                     var left = _tree[childIndex];
                     var right = _tree[childIndex + 1];
                     _tree[offset + i] = Hash.MerkleCombine(left, right);
@@ -106,6 +110,15 @@ namespace Phantasma.Cryptography
                 prevOffset = offset;
                 prevRows = rows;
             }
+        }
+
+        public bool VerifyContent(byte[] content, uint offset)
+        {
+            Throw.If(offset >= MaxDepthLeafCount, "Offset does not correspond to maximum depth leaf");
+
+            var hash = new Hash(CryptoExtensions.Sha256(content, 0, (uint) content.Length));
+
+            return hash == _tree[offset];
         }
 
         public void SerializeData(BinaryWriter writer)
