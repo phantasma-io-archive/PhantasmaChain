@@ -13,6 +13,7 @@ using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.VM.Contracts;
 
 namespace Phantasma.API
 {
@@ -427,6 +428,19 @@ namespace Phantasma.API
             return null;
         }
 
+        private ABIContractResult FillABI(string name, ContractInterface abi)
+        {
+            return new ABIContractResult
+            {
+                name = name,
+                methods = abi.Methods.Select(x => new ABIMethodResult()
+                {
+                    name = x.name,
+                    returnType = x.returnType.ToString(),
+                    parameters = x.parameters.Select(y => y.ToString()).ToArray()
+                }).ToArray()
+            };
+        }
         #endregion
 
         [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.")]
@@ -1143,7 +1157,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(int), "Returns the number of active auctions.")]
-        public IAPIResult GetAuctionsCount([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName = null, [APIParameter("Token symbol used as filter", "NACHO")]
+        public IAPIResult GetAuctionsCount([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName = null, [APIParameter("Token symbol used as filter", "NACHO")]
             string symbol = null)
         {
             var chain = FindChainByInput(chainAddressOrName);
@@ -1292,6 +1306,29 @@ namespace Phantasma.API
                 key = Base16.Encode(archive.Key),
                 metadata = archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
             };
+        }
+
+        [APIInfo(typeof(ABIContractResult), "Returns the ABI interface of specific contract.", false)]
+        public IAPIResult GetABI([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
+        {
+            var chain = FindChainByInput(chainAddressOrName);
+            if (chain == null)
+            {
+                return new ErrorResult { error = "Chain not found" };
+            }
+
+            if (string.IsNullOrEmpty(contractName))
+            {
+                return new ErrorResult { error = "Invalid contract name" };
+            }
+
+            if (!chain.HasContract(contractName))
+            {
+                return new ErrorResult { error = "Contract not found" };
+            }
+
+            var contract = this.Nexus.FindContract(contractName);
+            return FillABI(contractName, contract.ABI);
         }
     }
 }

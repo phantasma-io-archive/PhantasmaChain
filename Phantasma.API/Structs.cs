@@ -245,7 +245,7 @@ namespace Phantasma.API
         public string result;
     }
 
-    public struct ArchiveResult: IAPIResult
+    public struct ArchiveResult : IAPIResult
     {
         [APIDescription("Archive hash")]
         public string hash;
@@ -261,6 +261,26 @@ namespace Phantasma.API
 
         [APIDescription("Metadata")]
         public string[] metadata;
+    }
+
+    public struct ABIMethodResult : IAPIResult
+    {
+        [APIDescription("Name of method")]
+        public string name;
+
+        public string returnType;
+
+        [APIDescription("Type of parameters")]
+        public string[] parameters;
+    }
+
+    public struct ABIContractResult : IAPIResult
+    {
+        [APIDescription("Name of contract")]
+        public string name;
+
+        [APIDescription("List of methods")]
+        public ABIMethodResult[] methods;
     }
 
 }
