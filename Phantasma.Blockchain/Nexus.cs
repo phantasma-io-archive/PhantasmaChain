@@ -13,6 +13,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
+using System.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -32,6 +33,9 @@ namespace Phantasma.Blockchain
 
         private KeyValueStore<string, byte[]> _vars;
         private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
+
+        private KeyValueStore<Hash, Archive> _archiveEntries;
+        private KeyValueStore<Hash, byte[]> _archiveContents;
 
         public bool Ready { get; private set; }
 
@@ -201,6 +205,9 @@ namespace Phantasma.Blockchain
             {
                 Ready = false;
             }
+
+            _archiveEntries= new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
+            _archiveContents = new KeyValueStore<Hash, byte[]>(CreateKeyStoreAdapter("contents"));
 
             _logger = logger;
         }
@@ -1394,15 +1401,33 @@ namespace Phantasma.Blockchain
         #region STORAGE
         public Archive FindArchive(Hash hash)
         {
-            throw new NotImplementedException();
+            if (_archiveEntries.ContainsKey(hash))
+            {
+                return _archiveEntries.Get(hash);
+            }
+
+            return null;
         }
 
         public bool ArchiveExists(Hash hash)
         {
-            return FindArchive(hash) != null;
+            return _archiveEntries.ContainsKey(hash);
         }
 
-        public Archive CreateArchive(MerkleTree merkleTree, ArchiveFlags flags)
+        public bool IsArchiveComplete(Archive archive)
+        {
+            for (int i=0; i<archive.BlockCount; i++)
+            {
+                if (!HasArchiveBlock(archive, i))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public Archive CreateArchive(MerkleTree merkleTree, int size, ArchiveFlags flags, byte[] key)
         {
             var archive = FindArchive(merkleTree.Root);
             if (archive != null)
@@ -1410,19 +1435,64 @@ namespace Phantasma.Blockchain
                 return archive;
             }
 
-            throw new NotImplementedException();
+            archive = new Archive(merkleTree, size, flags, key);
+            var archiveHash = merkleTree.Root;
+            _archiveEntries.Set(archiveHash, archive);
+
+            return archive;
         }
 
-        public bool DeleteArchive(Hash hash)
+        public bool DeleteArchive(Archive archive)
         {
-            var archive = FindArchive(hash);
-            if (archive == null)
+            Throw.IfNull(archive, nameof(archive));
+
+            for (int i = 0; i < archive.BlockCount; i++)
             {
-                return false;
+                var blockHash = archive.MerkleTree.GetHash(i);
+                if (_archiveContents.ContainsKey(blockHash))
+                {
+                    _archiveContents.Remove(blockHash);
+                }
             }
 
-            throw new NotImplementedException();
+            _archiveEntries.Remove(archive.Hash);
+
+            return true;
         }
+
+        public bool HasArchiveBlock(Archive archive, int blockIndex)
+        {
+            Throw.IfNull(archive, nameof(archive));
+            Throw.If(blockIndex < 0 || blockIndex >= archive.BlockCount, "invalid block index");
+
+            var hash = archive.MerkleTree.GetHash(blockIndex);
+            return _archiveContents.ContainsKey(hash);
+        }
+
+        public void WriteArchiveBlock(Archive archive, byte[] content, int blockIndex)
+        {
+            Throw.IfNull(archive, nameof(archive));
+            Throw.IfNull(content, nameof(content));
+            Throw.If(blockIndex < 0 || blockIndex >= archive.BlockCount, "invalid block index");
+
+            var hash = MerkleTree.CalculateBlockHash(content);
+            if (!archive.MerkleTree.VerifyContent(hash, blockIndex))
+            {
+                throw new ArchiveException("Block content mismatch");
+            }
+
+            _archiveContents.Set(hash, content);
+        }
+
+        public byte[] ReadArchiveBlock(Archive archive, int blockIndex)
+        {
+            Throw.IfNull(archive, nameof(archive));
+            Throw.If(blockIndex < 0 || blockIndex >= archive.BlockCount, "invalid block index");
+
+            var hash = archive.MerkleTree.GetHash(blockIndex);
+            return _archiveContents.Get(hash);
+        }
+
         #endregion
 
         /*

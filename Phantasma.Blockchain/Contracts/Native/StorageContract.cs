@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void UploadFile(Address from, string name, int contentSize, byte[] contentMerkle, ArchiveFlags flags)
+        public void UploadFile(Address from, string name, int contentSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(contentSize >= Archive.MinSize, "file too small");
@@ -44,7 +44,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(availableSize >= requiredSize, "account does not have available space");
 
             var hashes = MerkleTree.FromBytes(contentMerkle);
-            Runtime.Expect(Runtime.Nexus.CreateArchive(hashes, flags) != null, "archive creation failed");
+            Runtime.Expect(Runtime.Nexus.CreateArchive(hashes, contentSize, flags, key) != null, "archive creation failed");
 
             var newEntry = new StorageEntry()
             {
@@ -78,7 +78,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Expect(Runtime.Nexus.DeleteArchive(targetHash), "deletion failed");
+            var archive = Runtime.Nexus.FindArchive(targetHash);
+            Runtime.Expect(Runtime.Nexus.DeleteArchive(archive), "deletion failed");
 
             Runtime.Expect(targetIndex >= 0, "file not found");
             list.RemoveAt<StorageEntry>(targetIndex);

@@ -112,13 +112,29 @@ namespace Phantasma.Cryptography
             }
         }
 
-        public bool VerifyContent(byte[] content, uint offset)
+        public static Hash CalculateBlockHash(byte[] content)
         {
-            Throw.If(offset >= MaxDepthLeafCount, "Offset does not correspond to maximum depth leaf");
+            var hash = new Hash(CryptoExtensions.Sha256(content, 0, (uint)content.Length));
+            return hash;
+        }
 
-            var hash = new Hash(CryptoExtensions.Sha256(content, 0, (uint) content.Length));
+        public bool VerifyContent(byte[] content, int blockIndex)
+        {
+            var hash = CalculateBlockHash(content);
+            return VerifyContent(hash, blockIndex);
+        }
 
-            return hash == _tree[offset];
+        public bool VerifyContent(Hash hash, int blockIndex)
+        {
+            Throw.If(blockIndex < 0, "Invalid index");
+            Throw.If(blockIndex >= MaxDepthLeafCount, "Index does not correspond to maximum depth leaf");
+            var expectedHash = GetHash(blockIndex);
+            return hash == expectedHash;
+        }
+
+        public Hash GetHash(int index)
+        {
+            return _tree[index];
         }
 
         public void SerializeData(BinaryWriter writer)
@@ -152,7 +168,6 @@ namespace Phantasma.Cryptography
                 }
             }
         }
-
 
         public static MerkleTree Unserialize(BinaryReader reader)
         {

@@ -34,7 +34,7 @@ namespace Phantasma.Tests
             for (int i = 0; i < chunkCount; i++)
             {
                 Array.Copy(file, i * chunkSize, chunk, 0, chunkSize);
-                Assert.IsTrue(tree.VerifyContent(chunk, (uint)i));
+                Assert.IsTrue(tree.VerifyContent(chunk, i));
             }
         }
 
@@ -71,7 +71,7 @@ namespace Phantasma.Tests
                     r.NextBytes(fakeChunk);
                 }
 
-                Assert.IsFalse(tree.VerifyContent(fakeChunk, (uint)i));
+                Assert.IsFalse(tree.VerifyContent(fakeChunk, i));
             }
         }
     }

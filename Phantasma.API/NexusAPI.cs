@@ -1304,7 +1304,7 @@ namespace Phantasma.API
                 size = (uint)archive.Size,
                 flags = archive.Flags.ToString(),
                 key = Base16.Encode(archive.Key),
-                metadata = archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
+                metadata = new string[0]// archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
             };
         }
 

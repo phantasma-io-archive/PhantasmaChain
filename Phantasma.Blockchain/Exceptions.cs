@@ -18,4 +18,13 @@ namespace Phantasma.Blockchain
 
         }
     }
+
+    public class ArchiveException : Exception
+    {
+        public ArchiveException(string msg) : base(msg)
+        {
+
+        }
+    }
+
 }

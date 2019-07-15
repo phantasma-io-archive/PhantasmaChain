@@ -2,6 +2,7 @@
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Phantasma.Blockchain
@@ -14,6 +15,7 @@ namespace Phantasma.Blockchain
         Encrypted = 0x2,
     }
 
+    // TODO support this
     public struct ArchiveMetadata
     {
         public readonly string Key;
@@ -30,48 +32,66 @@ namespace Phantasma.Blockchain
     {
         public static readonly int MinSize = 1024; //1kb
         public static readonly int MaxSize = 10485760; //100mb
+        public static readonly int BlockSize = 256 * 1024;
 
-        public MerkleTree Hashes { get; private set; }
+        public Hash Hash => MerkleTree.Root;
+
+        public MerkleTree MerkleTree { get; private set; }
         public int Size { get; private set; }
-        public int References { get; private set; }
         public ArchiveFlags Flags { get; private set; }
         public byte[] Key { get; private set; }
-        public ArchiveMetadata[] Metadata { get; private set; }
+
+        public int BlockCount => Size / BlockSize;
+
+        public IEnumerable<Hash> Blocks
+        {
+            get
+            {
+                for (int i=0; i<BlockCount; i++)
+                {
+                    yield return MerkleTree.GetHash(i);
+                }
+
+                yield break;
+            }
+        }
+
+        public Archive(MerkleTree tree, int size, ArchiveFlags flags, byte[] key)
+        {
+            this.MerkleTree = tree;
+            this.Size = size;
+            this.Flags = flags;
+            this.Key = key;
+        }
+
+        private Archive()
+        {
+
+        }
 
         public void SerializeData(BinaryWriter writer)
         {
-            Hashes.SerializeData(writer);
+            MerkleTree.SerializeData(writer);
             writer.Write(Size);
             writer.Write((byte)Flags);
             writer.WriteByteArray(Key);
-            writer.WriteVarInt(References);
-            writer.WriteVarInt(Metadata.Length);
-            for (int i = 0; i < Metadata.Length; i++)
-            {
-                writer.WriteVarString(Metadata[i].Key);
-                writer.WriteVarString(Metadata[i].Value);
-            }
         }
 
         public void UnserializeData(BinaryReader reader)
         {
-            Hashes = MerkleTree.Unserialize(reader);
+            MerkleTree = MerkleTree.Unserialize(reader);
             Size = reader.ReadInt32();
             Flags = (ArchiveFlags) reader.ReadByte();
 
             Key = reader.ReadByteArray();
             Key = Key ?? new byte[0];
+        }
 
-            References = (int)reader.ReadVarInt();
-
-            int metaCount = (int)reader.ReadVarInt();
-            Metadata = new ArchiveMetadata[metaCount];
-            for (int i = 0; i < Metadata.Length; i++)
-            {
-                var key = reader.ReadVarString();
-                var val = reader.ReadVarString();
-                Metadata[i] = new ArchiveMetadata(key, val);
-            }
+        public static Archive Unserialize(BinaryReader reader)
+        {
+            var archive = new Archive();
+            archive.UnserializeData(reader);
+            return archive;
         }
     }
 }
