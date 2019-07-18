@@ -15,8 +15,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "messages";
 
-        public const int MIN_MESSAGE_LENGTH = 1024 * 64;
-        public const int MAX_MESSAGE_LENGTH = 16;
+        public const int MAX_MESSAGE_LENGTH = 1024 * 64;
+        public const int MIN_MESSAGE_LENGTH = 16;
 
         internal StorageList _messages;
 
@@ -28,8 +28,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(content.Length >= MIN_MESSAGE_LENGTH, "message too small");
-            Runtime.Expect(content.Length <= MAX_MESSAGE_LENGTH, "message too large");
+            Runtime.Expect(content.Length >= MAX_MESSAGE_LENGTH, "message too small");
+            Runtime.Expect(content.Length <= MIN_MESSAGE_LENGTH, "message too large");
 
             var msg = new AddressMessage()
             {

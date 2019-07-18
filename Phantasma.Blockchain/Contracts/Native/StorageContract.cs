@@ -29,7 +29,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(contentSize >= Archive.MinSize, "file too small");
-            Runtime.Expect(contentSize >= Archive.MaxSize, "file too big");
+            Runtime.Expect(contentSize <= Archive.MaxSize, "file too big");
 
             int requiredSize = contentSize + Hash.Length + name.Length;
 
