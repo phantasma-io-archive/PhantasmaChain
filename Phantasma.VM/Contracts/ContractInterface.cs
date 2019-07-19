@@ -53,7 +53,7 @@ namespace Phantasma.VM.Contracts
 
             for (int i=0; i<method.parameters.Length; i++)
             {
-                if (thisMethod.parameters[i] != method.parameters[i])
+                if (thisMethod.parameters[i].type != method.parameters[i].type)
                 {
                     return false;
                 }

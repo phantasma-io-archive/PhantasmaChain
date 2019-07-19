@@ -6,13 +6,25 @@ using Phantasma.Storage.Utils;
 
 namespace Phantasma.VM.Contracts
 {
+    public struct ContractParameter
+    {
+        public readonly string name;
+        public readonly VMType type;
+
+        public ContractParameter(string name, VMType type)
+        {
+            this.name = name;
+            this.type = type;
+        }
+    }
+
     public class ContractMethod
     {
         public readonly string name;
         public readonly VMType returnType;
-        public readonly VMType[] parameters;
+        public readonly ContractParameter[] parameters;
 
-        public ContractMethod(string name, VMType returnType, params VMType[] parameters)
+        public ContractMethod(string name, VMType returnType, params ContractParameter[] parameters)
         {
             this.name = name;
             this.returnType = returnType;
@@ -29,10 +41,12 @@ namespace Phantasma.VM.Contracts
             var name = reader.ReadVarString();
             var returnType = (VMType)reader.ReadByte();
             var len = reader.ReadByte();
-            var parameters = new VMType[len];
+            var parameters = new ContractParameter[len];
             for (int i = 0; i < len; i++)
             {
-                parameters[i] = (VMType)reader.ReadByte();
+                var pName = reader.ReadVarString();
+                var pType = (VMType)reader.ReadByte();
+                parameters[i] = new ContractParameter(pName, pType);
             }
 
             return new ContractMethod(name, returnType, parameters);
@@ -45,7 +59,8 @@ namespace Phantasma.VM.Contracts
             writer.Write((byte)parameters.Length);
             foreach (var entry in parameters)
             {
-                writer.Write((byte)entry);
+                writer.WriteVarString(entry.name);
+                writer.Write((byte)entry.type);
             }
         }
 

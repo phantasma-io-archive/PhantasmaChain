@@ -18,9 +18,10 @@ namespace Phantasma.Blockchain
         {
             _abis = new Dictionary<NativeABI, ContractInterface>();
 
-            var methods = new List<ContractMethod>();
+            //TODO
+/*            var methods = new List<ContractMethod>();
 
-            methods.Add(new ContractMethod("Transfer", VMType.None, VMType.Object, VMType.Object, VMType.Number));
+            methods.Add(new ContractMethod("Transfer", VMType.None, new  VMType.Object, VMType.Object, VMType.Number));
             methods.Add(new ContractMethod("BalanceOf", VMType.Number, VMType.Object));
             methods.Add(new ContractMethod("Mint", VMType.None, VMType.Object, VMType.Number));
             methods.Add(new ContractMethod("Burn", VMType.None, VMType.Object, VMType.Number));
@@ -30,7 +31,7 @@ namespace Phantasma.Blockchain
 
             _abis[NativeABI.Token] = new ContractInterface(methods);
 
-            methods.Clear();
+            methods.Clear();*/
         }
 
         public static ContractInterface FindABI(NativeABI abi)

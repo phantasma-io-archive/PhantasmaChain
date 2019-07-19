@@ -88,7 +88,7 @@ namespace Phantasma.Blockchain.Contracts
 
             foreach (var srcMethod in srcMethods)
             {
-                var parameters = new List<VM.VMType>();
+                var parameters = new List<ContractParameter>();
                 var srcParams = srcMethod.GetParameters();
 
                 var methodName = srcMethod.Name;
@@ -118,7 +118,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     if (vmtype != VMType.None)
                     {
-                        parameters.Add(vmtype);
+                        parameters.Add(new ContractParameter(srcParam.Name, vmtype));
                     }
                     else
                     {
