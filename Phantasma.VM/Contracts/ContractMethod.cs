@@ -28,7 +28,7 @@ namespace Phantasma.VM.Contracts
         {
             this.name = name;
             this.returnType = returnType;
-            this.parameters = parameters.ToArray();
+            this.parameters = parameters;
         }
 
         public override string ToString()
