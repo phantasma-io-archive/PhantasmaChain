@@ -115,10 +115,15 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     var paramType = srcParam.ParameterType;
                     var vmtype = VMObject.GetVMType(paramType);
+                    Console.WriteLine("paramType: " + paramType);
+                    Console.WriteLine("paramTypeName: " + paramType.GetType());
+                    Console.WriteLine("name: " + srcParam.Name);
+                    Console.WriteLine("srcParam: " + srcParam.ToString());
+                    Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++");
 
                     if (vmtype != VMType.None)
                     {
-                        parameters.Add(new ContractParameter(srcParam.Name, vmtype));
+                        parameters.Add(new ContractParameter(srcParam.Name, vmtype, paramType.ToString()));
                     }
                     else
                     {

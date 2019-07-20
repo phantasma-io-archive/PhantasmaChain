@@ -9,11 +9,13 @@ namespace Phantasma.VM.Contracts
     public struct ContractParameter
     {
         public readonly string name;
-        public readonly VMType type;
+        public readonly VMType vmtype;
+        public readonly string type;
 
-        public ContractParameter(string name, VMType type)
+        public ContractParameter(string name, VMType vmtype, string type)
         {
             this.name = name;
+            this.vmtype = vmtype;
             this.type = type;
         }
     }
@@ -45,8 +47,9 @@ namespace Phantasma.VM.Contracts
             for (int i = 0; i < len; i++)
             {
                 var pName = reader.ReadVarString();
-                var pType = (VMType)reader.ReadByte();
-                parameters[i] = new ContractParameter(pName, pType);
+                var pVMType = (VMType)reader.ReadByte();
+                var pType = reader.ReadVarString();
+                parameters[i] = new ContractParameter(pName, pVMType, pType);
             }
 
             return new ContractMethod(name, returnType, parameters);
@@ -60,7 +63,8 @@ namespace Phantasma.VM.Contracts
             foreach (var entry in parameters)
             {
                 writer.WriteVarString(entry.name);
-                writer.Write((byte)entry.type);
+                writer.Write((byte)entry.vmtype);
+                writer.WriteVarString(entry.type);
             }
         }
 
