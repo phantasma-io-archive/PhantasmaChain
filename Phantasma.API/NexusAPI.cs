@@ -437,7 +437,13 @@ namespace Phantasma.API
                 {
                     name = x.name,
                     returnType = x.returnType.ToString(),
-                    parameters = x.parameters.Select(y => y.ToString()).ToArray()
+                    parameters = x.parameters.Select(y => new ABIParameterResult()
+                            {
+                                name = y.name,
+                                vmtype = y.vmtype.ToString(),
+                                type = y.type.ToString()
+
+                            }).ToArray()
                 }).ToArray()
             };
         }
@@ -1328,6 +1334,7 @@ namespace Phantasma.API
             }
 
             var contract = this.Nexus.FindContract(contractName);
+            Console.WriteLine("Contract.ABI::: " + contract.ABI);
             return FillABI(contractName, contract.ABI);
         }
     }

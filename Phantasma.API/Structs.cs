@@ -263,6 +263,16 @@ namespace Phantasma.API
         public string[] metadata;
     }
 
+    public struct ABIParameterResult : IAPIResult
+    {
+        [APIDescription("Name of method")]
+        public string name;
+
+        public string vmtype;
+
+        public string type;
+    }
+
     public struct ABIMethodResult : IAPIResult
     {
         [APIDescription("Name of method")]
@@ -271,7 +281,7 @@ namespace Phantasma.API
         public string returnType;
 
         [APIDescription("Type of parameters")]
-        public string[] parameters;
+        public ABIParameterResult[] parameters;
     }
 
     public struct ABIContractResult : IAPIResult
