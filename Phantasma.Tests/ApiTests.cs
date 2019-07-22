@@ -197,7 +197,7 @@ namespace Phantasma.Tests
 
             var returnType = method.ReturnType;
 
-            Assert.IsTrue(returnType == typeof(ExchangeOrder[]));
+            Assert.IsTrue(returnType == typeof(void));
         }
     }
 }
