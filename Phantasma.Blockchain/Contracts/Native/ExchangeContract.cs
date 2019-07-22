@@ -428,7 +428,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return _escrows.Get<BigInteger, BigInteger>(uid);
         }
 
-        public ExchangeOrder[] GetOrderBook(string baseSymbol, string quoteSymbol)
+        public ExchangeOrder[] GetOrderBooks(string baseSymbol, string quoteSymbol)
         {
             return GetOrderBook(baseSymbol, quoteSymbol, false);
         }

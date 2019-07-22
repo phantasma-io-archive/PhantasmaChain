@@ -8,6 +8,8 @@ using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts;
 using System;
+using System.Linq;
+using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Types;
 
 namespace Phantasma.Tests
@@ -145,6 +147,57 @@ namespace Phantasma.Tests
             Assert.IsTrue(info.ID == balance.ids[0]);
             var tokenStr = Base16.Encode(tokenData);
             Assert.IsTrue(info.rom == tokenStr);
+        }
+
+        [TestMethod]
+        public void TestGetABIFunction()
+        {
+            var test = CreateAPI();
+
+            var result = (ABIContractResult)test.api.GetABI(test.nexus.RootChain.Name, "exchange");
+
+            var methodCount = typeof(ExchangeContract).GetMethods();
+
+            var method = methodCount.FirstOrDefault(x => x.Name == "GetOrderBook");
+
+            Assert.IsTrue(method != null);
+
+            var parameters = method.GetParameters();
+
+            Assert.IsTrue(parameters.Length == 3);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(string)) == 2);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(ExchangeOrderSide)) == 1);
+
+            var returnType = method.ReturnType;
+
+            Assert.IsTrue(returnType == typeof(ExchangeOrder[]));
+        }
+
+
+        [TestMethod]
+        public void TestGetABIMethod()
+        {
+            var test = CreateAPI();
+
+            var result = (ABIContractResult)test.api.GetABI(test.nexus.RootChain.Name, "exchange");
+
+            var methodCount = typeof(ExchangeContract).GetMethods();
+
+            var method = methodCount.FirstOrDefault(x => x.Name == "OpenMarketOrder");
+
+            Assert.IsTrue(method != null);
+
+            var parameters = method.GetParameters();
+
+            Assert.IsTrue(parameters.Length == 5);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(string)) == 2);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(ExchangeOrderSide)) == 1);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(BigInteger)) == 1);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(Address)) == 1);
+
+            var returnType = method.ReturnType;
+
+            Assert.IsTrue(returnType == typeof(ExchangeOrder[]));
         }
     }
 }
