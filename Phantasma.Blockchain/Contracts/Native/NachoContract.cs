@@ -1917,7 +1917,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger battleID;
         public AccountFlags flags;
         public BigInteger[] counters;
-        public string comment;
+        //public string comment;
         public Address referral;
         public Timestamp lastTime;
         public TrophyFlag trophies;
@@ -2273,7 +2273,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     creationTime = 0,
                     flags = AccountFlags.None,
                     counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX],
-                    comment = "",
+                    //comment = "",
                     referral = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     //avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
