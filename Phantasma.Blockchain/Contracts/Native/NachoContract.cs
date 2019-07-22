@@ -4886,7 +4886,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var wrestler = GetWrestler(accountA.queueWrestlerIDs[i]);
 
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-                var itemKind = GetItem(wrestler.itemID).kind;
+                var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
@@ -4913,7 +4913,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var wrestler = GetWrestler(accountB.queueWrestlerIDs[i]);
 
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-                var itemKind = GetItem(wrestler.itemID).kind;
+                var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = wrestler.genes;
