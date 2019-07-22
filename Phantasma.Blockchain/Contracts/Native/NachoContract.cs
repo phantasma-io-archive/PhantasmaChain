@@ -1917,7 +1917,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger battleID;
         public AccountFlags flags;
         public BigInteger[] counters;
-        //public string comment;
+        public string comment;
         public Address referral;
         public Timestamp lastTime;
         public TrophyFlag trophies;
@@ -2273,7 +2273,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     creationTime = 0,
                     flags = AccountFlags.None,
                     counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX],
-                    //comment = "",
+                    comment = "",
                     referral = Address.Null,
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     //avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
@@ -4623,16 +4623,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void StartBotMatch(Address from, BigInteger botID)
         {
-            var botAccount = GetAccount(DevelopersAddress);
+            var botAddress = Runtime.Chain.Address;
+
+            var botAccount = GetAccount(botAddress);
             botAccount.queueJoinTime = GetCurrentTime();
             botAccount.queueUpdateTime = GetCurrentTime();
             botAccount.queueBet = 0;
             botAccount.queueWrestlerIDs = new BigInteger[] {botID};
             botAccount.queueVersus = Address.Null;
             botAccount.queueMode = BattleMode.Pratice;
-            SetAccount(DevelopersAddress, botAccount);
+            SetAccount(botAddress, botAccount);
 
-            PrepareMatch(DevelopersAddress, from);
+            PrepareMatch(botAddress, from);
         }
 
         // NOTE - bet parameter is hijacked for JoinPratice, who passes level of bot inside bet arg
@@ -4842,7 +4844,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private void PrepareMatch(Address addressA, Address addressB)
         {
             // cant battle against itself
-            //Runtime.Expect(addressA != addressB, "same address failed"); //todo uncomment after testing
+            Runtime.Expect(addressA != addressB, "same address failed");
 
             var accountA = GetAccount(addressA);
             var accountB = GetAccount(addressB);
