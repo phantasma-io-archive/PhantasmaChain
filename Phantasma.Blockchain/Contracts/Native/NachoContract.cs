@@ -1915,7 +1915,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public Timestamp creationTime;
         public BigInteger battleID;
-        public string unused; // TODO remover este campo que não é usado?
         public AccountFlags flags;
         public BigInteger[] counters;
         public string comment;
@@ -2244,7 +2243,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (_accounts.ContainsKey(address))
             {
                 account = _accounts.Get<Address, NachoAccount>(address);
-                account.unused = "";
 
                 if (account.battleID != 0)
                 {
@@ -2272,7 +2270,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                     battleID = 0,
                     queueBet = 0,
                     queueWrestlerIDs = new BigInteger[0],
-                    unused = "",
                     creationTime = 0,
                     flags = AccountFlags.None,
                     counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX],
