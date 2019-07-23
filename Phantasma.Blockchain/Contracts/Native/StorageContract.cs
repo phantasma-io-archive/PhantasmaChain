@@ -1,4 +1,4 @@
-﻿using Phantasma.Cryptography;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System;
@@ -25,13 +25,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void UploadFile(Address from, string name, int contentSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
+        public void UploadFile(Address from, string name, BigInteger contentSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(contentSize >= Archive.MinSize, "file too small");
             Runtime.Expect(contentSize <= Archive.MaxSize, "file too big");
 
-            int requiredSize = CalculateRequiredSize(name, contentSize);
+            BigInteger requiredSize = CalculateRequiredSize(name, contentSize);
 
             var usedSize = GetUsedSpace(from);
 
@@ -116,6 +116,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             return list.All<StorageEntry>();
         }
 
-        public static int CalculateRequiredSize(string name, int contentSize) => contentSize + Hash.Length + name.Length;
+        public static BigInteger CalculateRequiredSize(string name, BigInteger contentSize) => contentSize + Hash.Length + name.Length;
     }
 }
