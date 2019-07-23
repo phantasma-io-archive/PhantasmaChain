@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Utils;
@@ -59,6 +60,12 @@ namespace Phantasma.Tests
             var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
+            var rnd = new Random();
+            for (int i=0; i<content.Length; i++)
+            {
+                content[i] = (byte)rnd.Next();
+            }
+
             var contentMerkle = new MerkleTree(content, (uint) (contentSize / 10));
 
                 simulator.BeginBlock();
@@ -67,12 +74,20 @@ namespace Phantasma.Tests
                         .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
 
-                System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
+                //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
                 simulator.EndBlock();
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
-
             Assert.IsTrue(usedSpace == 0);
+
+            Assert.IsTrue(simulator.Nexus.ArchiveExists(contentMerkle.Root));
+            var archive = simulator.Nexus.FindArchive(contentMerkle.Root);
+            for (int i=0; i<archive.BlockCount; i++)
+            {
+                int ofs = i * Archive.BlockSize;
+                var blockContent = content.Skip(ofs).Take(Archive.BlockSize).ToArray();
+                simulator.Nexus.WriteArchiveBlock(archive, blockContent, i);
+            }
         }
 
         [TestMethod]
