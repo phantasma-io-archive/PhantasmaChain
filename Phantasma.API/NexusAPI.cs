@@ -1435,7 +1435,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "not channels open" };
             }
 
-            var channelList = channels.Select(x => (object)FillChannel(x));
+            var channelList = channels.Select(x => (object)FillChannel(x, address, Nexus.GetChannel(address, x)));
 
             return new ArrayResult() { values = channelList.ToArray() };
         }
