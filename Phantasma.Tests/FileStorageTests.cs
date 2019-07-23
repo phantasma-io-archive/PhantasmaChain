@@ -27,7 +27,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) * 5;
 
             Transaction tx = null;
 
@@ -38,7 +38,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for minimum staking amount
-            var stakeAmount = BaseEnergyRatioDivisor;
+            var stakeAmount = accountBalance / 2;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -58,7 +58,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(((stakedAmount / UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals)) / KilobytesPerStake) * 1024) - (long)headerSize;
             var content = new byte[contentSize];
             var rnd = new Random();
             for (int i=0; i<content.Length; i++)

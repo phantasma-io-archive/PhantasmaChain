@@ -65,7 +65,7 @@ namespace Phantasma.Blockchain
             this.Key = key;
         }
 
-        private Archive()
+        public Archive()
         {
 
         }
