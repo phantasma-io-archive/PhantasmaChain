@@ -440,9 +440,7 @@ namespace Phantasma.API
                     parameters = x.parameters.Select(y => new ABIParameterResult()
                             {
                                 name = y.name,
-                                vmtype = y.vmtype.ToString(),
                                 type = y.type.ToString()
-
                             }).ToArray()
                 }).ToArray()
             };

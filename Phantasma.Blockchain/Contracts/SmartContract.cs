@@ -118,7 +118,7 @@ namespace Phantasma.Blockchain.Contracts
 
                     if (vmtype != VMType.None)
                     {
-                        parameters.Add(new ContractParameter(srcParam.Name, vmtype, paramType.ToString()));
+                        parameters.Add(new ContractParameter(srcParam.Name, vmtype));
                     }
                     else
                     {

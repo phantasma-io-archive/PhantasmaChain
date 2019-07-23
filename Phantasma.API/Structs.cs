@@ -268,8 +268,6 @@ namespace Phantasma.API
         [APIDescription("Name of method")]
         public string name;
 
-        public string vmtype;
-
         public string type;
     }
 
