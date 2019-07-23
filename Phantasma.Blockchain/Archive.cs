@@ -4,6 +4,7 @@ using Phantasma.Storage.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain
 {
@@ -37,11 +38,11 @@ namespace Phantasma.Blockchain
         public Hash Hash => MerkleTree.Root;
 
         public MerkleTree MerkleTree { get; private set; }
-        public int Size { get; private set; }
+        public BigInteger Size { get; private set; }
         public ArchiveFlags Flags { get; private set; }
         public byte[] Key { get; private set; }
 
-        public int BlockCount => Size / BlockSize;
+        public BigInteger BlockCount => Size / BlockSize;
 
         public IEnumerable<Hash> Blocks
         {
@@ -56,7 +57,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Archive(MerkleTree tree, int size, ArchiveFlags flags, byte[] key)
+        public Archive(MerkleTree tree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
             this.MerkleTree = tree;
             this.Size = size;
@@ -72,7 +73,7 @@ namespace Phantasma.Blockchain
         public void SerializeData(BinaryWriter writer)
         {
             MerkleTree.SerializeData(writer);
-            writer.Write(Size);
+            writer.Write((long)Size);
             writer.Write((byte)Flags);
             writer.WriteByteArray(Key);
         }
