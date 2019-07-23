@@ -59,6 +59,8 @@ namespace Phantasma.VM
                 case Opcode.POP:
                 case Opcode.PUSH:
                 case Opcode.EXTCALL:
+                case Opcode.DEC:
+                case Opcode.INC:
                     {
                         AppendRegister(sb, Args[0]);
                         break;

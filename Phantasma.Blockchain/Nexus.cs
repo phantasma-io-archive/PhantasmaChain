@@ -1427,7 +1427,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public Archive CreateArchive(MerkleTree merkleTree, int size, ArchiveFlags flags, byte[] key)
+        public Archive CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
             var archive = FindArchive(merkleTree.Root);
             if (archive != null)
