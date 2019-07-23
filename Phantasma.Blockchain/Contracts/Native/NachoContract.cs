@@ -2322,6 +2322,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             _accounts.Set<Address, NachoAccount>(address, account);
         }
 
+        public void InitAccount(Address address, NachoAccount account)
+        {
+            SetAccount(address, account);
+        }
+
         public NachoReferral[] GetAccountReferrals(Address address)
         {
             var referrals = _referrals.Get<Address, StorageList>(address);
