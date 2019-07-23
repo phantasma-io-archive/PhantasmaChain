@@ -1407,7 +1407,6 @@ namespace Phantasma.API
             }
 
             var contract = this.Nexus.FindContract(contractName);
-            Console.WriteLine("Contract.ABI::: " + contract.ABI);
             return FillABI(contractName, contract.ABI);
         }
 
