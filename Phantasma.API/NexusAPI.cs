@@ -1312,6 +1312,43 @@ namespace Phantasma.API
             };
         }
 
+        [APIInfo(typeof(bool), "Returns info about a specific archive.", false)]
+        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, int blockIndex, [APIParameter("Block content bytes, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockContent)
+        {
+            Hash hash;
+
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult() { error = "invalid hash" };
+            }
+
+            var archive = Nexus.FindArchive(hash);
+            if (archive == null)
+            {
+                return new ErrorResult() { error = "archive not found" };
+            }
+
+            if (blockIndex<0 || blockIndex >= archive.BlockCount)
+            {
+                return new ErrorResult() { error = "invalid block index" };
+            }
+
+            var bytes = Base16.Decode(blockContent);
+
+            try
+            {
+                Nexus.WriteArchiveBlock(archive, bytes, blockIndex);
+                return new SingleResult()
+                {
+                    value = true
+                };
+            } 
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = e.Message};
+            }
+        }
+
         [APIInfo(typeof(ABIContractResult), "Returns the ABI interface of specific contract.", false)]
         public IAPIResult GetABI([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
         {
