@@ -166,6 +166,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
             _channels.Set<string, RelayChannel>(key, channel);
 
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
             Runtime.Notify(EventKind.ChannelOpen, from, channelName);
         }
 
@@ -182,6 +183,24 @@ namespace Phantasma.Blockchain.Contracts.Native
             channel.active = false;
             _channels.Set<string, RelayChannel>(key, channel);
             Runtime.Notify(EventKind.ChannelClose, from, channelName);
+        }
+
+        public void TopUpChannel(Address from, string channelName, BigInteger amount)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            var key = MakeKey(from, channelName);
+            Runtime.Expect(_channels.ContainsKey<string>(key), "invalid channel");
+
+            var channel = _channels.Get<string, RelayChannel>(key);
+            Runtime.Expect(channel.active, "channel already closed");
+
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, channel.symbol, from, Runtime.Chain.Address, amount), "insuficient balance");
+
+            channel.balance += amount;
+            _channels.Set<string, RelayChannel>(key, channel);
+
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
         }
 
         public void UpdateChannel(Address from, string channelName, RelayReceipt[] receipts)
@@ -214,13 +233,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(payout > 0, "invalid payout");
-            Runtime.Nexus.TransferTokens(Runtime, channel.symbol, Runtime.Chain.Address, channel.owner, payout);
+
+            if (channel.owner != Runtime.Chain.Address)
+            {
+                Runtime.Nexus.TransferTokens(Runtime, channel.symbol, Runtime.Chain.Address, channel.owner, payout);
+                Runtime.Notify(EventKind.TokenReceive, channel.owner, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = channel.symbol });
+            }
 
             if (!channel.active || channel.balance == 0)
             {
                 if (channel.balance > 0)
                 {
                     Runtime.Nexus.TransferTokens(Runtime, channel.symbol, Runtime.Chain.Address, from, channel.balance);
+                    Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = channel.balance, symbol = channel.symbol });
                 }
 
                 _channels.Remove<string>(key);
