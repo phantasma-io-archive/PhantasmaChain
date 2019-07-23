@@ -11,5 +11,6 @@
         EPOCH_Propose,
         EPOCH_Submit,
         EPOCH_Vote,
+        EVENT
     }
 }

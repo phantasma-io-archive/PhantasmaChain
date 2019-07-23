@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 
@@ -53,6 +54,11 @@ namespace Phantasma.Blockchain.Contracts
             this.Data = data;
         }
 
+        public override string ToString()
+        {
+            return $"{Kind} @ {Address}: {Base16.Encode(Data)}";
+        }
+
         public T GetKind<T>()
         {
             return (T)(object)Kind;
@@ -71,7 +77,7 @@ namespace Phantasma.Blockchain.Contracts
             writer.WriteByteArray(this.Data);
         }
 
-        internal static Event Unserialize(BinaryReader reader)
+        public static Event Unserialize(BinaryReader reader)
         {
             var kind = (EventKind)reader.ReadByte();
             var address = reader.ReadAddress();

@@ -382,6 +382,14 @@ namespace Phantasma.Network.P2P
             }
 
             switch (msg.Opcode) {
+                case Opcode.EVENT:
+                    {
+                        var evtMessage = (EventMessage)msg;
+                        var evt = evtMessage.Event;
+                        Logger.Message("New event: " + evt.ToString());
+                        return null;
+                    }
+
                 case Opcode.REQUEST:
                     {
                         var request = (RequestMessage)msg;
@@ -650,6 +658,7 @@ namespace Phantasma.Network.P2P
             var chain = Nexus.FindChainByName(channel.chain);
 
             var vm = new RuntimeVM(msg.script, chain, null, null, null, true, true);
+            vm.ThrowOnFault = true;
             var result = vm.Execute();
 
             if (result != VM.ExecutionState.Halt)
@@ -678,6 +687,15 @@ namespace Phantasma.Network.P2P
             }
 
             cache.Add(evt);
+
+            foreach (var peer in _peers)
+            {
+                if (peer.Address == evt.Address)
+                {
+                    var msg = new EventMessage(evt.Address, evt);
+                    SendMessage(peer, msg);
+                }
+            }
         }
 
         public IEnumerable<Event> GetEvents(Address address)
