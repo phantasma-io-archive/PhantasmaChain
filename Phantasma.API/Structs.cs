@@ -259,6 +259,9 @@ namespace Phantasma.API
         [APIDescription("Encryption public key")]
         public string key;
 
+        [APIDescription("Number of blocks")]
+        public int blockCount;
+
         [APIDescription("Metadata")]
         public string[] metadata;
     }

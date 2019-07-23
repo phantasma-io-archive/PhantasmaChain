@@ -84,8 +84,8 @@ namespace Phantasma.Tests
             var archive = simulator.Nexus.FindArchive(contentMerkle.Root);
             for (int i=0; i<archive.BlockCount; i++)
             {
-                int ofs = i * Archive.BlockSize;
-                var blockContent = content.Skip(ofs).Take(Archive.BlockSize).ToArray();
+                int ofs = (int)(i * Archive.BlockSize);
+                var blockContent = content.Skip(ofs).Take((int)Archive.BlockSize).ToArray();
                 simulator.Nexus.WriteArchiveBlock(archive, blockContent, i);
             }
         }

@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain
     {
         public static readonly int MinSize = 1024; //1kb
         public static readonly int MaxSize = 104857600; //100mb
-        public static readonly int BlockSize = 256 * 1024;
+        public static readonly uint BlockSize = 256 * 1024;
 
         public Hash Hash => MerkleTree.Root;
 
