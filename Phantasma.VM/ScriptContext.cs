@@ -52,7 +52,7 @@ namespace Phantasma.VM
         {
             var a = Read8();
             var b = Read8();
-            return (ushort)(a + (b >> 8));
+            return (ushort)(a + (b << 8));
         }
 
         private uint Read32()
