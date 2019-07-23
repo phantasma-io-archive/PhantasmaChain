@@ -560,7 +560,7 @@ namespace Phantasma.Tests
 
             //----------
             //User B uploads the same file: should succeed
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserB, () =>
