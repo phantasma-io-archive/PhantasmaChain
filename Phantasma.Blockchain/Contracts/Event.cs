@@ -33,6 +33,9 @@ namespace Phantasma.Blockchain.Contracts
         RemoveFriend = 22,
         FileCreate = 23,
         FileDelete = 24,
+        ChannelOpen = 25,
+        ChannelClose = 26,
+        ChannelDestroy = 27,
         Metadata = 31,
         Custom = 32,
     }

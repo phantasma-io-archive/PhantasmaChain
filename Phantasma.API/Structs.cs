@@ -291,4 +291,33 @@ namespace Phantasma.API
         public ABIMethodResult[] methods;
     }
 
+    public struct ReceiptResult : IAPIResult
+    {
+        [APIDescription("Name of nexus")]
+        public string nexus;
+
+        [APIDescription("Name of nexus")]
+        public string channel;
+
+        [APIDescription("Index of message")]
+        public string index;
+
+        [APIDescription("Date of message")]
+        public uint timestamp;
+
+        [APIDescription("Sender address")]
+        public string sender;
+
+        [APIDescription("Script of message, in hex")]
+        public string script;
+    }
+
+    public struct RelayResult : IAPIResult
+    {
+        [APIDescription("Address")]
+        public string address;
+
+        [APIDescription("List of receipts")]
+        public ReceiptResult[] receipts;
+    }
 }

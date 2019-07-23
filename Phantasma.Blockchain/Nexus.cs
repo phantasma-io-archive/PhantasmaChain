@@ -1495,6 +1495,14 @@ namespace Phantasma.Blockchain
 
         #endregion
 
+        #region CHANNELS
+        public RelayChannel GetChannel(Address address, string channelName)
+        {
+            var chain = RootChain;
+            return (RelayChannel)chain.InvokeContract("relay", "GetChannel", address, channelName);
+        }
+        #endregion
+
         /*
         public void SerializeData(BinaryWriter writer)
         {
