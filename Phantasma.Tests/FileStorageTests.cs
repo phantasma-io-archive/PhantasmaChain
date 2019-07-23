@@ -57,19 +57,74 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
-            var contentSize = (long)(BaseEnergyRatioDivisor * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
+            var contentMerkle = new MerkleTree(content, (uint) (contentSize / 10));
 
-            Assert.ThrowsException<Exception>(() =>
-            {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
-            })
-            ;
+
+            var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
+
+            Assert.IsTrue(usedSpace == 0);
+        }
+
+        [TestMethod]
+        public void SingleUploadSuccessMaxFileSize()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+
+            var accountBalance = (Archive.MaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, accountBalance);
+            simulator.EndBlock();
+
+            //-----------
+            //Perform a valid Stake call
+            var stakeAmount = accountBalance;
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            Assert.IsTrue(stakedAmount == stakeAmount);
+
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
+            Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            //-----------
+            //Upload a file: should succeed
+            var filename = "notAVirus.exe";
+            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var contentSize = (long)(Archive.MaxSize) - (long)headerSize;
+            var content = new byte[contentSize];
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
             Assert.IsTrue(usedSpace == 0);
@@ -115,10 +170,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024 / 5) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -187,10 +244,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -275,10 +334,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -297,10 +358,12 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
+                contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -318,10 +381,12 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
+                contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -374,10 +439,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -406,7 +473,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -478,10 +545,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
@@ -491,11 +560,13 @@ namespace Phantasma.Tests
 
             //----------
             //User B uploads the same file: should succeed
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
-                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
-                    SpendGas(testUserA.Address).EndScript());
+            tx = simulator.GenerateCustomTransaction(testUserB, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
             Assert.IsTrue(usedSpace == contentSize + headerSize);
@@ -544,10 +615,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -628,10 +701,12 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
+                var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             })
@@ -686,10 +761,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -708,10 +785,12 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
+                contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             })
@@ -765,10 +844,12 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
+            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
