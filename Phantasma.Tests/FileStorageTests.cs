@@ -56,7 +56,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
             var contentMerkle = new MerkleTree(content, (uint) (contentSize / 10));
@@ -113,7 +113,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(Archive.MaxSize) - (long)headerSize;
             var content = new byte[contentSize];
             var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
@@ -166,7 +166,7 @@ namespace Phantasma.Tests
             //Upload a file
             var filename = "notAVirus.exe";
 
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024 / 5) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -240,7 +240,7 @@ namespace Phantasma.Tests
             //Upload a file
             var filename = "notAVirus.exe";
 
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -330,7 +330,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -352,7 +352,7 @@ namespace Phantasma.Tests
             //Upload another file: should succeed
 
             filename = "giftFromTroia.exe";
-            headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             content = new byte[contentSize];
 
@@ -375,7 +375,7 @@ namespace Phantasma.Tests
             //Upload another file: should succeed
 
             filename = "JimTheEarthWORM.exe";
-            headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             content = new byte[contentSize];
 
@@ -435,7 +435,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -541,7 +541,7 @@ namespace Phantasma.Tests
             //-----------
             //User A uploads a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -611,7 +611,7 @@ namespace Phantasma.Tests
             //Upload a file
             var filename = "notAVirus.exe";
 
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -695,7 +695,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should fail due to exceeding available space
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -757,7 +757,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
@@ -779,7 +779,7 @@ namespace Phantasma.Tests
             //Upload a file: should fail due to exceeding available storage capacity
 
             filename = "giftFromTroia.exe";
-            headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             content = new byte[contentSize];
 
@@ -840,7 +840,7 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
-            var headerSize = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "CalculateRequiredSize", filename, 0);
+            var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 

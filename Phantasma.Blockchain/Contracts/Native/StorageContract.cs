@@ -31,7 +31,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(contentSize >= Archive.MinSize, "file too small");
             Runtime.Expect(contentSize <= Archive.MaxSize, "file too big");
 
-            int requiredSize = contentSize + Hash.Length + name.Length;
+            int requiredSize = CalculateRequiredSize(name, contentSize);
 
             var usedSize = GetUsedSpace(from);
 
@@ -116,6 +116,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             return list.All<StorageEntry>();
         }
 
-        public BigInteger CalculateRequiredSize(string name, BigInteger contentSize) => contentSize + Hash.Length + name.Length;
+        public static int CalculateRequiredSize(string name, int contentSize) => contentSize + Hash.Length + name.Length;
     }
 }
