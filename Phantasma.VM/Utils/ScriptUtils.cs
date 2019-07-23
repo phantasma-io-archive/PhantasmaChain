@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
@@ -47,6 +47,11 @@ namespace Phantasma.VM.Utils
             if (arg is int)
             {
                 sb.EmitLoad(target_reg, new BigInteger((int)arg));
+            }
+            else 
+            if (arg is long)
+            {
+                sb.EmitLoad(target_reg, new BigInteger((long)arg));
             }
             else
             if (arg is BigInteger)

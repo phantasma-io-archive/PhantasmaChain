@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -111,8 +112,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly int MinimumReceiptsPerTransaction = 20;
 
-        internal StorageMap _channels; //<string, ChannelEntry>
-        internal StorageMap _receipts; //<string, List<ChannelReceipt>>
+        internal StorageMap _channelMap; //<string, ChannelEntry>
+        internal StorageMap _channelList; //<Address, List<string>>
 
         public RelayContract() : base()
         {
@@ -126,11 +127,27 @@ namespace Phantasma.Blockchain.Contracts.Native
         public RelayChannel GetChannel(Address from, string channelName)
         {
             var key = MakeKey(from, channelName);
-            Runtime.Expect(_channels.ContainsKey<string>(key), "invalid channel");
+            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
 
-            var channel = _channels.Get<string, RelayChannel>(key);
+            var channel = _channelMap.Get<string, RelayChannel>(key);
 
             return channel;
+        }
+
+        public string[] GetOpenChannels(Address from)
+        {
+            var list = _channelList.Get<Address, StorageList>(from);
+            return list.All<string>();
+        }
+
+        public Address GetAddress(Address from, string channelName)
+        {
+            var key = MakeKey(from, channelName);
+            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
+
+            var bytes = Encoding.UTF8.GetBytes(key);
+            var hash = CryptoExtensions.SHA256(bytes);
+            return new Address(hash);
         }
 
         public void OpenChannel(Address from, Address to, string chainName, string channelName, string tokenSymbol, BigInteger amount, BigInteger fee)
@@ -149,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
             var key = MakeKey(from, channelName);
-            Runtime.Expect(!_channels.ContainsKey<string>(key), "channel already open");
+            Runtime.Expect(!_channelMap.ContainsKey<string>(key), "channel already open");
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, Runtime.Chain.Address, amount), "insuficient balance");
 
@@ -164,7 +181,14 @@ namespace Phantasma.Blockchain.Contracts.Native
                 active = true,
                 index = 0,
             };
-            _channels.Set<string, RelayChannel>(key, channel);
+            _channelMap.Set<string, RelayChannel>(key, channel);
+
+            var list = _channelList.Get<Address, StorageList>(from);
+            list.Add<string>(channelName);
+
+            var address = GetAddress(from, chainName);
+            // TODO create auto address 
+
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
             Runtime.Notify(EventKind.ChannelOpen, from, channelName);
@@ -175,13 +199,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             var key = MakeKey(from, channelName);
-            Runtime.Expect(_channels.ContainsKey<string>(key), "invalid channel");
+            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
 
-            var channel = _channels.Get<string, RelayChannel>(key);
+            var channel = _channelMap.Get<string, RelayChannel>(key);
             Runtime.Expect(channel.active, "channel already closed");
 
             channel.active = false;
-            _channels.Set<string, RelayChannel>(key, channel);
+            _channelMap.Set<string, RelayChannel>(key, channel);
             Runtime.Notify(EventKind.ChannelClose, from, channelName);
         }
 
@@ -190,15 +214,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             var key = MakeKey(from, channelName);
-            Runtime.Expect(_channels.ContainsKey<string>(key), "invalid channel");
+            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
 
-            var channel = _channels.Get<string, RelayChannel>(key);
+            var channel = _channelMap.Get<string, RelayChannel>(key);
             Runtime.Expect(channel.active, "channel already closed");
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, channel.symbol, from, Runtime.Chain.Address, amount), "insuficient balance");
 
             channel.balance += amount;
-            _channels.Set<string, RelayChannel>(key, channel);
+            _channelMap.Set<string, RelayChannel>(key, channel);
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
         }
@@ -206,9 +230,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void UpdateChannel(Address from, string channelName, RelayReceipt[] receipts)
         {
             var key = MakeKey(from, channelName);
-            Runtime.Expect(_channels.ContainsKey<string>(key), "invalid channel");
+            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
 
-            var channel = _channels.Get<string, RelayChannel>(key);
+            var channel = _channelMap.Get<string, RelayChannel>(key);
 
             if (channel.active)
             {
@@ -248,8 +272,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = channel.balance, symbol = channel.symbol });
                 }
 
-                _channels.Remove<string>(key);
+                _channelMap.Remove<string>(key);
                 Runtime.Notify(EventKind.ChannelDestroy, from, channelName);
+
+                var list = _channelList.Get<Address, StorageList>(from);
+                list.Remove<string>(channelName);
             }
         }
     }

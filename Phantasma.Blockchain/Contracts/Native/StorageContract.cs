@@ -16,7 +16,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "storage";
 
-        public const int KilobytesPerStake = 40 * 1024;
+        public const int KilobytesPerStake = 40;
 
         internal StorageMap _storageMap; //<string, Collection<StorageEntry>>
         internal StorageMap _referenceMap; //<string, int>
@@ -116,6 +116,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             return list.All<StorageEntry>();
         }
 
-        public BigInteger CalculateRequiredSize(string name, int contentSize) => contentSize + Hash.Length + name.Length;
+        public BigInteger CalculateRequiredSize(string name, BigInteger contentSize) => contentSize + Hash.Length + name.Length;
     }
 }

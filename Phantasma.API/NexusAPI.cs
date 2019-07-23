@@ -370,6 +370,23 @@ namespace Phantasma.API
             };
         }
 
+        private ChannelResult FillChannel(string name, Address creator, RelayChannel channel)
+        {
+            return new ChannelResult
+            {
+                creatorAddress = creator.Text,
+                targetAddress = channel.owner.Text,
+                active = channel.active,
+                balance = channel.balance.ToString(),
+                chain = channel.chain,
+                name = name,
+                creationTime = channel.creationTime.Value,
+                fee = channel.fee.ToString(),
+                index = (int)channel.index,
+                symbol = channel.symbol,
+            };
+        }
+
         private BlockResult FillBlock(Block block, Chain chain)
         {
             var result = new BlockResult
@@ -1392,6 +1409,35 @@ namespace Phantasma.API
             var contract = this.Nexus.FindContract(contractName);
             Console.WriteLine("Contract.ABI::: " + contract.ABI);
             return FillABI(contractName, contract.ABI);
+        }
+
+        [APIInfo(typeof(ChannelResult[]), "Returns the ABI interface of specific contract.", false)]
+        public IAPIResult GetChannels([APIParameter("Address or account name", "helloman")] string accountInput)
+        {
+            Address address;
+
+            if (Address.IsValidAddress(accountInput))
+            {
+                address = Address.FromText(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(accountInput);
+                if (address == Address.Null)
+                {
+                    return new ErrorResult { error = "name not owned" };
+                }
+            }
+
+            var channels = Nexus.GetOpenChannels(address);
+            if (!channels.Any())
+            {
+                return new ErrorResult { error = "not channels open" };
+            }
+
+            var channelList = channels.Select(x => (object)FillChannel(x, address, Nexus.GetChannel(address, x)));
+
+            return new ArrayResult() { values = channelList.ToArray() };
         }
 
         [APIInfo(typeof(bool), "Writes a message to the relay network.", false)]

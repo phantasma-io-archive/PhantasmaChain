@@ -291,12 +291,45 @@ namespace Phantasma.API
         public ABIMethodResult[] methods;
     }
 
+    public struct ChannelResult : IAPIResult
+    {
+        [APIDescription("Creator of channel")]
+        public string creatorAddress;
+
+        [APIDescription("Target of channel")]
+        public string targetAddress;
+
+        [APIDescription("Name of channel")]
+        public string name;
+
+        [APIDescription("Chain of channel")]
+        public string chain;
+
+        [APIDescription("Creation time")]
+        public uint creationTime;
+
+        [APIDescription("Token symbol")]
+        public string symbol;
+
+        [APIDescription("Fee of messages")]
+        public string fee;
+
+        [APIDescription("Estimated balance")]
+        public string balance;
+
+        [APIDescription("Channel status")]
+        public bool active;
+
+        [APIDescription("Message index")]
+        public int index;
+    }
+
     public struct ReceiptResult : IAPIResult
     {
         [APIDescription("Name of nexus")]
         public string nexus;
 
-        [APIDescription("Name of nexus")]
+        [APIDescription("Name of channel")]
         public string channel;
 
         [APIDescription("Index of message")]
