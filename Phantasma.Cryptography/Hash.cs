@@ -186,7 +186,7 @@ namespace Phantasma.Cryptography
 
         public static Hash FromBytes(byte[] input)
         {
-            if (input.Length > Length)
+            if (input.Length != Length) // NOTE this is actually problematic, better to separate into 2 methods
             {
                 input = CryptoExtensions.SHA256(input);
             }

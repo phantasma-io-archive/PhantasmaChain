@@ -1253,7 +1253,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "storage", "apps"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
@@ -1493,6 +1493,20 @@ namespace Phantasma.Blockchain
             return _archiveContents.Get(hash);
         }
 
+        #endregion
+
+        #region CHANNELS
+        public string[] GetOpenChannels(Address address)
+        {
+            var chain = RootChain;
+            return (string[])chain.InvokeContract("relay", "GetOpenChannels", address);
+        }
+
+        public RelayChannel GetChannel(Address address, string channelName)
+        {
+            var chain = RootChain;
+            return (RelayChannel)chain.InvokeContract("relay", "GetChannel", address, channelName);
+        }
         #endregion
 
         /*

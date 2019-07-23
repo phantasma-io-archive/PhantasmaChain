@@ -10,6 +10,9 @@ using Phantasma.Core.Log;
 using Phantasma.Numerics;
 using Phantasma.Blockchain;
 using Phantasma.Network.P2P.Messages;
+using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Core.Utils;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Network.P2P
 {
@@ -60,6 +63,9 @@ namespace Phantasma.Network.P2P
         private bool listening = false;
 
         public Nexus Nexus { get; private set; }
+
+        private Dictionary<string, uint> _receipts = new Dictionary<string, uint>();
+        private Dictionary<Address, Cache<Event>> _events = new Dictionary<Address, Cache<Event>>();
 
         public Node(Nexus nexus, Mempool mempool, KeyPair keys, int port, IEnumerable<string> seeds, Logger log)
         {
@@ -376,6 +382,14 @@ namespace Phantasma.Network.P2P
             }
 
             switch (msg.Opcode) {
+                case Opcode.EVENT:
+                    {
+                        var evtMessage = (EventMessage)msg;
+                        var evt = evtMessage.Event;
+                        Logger.Message("New event: " + evt.ToString());
+                        return null;
+                    }
+
                 case Opcode.REQUEST:
                     {
                         var request = (RequestMessage)msg;
@@ -531,6 +545,15 @@ namespace Phantasma.Network.P2P
                                     try
                                     {
                                         chain.AddBlock(block, transactions, null);
+
+                                        foreach (var hash in block.TransactionHashes)
+                                        {
+                                            var events = block.GetEventsForTransaction(hash);
+                                            foreach (var evt in events)
+                                            {
+                                                AddEvent(evt);
+                                            } 
+                                        }
                                     }
                                     catch (Exception e)
                                     {
@@ -606,6 +629,85 @@ namespace Phantasma.Network.P2P
             return null;
         }
 
+        private string MakeReceiptKey(Address address, string channel)
+        {
+            return address.Text + "." + channel;
+        }
 
+        public uint GetLastReceiptIndex(Address address, string channel)
+        {
+            var key = MakeReceiptKey(address, channel);
+            if (_receipts.ContainsKey(key))
+            {
+                return _receipts[key];
+            }
+
+            return 0;
+        }
+
+        public bool IsPendingReceipt(RelayReceipt receipt)
+        {
+            var lastIndex = GetLastReceiptIndex(receipt.message.sender, receipt.message.channel);
+
+            return receipt.message.index > lastIndex;
+        }
+
+        public void ExecuteRelayMessage(RelayMessage msg)
+        {
+            var channel = Nexus.GetChannel(msg.sender, msg.channel);
+            var chain = Nexus.FindChainByName(channel.chain);
+
+            var vm = new RuntimeVM(msg.script, chain, null, null, null, true, true);
+            vm.ThrowOnFault = true;
+            var result = vm.Execute();
+
+            if (result != VM.ExecutionState.Halt)
+            {
+                throw new Exception("Relay message execution failed");
+            }
+
+            foreach (var evt in vm.Events)
+            {
+                AddEvent(evt);
+            }
+        }
+
+        private void AddEvent(Event evt)
+        {
+            Cache<Event> cache;
+
+            if (_events.ContainsKey(evt.Address))
+            {
+                cache = _events[evt.Address];
+            }
+            else
+            {
+                cache = new Cache<Event>(100, TimeSpan.FromMinutes(60)); // TODO make this configurable
+                _events[evt.Address] = cache;
+            }
+
+            cache.Add(evt);
+
+            foreach (var peer in _peers)
+            {
+                if (peer.Address == evt.Address)
+                {
+                    var msg = new EventMessage(evt.Address, evt);
+                    SendMessage(peer, msg);
+                }
+            }
+        }
+
+        public IEnumerable<Event> GetEvents(Address address)
+        {
+            if (_events.ContainsKey(address))
+            {
+                return _events[address].Items;
+            }
+            else
+            {
+                return Enumerable.Empty<Event>();
+            }
+        }
     }
 }

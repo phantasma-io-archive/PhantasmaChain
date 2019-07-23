@@ -2278,6 +2278,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                     ELO = Constants.DEFAULT_ELO, // TODO o elo assim nunca é actualizado
                     //avatarID = 0  // TODO Avatar no inicio, antes do jogador mudar de avatar,pode ficar com o 0 mas dps tem de devolver o
                 };
+
+                //SetAccount(address, account);
+                //_accounts.Set<Address, NachoAccount>(address, account);
             }
 
             return account;

@@ -48,6 +48,12 @@ namespace Phantasma.Network.P2P
                         break;
                     }
 
+                case Opcode.EVENT:
+                    {
+                        msg = EventMessage.FromReader(address, reader);
+                        break;
+                    }
+
                 case Opcode.LIST:
                     {
                         msg = ListMessage.FromReader(address, reader);

@@ -14,6 +14,7 @@ using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.VM.Contracts;
+using Phantasma.Network.P2P;
 
 namespace Phantasma.API
 {
@@ -226,18 +227,20 @@ namespace Phantasma.API
     {
         public readonly Nexus Nexus;
         public readonly Mempool Mempool;
+        public readonly Node Node;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
         private const int PaginationMaxResults = 50;
 
-        public NexusAPI(Nexus nexus, Mempool mempool = null)
+        public NexusAPI(Nexus nexus, Mempool mempool = null, Node node = null)
         {
             Throw.IfNull(nexus, nameof(nexus));
 
             Nexus = nexus;
             Mempool = mempool;
+            Node = node;
 
             var methodInfo = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -346,12 +349,7 @@ namespace Phantasma.API
             var evts = block.GetEventsForTransaction(tx.Hash);
             foreach (var evt in evts)
             {
-                var eventEntry = new EventResult
-                {
-                    address = evt.Address.Text,
-                    data = evt.Data.Encode(),
-                    kind = evt.Kind.ToString()
-                };
+                var eventEntry = FillEvent(evt);
                 eventList.Add(eventEntry);
             }
             result.events = eventList.ToArray();
@@ -360,6 +358,33 @@ namespace Phantasma.API
             result.result = txResult != null ? Base16.Encode(txResult) : "";
 
             return result;
+        }
+
+        private EventResult FillEvent(Event evt)
+        {
+            return new EventResult
+            {
+                address = evt.Address.Text,
+                data = evt.Data.Encode(),
+                kind = evt.Kind.ToString()
+            };
+        }
+
+        private ChannelResult FillChannel(string name, Address creator, RelayChannel channel)
+        {
+            return new ChannelResult
+            {
+                creatorAddress = creator.Text,
+                targetAddress = channel.owner.Text,
+                active = channel.active,
+                balance = channel.balance.ToString(),
+                chain = channel.chain,
+                name = name,
+                creationTime = channel.creationTime.Value,
+                fee = channel.fee.ToString(),
+                index = (int)channel.index,
+                symbol = channel.symbol,
+            };
         }
 
         private BlockResult FillBlock(Block block, Chain chain)
@@ -405,7 +430,7 @@ namespace Phantasma.API
                 address = chain.Address.Text,
                 height = chain.BlockHeight,
                 parentAddress = parentChain != null ? parentChain.Address.ToString() : "",
-                contracts = chain.GetContracts()                
+                contracts = chain.GetContracts()
             };
 
             return result;
@@ -438,13 +463,24 @@ namespace Phantasma.API
                     name = x.name,
                     returnType = x.returnType.ToString(),
                     parameters = x.parameters.Select(y => new ABIParameterResult()
-                            {
-                                name = y.name,
-                                vmtype = y.vmtype.ToString(),
-                                type = y.type.ToString()
-
-                            }).ToArray()
+                    {
+                        name = y.name,
+                        type = y.type.ToString()
+                    }).ToArray()
                 }).ToArray()
+            };
+        }
+
+        private ReceiptResult FillReceipt(RelayReceipt receipt)
+        {
+            return new ReceiptResult()
+            {
+                nexus = receipt.message.nexus,
+                channel = receipt.message.channel,
+                index = receipt.message.index.ToString(),
+                timestamp = receipt.message.timestamp.Value,
+                sender = receipt.message.sender.Text,
+                script = Base16.Encode(receipt.message.script)
             };
         }
         #endregion
@@ -488,7 +524,7 @@ namespace Phantasma.API
                         if (!token.IsFungible)
                         {
                             var ownerships = new OwnershipSheet(symbol);
-                            var idList =  ownerships.Get(chain.Storage, address);
+                            var idList = ownerships.Get(chain.Storage, address);
                             if (idList != null && idList.Any())
                             {
                                 balanceEntry.ids = idList.Select(x => x.ToString()).ToArray();
@@ -1314,6 +1350,43 @@ namespace Phantasma.API
             };
         }
 
+        [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false)]
+        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, int blockIndex, [APIParameter("Block content bytes, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockContent)
+        {
+            Hash hash;
+
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult() { error = "invalid hash" };
+            }
+
+            var archive = Nexus.FindArchive(hash);
+            if (archive == null)
+            {
+                return new ErrorResult() { error = "archive not found" };
+            }
+
+            if (blockIndex < 0 || blockIndex >= archive.BlockCount)
+            {
+                return new ErrorResult() { error = "invalid block index" };
+            }
+
+            var bytes = Base16.Decode(blockContent);
+
+            try
+            {
+                Nexus.WriteArchiveBlock(archive, bytes, blockIndex);
+                return new SingleResult()
+                {
+                    value = true
+                };
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+        }
+
         [APIInfo(typeof(ABIContractResult), "Returns the ABI interface of specific contract.", false)]
         public IAPIResult GetABI([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
         {
@@ -1336,6 +1409,115 @@ namespace Phantasma.API
             var contract = this.Nexus.FindContract(contractName);
             Console.WriteLine("Contract.ABI::: " + contract.ABI);
             return FillABI(contractName, contract.ABI);
+        }
+
+        [APIInfo(typeof(ChannelResult[]), "Returns the ABI interface of specific contract.", false)]
+        public IAPIResult GetChannels([APIParameter("Address or account name", "helloman")] string accountInput)
+        {
+            Address address;
+
+            if (Address.IsValidAddress(accountInput))
+            {
+                address = Address.FromText(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(accountInput);
+                if (address == Address.Null)
+                {
+                    return new ErrorResult { error = "name not owned" };
+                }
+            }
+
+            var channels = Nexus.GetOpenChannels(address);
+            if (!channels.Any())
+            {
+                return new ErrorResult { error = "not channels open" };
+            }
+
+            var channelList = channels.Select(x => (object)FillChannel(x, address, Nexus.GetChannel(address, x)));
+
+            return new ArrayResult() { values = channelList.ToArray() };
+        }
+
+        [APIInfo(typeof(bool), "Writes a message to the relay network.", false)]
+        public IAPIResult RelaySend([APIParameter("Serialized receipt, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string receiptHex)
+        {
+            if (Node == null)
+            {
+                return new ErrorResult { error = "No node available" };
+            }
+
+            byte[] bytes;
+            RelayReceipt receipt;
+            try
+            {
+                bytes = Base16.Decode(receiptHex);
+                receipt = RelayReceipt.FromBytes(bytes);
+            }
+            catch
+            {
+                return new ErrorResult() { error = "error decoding receipt" };
+            }
+
+            var msgBytes = receipt.message.ToByteArray();
+            if (!receipt.signature.Verify(msgBytes, receipt.message.sender))
+            {
+                return new ErrorResult() { error = "invalid signature" };
+            }
+
+            if (!Node.IsPendingReceipt(receipt))
+            {
+                return new ErrorResult() { error = "invalid receipt index" };
+            }
+
+            try
+            {
+                Node.ExecuteRelayMessage(receipt.message);
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+
+            return new SingleResult()
+            {
+                value = true
+            };
+        }
+
+        [APIInfo(typeof(EventResult[]), "Reads pending messages from the relay network.", false)]
+        public IAPIResult GetEvents([APIParameter("Address or account name", "helloman")] string accountInput)
+        {
+            if (Node == null)
+            {
+                return new ErrorResult { error = "No node available" };
+            }
+
+            Address address;
+
+            if (Address.IsValidAddress(accountInput))
+            {
+                address = Address.FromText(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(accountInput);
+                if (address == Address.Null)
+                {
+                    return new ErrorResult { error = "name not owned" };
+                }
+            }
+
+            var events = Node.GetEvents(address);
+            if (!events.Any())
+            {
+                return new ErrorResult { error = "not events available" };
+            }
+
+            var eventList = events.Select(x => (object)FillEvent(x));
+
+            return new ArrayResult() { values = eventList.ToArray() };
         }
     }
 }
