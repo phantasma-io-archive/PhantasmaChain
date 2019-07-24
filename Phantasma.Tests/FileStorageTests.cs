@@ -27,7 +27,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) * 5;
+            var accountBalance = MinimumValidStake * 5;
 
             Transaction tx = null;
 
@@ -58,7 +58,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(((stakedAmount / UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals)) / KilobytesPerStake) * 1024) - (long)headerSize;
+            var contentSize = (long)(((UnitConversion.ToDecimal(stakedAmount, Nexus.StakingTokenDecimals)) * KilobytesPerStake) * 1024) - (long)headerSize;
             var content = new byte[contentSize];
             var rnd = new Random();
             for (int i=0; i<content.Length; i++)
@@ -66,7 +66,7 @@ namespace Phantasma.Tests
                 content[i] = (byte)rnd.Next();
             }
 
-            var contentMerkle = new MerkleTree(content, (uint) (contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -100,7 +100,8 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = (Archive.MaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
+            BigInteger accountBalance = (Archive.MaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
+            accountBalance *= UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
 
             Transaction tx = null;
 
@@ -133,13 +134,14 @@ namespace Phantasma.Tests
             var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(Archive.MaxSize) - (long)headerSize;
             var content = new byte[contentSize];
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
+            System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
             simulator.EndBlock();
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
@@ -187,7 +189,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024 / 5) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -261,7 +263,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -351,7 +353,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -375,7 +377,7 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
-                contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+                contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -398,7 +400,7 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
-                contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+                contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -456,7 +458,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -562,7 +564,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, () =>
@@ -577,7 +579,7 @@ namespace Phantasma.Tests
 
             //----------
             //User B uploads the same file: should succeed
-            contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserB, () =>
@@ -632,7 +634,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -718,7 +720,7 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
-                var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+                var contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -744,7 +746,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -778,7 +780,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -802,7 +804,7 @@ namespace Phantasma.Tests
 
             Assert.ThrowsException<Exception>(() =>
             {
-                contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+                contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -838,7 +840,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call
-            var stakeAmount = BaseEnergyRatioDivisor * 2;
+            var stakeAmount = MinimumValidStake * 2;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -861,7 +863,7 @@ namespace Phantasma.Tests
             var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
-            var contentMerkle = new MerkleTree(content, (uint)(contentSize / 10));
+            var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>

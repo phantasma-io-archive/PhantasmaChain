@@ -22,7 +22,7 @@ namespace Phantasma.Tests
             Random r = new Random();
             r.NextBytes(file);
 
-            var tree = new MerkleTree(file, chunkSize);
+            var tree = new MerkleTree(file);
 
             var chunkCount = file.Length / chunkSize;
             if (chunkCount * chunkSize < file.Length)
@@ -49,7 +49,7 @@ namespace Phantasma.Tests
             Random r = new Random();
             r.NextBytes(file);
 
-            var tree = new MerkleTree(file, chunkSize);
+            var tree = new MerkleTree(file);
 
             var chunkCount = file.Length / chunkSize;
             if (chunkCount * chunkSize < file.Length)
