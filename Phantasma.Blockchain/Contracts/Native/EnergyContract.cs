@@ -52,7 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
 
         public readonly static BigInteger BaseEnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
-        public static BigInteger MinimumValidStake => FuelToStake(1);
+        public static BigInteger MinimumValidStake => UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
 
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
@@ -184,7 +184,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void Stake(Address from, BigInteger stakeAmount)
         {
-            Runtime.Expect(StakeToFuel(stakeAmount) >= 1, "invalid amount");
+            Runtime.Expect(stakeAmount >= MinimumValidStake, "invalid amount");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var stakeBalances = new BalanceSheet(Nexus.StakingTokenSymbol);
@@ -230,6 +230,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger Unstake(Address from, BigInteger unstakeAmount)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(unstakeAmount >= MinimumValidStake, "invalid amount");
 
             if (!_stakes.ContainsKey<Address>(from))
             {
