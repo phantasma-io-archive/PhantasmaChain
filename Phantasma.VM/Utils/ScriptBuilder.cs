@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Storage;
 using Phantasma.Numerics;
@@ -60,6 +61,8 @@ namespace Phantasma.VM.Utils
 
         public ScriptBuilder EmitLoad(byte reg, byte[] bytes, VMType type = VMType.Bytes)
         {
+            Throw.If(bytes.Length > 0xFFFF, "tried to load too much data");
+
             Emit(Opcode.LOAD);
             writer.Write((byte)reg);
             writer.Write((byte)type);

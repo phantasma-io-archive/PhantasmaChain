@@ -167,7 +167,7 @@ namespace Phantasma.VM
                         {
                             var dst = Read8();
                             var type = (VMType)Read8();
-                            var len = (int)ReadVar(0xFFF);
+                            var len = (int)ReadVar(0xFFFF);
 
                             Expect(dst < frame.Registers.Length);
 
