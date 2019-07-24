@@ -2253,6 +2253,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
                 }
 
+                if (account.comment == null)
+                {
+                    account.comment = "";
+                }
+
                 if (account.ELO == 0)
                 {
                     account.ELO = Constants.DEFAULT_ELO;

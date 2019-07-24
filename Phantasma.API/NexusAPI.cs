@@ -884,6 +884,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Invalid transaction script" };
             }
 
+            //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join("\n", new VM.Disassembler(script).Instructions));
+
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var vm = new RuntimeVM(script, chain, null, null, changeSet, true);
 
