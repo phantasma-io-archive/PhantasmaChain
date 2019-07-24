@@ -25,6 +25,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
+        public static BigInteger CalculateStorageSizeForStake(BigInteger stakeAmount)
+        {
+            var availableSize = stakeAmount * KilobytesPerStake * 1024;
+            availableSize /= UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+
+            return availableSize;
+        }
+
         public void UploadFile(Address from, string name, BigInteger contentSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -35,10 +43,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var usedSize = GetUsedSpace(from);
 
-            var temp = Runtime.CallContext("energy", "GetStake", from);
-            var totalStaked = (BigInteger)temp;
-            totalStaked /= UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
-            var availableSize = totalStaked * KilobytesPerStake;
+            var stakedAmount = (BigInteger) Runtime.CallContext("energy", "GetStake", from);
+            var availableSize = CalculateStorageSizeForStake(stakedAmount);
+            
 
             availableSize -= usedSize;
             Runtime.Expect(availableSize >= requiredSize, "account does not have available space");
