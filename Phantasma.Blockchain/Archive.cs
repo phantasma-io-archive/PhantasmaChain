@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain
     {
         public static readonly int MinSize = 1024; //1kb
         public static readonly int MaxSize = 104857600; //100mb
-        public static readonly uint BlockSize = 256 * 1024;
+        public static readonly uint BlockSize = MerkleTree.ChunkSize;
 
         public Hash Hash => MerkleTree.Root;
 
@@ -81,7 +81,7 @@ namespace Phantasma.Blockchain
         public void UnserializeData(BinaryReader reader)
         {
             MerkleTree = MerkleTree.Unserialize(reader);
-            Size = reader.ReadInt32();
+            Size = reader.ReadInt64();
             Flags = (ArchiveFlags) reader.ReadByte();
 
             Key = reader.ReadByteArray();

@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
+using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 
@@ -16,6 +17,7 @@ namespace Phantasma.Cryptography
         public Hash Root => _tree[_tree.Length - 1];
 
         public uint MaxDepthLeafCount { get; private set; }
+        public static readonly uint ChunkSize = 256 * 1024;
 
         private MerkleTree()
         {
@@ -37,12 +39,13 @@ namespace Phantasma.Cryptography
         }
 
         // chunkSize must be a power of 2
-        public MerkleTree(byte[] content, uint chunkSize)
+        public MerkleTree(byte[] content)
         {
-            Throw.If(content == null || content.Length < chunkSize, "invalid content");
+            //Throw.If(content == null || content.Length < ChunkSize, "invalid content");
+            Throw.If(content == null, "invalid content");
 
-            var chunkCount = (uint)(content.Length / chunkSize);
-            if (chunkCount * chunkSize < content.Length)
+            var chunkCount = (uint)(content.Length / ChunkSize);
+            if (chunkCount * ChunkSize < content.Length)
             {
                 chunkCount++;
             }
@@ -67,10 +70,10 @@ namespace Phantasma.Cryptography
             {
                 Hash hash;
 
-                var ofs = (uint)(i * chunkSize);
+                var ofs = (uint)(i * ChunkSize);
                 if (ofs < content.Length)
                 {
-                    var length = chunkSize;
+                    var length = ChunkSize;
                     if (ofs+length > content.Length)
                     {
                         length = (uint)(content.Length - ofs);
