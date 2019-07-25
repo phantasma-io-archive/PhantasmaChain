@@ -2262,11 +2262,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 {
                     account.ELO = Constants.DEFAULT_ELO;
                 }
-
-                if (account.queueBet == 0)
-                {
-                    account.queueBet = 0;
-                }
             }
             else
             {
@@ -5162,12 +5157,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             // this allows us to add new counters later while keeping binary compatibility
             if (battle.counters == null)
             {
-                battle.counters = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
+                battle.counters = new BigInteger[Constants.BATTLE_COUNTER_MAX];
             }
             else
-            if (battle.counters.Length < Constants.ACCOUNT_COUNTER_MAX)
+            if (battle.counters.Length < Constants.BATTLE_COUNTER_MAX)
             {
-                var temp = new BigInteger[Constants.ACCOUNT_COUNTER_MAX];
+                var temp = new BigInteger[Constants.BATTLE_COUNTER_MAX];
                 for (int i = 0; i < battle.counters.Length; i++)
                 {
                     temp[i] = battle.counters[i];
