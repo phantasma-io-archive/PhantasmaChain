@@ -457,9 +457,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             return TAG_MOVES[n];
         }
 
-        public static WrestlingMove GetMoveFromMoveset(byte[] genes, byte slot, BattleStance stance)
+        public static WrestlingMove GetMoveFromMoveset(byte[] genes, BigInteger slot, BattleStance stance)
         {
-            switch (slot)
+            var slotIndex = (int) slot;
+
+            switch (slotIndex)
             {
                 case 0: return WrestlingMove.Idle;
 
@@ -6539,7 +6541,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             SetBattleCounter(ref battle, index, val);
         }
 
-        public bool PlayTurn(Address from, BigInteger battleID, int turn, byte slot)
+        public bool PlayTurn(Address from, BigInteger battleID, BigInteger turn, BigInteger slot)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
@@ -6587,7 +6589,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 // Auto play mode opponents
 
                 battle.sides[opponentIndex].turn = turn;
-                var aiSlot = (byte)(1 + (seed % 4));
+                var aiSlot = /*(byte)*/(1 + (seed % 4));
 
                 var opponentState = battle.sides[1].wrestlers[0];
                 var aiState = battle.sides[0].wrestlers[0];
@@ -6711,7 +6713,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                         if (avoidMove)
                         {
-                            byte botSlot = (byte)(chance % 2 == 0 ? 4 : 0);
+                            var botSlot = /*(byte)*/(chance % 2 == 0 ? 4 : 0);
                             aiMove = Rules.GetMoveFromMoveset(aiWrestler.genes, botSlot, aiStance);
                         }
                     }
@@ -6841,7 +6843,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     if (states[i].status.HasFlag(BattleStatus.Drunk))
                     {
                         var genes = GetWrestler(states[i].wrestlerID).genes;
-                        var vomitSlot = (byte)(1 + battle.turn % 4);
+                        var vomitSlot = /*(byte)*/(1 + battle.turn % 4);
                         var vomitMove = Rules.GetMoveFromMoveset(genes, vomitSlot, states[i].stance);
 
                         if (battle.sides[i].move == vomitMove)
