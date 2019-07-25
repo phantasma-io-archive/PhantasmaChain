@@ -1033,7 +1033,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static int MAX_PRATICE_LEVEL = 8;
 
-        public const uint BASE_LUCHADOR_ID = 1; // Bot Ids = [-1, -99]
+        public const uint BASE_LUCHADOR_ID = 1; // Wrestler Ids = [1, ...[   &&   Bot Ids = [-1, -99]
         public const uint LUCHADOR_GENERATION_SIZE = 1000;
 
         public const int MINIMUM_SOUL_TRANSFER_AMOUNT = 1;
@@ -1836,7 +1836,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct NachoBattle
     {
         public BattleSide[] sides;
-        public ushort version;
+        public BigInteger version;
         public BattleMode mode;
         public BigInteger bet;
         public BigInteger turn;
@@ -2066,7 +2066,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "nacho";
 
-        public static readonly ushort CurrentBattleVersion = 10;
+        public static readonly int CurrentBattleVersion = 10;
 
         public static readonly string ACCOUNT_WRESTLERS = "team";
         public static readonly string ACCOUNT_ITEMS = "items";
