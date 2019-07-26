@@ -27,7 +27,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(hash.ToByteArray().Length == 32);
             Assert.IsTrue(hash.ToByteArray().SequenceEqual(bytes));
 
-            bytes = new byte[10];
+            bytes = new byte[32];
             BigInteger number;
 
             do
