@@ -1864,20 +1864,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         public WrestlerLocation location;
         public StatKind trainingStat;
         public byte gymBoostStamina;
-        public byte us1;
-        public byte us2;
-        public byte us3;
         public byte gymBoostAtk;
-        public byte ua1;
-        public byte ua2;
-        public byte ua3;
         public byte gymBoostDef;
         public byte maskOverrideRarity;
         public byte maskOverrideID;
         public byte maskOverrideCheck;
         public BigInteger itemID;
-        public string[] comments;
         public Timestamp roomTime;
+        public string[] comments;
         public byte[] moveOverrides;
         public WrestlerFlags flags;
         public BigInteger stakeAmount;
@@ -3264,45 +3258,18 @@ namespace Phantasma.Blockchain.Contracts.Native
                 wrestler.location = WrestlerLocation.Market;
             }
 
-            if (wrestler.genes == null || wrestler.genes.Length == 0)
-            {
-                wrestler.genes = new byte[10];
-            }
-
-            if (wrestler.stakeAmount == null)
-            {
-                wrestler.stakeAmount = 0;
-            }
-
             // TODO fix -> por alguma razão o itemID não está inicializado mas quando se cria um novo lutador no server, o itemID é inicializado com 0
             //if (wrestler.itemID != 0) // TODO podemos por este if outra vez dps dos operadores do big int estarem corrigidos
             if (wrestler.itemID > 0)
             {
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-                var itemKind = GetItem(wrestler.itemID).kind;
-
+                //var itemKind = GetItem(wrestler.itemID).kind;
                 // todo confirmar apagar este código. este tryparse já não sentido acho eu
                 //int n;
                 //if (int.TryParse(itemKind.ToString(), out n))
                 //{
                 //    wrestler.itemID = 0;
                 //}
-            }
-
-            if (wrestler.us1 > 0 || wrestler.us2 > 0 || wrestler.us3 > 0)
-            {
-                IncreaseWrestlerEV(ref wrestler, StatKind.Stamina, wrestler.us1 + wrestler.us2 + wrestler.us3);
-                wrestler.us1 = 0;
-                wrestler.us2 = 0;
-                wrestler.us3 = 0;
-            }
-
-            if (wrestler.ua1 > 0 || wrestler.ua2 > 0 || wrestler.ua3 > 0)
-            {
-                IncreaseWrestlerEV(ref wrestler, StatKind.Attack, wrestler.ua1 + wrestler.ua2 + wrestler.ua3);
-                wrestler.ua1 = 0;
-                wrestler.ua2 = 0;
-                wrestler.ua3 = 0;
             }
 
             if (!IsValidMaskOverride(wrestler))
