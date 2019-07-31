@@ -330,18 +330,18 @@ namespace Phantasma.API
         private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockByTransaction(tx);
-            var chain = Nexus.FindChainByAddress(block.ChainAddress);
+            var chain = block!=null? Nexus.FindChainByAddress(block.ChainAddress) : null;
 
             var result = new TransactionResult
             {
                 hash = tx.Hash.ToString(),
-                chainAddress = chain.Address.Text,
+                chainAddress = chain!=null ? chain.Address.Text: Address.Null.Text,
                 timestamp = block.Timestamp.Value,
                 blockHeight = block.Height,
                 blockHash = block.Hash.ToString(),
                 confirmations = Nexus.GetConfirmationsOfBlock(block),
                 script = tx.Script.Encode(),
-                fee = chain.GetTransactionFee(tx.Hash).ToString()
+                fee = chain!=null ? chain.GetTransactionFee(tx.Hash).ToString(): "0"
             };
 
             var eventList = new List<EventResult>();
