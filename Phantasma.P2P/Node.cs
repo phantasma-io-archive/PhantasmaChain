@@ -629,11 +629,23 @@ namespace Phantasma.Network.P2P
             return null;
         }
 
-        private Dictionary<Address, List<RelayMessage>> _messages = new Dictionary<Address, List<RelayMessage>>();
+        private Dictionary<Address, List<RelayReceipt>> _messages = new Dictionary<Address, List<RelayReceipt>>();
 
-        public void ExecuteRelayMessage(RelayMessage msg)
+        public IEnumerable<RelayReceipt> GetRelayReceipts(Address from)
         {
-            List<RelayMessage> list;
+            if (_messages.ContainsKey(from))
+            {
+                return _messages[from];
+            }
+
+            return Enumerable.Empty<RelayReceipt>();
+        }
+
+        public void PostRelayMessage(RelayReceipt receipt)
+        {
+            List<RelayReceipt> list;
+
+            var msg = receipt.message;
 
             if (_messages.ContainsKey(msg.receiver))
             {
@@ -641,14 +653,15 @@ namespace Phantasma.Network.P2P
             }
             else
             {
-                list = new List<RelayMessage>();
+                list = new List<RelayReceipt>();
                 _messages[msg.receiver] = list;
             }
 
             BigInteger expectedMessageIndex = 0;
 
-            foreach (var temp in list)
+            foreach (var otherReceipt in list)
             {
+                var temp = otherReceipt.message;
                 if (temp.sender == msg.sender && temp.index > expectedMessageIndex)
                 {
                     expectedMessageIndex = temp.index + 1;
@@ -660,7 +673,7 @@ namespace Phantasma.Network.P2P
                 throw new RelayException("unexpected message index, should be "+expectedMessageIndex);
             }
 
-            list.Add(msg);
+            list.Add(receipt);
         }
 
         private void AddEvent(Event evt)

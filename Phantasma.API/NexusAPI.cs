@@ -1426,7 +1426,7 @@ namespace Phantasma.API
 
             try
             {
-                Node.ExecuteRelayMessage(receipt.message);
+                Node.PostRelayMessage(receipt);
             }
             catch (Exception e)
             {
@@ -1437,6 +1437,42 @@ namespace Phantasma.API
             {
                 value = true
             };
+        }
+
+        [APIInfo(typeof(ReceiptResult[]), "Receives messages from the relay network.", false)]
+        public IAPIResult RelayReceive([APIParameter("Address or account name", "helloman")] string accountInput)
+        {
+            if (Node == null)
+            {
+                return new ErrorResult { error = "No node available" };
+            }
+
+            Address address;
+
+            if (Address.IsValidAddress(accountInput))
+            {
+                address = Address.FromText(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(accountInput);
+                if (address == Address.Null)
+                {
+                    return new ErrorResult { error = "name not owned" };
+                }
+            }
+
+            var receipts = Node.GetRelayReceipts(address);
+            if (receipts.Any())
+            {
+                var receiptList = receipts.Select(x => (object)FillReceipt(x));
+
+                return new ArrayResult() { values = receiptList.ToArray() };
+            }
+            else
+            {
+                return new ErrorResult { error = "no messages available" };
+            }
         }
 
         [APIInfo(typeof(EventResult[]), "Reads pending messages from the relay network.", false)]
