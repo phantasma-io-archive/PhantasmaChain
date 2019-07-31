@@ -13,10 +13,10 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct RelayMessage : ISerializable
     {
         public string nexus;
-        public string channel;
         public BigInteger index;
         public Timestamp timestamp;
         public Address sender;
+        public Address receiver;
         public byte[] script;
 
         public byte[] ToByteArray()
@@ -34,20 +34,20 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(nexus);
-            writer.WriteVarString(channel);
             writer.WriteBigInteger(index);
             writer.Write(timestamp.Value);
             writer.WriteAddress(sender);
+            writer.WriteAddress(receiver);
             writer.WriteByteArray(script);
         }
 
         public void UnserializeData(BinaryReader reader)
         {
             nexus = reader.ReadVarString();
-            channel = reader.ReadVarString();
             index = reader.ReadBigInteger();
             timestamp = new Timestamp(reader.ReadUInt32());
             sender = reader.ReadAddress();
+            receiver = reader.ReadAddress();
             script = reader.ReadByteArray();
         }
     }
@@ -94,62 +94,54 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
     }
 
-    public struct RelayChannel
-    {
-        public Address owner;
-        public string chain;
-        public Timestamp creationTime;
-        public string symbol; // token symbol
-        public BigInteger balance;
-        public BigInteger fee; // per message
-        public bool active;
-        public BigInteger index;
-    }
-
     public sealed class RelayContract : SmartContract
     {
         public override string Name => "relay";
 
         public static readonly int MinimumReceiptsPerTransaction = 20;
 
-        internal StorageMap _channelMap; //<string, ChannelEntry>
-        internal StorageMap _channelList; //<Address, List<string>>
+        public static readonly BigInteger RelayFeePerMessage = 10;
+
+        internal StorageMap _balances; //<address, BigiInteger>
+        internal StorageMap _indices; //<string, BigiInteger>
 
         public RelayContract() : base()
         {
         }
 
-        private string MakeKey(Address address, string channelName)
+        private string MakeKey(Address sender, Address receiver)
         {
-            return address.Text + "." + channelName;
+            return sender.Text + ">" + receiver.Text;
         }
 
-        public RelayChannel GetChannel(Address from, string channelName)
+        public BigInteger GetBalance(Address from)
         {
-            var key = MakeKey(from, channelName);
-            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
-
-            var channel = _channelMap.Get<string, RelayChannel>(key);
-
-            return channel;
+            if (_balances.ContainsKey<Address>(from))
+            {
+                return _balances.Get<Address, BigInteger>(from);
+            }
+            return 0;
         }
 
-        public string[] GetOpenChannels(Address from)
+        public BigInteger GetIndex(Address from, Address to)
         {
-            var list = _channelList.Get<Address, StorageList>(from);
-            return list.All<string>();
+            var key = MakeKey(from, to);
+            if (_indices.ContainsKey<string>(key))
+            {
+                return _indices.Get<string, BigInteger>(key);
+            }
+
+            return 0;
         }
 
-        public Address GetAddress(Address from, string channelName)
+        public Address GetTopUpAddress(Address from)
         {
-            var key = MakeKey(from, channelName);
-            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
-
-            var bytes = Encoding.UTF8.GetBytes(key);
+            var bytes = Encoding.UTF8.GetBytes(from.Text+".relay");
             var hash = CryptoExtensions.SHA256(bytes);
             return new Address(hash);
         }
 
+        /*
         public void OpenChannel(Address from, Address to, string chainName, string channelName, string tokenSymbol, BigInteger amount, BigInteger fee)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -207,77 +199,48 @@ namespace Phantasma.Blockchain.Contracts.Native
             channel.active = false;
             _channelMap.Set<string, RelayChannel>(key, channel);
             Runtime.Notify(EventKind.ChannelClose, from, channelName);
-        }
+        }*/
 
-        public void TopUpChannel(Address from, string channelName, BigInteger amount)
+        public void TopUpChannel(Address from, BigInteger amount)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var key = MakeKey(from, channelName);
-            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
+            BigInteger balance = _balances.ContainsKey(from) ? _balances.Get<Address, BigInteger>(from) : 0;
 
-            var channel = _channelMap.Get<string, RelayChannel>(key);
-            Runtime.Expect(channel.active, "channel already closed");
-
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, channel.symbol, from, Runtime.Chain.Address, amount), "insuficient balance");
-
-            channel.balance += amount;
-            _channelMap.Set<string, RelayChannel>(key, channel);
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, Runtime.Chain.Address, amount), "insuficient balance");
+            balance += amount;
+            Runtime.Expect(balance >= 0, "invalid balance");
+            _balances.Set<Address, BigInteger>(from, balance);
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
         }
 
-        public void UpdateChannel(Address from, string channelName, RelayReceipt[] receipts)
+        public void UpdateChannel(RelayReceipt receipt)
         {
-            var key = MakeKey(from, channelName);
-            Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
+            var channelIndex = GetIndex(receipt.message.sender, receipt.message.receiver);
+            // here we count how many receipts we are implicitly accepting
+            // this means that we don't need to accept every receipt, allowing skipping several
+            var receiptCount = 1 + receipt.message.index - channelIndex;
+            Runtime.Expect(receiptCount > 0, "invalid receipt index");
 
-            var channel = _channelMap.Get<string, RelayChannel>(key);
+            var payout = RelayFeePerMessage * receiptCount;
 
-            if (channel.active)
-            {
-                Runtime.Expect(receipts.Length >= MinimumReceiptsPerTransaction, "more receipts are necessary");
-            }
+            var balance = GetBalance(receipt.message.sender);
+            Runtime.Expect(balance >= payout, "insuficient balance");
 
-            BigInteger payout = 0;
+            var bytes = receipt.message.ToByteArray();
+            Runtime.Expect(receipt.signature.Verify(bytes, receipt.message.sender), "invalid signature");
 
-            for (int i=0; i<receipts.Length; i++)
-            {
-                var receipt = receipts[i];
-
-                Runtime.Expect(channel.index == receipt.message.index, "invalid receipt index");
-                Runtime.Expect(channel.balance >= channel.fee, "insuficient balance");
-
-                var bytes = receipt.message.ToByteArray();
-                Runtime.Expect(receipt.signature.Verify(bytes, from), "invalid signature");
-
-                payout += channel.fee;
-                channel.balance -= channel.fee;
-                channel.index = channel.index + 1;
-            }
+            balance -= payout;
+            _balances.Set<Address, BigInteger>(receipt.message.sender, balance);
+            var key = MakeKey(receipt.message.sender, receipt.message.receiver);
+            _indices.Set<string, BigInteger>(key, receipt.message.index);
 
             Runtime.Expect(payout > 0, "invalid payout");
 
-            if (channel.owner != Runtime.Chain.Address)
-            {
-                Runtime.Nexus.TransferTokens(Runtime, channel.symbol, Runtime.Chain.Address, channel.owner, payout);
-                Runtime.Notify(EventKind.TokenReceive, channel.owner, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = channel.symbol });
-            }
-
-            if (!channel.active || channel.balance == 0)
-            {
-                if (channel.balance > 0)
-                {
-                    Runtime.Nexus.TransferTokens(Runtime, channel.symbol, Runtime.Chain.Address, from, channel.balance);
-                    Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = channel.balance, symbol = channel.symbol });
-                }
-
-                _channelMap.Remove<string>(key);
-                Runtime.Notify(EventKind.ChannelDestroy, from, channelName);
-
-                var list = _channelList.Get<Address, StorageList>(from);
-                list.Remove<string>(channelName);
-            }
+            // TODO proper define a payment address here?
+            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, Runtime.Chain.Address, payout);
+            Runtime.Notify(EventKind.TokenReceive, Runtime.Chain.Address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = channel.symbol });
         }
     }
 }
