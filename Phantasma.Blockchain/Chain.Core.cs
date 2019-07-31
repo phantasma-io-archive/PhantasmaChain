@@ -9,7 +9,6 @@ using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.VM.Utils;
 using Phantasma.Core.Types;
-using Phantasma.Blockchain.Consensus;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Blockchain.Tokens;
@@ -196,12 +195,14 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
+            var targetEpoch = CurrentEpoch != null ? CurrentEpoch : GenerateEpoch();
+
             foreach (var tx in transactions)
             {
                 byte[] result;
                 try
                 {
-                    if (tx.Execute(this, block, changeSet, block.Notify, oracleReader, out result))
+                    if (tx.Execute(this, targetEpoch, block, changeSet, block.Notify, oracleReader, out result))
                     {
                         if (result != null)
                         {
@@ -230,11 +231,7 @@ namespace Phantasma.Blockchain
 
             changeSet.Execute();
 
-            if (CurrentEpoch == null)
-            {
-                GenerateEpoch();
-            }
-
+            CurrentEpoch = targetEpoch;
             CurrentEpoch.AddBlockHash(block.Hash);
             CurrentEpoch.UpdateHash();
 
@@ -486,7 +483,7 @@ namespace Phantasma.Blockchain
         public VMObject InvokeScript(byte[] script)
         {
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, this.LastBlock, null, changeSet, true);
+            var vm = new RuntimeVM(script, this, null,  this.LastBlock, null, changeSet, true);
 
             var state = vm.Execute();
 
@@ -578,7 +575,7 @@ namespace Phantasma.Blockchain
             return address == firstValidator;
         }
 
-        private void GenerateEpoch()
+        private Epoch GenerateEpoch()
         {
             Address nextValidator;
 
@@ -601,14 +598,19 @@ namespace Phantasma.Blockchain
                 nextValidator = Nexus.GetValidatorByIndex(currentIndex);
             }
             else
+            if (BlockHeight == 0)
+            {
+                epochIndex = 0;
+                nextValidator = Nexus.GenesisAddress;
+            }
+            else
             {
                 epochIndex = 0;
                 nextValidator = Nexus.GetValidatorByIndex(0);
             }
 
             var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
-
-            CurrentEpoch = epoch;
+            return epoch;
         }
         #endregion
 

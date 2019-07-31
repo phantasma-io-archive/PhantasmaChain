@@ -125,5 +125,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             var address = _validatorList.Get<Address>(index);
             return address;
         }
+
+        public void Validate(Address from)
+        {
+            Runtime.Expect(IsValidator(from), "validator failed");
+            Runtime.Expect(Runtime.Epoch.ValidatorAddress == from, "epoch validator mismatch");
+
+            var validator = _validatorMap.Get<Address, ValidatorEntry>(from);
+            validator.lastActivity = Runtime.Time;
+            _validatorMap.Set<Address, ValidatorEntry>(from, validator);
+
+            Runtime.Notify(EventKind.ValidatorUpdate, Runtime.Chain.Address, from);
+        }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Consensus;
 using Phantasma.Cryptography;
 
 namespace Phantasma.Network.P2P.Messages

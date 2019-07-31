@@ -36,6 +36,7 @@ namespace Phantasma.Blockchain.Contracts
         FileDelete = 24,
         ValidatorAdd = 25,
         ValidatorRemove = 26,
+        ValidatorUpdate = 27,
         Metadata = 31,
         Custom = 32,
     }

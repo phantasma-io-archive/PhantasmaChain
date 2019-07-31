@@ -872,7 +872,7 @@ namespace Phantasma.API
             //System.IO.File.AppendAllLines(@"c:\code\bug_vm.txt", new []{string.Join("\n", new VM.Disassembler(script).Instructions)});
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
-            var vm = new RuntimeVM(script, chain, null, null, changeSet, true);
+            var vm = new RuntimeVM(script, chain, null, null, null, changeSet, true);
 
             var state = vm.Execute();
 

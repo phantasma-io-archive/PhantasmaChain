@@ -4,7 +4,7 @@ using Phantasma.Core.Types;
 using System.Linq;
 using System;
 
-namespace Phantasma.Blockchain.Consensus
+namespace Phantasma.Blockchain
 {
     public class ProofOfWork
     {

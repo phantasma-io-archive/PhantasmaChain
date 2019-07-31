@@ -6,7 +6,7 @@ using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Phantasma.Blockchain.Consensus
+namespace Phantasma.Blockchain
 {
     public struct EpochSigner
     {

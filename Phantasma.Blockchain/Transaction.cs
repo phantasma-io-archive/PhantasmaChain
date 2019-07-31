@@ -73,11 +73,11 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool Execute(Chain chain, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReaderDelegate oracleReader, out byte[] result)
+        internal bool Execute(Chain chain, Epoch epoch, Block block, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReaderDelegate oracleReader, out byte[] result)
         {
             result = null;
 
-            var runtime = new RuntimeVM(this.Script, chain, block, this, changeSet, false);
+            var runtime = new RuntimeVM(this.Script, chain, epoch, block, this, changeSet, false);
             runtime.ThrowOnFault = true;
             runtime.OracleReader = oracleReader;
 

@@ -19,6 +19,7 @@ namespace Phantasma.Blockchain.Contracts
         public Chain Chain { get; private set; }
         public Chain ParentChain { get; private set; }
         public Block Block { get; private set; }
+        public Epoch Epoch { get; private set; }
         public Nexus Nexus => Chain.Nexus;
         public Timestamp Time => Block != null ? Block.Timestamp : Timestamp.Now;
 
@@ -40,7 +41,7 @@ namespace Phantasma.Blockchain.Contracts
 
         private BigInteger seed;
 
-        public RuntimeVM(byte[] script, Chain chain, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode, bool delayPayment = false) : base(script)
+        public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -56,6 +57,7 @@ namespace Phantasma.Blockchain.Contracts
             this.DelayPayment = delayPayment;
 
             this.Chain = chain;
+            this.Epoch = epoch;
             this.Block = block;
             this.Transaction = transaction;
             this.ChangeSet = changeSet;
