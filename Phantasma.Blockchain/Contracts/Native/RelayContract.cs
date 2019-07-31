@@ -212,7 +212,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(balance >= 0, "invalid balance");
             _balances.Set<Address, BigInteger>(from, balance);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
         }
 
         public void UpdateChannel(RelayReceipt receipt)
@@ -240,7 +240,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // TODO proper define a payment address here?
             Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, Runtime.Chain.Address, payout);
-            Runtime.Notify(EventKind.TokenReceive, Runtime.Chain.Address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = channel.symbol });
+            Runtime.Notify(EventKind.TokenReceive, Runtime.Chain.Address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
         }
     }
 }

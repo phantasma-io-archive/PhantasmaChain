@@ -37,6 +37,9 @@ namespace Phantasma.API
         [APIDescription("Amount of staked SOUL")]
         public string stake;
 
+        [APIDescription("Amount of available KCAL for relay channel")]
+        public string relay;
+
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
     }
@@ -343,6 +346,9 @@ namespace Phantasma.API
 
         [APIDescription("Sender address")]
         public string sender;
+
+        [APIDescription("Receiver address")]
+        public string receiver;
 
         [APIDescription("Script of message, in hex")]
         public string script;

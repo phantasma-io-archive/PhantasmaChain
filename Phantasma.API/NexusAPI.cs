@@ -370,23 +370,6 @@ namespace Phantasma.API
             };
         }
 
-        private ChannelResult FillChannel(string name, Address creator, RelayChannel channel)
-        {
-            return new ChannelResult
-            {
-                creatorAddress = creator.Text,
-                targetAddress = channel.owner.Text,
-                active = channel.active,
-                balance = channel.balance.ToString(),
-                chain = channel.chain,
-                name = name,
-                creationTime = channel.creationTime.Value,
-                fee = channel.fee.ToString(),
-                index = (int)channel.index,
-                symbol = channel.symbol,
-            };
-        }
-
         private BlockResult FillBlock(Block block, Chain chain)
         {
             var result = new BlockResult
@@ -476,10 +459,10 @@ namespace Phantasma.API
             return new ReceiptResult()
             {
                 nexus = receipt.message.nexus,
-                channel = receipt.message.channel,
                 index = receipt.message.index.ToString(),
                 timestamp = receipt.message.timestamp.Value,
                 sender = receipt.message.sender.Text,
+                receiver = receipt.message.receiver.Text,
                 script = Base16.Encode(receipt.message.script)
             };
         }
@@ -534,6 +517,7 @@ namespace Phantasma.API
                     }
                 }
             }
+            result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
 
             return result;
@@ -1414,35 +1398,6 @@ namespace Phantasma.API
             return FillABI(contractName, contract.ABI);
         }
 
-        [APIInfo(typeof(ChannelResult[]), "Returns the ABI interface of specific contract.", false)]
-        public IAPIResult GetChannels([APIParameter("Address or account name", "helloman")] string accountInput)
-        {
-            Address address;
-
-            if (Address.IsValidAddress(accountInput))
-            {
-                address = Address.FromText(accountInput);
-            }
-            else
-            {
-                address = Nexus.LookUpName(accountInput);
-                if (address == Address.Null)
-                {
-                    return new ErrorResult { error = "name not owned" };
-                }
-            }
-
-            var channels = Nexus.GetOpenChannels(address);
-            if (!channels.Any())
-            {
-                return new ErrorResult { error = "not channels open" };
-            }
-
-            var channelList = channels.Select(x => (object)FillChannel(x, address, Nexus.GetChannel(address, x)));
-
-            return new ArrayResult() { values = channelList.ToArray() };
-        }
-
         [APIInfo(typeof(bool), "Writes a message to the relay network.", false)]
         public IAPIResult RelaySend([APIParameter("Serialized receipt, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string receiptHex)
         {
@@ -1467,11 +1422,6 @@ namespace Phantasma.API
             if (!receipt.signature.Verify(msgBytes, receipt.message.sender))
             {
                 return new ErrorResult() { error = "invalid signature" };
-            }
-
-            if (!Node.IsPendingReceipt(receipt))
-            {
-                return new ErrorResult() { error = "invalid receipt index" };
             }
 
             try

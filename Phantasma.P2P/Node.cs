@@ -629,47 +629,38 @@ namespace Phantasma.Network.P2P
             return null;
         }
 
-        private string MakeReceiptKey(Address address, string channel)
-        {
-            return address.Text + "." + channel;
-        }
-
-        public uint GetLastReceiptIndex(Address address, string channel)
-        {
-            var key = MakeReceiptKey(address, channel);
-            if (_receipts.ContainsKey(key))
-            {
-                return _receipts[key];
-            }
-
-            return 0;
-        }
-
-        public bool IsPendingReceipt(RelayReceipt receipt)
-        {
-            var lastIndex = GetLastReceiptIndex(receipt.message.sender, receipt.message.channel);
-
-            return receipt.message.index > lastIndex;
-        }
+        private Dictionary<Address, List<RelayMessage>> _messages = new Dictionary<Address, List<RelayMessage>>();
 
         public void ExecuteRelayMessage(RelayMessage msg)
         {
-            var channel = Nexus.GetChannel(msg.sender, msg.channel);
-            var chain = Nexus.FindChainByName(channel.chain);
+            List<RelayMessage> list;
 
-            var vm = new RuntimeVM(msg.script, chain, null, null, null, true, true);
-            vm.ThrowOnFault = true;
-            var result = vm.Execute();
-
-            if (result != VM.ExecutionState.Halt)
+            if (_messages.ContainsKey(msg.receiver))
             {
-                throw new Exception("Relay message execution failed");
+                list = _messages[msg.receiver];
+            }
+            else
+            {
+                list = new List<RelayMessage>();
+                _messages[msg.receiver] = list;
             }
 
-            foreach (var evt in vm.Events)
+            BigInteger expectedMessageIndex = 0;
+
+            foreach (var temp in list)
             {
-                AddEvent(evt);
+                if (temp.sender == msg.sender && temp.index > expectedMessageIndex)
+                {
+                    expectedMessageIndex = temp.index + 1;
+                }
             }
+
+            if (expectedMessageIndex != msg.index)
+            {
+                throw new RelayException("unexpected message index, should be "+expectedMessageIndex);
+            }
+
+            list.Add(msg);
         }
 
         private void AddEvent(Event evt)

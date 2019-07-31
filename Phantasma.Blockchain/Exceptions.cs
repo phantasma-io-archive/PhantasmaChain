@@ -27,4 +27,12 @@ namespace Phantasma.Blockchain
         }
     }
 
+    public class RelayException : Exception
+    {
+        public RelayException(string msg) : base(msg)
+        {
+
+        }
+    }
+
 }

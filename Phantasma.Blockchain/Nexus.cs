@@ -1496,16 +1496,10 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CHANNELS
-        public string[] GetOpenChannels(Address address)
+        public BigInteger GetRelayBalance(Address address)
         {
             var chain = RootChain;
-            return (string[])chain.InvokeContract("relay", "GetOpenChannels", address);
-        }
-
-        public RelayChannel GetChannel(Address address, string channelName)
-        {
-            var chain = RootChain;
-            return (RelayChannel)chain.InvokeContract("relay", "GetChannel", address, channelName);
+            return (BigInteger)chain.InvokeContract("relay", "GetBalance", address);
         }
         #endregion
 
