@@ -336,10 +336,10 @@ namespace Phantasma.API
             {
                 hash = tx.Hash.ToString(),
                 chainAddress = chain!=null ? chain.Address.Text: Address.Null.Text,
-                timestamp = block.Timestamp.Value,
-                blockHeight = block.Height,
-                blockHash = block.Hash.ToString(),
-                confirmations = Nexus.GetConfirmationsOfBlock(block),
+                timestamp = block != null ? block.Timestamp.Value: 0,
+                blockHeight = block!= null ? (int)block.Height: -1,
+                blockHash = block!=null? block.Hash.ToString() : Hash.Null.ToString(),
+                confirmations = block != null ? Nexus.GetConfirmationsOfBlock(block) : 0,
                 script = tx.Script.Encode(),
                 fee = chain!=null ? chain.GetTransactionFee(tx.Hash).ToString(): "0"
             };

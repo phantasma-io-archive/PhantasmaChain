@@ -93,7 +93,7 @@ namespace Phantasma.API
         public int confirmations;
 
         [APIDescription("Block height at which the transaction was accepted")]
-        public uint blockHeight;
+        public int blockHeight;
 
         [APIDescription("Hash of the block")]
         public string blockHash;
