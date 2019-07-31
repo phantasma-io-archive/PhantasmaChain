@@ -371,12 +371,12 @@ namespace Phantasma.Blockchain
                 case "token": contract = new TokenContract(); break;
                 case "swap": contract = new SwapContract(); break;
                 case "gas":  contract  = new GasContract(); break;
-                case "privacy": contract  = new PrivacyContract(); break;
+                case "relay": contract = new RelayContract(); break;
                 case "storage": contract  = new StorageContract(); break;
                 case "vault": contract  = new VaultContract(); break;
                 case "bank": contract  = new BankContract(); break;
                 case "apps": contract  = new AppsContract(); break;
-                case "dex": contract  = new ExchangeContract(); break;
+                case "dex": contract = new ExchangeContract(); break;
                 case "nacho": contract  = new NachoContract(); break;
                 case "casino": contract  = new CasinoContract(); break;
                 default:
