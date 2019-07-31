@@ -6,11 +6,11 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public struct ValidatorInfo
+    public struct ValidatorEntry
     {
         public Address address;
-        public BigInteger stake;
-        public Timestamp timestamp;
+        public Timestamp joinDate;
+        public Timestamp lastActivity;
         public int slashes;
     }
 
@@ -18,8 +18,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "consensus";
 
-        private StorageList _entryList; //<Address> 
-        private StorageMap _entryMap; // <Address, ValidatorInfo>
+        private StorageList _validatorList; //<Address> 
+        private StorageMap _validatorMap; // <Address, ValidatorInfo>
 
         public ConsensusContract() : base()
         {
@@ -27,12 +27,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetMaxValidators()
         {
-            return 3; // TODO this should be dynamic
-        }
-
-        public BigInteger GetActiveValidators()
-        {
-            return _entryList.Count();
+            return 10; // TODO this should be dynamic
         }
 
         public BigInteger GetRequiredStake()
@@ -42,79 +37,71 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public Address[] GetValidators()
         {
-            return _entryList.All<Address>();
+            return _validatorList.All<Address>();
         }
 
         // here we reintroduce this method, as a faster way to check if an address is a validator
         private new bool IsValidator(Address address)
         {
-            return _entryMap.ContainsKey(address);
+            return _validatorMap.ContainsKey(address);
         }
 
-        public void Stake(Address address)
+        public void AddValidator(Address from)
         {
-            Runtime.Expect(IsWitness(address), "witness failed");
+            Runtime.Expect(IsWitness(from), "witness failed");
 
-            var count = _entryList.Count();
+            var count = _validatorList.Count();
             var max = GetMaxValidators();
             Runtime.Expect(count < max, "no open validators spots");
 
-            var stakeAmount = GetRequiredStake();
+            var requiredStake = GetRequiredStake();
+            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
 
-            var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
-            var balances = new BalanceSheet(token.Symbol);
-            var balance = balances.Get(this.Storage, address);
-            Runtime.Expect(balance >= stakeAmount, "not enough balance");
+            Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
 
-            Runtime.Expect(balances.Subtract(this.Storage, address, stakeAmount), "balance subtract failed");
-            Runtime.Expect(balances.Add(this.Storage, Runtime.Chain.Address, stakeAmount), "balance add failed");
+            _validatorList.Add(from);
 
-            _entryList.Add(address);
-
-            var entry = new ValidatorInfo()
+            var entry = new ValidatorEntry()
             {
-                address = address,
-                stake = stakeAmount,
-                timestamp = Runtime.Time,
+                address = from,
+                joinDate = Runtime.Time,
+                lastActivity = Runtime.Time,
                 slashes = 0
             };
-            _entryMap.Set(address, entry);
+            _validatorMap.Set(from, entry);
 
-            Runtime.Notify(EventKind.TokenStake, address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = stakeAmount });
+            Runtime.Notify(EventKind.ValidatorAdd, Runtime.Chain.Address, from);
         }
 
-        public void Unstake(Address address)
+        public void RemoveValidator(Address from)
         {
-            Runtime.Expect(IsValidator(address), "validator failed");
-            Runtime.Expect(IsWitness(address), "witness failed");
+            Runtime.Expect(IsValidator(from), "validator failed");
 
-            var entry = _entryMap.Get<Address, ValidatorInfo>(address);
+            var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
 
-            var diff = Timestamp.Now - entry.timestamp;
-            var days = diff / 86400; // convert seconds to days
+            bool brokenRules = false;
 
-            Runtime.Expect(days >= 30, "waiting period required");
+            var diff = Timestamp.Now - entry.lastActivity;
+            var maxPeriod = 3600 * 2; // 2 hours
+            if (diff > maxPeriod)
+            {
+                brokenRules = true;
+            }
 
-            var stakeAmount = entry.stake;
-            var token = Runtime.Nexus.GetTokenInfo(Nexus.StakingTokenSymbol);
-            var balances = new BalanceSheet(token.Symbol);
-            var balance = balances.Get(this.Storage, Runtime.Chain.Address);
-            Runtime.Expect(balance >= stakeAmount, "not enough balance");
+            var requiredStake = GetRequiredStake();
+            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
 
-            Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, stakeAmount), "balance subtract failed");
-            Runtime.Expect(balances.Add(this.Storage, address, stakeAmount), "balance add failed");
+            if (stakedAmount < requiredStake)
+            {
+                brokenRules = true;
+            }
 
-            _entryMap.Remove(address);
-            _entryList.Remove(address);
+            Runtime.Expect(brokenRules, "no rules broken");
 
-            Runtime.Notify(EventKind.TokenUnstake, address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = token.Symbol, value = stakeAmount });
-        }
+            _validatorMap.Remove(from);
+            _validatorList.Remove(from);
 
-        public BigInteger GetStake(Address address)
-        {
-            Runtime.Expect(_entryMap.ContainsKey(address), "not a validator address");
-            var entry = _entryMap.Get<Address, ValidatorInfo>(address);
-            return entry.stake;
+            Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, from);
         }
 
         public BigInteger GetIndexOfValidator(Address address)
@@ -124,7 +111,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return -1;
             }
 
-            var index = _entryList.IndexOf(address);
+            var index = _validatorList.IndexOf(address);
             return index;
         }
 
@@ -132,10 +119,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(index >= 0, "invalid validator index");
 
-            var count = _entryList.Count();
+            var count = _validatorList.Count();
             Runtime.Expect(index < count, "invalid validator index");
 
-            var address = _entryList.Get<Address>(index);
+            var address = _validatorList.Get<Address>(index);
             return address;
         }
     }

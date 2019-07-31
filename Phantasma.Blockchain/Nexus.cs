@@ -1200,7 +1200,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("consensus", "Stake", owner.Address).
+                CallContract("consensus", "AddValidator", owner.Address).
                 CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
                 CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 SpendGas(owner.Address).
@@ -1290,7 +1290,7 @@ namespace Phantasma.Blockchain
             }
             catch (Exception e)
             {
-                _logger.Error(e.ToString());
+                _logger?.Error(e.ToString());
                 return false;
             }
 
