@@ -5003,7 +5003,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 mode = mode,
                 turn = 1,
                 bet = bet,
-                lastTurnHash = 0,
+                lastTurnHash = Hash.Null,
                 state = BattleState.Active,
                 time = GetCurrentTime(),
                 counters = new BigInteger[Constants.BATTLE_COUNTER_MAX]
@@ -8329,7 +8329,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             battle.turn++;
             battle.time = GetCurrentTime();
-            //battle.lastTurnHash = Transaction != null ? Transaction.Hash : BigInteger.Zero; // TODO fix
+            battle.lastTurnHash = Runtime.Transaction != null ? Runtime.Transaction.Hash : Hash.Null; 
 
             if (battle.state != BattleState.Active)
             {
