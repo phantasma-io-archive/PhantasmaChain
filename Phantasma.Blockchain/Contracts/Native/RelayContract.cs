@@ -100,7 +100,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly int MinimumReceiptsPerTransaction = 20;
 
-        public static readonly BigInteger RelayFeePerMessage = 10;
+        public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) / (1000 * EnergyContract.BaseEnergyRatioDivisor);
 
         internal StorageMap _balances; //<address, BigiInteger>
         internal StorageMap _indices; //<string, BigiInteger>
@@ -223,24 +223,30 @@ namespace Phantasma.Blockchain.Contracts.Native
             var receiptCount = 1 + receipt.message.index - channelIndex;
             Runtime.Expect(receiptCount > 0, "invalid receipt index");
 
-            var payout = RelayFeePerMessage * receiptCount;
+            var expectedFee = RelayFeePerMessage * receiptCount;
 
             var balance = GetBalance(receipt.message.sender);
-            Runtime.Expect(balance >= payout, "insuficient balance");
+            Runtime.Expect(balance >= expectedFee, "insuficient balance");
 
             var bytes = receipt.message.ToByteArray();
             Runtime.Expect(receipt.signature.Verify(bytes, receipt.message.sender), "invalid signature");
 
-            balance -= payout;
+            balance -= expectedFee;
             _balances.Set<Address, BigInteger>(receipt.message.sender, balance);
             var key = MakeKey(receipt.message.sender, receipt.message.receiver);
             _indices.Set<string, BigInteger>(key, receipt.message.index);
 
-            Runtime.Expect(payout > 0, "invalid payout");
+            Runtime.Expect(expectedFee > 0, "invalid payout");
 
-            // TODO proper define a payment address here?
+            var payout = expectedFee / 2;
+
+            // send half to the chain
             Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, Runtime.Chain.Address, payout);
             Runtime.Notify(EventKind.TokenReceive, Runtime.Chain.Address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
+
+            // send half to the receiver
+            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, receipt.message.receiver, Runtime.Chain.Address, payout);
+            Runtime.Notify(EventKind.TokenReceive, receipt.message.receiver, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
         }
     }
 }
