@@ -26,6 +26,8 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
             vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
+
+            vm.RegisterMethod("CheckWitness()", Constructor_CheckWitness);
         }
 
         private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
@@ -48,7 +50,35 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        
+        private static ExecutionState Constructor_CheckWitness(RuntimeVM vm)
+        {
+            try
+            {
+                bool success = false;
+                string addressString = vm.Stack.Pop().AsString();
+                var tx = vm.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                var address = Address.FromText(addressString);
+                Throw.If(address == Address.Null, "Address must not be null!");
+
+                if (tx.IsSignedBy(address))
+                {
+                    success = true;
+                }
+
+                var temp = new VMObject();
+                temp.SetValue(success);
+                vm.Stack.Push(temp);
+            }
+            catch 
+            {
+                return ExecutionState.Fault;
+            }
+
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Constructor_Address(RuntimeVM vm)
         {
             return Constructor_Object<byte[], Address>(vm, bytes =>
@@ -95,7 +125,6 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_Log(RuntimeVM vm)
         {
             var text = vm.Stack.Pop().AsString();
-            //this.Log.Write(Core.Log.LogEntryKind.Message, text);
             Console.WriteLine(text); // TODO fixme
             return ExecutionState.Running;
         }
