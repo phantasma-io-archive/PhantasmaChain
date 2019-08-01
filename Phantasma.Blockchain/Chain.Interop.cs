@@ -27,7 +27,6 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Hash()", Constructor_Hash);
             vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
 
-
             vm.RegisterMethod("CheckWitness()", Constructor_CheckWitness);
           
             vm.RegisterMethod("Data.Get", Data_Get);
@@ -46,35 +45,6 @@ namespace Phantasma.Blockchain
                 OUT obj = loader((IN)input);
                 var temp = new VMObject();
                 temp.SetValue(obj);
-                vm.Stack.Push(temp);
-            }
-            catch 
-            {
-                return ExecutionState.Fault;
-            }
-
-            return ExecutionState.Running;
-        }
-
-        private static ExecutionState Constructor_CheckWitness(RuntimeVM vm)
-        {
-            try
-            {
-                bool success = false;
-                string addressString = vm.Stack.Pop().AsString();
-                var tx = vm.Transaction;
-                Throw.IfNull(tx, nameof(tx));
-
-                var address = Address.FromText(addressString);
-                Throw.If(address == Address.Null, "Address must not be null!");
-
-                if (tx.IsSignedBy(address))
-                {
-                    success = true;
-                }
-
-                var temp = new VMObject();
-                temp.SetValue(success);
                 vm.Stack.Push(temp);
             }
             catch 
@@ -209,6 +179,41 @@ namespace Phantasma.Blockchain
         private static ExecutionState Oracle_List(RuntimeVM vm)
         {
             throw new NotImplementedException();
+        }
+
+        private static ExecutionState Constructor_CheckWitness(RuntimeVM vm)
+        {
+            try
+            {
+                var tx = vm.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                if (vm.Stack.Count < 1)
+                {
+                    return ExecutionState.Fault;
+                }
+
+                var temp = vm.Stack.Pop();
+
+                if (temp.Type != VMType.Object)
+                {
+                    return ExecutionState.Fault;
+                }
+
+                var address = temp.AsInterop<Address>();
+
+                var success = tx.IsSignedBy(address);
+
+                var result = new VMObject();
+                result.SetValue(success);
+                vm.Stack.Push(result);
+            }
+            catch
+            {
+                return ExecutionState.Fault;
+            }
+
+            return ExecutionState.Running;
         }
 
         private static ExecutionState Data_Get(RuntimeVM vm)
