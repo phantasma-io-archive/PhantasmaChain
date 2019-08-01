@@ -26,6 +26,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
             vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
+
+            vm.RegisterMethod("Data.Get", Data_Get);
+            vm.RegisterMethod("Data.Set", Data_Set);
+            vm.RegisterMethod("Data.Delete", Data_Delete);
         }
 
         private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
@@ -174,6 +178,42 @@ namespace Phantasma.Blockchain
         private static ExecutionState Oracle_List(RuntimeVM vm)
         {
             throw new NotImplementedException();
+        }
+
+        private static ExecutionState Data_Get(RuntimeVM vm)
+        {
+            var key = vm.Stack.Pop();
+            var key_bytes = key.AsByteArray();
+
+            var value_bytes = vm.ChangeSet.Get(key_bytes);
+            var val = new VMObject();
+            val.SetValue(value_bytes, VMType.Bytes);
+            vm.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Data_Set(RuntimeVM vm)
+        {
+            var key = vm.Stack.Pop();
+            var key_bytes = key.AsByteArray();
+
+            var val = vm.Stack.Pop();
+            var val_bytes = val.AsByteArray();
+
+            vm.ChangeSet.Put(key_bytes, val_bytes);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Data_Delete(RuntimeVM vm)
+        {
+            var key = vm.Stack.Pop();
+            var key_bytes = key.AsByteArray();
+
+            vm.ChangeSet.Delete(key_bytes);
+
+            return ExecutionState.Running;
         }
 
         /*private static ExecutionState Contract_Deploy(RuntimeVM vm)
