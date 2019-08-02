@@ -938,7 +938,7 @@ namespace Phantasma.Blockchain
             }
 
             accountScript = this.LookUpAddressScript(destination);
-            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, destination, amount);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerReceive, destination, amount);
             if (!accountTriggerResult)
             {
                 return false;
