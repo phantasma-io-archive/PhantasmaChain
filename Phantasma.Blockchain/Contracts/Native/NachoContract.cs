@@ -1842,7 +1842,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BattleMode mode;
         public BigInteger bet;
         public BigInteger turn;
-        public BigInteger lastTurnHash;
+        public Hash lastTurnHash;
         public BattleState state;
         public Timestamp time;
         public BigInteger[] counters;
