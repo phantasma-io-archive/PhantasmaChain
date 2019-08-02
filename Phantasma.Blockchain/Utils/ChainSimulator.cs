@@ -322,14 +322,28 @@ namespace Phantasma.Blockchain.Utils
             return Enumerable.Empty<Block>();
         }
 
-        private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
+        private Transaction MakeTransaction(KeyPair source, List<KeyPair> signees, Chain chain, byte[] script)
         {
             var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             if (source != null)
             {
-                tx.Sign(source);
+                signees.Add(source);
             }
+
+            Signature[] existing = tx.Signatures;
+            var msg = tx.ToByteArray(false);
+
+            List<Signature> newSignatures = new List<Signature>();
+
+            foreach (KeyPair kp in signees)
+            {
+                newSignatures.Add(kp.Sign(msg));
+            }
+
+            Signature[] signatures =  existing.Concat(newSignatures.ToArray()).ToArray();
+
+            tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2), signatures);
 
             txChainMap[tx.Hash] = chain;
             txHashMap[tx.Hash] = tx;
@@ -338,6 +352,11 @@ namespace Phantasma.Blockchain.Utils
             usedAddresses.Add(source.Address);
 
             return tx;
+        }
+
+        private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
+        {
+            return MakeTransaction(source, new List<KeyPair>(), chain, script);
         }
 
         public Transaction GenerateCustomTransaction(KeyPair owner, Func<byte[]> scriptGenerator)
@@ -484,14 +503,15 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
-        public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger amount)
+        public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<KeyPair> signees = null)
         {
+            signees = signees ?? new List<KeyPair>();
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
-            var tx = MakeTransaction(source, chain, script);
+            var tx = MakeTransaction(source, signees, chain, script);
             return tx;
         }
 
