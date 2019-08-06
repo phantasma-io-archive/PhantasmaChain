@@ -6364,8 +6364,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             // TODO LATER
-            Runtime.Expect(false, "not implemented, read code 6547y");
-            //SetBattle(battleID, battle);
+            //Runtime.Expect(false, "not implemented, read code 6547y");
+            SetBattle(battleID, battle);
 
             for (int i = 0; i < 2; i++)
             {
