@@ -1499,7 +1499,15 @@ namespace Phantasma.Blockchain
         public BigInteger GetRelayBalance(Address address)
         {
             var chain = RootChain;
-            return (BigInteger)chain.InvokeContract("relay", "GetBalance", address);
+            try
+            {
+                var result = (BigInteger)chain.InvokeContract("relay", "GetBalance", address);
+                return result;
+            }
+            catch
+            {
+                return 0;
+            }
         }
         #endregion
 

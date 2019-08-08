@@ -77,7 +77,16 @@ namespace Phantasma.Blockchain.Tokens
             Flags = (TokenFlags)reader.ReadUInt32();
             Decimals = reader.ReadInt32();
             MaxSupply = reader.ReadBigInteger();
-            Script = reader.ReadByteArray();
+
+            // TODO this try catch will be unecessary for mainnet
+            try
+            {
+                Script = reader.ReadByteArray();
+            }
+            catch
+            {
+                Script = new byte[0];
+            }
         }
     }
 }
