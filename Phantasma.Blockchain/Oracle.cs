@@ -40,9 +40,25 @@ namespace Phantasma.Blockchain
 
     public static class OracleUtils
     {
-        public static byte[] DecodeOracle(string input)
+        public static byte[] ReadNEO(string[] input)
         {
-            throw new NotImplementedException();
+            if (input == null || input.Length == 0)
+            {
+                throw new OracleException("missing oracle input");
+            }
+
+            var cmd = input[0].ToLower();
+            switch (cmd)
+            {
+                case "tx":
+                    throw new NotImplementedException();
+
+                case "block":
+                    throw new NotImplementedException();
+
+                default:
+                    throw new OracleException("unknown neo oracle");
+            }
         }
     }
 }

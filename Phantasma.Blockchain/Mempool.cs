@@ -269,7 +269,34 @@ namespace Phantasma.Blockchain
         // TODO add
         private byte[] ReadFromOracle(/*Hash hash, */string url)
         {
-            throw new NotImplementedException();
+            var interopTag = "interop://";
+            if (url.StartsWith(interopTag))
+            {
+                url = url.Substring(interopTag.Length);
+                int i = url.IndexOf('/');
+                if (i > 0)
+                {
+                    var chainName = url.Substring(0, i).ToLower();
+                    var input = url.Substring(i + 1);
+
+                    switch (chainName)
+                    {
+                        case "neo":
+                            return OracleUtils.ReadNEO(input);
+
+                        default:
+                            throw new OracleException("invalid oracle chain: "+chainName);
+                    }
+                }
+                else
+                {
+                    throw new OracleException("invalid oracle url");
+                }
+            }
+            else
+            {
+                throw new OracleException("unknown oracle protocol");
+            }
         }
 
         private void MintBlock(List<Transaction> transactions, Chain chain)
