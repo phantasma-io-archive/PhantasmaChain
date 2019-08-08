@@ -35,4 +35,12 @@ namespace Phantasma.Blockchain
         }
     }
 
+    public class OracleException : Exception
+    {
+        public OracleException(string msg) : base(msg)
+        {
+
+        }
+    }
+
 }
