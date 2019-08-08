@@ -273,25 +273,19 @@ namespace Phantasma.Blockchain
             if (url.StartsWith(interopTag))
             {
                 url = url.Substring(interopTag.Length);
-                int i = url.IndexOf('/');
-                if (i > 0)
-                {
-                    var chainName = url.Substring(0, i).ToLower();
-                    var input = url.Substring(i + 1);
+                var args = url.Split('/');
 
-                    switch (chainName)
-                    {
-                        case "neo":
-                            return OracleUtils.ReadNEO(input);
+                var chainName = args[0];
+                args = args.Skip(1).ToArray();
 
-                        default:
-                            throw new OracleException("invalid oracle chain: "+chainName);
-                    }
-                }
-                else
+                switch (chainName)
                 {
-                    throw new OracleException("invalid oracle url");
-                }
+                    case "neo":
+                        return OracleUtils.ReadNEO(args);
+
+                    default:
+                        throw new OracleException("invalid oracle chain: "+chainName);
+                }                
             }
             else
             {
