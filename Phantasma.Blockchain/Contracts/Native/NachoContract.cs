@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
@@ -914,14 +915,9 @@ namespace Phantasma.Blockchain.Contracts.Native
     // TODO clean up stuff that is not related to backend
     public static class Constants
     {
-        public const string NEO_LABEL = "NEO";
         public const string ANONYMOUS_NAME = "Anonymous";
         public const string ACADEMY_NAME = "Academy";
-
-        public const string SOUL_ICON = "<img=icons.soul>";
-        public const string NACHO_ICON = "<img=icons.nacho>";
-        public const string USD_ICON = "<img=icons.gold>";   // TODO "<img=icons.dollar>";
-
+        
         public const string SOUL_SYMBOL = "SOUL";
         public const string NACHO_SYMBOL = "NACHO";
         public const string WRESTLER_SYMBOL = "LUCHA";
@@ -2000,8 +1996,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     }
 
     #endregion
-
-
+    
     public enum NachoEvent
     {
         Purchase = 0,
@@ -6363,8 +6358,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            // TODO LATER
-            //Runtime.Expect(false, "not implemented, read code 6547y");
             SetBattle(battleID, battle);
 
             for (int i = 0; i < 2; i++)
