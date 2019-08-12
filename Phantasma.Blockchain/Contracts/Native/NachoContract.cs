@@ -2438,7 +2438,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return bonusAmount;
         }
 
-        public void StakeReferral(Address from, int referralIndex)
+        public void StakeReferral(Address from, BigInteger referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(referralIndex >= 0, "invalid referral");
@@ -2524,7 +2524,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenStake, from, referralIndex);
         }
 
-        public void UnstakeReferral(Address from, int referralIndex)
+        public void UnstakeReferral(Address from, BigInteger referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
