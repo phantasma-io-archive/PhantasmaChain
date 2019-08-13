@@ -130,6 +130,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             return nextMasterClaim;
         }
 
+        public BigInteger GetMasterRewards(Address from)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(IsMaster(from), "invalid master");
+
+            var thisClaimDate = GetMaster(from).claimDate;
+            var totalAmount = MasterClaimGlobalAmount;
+            var validMasterCount = GetClaimMasterCount(thisClaimDate);
+            var individualAmount = totalAmount / validMasterCount;
+            var leftovers = totalAmount % validMasterCount;
+            individualAmount += leftovers;
+
+            return individualAmount;
+        }
+
         public void MasterClaim(Address from)
         {
             Runtime.Expect(_masterClaimCount < 12 * 4, "no more claims available"); // 4 years
@@ -316,6 +331,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             return unstakeAmount;
         }
 
+        public BigInteger GetTimeBeforeUnstake(Address from)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(IsMaster(from), "invalid master");
+
+            if (!_stakes.ContainsKey<Address>(from))
+            {
+                return 0;
+            }
+
+            var stake = _stakes.Get<Address, EnergyAction>(from);
+            return 86400 - (Runtime.Time - stake.timestamp);
+
+        }
+
         private void RemoveVotingPower(Address from, BigInteger amount)
         {
             var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
@@ -368,7 +398,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 currentStake -= lastClaim.totalAmount;
             }
-            
+
             // clamp to avoid negative values
             if (currentStake < 0)
             {
@@ -410,7 +440,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             BigInteger sum = 0;
             BigInteger availableAmount = fuelAmount;
-            
+
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
