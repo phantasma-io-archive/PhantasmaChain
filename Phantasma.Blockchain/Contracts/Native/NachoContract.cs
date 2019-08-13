@@ -4007,7 +4007,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
             //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-            var itemKind = GetItem(wrestler.itemID).kind;
+            var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
             var maxXP = GetMaxGymXPForWrestler(wrestler, itemKind);
             var obtainedXP = GetObtainedGymXP(wrestler, maxXP, itemKind);
@@ -4025,7 +4025,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
             //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-            var itemKind = GetItem(wrestler.itemID).kind;
+            var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
             var maxXPPerSession = GetMaxGymXPForWrestler(wrestler, itemKind);
 
