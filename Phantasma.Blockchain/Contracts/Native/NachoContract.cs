@@ -4716,8 +4716,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (bet > 0)
             {
-                Runtime.Expect(false, "not implemented, read the code rfsdgfdsg");
-                //SpendBet(from, bet, mode, from); TODO LATER
+                SpendBet(from, bet, mode, from);
             }
 
             switch (mode)
@@ -4772,7 +4771,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                             Runtime.Expect(praticeLevel >= maxPraticeLevelAllowed, "locked bot");
                         }
 
-                        //Runtime.Expect(false, "not implemented, read the code fdgds");
                         StartBotMatch(from, (int)praticeLevel);
 
                         return;
@@ -4780,8 +4778,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 default:
                     {
-                        Runtime.Expect(false, "not implemented, read the code dgss");
-                        /*if (Rules.IsModeWithMatchMaker(mode))
+                        if (Rules.IsModeWithMatchMaker(mode))
                         {
                             InsertIntoMatchMaker(from);
 
@@ -4821,7 +4818,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
                             }
                         }
-                        */
+                        
                         break;
                     }
             }
