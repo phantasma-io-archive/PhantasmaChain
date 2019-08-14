@@ -2095,8 +2095,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         internal StorageList _globalMatchmakerList;
 
-        internal StorageMap _playerVersusChallengesList;
-        internal StorageMap _globalBattlesList;
+        internal StorageMap _playerVersusChallengesList, _playerWrestlersList, _playerItemsList;
+        internal StorageMap _globalBattlesList, _globalItemList;
         //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
@@ -2870,7 +2870,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // TransferItem(from, DevelopersAddress, itemID); TODO LATER
         }
 
-        /* TODO LATER
+        /* TODO LATER*/
         public BigInteger GenerateItem(Address to, BigInteger itemID, bool wrapped)
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
@@ -2879,18 +2879,24 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private BigInteger CreateItem(Address to, BigInteger itemID, bool wrapped)
         {
-            var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
-            Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+            Runtime.Expect(!hasItem, "duplicated ID");
 
-            temp.Set(itemID, true);
+            //temp.Set(itemID, true);
+            _globalItemList.Set(itemID, true);
 
-            var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            var player_items = _playerItemsList.Get<Address, StorageList>(to);
             player_items.Add(itemID);
 
             var item = new NachoItem()
             {
-                owner = to,
-                locationID = 0,
+                //owner = to,
+                //locationID = 0,
+                wrestlerID = BigInteger.Zero,
+                //kind = ,// TODO
                 flags = ItemFlags.None,
                 location = ItemLocation.None,
             };
@@ -2902,10 +2908,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             SetItem(itemID, item);
 
-            Runtime.Notify(EventKind.ItemReceived, to, itemID);
+            //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO
 
             return itemID;
-        }*/
+        }
         #endregion
 
         #region AVATAR API
@@ -3813,12 +3819,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // note - requires that wrestler spent at least one hour training
-        /* TODO LATER
         public void LeaveMysteryRoom(Address from, BigInteger wrestlerID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            var wrestlers = _playerWrestlersList.Get<Address, StorageList>(from);
             Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler");
 
             var wrestler = GetWrestler(wrestlerID);
@@ -3827,16 +3833,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakedAmount = wrestler.stakeAmount;
             if (wrestler.stakeAmount > 0)
             {
-                Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
-                Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
+                // TODO fix
+                //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
+                //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
                 wrestler.stakeAmount = 0;
             }
 
             wrestler.location = WrestlerLocation.None;
             SetWrestler(wrestlerID, wrestler);
 
-            var roomCounter = Storage.Get(ROOM_COUNTER_KEY).AsBigInteger();
-            var roomSequence = Storage.Get(ROOM_SEQUENCE_KEY).AsBigInteger();
+            var roomCounter = BigInteger.Zero; // TODO Storage.Get(ROOM_COUNTER_KEY).AsBigInteger();
+            var roomSequence = BigInteger.Zero; // TODO Storage.Get(ROOM_SEQUENCE_KEY).AsBigInteger();
             roomCounter++;
 
             if (roomSequence < 1)
@@ -3871,12 +3878,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                     rarity = Rarity.Common;
                 }
 
-                var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+                //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
                 do
                 {
-                    itemID = Equipment.MineItemRarity(rarity, ref lastID);
-                    var itemKind = Formulas.GetItemKind(itemID);
-                    if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
+                    itemID = BigInteger.Zero; // TODO Equipment.MineItemRarity(rarity, ref lastID);
+
+                    //var itemKind = Formulas.GetItemKind(itemID);
+                    var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
+
+                    var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+                    //if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
+                    if (Rules.IsReleasedItem(itemKind) && !hasItem)
                     {
                         break;
                     }
@@ -3901,7 +3913,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Storage.Put(ROOM_COUNTER_KEY, roomCounter);
-        }*/
+        }
         #endregion
 
         #region GYM API
@@ -8805,6 +8817,32 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger GetProtocolVersion()
         {
             return 1 * 256 + 9;
+        }
+
+        private BigInteger MineItemRarity(Rarity rarity, ref BigInteger lastID)
+        {
+            return MineItem((x) => (Rules.GetItemRarity(x) == rarity), ref lastID);
+        }
+
+        private BigInteger MineItem(Func<ItemKind, bool> filter, ref BigInteger lastID)
+        {
+            //var rnd = new Random();
+            do
+            {
+                lastID++;
+
+                var item = new NachoItem(); // TODO Equipment.FromID(lastID);
+
+                if (item.kind.ToString() != ((int)item.kind).ToString())
+                {
+                    if (filter(item.kind))
+                    {
+                        return lastID;
+                    }
+                }
+
+
+            } while (true);
         }
     }
 }
