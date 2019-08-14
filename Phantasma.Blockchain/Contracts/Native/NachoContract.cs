@@ -4723,9 +4723,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             switch (mode)
             {
                 case BattleMode.Versus:
-                    {
-                        Runtime.Expect(false, "not implemented, read the code gdfgf");
-                        /*
+                    {                       
                         var otherAccount = GetAccount(versus);
                         if (otherAccount.queueMode == BattleMode.Versus && otherAccount.queueVersus == from)
                         {
@@ -4735,12 +4733,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                         else
                         if (otherAccount.queueMode == BattleMode.None && otherAccount.battleID == 0)
                         {
-                            var challengerList = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, versus);
+                            //var challengerList = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, versus);
+                            var challengerList = _playerVersusChallengesList.Get<Address, StorageList>(versus);
                             var entry = new NachoVersusInfo()
                             {
                                 bet = bet,
                                 challenger = from,
-                                timestamp = GetCurrentTime(),
+                                time = GetCurrentTime(),
                                 levels = levels,
                             };
 
@@ -4752,7 +4751,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             RemoveAccountFromQueue(from);
                             return;
                         }
-                        */
+                        
                         break;
                     }
 
