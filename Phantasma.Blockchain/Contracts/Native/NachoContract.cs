@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
@@ -752,9 +753,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
     }
+
     #endregion
 
-    #region FORMULAS
+        #region FORMULAS
     public static class Formulas
     {
         public const int MaxBaseStat = 120;
@@ -914,14 +916,9 @@ namespace Phantasma.Blockchain.Contracts.Native
     // TODO clean up stuff that is not related to backend
     public static class Constants
     {
-        public const string NEO_LABEL = "NEO";
         public const string ANONYMOUS_NAME = "Anonymous";
         public const string ACADEMY_NAME = "Academy";
-
-        public const string SOUL_ICON = "<img=icons.soul>";
-        public const string NACHO_ICON = "<img=icons.nacho>";
-        public const string USD_ICON = "<img=icons.gold>";   // TODO "<img=icons.dollar>";
-
+        
         public const string SOUL_SYMBOL = "SOUL";
         public const string NACHO_SYMBOL = "NACHO";
         public const string WRESTLER_SYMBOL = "LUCHA";
@@ -957,6 +954,52 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         // minimum vip points to reach each vip level. where the level = index of array
         public static readonly int[] VIP_LEVEL_POINTS = new int[] { 0, 250, 500, 1000, 2500, 5000, 10000, 15000, 25000, 35000, 50000 };
+
+        public static readonly Dictionary<Rarity, List<ItemKind>> ITEMS_RARITY = 
+            new Dictionary<Rarity, List<ItemKind>>
+            {
+                {
+                    Rarity.Common,
+                    new List<ItemKind>()
+                    {
+                        ItemKind.Expert_Gloves, ItemKind.Vigour_Juice, ItemKind.Power_Juice, ItemKind.Claws, ItemKind.Shell,
+                        ItemKind.Chilli_Bottle, ItemKind.Fork, ItemKind.Gnome_Cap, ItemKind.Wood_Potato, ItemKind.Make_Up_Common
+                    }
+                },
+                {
+                    Rarity.Uncommon,
+                    new List<ItemKind>()
+                    {
+                        ItemKind.Muscle_Overclocker, ItemKind.Spike_Vest, ItemKind.Dice, ItemKind.Lemon_Shake, ItemKind.Gas_Mask, ItemKind.Ignition_Chip, ItemKind.Bomb, ItemKind.Stamina_Pill,
+                        ItemKind.Attack_Pill, ItemKind.Defense_Pill, ItemKind.Rubber_Suit, ItemKind.Mummy_Bandages, ItemKind.Purple_Cog, ItemKind.Red_Spring, ItemKind.Blue_Gear, ItemKind.Make_Up_Uncommon
+                    }
+                },
+                {
+                    Rarity.Rare,
+                    new List<ItemKind>()
+                    {
+                        ItemKind.Battle_Helmet, ItemKind.Steel_Boots, ItemKind.Envy_Mask, ItemKind.Giant_Pillow, ItemKind.Killer_Gloves, ItemKind.Rare_Taco, ItemKind.XP_Perfume,
+                        ItemKind.Nails, ItemKind.Clown_Nose, ItemKind.Hand_Bandages, ItemKind.Love_Lotion, ItemKind.Nanobots, ItemKind.Make_Up_Rare
+                    }
+                },
+                {
+                    Rarity.Epic,
+                    new List<ItemKind>()
+                    {
+                        ItemKind.Gym_Card, ItemKind.Creepy_Toy, ItemKind.Loser_Mask, ItemKind.Ego_Mask, ItemKind.Trainer_Speaker, ItemKind.Vampire_Teeth, ItemKind.Magnifying_Glass,
+                        ItemKind.Body_Armor, ItemKind.Dumbell, ItemKind.Lucky_Charm, ItemKind.Spinner, ItemKind.Wood_Chair, ItemKind.Spy_Specs, ItemKind.Focus_Banana, ItemKind.Yellow_Card,
+                        ItemKind.Magic_Mirror, ItemKind.Stance_Block, ItemKind.Wrist_Weights, ItemKind.Tequilla, ItemKind.Sombrero, ItemKind.Poncho, ItemKind.Make_Up_Epic
+                    }
+                },
+                {
+                    Rarity.Legendary,
+                    new List<ItemKind>()
+                    {
+                        ItemKind.Bling, ItemKind.Meat_Snack, ItemKind.Golden_Bullet, ItemKind.Pincers, ItemKind.Ancient_Trinket, ItemKind.Virus_Chip, ItemKind.Gyroscope, ItemKind.Dojo_Belt,
+                        ItemKind.Nullifier, ItemKind.Yo_Yo, ItemKind.Trap_Card, ItemKind.Dev_Badge, ItemKind.Make_Up_Legendary
+                    }
+                }
+            };
 
         public static readonly Dictionary<int, DailyRewards> VIP_DAILY_LOOT_BOX_REWARDS = new Dictionary<int, DailyRewards>()
         {
@@ -2000,8 +2043,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     }
 
     #endregion
-
-
+    
     public enum NachoEvent
     {
         Purchase = 0,
@@ -2088,8 +2130,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string NEO_TO_PHANTASMA_MAP = "neo2pha";
         public static readonly string PHANTASMA_TO_NEO_MAP = "pha2neo";
 
-        public static readonly string ROOM_COUNTER_KEY = "_roomctr_";
-        public static readonly string ROOM_SEQUENCE_KEY = "_roomseq_";
+        //public static readonly string ROOM_COUNTER_KEY = "_roomctr_";
+        //public static readonly string ROOM_SEQUENCE_KEY = "_roomseq_";
         public static readonly string MOTD_KEY = "_MOTD_";
 
         public bool SuspendTransfers = false;
@@ -2100,8 +2142,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         internal StorageList _globalMatchmakerList;
 
-        internal StorageMap _playerVersusChallengesList;
-        internal StorageMap _globalBattlesList;
+        internal StorageMap _playerVersusChallengesList, _playerWrestlersList, _playerItemsList;
+        internal StorageMap _globalBattlesList, _globalItemList;
         //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
@@ -2111,6 +2153,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _referrals;  // <Address, StorageList<NachoReferal>>
         private StorageMap _accounts; // <Address, NachoAccount>;
         private NachoPot _pot;
+
+        internal BigInteger _roomCounter;
+        internal BigInteger _roomSequence;
 
         public NachoContract() : base()
         {
@@ -2443,7 +2488,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return bonusAmount;
         }
 
-        public void StakeReferral(Address from, int referralIndex)
+        public void StakeReferral(Address from, BigInteger referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(referralIndex >= 0, "invalid referral");
@@ -2529,7 +2574,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenStake, from, referralIndex);
         }
 
-        public void UnstakeReferral(Address from, int referralIndex)
+        public void UnstakeReferral(Address from, BigInteger referralIndex)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -2875,7 +2920,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // TransferItem(from, DevelopersAddress, itemID); TODO LATER
         }
 
-        /* TODO LATER
+        /* TODO LATER*/
         public BigInteger GenerateItem(Address to, BigInteger itemID, bool wrapped)
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
@@ -2884,18 +2929,24 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private BigInteger CreateItem(Address to, BigInteger itemID, bool wrapped)
         {
-            var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
-            Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+            Runtime.Expect(!hasItem, "duplicated ID");
 
-            temp.Set(itemID, true);
+            //temp.Set(itemID, true);
+            _globalItemList.Set(itemID, true);
 
-            var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            var player_items = _playerItemsList.Get<Address, StorageList>(to);
             player_items.Add(itemID);
 
             var item = new NachoItem()
             {
-                owner = to,
-                locationID = 0,
+                //owner = to,
+                //locationID = 0,
+                wrestlerID = BigInteger.Zero,
+                //kind = ,// TODO
                 flags = ItemFlags.None,
                 location = ItemLocation.None,
             };
@@ -2907,10 +2958,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             SetItem(itemID, item);
 
-            Runtime.Notify(EventKind.ItemReceived, to, itemID);
+            //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO
 
             return itemID;
-        }*/
+        }
         #endregion
 
         #region AVATAR API
@@ -3818,12 +3869,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // note - requires that wrestler spent at least one hour training
-        /* TODO LATER
         public void LeaveMysteryRoom(Address from, BigInteger wrestlerID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            var wrestlers = _playerWrestlersList.Get<Address, StorageList>(from);
             Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler");
 
             var wrestler = GetWrestler(wrestlerID);
@@ -3832,26 +3883,27 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakedAmount = wrestler.stakeAmount;
             if (wrestler.stakeAmount > 0)
             {
-                Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
-                Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
+                // TODO fix
+                //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
+                //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount); TODO Runtime.Notify(from, Runtime.Nexus.TransferTokens().Withdraw, wrestler.stakeAmount);
                 wrestler.stakeAmount = 0;
             }
 
             wrestler.location = WrestlerLocation.None;
             SetWrestler(wrestlerID, wrestler);
 
-            var roomCounter = Storage.Get(ROOM_COUNTER_KEY).AsBigInteger();
-            var roomSequence = Storage.Get(ROOM_SEQUENCE_KEY).AsBigInteger();
-            roomCounter++;
+            //var roomCounter = Storage.Get(ROOM_COUNTER_KEY).AsBigInteger();
+            //var roomSequence = Storage.Get(ROOM_SEQUENCE_KEY).AsBigInteger();
+            _roomCounter++;
 
-            if (roomSequence < 1)
+            if (_roomSequence < 1)
             {
-                roomSequence = 1;
+                _roomSequence = 1;
             }
 
-            var nextNumber = Fibonacci((int)roomSequence);
+            var nextNumber = Fibonacci((int)_roomSequence);
 
-            if (roomCounter >= nextNumber && stakedAmount >= nextNumber)
+            if (_roomCounter >= nextNumber && stakedAmount >= nextNumber)
             {
                 BigInteger itemID;
                 BigInteger lastID = Runtime.Time.Value;
@@ -3876,12 +3928,19 @@ namespace Phantasma.Blockchain.Contracts.Native
                     rarity = Rarity.Common;
                 }
 
-                var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+                //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
                 do
                 {
-                    itemID = Equipment.MineItemRarity(rarity, ref lastID);
-                    var itemKind = Formulas.GetItemKind(itemID);
-                    if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
+                    //itemID = Equipment.MineItemRarity(rarity, ref lastID);
+                    itemID = BigInteger.Zero; // TODO MineItemRarity(rarity, ref lastID);
+
+                    //var itemKind = Formulas.GetItemKind(itemID);
+                    //var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
+                    var itemKind = GetRandomItemKind(rarity);
+
+                    var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+                    //if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
+                    if (Rules.IsReleasedItem(itemKind) && !hasItem)
                     {
                         break;
                     }
@@ -3894,19 +3953,19 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (nextNumber >= 10000)
                 {
-                    roomCounter = 0;
-                    roomSequence = 1;
+                    _roomCounter = 0;
+                    _roomSequence = 1;
                 }
                 else
                 {
-                    roomSequence++;
+                    _roomSequence++;
                 }
 
-                Storage.Put(ROOM_SEQUENCE_KEY, roomSequence);
+                //Storage.Put(ROOM_SEQUENCE_KEY, _roomSequence);
             }
 
-            Storage.Put(ROOM_COUNTER_KEY, roomCounter);
-        }*/
+            //Storage.Put(ROOM_COUNTER_KEY, _roomCounter);
+        }
         #endregion
 
         #region GYM API
@@ -4012,7 +4071,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
             //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-            var itemKind = GetItem(wrestler.itemID).kind;
+            var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
             var maxXP = GetMaxGymXPForWrestler(wrestler, itemKind);
             var obtainedXP = GetObtainedGymXP(wrestler, maxXP, itemKind);
@@ -4030,7 +4089,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
             //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-            var itemKind = GetItem(wrestler.itemID).kind;
+            var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
             var maxXPPerSession = GetMaxGymXPForWrestler(wrestler, itemKind);
 
@@ -4709,16 +4768,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (bet > 0)
             {
-                Runtime.Expect(false, "not implemented, read the code rfsdgfdsg");
-                //SpendBet(from, bet, mode, from); TODO LATER
+                SpendBet(from, bet, mode, from);
             }
 
             switch (mode)
             {
                 case BattleMode.Versus:
-                    {
-                        Runtime.Expect(false, "not implemented, read the code gdfgf");
-                        /*
+                    {                       
                         var otherAccount = GetAccount(versus);
                         if (otherAccount.queueMode == BattleMode.Versus && otherAccount.queueVersus == from)
                         {
@@ -4728,12 +4784,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                         else
                         if (otherAccount.queueMode == BattleMode.None && otherAccount.battleID == 0)
                         {
-                            var challengerList = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, versus);
+                            //var challengerList = Storage.FindCollectionForAddress<NachoVersusInfo>(ACCOUNT_CHALLENGES, versus);
+                            var challengerList = _playerVersusChallengesList.Get<Address, StorageList>(versus);
                             var entry = new NachoVersusInfo()
                             {
                                 bet = bet,
                                 challenger = from,
-                                timestamp = GetCurrentTime(),
+                                time = GetCurrentTime(),
                                 levels = levels,
                             };
 
@@ -4745,7 +4802,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             RemoveAccountFromQueue(from);
                             return;
                         }
-                        */
+                        
                         break;
                     }
 
@@ -4766,7 +4823,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                             Runtime.Expect(praticeLevel >= maxPraticeLevelAllowed, "locked bot");
                         }
 
-                        //Runtime.Expect(false, "not implemented, read the code fdgds");
                         StartBotMatch(from, (int)praticeLevel);
 
                         return;
@@ -4774,8 +4830,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 default:
                     {
-                        Runtime.Expect(false, "not implemented, read the code dgss");
-                        /*if (Rules.IsModeWithMatchMaker(mode))
+                        if (Rules.IsModeWithMatchMaker(mode))
                         {
                             InsertIntoMatchMaker(from);
 
@@ -4815,7 +4870,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 }
                             }
                         }
-                        */
+                        
                         break;
                     }
             }
@@ -6363,8 +6418,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            // TODO LATER
-            //Runtime.Expect(false, "not implemented, read code 6547y");
             SetBattle(battleID, battle);
 
             for (int i = 0; i < 2; i++)
@@ -6592,7 +6645,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                                 {
                                     aiMove = WrestlingMove.Counter;
                                     break;
-                                }
+                                } 
 
                             case WrestlingMove.Block:
                                 {
@@ -8812,6 +8865,41 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger GetProtocolVersion()
         {
             return 1 * 256 + 9;
+        }
+
+        private ItemKind GetRandomItemKind(Rarity rarity)
+        {
+            var items = Constants.ITEMS_RARITY[rarity];
+
+            var rnd = new Random();
+
+            return items[rnd.Next(0, items.Count)];
+        }
+
+        private BigInteger MineItemRarity(Rarity rarity, ref BigInteger lastID)
+        {
+            return MineItem((x) => (Rules.GetItemRarity(x) == rarity), ref lastID);
+        }
+
+        private BigInteger MineItem(Func<ItemKind, bool> filter, ref BigInteger lastID)
+        {
+            //var rnd = new Random();
+            do
+            {
+                lastID++;
+
+                var item = new NachoItem(); // TODO Equipment.FromID(lastID);
+
+                if (item.kind.ToString() != ((int)item.kind).ToString())
+                {
+                    if (filter(item.kind))
+                    {
+                        return lastID;
+                    }
+                }
+
+
+            } while (true);
         }
     }
 }
