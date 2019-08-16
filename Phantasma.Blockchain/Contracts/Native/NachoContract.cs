@@ -3962,7 +3962,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
             var wrestlers = _playerWrestlersList.Get<Address, StorageList>(from);
-            Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler");
+            //Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler"); // TODO fix. O WrestlerID está bem mas não deve estar na lista de wrestlers do jogador
 
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Room, "location failed");
@@ -5109,7 +5109,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             accountB.queueMode = BattleMode.None;
 
             SetAccount(addressA, accountA);
-            SetAccount(addressB, accountB);
+            SetAccount(addressB, accountB); // Runtime.Chain.Address
 
             // equalize bets
             BigInteger bet;
@@ -5132,7 +5132,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     bet = accountA.queueBet;
                 }
 
-                //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed"); // TODO fix
+                //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, refundAddress, refundAmount), "refund failed");
             }
             else
             {
@@ -5249,7 +5250,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (bet > 0)
                 {
-                    //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed"); // TODO fix
+                    //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, from, bet), "refund failed");
                 }
             }
 
@@ -6070,9 +6072,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.counters[Constants.ACCOUNT_COUNTER_POT_COUNT]++;
                 SetAccount(target, account);
 
-                // TODO LATER
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
-                //Runtime.Notify(NachoEvent.Deposit, target, amount); //todo fix no event Deposit anymore
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, target, amount), "deposit failed");
+                //Runtime.Notify(NachoEvent.Deposit, target, amount);
+                Runtime.Notify(EventKind.TokenReceive, target, amount);
             }
 
             var leftovers = _pot.lastBalance - distributedTotal;
@@ -6134,17 +6137,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                         break;
                 }
 
-                // Ranked battle fees do not go to the pot anymore
-                //BigInteger potAmount;
-                //if (battle.mode == BattleMode.Ranked)
-                //{
-                //    potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
-                //    winnerAmount -= potAmount;
-                //}
-                //else
-                //{
-                //    potAmount = 0;
-                //}
+                // TODO -> Ranked battle fees do not go to the pot anymore ?
+                BigInteger potAmount;
+                if (battle.mode == BattleMode.Ranked)
+                {
+                    potAmount = winnerAmount;// TODO fix (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
+                    winnerAmount -= potAmount;
+                }
+                else
+                {
+                    potAmount = 0;
+                }
 
                 int winnerSide;
                 int loserSide;
@@ -6171,44 +6174,48 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (winnerSide != -1)
                 {
-                    //if (potAmount > 0)
-                    //{
-                    //    AddToPot(battle.sides[winnerSide].address, potAmount);
-                    //}
+                    // TODO both players now receive prizes. Check the bet spent transfers and notifications and both prizes
+                    if (potAmount > 0)
+                    {
+                        AddToPot(battle.sides[winnerSide].address, potAmount);
+                    }
 
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
 
-                    //TODO LATER
-                    Runtime.Expect(false, "not implemented, read code yrrytr");
-                    /*Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
-                    
                     var other = 1 - winnerSide;
 
-                    Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
-                    Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);*/
+                    //Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = winnerAmount });
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = loserAmount });
+
+                    // Old spend bet
+                    //Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);
+                    Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = battle.bet });
                 }
                 else
                 {
-                    // refund bothy
+                    // refund both
                     var refundAmount = drawAmount;
 
-                    //if (potAmount > 0)
-                    //{
-                    //    AddToPot(Address.Null, potAmount);
-                    //}
-
-                    /* TODO LATER
+                    if (potAmount > 0)
+                    {
+                        AddToPot(Address.Null, potAmount);
+                    }
+                    
                     for (var i = 0; i < 2; i++)
                     {
-                        Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
+                        //Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[i].address, refundAmount), "refund failed");
 
                         if (potAmount > 0)
                         {
-                            Runtime.Notify(battle.sides[i].address, NachoEvent.Withdraw, potAmount / 2);
+                            //Runtime.Notify(battle.sides[i].address, NachoEvent.Withdraw, potAmount / 2);
+                            Runtime.Notify(EventKind.TokenSend, battle.sides[i].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = potAmount / 2 });
                         }
                     }
-                    */
                 }
             }
 
