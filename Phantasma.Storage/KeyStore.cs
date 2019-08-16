@@ -98,22 +98,33 @@ namespace Phantasma.Storage
             if (File.Exists(fileName))
             {
                 var lines = File.ReadAllLines(fileName);
-                foreach (var line in lines)
+                lock (_cache)
                 {
-                    var temp = line.Split(',');
-                    var key = Convert.FromBase64String(temp[0]);
-                    var val = Convert.FromBase64String(temp[1]);
-                    _cache[key] = val;
+                    foreach (var line in lines)
+                    {
+                        var temp = line.Split(',');
+                        var key = Convert.FromBase64String(temp[0]);
+                        var val = Convert.FromBase64String(temp[1]);
+                        _cache[key] = val;
+                    }
                 }
             }
         }
 
         public void Visit(Action<byte[], byte[]> visitor)
         {
-            foreach (var entry in _cache)
+            lock (_cache)
             {
-                visitor(entry.Key, entry.Value);
+                foreach (var entry in _cache)
+                {
+                    visitor(entry.Key, entry.Value);
+                }
             }
+        }
+
+        private void UpdateToDisk()
+        {
+            File.WriteAllLines(fileName, _cache.Select(x => Convert.ToBase64String(x.Key) + "," + Convert.ToBase64String(x.Value)));
         }
 
         public void SetValue(byte[] key, byte[] value)
@@ -126,17 +137,22 @@ namespace Phantasma.Storage
             }
             else
             {
-                _cache[key] = value;
+                lock (_cache)
+                {
+                    _cache[key] = value;
+                    UpdateToDisk();
+                }
             }
-
-            File.WriteAllLines(fileName, _cache.Select(x => Convert.ToBase64String(x.Key) + "," + Convert.ToBase64String(x.Value)));
         }
 
         public byte[] GetValue(byte[] key)
         {
             if (ContainsKey(key))
             {
-                return _cache[key];
+                lock (_cache)
+                {
+                    return _cache[key];
+                }
             }
 
             return null;
@@ -144,15 +160,22 @@ namespace Phantasma.Storage
 
         public bool ContainsKey(byte[] key)
         {
-            var result = _cache.ContainsKey(key);
-            return result;
+            lock (_cache)
+            {
+                var result = _cache.ContainsKey(key);
+                return result;
+            }
         }
 
         public bool Remove(byte[] key)
         {
             if (ContainsKey(key))
             {
-                _cache.Remove(key);
+                lock (_cache)
+                {
+                    _cache.Remove(key);
+                    UpdateToDisk();
+                }
                 return true;
             }
             else

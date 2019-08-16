@@ -43,8 +43,7 @@ namespace Phantasma.Blockchain
         private KeyValueStore<Hash, Hash> _transactionBlockMap;
         private KeyValueStore<Hash, Epoch> _epochMap;
         private KeyValueStore<string, bool> _contracts;
-
-        private Dictionary<BigInteger, Block> _blockHeightMap = new Dictionary<BigInteger, Block>();
+        private KeyValueStore<BigInteger, Hash> _blockHeightMap;
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
@@ -92,6 +91,7 @@ namespace Phantasma.Blockchain
             _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
             _epochMap = new KeyValueStore<Hash, Epoch>(Nexus.CreateKeyStoreAdapter(this.Address, "epoch"));
             _contracts = new KeyValueStore<string, bool>(Nexus.CreateKeyStoreAdapter(this.Address, "contracts"));
+            _blockHeightMap = new KeyValueStore<BigInteger, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "heights"));
 
             this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
 
@@ -225,7 +225,7 @@ namespace Phantasma.Blockchain
             }
 
             // from here on, the block is accepted
-            _blockHeightMap[block.Height] = block;
+            _blockHeightMap[block.Height] = block.Hash;
             _blocks[block.Hash] = block;
             _blockChangeSets[block.Hash] = changeSet;
 
@@ -349,7 +349,13 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByHeight(BigInteger height)
         {
-            return _blockHeightMap.ContainsKey(height) ? _blockHeightMap[height] : null;
+            if (_blockHeightMap.ContainsKey(height))
+            {
+                var hash = _blockHeightMap[height];
+                return FindBlockByHash(hash);
+            }
+
+            return null; // TODO Should thrown an exception?
         }
 
         // NOTE should never be used directly from a contract!
