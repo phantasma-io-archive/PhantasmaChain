@@ -2921,14 +2921,17 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         /* TODO LATER*/
-        public BigInteger GenerateItem(Address to, BigInteger itemID, bool wrapped)
+        public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
-            return CreateItem(to, itemID, wrapped);
+            return CreateItem(to, itemID, itemKind, wrapped);
         }
 
-        private BigInteger CreateItem(Address to, BigInteger itemID, bool wrapped)
+        private BigInteger CreateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
         {
+            var itemToken = Runtime.Nexus.GetTokenInfo(Constants.ITEM_SYMBOL);
+            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), "Can't find the token symbol");
+
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
             //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
             var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
@@ -2946,9 +2949,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //owner = to,
                 //locationID = 0,
                 wrestlerID = BigInteger.Zero,
-                //kind = ,// TODO
-                flags = ItemFlags.None,
-                location = ItemLocation.None,
+                kind        = itemKind,
+                flags       = ItemFlags.None,
+                location    = ItemLocation.None,
             };
 
             if (wrapped)
@@ -2956,12 +2959,70 @@ namespace Phantasma.Blockchain.Contracts.Native
                 item.flags |= ItemFlags.Wrapped;
             }
 
+            var itemBytes = item.Serialize();
+
+            var tokenROM = new byte[0]; //itemBytes;
+            var tokenRAM = itemBytes;   //new byte[0];
+
+            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, itemID);
+            Runtime.Expect(tokenID > 0, "invalid tokenID");
+
+            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
+
+            SetItem(itemID, item); //  Isto volta a serializar os dados do token. Mas com o CreateNFT que adicionei em cima já temos essa parte feita.. Remover isto?
+        
+            //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO ??
+
+            return itemID;
+        }
+
+        /*
+        private BigInteger CreateItem(Address to, ItemKind itemKind, bool wrapped)
+        {
+            var item = new NachoItem()
+            {
+                kind        = itemKind,
+                flags       = ItemFlags.None,
+                location    = ItemLocation.None,
+                wrestlerID  = 0
+            };
+
+            if (wrapped)
+            {
+                item.flags |= ItemFlags.Wrapped;
+            }
+
+            var itemBytes = item.Serialize();
+
+            var tokenROM = new byte[0]; //itemBytes;
+            var tokenRAM = itemBytes;   //new byte[0];
+
+            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, value); // TODO o que é este BigInt value? 
+            Runtime.Expect(tokenID > 0, "invalid tokenID");
+
+            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, from, tokenID), "minting failed");
+
+            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+            Runtime.Expect(!hasItem, "duplicated ID");
+
+            //temp.Set(itemID, true);
+            _globalItemList.Set(itemID, true);
+
+            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            var player_items = _playerItemsList.Get<Address, StorageList>(to);
+            player_items.Add(itemID);
+
+
             SetItem(itemID, item);
 
             //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO
 
             return itemID;
         }
+        */
+
         #endregion
 
         #region AVATAR API
@@ -3883,9 +3944,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stakedAmount = wrestler.stakeAmount;
             if (wrestler.stakeAmount > 0)
             {
-                // TODO fix
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
-                //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount); TODO Runtime.Notify(from, Runtime.Nexus.TransferTokens().Withdraw, wrestler.stakeAmount);
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, from, Runtime.Chain.Address, wrestler.stakeAmount), "unstake failed");
+                //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
+                Runtime.Notify(EventKind.TokenUnstake, from, wrestler.stakeAmount); // TODO é um evento TokenUnstake pq fez o unstake da mystery room ou usamos o evento TokenReceive mais geral ?
                 wrestler.stakeAmount = 0;
             }
 
@@ -3928,15 +3990,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                     rarity = Rarity.Common;
                 }
 
+                var itemKind = ItemKind.None;
+
                 //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
                 do
                 {
                     //itemID = Equipment.MineItemRarity(rarity, ref lastID);
-                    itemID = BigInteger.Zero; // TODO MineItemRarity(rarity, ref lastID);
+                    itemID = BigInteger.Zero; // TODO MineItemRarity(rarity, ref lastID); ?????
 
                     //var itemKind = Formulas.GetItemKind(itemID);
-                    //var itemKind = wrestler.itemID > 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
-                    var itemKind = GetRandomItemKind(rarity);
+                    itemKind = GetRandomItemKind(rarity);
 
                     var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
                     //if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
@@ -3948,7 +4011,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     lastID++;
                 } while (true);
 
-                CreateItem(from, itemID, false);
+                CreateItem(from, itemID, itemKind, false);
                 AddTrophy(from, TrophyFlag.Safe);
 
                 if (nextNumber >= 10000)
@@ -8901,5 +8964,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             } while (true);
         }
+
+
     }
 }
