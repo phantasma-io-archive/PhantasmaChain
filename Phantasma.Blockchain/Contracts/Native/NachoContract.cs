@@ -2921,33 +2921,19 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         
         /* TODO LATER*/
-        public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
-        {
-            Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
-            return CreateItem(to, itemID, itemKind, wrapped);
-        }
+        //public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
+        //{
+        //    Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
+        //    return CreateItem(to, itemID, itemKind, wrapped);
+        //}
 
-        private BigInteger CreateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
+        private BigInteger CreateItem(Address to, ItemKind itemKind, bool wrapped)
         {
             var itemToken = Runtime.Nexus.GetTokenInfo(Constants.ITEM_SYMBOL);
             Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), "Can't find the token symbol");
 
-            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
-            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
-            var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
-            Runtime.Expect(!hasItem, "duplicated ID");
-
-            //temp.Set(itemID, true);
-            _globalItemList.Set(itemID, true);
-
-            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
-            var player_items = _playerItemsList.Get<Address, StorageList>(to);
-            player_items.Add(itemID);
-
             var item = new NachoItem()
             {
-                //owner = to,
-                //locationID = 0,
                 wrestlerID = BigInteger.Zero,
                 kind        = itemKind,
                 flags       = ItemFlags.None,
@@ -2967,11 +2953,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, 0);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
+            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            var hasItem = _globalItemList.Get<BigInteger, bool>(tokenID);
+            Runtime.Expect(!hasItem, "duplicated ID");
+
+            //temp.Set(itemID, true);
+            _globalItemList.Set(tokenID, true);
+
+            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            var playerItems = _playerItemsList.Get<Address, StorageList>(to);
+            playerItems.Add(tokenID);
+
             Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
-            //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO ??
+            //Runtime.Notify(EventKind.ItemReceived, to, itemID);
             Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
 
-            return itemID;
+            return tokenID;
         }
 
         /*
@@ -3995,8 +3993,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (_roomCounter >= nextNumber && stakedAmount >= nextNumber)
             {
-                BigInteger itemID;
-                BigInteger lastID = Runtime.Time.Value;
+                //BigInteger itemID;
+                //BigInteger lastID = Runtime.Time.Value;
 
                 Rarity rarity;
                 if (nextNumber >= 1000)
@@ -4023,23 +4021,23 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
                 do
                 {
-                    //itemID = Equipment.MineItemRarity(rarity, ref lastID);
-                    itemID = BigInteger.Zero; // TODO MineItemRarity(rarity, ref lastID); ?????
+                    //itemID = MineItemRarity(rarity, ref lastID); //Equipment.MineItemRarity(rarity, ref lastID);
 
                     //var itemKind = Formulas.GetItemKind(itemID);
                     itemKind = GetRandomItemKind(rarity);
 
-                    var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+                    //var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
                     //if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
-                    if (Rules.IsReleasedItem(itemKind) && !hasItem)
+                    if (Rules.IsReleasedItem(itemKind)/* && !hasItem*/)
                     {
                         break;
                     }
 
-                    lastID++;
+                    //lastID++;
                 } while (true);
 
-                CreateItem(from, itemID, itemKind, false);
+                //CreateItem(from, itemID, itemKind, false);
+                CreateItem(from, itemKind, false);
                 AddTrophy(from, TrophyFlag.Safe);
 
                 if (nextNumber >= 10000)
