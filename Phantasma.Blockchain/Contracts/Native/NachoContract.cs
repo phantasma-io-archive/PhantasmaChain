@@ -2594,8 +2594,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //diff = diff / Constants.SECONDS_PER_DAY; // convert to days // TODO fix
                 Runtime.Expect(diff >= Constants.REFERRAL_MINIMUM_DAYS, "too soon");
             }
-
-            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed"); // TODO fix
+            
+            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, Runtime.Chain.Address, from, outputAmount), "deposit failed");
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -2766,8 +2767,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void DeleteItem(Address from, BigInteger itemID)
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
-
-
+            
             Runtime.Expect(HasItem(from, itemID), "invalid owner");
 
             var item = GetItem(itemID);
@@ -2778,7 +2778,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
-            //token.Burn(balances, from,) TODO how to burn NFT?
+            //token.Burn(balances, from,)
+            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.ITEM_SYMBOL, from, itemID), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, itemID);
         }
@@ -5109,7 +5110,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             accountB.queueMode = BattleMode.None;
 
             SetAccount(addressA, accountA);
-            SetAccount(addressB, accountB); // Runtime.Chain.Address
+            SetAccount(addressB, accountB);
 
             // equalize bets
             BigInteger bet;
@@ -6540,7 +6541,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // changes luchador mode into Auto mode
-        /* TODO LATER
         public void AutoTurn(Address from, BigInteger battleID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -6565,9 +6565,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             battle.sides[localIndex].auto = true;
             SetBattle(battleID, battle);
 
-            Runtime.Notify(EventKind.Auto, from, battleID);
+            //Runtime.Notify(EventKind.Auto, from, battleID);
+            Runtime.Notify(NachoEvent.Auto, from, battleID);
         }
-        */
 
         private bool IsBattleBroken(NachoBattle battle)
         {
