@@ -325,9 +325,7 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     runtimeVM.Notify(evt.Kind, evt.Address, evt.Data);
                 }
-
-                
-
+              
                 return true;
             }
             else

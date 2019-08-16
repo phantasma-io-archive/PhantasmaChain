@@ -7,10 +7,10 @@ using Phantasma.Storage.Context;
 
 /*
  * Token script triggers
- * OnMint(address, amount)
- * OnBurn(address, amount)
- * OnSend(address, amount)
- * OnReceive(address, amount)
+ * OnMint(symbol, address, amount)
+ * OnBurn(symbol, address, amount)
+ * OnSend(symbol, address, amount)
+ * OnReceive(symbol, address, amount)
 */
 namespace Phantasma.Blockchain.Contracts.Native
 {
