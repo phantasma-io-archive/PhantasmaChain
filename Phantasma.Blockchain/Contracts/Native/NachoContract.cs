@@ -2594,8 +2594,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //diff = diff / Constants.SECONDS_PER_DAY; // convert to days // TODO fix
                 Runtime.Expect(diff >= Constants.REFERRAL_MINIMUM_DAYS, "too soon");
             }
-
-            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed"); // TODO fix
+            
+            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, Runtime.Chain.Address, from, outputAmount), "deposit failed");
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -2766,8 +2767,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void DeleteItem(Address from, BigInteger itemID)
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
-
-
+            
             Runtime.Expect(HasItem(from, itemID), "invalid owner");
 
             var item = GetItem(itemID);
@@ -2778,7 +2778,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Take(this.Storage, from, itemID);
-            //token.Burn(balances, from,) TODO how to burn NFT?
+            //token.Burn(balances, from,)
+            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.ITEM_SYMBOL, from, itemID), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, itemID);
         }
@@ -2919,15 +2920,61 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // TransferItem(from, DevelopersAddress, itemID); TODO LATER
         }
-
+        
         /* TODO LATER*/
-        public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
+        //public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
+        //{
+        //    Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
+        //    return CreateItem(to, itemID, itemKind, wrapped);
+        //}
+
+        private BigInteger CreateItem(Address to, ItemKind itemKind, bool wrapped)
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
-            return CreateItem(to, itemID, itemKind, wrapped);
+            var itemToken = Runtime.Nexus.GetTokenInfo(Constants.ITEM_SYMBOL);
+            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), "Can't find the token symbol");
+
+            var item = new NachoItem()
+            {
+                wrestlerID = BigInteger.Zero,
+                kind        = itemKind,
+                flags       = ItemFlags.None,
+                location    = ItemLocation.None,
+            };
+
+            if (wrapped)
+            {
+                item.flags |= ItemFlags.Wrapped;
+            }
+
+            var itemBytes = item.Serialize();
+
+            var tokenROM = new byte[0]; //itemBytes;
+            var tokenRAM = itemBytes;   //new byte[0];
+
+            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, 0);
+            Runtime.Expect(tokenID > 0, "invalid tokenID");
+
+            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
+            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
+            var hasItem = _globalItemList.Get<BigInteger, bool>(tokenID);
+            Runtime.Expect(!hasItem, "duplicated ID");
+
+            //temp.Set(itemID, true);
+            _globalItemList.Set(tokenID, true);
+
+            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            var playerItems = _playerItemsList.Get<Address, StorageList>(to);
+            playerItems.Add(tokenID);
+
+            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
+            //Runtime.Notify(EventKind.ItemReceived, to, itemID);
+            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
+
+            return tokenID;
         }
 
-        private BigInteger CreateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
+        /*
+        private BigInteger CreateItem(Address to, BigInteger itemID, bool wrapped)
         {
             var itemToken = Runtime.Nexus.GetTokenInfo(Constants.ITEM_SYMBOL);
             Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), "Can't find the token symbol");
@@ -2949,79 +2996,59 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //owner = to,
                 //locationID = 0,
                 wrestlerID = BigInteger.Zero,
-                kind        = itemKind,
-                flags       = ItemFlags.None,
-                location    = ItemLocation.None,
+                //kind = ,// TODO
+                flags = ItemFlags.None,
+                location = ItemLocation.None,
             };
 
             if (wrapped)
             {
                 item.flags |= ItemFlags.Wrapped;
             }
-
-            var itemBytes = item.Serialize();
-
-            var tokenROM = new byte[0]; //itemBytes;
-            var tokenRAM = itemBytes;   //new byte[0];
-
-            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, itemID);
-            Runtime.Expect(tokenID > 0, "invalid tokenID");
-
-            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
-
-            SetItem(itemID, item); //  Isto volta a serializar os dados do token. Mas com o CreateNFT que adicionei em cima já temos essa parte feita.. Remover isto?
-        
-            //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO ??
-
-            return itemID;
-        }
-
-        /*
-        private BigInteger CreateItem(Address to, ItemKind itemKind, bool wrapped)
-        {
-            var item = new NachoItem()
-            {
-                kind        = itemKind,
-                flags       = ItemFlags.None,
-                location    = ItemLocation.None,
-                wrestlerID  = 0
-            };
-
-            if (wrapped)
-            {
-                item.flags |= ItemFlags.Wrapped;
-            }
-
-            var itemBytes = item.Serialize();
-
-            var tokenROM = new byte[0]; //itemBytes;
-            var tokenRAM = itemBytes;   //new byte[0];
-
-            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, value); // TODO o que é este BigInt value? 
-            Runtime.Expect(tokenID > 0, "invalid tokenID");
-
-            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, from, tokenID), "minting failed");
-
-            //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
-            //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
-            var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
-            Runtime.Expect(!hasItem, "duplicated ID");
-
-            //temp.Set(itemID, true);
-            _globalItemList.Set(itemID, true);
-
-            //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
-            var player_items = _playerItemsList.Get<Address, StorageList>(to);
-            player_items.Add(itemID);
-
 
             SetItem(itemID, item);
 
-            //Runtime.Notify(EventKind.ItemReceived, to, itemID); // TODO
+            Runtime.Notify(EventKind.ItemReceived, to, itemID);
 
             return itemID;
         }
         */
+
+        private ItemKind GetRandomItemKind(Rarity rarity)
+        {
+            var items = Constants.ITEMS_RARITY[rarity];
+
+            var rnd = new Random();
+
+            return items[rnd.Next(0, items.Count)];
+        }
+
+        private BigInteger MineItemRarity(Rarity rarity, ref BigInteger lastID)
+        {
+            return MineItem((x) => (Rules.GetItemRarity(x) == rarity), ref lastID);
+        }
+
+        private BigInteger MineItem(Func<ItemKind, bool> filter, ref BigInteger lastID)
+        {
+            //var rnd = new Random();
+            do
+            {
+                lastID++;
+
+                var item = new NachoItem(); // TODO Equipment.FromID(lastID);
+
+                if (item.kind.ToString() != ((int)item.kind).ToString())
+                {
+                    if (filter(item.kind))
+                    {
+                        return lastID;
+                    }
+                }
+
+
+            } while (true);
+        }
+
 
         #endregion
 
@@ -3936,7 +3963,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
             var wrestlers = _playerWrestlersList.Get<Address, StorageList>(from);
-            Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler");
+            //Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler"); // TODO fix. O WrestlerID está bem mas não deve estar na lista de wrestlers do jogador
 
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Room, "location failed");
@@ -3947,7 +3974,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
                 Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, from, Runtime.Chain.Address, wrestler.stakeAmount), "unstake failed");
                 //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
-                Runtime.Notify(EventKind.TokenUnstake, from, wrestler.stakeAmount); // TODO é um evento TokenUnstake pq fez o unstake da mystery room ou usamos o evento TokenReceive mais geral ?
+                Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.SOUL_SYMBOL, value = wrestler.stakeAmount });
                 wrestler.stakeAmount = 0;
             }
 
@@ -3967,8 +3994,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (_roomCounter >= nextNumber && stakedAmount >= nextNumber)
             {
-                BigInteger itemID;
-                BigInteger lastID = Runtime.Time.Value;
+                //BigInteger itemID;
+                //BigInteger lastID = Runtime.Time.Value;
 
                 Rarity rarity;
                 if (nextNumber >= 1000)
@@ -3995,23 +4022,23 @@ namespace Phantasma.Blockchain.Contracts.Native
                 //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
                 do
                 {
-                    //itemID = Equipment.MineItemRarity(rarity, ref lastID);
-                    itemID = BigInteger.Zero; // TODO MineItemRarity(rarity, ref lastID); ?????
+                    //itemID = MineItemRarity(rarity, ref lastID); //Equipment.MineItemRarity(rarity, ref lastID);
 
                     //var itemKind = Formulas.GetItemKind(itemID);
                     itemKind = GetRandomItemKind(rarity);
 
-                    var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
+                    //var hasItem = _globalItemList.Get<BigInteger, bool>(itemID);
                     //if (Rules.IsReleasedItem(itemKind) && !temp.ContainsKey(itemID))
-                    if (Rules.IsReleasedItem(itemKind) && !hasItem)
+                    if (Rules.IsReleasedItem(itemKind)/* && !hasItem*/)
                     {
                         break;
                     }
 
-                    lastID++;
+                    //lastID++;
                 } while (true);
 
-                CreateItem(from, itemID, itemKind, false);
+                //CreateItem(from, itemID, itemKind, false);
+                CreateItem(from, itemKind, false);
                 AddTrophy(from, TrophyFlag.Safe);
 
                 if (nextNumber >= 10000)
@@ -5106,7 +5133,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     bet = accountA.queueBet;
                 }
 
-                //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed"); // TODO fix
+                //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, refundAddress, refundAmount), "refund failed");
             }
             else
             {
@@ -5223,7 +5251,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (bet > 0)
                 {
-                    //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed"); // TODO fix
+                    //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, from, bet), "refund failed");
                 }
             }
 
@@ -6044,9 +6073,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.counters[Constants.ACCOUNT_COUNTER_POT_COUNT]++;
                 SetAccount(target, account);
 
-                // TODO LATER
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
-                //Runtime.Notify(NachoEvent.Deposit, target, amount); //todo fix no event Deposit anymore
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, target, amount), "deposit failed");
+                //Runtime.Notify(NachoEvent.Deposit, target, amount);
+                Runtime.Notify(EventKind.TokenReceive, target, amount);
             }
 
             var leftovers = _pot.lastBalance - distributedTotal;
@@ -6108,17 +6138,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                         break;
                 }
 
-                // Ranked battle fees do not go to the pot anymore
-                //BigInteger potAmount;
-                //if (battle.mode == BattleMode.Ranked)
-                //{
-                //    potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
-                //    winnerAmount -= potAmount;
-                //}
-                //else
-                //{
-                //    potAmount = 0;
-                //}
+                // TODO -> Ranked battle fees do not go to the pot anymore ?
+                BigInteger potAmount;
+                if (battle.mode == BattleMode.Ranked)
+                {
+                    potAmount = winnerAmount;// TODO fix (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
+                    winnerAmount -= potAmount;
+                }
+                else
+                {
+                    potAmount = 0;
+                }
 
                 int winnerSide;
                 int loserSide;
@@ -6145,44 +6175,48 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (winnerSide != -1)
                 {
-                    //if (potAmount > 0)
-                    //{
-                    //    AddToPot(battle.sides[winnerSide].address, potAmount);
-                    //}
+                    // TODO both players now receive prizes. Check the bet spent transfers and notifications and both prizes
+                    if (potAmount > 0)
+                    {
+                        AddToPot(battle.sides[winnerSide].address, potAmount);
+                    }
 
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
 
-                    //TODO LATER
-                    Runtime.Expect(false, "not implemented, read code yrrytr");
-                    /*Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
-                    
                     var other = 1 - winnerSide;
 
-                    Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
-                    Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);*/
+                    //Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = winnerAmount });
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = loserAmount });
+
+                    // Old spend bet
+                    //Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);
+                    Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = battle.bet });
                 }
                 else
                 {
-                    // refund bothy
+                    // refund both
                     var refundAmount = drawAmount;
 
-                    //if (potAmount > 0)
-                    //{
-                    //    AddToPot(Address.Null, potAmount);
-                    //}
-
-                    /* TODO LATER
+                    if (potAmount > 0)
+                    {
+                        AddToPot(Address.Null, potAmount);
+                    }
+                    
                     for (var i = 0; i < 2; i++)
                     {
-                        Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
+                        //Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[i].address, refundAmount), "refund failed");
 
                         if (potAmount > 0)
                         {
-                            Runtime.Notify(battle.sides[i].address, NachoEvent.Withdraw, potAmount / 2);
+                            //Runtime.Notify(battle.sides[i].address, NachoEvent.Withdraw, potAmount / 2);
+                            Runtime.Notify(EventKind.TokenSend, battle.sides[i].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = potAmount / 2 });
                         }
                     }
-                    */
                 }
             }
 
@@ -6507,7 +6541,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // changes luchador mode into Auto mode
-        /* TODO LATER
         public void AutoTurn(Address from, BigInteger battleID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -6532,9 +6565,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             battle.sides[localIndex].auto = true;
             SetBattle(battleID, battle);
 
-            Runtime.Notify(EventKind.Auto, from, battleID);
+            //Runtime.Notify(EventKind.Auto, from, battleID);
+            Runtime.Notify(NachoEvent.Auto, from, battleID);
         }
-        */
 
         private bool IsBattleBroken(NachoBattle battle)
         {
@@ -8929,42 +8962,5 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             return 1 * 256 + 9;
         }
-
-        private ItemKind GetRandomItemKind(Rarity rarity)
-        {
-            var items = Constants.ITEMS_RARITY[rarity];
-
-            var rnd = new Random();
-
-            return items[rnd.Next(0, items.Count)];
-        }
-
-        private BigInteger MineItemRarity(Rarity rarity, ref BigInteger lastID)
-        {
-            return MineItem((x) => (Rules.GetItemRarity(x) == rarity), ref lastID);
-        }
-
-        private BigInteger MineItem(Func<ItemKind, bool> filter, ref BigInteger lastID)
-        {
-            //var rnd = new Random();
-            do
-            {
-                lastID++;
-
-                var item = new NachoItem(); // TODO Equipment.FromID(lastID);
-
-                if (item.kind.ToString() != ((int)item.kind).ToString())
-                {
-                    if (filter(item.kind))
-                    {
-                        return lastID;
-                    }
-                }
-
-
-            } while (true);
-        }
-
-
     }
 }
