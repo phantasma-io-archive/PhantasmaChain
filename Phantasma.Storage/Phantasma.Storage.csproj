@@ -9,8 +9,4 @@
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RocksDbSharp" Version="5.17.2" />
-  </ItemGroup>
-
 </Project>
