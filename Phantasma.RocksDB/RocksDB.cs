@@ -11,7 +11,7 @@ namespace Phantasma.RocksDB
 {
     public class DBPartition : IKeyValueStoreAdapter
     {
-	private RocksDb _db;
+	    private RocksDb _db;
         private ColumnFamilyHandle partition;
         private string partitionName;
         private string path;
@@ -30,8 +30,7 @@ namespace Phantasma.RocksDB
                 path += '/';
             }
 
-	    this._db = RocksDbStore.Instance(path);
-
+	        this._db = RocksDbStore.Instance(path);
 
             // Create partition if it doesn't exist already
             try
@@ -186,6 +185,7 @@ namespace Phantasma.RocksDB
             try
             {
                 var partitionList = RocksDb.ListColumnFamilies(options, path);
+
                 foreach (var partition in partitionList)
                 {
                     columnFamilies.Add(partition, new ColumnFamilyOptions());
