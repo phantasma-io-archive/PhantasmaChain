@@ -1,11 +1,12 @@
-﻿using Phantasma.Core;
-using Phantasma.Core.Utils;
-using Phantasma.Storage.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using Phantasma.Core;
+using Phantasma.Core.Utils;
+using Phantasma.Storage.Utils;
+using Logger = Phantasma.Core.Log.Logger;
+using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
 using RocksDbSharp;
 
 namespace Phantasma.Storage
@@ -84,24 +85,36 @@ namespace Phantasma.Storage
 	private RocksDb _db;
         private ColumnFamilyHandle partition;
         private string partitionName;
+        private string path;
+        private readonly Logger logger = new ConsoleLogger();
 
         public uint Count => GetCount();
 
-        public DBPartition(string partition, string fileName=null)
+        public DBPartition(string fileName)
         {
-	    this._db = RocksDbStore.Instance(fileName);
-            this.partitionName = partition;
+            this.partitionName = Path.GetFileName(fileName);
+            this.path = Path.GetDirectoryName(fileName);
 
-            //create partition if it doesn't exist already
+            if (!path.EndsWith("/"))
+            {
+                path += '/';
+            }
 
+	    this._db = RocksDbStore.Instance(path);
+
+
+            // Create partition if it doesn't exist already
             try
             {
-                this.partition = this._db.GetColumnFamily(partition);
+                logger.Message("Getting partition: " + this.partitionName);
+                this.partition = this._db.GetColumnFamily(partitionName);
             }
             catch
             {
+                logger.Message("Partition not found, create it now: " + this.partitionName);
+
                 // TODO different partitions might need different options...
-                this.partition = this._db.CreateColumnFamily(new ColumnFamilyOptions(), partition);
+                this.partition = this._db.CreateColumnFamily(new ColumnFamilyOptions(), partitionName);
             }
         }
 
@@ -206,11 +219,14 @@ namespace Phantasma.Storage
     {
 	private static RocksDb _db;
 	private static RocksDbStore _rdb;
+        private readonly Logger logger = new ConsoleLogger();
 
         private string fileName;
 
         private RocksDbStore(string fileName)
         {
+            AppDomain.CurrentDomain.ProcessExit += (s, e) => Shutdown();
+            logger.Message("RocksDBStore: " + fileName);
             this.fileName = fileName.Replace("\\", "/");
 
             var path = Path.GetDirectoryName(fileName);
@@ -237,6 +253,20 @@ namespace Phantasma.Storage
                 //},
             };
 
+            try
+            {
+                var partitionList = RocksDb.ListColumnFamilies(options, path);
+                foreach (var partition in partitionList)
+                {
+                    columnFamilies.Add(partition, new ColumnFamilyOptions());
+                }
+            }
+            catch
+            {
+                logger.Warning("Inital start, no partitions created yet!");
+            }
+
+
 	    _db = RocksDb.Open(options, path, columnFamilies);
         }
 
@@ -251,6 +281,15 @@ namespace Phantasma.Storage
 
             return _db;
         }
+
+        private void Shutdown()
+        {
+
+            logger.Message("Shutting down database...");
+            _db.Dispose();
+            logger.Message("Database has been shut down!");
+        }
+
     }
 
     public class BasicDiskStore : IKeyValueStoreAdapter
