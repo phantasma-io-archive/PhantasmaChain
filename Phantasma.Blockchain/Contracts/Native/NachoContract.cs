@@ -8,7 +8,6 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
-//using Phantasma.CodeGen.Assembler;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -2169,17 +2168,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #region TOKENS
 
-        public void OnSendTrigger(BigInteger tokenID, Address to, Address from, string symbol)
+        public void OnSendTrigger(BigInteger tokenID, /*Address receiver,*/ Address sender/*, string symbol*/)
         {
             //Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), "Can't find the token symbol");
 
-            if(symbol != Constants.WRESTLER_SYMBOL && symbol != Constants.ITEM_SYMBOL) return;
+            //if(symbol != Constants.WRESTLER_SYMBOL && symbol != Constants.ITEM_SYMBOL) return;
 
             var hasItem = _items.Get<BigInteger, bool>(tokenID);
 
             if (hasItem)
             {
-                TransferItem(from, to, tokenID);
+                TransferItem(/*from, to, */tokenID);
             }
             else
             {
@@ -2187,7 +2186,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (hasWrestler)
                 {
-                    TransferWrestler(from, to, tokenID);
+                    TransferWrestler(/*from, to, */tokenID);
                 }
             }
         }
@@ -2224,7 +2223,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
 
-        public void TransferWrestler(Address from, Address to, BigInteger wrestlerID)
+        public void TransferWrestler(/*Address from, Address to, */BigInteger wrestlerID)
         {
             //Runtime.Expect(IsWitness(from), "invalid witness");
             //Runtime.Expect(to != from, "same address");
@@ -2255,7 +2254,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //Runtime.Notify(EventKind.TokenReceive, to, wrestlerID);
         }
 
-        public void TransferItem(Address from, Address to, BigInteger itemID)
+        public void TransferItem(/*Address from, Address to, */BigInteger itemID)
         {
             //Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -2974,33 +2973,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 item.flags |= ItemFlags.Wrapped;
             }
-
-            var scriptString = new string[]
-            {
-                "alias r2 $address",
-                "alias r3 $tokenID",
-
-                "pop $address",
-                "pop $tokenID",
-
-                "load r0 \"OnSend\"",
-                "cmp r0, r1",
-                "jmpif @execTrigger",
-                "ret",
-
-                "@execTrigger:",
-                "load r0 \"nacho\"",
-                "ctx r0 r1",
-                "load r0 \"OnSendTrigger\"",
-                "push $address",
-                "push $tokenID",
-                "switch r1",
-                "ret"
-            };
-
-            //var callScript = AssemblerUtils.BuildScript(scriptString);
-
-
+          
             var itemBytes = item.Serialize();
 
             var tokenROM = new byte[0]; //itemBytes;
@@ -3199,8 +3172,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(to, NachoEvent.WrestlerReceived, wrestlerID);
             return wrestlerID;
-        }
-        */
+        }*/
 
         public void RenameWrestler(Address from, BigInteger wrestlerID, string name)
         {
@@ -3927,10 +3899,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             //    item.owner = from;
             //}
 
-            /* TODO add later           
             Runtime.Expect(item.location == ItemLocation.Wrestler, "invalid location");
-            Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler");
-            */
+            //Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler"); // TODO fix
 
             var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
@@ -4149,6 +4119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "witness failed");
 
             //Runtime.Expect(mode >= 1 && mode <= 3, "mode failed");
+            Runtime.Expect((int)mode >= 1 && (int)mode <= 3, "mode failed");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
 
