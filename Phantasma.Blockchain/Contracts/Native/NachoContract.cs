@@ -2769,15 +2769,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return item;
-
-            /*
-            return new NachoItem()
-            {
-                owner = Address.Null,
-                flags = ItemFlags.None,
-                location = ItemLocation.None,
-                locationID = 0,
-            };*/
         }
 
         public void SetItem(BigInteger ID, NachoItem item)
@@ -3186,7 +3177,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(HasWrestler(from, wrestlerID), "wrestler invalid");
 
             var wrestler = GetWrestler(wrestlerID);
-            //Runtime.Expect(wrestler.location == WrestlerLocation.None, "location invalid");
+            Runtime.Expect(wrestler.location == WrestlerLocation.None, "location invalid");
 
             wrestler.nickname = name;
             SetWrestler(wrestlerID, wrestler);
@@ -3194,7 +3185,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(NachoEvent.Rename, from, wrestlerID);
         }
 
-        /* TODO LATER
         public void SetWrestlerComment(Address from, BigInteger wrestlerID, int commentIndex, string comment)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -3205,8 +3195,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(commentIndex >= 0, "invalid index");
             Runtime.Expect(commentIndex < Constants.LUCHADOR_COMMENT_MAX, "invalid index");
 
-            var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            Runtime.Expect(team.Contains(wrestlerID), "wrestler invalid");
+            //var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            var ownership = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
+            var team = ownership.Get(this.Storage, from);
+            Runtime.Expect(team.Contains(wrestlerID), "invalid wrestler");
 
             var wrestler = GetWrestler(wrestlerID);
             //Runtime.Expect(wrestler.location == WrestlerLocation.None, "location invalid");
@@ -3229,9 +3221,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             wrestler.comments[commentIndex] = comment;
             SetWrestler(wrestlerID, wrestler);
 
-            Runtime.Notify(from, NachoEvent.Rename);
+            //Runtime.Notify(from, NachoEvent.Rename);
+            Runtime.Notify(NachoEvent.Rename, from, comment);
         }
-        */
 
         //public NachoWrestler[] GetWrestlers(BigInteger[] IDs)
         //{
