@@ -2143,7 +2143,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         internal StorageList _globalMatchmakerList;
 
-        internal StorageMap _playerVersusChallengesList, _accountWrestlers, _accountItems;
+        internal StorageMap _playerVersusChallengesList; // _accountWrestlers, _accountItems;
         internal StorageMap _battles, _wrestlers, _items;
         //internal StorageMap _globalVersusChallengesList;
 
@@ -2226,45 +2226,44 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void TransferWrestler(Address from, Address to, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-
-            Runtime.Expect(to != from, "same address");
+            //Runtime.Expect(IsWitness(from), "invalid witness");
+            //Runtime.Expect(to != from, "same address");
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
-            Runtime.Expect(wrestlers.Contains(wrestlerID), "wrestler invalid");
+            //var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
+            //Runtime.Expect(wrestlers.Contains(wrestlerID), "wrestler invalid");
 
             var wrestler = GetWrestler(wrestlerID);
 
             Runtime.Expect(!wrestler.flags.HasFlag(WrestlerFlags.Locked), "locked wrestler");
             Runtime.Expect(wrestler.location == WrestlerLocation.None, "location invalid");
-            Runtime.Expect(wrestler.itemID == 0, "can't have equpped item");
+            Runtime.Expect(wrestler.itemID == 0, "can't have equipped item");
 
             // change owner
             //wrestler.owner = to;
-            SetWrestler(wrestlerID, wrestler);
+            //SetWrestler(wrestlerID, wrestler);
 
             // remove it from old team
-            wrestlers.Remove(wrestlerID);
+            //wrestlers.Remove(wrestlerID);
 
             // add to new team
             //var otherWrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, to);
-            var otherWrestlers = _accountWrestlers.Get<Address, StorageList>(to);
-            otherWrestlers.Add(wrestlerID);
+            //var otherWrestlers = _accountWrestlers.Get<Address, StorageList>(to);
+            //otherWrestlers.Add(wrestlerID);
 
-            Runtime.Notify(EventKind.TokenSend, from, wrestlerID);
-            Runtime.Notify(EventKind.TokenReceive, to, wrestlerID);
+            //Runtime.Notify(EventKind.TokenSend, from, wrestlerID);
+            //Runtime.Notify(EventKind.TokenReceive, to, wrestlerID);
         }
 
         public void TransferItem(Address from, Address to, BigInteger itemID)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            //Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(to != from, "same address");
+            //Runtime.Expect(to != from, "same address");
 
             //var playerItems = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, from);
-            var playerItems = _accountItems.Get<Address, StorageList>(from);
-            Runtime.Expect(playerItems.Contains(itemID), "item invalid");
+            //var playerItems = _accountItems.Get<Address, StorageList>(from);
+            //Runtime.Expect(playerItems.Contains(itemID), "item invalid");
 
             var item = GetItem(itemID);
 
@@ -2277,18 +2276,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             //Runtime.Expect(item.owner == from, "invalid owner");
 
             //item.owner = to;
-            SetItem(itemID, item);
+            //SetItem(itemID, item);
 
             // remove it from old team
-            playerItems.Remove(itemID);
+            //playerItems.Remove(itemID);
 
             // add to new team
             //var otherItems = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
-            var otherItems = _accountItems.Get<Address, StorageList>(to);
-            otherItems.Add(itemID);
+            //var otherItems = _accountItems.Get<Address, StorageList>(to);
+            //otherItems.Add(itemID);
 
-            Runtime.Notify(EventKind.TokenSend, from, itemID);
-            Runtime.Notify(EventKind.TokenReceive, to, itemID);
+            //Runtime.Notify(EventKind.TokenSend, from, itemID);
+            //Runtime.Notify(EventKind.TokenReceive, to, itemID);
         }
 
         private bool SpendFromAccountBalance<T>(Address address, BigInteger amount)
@@ -2807,7 +2806,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //item.owner = Address.Null;
 
             var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
-            ownerships.Take(this.Storage, from, itemID);
+            ownerships.Remove(this.Storage, from, itemID);
             //token.Burn(balances, from,)
             Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.ITEM_SYMBOL, from, itemID), "burn failed");
 
@@ -3019,9 +3018,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             _items.Set(tokenID, true);
 
             //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
-            var playerItems = _accountItems.Get<Address, StorageList>(to);
-            playerItems.Add(tokenID);
-
+            //var playerItems = _accountItems.Get<Address, StorageList>(to);
+            var ownership   = new OwnershipSheet(Constants.ITEM_SYMBOL);
+            var playerItems = ownership.Get(this.Storage, to);
+            //playerItems.Add(tokenID);
+            ownership.Add(this.Storage, to, tokenID);
+            
             Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
             //Runtime.Notify(EventKind.ItemReceived, to, itemID);
             Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
@@ -4018,8 +4020,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "witness failed");
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
-            //Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler"); // TODO fix. O WrestlerID está bem mas não deve estar na lista de wrestlers do jogador
+            //var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
+            var ownership = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
+            var wrestlers = ownership.Get(this.Storage, from);
+            Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler");
 
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Room, "location failed");
