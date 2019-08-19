@@ -8,6 +8,7 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
+//using Phantasma.CodeGen.Assembler;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -2142,8 +2143,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         internal StorageList _globalMatchmakerList;
 
-        internal StorageMap _playerVersusChallengesList, _playerWrestlersList, _playerItemsList;
-        internal StorageMap _globalBattlesList, _globalItemList;
+        internal StorageMap _playerVersusChallengesList, _accountWrestlers, _accountItems;
+        internal StorageMap _battles, _wrestlers, _items;
         //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
@@ -2165,6 +2166,33 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             // TODO
         }
+
+        #region TOKENS
+
+        public void OnSendTrigger(BigInteger tokenID, Address to, Address from, string symbol)
+        {
+            //Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), "Can't find the token symbol");
+
+            if(symbol != Constants.WRESTLER_SYMBOL && symbol != Constants.ITEM_SYMBOL) return;
+
+            var hasItem = _items.Get<BigInteger, bool>(tokenID);
+
+            if (hasItem)
+            {
+                TransferItem(from, to, tokenID);
+            }
+            else
+            {
+                var hasWrestler = _wrestlers.Get<BigInteger, bool>(tokenID);
+
+                if (hasWrestler)
+                {
+                    TransferWrestler(from, to, tokenID);
+                }
+            }
+        }
+
+        #endregion
 
         #region ACCOUNT API
 
@@ -2196,14 +2224,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
 
-        /* TODO LATER
         public void TransferWrestler(Address from, Address to, BigInteger wrestlerID)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(to != from, "same address");
 
-            var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
             Runtime.Expect(wrestlers.Contains(wrestlerID), "wrestler invalid");
 
             var wrestler = GetWrestler(wrestlerID);
@@ -2213,53 +2241,55 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(wrestler.itemID == 0, "can't have equpped item");
 
             // change owner
-            wrestler.owner = to;
+            //wrestler.owner = to;
             SetWrestler(wrestlerID, wrestler);
 
             // remove it from old team
             wrestlers.Remove(wrestlerID);
 
             // add to new team
-            var otherWrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, to);
+            //var otherWrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, to);
+            var otherWrestlers = _accountWrestlers.Get<Address, StorageList>(to);
             otherWrestlers.Add(wrestlerID);
 
             Runtime.Notify(EventKind.TokenSend, from, wrestlerID);
             Runtime.Notify(EventKind.TokenReceive, to, wrestlerID);
-        }*/
-
-        /* TODO LATER
-    public void TransferItem(Address from, Address to, BigInteger itemID)
-    {
-        Runtime.Expect(IsWitness(from), "invalid witness");
-
-        Runtime.Expect(to != from, "same address");
-
-        var from_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, from);
-        Runtime.Expect(from_items.Contains(itemID), "item invalid");
-
-        var item = GetItem(itemID);
-
-        if (item.owner == Address.Null)
-        {
-            item.owner = from;
         }
 
-        Runtime.Expect(!item.flags.HasFlag(ItemFlags.Locked), "locked item");
-        Runtime.Expect(item.owner == from, "invalid owner");
+        public void TransferItem(Address from, Address to, BigInteger itemID)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
-        item.owner = to;
-        SetItem(itemID, item);
+            Runtime.Expect(to != from, "same address");
 
-        // remove it from old team
-        from_items.Remove(itemID);
+            //var playerItems = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, from);
+            var playerItems = _accountItems.Get<Address, StorageList>(from);
+            Runtime.Expect(playerItems.Contains(itemID), "item invalid");
 
-        // add to new team
-        var to_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
-        to_items.Add(itemID);
+            var item = GetItem(itemID);
 
-        Runtime.Notify(EventKind.TokenSend, from, itemID);
-        Runtime.Notify(EventKind.TokenReceive, to, itemID);
-    }*/
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
+
+            Runtime.Expect(!item.flags.HasFlag(ItemFlags.Locked), "locked item");
+            //Runtime.Expect(item.owner == from, "invalid owner");
+
+            //item.owner = to;
+            SetItem(itemID, item);
+
+            // remove it from old team
+            playerItems.Remove(itemID);
+
+            // add to new team
+            //var otherItems = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
+            var otherItems = _accountItems.Get<Address, StorageList>(to);
+            otherItems.Add(itemID);
+
+            Runtime.Notify(EventKind.TokenSend, from, itemID);
+            Runtime.Notify(EventKind.TokenReceive, to, itemID);
+        }
 
         private bool SpendFromAccountBalance<T>(Address address, BigInteger amount)
         {
@@ -2523,7 +2553,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             int currentReferralPercent;
-
+            // TODO update this values
             if (Runtime.Time.Value <= 1541030400) // 1 nov
             {
                 currentReferralPercent = 40;
@@ -2946,6 +2976,32 @@ namespace Phantasma.Blockchain.Contracts.Native
                 item.flags |= ItemFlags.Wrapped;
             }
 
+            var scriptString = new string[]
+            {
+                "alias r2 $address",
+                "alias r3 $tokenID",
+
+                "pop $address",
+                "pop $tokenID",
+
+                "load r0 \"OnSend\"",
+                "cmp r0, r1",
+                "jmpif @execTrigger",
+                "ret",
+
+                "@execTrigger:",
+                "load r0 \"nacho\"",
+                "ctx r0 r1",
+                "load r0 \"OnSendTrigger\"",
+                "push $address",
+                "push $tokenID",
+                "switch r1",
+                "ret"
+            };
+
+            //var callScript = AssemblerUtils.BuildScript(scriptString);
+
+
             var itemBytes = item.Serialize();
 
             var tokenROM = new byte[0]; //itemBytes;
@@ -2956,14 +3012,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
             //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
-            var hasItem = _globalItemList.Get<BigInteger, bool>(tokenID);
+            var hasItem = _items.Get<BigInteger, bool>(tokenID);
             Runtime.Expect(!hasItem, "duplicated ID");
 
             //temp.Set(itemID, true);
-            _globalItemList.Set(tokenID, true);
+            _items.Set(tokenID, true);
 
             //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
-            var playerItems = _playerItemsList.Get<Address, StorageList>(to);
+            var playerItems = _accountItems.Get<Address, StorageList>(to);
             playerItems.Add(tokenID);
 
             Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
@@ -3962,7 +4018,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "witness failed");
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            var wrestlers = _playerWrestlersList.Get<Address, StorageList>(from);
+            var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
             //Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler"); // TODO fix. O WrestlerID está bem mas não deve estar na lista de wrestlers do jogador
 
             var wrestler = GetWrestler(wrestlerID);
@@ -4991,7 +5047,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
 
             //var battle_id = battles.Count() + 1;
-            var battle_id = _globalBattlesList.Count() + 1;
+            var battle_id = _battles.Count() + 1;
 
             if (mode == BattleMode.Ranked)
             {
@@ -5160,7 +5216,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // save battle info
             //battles.Set(battle_id, battle);
-            _globalBattlesList.Set(battle_id, battle);
+            _battles.Set(battle_id, battle);
 
             SetAccountBattle(addressA, battle_id, battle, 0);
             SetAccountBattle(addressB, battle_id, battle, 1);
@@ -5268,7 +5324,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
 
             //var battle = battles.Get(battleID);
-            var battle = _globalBattlesList.Get<BigInteger, NachoBattle>(battleID);
+            var battle = _battles.Get<BigInteger, NachoBattle>(battleID);
 
             // this allows us to add new counters later while keeping binary compatibility
             if (battle.counters == null)
@@ -5301,7 +5357,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //var battles = Storage.FindMapForContract<BigInteger, NachoBattle>(GLOBAL_BATTLE_LIST);
             //battles.Set(battleID, battle);
 
-            _globalBattlesList.Set(battleID, battle);
+            _battles.Set(battleID, battle);
         }
 
         // this is the calculate damage if the move hits, ignoring the move of the opponent, which is taken into account in CalculateMoveResult()
