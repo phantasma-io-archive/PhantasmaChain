@@ -2143,7 +2143,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageList _globalMatchmakerList;
 
         internal StorageMap _playerVersusChallengesList; // _accountWrestlers, _accountItems;
-        internal StorageMap _battles, _wrestlers, _items;
+        internal StorageMap _battles; //, _wrestlers, _items;
         //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
@@ -2165,33 +2165,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             // TODO
         }
-
-        #region TOKENS
-
-        public void OnSendTrigger(BigInteger tokenID, /*Address receiver,*/ Address sender/*, string symbol*/)
-        {
-            //Runtime.Expect(Runtime.Nexus.TokenExists(Constants.WRESTLER_SYMBOL), "Can't find the token symbol");
-
-            //if(symbol != Constants.WRESTLER_SYMBOL && symbol != Constants.ITEM_SYMBOL) return;
-
-            var hasItem = _items.Get<BigInteger, bool>(tokenID);
-
-            if (hasItem)
-            {
-                TransferItem(/*from, to, */tokenID);
-            }
-            else
-            {
-                var hasWrestler = _wrestlers.Get<BigInteger, bool>(tokenID);
-
-                if (hasWrestler)
-                {
-                    TransferWrestler(/*from, to, */tokenID);
-                }
-            }
-        }
-
-        #endregion
 
         #region ACCOUNT API
 
@@ -2221,6 +2194,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 Runtime.Notify(NachoEvent.PlayerJoinFaction, address, faction);
             }
+        }
+
+        public void OnSendWrestlerTrigger(BigInteger tokenID, Address sender)
+        {
+            TransferWrestler(tokenID);
         }
 
         public void TransferWrestler(/*Address from, Address to, */BigInteger wrestlerID)
@@ -2254,6 +2232,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             //Runtime.Notify(EventKind.TokenReceive, to, wrestlerID);
         }
 
+        public void OnSendItemTrigger(BigInteger tokenID, Address sender)
+        {
+            TransferItem(tokenID);
+        }
+        
         public void TransferItem(/*Address from, Address to, */BigInteger itemID)
         {
             //Runtime.Expect(IsWitness(from), "invalid witness");
@@ -2975,11 +2958,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
             //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
-            var hasItem = _items.Get<BigInteger, bool>(tokenID);
-            Runtime.Expect(!hasItem, "duplicated ID");
+            //var hasItem = _items.Get<BigInteger, bool>(tokenID);
+            //Runtime.Expect(!hasItem, "duplicated ID");
 
             //temp.Set(itemID, true);
-            _items.Set(tokenID, true);
+            //_items.Set(tokenID, true);
 
             //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
             //var playerItems = _accountItems.Get<Address, StorageList>(to);
