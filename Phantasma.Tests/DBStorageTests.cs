@@ -7,39 +7,41 @@ using Phantasma.RocksDB;
 using Phantasma.Storage;
 using System.Threading;
 
+using RocksDbSharp;
+
 namespace Phantasma.Tests
 {
 
     [TestClass]
     public class DBStorageTests
     {
-        private Func<string, IKeyValueStoreAdapter> _adapterFactory = null;
         private readonly string path = "./Storage/";
+        private Func<string, IKeyValueStoreAdapter> _adapterFactory = null;
+        private KeyValueStore<string, string> _testStorage = null;
 
         [TestInitialize()]
-        public void Initialize() 
+        public void TestInitialize()
         {
-            if (Directory.Exists(path))
-            {
-                Directory.Delete(path, true);
-            }
+            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(path + name); };
+            _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
+        }
 
-            _adapterFactory = (name) => new DBPartition(path + "test");
+        [ClassCleanup()]
+        public static void ClassCleanup()
+        {
+            if (Directory.Exists(Directory.GetCurrentDirectory()+"/Storage/"))
+            {
+                Directory.Delete(Directory.GetCurrentDirectory() + "/Storage/", true);
+            }
         }
 
         [TestCleanup()]
-        public void Cleanup() 
+        public void TestCleanup()
         {
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
             _testStorage.Visit((key, _) =>
             {
                 _testStorage.Remove(key);
             });
-
-            if (Directory.Exists(path))
-            {
-                Directory.Delete(path, true);
-            }
         }
 
         private IKeyValueStoreAdapter CreateKeyStoreAdapterTest(string name)
@@ -52,7 +54,6 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestDBStorageSet()
         {
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
             _testStorage.Set("test1", "Value11");
             string val = _testStorage.Get("test1");
             Assert.IsTrue(val == "Value11");
@@ -61,7 +62,6 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestDBStorageRemove()
         {
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
             _testStorage.Set("test1", "Value11");
             _testStorage.Remove("test1");
 
@@ -74,7 +74,6 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestDBStorageContains()
         {
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
             _testStorage.Set("test1", "Value11");
             bool result = _testStorage.ContainsKey("test1");
 
@@ -84,8 +83,6 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestDBStorageVisit()
         {
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
-
             _testStorage.Set("test1", "Value11");
             _testStorage.Set("test2", "Value12");
             _testStorage.Set("test3", "Value13");
@@ -107,7 +104,6 @@ namespace Phantasma.Tests
         {
             int count = 20;
             int threadCount = 20;
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
             List<Thread> threadList = new List<Thread>();
 
             for (int i = 0; i < threadCount; i++)
@@ -134,7 +130,6 @@ namespace Phantasma.Tests
         {
             int count = 20;
             int threadCount = 15;
-            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
             List<Thread> threadList = new List<Thread>();
 
             for (int i = 0; i < threadCount; i++)

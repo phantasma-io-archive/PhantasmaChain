@@ -196,8 +196,8 @@ namespace Phantasma.RocksDB
                 logger.Warning("Inital start, no partitions created yet!");
             }
 
-
-	    _db = RocksDb.Open(options, path, columnFamilies);
+            logger.Message("Opening database at: " + path);
+	        _db = RocksDb.Open(options, path, columnFamilies);
         }
 
         public static RocksDb Instance(string name=null)
