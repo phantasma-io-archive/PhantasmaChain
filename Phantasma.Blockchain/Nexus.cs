@@ -769,7 +769,7 @@ namespace Phantasma.Blockchain
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Give(runtimeVM.ChangeSet, target, tokenID))
+            if (!ownerships.Add(runtimeVM.ChangeSet, target, tokenID))
             {
                 return false;
             }
@@ -863,7 +863,7 @@ namespace Phantasma.Blockchain
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Take(runtimeVM.ChangeSet, target, tokenID))
+            if (!ownerships.Remove(runtimeVM.ChangeSet, target, tokenID))
             {
                 return false;
             }
@@ -972,12 +972,12 @@ namespace Phantasma.Blockchain
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Take(runtimeVM.ChangeSet, source, tokenID))
+            if (!ownerships.Remove(runtimeVM.ChangeSet, source, tokenID))
             {
                 return false;
             }
 
-            if (!ownerships.Give(runtimeVM.ChangeSet, destination, tokenID))
+            if (!ownerships.Add(runtimeVM.ChangeSet, destination, tokenID))
             {
                 return false;
             }

@@ -53,7 +53,7 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
-        public bool Give(StorageContext storage, Address address, BigInteger tokenID)
+        public bool Add(StorageContext storage, Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain.Tokens
             return true;
         }
 
-        public bool Take(StorageContext storage, Address address, BigInteger tokenID)
+        public bool Remove(StorageContext storage, Address address, BigInteger tokenID)
         {
             if (tokenID <= 0)
             {
