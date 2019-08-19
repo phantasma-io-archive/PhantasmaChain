@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.RocksDB;
 using Phantasma.Storage;
+using System.Threading;
 
 namespace Phantasma.Tests
 {
@@ -24,18 +25,21 @@ namespace Phantasma.Tests
             }
 
             _adapterFactory = (name) => new DBPartition(path + "test");
-
         }
 
         [TestCleanup()]
         public void Cleanup() 
         {
+            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
+            _testStorage.Visit((key, _) =>
+            {
+                _testStorage.Remove(key);
+            });
 
             if (Directory.Exists(path))
             {
                 Directory.Delete(path, true);
             }
-
         }
 
         private IKeyValueStoreAdapter CreateKeyStoreAdapterTest(string name)
@@ -96,6 +100,78 @@ namespace Phantasma.Tests
             });
 
             Assert.IsTrue(keyList.Count == valueList.Count);
+        }
+
+        [TestMethod]
+        public void TestDBStorageAddManySameKey()
+        {
+            int count = 20;
+            int threadCount = 20;
+            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
+            List<Thread> threadList = new List<Thread>();
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                int tmp = i;
+                threadList.Add(new Thread(() => AddMany(_testStorage, count, tmp)));
+            }
+
+            foreach (Thread t in threadList)
+            {
+                t.Start();
+            }
+
+            foreach (Thread t in threadList)
+            {
+                t.Join();
+            }
+
+            Assert.AreEqual(count, (int)_testStorage.Count);
+        }
+
+        [TestMethod]
+        public void TestDBStorageAddManyDifKey()
+        {
+            int count = 20;
+            int threadCount = 15;
+            KeyValueStore<string, string> _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
+            List<Thread> threadList = new List<Thread>();
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                int tmp = i;
+                threadList.Add(new Thread(() => AddMany(_testStorage, count, tmp, true)));
+            }
+
+            foreach (Thread t in threadList)
+            {
+                t.Start();
+            }
+
+            foreach (Thread t in threadList)
+            {
+                t.Join();
+            }
+
+            Assert.AreEqual(count*threadCount, (int)_testStorage.Count);
+        }
+
+        private void AddMany(KeyValueStore<string, string> kvstore, int count, int threadNum, bool addThreadNum=false)
+        {
+            for (int x = 0; x < count; x++)
+            {
+                string key = "";
+                if (addThreadNum)
+                {
+                    key = string.Format("{0}key{1}", x, threadNum);
+                }
+                else
+                {
+                    key = string.Format("{0}key", x);
+                }
+                var val = string.Format("{0}val{1}", x, threadNum);
+                kvstore.Set(key, val);
+            }
         }
     }
 }
