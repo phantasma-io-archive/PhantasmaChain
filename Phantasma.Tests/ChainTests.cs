@@ -10,6 +10,7 @@ using Phantasma.Numerics;
 using Phantasma.Blockchain.Utils;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.CodeGen.Assembler;
 
 namespace Phantasma.Tests
 {
@@ -978,6 +979,82 @@ namespace Phantasma.Tests
             Assert.IsTrue(address.Text == nexus.GenesisAddress.Text);
             Assert.IsTrue(address.PublicKey.SequenceEqual(nexus.GenesisAddress.PublicKey));
             Assert.IsTrue(address == nexus.GenesisAddress);
+        }
+
+        [TestMethod]
+        public void TestChainTransfer()
+        {
+            var owner = KeyPair.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
+            var sim = new ChainSimulator(owner, 1234);
+
+            var user = KeyPair.Generate();
+
+            var symbol = Nexus.StakingTokenSymbol;
+
+            var chainAddressStr = Base16.Encode(sim.Nexus.RootChainAddress.PublicKey);
+            var userAddressStr = Base16.Encode(user.Address.PublicKey);
+
+            sim.BeginBlock();
+            sim.GenerateTransfer(owner, user.Address, sim.Nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            sim.GenerateTransfer(owner, user.Address, sim.Nexus.RootChain, Nexus.StakingTokenSymbol, 100000000);
+            sim.GenerateTransfer(owner, sim.Nexus.RootChainAddress, sim.Nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            sim.EndBlock();
+
+
+            string[] scriptString = new string[]
+            {
+                $"alias r4, $tokenContract",
+                $"alias r5, $sourceAddress",
+                $"alias r6, $targetAddress",
+                $"alias r7, $amount",
+                $"alias r8, $symbol",
+                $"alias r9, $methodName",
+
+                $"load $amount, 10000",
+                $@"load $symbol, ""{symbol}""",
+
+                $"load r11 0x{chainAddressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop $sourceAddress",
+
+                $"load r11 0x{userAddressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop $targetAddress",
+
+                $@"load $methodName, ""TransferTokens""",
+
+                $"push $amount",
+                $"push $symbol",
+                $"push $targetAddress",
+                $"push $sourceAddress",
+                $@"push $methodName",
+                
+                //switch to token contract
+                $@"load r12, ""token""",
+                $"ctx r12, $tokenContract",
+                $"switch $tokenContract",
+                
+                $"ret"
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+            
+            var initialBalance = sim.Nexus.RootChain.GetTokenBalance(symbol, sim.Nexus.RootChainAddress);
+            Assert.IsTrue(initialBalance > 10000);
+
+            sim.BeginBlock();
+            sim.GenerateCustomTransaction(user, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(user.Address, Address.Null, 1, 9999).
+                    EmitRaw(script).
+                    SpendGas(user.Address).
+                    EndScript());
+            sim.EndBlock();
+
+            var finalBalance = sim.Nexus.RootChain.GetTokenBalance(symbol, sim.Nexus.RootChainAddress);
+            Assert.IsTrue(initialBalance == finalBalance);
         }
 
     }
