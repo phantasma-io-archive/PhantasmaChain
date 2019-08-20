@@ -60,23 +60,8 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (address == this.Runtime.Chain.Address) 
             {
-                bool insideContract = false;
-
-                foreach (var frame in Runtime.frames)
-                {
-                    // TODO probably this should just always skip the first frame in the stack, instead of hardcoded token contract?
-                    if (frame.Context.Name.Equals("token", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    if (!frame.Context.Name.StartsWith("@"))
-                    {
-                        insideContract = true;
-                    }
-                }
-
-                return insideContract;
+                var frame = Runtime.frames.Skip(1).FirstOrDefault();
+                return frame != null && frame.Context.Admin;
             }
 
             if (Runtime.Transaction == null)

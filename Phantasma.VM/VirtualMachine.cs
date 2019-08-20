@@ -107,7 +107,7 @@ namespace Phantasma.VM
             Throw.IfNull(script, nameof(script));
 
             this.EntryAddress = Address.FromScript(script);
-            this.entryContext = new ScriptContext(script, "@tx");
+            this.entryContext = new ScriptContext(script, false);
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
             this.entryScript = script;

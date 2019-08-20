@@ -11,7 +11,7 @@ namespace Phantasma.Blockchain.Contracts
     {
         public readonly SmartContract Contract;
 
-        public override string Name => Contract.Name;
+        public override bool Admin => true; // TODO change this later if necessary
 
         public NativeExecutionContext(SmartContract contract)
         {
@@ -103,7 +103,7 @@ namespace Phantasma.Blockchain.Contracts
 
             stack.Push(stackObj);
 
-            var context = new ScriptContext(customContract.Script, customContract.Name);
+            var context = new ScriptContext(customContract.Script, true);
             return context.Execute(frame, stack);
         }
 

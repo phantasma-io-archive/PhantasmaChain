@@ -66,7 +66,7 @@ namespace Phantasma.Tests
 
                 var byteScript = BuildScript(scriptString);
 
-                contexts.Add(contextName, new ScriptContext(byteScript, "@test"));
+                contexts.Add(contextName, new ScriptContext(byteScript, false));
 
                 return contexts[contextName];
             }
