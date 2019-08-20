@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Phantasma.Pay\Phantasma.Pay.csproj" />
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
     <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />
+    <ProjectReference Include="..\Phantasma.RocksDB\Phantasma.RocksDB.csproj" />
   </ItemGroup>
   
 </Project>

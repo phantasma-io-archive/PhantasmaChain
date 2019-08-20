@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.API", "Phantasma.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.CodeGen", "Phantasma.CodeGen\Phantasma.CodeGen.csproj", "{42651585-A6E5-4199-B37C-F3DC7D452C36}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.RocksDB", "Phantasma.RocksDB\Phantasma.RocksDB.csproj", "{42651585-A6E5-4199-B37C-F3DC7D452C36}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
