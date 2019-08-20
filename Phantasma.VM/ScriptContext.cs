@@ -14,6 +14,8 @@ namespace Phantasma.VM
 
         public uint InstructionPointer { get; private set; }
 
+        public override string Name => "script";
+
         private ExecutionState _state;
 
         public ScriptContext(byte[] script)

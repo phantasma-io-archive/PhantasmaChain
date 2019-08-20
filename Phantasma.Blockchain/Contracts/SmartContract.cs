@@ -58,9 +58,9 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool IsWitness(Address address)
         {
-            if (address == this.Runtime.Chain.Address) // TODO this is not right...
+            if (address == this.Runtime.Chain.Address) 
             {
-                return true;
+                return this.Runtime.ContextPath != ".script.gas.token";
             }
 
             if (Runtime.Transaction == null)

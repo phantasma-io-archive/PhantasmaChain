@@ -982,7 +982,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestChainTransfer()
+        public void TestChainTransferExploit()
         {
             var owner = KeyPair.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
             var sim = new ChainSimulator(owner, 1234);
@@ -1035,11 +1035,12 @@ namespace Phantasma.Tests
                 $@"load r12, ""token""",
                 $"ctx r12, $tokenContract",
                 $"switch $tokenContract",
-                
-                $"ret"
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
+
+            var sb = new ScriptBuilder();
+            sb.AllowGas(user.Address, Address.Null, 1, 9999).EmitRaw(script).SpendGas(user.Address);
             
             var initialBalance = sim.Nexus.RootChain.GetTokenBalance(symbol, sim.Nexus.RootChainAddress);
             Assert.IsTrue(initialBalance > 10000);
@@ -1051,7 +1052,15 @@ namespace Phantasma.Tests
                     EmitRaw(script).
                     SpendGas(user.Address).
                     EndScript());
-            sim.EndBlock();
+
+            try
+            {
+                sim.EndBlock();
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(e is ChainException);
+            }
 
             var finalBalance = sim.Nexus.RootChain.GetTokenBalance(symbol, sim.Nexus.RootChainAddress);
             Assert.IsTrue(initialBalance == finalBalance);
