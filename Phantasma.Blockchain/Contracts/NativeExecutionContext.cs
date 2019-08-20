@@ -103,7 +103,7 @@ namespace Phantasma.Blockchain.Contracts
 
             stack.Push(stackObj);
 
-            var context = new ScriptContext(customContract.Script);
+            var context = new ScriptContext(customContract.Script, customContract.Name);
             return context.Execute(frame, stack);
         }
 

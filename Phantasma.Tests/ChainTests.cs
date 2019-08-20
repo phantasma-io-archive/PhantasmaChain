@@ -1038,9 +1038,6 @@ namespace Phantasma.Tests
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
-
-            var sb = new ScriptBuilder();
-            sb.AllowGas(user.Address, Address.Null, 1, 9999).EmitRaw(script).SpendGas(user.Address);
             
             var initialBalance = sim.Nexus.RootChain.GetTokenBalance(symbol, sim.Nexus.RootChainAddress);
             Assert.IsTrue(initialBalance > 10000);

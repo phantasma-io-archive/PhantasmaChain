@@ -96,7 +96,6 @@ namespace Phantasma.VM
 
         public readonly ExecutionContext entryContext;
         public ExecutionContext CurrentContext { get; private set; }
-        public string ContextPath { get; private set; }
 
         private Dictionary<string, ExecutionContext> _contextList = new Dictionary<string, ExecutionContext>();
 
@@ -108,7 +107,7 @@ namespace Phantasma.VM
             Throw.IfNull(script, nameof(script));
 
             this.EntryAddress = Address.FromScript(script);
-            this.entryContext = new ScriptContext(script);
+            this.entryContext = new ScriptContext(script, "@tx");
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
             this.entryScript = script;
@@ -188,7 +187,6 @@ namespace Phantasma.VM
         internal ExecutionState SwitchContext(ExecutionContext context, uint instructionPointer)
         {
             this.CurrentContext = context;
-            this.ContextPath += $".{context.Name}";
             PushFrame(context, instructionPointer, DefaultRegisterCount);
             return context.Execute(this.CurrentFrame, this.Stack);
         }

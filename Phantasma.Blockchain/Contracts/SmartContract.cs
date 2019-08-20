@@ -60,7 +60,23 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (address == this.Runtime.Chain.Address) 
             {
-                return this.Runtime.ContextPath != ".script.gas.token";
+                bool insideContract = false;
+
+                foreach (var frame in Runtime.frames)
+                {
+                    // TODO probably this should just always skip the first frame in the stack, instead of hardcoded token contract?
+                    if (frame.Context.Name.Equals("token", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (!frame.Context.Name.StartsWith("@"))
+                    {
+                        insideContract = true;
+                    }
+                }
+
+                return insideContract;
             }
 
             if (Runtime.Transaction == null)

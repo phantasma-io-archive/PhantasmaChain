@@ -14,14 +14,18 @@ namespace Phantasma.VM
 
         public uint InstructionPointer { get; private set; }
 
-        public override string Name => "script";
+        private string _alias;
+        public override string Name => _alias;
 
         private ExecutionState _state;
 
-        public ScriptContext(byte[] script)
+        public ScriptContext(byte[] script, string alias)
         {
+            Throw.IfNull(alias, nameof(alias));
+
             this.Script = script;
             this.InstructionPointer = 0;
+            this._alias = alias;
             this._state = ExecutionState.Running;
         }
 
