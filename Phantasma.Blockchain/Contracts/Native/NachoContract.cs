@@ -2617,24 +2617,32 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
         }
+        
+        public void DeleteWrestler(Address from, BigInteger wrestlerID)
+        {
+            Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
 
-        /*
-    public void DeleteWrestler(Address from, BigInteger wrestlerID)
-    {
-        Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
+            //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
+            //Runtime.Expect(wrestlers.Contains(wrestlerID), "not found");
 
-        var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-        Runtime.Expect(wrestlers.Contains(wrestlerID), "not found");
+            Runtime.Expect(HasWrestler(from, wrestlerID), "invalid owner");
 
-        var wrestler = GetWrestler(wrestlerID);
-        Runtime.Expect(wrestler.location != WrestlerLocation.Market, "in auction");
+            var wrestler = GetWrestler(wrestlerID);
+            Runtime.Expect(wrestler.location != WrestlerLocation.Market, "in auction");
 
-        wrestler.location = WrestlerLocation.None;
-        wrestler.owner = Address.Null;
+            wrestler.location = WrestlerLocation.None;
+            //wrestler.owner = Address.Null;
 
-        wrestlers.Remove(wrestlerID);
-    }
+            //wrestlers.Remove(wrestlerID);
 
+            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
+            ownerships.Remove(this.Storage, from, wrestlerID);
+            //token.Burn(balances, from,)
+            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.WRESTLER_SYMBOL, from, wrestlerID), "burn failed");
+
+            Runtime.Notify(EventKind.TokenBurn, from, wrestlerID);
+        }
+    
         // get how many wrestlers in an account
         //public BigInteger[] GetAccountWrestlers(Address address)
         //{
@@ -2920,7 +2928,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(NachoEvent.ItemSpent, from, itemID);
 
-            // TransferItem(from, DevelopersAddress, itemID); TODO LATER
+            // Recycle the item and send it back to our account
+            //TransferItem(from, DevelopersAddress, itemID);
+            Runtime.Nexus.TransferToken(Runtime, Constants.ITEM_SYMBOL, from, DevelopersAddress, itemID);
         }
         
         /* TODO LATER*/
@@ -4748,7 +4758,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (battle.mode == BattleMode.Pratice || battle.mode == BattleMode.Unranked)
                 {
                     account.balanceNACHOS++;
-                }*/
+                }
+                */
 
                 account.battleID = 0;
             }
