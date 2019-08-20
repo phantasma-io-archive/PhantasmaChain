@@ -12,6 +12,7 @@ namespace Phantasma.VM
 
     public abstract class ExecutionContext
     {
+        public abstract string Name { get; }
         public abstract int GetSize();
 
         public abstract ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack);

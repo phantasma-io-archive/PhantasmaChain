@@ -310,7 +310,7 @@ namespace Phantasma.Blockchain.Utils
                         }
                         else
                         {
-                            throw new Exception($"add block @ {chain.Name} failed");
+                            throw new ChainException($"add block @ {chain.Name} failed");
                         }
                     }
                 }

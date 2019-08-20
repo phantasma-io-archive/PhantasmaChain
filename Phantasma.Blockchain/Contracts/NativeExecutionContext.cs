@@ -11,6 +11,8 @@ namespace Phantasma.Blockchain.Contracts
     {
         public readonly SmartContract Contract;
 
+        public override string Name => Contract.Name;
+
         public NativeExecutionContext(SmartContract contract)
         {
             this.Contract = contract;
