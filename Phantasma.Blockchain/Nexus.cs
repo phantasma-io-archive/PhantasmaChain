@@ -907,6 +907,11 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            if (source == destination)
+            {
+                return true;
+            }
+
             var balances = new BalanceSheet(symbol);
             if (!balances.Subtract(runtimeVM.ChangeSet, source, amount))
             {
@@ -969,6 +974,11 @@ namespace Phantasma.Blockchain
             if (tokenID <= 0)
             {
                 return false;
+            }
+
+            if (source == destination)
+            {
+                return true;
             }
 
             var ownerships = new OwnershipSheet(symbol);
