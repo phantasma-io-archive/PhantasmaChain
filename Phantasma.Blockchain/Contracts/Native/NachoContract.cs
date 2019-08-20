@@ -1974,7 +1974,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger vipPoints;
         public Faction faction;
 
-        //public BigInteger avatarID;
+        public BigInteger avatarID;
     }
 
     public struct NachoReferral
@@ -3069,43 +3069,45 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #region AVATAR API
         // TODO when player sells an equipped avatar, the avatar must revert back to default avatar!
-        //public void UseAvatar(Address from, BigInteger itemID)
-        //{
-        //    var kind = Formulas.GetItemKind(itemID);
-        //    var category = Rules.GetItemCategory(kind);
-        //    Runtime.Expect(category == ItemCategory.Avatar, "not avatar");
+        public void UseAvatar(Address from, BigInteger itemID)
+        {
+            // TODO
+            //var kind = Formulas.GetItemKind(itemID);
+            //var category = Rules.GetItemCategory(kind);
+            //Runtime.Expect(category == ItemCategory.Avatar, "not avatar");
 
-        //    Runtime.Expect(HasItem(from, itemID), "invalid item");
+            Runtime.Expect(HasItem(from, itemID), "invalid item");
 
-        //    var item = GetItem(itemID);
+            var item = GetItem(itemID);
 
-        //    if (item.owner == Address.Null)
-        //    {
-        //        item.owner = from;
-        //    }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
-        //    Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-        //    Runtime.Expect(item.owner == from, "invalid owner");
-        //    Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+            Runtime.Expect(item.location == ItemLocation.None, "invalid location");
+            //Runtime.Expect(item.owner == from, "invalid owner");
+            Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-        //    var account = GetAccount(from);
-        //    account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
-        //    SetAccount(from, account);
+            var account = GetAccount(from);
+            account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
+            SetAccount(from, account);
 
-        //    Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
-        //}
+            //Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
+            Runtime.Notify(NachoEvent.SelectAvatar, from, account.avatarID);
+        }
 
-        // todo confirmar se pode ficar com bigint. Com int dava erro a converter 
-        //public void UseDefaultAvatar(Address from, BigInteger avatarID)
-        //{
-        //    Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
+        public void UseDefaultAvatar(Address from, BigInteger avatarID)
+        {
+            Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
 
-        //    var account = GetAccount(from);
-        //    account.avatarID = avatarID;
-        //    SetAccount(from, account);
+            var account = GetAccount(from);
+            account.avatarID = avatarID;
+            SetAccount(from, account);
 
-        //    Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
-        //}
+            //Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
+            Runtime.Notify(NachoEvent.SelectAvatar, from, avatarID);
+        }
         #endregion
 
         #region WRESTLER API
@@ -3123,7 +3125,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
             return CreateWrestler(to, genes, experience, wrapped);
         }
-
+        
         private BigInteger CreateWrestler(Address to, byte[] genes, uint experience, bool wrapped)
         {
             var wrestlers = Storage.FindMapForContract<BigInteger, NachoWrestler>(GLOBAL_WRESTLERS_LIST);
