@@ -1975,7 +1975,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger vipPoints;
         public Faction faction;
 
-        public BigInteger avatarID;
+        //public BigInteger avatarID;
     }
 
     public struct NachoReferral
@@ -3070,6 +3070,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #region AVATAR API
         // TODO when player sells an equipped avatar, the avatar must revert back to default avatar!
+        /*
         public void UseAvatar(Address from, BigInteger itemID)
         {
             // TODO -> Avatar deve ser um NFT novo e não um item
@@ -3109,6 +3110,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
             Runtime.Notify(NachoEvent.SelectAvatar, from, avatarID);
         }
+        */
         #endregion
 
         #region WRESTLER API
