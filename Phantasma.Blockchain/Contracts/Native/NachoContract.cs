@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
+using System.Text.RegularExpressions;
 using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
@@ -1974,7 +1975,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger vipPoints;
         public Faction faction;
 
-        //public BigInteger avatarID;
+        public BigInteger avatarID;
     }
 
     public struct NachoReferral
@@ -3069,43 +3070,45 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         #region AVATAR API
         // TODO when player sells an equipped avatar, the avatar must revert back to default avatar!
-        //public void UseAvatar(Address from, BigInteger itemID)
-        //{
-        //    var kind = Formulas.GetItemKind(itemID);
-        //    var category = Rules.GetItemCategory(kind);
-        //    Runtime.Expect(category == ItemCategory.Avatar, "not avatar");
+        public void UseAvatar(Address from, BigInteger itemID)
+        {
+            // TODO -> Avatar deve ser um NFT novo e não um item
+            //var kind = Formulas.GetItemKind(itemID);
+            //var category = Rules.GetItemCategory(kind);
+            //Runtime.Expect(category == ItemCategory.Avatar, "not avatar");
 
-        //    Runtime.Expect(HasItem(from, itemID), "invalid item");
+            Runtime.Expect(HasItem(from, itemID), "invalid item");
 
-        //    var item = GetItem(itemID);
+            var item = GetItem(itemID);
 
-        //    if (item.owner == Address.Null)
-        //    {
-        //        item.owner = from;
-        //    }
+            //if (item.owner == Address.Null)
+            //{
+            //    item.owner = from;
+            //}
 
-        //    Runtime.Expect(item.location == ItemLocation.None, "invalid location");
-        //    Runtime.Expect(item.owner == from, "invalid owner");
-        //    Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
+            Runtime.Expect(item.location == ItemLocation.None, "invalid location");
+            //Runtime.Expect(item.owner == from, "invalid owner");
+            Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-        //    var account = GetAccount(from);
-        //    account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
-        //    SetAccount(from, account);
+            var account = GetAccount(from);
+            account.avatarID = new BigInteger(Formulas.GetAvatarID(itemID));
+            SetAccount(from, account);
 
-        //    Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
-        //}
+            //Runtime.Notify(EventKind.SelectAvatar, from, account.avatarID);
+            Runtime.Notify(NachoEvent.SelectAvatar, from, account.avatarID);
+        }
 
-        // todo confirmar se pode ficar com bigint. Com int dava erro a converter 
-        //public void UseDefaultAvatar(Address from, BigInteger avatarID)
-        //{
-        //    Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
+        public void UseDefaultAvatar(Address from, BigInteger avatarID)
+        {
+            Runtime.Expect(avatarID <= Constants.DEFAULT_AVATARS, "invalid avatar ID");
 
-        //    var account = GetAccount(from);
-        //    account.avatarID = avatarID;
-        //    SetAccount(from, account);
+            var account = GetAccount(from);
+            account.avatarID = avatarID;
+            SetAccount(from, account);
 
-        //    Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
-        //}
+            //Runtime.Notify(EventKind.SelectAvatar, from, avatarID);
+            Runtime.Notify(NachoEvent.SelectAvatar, from, avatarID);
+        }
         #endregion
 
         #region WRESTLER API
@@ -3123,7 +3126,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
             return CreateWrestler(to, genes, experience, wrapped);
         }
-
+        
         private BigInteger CreateWrestler(Address to, byte[] genes, uint experience, bool wrapped)
         {
             var wrestlers = Storage.FindMapForContract<BigInteger, NachoWrestler>(GLOBAL_WRESTLERS_LIST);
@@ -3162,10 +3165,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            /* TODO LATER
-            var nameResult = NameGenerator.ValidateName(name);
+            //var nameResult = NameGenerator.ValidateName(name);
+            var nameResult = ValidateName(name);
             Runtime.Expect(nameResult == EWRESTLER_NAME_ERRORS.NONE, nameResult.ToString().ToLower().Replace("_", " "));
-            */
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "wrestler invalid");
 
@@ -8979,5 +8981,109 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             return 1 * 256 + 9;
         }
+
+        #region Name Generator
+
+        public enum EWRESTLER_NAME_ERRORS
+        {
+            NONE,
+            EMPTY_NAME,
+            NAME_TOO_SHORT,
+            NAME_TOO_BIG,
+            INVALID_CHARACTERS,
+            FORBIDDEN_NAME
+        }
+
+        public const int MIN_NAME_CHAR_LENGTH = 4;
+        public const int MAX_NAME_CHAR_LENGTH = 15;
+
+        private Regex[] nameFilters = null;
+
+        private static string[] bannedPatterns = new string[]
+        {
+            "ASSHOLE", "BASTARD", "*BITCH", "BLOWJOB", "BOLLOCKS", "COCKSUCK", "CUMSHOT", "*CUNT*",
+            "DILDO", "*FAG*", "*FUCK*", "*HOMO*", "JESUSSUCKS", "MAST?RBATION", "MILF", "*NIGGA*",
+            "*NIGGER*", "PAEDO*", "PEDO*", "*PENIS", "*PIMP*", "PUSSY", "RIMJOB", "SEX", "SHIT*",
+            "*SLUT*", "SPASTIC", "TWAT", "VULVA", "WANK", "XXX", "9*11", "ARSE", "BASTARD", "BITCH",
+            "B1TCH", "CHINK", "CREAMPIE", "DAGO", "*DICK*", "*D1CK*", "DIRTY", "DOUCHE", "DUNG",
+            "DYKE", "FCK", "FECES", "HOOTERS", "HUMP", "JIGAB", "LESBIAN", "*LESBO*", "MORNINGWOOD",
+            "*PISS*", "PUSSIES", "*PUSSY*", "RECTUM", "RETARD", "SACRAMENT", "*SPIC*", "STUPID",
+            "TWAT", "VAGIN*", "*WEED*", "WHOR*", "GLAND", "*FICK*", "*F1CK*", "F!CK", "FOTZE", "GEIL",
+            "HITLER", "HOLOCAUST", "HURENSOHN", "KACKBRATZE", "MISSGEBURT", "MUSCHI", "*NAZI*",
+            "*NEGER*", "NUTTE", "SCHEISS", "SCHLAMPE", "SCHWUCHTEL", "SIEGHEIL", "STRICHER", "TITTEN",
+            "VERDAMMT", "WIXER", "ABORTUS", "ACHTERLIJK", "KANKER", "LULHANNES", "*NEGER*", "BOLLERA",
+            "*CABRON*", "CAPULL?", "CHOCHO", "COJONES", "FOLLAR", "*JODER*",
+        };
+
+        private EWRESTLER_NAME_ERRORS ValidateName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return EWRESTLER_NAME_ERRORS.EMPTY_NAME;
+
+            if (name.Length < MIN_NAME_CHAR_LENGTH) return EWRESTLER_NAME_ERRORS.NAME_TOO_SHORT;
+
+            if (name.Length > MAX_NAME_CHAR_LENGTH) return EWRESTLER_NAME_ERRORS.NAME_TOO_BIG;
+
+            var bytes = Encoding.UTF8.GetBytes(name);
+            var index = 0;
+
+            while (index < bytes.Length)
+            {
+                var prev = index > 0 ? bytes[index - 1] : (byte)0;
+                var c = bytes[index];
+                index++;
+
+                // can contain spaces but cant' start or end with a space and cant have a space followed by another space
+                if (c == 32 && index > 0 && index < bytes.Length - 1 && prev != 32) continue;
+
+                // lowercase letters
+                if (c >= 97 && c <= 122) continue;
+
+                // uppercase letters
+                if (c >= 65 && c <= 90) continue;
+
+                // hyphen
+                if (c == 45) continue;
+
+                // dot
+                if (c == 46) continue;
+
+                return EWRESTLER_NAME_ERRORS.INVALID_CHARACTERS;
+            }
+
+            if (IsBanned(name)) return EWRESTLER_NAME_ERRORS.FORBIDDEN_NAME;
+
+            return EWRESTLER_NAME_ERRORS.NONE;
+        }
+
+        private bool IsBanned(string name)
+        {
+            if (nameFilters == null)
+            {
+                nameFilters = new Regex[bannedPatterns.Length];
+                for (int i = 0; i < nameFilters.Length; i++)
+                {
+                    var pattern = WildcardToRegex(bannedPatterns[i]);
+                    nameFilters[i] = new Regex(pattern);
+                }
+            }
+
+            name = name.ToUpperInvariant();
+
+            foreach (var filter in nameFilters)
+            {
+                if (filter.IsMatch(name)) return true;
+            }
+
+            return false;
+        }
+
+        private string WildcardToRegex(string pattern)
+        {
+            return "^" + Regex.Escape(pattern).
+                       Replace("\\*", ".*").
+                       Replace("\\?", ".") + "$";
+        }
+
+        #endregion
     }
 }
