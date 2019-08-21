@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var owner = ownerships.GetOwner(this.Storage, tokenID);
             Runtime.Expect(owner == from, "invalid owner");
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, from, Runtime.Chain.Address, tokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, from, this.Address, tokenID), "transfer failed");
 
             var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _auctionIDs.Add(auctionID);
 
             Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price });
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.BaseSymbol, value = tokenID });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = auction.BaseSymbol, value = tokenID });
         }
 
         public void BuyToken(Address from, string symbol, BigInteger tokenID)
@@ -94,7 +94,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var ownerships = new OwnershipSheet(baseToken.Symbol);
             var owner = ownerships.GetOwner(this.Storage, auction.TokenID);
-            Runtime.Expect(owner == Runtime.Chain.Address, "invalid owner");
+            Runtime.Expect(owner == this.Address, "invalid owner");
 
             if (auction.Creator != from)
             {
@@ -109,7 +109,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, quoteToken.Symbol, from, auction.Creator, auction.Price), "payment failed");
             }
 
-            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, Runtime.Chain.Address, from, auction.TokenID), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, this.Address, from, auction.TokenID), "transfer failed");
 
             _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);
@@ -120,13 +120,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.QuoteSymbol, value = auction.Price });
-                Runtime.Notify(EventKind.TokenReceive, auction.Creator, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.QuoteSymbol, value = auction.Price });
+                Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = auction.QuoteSymbol, value = auction.Price });
+                Runtime.Notify(EventKind.TokenReceive, auction.Creator, new TokenEventData() { chainAddress = this.Address, symbol = auction.QuoteSymbol, value = auction.Price });
 
                 Runtime.Notify(EventKind.OrderFilled, from, new MarketEventData() { ID = auction.TokenID, BaseSymbol = auction.BaseSymbol, QuoteSymbol = auction.QuoteSymbol, Price = auction.Price });
             }
 
-            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, symbol = auction.BaseSymbol, value = auction.TokenID });
+            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Address, symbol = auction.BaseSymbol, value = auction.TokenID });
         }
 
         public MarketAuction[] GetAuctions()
