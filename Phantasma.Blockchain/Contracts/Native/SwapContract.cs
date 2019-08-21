@@ -1,10 +1,15 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
-using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public struct SwapPair
+    {
+        public string Symbol;
+        public BigInteger Value;
+    }
+
     public sealed class SwapContract : SmartContract
     {
         public override string Name => "swap";
@@ -24,8 +29,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
             Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
 
-            var fromBalance = GetAvailable(fromSymbol);
-            var toBalance = GetAvailable(toSymbol);
+            var fromBalance = GetAvailableForSymbol(fromSymbol);
+            var toBalance = GetAvailableForSymbol(toSymbol);
 
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
@@ -58,7 +63,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _total += amount;
 
-            var balance = GetAvailable(symbol);
+            var balance = GetAvailableForSymbol(symbol);
             balance += amount;
             _balances.Set<string, BigInteger>(symbol, balance);
 
@@ -66,9 +71,67 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = symbol, value = amount });
         }
 
-        private BigInteger GetAvailable(string symbol)
+        private BigInteger GetAvailableForSymbol(string symbol)
         {
             return _balances.ContainsKey<string>(symbol) ? _balances.Get<string, BigInteger>(symbol) : 0;
+        }
+
+        // TODO optimize this method without using .NET native stuff
+        public SwapPair[] GetAvailable()
+        {
+            var resultSize = (int)_balances.Count();
+
+            var result = new SwapPair[resultSize];
+            int index = 0;
+            foreach (var symbol in Runtime.Nexus.Tokens)
+            {
+                if (_balances.ContainsKey<string>(symbol))
+                {
+                    var amount = _balances.Get<string, BigInteger>(symbol);
+                    result[index] = new SwapPair()
+                    {
+                        Symbol = symbol,
+                        Value = amount
+                    };
+
+                    index++;
+                }
+            }
+
+            return result;
+        }
+
+        // TODO optimize this method without using .NET native stuff
+        public SwapPair[] GetRates(string symbol, BigInteger amount)
+        {
+            int resultSize = 0;
+            foreach (var toSymbol in Runtime.Nexus.Tokens)
+            {
+                var rate = GetRate(symbol, toSymbol, amount);
+                if (rate > 0)
+                {
+                    resultSize++;
+                }
+            }
+
+            var result = new SwapPair[resultSize];
+            int index = 0;
+            foreach (var toSymbol in Runtime.Nexus.Tokens)
+            {
+                var rate = GetRate(symbol, toSymbol, amount);
+                if (rate > 0)
+                {
+                    result[index] = new SwapPair()
+                    {
+                        Symbol = toSymbol,
+                        Value = rate
+                    };
+
+                    index++;
+                }
+            }
+
+            return result;
         }
 
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
@@ -86,8 +149,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var total = GetRate(fromSymbol, toSymbol, amount);
 
-            var fromBalance = GetAvailable(fromSymbol);
-            var toBalance = GetAvailable(toSymbol);
+            var fromBalance = GetAvailableForSymbol(fromSymbol);
+            var toBalance = GetAvailableForSymbol(toSymbol);
 
             Runtime.Expect(fromBalance > 0, "insufficient balance in pot");
 
