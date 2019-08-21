@@ -6167,11 +6167,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                 BigInteger potAmount;
                 if (battle.mode == BattleMode.Ranked)
                 {
-                    // TODO -> Ranked battle fees do not go to the pot anymore ? -> No more fees from bets
-                    // TODO send nachos from developers address to the pot Constants.RANKED_BATTLE_POT_GIVEAWAY
+                    // Ranked battle : No more fees from bets to the pot
+                    //potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
+                    //winnerAmount -= potAmount;
 
-                    potAmount = winnerAmount;// TODO fix (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
-                    winnerAmount -= potAmount;
+                    potAmount = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_POT_GIVEAWAY, Constants.NACHO_TOKEN_DECIMALS); 
                 }
                 else
                 {
@@ -6203,16 +6203,22 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (winnerSide != -1)
                 {
-                    // TODO both players now receive prizes. Check the bet spent transfers and notifications and both prizes
                     if (potAmount > 0)
                     {
                         AddToPot(battle.sides[winnerSide].address, potAmount);
                     }
 
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    if (winnerAmount > 0)
+                    {
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    }
+
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
+                    if (loserAmount > 0)
+                    {
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
+                    }
 
                     var other = 1 - winnerSide;
 
@@ -6220,6 +6226,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = winnerAmount });
                     Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = loserAmount });
 
+                    // TODO check this: No SpendBet já retiramos os tokens do jogador para entrar no jogo. Aqui estamos a retirar outra vez no fim do jogo... ? Confirmar isto.
                     // Old spend bet
                     //Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);
                     Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = battle.bet });
