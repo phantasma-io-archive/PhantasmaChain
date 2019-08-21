@@ -936,7 +936,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const float RANKED_BATTLE_ENTRY_COST       = 5;
         public const float RANKED_BATTLE_WINNER_PRIZE     = 10;
-        public const float RANKED_BATTLE_DRAW_PRIZE       = 6;
+        public const float RANKED_BATTLE_DRAW_PRIZE       = 5;
         public const float RANKED_BATTLE_LOSER_PRIZE      = 2;
 
         public const float UNRANKED_BATTLE_WINNER_PRIZE   = 5;
@@ -4579,7 +4579,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private BigInteger GetRankedBet()
         {
-            return new BigInteger(2); // GetConfig().rankedFee; TODO fix
+            //return GetConfig().rankedFee;
+            return UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_ENTRY_COST, Constants.NACHO_TOKEN_DECIMALS);
         }
 
         public void JoinPraticeQueue(Address from, BigInteger wrestlerID, PraticeLevel level)
