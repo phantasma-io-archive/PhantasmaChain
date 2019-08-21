@@ -934,10 +934,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int DEFAULT_AVATARS = 10;
 
-        public const float RANKED_BATTLE_ENTRY_COST       = 5;
-        public const float RANKED_BATTLE_WINNER_PRIZE     = 10;
-        public const float RANKED_BATTLE_DRAW_PRIZE       = 5;
-        public const float RANKED_BATTLE_LOSER_PRIZE      = 2;
+        public const float RANKED_BATTLE_ENTRY_COST     = 5;
+        public const float RANKED_BATTLE_WINNER_PRIZE   = 10;
+        public const float RANKED_BATTLE_DRAW_PRIZE     = 5;
+        public const float RANKED_BATTLE_LOSER_PRIZE    = 2;
+        public const float RANKED_BATTLE_POT_GIVEAWAY   = 3;
 
         public const float UNRANKED_BATTLE_WINNER_PRIZE   = 5;
         public const float UNRANKED_BATTLE_DRAW_PRIZE     = 2.5f;
@@ -1334,7 +1335,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int DEFAULT_ELO = 1200;
 
         // percentage distributions for pot in ranked mode
-        public static readonly int[] POT_PERCENTAGES = new int[]
+        public static readonly int[] RANKED_POT_PERCENTAGES = new int[]
         {
             50,
             20,
@@ -4557,11 +4558,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(bet == GetRankedBet(), "invalid bet");
                 Runtime.Expect(account.queueBet == bet, "bets differ");
 
-                var fee = new BigInteger(5); // (bet * Constants.POT_FEE_PERCENTAGE) / 100; TODO fix
-                var split = bet - fee;
+                //var fee = new BigInteger(5); // (bet * Constants.POT_FEE_PERCENTAGE) / 100; TODO fix
+                //var split = bet - fee;
 
-                Runtime.Expect(SpendFromAccountBalance(from, split, 0), "balance failed for bet");
-                Runtime.Expect(SpendFromAccountBalance(from, fee, 0), "balance failed for fee");
+                //Runtime.Expect(SpendFromAccountBalance(from, split, 0), "balance failed for bet");
+                //Runtime.Expect(SpendFromAccountBalance(from, fee, 0), "balance failed for fee");
+
+                Runtime.Expect(SpendFromAccountBalance(from, bet, 0), "balance failed for bet");
             }
             else
             {
@@ -5993,10 +5996,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 winnerCount = 0;
             }
-            else
-            if (winnerCount > Constants.POT_PERCENTAGES.Length)
+            else if (winnerCount > Constants.RANKED_POT_PERCENTAGES.Length)
             {
-                winnerCount = Constants.POT_PERCENTAGES.Length;
+                winnerCount = Constants.RANKED_POT_PERCENTAGES.Length;
             }
 
             var winners = new Address[winnerCount];
@@ -6088,7 +6090,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (int i = 0; i < _pot.lastWinners.Length; i++)
             {
                 var target = _pot.lastWinners[i];
-                var amount = (_pot.lastBalance * Constants.POT_PERCENTAGES[i]) / 100;
+                var amount = (_pot.lastBalance * Constants.RANKED_POT_PERCENTAGES[i]) / 100;
                 distributedTotal += amount;
 
                 var account = GetAccount(target);
@@ -6108,6 +6110,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _pot.claimed = true;
 
             //Runtime.Notify(EventKind.Pot, from, ???);
+            Runtime.Notify(NachoEvent.PotPrize, from, distributedTotal); // TODO qual o valor que mandamos aqui? Isto vai para o user que fez o claim, certo? Talvez fique melhor enviar o valor que este jogador recebeu no pot
         }
 
         private void TerminateMatchWithResult(BigInteger battleID, NachoBattle battle, BattleState result)
@@ -6152,6 +6155,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         winnerAmount    = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_WINNER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
                         loserAmount     = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_LOSER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
                         drawAmount      = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_DRAW_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+
                         break;
                     case BattleMode.Versus:
                         winnerAmount    = battle.bet * 2;
@@ -6160,10 +6164,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                         break;
                 }
 
-                // TODO -> Ranked battle fees do not go to the pot anymore ?
                 BigInteger potAmount;
                 if (battle.mode == BattleMode.Ranked)
                 {
+                    // TODO -> Ranked battle fees do not go to the pot anymore ? -> No more fees from bets
+                    // TODO send nachos from developers address to the pot Constants.RANKED_BATTLE_POT_GIVEAWAY
+
                     potAmount = winnerAmount;// TODO fix (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
                     winnerAmount -= potAmount;
                 }
