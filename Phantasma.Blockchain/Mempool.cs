@@ -38,6 +38,8 @@ namespace Phantasma.Blockchain
         public static readonly int MinimumBlockTime = 2; // in seconds
         public static readonly int MaxTransactionsPerBlock = 5000;
 
+        private OracleReaderDelegate _oracleReader;
+
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private HashSet<Hash> _pendingSet = new HashSet<Hash>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
@@ -61,11 +63,12 @@ namespace Phantasma.Blockchain
 
         public readonly int BlockTime; // in seconds
 
-        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime)
+        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime, OracleReaderDelegate oracleReader)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 
             this._validatorKeys = validatorKeys;
+            this._oracleReader = oracleReader;
             this.Nexus = nexus;
             this.BlockTime = blockTime;
         }
@@ -266,33 +269,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        // TODO add
-        private byte[] ReadFromOracle(/*Hash hash, */string url)
-        {
-            var interopTag = "interop://";
-            if (url.StartsWith(interopTag))
-            {
-                url = url.Substring(interopTag.Length);
-                var args = url.Split('/');
-
-                var chainName = args[0];
-                args = args.Skip(1).ToArray();
-
-                switch (chainName)
-                {
-                    case "neo":
-                        return OracleUtils.ReadNEO(args);
-
-                    default:
-                        throw new OracleException("invalid oracle chain: "+chainName);
-                }                
-            }
-            else
-            {
-                throw new OracleException("unknown oracle protocol");
-            }
-        }
-
         private void MintBlock(List<Transaction> transactions, Chain chain)
         {
             var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
@@ -305,7 +281,7 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    chain.AddBlock(block, transactions, ReadFromOracle);
+                    chain.AddBlock(block, transactions, _oracleReader);
                 }
                 catch (InvalidTransactionException e)
                 {

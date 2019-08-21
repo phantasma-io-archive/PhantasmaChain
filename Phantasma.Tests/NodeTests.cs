@@ -123,6 +123,11 @@ namespace Phantasma.Tests
             return nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, address);
         }
 
+        private byte[] OracleCallback(string url)
+        {
+            throw new NotImplementedException();
+        }
+
         private void InitMainNode()
         {
             var log = new ConsoleLogger();
@@ -137,7 +142,7 @@ namespace Phantasma.Tests
             nexus = simulator.Nexus;
 
             // mempool setup
-            mempool = new Mempool(node_keys, nexus, Mempool.MinimumBlockTime);
+            mempool = new Mempool(node_keys, nexus, Mempool.MinimumBlockTime, OracleCallback);
             mempool.Start();
 
             // node setup
