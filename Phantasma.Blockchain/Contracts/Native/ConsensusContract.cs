@@ -126,6 +126,26 @@ namespace Phantasma.Blockchain.Contracts.Native
             return address;
         }
 
+        public void Migrate(Address from, Address to)
+        {
+            Runtime.Expect(IsWitness(from), "witness failed");
+
+            var index = GetIndexOfValidator(from);
+            Runtime.Expect(index >= 0, "not a validator");
+
+            var transferResult = (bool)Runtime.CallContext("energy", "Migrate", from, to);
+            Runtime.Expect(transferResult, "stake transfer failed");
+
+            _validatorList.Replace<Address>(index, to);
+
+            var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
+            _validatorMap.Remove<Address>(from);
+
+            entry.address = to;
+            entry.lastActivity = Runtime.Time;
+            _validatorMap.Set<Address, ValidatorEntry>(to, entry);
+        }
+
         public void Validate(Address from)
         {
             Runtime.Expect(IsValidator(from), "validator failed");

@@ -158,7 +158,7 @@ namespace Phantasma.Tests
             var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
@@ -256,7 +256,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(eventMessage == message);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
@@ -336,7 +336,7 @@ namespace Phantasma.Tests
             var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
@@ -441,7 +441,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(eventMessage == message);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);

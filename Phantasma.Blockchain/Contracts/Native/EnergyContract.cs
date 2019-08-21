@@ -145,6 +145,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             return individualAmount;
         }
 
+        // migrates the full stake from one address to other
+        public void Migrate(Address from, Address to)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            throw new NotImplementedException();
+        }
+
         public void MasterClaim(Address from)
         {
             Runtime.Expect(_masterClaimCount < 12 * 4, "no more claims available"); // 4 years

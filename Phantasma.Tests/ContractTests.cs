@@ -233,7 +233,7 @@ namespace Phantasma.Tests
             var stakeReduction = initialStakedAmount - MinimumValidStake;
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -255,7 +255,7 @@ namespace Phantasma.Tests
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
             stakeReduction = stakedAmount * 2;
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -297,7 +297,7 @@ namespace Phantasma.Tests
             stakeReduction = initialStakedAmount;
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -481,7 +481,7 @@ namespace Phantasma.Tests
             //Perform another claim call: should fail, not enough time passed between claim calls
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -773,7 +773,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Add main account as proxy to itself: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -795,7 +795,7 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, proxyA.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -862,7 +862,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Add 101% proxy: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -890,7 +890,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Re-add proxy A: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -911,7 +911,7 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, proxyB.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -972,7 +972,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Try to remove proxy B again: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -987,7 +987,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Add 76% proxy B: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -1034,7 +1034,7 @@ namespace Phantasma.Tests
 
             var startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -1052,7 +1052,7 @@ namespace Phantasma.Tests
             startingMainFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
             startingProxyFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, proxyA.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(proxyA, () =>
@@ -1116,7 +1116,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Try to claim from proxy A: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(proxyA, () =>
@@ -1128,7 +1128,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Try to claim from main: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -1143,7 +1143,7 @@ namespace Phantasma.Tests
             simulator.TimeSkipDays(1);
 
             //Try to claim from proxy A: should fail
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(proxyA, () =>
@@ -1384,7 +1384,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
             var initialStake = FuelToStake(1) - 1;
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -1402,7 +1402,7 @@ namespace Phantasma.Tests
 
             //----------
             //Try to stake an amount higher than the account's balance
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -1500,7 +1500,7 @@ namespace Phantasma.Tests
             //-----------
             //A attempts master claim -> verify failure: not a master
             var startingBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUserA, () =>
@@ -1532,7 +1532,7 @@ namespace Phantasma.Tests
             //A attempts master claim -> verify failure: didn't wait until the 1st of the month after genesis block
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUserA, () =>
@@ -1553,7 +1553,7 @@ namespace Phantasma.Tests
 
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUserA, () =>
@@ -1592,7 +1592,7 @@ namespace Phantasma.Tests
             //A attempts master claim -> verify failure: not enough time passed since last claim
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUserA, () =>
@@ -1643,7 +1643,7 @@ namespace Phantasma.Tests
             //A attempts master claim -> verify failure, because he lost master status once during this reward period
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUserA, () =>
