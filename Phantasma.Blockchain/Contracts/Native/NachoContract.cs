@@ -929,8 +929,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int LOOTBOX_SALE_RANKED_POT_FEE = 10; // 10%
 
-        public const uint NEO_TICKER = 1376;
-        public const uint SOUL_TICKER = 2827;
+        //public const uint NEO_TICKER = 1376;
+        //public const uint SOUL_TICKER = 2827;
 
         public const int DEFAULT_AVATARS = 10;
 
@@ -2000,7 +2000,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger currentBalance;
         public BigInteger lastBalance;
         public Address[] lastWinners;
-        public Timestamp timestamp;
+        public Timestamp startTime;
         public bool claimed;
         public NachoPotEntry[] entries;
     }
@@ -5960,13 +5960,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 lastBalance = 0,
                 entries = new NachoPotEntry[0],
                 lastWinners = new Address[0],
-                timestamp = GetCurrentTime(),
+                startTime = GetCurrentTime(),
             };
         }
 
         public NachoPot GetPot()
         {
-            if (_pot.timestamp == 0)
+            if (_pot.startTime == 0)
             {
                 InitPot();
             }
@@ -5976,7 +5976,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void ClosePot()
         {
-            var diff = GetCurrentTime() - _pot.timestamp;
+            var diff = GetCurrentTime() - _pot.startTime;
             if (diff < Constants.SECONDS_PER_DAY)
             {
                 return;
@@ -6019,7 +6019,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             _pot.claimed = false;
-            _pot.timestamp = GetCurrentTime();
+            _pot.startTime = GetCurrentTime();
         }
 
         private void AddToPot(Address address, BigInteger amount)
@@ -6029,7 +6029,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return;
             }
 
-            if (_pot.timestamp == 0)
+            if (_pot.startTime == 0)
             {
                 InitPot();
             }
@@ -6072,7 +6072,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            if (_pot.timestamp == 0)
+            if (_pot.startTime == 0)
             {
                 InitPot();
             }
