@@ -1026,6 +1026,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             //{ ELOOT_BOX_TYPE.AVATAR,    10 },
         };
 
+        public static readonly Dictionary<Rarity, int> LOOT_BOX_ASSET_RARITY_CHANCE = new Dictionary<Rarity, int>()
+        {
+            { Rarity.Common,    35 },
+            { Rarity.Uncommon,  30 },
+            { Rarity.Rare,      20 },
+            { Rarity.Epic,      12 },
+            { Rarity.Legendary, 3 }
+        };
+
         public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
         {
             { 0,    1 },
@@ -1335,19 +1344,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const int DEFAULT_ELO = 1200;
 
         // percentage distributions for pot in ranked mode
-        public static readonly int[] RANKED_POT_PERCENTAGES = new int[]
-        {
-            50,
-            20,
-            10,
-            5,
-            5,
-            2,
-            2,
-            2,
-            2,
-            2
-        };
+        public static readonly int[] RANKED_POT_PERCENTAGES = new int[] { 50, 20, 10, 5, 5, 2, 2, 2, 2, 2 };
 
         public static readonly Dictionary<LuchadorHoroscope, byte[]> horoscopeStats = new Dictionary<LuchadorHoroscope, byte[]>()
         {
