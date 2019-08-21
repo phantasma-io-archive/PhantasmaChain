@@ -62,8 +62,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             balance += amount;
             _balances.Set<string, BigInteger>(symbol, balance);
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, Runtime.Chain.Address, amount), "tokens transfer failed");
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = symbol, value = amount });
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "tokens transfer failed");
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = symbol, value = amount });
         }
 
         private BigInteger GetAvailable(string symbol)
@@ -97,10 +97,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var maxAvailable = toBalance / limiter; 
             Runtime.Expect(total < maxAvailable, "balance limit reached"); // here should be < instead of <= because we can take more than half of the pot at once
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, fromSymbol, from, Runtime.Chain.Address, amount), "source tokens transfer failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, toSymbol, Runtime.Chain.Address, from, total), "target tokens transfer failed");
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = fromSymbol, value = amount });
-            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = toSymbol, value = total });
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, fromSymbol, from, this.Address, amount), "source tokens transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, toSymbol, this.Address, from, total), "target tokens transfer failed");
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });
+            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Address, symbol = toSymbol, value = total });
         }
     }
 }

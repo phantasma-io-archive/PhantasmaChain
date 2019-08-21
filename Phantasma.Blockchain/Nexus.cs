@@ -862,6 +862,11 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            if (!DestroyNFT(symbol, tokenID))
+            {
+                return false;
+            }
+
             var ownerships = new OwnershipSheet(symbol);
             if (!ownerships.Remove(runtimeVM.ChangeSet, target, tokenID))
             {

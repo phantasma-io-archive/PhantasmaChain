@@ -172,8 +172,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, symbol, from, tokenID), "burn failed");
 
-            Runtime.Expect(this.Runtime.Nexus.DestroyNFT(symbol, tokenID), "destroy token failed");
-
             Runtime.Expect(this.Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, from, nft.Value), "energy claim failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
