@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var key = MakeKey(from, channelName);
             Runtime.Expect(!_channelMap.ContainsKey<string>(key), "channel already open");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, Runtime.Chain.Address, amount), "insuficient balance");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, this.Address, amount), "insuficient balance");
 
             var channel = new RelayChannel()
             {
@@ -182,7 +182,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // TODO create auto address 
 
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = channel.symbol });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = channel.symbol });
             Runtime.Notify(EventKind.ChannelOpen, from, channelName);
         }
 
@@ -207,12 +207,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             BigInteger balance = _balances.ContainsKey(from) ? _balances.Get<Address, BigInteger>(from) : 0;
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, Runtime.Chain.Address, amount), "insuficient balance");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, this.Address, amount), "insuficient balance");
             balance += amount;
             Runtime.Expect(balance >= 0, "invalid balance");
             _balances.Set<Address, BigInteger>(from, balance);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
         }
 
         public void UpdateChannel(RelayReceipt receipt)
@@ -241,12 +241,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             var payout = expectedFee / 2;
 
             // send half to the chain
-            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, Runtime.Chain.Address, payout);
-            Runtime.Notify(EventKind.TokenReceive, Runtime.Chain.Address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
+            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, this.Address, payout);
+            Runtime.Notify(EventKind.TokenReceive, this.Address, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
 
             // send half to the receiver
-            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, receipt.message.receiver, Runtime.Chain.Address, payout);
-            Runtime.Notify(EventKind.TokenReceive, receipt.message.receiver, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
+            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, receipt.message.receiver, this.Address, payout);
+            Runtime.Notify(EventKind.TokenReceive, receipt.message.receiver, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
         }
     }
 }

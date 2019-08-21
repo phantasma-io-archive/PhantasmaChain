@@ -27,11 +27,26 @@ namespace Phantasma.Blockchain.Contracts
 
         private Dictionary<string, MethodInfo> _methodTable = new Dictionary<string, MethodInfo>();
 
+        private Address _address;
+        public Address Address { get
+            {
+                if (_address == Address.Null)
+                {
+                    var publicKey = Name.Sha256();
+                   _address = new Address(publicKey);
+                }
+
+                return _address;
+            }
+        }
+
         public SmartContract()
         {
             this.Order = 0;
 
             BuildMethodTable();
+
+            _address = Address.Null;
         }
 
         internal void SetRuntimeData(RuntimeVM VM)
@@ -58,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool IsWitness(Address address)
         {
-            if (address == this.Runtime.Chain.Address) 
+            if (address == this.Runtime.Chain.Address || address == this.Address) 
             {
                 var frame = Runtime.frames.Skip(1).FirstOrDefault();
                 return frame != null && frame.Context.Admin;

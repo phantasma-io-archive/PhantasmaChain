@@ -32,14 +32,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stableToken = Runtime.Nexus.GetTokenInfo(Nexus.StableTokenSymbol);
             Runtime.Expect(Runtime.Nexus.TokenExists(Nexus.StableTokenSymbol), "invalid stable token");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, nativeToken.Symbol, target, Runtime.Chain.Address, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, nativeToken.Symbol, target, this.Address, amount), "transfer failed");
 
             var stableAmount = amount * GetRate(Nexus.FuelTokenSymbol);
 
             Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, stableToken.Symbol, target, stableAmount), "mint failed");
 
-            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = stableAmount, symbol = Nexus.StableTokenSymbol });
+            Runtime.Notify(EventKind.TokenSend, target, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
+            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { chainAddress = this.Address, value = stableAmount, symbol = Nexus.StableTokenSymbol });
         }
 
         // stable => native
@@ -59,10 +59,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var expectedAmount = amount / GetRate(Nexus.FuelTokenSymbol);
             Runtime.Expect(expectedAmount > 0, "swap amount should greater than zero");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, nativeToken.Symbol, Runtime.Chain.Address, target, expectedAmount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, nativeToken.Symbol, this.Address, target, expectedAmount), "transfer failed");
 
-            Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = expectedAmount, symbol = Nexus.FuelTokenSymbol });
-            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = Nexus.StableTokenSymbol });
+            Runtime.Notify(EventKind.TokenReceive, target, new TokenEventData() { chainAddress = this.Address, value = expectedAmount, symbol = Nexus.FuelTokenSymbol });
+            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = Nexus.StableTokenSymbol });
         }
     }
 }

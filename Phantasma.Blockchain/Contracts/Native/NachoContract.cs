@@ -2609,7 +2609,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             
             //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, Runtime.Chain.Address, from, outputAmount), "deposit failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, this.Address, from, outputAmount), "deposit failed");
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -2965,7 +2965,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenROM = new byte[0]; //itemBytes;
             var tokenRAM = itemBytes;   //new byte[0];
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, Runtime.Chain.Address, tokenROM, tokenRAM, 0);
+            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, this.Address, tokenROM, tokenRAM, 0);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
@@ -2985,7 +2985,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             
             Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
             //Runtime.Notify(EventKind.ItemReceived, to, itemID);
-            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
+            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = this.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
 
             return tokenID;
         }
@@ -3992,9 +3992,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (wrestler.stakeAmount > 0)
             {
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, from, Runtime.Chain.Address, wrestler.stakeAmount), "unstake failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, from, this.Address, wrestler.stakeAmount), "unstake failed");
                 //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
-                Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.SOUL_SYMBOL, value = wrestler.stakeAmount });
+                Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = this.Address, symbol = Constants.SOUL_SYMBOL, value = wrestler.stakeAmount });
                 wrestler.stakeAmount = 0;
             }
 
@@ -4777,7 +4777,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void StartBotMatch(Address from, BigInteger botID)
         {
-            var botAddress = Runtime.Chain.Address;
+            var botAddress = this.Address;
 
             var botAccount = GetAccount(botAddress);
             botAccount.queueJoinTime = GetCurrentTime();
@@ -5159,7 +5159,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
 
                 //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, refundAddress, refundAmount), "refund failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, refundAddress, refundAmount), "refund failed");
             }
             else
             {
@@ -5277,7 +5277,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (bet > 0)
                 {
                     //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, from, bet), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, from, bet), "refund failed");
                 }
             }
 
@@ -6098,7 +6098,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 SetAccount(target, account);
 
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, target, amount), "deposit failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
                 //Runtime.Notify(NachoEvent.Deposit, target, amount);
                 Runtime.Notify(EventKind.TokenReceive, target, amount);
             }
@@ -6210,19 +6210,19 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
 
                     var other = 1 - winnerSide;
 
                     //Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
-                    Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = winnerAmount });
-                    Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = loserAmount });
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = winnerAmount });
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = loserAmount });
 
                     // Old spend bet
                     //Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);
-                    Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = battle.bet });
+                    Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = battle.bet });
                 }
                 else
                 {
@@ -6237,12 +6237,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                     for (var i = 0; i < 2; i++)
                     {
                         //Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
-                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, Runtime.Chain.Address, battle.sides[i].address, refundAmount), "refund failed");
+                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[i].address, refundAmount), "refund failed");
 
                         if (potAmount > 0)
                         {
                             //Runtime.Notify(battle.sides[i].address, NachoEvent.Withdraw, potAmount / 2);
-                            Runtime.Notify(EventKind.TokenSend, battle.sides[i].address, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Constants.NACHO_SYMBOL, value = potAmount / 2 });
+                            Runtime.Notify(EventKind.TokenSend, battle.sides[i].address, new TokenEventData() { chainAddress = this.Address, symbol = Constants.NACHO_SYMBOL, value = potAmount / 2 });
                         }
                     }
                 }
