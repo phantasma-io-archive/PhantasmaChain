@@ -855,7 +855,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
-            var bytes = CryptoExtensions.Sha256(itemID.ToByteArray());
+            var bytes = CryptoExtensions.Sha256(itemID.ToSignedByteArray());
             var num = 1 + bytes[2];
             return num;
         }
@@ -6703,7 +6703,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_IDLE;
 
-            BigInteger seed = Runtime.Randomize(battleID.ToByteArray());
+            BigInteger seed = Runtime.Randomize(battleID.ToSignedByteArray());
 
             int localIndex = -1;
 

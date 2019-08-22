@@ -21,7 +21,7 @@ namespace Phantasma.Numerics
                 bi += index * BigInteger.Pow(58, input.Length - 1 - i);
             }
 
-            byte[] bytes = bi.ToByteArray();
+            byte[] bytes = bi.ToUnsignedByteArray();
             Array.Reverse(bytes);
 
             int leadingZeros = 0;

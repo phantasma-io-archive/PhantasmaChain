@@ -145,7 +145,7 @@ namespace Phantasma.Cryptography.ECC
 
         public byte[] ToByteArray()
         {
-            byte[] data = Value.ToByteArray();
+            byte[] data = Value.ToSignedByteArray();
             if (data.Length == 32)
                 return data.Reverse().ToArray();
             if (data.Length > 32)

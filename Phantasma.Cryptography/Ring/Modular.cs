@@ -33,7 +33,7 @@ namespace Phantasma.Cryptography.Ring
 
         protected int[] GetData(BigInteger number)
         {
-            var bytes = number.ToByteArray();
+            var bytes = number.ToSignedByteArray();
             int nBytes = bytes.Length;
             while (nBytes > 0 && bytes[nBytes - 1] == 0)
                 --nBytes;

@@ -81,7 +81,7 @@ namespace Phantasma.VM.Utils
 
         public ScriptBuilder EmitLoad(byte reg, BigInteger val)
         {
-            var bytes = val.ToByteArray(includeSignInArray: true);
+            var bytes = val.ToSignedByteArray();
             EmitLoad(reg, bytes, VMType.Number);
             return this;
         }

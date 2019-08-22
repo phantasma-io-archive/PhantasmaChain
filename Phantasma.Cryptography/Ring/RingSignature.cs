@@ -75,7 +75,7 @@ namespace Phantasma.Cryptography.Ring
                 L.AddRange(prefix);
 
             foreach (var key in ints)
-                L.AddRange(key.ToByteArray());
+                L.AddRange(key.ToSignedByteArray());
 
             return L.ToArray();
         }

@@ -73,8 +73,8 @@ namespace Phantasma.Cryptography.ECC
                 return null;
             }
 
-            var rBytes = r.ToByteArray().Reverse().ToArray();
-            var sBytes = s.ToByteArray().Reverse().ToArray();
+            var rBytes = r.ToSignedByteArray().Reverse().ToArray();
+            var sBytes = s.ToSignedByteArray().Reverse().ToArray();
 
             using (var stream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(stream))

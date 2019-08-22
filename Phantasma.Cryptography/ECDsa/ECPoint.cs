@@ -26,7 +26,7 @@ namespace Phantasma.Cryptography.ECC
 
         public static int CalculateBitLength(this BigInteger i)
         {
-            byte[] b = i.ToByteArray();
+            byte[] b = i.ToSignedByteArray();
             return (b.Length - 1) * 8 + BitLen(i.Sign> 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
         }
     }
@@ -171,10 +171,10 @@ namespace Phantasma.Cryptography.ECC
             else
             {
                 data = new byte[65];
-                byte[] yBytes = Y.Value.ToByteArray().Reverse().ToArray();
+                byte[] yBytes = Y.Value.ToSignedByteArray().Reverse().ToArray();
                 Buffer.BlockCopy(yBytes, 0, data, 65 - yBytes.Length, yBytes.Length);
             }
-            byte[] xBytes = X.Value.ToByteArray().Reverse().ToArray();
+            byte[] xBytes = X.Value.ToSignedByteArray().Reverse().ToArray();
             Buffer.BlockCopy(xBytes, 0, data, 33 - xBytes.Length, xBytes.Length);
             data[0] = compressed ? Y.Value.IsEven ? (byte)0x02 : (byte)0x03 : (byte)0x04;
             return data;

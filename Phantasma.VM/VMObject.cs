@@ -233,7 +233,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = new BigInteger(val, twosComplementFormatFlag: true);
+                        this.Data = new BigInteger(val);
                         break;
                     }
 
@@ -275,7 +275,7 @@ namespace Phantasma.VM
         {
             this.Type = VMType.Number;
             this.Data = val;
-            this._localSize = val.ToByteArray().Length;
+            this._localSize = val.ToSignedByteArray().Length;
             return this;
         }
 
@@ -581,7 +581,7 @@ namespace Phantasma.VM
                         case VMType.Number:
                             {
                                 var result = new VMObject();
-                                result.SetValue(((BigInteger)srcObj.Data).ToByteArray());
+                                result.SetValue(((BigInteger)srcObj.Data).ToSignedByteArray());
                                 return result;
                             }
 

@@ -69,7 +69,7 @@ namespace Phantasma.Tests
         public void TestEndian()
         {
             var n = new BigInteger(100000000);
-            var bytes = n.ToByteArray(false);
+            var bytes = n.ToSignedByteArray();
             Assert.IsTrue(bytes.Length == 4);
             Assert.IsTrue(bytes[0] == 00);
             Assert.IsTrue(bytes[1] == 0xe1);

@@ -375,7 +375,7 @@ namespace Phantasma.Cryptography
             // The simple modular method from the NIST SP800-90A recommendation
             Throw.If(securityParameter < 64, "Given security parameter, " + securityParameter + ", is too low.");
 
-            var bytesToRepresent = max.ToByteArray().Length;
+            var bytesToRepresent = max.ToSignedByteArray().Length;
             var bytes = new byte[bytesToRepresent + securityParameter / 8 + 1];
             rng.GetBytes(bytes);
             bytes[bytes.Length - 1] = 0;

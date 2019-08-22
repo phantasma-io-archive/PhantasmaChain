@@ -32,7 +32,7 @@ namespace Phantasma.Cryptography
 
             var q = n % max;
 
-            bytes = q.ToByteArray();
+            bytes = q.ToSignedByteArray();
 
             // TODO this is a fix for a bug that appears sometimes, it appears that the math before has a mistake somewhere
             var diff = targetLength - bytes.Length;

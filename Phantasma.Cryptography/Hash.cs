@@ -178,7 +178,7 @@ namespace Phantasma.Cryptography
         // If necessary pads the number to 32 bytes with zeros 
         public static implicit operator Hash(BigInteger val)
         {
-            var src = val.ToByteArray();
+            var src = val.ToSignedByteArray();
             Throw.If(src.Length > Length, "number is too large");
 
             return FromBytes(src);

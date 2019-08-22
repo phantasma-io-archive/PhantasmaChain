@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool InitVotingRound(GovernanceSubject subject, BigInteger value)
         {
-            return InitVotingRound(subject, value.ToByteArray());
+            return InitVotingRound(subject, value.ToSignedByteArray());
         }
 
         public byte[] GetGovernanceBytes(GovernanceSubject subject)

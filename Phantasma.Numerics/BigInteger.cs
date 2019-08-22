@@ -61,18 +61,26 @@ namespace Phantasma.Numerics
         {
         }
 
-        public BigInteger(byte[] bytes, bool twosComplementFormatFlag)
+        //this constructor assumes that the byte array is in Two's complement notation
+        public BigInteger(byte[] bytes)
         {
-            int sign;
+            var msb = bytes[bytes.Length - 1];
 
-            if (twosComplementFormatFlag)
+            int sign = 0;
+
+            switch (msb)
             {
-                var msb = bytes[bytes.Length - 1] >> 7;
+                case 0xFF:
+                    sign = -1;
+                    break;
 
-                sign = msb == 0 ? 1 : -1;
+                case 0x00:
+                    sign = 1;
+                    break;
+
+                default:
+                    throw new Exception("unexpected sign byte value");
             }
-            else
-                sign = 1;
 
             byte[] buffer;
 
@@ -84,7 +92,7 @@ namespace Phantasma.Numerics
             this = new BigInteger(buffer, sign);
         }
 
-        public BigInteger(byte[] bytes, int sign = 1)
+        private BigInteger(byte[] bytes, int sign = 1)
         {
             _sign = sign;
             _data = null;
@@ -1040,7 +1048,7 @@ namespace Phantasma.Numerics
             if (this.Sign== 0)
                 return -1;
 
-            byte[] b = this.ToByteArray();
+            byte[] b = this.ToSignedByteArray();
             int w = 0;
             while (b[w] == 0)
                 w++;
@@ -1171,14 +1179,35 @@ public void SetBit(uint bitNum)
             return new BigInteger(sqrtArray);
         }
 
-
-        public byte[] ToByteArray(bool includeSignInArray = false)
+        public byte[] ToUnsignedByteArray()
         {
             var bitLength = GetBitLength();
-            var byteArraySize = (bitLength / 8) + (uint)((bitLength % 8 > 0) ? 1 : 0) + (includeSignInArray ? 1 : 0);
+            var byteArraySize = (bitLength / 8) + (uint)((bitLength % 8 > 0) ? 1 : 0);
             byte[] result = new byte[byteArraySize];
 
-            bool applyTwosComplement = includeSignInArray && (_sign == -1);    //only apply two's complement if this number is negative
+            for (int i = 0, j = 0; i < Data.Length; i++, j += 4)
+            {
+                byte[] bytes = BitConverter.GetBytes(Data[i]);
+                for (int k = 0; k < 4; k++)
+                {
+                    if (bytes[k] == 0)
+                        continue;
+
+                    result[j + k] = bytes[k];
+                }
+            }
+
+            return result;
+        }
+
+        //The returned byte array is signed by applying the Two's complement technique for negative numbers
+        public byte[] ToSignedByteArray()
+        {
+            var bitLength = GetBitLength();
+            var byteArraySize = (bitLength / 8) + (uint)((bitLength % 8 > 0) ? 1 : 0) + 1;  //the extra byte is for sign carrying purposes
+            byte[] result = new byte[byteArraySize];
+
+            bool applyTwosComplement = Sign == -1;    //only apply two's complement if this number is negative
 
             for (int i = 0, j = 0; i < Data.Length; i++, j += 4)
             {
@@ -1191,7 +1220,7 @@ public void SetBit(uint bitNum)
                         continue;
 
                     if (applyTwosComplement)
-                        result[j + k] = (byte)(bytes[k] ^ 0xFF);
+                        result[j + k] = (byte) ~bytes[k];
                     else
                         result[j + k] = bytes[k];
                 }
@@ -1203,16 +1232,16 @@ public void SetBit(uint bitNum)
 
                 var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1.
 
-                result = tmp.ToByteArray(true);     //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to keep sign information while in byte[] format
+                result = tmp.ToSignedByteArray();         //when we call the ToByteArray, we will get an extra byte on the array to keep sign information while in byte[] format
                                                     //but the twos complement logic won't get applied again given the bigint has positive sign.
 
-                result[result.Length - 1] = 0xFF;      //force the MSB to 1's, as this array represents a negative number.
+                result[result.Length - 1] = 0xFF;      //sets the MSB to 1's, as this array represents a negative number.
             }
 
             return result;
         }
 
-        public static byte[] ApplyTwosComplement(byte[] bytes)
+        private static byte[] ApplyTwosComplement(byte[] bytes)
         {
             var buffer = new byte[bytes.Length];
 
@@ -1223,8 +1252,8 @@ public void SetBit(uint bitNum)
 
             var tmp = (new BigInteger(buffer, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
 
-            buffer = tmp.ToByteArray(true); //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
-            //but the twos complement logic won't get applied again given the bigint has positive sign.
+            buffer = tmp.ToSignedByteArray(); //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
+                                        //but the twos complement logic won't get applied again given the bigint has positive sign.
 
             return buffer;
         }
@@ -1267,6 +1296,6 @@ public void SetBit(uint bitNum)
     public static class BigIntegerExtensions
     {
         public static BigInteger AsBigInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
-        public static byte[] AsByteArray(this BigInteger source) { return source.ToByteArray(); }
+        public static byte[] AsByteArray(this BigInteger source) { return source.ToSignedByteArray(); }
     }
 }
