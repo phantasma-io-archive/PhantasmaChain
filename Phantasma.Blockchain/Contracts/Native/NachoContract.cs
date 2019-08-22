@@ -2278,6 +2278,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private bool SpendFromAccountBalance<T>(Address address, BigInteger amount, T reference)
         {
+            Runtime.Expect(amount >= 0, "invalid amount");
+
             if (amount == 0)
             {
                 return true;
@@ -6095,7 +6097,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 SetAccount(target, account);
 
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
+                //Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
+                Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, target, amount), "mint failed");
+
                 //Runtime.Notify(NachoEvent.Deposit, target, amount);
                 Runtime.Notify(EventKind.TokenReceive, target, amount);
             }
