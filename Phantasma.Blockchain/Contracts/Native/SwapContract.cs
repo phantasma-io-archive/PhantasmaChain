@@ -102,17 +102,24 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // TODO optimize this method without using .NET native stuff
-        public SwapPair[] GetRates(string symbol, BigInteger amount)
+        public SwapPair[] GetRates(string fromSymbol, BigInteger amount)
         {
+            Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
+
             int resultSize = 0;
             foreach (var toSymbol in Runtime.Nexus.Tokens)
             {
-                if (toSymbol == symbol)
+                if (toSymbol == fromSymbol)
                 {
                     continue;
                 }
 
-                var rate = GetRate(symbol, toSymbol, amount);
+                if (!_balances.ContainsKey<string>(toSymbol))
+                {
+                    continue;
+                }
+
+                var rate = GetRate(fromSymbol, toSymbol, amount);
                 if (rate > 0)
                 {
                     resultSize++;
@@ -123,12 +130,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             int index = 0;
             foreach (var toSymbol in Runtime.Nexus.Tokens)
             {
-                if (toSymbol == symbol)
+                if (toSymbol == fromSymbol)
                 {
                     continue;
                 }
 
-                var rate = GetRate(symbol, toSymbol, amount);
+                if (!_balances.ContainsKey<string>(toSymbol))
+                {
+                    continue;
+                }
+
+                var rate = GetRate(fromSymbol, toSymbol, amount);
                 if (rate > 0)
                 {
                     result[index] = new SwapPair()
