@@ -3385,7 +3385,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public NachoWrestler GetWrestler(BigInteger wrestlerID)
         {
-            Runtime.Expect(wrestlerID > 0, "null or negative id");
+            Runtime.Expect(wrestlerID > 0 || wrestlerID < 0, "null id");
 
             if (wrestlerID < Constants.BASE_LUCHADOR_ID)
             {
