@@ -1179,6 +1179,15 @@ public void SetBit(uint bitNum)
             return new BigInteger(sqrtArray);
         }
 
+        /// <summary>
+        /// IF YOU USE THIS METHOD, DON'T FEED THE RESULTING BYTE ARRAY TO THE BigInteger(byte[] array) CONSTRUCTOR
+        /// That constructor depends on having a byte array using the Two's Complement convention, where the MSB is either 0 or FF
+        /// This method does not produce an extra byte for the sign, that only happens on the ToSignedByteArray method.
+        ///
+        /// tl;dr:  if the byte array will be used to reconstruct a bigint, use ToSignedByteArray
+        ///         if you just need to manipulate the raw byte array without having to reconstruct a bigint, AND you don't care about sign, use ToUnsignedByteArray.
+        /// </summary>
+        /// <returns></returns>
         public byte[] ToUnsignedByteArray()
         {
             var bitLength = GetBitLength();
