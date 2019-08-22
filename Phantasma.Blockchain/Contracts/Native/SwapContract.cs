@@ -107,6 +107,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             int resultSize = 0;
             foreach (var toSymbol in Runtime.Nexus.Tokens)
             {
+                if (toSymbol == symbol)
+                {
+                    continue;
+                }
+
                 var rate = GetRate(symbol, toSymbol, amount);
                 if (rate > 0)
                 {
@@ -118,6 +123,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             int index = 0;
             foreach (var toSymbol in Runtime.Nexus.Tokens)
             {
+                if (toSymbol == symbol)
+                {
+                    continue;
+                }
+
                 var rate = GetRate(symbol, toSymbol, amount);
                 if (rate > 0)
                 {
