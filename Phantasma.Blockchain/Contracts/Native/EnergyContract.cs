@@ -501,7 +501,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var temp = Runtime.CallContext("storage", "GetUsedSpace", address);
             var usedStorageSize = (BigInteger)temp;
-            var usedStake = UnitConversion.ToBigInteger((long)usedStorageSize / StorageContract.KilobytesPerStake, Nexus.StakingTokenDecimals);
+            var usedStake = usedStorageSize * UnitConversion.ToBigInteger(1, Nexus.StakingTokenDecimals);
+            usedStake = usedStake / (StorageContract.KilobytesPerStake * 1024);
+            
             return usedStake;
         }
 
