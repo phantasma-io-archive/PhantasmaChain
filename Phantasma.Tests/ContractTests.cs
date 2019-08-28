@@ -1790,6 +1790,40 @@ namespace Phantasma.Tests
 
 
         [TestMethod]
+        public void TestSwaping()
+        {
+            var owner = KeyPair.Generate();
+
+            var simulator = new ChainSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, 100000000);
+            simulator.EndBlock();
+
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
+            var startingKcalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
+
+            BigInteger swapAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("swap", "SwapTokens", testUser.Address, Nexus.StakingTokenSymbol, Nexus.FuelTokenSymbol, swapAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var currentSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
+            var currentKcalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
+
+            Assert.IsTrue(currentSoulBalance < startingSoulBalance);
+            Assert.IsTrue(currentKcalBalance > startingKcalBalance);
+        }
+
+        [TestMethod]
         public void TestFriendsContract()
         {
             var owner = KeyPair.Generate();
