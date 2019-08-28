@@ -34,11 +34,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
-            Runtime.Expect(fromInfo.IsSwappable, "must be swappable");
 
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
             Runtime.Expect(toInfo.IsFungible, "must be fungible");
-            Runtime.Expect(toInfo.IsSwappable, "must be swappable");
             BigInteger total;
 
             if (fromBalance < toBalance)
@@ -59,7 +57,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var info = Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(info.IsFungible, "must be fungible");
-            Runtime.Expect(info.IsSwappable, "must be swappable");
 
             var unitAmount = UnitConversion.GetUnitValue(info.Decimals);
             Runtime.Expect(amount >= unitAmount, "invalid amount");
@@ -109,7 +106,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
-            Runtime.Expect(fromInfo.IsSwappable, "must be swappable");
 
             Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
 
@@ -123,9 +119,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (!_balances.ContainsKey<string>(toSymbol))
                 {
+
                     continue;
                 }
-
                 var rate = GetRate(fromSymbol, toSymbol, amount);
                 if (rate > 0)
                 {
@@ -170,11 +166,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
-            Runtime.Expect(fromInfo.IsSwappable, "must be swappable");
 
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
             Runtime.Expect(toInfo.IsFungible, "must be fungible");
-            Runtime.Expect(toInfo.IsSwappable, "must be swappable");
 
             Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
 
