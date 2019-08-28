@@ -58,7 +58,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(((UnitConversion.ToDecimal(stakedAmount, Nexus.StakingTokenDecimals)) * KilobytesPerStake) * 1024) - (long)headerSize;
+            var contentSize = (long)((stakedAmount / MinimumValidStake * KilobytesPerStake) * 1024) - (long)headerSize;
             var content = new byte[contentSize];
             var rnd = new Random();
             for (int i=0; i<content.Length; i++)
@@ -68,17 +68,17 @@ namespace Phantasma.Tests
 
             var contentMerkle = new MerkleTree(content);
 
-                simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
-                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
-                        SpendGas(testUser.Address).EndScript());
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    SpendGas(testUser.Address).EndScript());
 
-                //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
-                simulator.EndBlock();
+            //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
+            simulator.EndBlock();
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
-            Assert.IsTrue(usedSpace == 0);
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
 
             Assert.IsTrue(simulator.Nexus.ArchiveExists(contentMerkle.Root));
             var archive = simulator.Nexus.FindArchive(contentMerkle.Root);
@@ -146,7 +146,7 @@ namespace Phantasma.Tests
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
-            Assert.IsTrue(usedSpace == 0);
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
         }
 
         //upload a file for less than available space and perform partial unstake
@@ -160,7 +160,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -171,7 +171,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for minimum staking amount
-            var stakedAmount = BaseEnergyRatioDivisor * 5;
+            var stakedAmount = MinimumValidStake * 5;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -186,7 +186,7 @@ namespace Phantasma.Tests
             var filename = "notAVirus.exe";
 
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024 / 5) - (long)headerSize;
+            var contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024 / 5) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -200,7 +200,7 @@ namespace Phantasma.Tests
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
-            Assert.IsTrue(usedSpace == contentSize);
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
 
             //-----------
             //Time skip 1 day
@@ -210,7 +210,6 @@ namespace Phantasma.Tests
             //Try partial unstake: should succeed
             var initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             var stakeReduction = stakedAmount / 5;
-            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
@@ -220,7 +219,8 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             var finalStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
-            Assert.IsTrue(finalStakedAmount == 0);
+
+            Assert.IsTrue(finalStakedAmount == initialStakedAmount - stakeReduction);
         }
 
         //upload a file for full space, delete file and perform full unstake
@@ -234,7 +234,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -245,7 +245,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for minimum staking amount
-            var stakedAmount = BaseEnergyRatioDivisor;
+            var stakedAmount = MinimumValidStake;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -260,7 +260,7 @@ namespace Phantasma.Tests
             var filename = "notAVirus.exe";
 
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -274,7 +274,7 @@ namespace Phantasma.Tests
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
-            Assert.IsTrue(usedSpace == contentSize);
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
 
             //-----------
             //Delete the file
@@ -319,7 +319,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -330,7 +330,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call
-            var stakeAmount = BaseEnergyRatioDivisor * 2;
+            var stakeAmount = MinimumValidStake * 2;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -350,7 +350,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
+            var contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -372,43 +372,41 @@ namespace Phantasma.Tests
 
             filename = "giftFromTroia.exe";
             headerSize = CalculateRequiredSize(filename, 0);
-            contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
+            contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             content = new byte[contentSize];
 
-            Assert.ThrowsException<Exception>(() =>
-            {
-                contentMerkle = new MerkleTree(content);
+            contentMerkle = new MerkleTree(content);
 
-                simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
-                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
-                        SpendGas(testUser.Address).EndScript());
-                simulator.EndBlock();
-            });
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
             Assert.IsTrue(usedSpace == oldSpace + contentSize + headerSize);
 
-            oldSpace = contentSize + headerSize;
+            oldSpace += contentSize + headerSize;
             //----------
             //Upload another file: should succeed
 
             filename = "JimTheEarthWORM.exe";
             headerSize = CalculateRequiredSize(filename, 0);
-            contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 4) - (long)headerSize;
+            contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 4) - (long)headerSize;
             content = new byte[contentSize];
 
-            Assert.ThrowsException<Exception>(() =>
-            {
-                contentMerkle = new MerkleTree(content);
+            contentMerkle = new MerkleTree(content);
 
-                simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
-                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
-                        SpendGas(testUser.Address).EndScript());
-                simulator.EndBlock();
-            });
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
             Assert.IsTrue(usedSpace == oldSpace + contentSize + headerSize);
         }
@@ -424,7 +422,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -435,7 +433,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call
-            var stakeAmount = BaseEnergyRatioDivisor * 2;
+            var stakeAmount = MinimumValidStake * 2;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -455,7 +453,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
+            var contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -496,6 +494,8 @@ namespace Phantasma.Tests
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
+            usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
+
             Assert.IsTrue(usedSpace == oldSpace);
         }
 
@@ -511,7 +511,7 @@ namespace Phantasma.Tests
             var testUserA = KeyPair.Generate();
             var testUserB = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -524,7 +524,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for userA
-            var stakeAmount = BaseEnergyRatioDivisor * 2;
+            var stakeAmount = MinimumValidStake * 2;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
             simulator.BeginBlock();
@@ -542,26 +542,26 @@ namespace Phantasma.Tests
 
             //----------
             //Perform a valid Stake call for userB
-            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserB.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
-                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("energy", "Stake", testUserA.Address, stakeAmount).
-                    SpendGas(testUserA.Address).EndScript());
+            tx = simulator.GenerateCustomTransaction(testUserB, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Stake", testUserB.Address, stakeAmount).
+                    SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
-            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUserA.Address);
+            stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUserB.Address);
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
             //User A uploads a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
+            var contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -588,6 +588,8 @@ namespace Phantasma.Tests
                     SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
+            usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUserB.Address);
+
             Assert.IsTrue(usedSpace == contentSize + headerSize);
         }
         #endregion
@@ -605,7 +607,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -616,7 +618,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for minimum staking amount
-            var stakedAmount = BaseEnergyRatioDivisor;
+            var stakedAmount = MinimumValidStake;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -631,7 +633,7 @@ namespace Phantasma.Tests
             var filename = "notAVirus.exe";
 
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -645,7 +647,9 @@ namespace Phantasma.Tests
 
             var usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
 
-            Assert.IsTrue(usedSpace == contentSize);
+            Assert.IsTrue(usedSpace == contentSize + headerSize);
+
+            var oldSpace = usedSpace;
 
             //-----------
             //Time skip 1 day
@@ -654,10 +658,10 @@ namespace Phantasma.Tests
             //-----------
             //Try to unstake everything: should fail due to files still existing for this user
             var initialStakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
-            var stakeReduction = initialStakedAmount - BaseEnergyRatioDivisor;
+            var stakeReduction = initialStakedAmount - MinimumValidStake;
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 simulator.GenerateCustomTransaction(testUser, () =>
@@ -671,6 +675,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(initialStakedAmount == finalStakedAmount);
 
             usedSpace = (BigInteger)simulator.Nexus.RootChain.InvokeContract("storage", "GetUsedSpace", testUser.Address);
+
+            Assert.IsTrue(usedSpace == oldSpace);
         }
 
         //try to upload a single file beyond available space
@@ -684,7 +690,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -695,7 +701,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for minimum staking amount
-            var stakeAmount = BaseEnergyRatioDivisor;
+            var stakeAmount = MinimumValidStake;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -715,10 +721,10 @@ namespace Phantasma.Tests
             //Upload a file: should fail due to exceeding available space
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 var contentMerkle = new MerkleTree(content);
 
@@ -757,7 +763,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform a valid Stake call for minimum staking amount
-            var stakeAmount = BaseEnergyRatioDivisor;
+            var stakeAmount = MinimumValidStake;
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
@@ -777,7 +783,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
+            var contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -799,10 +805,10 @@ namespace Phantasma.Tests
 
             filename = "giftFromTroia.exe";
             headerSize = CalculateRequiredSize(filename, 0);
-            contentSize = (long)(stakedAmount * KilobytesPerStake * 1024) - (long)headerSize;
+            contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024) - (long)headerSize;
             content = new byte[contentSize];
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 contentMerkle = new MerkleTree(content);
 
@@ -812,8 +818,7 @@ namespace Phantasma.Tests
                         .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
-            })
-                ;
+            });
 
             Assert.IsTrue(usedSpace == oldSpace);
         }
@@ -829,7 +834,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            var accountBalance = BaseEnergyRatioDivisor * 100;
+            var accountBalance = MinimumValidStake * 100;
 
             Transaction tx = null;
 
@@ -860,7 +865,7 @@ namespace Phantasma.Tests
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(stakeAmount * KilobytesPerStake * 1024 / 2) - (long)headerSize;
+            var contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 2) - (long)headerSize;
             var content = new byte[contentSize];
 
             var contentMerkle = new MerkleTree(content);
@@ -880,12 +885,15 @@ namespace Phantasma.Tests
 
             //----------
             //Upload a file with the same name: should fail
-            simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
-                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
-                    SpendGas(testUser.Address).EndScript());
-            simulator.EndBlock();
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                    ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        SpendGas(testUser.Address).EndScript());
+                simulator.EndBlock();
+            });
 
             Assert.IsTrue(usedSpace == oldSpace);
         }

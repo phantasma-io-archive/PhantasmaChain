@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void DeleteFile(Address from, string name)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
+            //Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
 
             var list = _storageMap.Get<Address, StorageList>(from);
             var count = list.Count();
@@ -85,20 +85,21 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
+            Runtime.Expect(targetIndex >= 0, "file not found");
+
             var archive = Runtime.Nexus.FindArchive(targetHash);
             Runtime.Expect(Runtime.Nexus.DeleteArchive(archive), "deletion failed");
 
-            Runtime.Expect(targetIndex >= 0, "file not found");
             list.RemoveAt<StorageEntry>(targetIndex);
             Runtime.Notify(EventKind.FileDelete, from, name);
         }
 
         public BigInteger GetUsedSpace(Address from)
         {
-            if (!_storageMap.ContainsKey<Address>(from))
-            {
-                return 0;
-            }
+            //if (!_storageMap.ContainsKey<Address>(from))
+            //{
+            //    return 0;
+            //}
 
             var list = GetFiles(from);
             BigInteger usedSize = 0;
@@ -118,7 +119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public StorageEntry[] GetFiles(Address from)
         {
-            Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
+            //Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
             var list = _storageMap.Get<Address, StorageList>(from);
             return list.All<StorageEntry>();
         }
