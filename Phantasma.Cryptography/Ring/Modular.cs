@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Phantasma.Numerics;
@@ -49,7 +49,7 @@ namespace Phantasma.Cryptography.Ring
         {
             var bytes = new byte[data.Length * 4 + 1];
             Buffer.BlockCopy(data.Reverse().ToArray(), 0, bytes, 0, bytes.Length - 1);
-            return new BigInteger(bytes);
+            return BigInteger.FromSignedArray(bytes);
         }
 
         private long GetMDash(int[] magnitude)

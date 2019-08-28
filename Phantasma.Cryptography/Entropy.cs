@@ -1,4 +1,4 @@
-﻿using Phantasma.Core.Utils;
+using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using System;
 
@@ -27,8 +27,8 @@ namespace Phantasma.Cryptography
                 maxBytes[i] = 255;
             }
 
-            var n = new BigInteger(bytes);
-            var max = new BigInteger(maxBytes);
+            var n = BigInteger.FromSignedArray(bytes);
+            var max = BigInteger.FromSignedArray(maxBytes);
 
             var q = n % max;
 

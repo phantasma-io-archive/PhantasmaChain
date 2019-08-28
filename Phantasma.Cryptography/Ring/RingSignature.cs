@@ -48,7 +48,7 @@ namespace Phantasma.Cryptography.Ring
 
         public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
-            var publicKeys = addresses.Select(x => new BigInteger(x.PublicKey)).ToArray();
+            var publicKeys = addresses.Select(x => BigInteger.FromSignedArray(x.PublicKey)).ToArray();
             return this.VerifySignature(message, publicKeys);
         }
 
@@ -116,7 +116,7 @@ namespace Phantasma.Cryptography.Ring
         public static RingKeyPair GenerateKeyPair(KeyPair keyPair)
         {
             var mod = new Modular(GroupParameters.Prime);
-            var privateKey = new BigInteger(keyPair.PrivateKey);
+            var privateKey = BigInteger.FromUnsignedArray(keyPair.PrivateKey, true);
             var publicKey = mod.Pow(GroupParameters.Generator, privateKey);
             return new RingKeyPair(privateKey, publicKey);
         }

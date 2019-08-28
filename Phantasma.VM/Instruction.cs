@@ -1,4 +1,4 @@
-﻿using Phantasma.Numerics;
+using Phantasma.Numerics;
 using System.Text;
 
 namespace Phantasma.VM
@@ -93,7 +93,7 @@ namespace Phantasma.VM
                                 break;
 
                             case VMType.Number:
-                                sb.Append(new BigInteger(bytes));
+                                sb.Append(BigInteger.FromSignedArray(bytes));
                                 break;
 
                             default:

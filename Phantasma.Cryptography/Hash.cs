@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Phantasma.Numerics;
 using Phantasma.Core;
@@ -178,7 +178,8 @@ namespace Phantasma.Cryptography
         // If necessary pads the number to 32 bytes with zeros 
         public static implicit operator Hash(BigInteger val)
         {
-            var src = val.ToSignedByteArray();
+            //var src = val.ToSignedByteArray();
+            var src = val.ToUnsignedByteArray();
             Throw.If(src.Length > Length, "number is too large");
 
             return FromBytes(src);
@@ -208,7 +209,9 @@ namespace Phantasma.Cryptography
 
         public static implicit operator BigInteger(Hash val)
         {
-            return new BigInteger(val.ToByteArray());
+            var unsignedByteArray = val.ToByteArray();
+
+            return BigInteger.FromUnsignedArray(unsignedByteArray, isPositive: true);
         }
 
         public static Hash MerkleCombine(Hash A, Hash B)

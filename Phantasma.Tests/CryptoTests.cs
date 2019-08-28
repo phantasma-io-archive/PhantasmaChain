@@ -33,7 +33,7 @@ namespace Phantasma.Tests
             do
             {
                 rnd.NextBytes(bytes);
-                number = new BigInteger(bytes);
+                number = BigInteger.FromUnsignedArray(bytes, isPositive: true);
             } while (number <= 0);
 
             hash = number;

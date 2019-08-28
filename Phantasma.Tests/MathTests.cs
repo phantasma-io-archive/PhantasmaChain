@@ -409,7 +409,7 @@ namespace Phantasma.Tests
 
             var negArray = (-posBigint).ToSignedByteArray();
 
-            var negBigInt = new BigInteger(negArray);
+            var negBigInt = BigInteger.FromSignedArray(negArray);
 
             Assert.IsTrue(posBigint.Sign== 1);
             Assert.IsTrue(negBigInt.Sign== -1);

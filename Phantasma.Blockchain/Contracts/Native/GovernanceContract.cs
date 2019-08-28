@@ -1,4 +1,4 @@
-﻿using Phantasma.Numerics;
+using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -43,7 +43,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetGovernanceValue(GovernanceSubject subject)
         {
-            return new BigInteger(GetGovernanceBytes(subject));
+            return BigInteger.FromSignedArray(GetGovernanceBytes(subject));
         }
 
         public void Vote(GovernanceSubject subject, bool vote)

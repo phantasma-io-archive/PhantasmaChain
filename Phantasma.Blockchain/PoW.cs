@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
 using System.Linq;
@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain
             uint nonce = 0;
             do
             {
-                BigInteger n = new BigInteger(block.Hash.ToByteArray());
+                BigInteger n = BigInteger.FromSignedArray(block.Hash.ToByteArray());
                 if (n < target)
                 {
                     break;
