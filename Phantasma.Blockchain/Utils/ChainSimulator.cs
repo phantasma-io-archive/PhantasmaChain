@@ -636,7 +636,7 @@ namespace Phantasma.Blockchain.Utils
 
                 switch (_rnd.Next() % 4)
                 {
-                    case 1: tokenSymbol = Nexus.StableTokenSymbol; break;
+                    case 1: tokenSymbol = Nexus.FiatTokenSymbol; break;
                     //case 2: token = Nexus.FuelTokenSymbol; break;
                     default: tokenSymbol = Nexus.StakingTokenSymbol; break;
                 }
@@ -722,7 +722,7 @@ namespace Phantasma.Blockchain.Utils
                     case 4:
                         {
                             sourceChain = bankChain;
-                            tokenSymbol = Nexus.StableTokenSymbol;
+                            tokenSymbol = Nexus.FiatTokenSymbol;
 
                             var tokenBalance = sourceChain.GetTokenBalance(tokenSymbol, source.Address);
                             var fuelBalance = sourceChain.GetTokenBalance(Nexus.FuelTokenSymbol, source.Address);

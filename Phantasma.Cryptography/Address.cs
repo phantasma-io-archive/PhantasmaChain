@@ -8,6 +8,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Storage;
 using System.IO;
 using Phantasma.Storage.Utils;
+using System.Text;
 
 namespace Phantasma.Cryptography
 {
@@ -165,6 +166,33 @@ namespace Phantasma.Cryptography
         {
             this._publicKey = reader.ReadByteArray();
             this._text = null;
+        }
+
+        public string DecodeChainSymbol()
+        {
+            if (!IsInterop)
+            {
+                throw new Exception("not an interop address");
+            }
+
+            var sb = new StringBuilder();
+            for (int i=1; i<_publicKey.Length; i++)
+            {
+                var ch = (char)_publicKey[i];
+                if (ch == '*')
+                {
+                    if (sb.Length == 0)
+                    {
+                        throw new Exception("invalid interop address");
+                    }
+
+                    return sb.ToString();
+                }
+
+                sb.Append(ch);
+            }
+
+            throw new Exception("error decoding interop address");
         }
     }
 }

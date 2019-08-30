@@ -59,7 +59,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(flags.HasFlag(TokenFlags.Stakable), "token should be stakable");
             }
 
-            if (symbol == Nexus.StableTokenSymbol)
+            if (symbol == Nexus.FiatTokenSymbol)
             {
                 Runtime.Expect(flags.HasFlag(TokenFlags.Stable), "token should be stable");
             }

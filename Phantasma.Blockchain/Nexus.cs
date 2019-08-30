@@ -1250,9 +1250,9 @@ namespace Phantasma.Blockchain
         public const string StakingTokenName = "Phantasma Stake";
         public const int StakingTokenDecimals = 8;
 
-        public const string StableTokenSymbol = "SUS";
-        public const string StableTokenName = "Phantasma Dollar";
-        public const int StableTokenDecimals = 8;
+        public const string FiatTokenSymbol = "USD";
+        public const string FiatTokenName = "Dollars";
+        public const int FiatTokenDecimals = 8;
 
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
 
@@ -1273,7 +1273,7 @@ namespace Phantasma.Blockchain
             var tokenScript = new byte[0];
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
             CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
-            CreateToken(owner.Address, StableTokenSymbol, StableTokenName, 0, StableTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, tokenScript);
+            CreateToken(owner.Address, FiatTokenSymbol, FiatTokenName, 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stable, tokenScript);
 
             CreateToken(owner.Address, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External, tokenScript);
             CreateToken(owner.Address, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External, tokenScript);

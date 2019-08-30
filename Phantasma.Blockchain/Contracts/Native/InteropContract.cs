@@ -1,4 +1,5 @@
 ﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
@@ -7,13 +8,24 @@ using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public enum InteropTransferStatus
+    {
+        Unknown,
+        Queued,
+        Pending,
+        Confirmed
+    }
+
     public struct InteropWithdraw
     {
         public Hash hash;
         public Address destination;
-        public string symbol;
-        public BigInteger amount;
-        public BigInteger fee;
+        public string transferSymbol;
+        public BigInteger transferAmount;
+        public string feeSymbol;
+        public BigInteger feeAmount;
+        public Address broker;
+        public Timestamp timestamp;
     }
 
     public sealed class InteropContract : SmartContract
@@ -23,7 +35,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _hashes;
         private StorageList _withdraws;
 
-        public static BigInteger InteropFeeRate => 10;
+        public static BigInteger InteropFeeRate => 2;
 
         public InteropContract() : base()
         {
@@ -74,8 +86,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (evt.Kind == EventKind.TokenClaim)
                 {
-                    Runtime.Expect(IsValidator(from), "invalid validator");
-
                     var destination = evt.Address;
                     Runtime.Expect(destination != Address.Null, "invalid destination");
 
@@ -93,7 +103,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     for (int i=0; i<count; i++)
                     {
                         var entry = _withdraws.Get<InteropWithdraw>(i);
-                        if (entry.destination == destination && entry.amount == transfer.value && entry.symbol == transfer.symbol)
+                        if (entry.destination == destination && entry.transferAmount == transfer.value && entry.transferSymbol == transfer.symbol)
                         {
                             index = i;
                             break;
@@ -103,11 +113,14 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(index >= 0, "invalid withdraw, possible leak found");
 
                     var withdraw = _withdraws.Get<InteropWithdraw>(index);
+                    Runtime.Expect(withdraw.broker == from, "invalid broker");
+
                     _withdraws.RemoveAt<InteropWithdraw>(index);
 
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, transfer.symbol, this.Address, from, withdraw.fee), "fee payment failed");
-                    Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.fee, symbol = transfer.symbol });
-                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = expectedChainAddress, value = withdraw.amount, symbol = transfer.symbol });
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, withdraw.feeSymbol, this.Address, from, withdraw.feeAmount), "fee payment failed");
+
+                    Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
+                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = expectedChainAddress, value = withdraw.transferAmount, symbol = withdraw.transferSymbol});
                     break;
                 }
             }
@@ -123,34 +136,139 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(to.IsInterop, "destination must be interop address");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
-            var minimumAmount = UnitConversion.GetUnitValue(token.Decimals);
-            Runtime.Expect(amount >= minimumAmount, "amount is too small");
+            var transferToken = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(transferToken.Flags.HasFlag(TokenFlags.Transferable), "transfer token must be transferable");
+            Runtime.Expect(transferToken.Flags.HasFlag(TokenFlags.External), "transfer token must be external");
 
-            var feeAmount = amount / InteropFeeRate;
+            var feeSymbol = to.DecodeChainSymbol();
+            Runtime.Expect(Runtime.Nexus.TokenExists(feeSymbol), "invalid token");
+
+            var feeToken = this.Runtime.Nexus.GetTokenInfo(feeSymbol);
+            Runtime.Expect(feeToken.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
+            Runtime.Expect(feeToken.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
+
+            var basePrice = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals) / InteropFeeRate;
+            var feeAmount = OracleUtils.GetQuote(Runtime.OracleReader, basePrice, Nexus.FiatTokenSymbol, feeSymbol);
             Runtime.Expect(feeAmount > 0, "fee is too small");
-            var withdrawAmount = amount - feeAmount;
-            Runtime.Expect(withdrawAmount > 0, "invalid withdraw amount");
 
-            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, withdrawAmount), "burn failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, feeAmount), "fee transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, feeSymbol, from, this.Address, feeAmount), "fee transfer failed");
+
+            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount), "burn failed");
 
             var withdraw = new InteropWithdraw()
             {
                 destination = to,
-                amount = withdrawAmount,
-                fee = feeAmount,
-                symbol = symbol,
+                transferAmount = amount,
+                transferSymbol = symbol,
+                feeAmount = feeAmount,
+                feeSymbol = feeSymbol,
                 hash = Runtime.Transaction.Hash,
+                broker = Address.Null,
+                timestamp = Runtime.Time
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdrawAmount, symbol = symbol });
             Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = feeAmount, symbol = symbol });
+        }
+
+
+        public void SetBroker(Address from, Hash hash)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(IsValidator(from), "invalid validator");
+
+            var count = _withdraws.Count();
+            var index = -1;
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _withdraws.Get<InteropWithdraw>(i);
+                if (entry.hash == hash)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            Runtime.Expect(index >= 0, "invalid hash");
+
+            var withdraw = _withdraws.Get<InteropWithdraw>(index);
+            Runtime.Expect(withdraw.broker == Address.Null, "broker already set");
+
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, withdraw.feeSymbol, from, this.Address, withdraw.feeAmount), "fee payment failed");
+            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
+
+            withdraw.broker = from;
+            withdraw.timestamp = Runtime.Time;
+            withdraw.feeAmount *= 2; 
+            _withdraws.Replace<InteropWithdraw>(index, withdraw);
+        }
+
+        // NOTE we dont allow cancelling an withdraw due to being possible to steal tokens that way
+        // we do however allow to cancel a broker if too long has passed
+        public void CancelBroker(Address from, Hash hash)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            var count = _withdraws.Count();
+            var index = -1;
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _withdraws.Get<InteropWithdraw>(i);
+                if (entry.hash == hash)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            Runtime.Expect(index >= 0, "invalid hash");
+
+            var withdraw = _withdraws.Get<InteropWithdraw>(index);
+
+            Runtime.Expect(withdraw.broker != Address.Null, "no broker set");
+
+            var diff = Runtime.Time - withdraw.timestamp;
+            var days = diff / 86400; // convert seconds to days
+            Runtime.Expect(days >= 1, "still waiting for broker");
+
+            var escrowAmount = withdraw.feeAmount / 2;
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, withdraw.feeSymbol, this.Address, from, escrowAmount), "fee payment failed");
+
+            withdraw.broker = Address.Null;
+            withdraw.timestamp = Runtime.Time;
+            withdraw.feeAmount -= escrowAmount;
+            _withdraws.Replace<InteropWithdraw>(index, withdraw);
+
+            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = escrowAmount, symbol = withdraw.feeSymbol });
+        }
+
+        public InteropTransferStatus GetStatus(string chainName, Hash hash)
+        {
+            var chainHashes = _hashes.Get<string, StorageSet>(chainName);
+            if (chainHashes.Contains<Hash>(hash))
+            {
+                return InteropTransferStatus.Confirmed;
+            }
+
+            var count = _withdraws.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _withdraws.Get<InteropWithdraw>(i);
+                if (entry.hash == hash)
+                {
+                    if (entry.broker != Address.Null)
+                    {
+                        return InteropTransferStatus.Pending;
+                    }
+
+                    return InteropTransferStatus.Queued;
+                }
+            }
+
+
+            return InteropTransferStatus.Unknown;
         }
     }
 }
