@@ -376,7 +376,8 @@ namespace Phantasma.Blockchain
                 case "vault": contract  = new VaultContract(); break;
                 case "apps": contract  = new AppsContract(); break;
                 case "dex": contract = new ExchangeContract(); break;
-                case "nacho": contract  = new NachoContract(); break;
+                case "sale": contract = new SaleContract(); break;
+                case "nacho": contract = new NachoContract(); break;
                 default:
                     throw new Exception("Unknown contract: " + contractName);
             }
@@ -1284,7 +1285,7 @@ namespace Phantasma.Blockchain
                 TokenInitTx(owner),
 
                 ChainCreateTx(owner, "privacy", "privacy"),
-                // ChainCreateTx(owner, "market"), TODO
+                ChainCreateTx(owner, "sale", "sale"),
 
                 TokenMetadataTx(owner, StakingTokenSymbol, "interop.neo", "ed07cffad18f1308db51920d99a2af60ac66a7b3"),
                 TokenMetadataTx(owner, "NEO", "interop.neo", "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"),
