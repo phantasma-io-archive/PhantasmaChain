@@ -44,7 +44,7 @@ namespace Phantasma.Cryptography
         {
             if (data == null || key == null || iv == null) throw new ArgumentNullException();
             if (data.Length % 16 != 0 || key.Length != 32 || iv.Length != 16) throw new ArgumentException();
-            using (Aes aes = Aes.Create())
+            using (Aes aes = Aes.Create))
             {
                 aes.Padding = PaddingMode.None;
                 using (ICryptoTransform decryptor = aes.CreateDecryptor(key, iv))
@@ -243,32 +243,6 @@ namespace Phantasma.Cryptography
             data = default(T);
         }
 
-        /*internal static byte[] ToArray(this SecureString s)
-        {
-            if (s == null)
-                throw new NullReferenceException();
-            if (s.Length == 0)
-                return new byte[0];
-            List<byte> result = new List<byte>();
-            IntPtr ptr = Marshal.SecureStringToGlobalAllocAnsi(s);
-            try
-            {
-                int i = 0;
-                do
-                {
-                    byte b = Marshal.ReadByte(ptr, i++);
-                    if (b == 0)
-                        break;
-                    result.Add(b);
-                } while (true);
-            }
-            finally
-            {
-                Marshal.ZeroFreeGlobalAllocAnsi(ptr);
-            }
-            return result.ToArray();
-        }*/
-
         private static int BitLen(int w)
         {
             return (w < 1 << 15 ? (w < 1 << 7
@@ -286,89 +260,22 @@ namespace Phantasma.Cryptography
                 : (w < 1 << 29 ? (w < 1 << 28 ? 28 : 29) : (w < 1 << 30 ? 30 : 31)))));
         }
 
-/*
-        internal static int GetBitLength(this LargeInteger i)
-        {
-            byte[] b = i.ToByteArray();
-            return (b.Length - 1) * 8 + BitLen(i.Sign > 0 ? b[b.Length - 1] : 255 - b[b.Length - 1]);
-        }
-
-        
-        internal static LargeInteger Mod(this LargeInteger x, LargeInteger y)
-        {
-            x %= y;
-            if (x.Sign < 0)
-                x += y;
-            return x;
-        }
-
-        internal static LargeInteger ModInverse(this LargeInteger a, LargeInteger n)
-        {
-            LargeInteger i = n, v = 0, d = 1;
-            while (a > 0)
-            {
-                LargeInteger t = i / a, x = a;
-                a = i % x;
-                i = x;
-                x = d;
-                d = v - t * x;
-                v = x;
-            }
-            v %= n;
-            if (v < 0) v = (v + n) % n;
-            return v;
-        }
-        */
-
-        internal static BigInteger NextBigInteger(this Random rand, int sizeInBits)
+        internal static BigInteger NextBigInteger(int sizeInBits)
         {
             if (sizeInBits < 0)
                 throw new ArgumentException("sizeInBits must be non-negative");
             if (sizeInBits == 0)
                 return 0;
-            byte[] b = new byte[sizeInBits / 8 + 1];
-            rand.NextBytes(b);
+
+            var b = Entropy.GetRandomBytes(sizeInBits / 8 + 1);
+
             if (sizeInBits % 8 == 0)
                 b[b.Length - 1] = 0;
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
+
             return BigInteger.FromUnsignedArray(b, isPositive: true);
         }
-
-        /*internal static LargeInteger NextLargeInteger(this RandomNumberGenerator rng, int sizeInBits)
-        {
-            if (sizeInBits < 0)
-                throw new ArgumentException("sizeInBits must be non-negative");
-            if (sizeInBits == 0)
-                return 0;
-            byte[] b = new byte[sizeInBits / 8 + 1];
-            rng.GetBytes(b);
-            if (sizeInBits % 8 == 0)
-                b[b.Length - 1] = 0;
-            else
-                b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new LargeInteger(b);
-        }
-
-        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
-        {
-            long sum = 0;
-            checked
-            {
-                foreach (Fixed8 item in source)
-                {
-                    sum += item.value;
-                }
-            }
-            return new Fixed8(sum);
-        }
-
-        public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
-        {
-            return source.Select(selector).Sum();
-        }
-        
-        */
 
         public static BigInteger GenerateInteger(this HMACDRBG rng, BigInteger max, int securityParameter = 64)
         {

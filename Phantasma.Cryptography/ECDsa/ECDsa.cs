@@ -40,7 +40,7 @@ namespace Phantasma.Cryptography.ECC
             BigInteger e = CalculateE(curve.N, message);
             BigInteger d = BigInteger.FromSignedArray(privateKey.Reverse().Concat(new byte[1]).ToArray());
             BigInteger r, s;
-            var rng = new Random();
+
             do
             {
                 BigInteger k;
@@ -48,7 +48,7 @@ namespace Phantasma.Cryptography.ECC
                 {
                     do
                     {
-                        k = rng.NextBigInteger(curve.N.GetBitLength());
+                        k = CryptoExtensions.NextBigInteger(curve.N.GetBitLength());
                     }
                     while (k.Sign== 0 || k.CompareTo(curve.N) >= 0);
                     ECPoint p = ECPoint.Multiply(curve.G, k);

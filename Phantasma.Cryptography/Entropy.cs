@@ -6,17 +6,18 @@ namespace Phantasma.Cryptography
 {
     public static class Entropy
     {
-        private static Random rnd = new Random();
+        //private static Random rnd = new Random();
+        private static System.Security.Cryptography.RandomNumberGenerator rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
 
         private static readonly int securityParameter = 64;
 
-        // TODO this should use secure random generation instead of System.Random!!
         public static byte[] GetRandomBytes(int targetLength)
         {
             var bytes = new byte[targetLength + (securityParameter / 8) + 1];
             lock (rnd)
             {
-                rnd.NextBytes(bytes);
+                rnd.GetBytes(bytes);
+                //rnd.NextBytes(bytes);
             }
 
             bytes[bytes.Length - 1] = 0;
@@ -41,7 +42,8 @@ namespace Phantasma.Cryptography
                 var pad = new byte[diff];
                 lock (rnd)
                 {
-                    rnd.NextBytes(pad);
+                    rnd.GetBytes(bytes);
+                    //rnd.NextBytes(pad);
                 }
 
                 bytes = ByteArrayUtils.ConcatBytes(bytes, pad);
