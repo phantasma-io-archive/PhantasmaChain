@@ -247,7 +247,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
             }
 
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = newStake });
+            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = stakeAmount});
         }
 
         public BigInteger Unstake(Address from, BigInteger unstakeAmount)
