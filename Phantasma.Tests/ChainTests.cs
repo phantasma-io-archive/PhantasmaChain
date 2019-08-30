@@ -509,7 +509,8 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var sideChain = nexus.FindChainByName("bank");
+            var sideChain = nexus.FindChainByName("sale");
+            Assert.IsTrue(sideChain != null);
 
             var symbol = Nexus.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);

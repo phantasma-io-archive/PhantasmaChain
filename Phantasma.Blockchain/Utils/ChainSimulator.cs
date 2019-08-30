@@ -494,6 +494,8 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateChain(KeyPair source, Chain parentchain, string name, params string[] contracts)
         {
+            Throw.IfNull(parentchain, nameof(parentchain));
+
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name, contracts).
