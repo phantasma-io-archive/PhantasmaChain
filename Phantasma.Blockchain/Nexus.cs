@@ -374,11 +374,9 @@ namespace Phantasma.Blockchain
                 case "relay": contract = new RelayContract(); break;
                 case "storage": contract  = new StorageContract(); break;
                 case "vault": contract  = new VaultContract(); break;
-                case "bank": contract  = new BankContract(); break;
                 case "apps": contract  = new AppsContract(); break;
                 case "dex": contract = new ExchangeContract(); break;
                 case "nacho": contract  = new NachoContract(); break;
-                case "casino": contract  = new CasinoContract(); break;
                 default:
                     throw new Exception("Unknown contract: " + contractName);
             }
@@ -1268,7 +1266,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "storage", "apps", "relay"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
@@ -1286,7 +1284,6 @@ namespace Phantasma.Blockchain
                 TokenInitTx(owner),
 
                 ChainCreateTx(owner, "privacy", "privacy"),
-                ChainCreateTx(owner, "bank", "bank", "vault"),
                 // ChainCreateTx(owner, "market"), TODO
 
                 TokenMetadataTx(owner, StakingTokenSymbol, "interop.neo", "ed07cffad18f1308db51920d99a2af60ac66a7b3"),
