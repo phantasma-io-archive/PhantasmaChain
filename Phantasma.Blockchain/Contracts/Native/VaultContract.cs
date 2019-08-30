@@ -1,6 +1,7 @@
 ﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Storage.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "vault";
 
-        private Dictionary<Address, List<VaultEntry>> _entries = new Dictionary<Address, List<VaultEntry>>();
+        private StorageMap _entries; //Dictionary<Address, List<VaultEntry>>();
 
         public VaultContract() : base()
         {
@@ -35,17 +36,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
 
-            List<VaultEntry> list;
-
-            if (_entries.ContainsKey(from))
-            {
-                list = _entries[from];
-            }
-            else
-            {
-                list = new List<VaultEntry>();
-                _entries[from] = list;
-            }
+            var list = _entries.Get<Address, StorageList>(from);
 
             var entry = new VaultEntry()
             {
@@ -53,6 +44,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 unlockTime = Runtime.Time + TimeSpan.FromSeconds(duration),
             };
             list.Add(entry);
+
+            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
         }
 
         public void UnlockTokens(Address from, string symbol)
@@ -65,30 +58,31 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(_entries.ContainsKey(from), "address not in vault");
 
-            var list = _entries[from];
+            var list = _entries.Get<Address, StorageList>(from);
 
             BigInteger amount = 0;
 
-            foreach (var entry in list)
+            var count = list.Count();
+
+            int i = 0;
+            while (i<count)
             {
+                var entry = list.Get<VaultEntry>(i);
                 if (entry.unlockTime <= Runtime.Time)
                 {
                     amount += entry.amount;
+                    list.RemoveAt<VaultEntry>(i);
+                }
+                else
+                {
+                    i++;
                 }
             }
             Runtime.Expect(amount > 0, "available amount must be greater than zero");
 
-            list = list.Where(x => x.unlockTime > Runtime.Time).ToList();
-            if (list.Count > 0)
-            {
-                _entries[from] = list;
-            }
-            else
-            {
-                _entries.Remove(from);
-            }
-
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, this.Address, from, amount), "transfer failed");
+
+            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Text;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
