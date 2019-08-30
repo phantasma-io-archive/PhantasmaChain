@@ -203,6 +203,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             withdraw.timestamp = Runtime.Time;
             withdraw.feeAmount *= 2; 
             _withdraws.Replace<InteropWithdraw>(index, withdraw);
+
+            var expireDate = new Timestamp(Runtime.Time.Value + 86400); // 24 hours from now
+            Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "broker", date = expireDate });
         }
 
         // NOTE we dont allow cancelling an withdraw due to being possible to steal tokens that way
@@ -227,7 +230,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var withdraw = _withdraws.Get<InteropWithdraw>(index);
 
-            Runtime.Expect(withdraw.broker != Address.Null, "no broker set");
+            var brokerAddress = withdraw.broker;
+            Runtime.Expect(brokerAddress != Address.Null, "no broker set");
 
             var diff = Runtime.Time - withdraw.timestamp;
             var days = diff / 86400; // convert seconds to days
@@ -242,6 +246,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             _withdraws.Replace<InteropWithdraw>(index, withdraw);
 
             Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = escrowAmount, symbol = withdraw.feeSymbol });
+
+            Runtime.Notify(EventKind.RoleDemote, brokerAddress, new RoleEventData() { role = "broker", date = Runtime.Time});
         }
 
         public InteropTransferStatus GetStatus(string chainName, Hash hash)

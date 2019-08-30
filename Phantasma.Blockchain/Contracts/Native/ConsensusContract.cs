@@ -130,6 +130,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
+            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
+
             var index = GetIndexOfValidator(from);
             Runtime.Expect(index >= 0, "not a validator");
 

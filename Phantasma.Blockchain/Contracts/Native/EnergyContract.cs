@@ -149,6 +149,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void Migrate(Address from, Address to)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
             throw new NotImplementedException();
         }
@@ -244,7 +245,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var nextClaim = GetMasterClaimDate(2);
 
                 _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim });
-                Runtime.Notify(EventKind.MasterPromote, from, nextClaim);
+                Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "master", date = nextClaim });
             }
 
             Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = stakeAmount});
@@ -330,7 +331,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var penalizationDate = GetMasterClaimDateFromReference(1, _mastersList.Get<EnergyMaster>(index).claimDate);
                     _mastersList.RemoveAt<EnergyMaster>(index);
 
-                    Runtime.Notify(EventKind.MasterDemote, from, penalizationDate);
+                    Runtime.Notify(EventKind.RoleDemote, from, new RoleEventData() { role = "master", date = penalizationDate });
                 }
             }
 

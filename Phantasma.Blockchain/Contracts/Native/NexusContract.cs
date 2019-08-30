@@ -1,4 +1,5 @@
 ﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
@@ -23,6 +24,12 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public string symbol;
         public TokenMetadata metadata;
+    }
+
+    public struct RoleEventData
+    {
+        public string role;
+        public Timestamp date;
     }
 
     public sealed class NexusContract : SmartContract

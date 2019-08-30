@@ -464,12 +464,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             return orderbook;
         }
 
-
         #region OTC TRADES
         public void SwapTokens(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger amount, BigInteger price, byte[] signature)
         {
             Runtime.Expect(IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
+
+            Runtime.Expect(!seller.IsInterop, "seller cannot be interop address");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
@@ -514,6 +515,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
+
+            Runtime.Expect(!seller.IsInterop, "seller cannot be interop address");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);

@@ -3,6 +3,7 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    // TODO refactor this into "metadata", no need for a custom struct with limited fields
     public struct AppInfo
     {
         public string id;
@@ -15,8 +16,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     public class AppsContract : SmartContract
     {
         public override string Name => "apps";
-
-        private const string TOKEN_VIEWERS = "_viewers";
 
         internal StorageList _apps;
 
