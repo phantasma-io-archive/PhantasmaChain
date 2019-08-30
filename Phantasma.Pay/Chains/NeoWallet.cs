@@ -44,6 +44,34 @@ namespace Phantasma.Pay.Chains
             });
         }
 
+        public static Address DecodeAddress(string addressText)
+        {
+            var bytes = addressText.Base58CheckDecode();
+
+            byte[] temp = new byte[32];
+            int i = 0;
+            temp[i] = (byte)'*'; i++;
+            temp[i] = (byte)'N'; i++;
+            temp[i] = (byte)'E'; i++;
+            temp[i] = (byte)'O'; i++;
+            temp[i] = (byte)'*'; i++;
+            for (int count =0; count<20; count++)
+            {
+                temp[i] = bytes[count + 1];
+                i++;
+            }
+
+            return new Cryptography.Address(temp);
+        }
+
+        public static string EncodeAddress(Address address)
+        {
+            byte[] data = new byte[21];
+            data[0] = 23;
+            Buffer.BlockCopy(address.PublicKey, 5, data, 1, 20);
+            return data.Base58CheckEncode();
+        }
+
         protected override string DeriveAddress(KeyPair keys)
         {
             ECPoint pKey = ECCurve.Secp256r1.G * keys.PrivateKey;

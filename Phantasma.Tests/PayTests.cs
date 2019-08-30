@@ -5,6 +5,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Pay;
+using Phantasma.Pay.Chains;
 
 namespace Phantasma.Tests
 {
@@ -53,7 +54,13 @@ namespace Phantasma.Tests
             var keys = KeyPair.FromWIF("L1nuBmNJ2HvLat5xyvpqmHpmXNe6rGGdAzGJgLjDLECaTCVgqjdx");
             var wallet = new TestWalletManager(keys);
             var address = wallet.GetAddress(WalletKind.Neo);
-            Assert.IsTrue(address.Equals("AU2eYJkpZ2nG81RyqnzF5UL2qjdkpPEJqN", StringComparison.OrdinalIgnoreCase));
+
+            string expectedAddress = "AU2eYJkpZ2nG81RyqnzF5UL2qjdkpPEJqN";
+            Assert.IsTrue(address.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
+
+            var decodedAddress = NeoWallet.DecodeAddress(expectedAddress);
+            var encodedAddress = NeoWallet.EncodeAddress(decodedAddress);
+            Assert.IsTrue(encodedAddress.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]

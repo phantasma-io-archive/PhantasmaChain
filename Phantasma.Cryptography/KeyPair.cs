@@ -35,8 +35,15 @@ namespace Phantasma.Cryptography
 
         public static KeyPair Generate()
         {
-            var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
-            return new KeyPair(privateKey);
+            do
+            {
+                var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
+                var pair = new KeyPair(privateKey);
+                if (!pair.Address.IsInterop)
+                {
+                    return pair;
+                }
+            } while (true);
         }
 
         public static KeyPair FromWIF(string wif)

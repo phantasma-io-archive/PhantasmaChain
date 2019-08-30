@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain
 {
@@ -35,6 +36,29 @@ namespace Phantasma.Blockchain
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(URL);
             hashCode = hashCode * -1521134295 + EqualityComparer<byte[]>.Default.GetHashCode(Content);
             return hashCode;
+        }
+    }
+
+    public static class OracleUtils
+    {
+        // returns USD value
+        public static BigInteger GetPrice(OracleReaderDelegate reader, string symbol)
+        {
+            if (symbol == "USD")
+            {
+                return 1;
+            }
+
+            var bytes = reader("price://" + symbol);
+            var value = BigInteger.FromUnsignedArray(bytes, true);
+            return value;
+        }
+
+        public static BigInteger GetQuote(OracleReaderDelegate reader, BigInteger amount, string baseSymbol, string quoteSymbol)
+        {
+            var basePrice = GetPrice(reader, baseSymbol);
+            var quotePrice = GetPrice(reader, quoteSymbol);
+            throw new NotImplementedException();
         }
     }
 }

@@ -36,6 +36,9 @@ namespace Phantasma.Cryptography
 
         public const int PublicKeyLength = 32;
 
+        // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
+        public bool IsInterop => _publicKey != null && _publicKey[0] == (byte)'*' && _publicKey[4] == (byte)'*';
+
         private string _text;
         public string Text
         {
@@ -43,7 +46,7 @@ namespace Phantasma.Cryptography
             {
                 if (string.IsNullOrEmpty(_text))
                 {
-                    byte opcode = 74;
+                    var opcode = (byte)(IsInterop ? 102 : 74);
                     var bytes = ByteArrayUtils.ConcatBytes(new byte[] { opcode }, PublicKey);
                     _text = Base58.Encode(bytes);
                 }
@@ -124,7 +127,7 @@ namespace Phantasma.Cryptography
             var bytes = Base58.Decode(text);
             var opcode = bytes[0];
 
-            Throw.If(opcode != 74, "Invalid address opcode");
+            Throw.If(opcode != 74 && opcode != 102, "Invalid address opcode");
 
             return new Address(bytes.Skip(1).ToArray());
         }
