@@ -30,6 +30,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsAddressOfParentChain(targetChainAddress) || IsAddressOfChildChain(targetChainAddress), "target must be parent or child chain");
 
+            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
+
             var targetChain = this.Runtime.Nexus.FindChainByAddress(targetChainAddress);
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
@@ -65,6 +67,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
+            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
+
             Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, to, amount), "minting failed");
@@ -92,6 +96,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(source != destination, "source and destination must be different");
             Runtime.Expect(IsWitness(source), "invalid witness");
+
+            if (destination.IsInterop)
+            {
+                Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
+                Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
+                return;
+            }
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -134,6 +145,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!tokenInfo.IsFungible, "token must be non-fungible");
             Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
 
+            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
             Runtime.Expect(Runtime.Chain.Name == Nexus.RootChainName, "can only mint nft in root chain");
 
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
@@ -199,6 +211,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(IsAddressOfParentChain(targetChainAddress) || IsAddressOfChildChain(targetChainAddress), "source must be parent or child chain");
+
+            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
             var targetChain = this.Runtime.Nexus.FindChainByAddress(targetChainAddress);
 

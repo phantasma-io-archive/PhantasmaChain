@@ -169,7 +169,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdrawAmount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
             Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = feeAmount, symbol = symbol });
         }
 
