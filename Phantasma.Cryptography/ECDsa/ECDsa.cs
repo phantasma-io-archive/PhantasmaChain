@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Phantasma.Numerics;
@@ -26,7 +26,7 @@ namespace Phantasma.Cryptography.ECC
         private static BigInteger CalculateE(BigInteger n, byte[] message)
         {
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = new BigInteger(message.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger trunc = BigInteger.FromSignedArray(message.Reverse().Concat(new byte[1]).ToArray());
             if (n.GetBitLength() < messageBitLength)
             {
                 trunc >>= messageBitLength - n.GetBitLength();
@@ -38,7 +38,7 @@ namespace Phantasma.Cryptography.ECC
         {
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
-            BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger d = BigInteger.FromSignedArray(privateKey.Reverse().Concat(new byte[1]).ToArray());
             BigInteger r, s;
             var rng = new Random();
             do
@@ -146,8 +146,8 @@ namespace Phantasma.Cryptography.ECC
                     var lenS = reader.ReadByte();
                     var bytesS = reader.ReadBytes(lenS).Reverse().ToArray();
 
-                    var R = new BigInteger(bytesR);
-                    var S = new BigInteger(bytesS);
+                    var R = BigInteger.FromSignedArray(bytesR);
+                    var S = BigInteger.FromSignedArray(bytesS);
                     return VerifySignature(message, R, S, curve, publicKey);
                 }
             }

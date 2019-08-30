@@ -61,10 +61,20 @@ namespace Phantasma.Numerics
         {
         }
 
-        //this constructor assumes that the byte array is in Two's complement notation
-        public BigInteger(byte[] bytes)
+        public static BigInteger FromUnsignedArray(byte[] unsignedArray, bool isPositive)
         {
-            var msb = bytes[bytes.Length - 1];
+            return new BigInteger(unsignedArray, isPositive ? 1 : -1);
+        }
+
+        public static BigInteger FromSignedArray(byte[] signedArray)
+        {
+            return new BigInteger(signedArray);
+        }
+
+        //this constructor expects that the byte array is in Two's complement notation
+        private BigInteger(byte[] signedByteArray)
+        {
+            var msb = signedByteArray[signedByteArray.Length - 1];
 
             int sign = 0;
 
@@ -85,29 +95,29 @@ namespace Phantasma.Numerics
             byte[] buffer;
 
             if (sign == -1)
-                buffer = ApplyTwosComplement(bytes);
+                buffer = ApplyTwosComplement(signedByteArray);
             else
-                buffer = bytes;
+                buffer = signedByteArray;
 
             this = new BigInteger(buffer, sign);
         }
 
-        private BigInteger(byte[] bytes, int sign = 1)
+        private BigInteger(byte[] unsignedByteArray, int sign)
         {
             _sign = sign;
             _data = null;
 
-            uint[] uintArray = new uint[(bytes.Length / 4) + (bytes.Length % 4 > 0 ? 1 : 0)];
+            uint[] uintArray = new uint[(unsignedByteArray.Length / 4) + (unsignedByteArray.Length % 4 > 0 ? 1 : 0)];
 
             int bytePosition = 0;
-            for (int i = 0, j = -1; i < bytes.Length; i++)
+            for (int i = 0, j = -1; i < unsignedByteArray.Length; i++)
             {
                 bytePosition = i % 4;
 
                 if (bytePosition == 0)
                     j++;
 
-                uintArray[j] |= (uint)(bytes[i] << (bytePosition * 8));
+                uintArray[j] |= (uint)(unsignedByteArray[i] << (bytePosition * 8));
             }
 
             InitFromArray(uintArray);
@@ -1250,6 +1260,11 @@ public void SetBit(uint bitNum)
             return result;
         }
 
+        /// <summary>
+        /// Turns an unsigned byte array for a negative number and returns a signed byte array in 2's complement notation
+        /// </summary>
+        /// <param name="bytes">Unsigned byte array for a negative number</param>
+        /// <returns>Signed byte array in 2's complement notation</returns>
         private static byte[] ApplyTwosComplement(byte[] bytes)
         {
             var buffer = new byte[bytes.Length];
@@ -1304,7 +1319,7 @@ public void SetBit(uint bitNum)
 
     public static class BigIntegerExtensions
     {
-        public static BigInteger AsBigInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : new BigInteger(source); }
+        public static BigInteger AsBigInteger(this byte[] source) { return (source == null || source.Length == 0) ? new BigInteger(0) : BigInteger.FromSignedArray(source); }
         public static byte[] AsByteArray(this BigInteger source) { return source.ToSignedByteArray(); }
     }
 }

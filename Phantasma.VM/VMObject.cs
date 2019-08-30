@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
@@ -233,7 +233,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = new BigInteger(val);
+                        this.Data = BigInteger.FromSignedArray(val);
                         break;
                     }
 
@@ -608,7 +608,7 @@ namespace Phantasma.VM
                         case VMType.Bytes:
                             {
                                 var result = new VMObject();
-                                result.SetValue(new BigInteger((byte[])srcObj.Data));
+                                result.SetValue(BigInteger.FromSignedArray((byte[])srcObj.Data));
                                 return result;
                             }
 

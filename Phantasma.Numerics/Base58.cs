@@ -1,4 +1,4 @@
-﻿using Phantasma.Core;
+using Phantasma.Core;
 using System;
 using System.Text;
 
@@ -44,7 +44,7 @@ namespace Phantasma.Numerics
             }
             temp[input.Length] = 0;
 
-            var value = new BigInteger(temp);
+            var value = BigInteger.FromSignedArray(temp);
             var sb = new StringBuilder();
             while (value >= 58)
             {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -332,7 +332,7 @@ namespace Phantasma.Cryptography
                 b[b.Length - 1] = 0;
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
-            return new BigInteger(b);
+            return BigInteger.FromUnsignedArray(b, isPositive: true);
         }
 
         /*internal static LargeInteger NextLargeInteger(this RandomNumberGenerator rng, int sizeInBits)
@@ -379,7 +379,7 @@ namespace Phantasma.Cryptography
             var bytes = new byte[bytesToRepresent + securityParameter / 8 + 1];
             rng.GetBytes(bytes);
             bytes[bytes.Length - 1] = 0;
-            return new BigInteger(bytes) % max;
+            return BigInteger.FromSignedArray(bytes) % max;
         }
 
         public static byte[] Hash256(byte[] message)

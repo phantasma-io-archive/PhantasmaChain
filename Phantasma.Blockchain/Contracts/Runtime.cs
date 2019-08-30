@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Phantasma.VM.Contracts;
 using Phantasma.VM;
@@ -224,7 +224,7 @@ namespace Phantasma.Blockchain.Contracts
                 temp = ByteArrayUtils.ConcatBytes(time, init);
             }
 
-            var seed = new BigInteger(temp);
+            var seed = BigInteger.FromSignedArray(temp);
             return seed;
         }
 

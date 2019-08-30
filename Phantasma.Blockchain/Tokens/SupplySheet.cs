@@ -1,4 +1,4 @@
-﻿using Phantasma.Core;
+using Phantasma.Core;
 using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Tokens
                 {
                     return 0;
                 }
-                return new BigInteger(temp);
+                return BigInteger.FromSignedArray(temp);
             }
         }
 

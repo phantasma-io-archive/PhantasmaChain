@@ -1,4 +1,4 @@
-﻿using Phantasma.Numerics;
+using Phantasma.Numerics;
 using System;
 using System.IO;
 using System.Text;
@@ -83,7 +83,7 @@ namespace Phantasma.Storage.Utils
         {
             var length = reader.ReadByte();
             var bytes = reader.ReadBytes(length);
-            return new BigInteger(bytes);
+            return BigInteger.FromSignedArray(bytes);
         }
 
         public static byte[] ReadByteArray(this BinaryReader reader)
