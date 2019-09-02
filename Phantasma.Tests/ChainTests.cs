@@ -308,7 +308,7 @@ namespace Phantasma.Tests
 
             var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
 
-            var swapAmount = UnitConversion.ToBigInteger(0.1m, Nexus.StakingTokenDecimals);
+            var swapAmount = UnitConversion.ToBigInteger(0.01m, Nexus.StakingTokenDecimals);
             simulator.BeginBlock();
             simulator.GenerateSwap(testUserA, nexus.RootChain, Nexus.StakingTokenSymbol, Nexus.FuelTokenSymbol, swapAmount);
             simulator.EndBlock();

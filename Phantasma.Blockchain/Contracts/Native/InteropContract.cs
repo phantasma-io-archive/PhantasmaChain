@@ -149,7 +149,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(feeToken.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
             var basePrice = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals) / InteropFeeRate;
-            var feeAmount = OracleUtils.GetQuote(Runtime.OracleReader, basePrice, Nexus.FiatTokenSymbol, feeSymbol);
+            var feeAmount = OracleUtils.GetQuote(Runtime.OracleReader, Runtime.Nexus, Nexus.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, feeSymbol, from, this.Address, feeAmount), "fee transfer failed");

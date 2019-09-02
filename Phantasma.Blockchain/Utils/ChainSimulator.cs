@@ -148,6 +148,35 @@ namespace Phantasma.Blockchain.Utils
             */
         }
 
+        private byte[] SimOracleReader(string url)
+        {
+            var priceProtocol = "price://";
+            
+            if (url.StartsWith(priceProtocol))
+            {
+                var symbol = url.Substring(priceProtocol.Length);
+
+                // some dummy values, only really used in the test suite ...
+                BigInteger price;
+                switch (symbol)
+                {
+                    case "SOUL": price = 100; break;
+                    case "KCAL": price = 20; break;
+                    case "NEO": price = 200; break;
+                    case "ETH": price = 4000; break;
+                    case "BTC": price = 80000; break;
+                    default: return null;
+                }
+
+                price *= UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals);
+                price /= 100;
+
+                return price.ToUnsignedByteArray();
+            }
+
+            return null;
+        }
+
         private void RandomSpreadNFT(string tokenSymbol, int amount)
         {
             Throw.If(!Nexus.TokenExists(tokenSymbol), "Token does not exist: "+tokenSymbol);
@@ -271,7 +300,7 @@ namespace Phantasma.Blockchain.Utils
                         {
                             try
                             {
-                                chain.AddBlock(block, txs, null);
+                                chain.AddBlock(block, txs, SimOracleReader);
                                 submitted = true;
                             }
                             catch (Exception e)

@@ -37,18 +37,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
             Runtime.Expect(toInfo.IsFungible, "must be fungible");
-            BigInteger total;
 
-            if (fromBalance < toBalance)
-            {
-                total = UnitConversion.ToBigInteger((UnitConversion.ToDecimal(amount, fromInfo.Decimals) / UnitConversion.ToDecimal(toBalance, toInfo.Decimals)) * UnitConversion.ToDecimal(fromBalance + amount, fromInfo.Decimals), toInfo.Decimals);
-            }
-            else
-            {
-                total = UnitConversion.ToBigInteger((UnitConversion.ToDecimal(amount, fromInfo.Decimals) * UnitConversion.ToDecimal(fromBalance + amount, fromInfo.Decimals)) / UnitConversion.ToDecimal(toBalance, toInfo.Decimals), toInfo.Decimals);
-            }
-
-            return total;
+            var rate = OracleUtils.GetQuote(Runtime.OracleReader, Runtime.Nexus, fromSymbol, toSymbol, amount);
+            return rate;
         }
 
         public void DepositTokens(Address from, string symbol, BigInteger amount)
