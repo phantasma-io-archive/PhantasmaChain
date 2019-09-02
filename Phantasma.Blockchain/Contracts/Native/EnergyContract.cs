@@ -146,12 +146,48 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // migrates the full stake from one address to other
-        public void Migrate(Address from, Address to)
+        public void Migrate(Address source, Address target)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
-            throw new NotImplementedException();
+            var targetStake = _stakes.Get<Address, EnergyAction>(target);
+            Runtime.Expect(targetStake.totalAmount == 0, "Tried to migrate to an account that's already staking");
+
+            //migrate stake
+            var sourceStake = _stakes.Get<Address, EnergyAction>(source);
+            
+            _stakes.Set(target, sourceStake);
+            _stakes.Remove(source);
+
+            //migrate master claim
+            if (sourceStake.totalAmount >= MasterAccountThreshold)
+            {
+                var count = _mastersList.Count();
+                var index = -1;
+                Timestamp claimDate;
+                for (int i = 0; i < count; i++)
+                {
+                    var master = _mastersList.Get<EnergyMaster>(i);
+                    if (master.address == from)
+                    {
+
+                        index = i;
+                        claimDate = master.claimDate;
+                        break;
+                    }
+                }
+
+                Runtime.Expect(index >= 0,"Expected this address to be a master");
+
+                _mastersList.RemoveAt<EnergyMaster>(index);
+                _mastersList.Add(new EnergyMaster() { address = target, claimDate = claimDate });
+            }
+
+            //migrate voting power
+            var votingLogbook = _voteHistory.Get<Address, StorageList>(source);
+            votingLogbook.Add(target);
+            votingLogbook.Remove(source);
         }
 
         public void MasterClaim(Address from)
