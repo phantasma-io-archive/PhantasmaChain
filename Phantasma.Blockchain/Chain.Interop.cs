@@ -12,27 +12,31 @@ namespace Phantasma.Blockchain
 {
     public partial class Chain
     {
+        // naming scheme should be "namespace.methodName" for methods, and "type()" for constructors
         internal static void RegisterInterop(RuntimeVM vm)
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Event", Runtime_Event);
+            vm.RegisterMethod("Runtime.CheckWitness", Constructor_CheckWitness);
 
-            vm.RegisterMethod("ABI()", Constructor_ABI);
-
-            vm.RegisterMethod("Oracle.Read", Oracle_Read);
-            vm.RegisterMethod("Oracle.Register", Oracle_Register);
-            vm.RegisterMethod("Oracle.List", Oracle_List);
-
-            vm.RegisterMethod("Address()", Constructor_Address);
-            vm.RegisterMethod("Hash()", Constructor_Hash);
-            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
-
-            vm.RegisterMethod("CheckWitness()", Constructor_CheckWitness);
-          
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
             vm.RegisterMethod("Data.Delete", Data_Delete);
 
+            vm.RegisterMethod("Oracle.Read", Oracle_Read);
+            vm.RegisterMethod("Oracle.Price", Oracle_Price);
+            vm.RegisterMethod("Oracle.Quote", Oracle_Quote);
+            // TODO
+            //vm.RegisterMethod("Oracle.Block", Oracle_Block);
+            //vm.RegisterMethod("Oracle.Transaction", Oracle_Transaction);
+            /*vm.RegisterMethod("Oracle.Register", Oracle_Register);
+            vm.RegisterMethod("Oracle.List", Oracle_List);
+            */
+
+            vm.RegisterMethod("ABI()", Constructor_ABI);
+            vm.RegisterMethod("Address()", Constructor_Address);
+            vm.RegisterMethod("Hash()", Constructor_Hash);
+            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);          
         }
 
         private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
@@ -115,6 +119,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        #region ORACLES
         // TODO proper exceptions
         private static ExecutionState Oracle_Read(RuntimeVM vm)
         {
@@ -147,6 +152,71 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Oracle_Price(RuntimeVM vm)
+        {
+            if (vm.Stack.Count < 1)
+            {
+                return ExecutionState.Fault;
+            }
+
+            VMObject temp;
+
+            temp = vm.Stack.Pop();
+            if (temp.Type != VMType.String)
+            {
+                return ExecutionState.Fault;
+            }
+
+            var symbol = temp.AsString();
+
+            var price = OracleUtils.GetPrice(vm.OracleReader, vm.Nexus, symbol);
+
+            vm.Stack.Push(VMObject.FromObject(price));
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Oracle_Quote(RuntimeVM vm)
+        {
+            if (vm.Stack.Count < 3)
+            {
+                return ExecutionState.Fault;
+            }
+
+            VMObject temp;
+
+            temp = vm.Stack.Pop();
+            if (temp.Type != VMType.Number)
+            {
+                return ExecutionState.Fault;
+            }
+
+            var amount = temp.AsNumber();
+
+            temp = vm.Stack.Pop();
+            if (temp.Type != VMType.String)
+            {
+                return ExecutionState.Fault;
+            }
+
+            var quoteSymbol = temp.AsString();
+
+            temp = vm.Stack.Pop();
+            if (temp.Type != VMType.String)
+            {
+                return ExecutionState.Fault;
+            }
+
+            var baseSymbol = temp.AsString();
+
+            var price = OracleUtils.GetQuote(vm.OracleReader, vm.Nexus, baseSymbol, quoteSymbol, amount);
+
+            vm.Stack.Push(VMObject.FromObject(price));
+
+            return ExecutionState.Running;
+        }
+
+        /*
         private static ExecutionState Oracle_Register(RuntimeVM vm)
         {
             if (vm.Stack.Count < 2)
@@ -179,7 +249,9 @@ namespace Phantasma.Blockchain
         private static ExecutionState Oracle_List(RuntimeVM vm)
         {
             throw new NotImplementedException();
-        }
+        }*/
+
+        #endregion
 
         private static ExecutionState Constructor_CheckWitness(RuntimeVM vm)
         {
