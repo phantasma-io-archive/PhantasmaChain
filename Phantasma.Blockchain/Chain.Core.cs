@@ -486,10 +486,11 @@ namespace Phantasma.Blockchain
             return result.ToObject(); // TODO remove ToObject and let the callers convert as they want
         }
 
-        public VMObject InvokeScript(byte[] script)
+        public VMObject InvokeScript(byte[] script, OracleReaderDelegate oracleReader = null)
         {
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null,  this.LastBlock, null, changeSet, true);
+            vm.OracleReader = oracleReader;
 
             var state = vm.Execute();
 

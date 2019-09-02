@@ -148,7 +148,7 @@ namespace Phantasma.Blockchain.Utils
             */
         }
 
-        private byte[] SimOracleReader(string url)
+        public byte[] OracleReader(string url)
         {
             var priceProtocol = "price://";
             
@@ -300,7 +300,7 @@ namespace Phantasma.Blockchain.Utils
                         {
                             try
                             {
-                                chain.AddBlock(block, txs, SimOracleReader);
+                                chain.AddBlock(block, txs, OracleReader);
                                 submitted = true;
                             }
                             catch (Exception e)

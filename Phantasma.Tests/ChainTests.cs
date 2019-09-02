@@ -11,6 +11,7 @@ using Phantasma.Blockchain.Utils;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;
+using Phantasma.Blockchain.Contracts.Native;
 
 namespace Phantasma.Tests
 {
@@ -290,7 +291,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void SimpleSwap()
+        public void SwapSimple()
         {
             var owner = KeyPair.Generate();
             var simulator = new ChainSimulator(owner, 1234);
@@ -315,6 +316,35 @@ namespace Phantasma.Tests
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
             Assert.IsTrue(finalBalance > originalBalance);
+        }
+
+        [TestMethod]
+        public void GetRatesForSwap()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+
+            var script = new ScriptBuilder().CallContract("swap", "GetRates", "SOUL", UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals)).EndScript();
+
+            var result = nexus.RootChain.InvokeScript(script, simulator.OracleReader);
+
+            var temp = result.ToObject();
+            var rates = (SwapPair[])temp;
+
+            decimal targetRate = 0;
+
+            foreach (var entry in rates)
+            {
+                if (entry.Symbol == Nexus.FuelTokenSymbol)
+                {
+                    targetRate = UnitConversion.ToDecimal( entry.Value, Nexus.FuelTokenDecimals);
+                    break;
+                }
+            }
+
+            Assert.IsTrue(targetRate == 5);
         }
 
         [TestMethod]
