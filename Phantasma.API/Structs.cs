@@ -239,6 +239,15 @@ namespace Phantasma.API
         public string ram;
     }
 
+    public struct OracleResult : IAPIResult
+    {
+        [APIDescription("URL that was read by the oracle")]
+        public string url;
+
+        [APIDescription("Byte array content read by the oracle, encoded as hex string")]
+        public string content;
+    }
+
     public struct ScriptResult : IAPIResult
     {
         [APIDescription("List of events that triggered in the transaction")]
@@ -246,6 +255,9 @@ namespace Phantasma.API
 
         [APIDescription("Result of the transaction, if any. Serialized, in hexadecimal format")]
         public string result;
+
+        [APIDescription("List of oracle reads that were triggered in the transaction")]
+        public OracleResult[] oracles;
     }
 
     public struct ArchiveResult : IAPIResult

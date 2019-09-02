@@ -8,6 +8,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Storage;
 using Phantasma.Core;
 using Phantasma.Storage.Utils;
+using System;
 
 namespace Phantasma.Blockchain
 {
@@ -52,6 +53,7 @@ namespace Phantasma.Blockchain
 
         // stores the results of oracles
         private List<OracleEntry> _oracleData = new List<OracleEntry>();
+        public IEnumerable<OracleEntry> OracleData => _oracleData;
 
         // required for unserialization
         public Block()
@@ -298,6 +300,15 @@ namespace Phantasma.Blockchain
             }
 
             _dirty = true;
+        }
+
+        internal void MergeOracle(OracleReader oracle)
+        {
+            if (oracle.Entries.Any())
+            {
+                _oracleData = oracle.Entries.ToList();
+                _dirty = true;
+            }
         }
         #endregion
     }

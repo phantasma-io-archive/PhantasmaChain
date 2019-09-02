@@ -1807,7 +1807,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
             var startingKcalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
-            BigInteger swapAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+            BigInteger swapAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals) / 100;
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>

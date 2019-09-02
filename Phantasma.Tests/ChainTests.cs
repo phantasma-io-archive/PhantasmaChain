@@ -51,7 +51,7 @@ namespace Phantasma.Tests
         public void GenesisBlock()
         {
             var owner = KeyPair.Generate();
-            var nexus = new Nexus();
+            var nexus = new Nexus(null, null, () => new OracleSimulator());
 
             Assert.IsTrue(nexus.CreateGenesisBlock("simnet", owner, DateTime.Now));
 
@@ -305,14 +305,20 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
-            simulator.EndBlock();
+            var blockA = simulator.EndBlock().FirstOrDefault();
+
+            Assert.IsTrue(blockA != null);
+            Assert.IsFalse(blockA.OracleData.Any());
 
             var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
 
             var swapAmount = UnitConversion.ToBigInteger(0.01m, Nexus.StakingTokenDecimals);
             simulator.BeginBlock();
             simulator.GenerateSwap(testUserA, nexus.RootChain, Nexus.StakingTokenSymbol, Nexus.FuelTokenSymbol, swapAmount);
-            simulator.EndBlock();
+            var blockB = simulator.EndBlock().FirstOrDefault();
+
+            Assert.IsTrue(blockB != null);
+            Assert.IsTrue(blockB.OracleData.Any());
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
             Assert.IsTrue(finalBalance > originalBalance);
@@ -328,7 +334,7 @@ namespace Phantasma.Tests
 
             var script = new ScriptBuilder().CallContract("swap", "GetRates", "SOUL", UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals)).EndScript();
 
-            var result = nexus.RootChain.InvokeScript(script, simulator.OracleReader);
+            var result = nexus.RootChain.InvokeScript(script);
 
             var temp = result.ToObject();
             var rates = (SwapPair[])temp;

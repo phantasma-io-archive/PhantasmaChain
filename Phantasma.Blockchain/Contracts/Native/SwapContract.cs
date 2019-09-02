@@ -38,7 +38,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
             Runtime.Expect(toInfo.IsFungible, "must be fungible");
 
-            var rate = OracleUtils.GetQuote(Runtime.OracleReader, Runtime.Nexus, fromSymbol, toSymbol, amount);
+            var rate = Runtime.GetTokenQuote(fromSymbol, toSymbol, amount);
             return rate;
         }
 

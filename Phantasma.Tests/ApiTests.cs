@@ -28,16 +28,11 @@ namespace Phantasma.Tests
         private static readonly string testWIF = "Kx9Kr8MwQ9nAJbHEYNAjw5n99B2GpU6HQFf75BGsC3hqB1ZoZm5W";
         private static readonly string testAddress = "P9dKgENhREKbRNsecvVeyPLvrMVJJqDHSWBwFZPyEJjSy";
 
-        private byte[] OracleReaderCallback(string url)
-        {
-            return null;
-        }
-
         private TestData CreateAPI(bool useMempool = false)
         {
             var owner = KeyPair.FromWIF(testWIF);
             var sim = new ChainSimulator(owner, 1234);
-            var mempool = useMempool? new Mempool(owner, sim.Nexus, 2, OracleReaderCallback) : null;
+            var mempool = useMempool? new Mempool(owner, sim.Nexus, 2) : null;
             var api = new NexusAPI(sim.Nexus, mempool);
 
             var data = new TestData()

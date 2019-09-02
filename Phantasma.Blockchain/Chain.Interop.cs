@@ -136,7 +136,7 @@ namespace Phantasma.Blockchain
 
             var url = temp.AsString();
 
-            if (vm.OracleReader == null)
+            if (vm.Oracle == null)
             {
                 return ExecutionState.Fault;
             }
@@ -147,7 +147,7 @@ namespace Phantasma.Blockchain
                 return ExecutionState.Fault;
             }
 
-            var result = vm.OracleReader(/*vm.Transaction.Hash, */url);
+            var result = vm.Oracle.Read(/*vm.Transaction.Hash, */url);
 
             return ExecutionState.Running;
         }
@@ -169,7 +169,7 @@ namespace Phantasma.Blockchain
 
             var symbol = temp.AsString();
 
-            var price = OracleUtils.GetPrice(vm.OracleReader, vm.Nexus, symbol);
+            var price = vm.GetTokenPrice(symbol);
 
             vm.Stack.Push(VMObject.FromObject(price));
 
@@ -209,7 +209,7 @@ namespace Phantasma.Blockchain
 
             var baseSymbol = temp.AsString();
 
-            var price = OracleUtils.GetQuote(vm.OracleReader, vm.Nexus, baseSymbol, quoteSymbol, amount);
+            var price = vm.GetTokenQuote(baseSymbol, quoteSymbol, amount);
 
             vm.Stack.Push(VMObject.FromObject(price));
 

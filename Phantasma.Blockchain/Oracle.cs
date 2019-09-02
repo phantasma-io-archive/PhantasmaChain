@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain
 {
-    public delegate byte[] OracleReaderDelegate(string url);
-
     public struct OracleEntry
     {
         public readonly string URL;
@@ -39,46 +39,27 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public static class OracleUtils
+    public abstract class OracleReader
     {
-        // returns USD value
-        public static BigInteger GetPrice(OracleReaderDelegate reader, Nexus nexus, string symbol)
+        private Dictionary<string, OracleEntry> _entries = new Dictionary<string, OracleEntry>();
+
+        public IEnumerable<OracleEntry> Entries => _entries.Values;
+
+        protected abstract byte[] PullData(string url);
+
+        public byte[] Read(string url)
         {
-            if (symbol == "USD")
+            if (_entries.ContainsKey(url))
             {
-                return 1;
+                return _entries[url].Content;
             }
 
-            if (symbol == "KCAL")
-            {
-                var result = GetPrice(reader, nexus, "SOUL");
-                result /= 5;
-                return result;
-            }
+            var content = PullData(url);
 
-            var bytes = reader("price://" + symbol);
-            var value = BigInteger.FromUnsignedArray(bytes, true);
-            return value;
-        }
+            var entry = new OracleEntry(url, content);
+            _entries[url] = entry;
 
-        public static BigInteger GetQuote(OracleReaderDelegate reader, Nexus nexus, string baseSymbol, string quoteSymbol, BigInteger amount)
-        {
-            var basePrice = GetPrice(reader, nexus, baseSymbol);
-            var quotePrice = GetPrice(reader, nexus, quoteSymbol);
-
-            BigInteger result;
-
-            var baseToken = nexus.GetTokenInfo(baseSymbol);
-            var quoteToken = nexus.GetTokenInfo(quoteSymbol);
-
-            result = basePrice * amount;
-            result = UnitConversion.ConvertDecimals(result, baseToken.Decimals, Nexus.FiatTokenDecimals);
-
-            result /= quotePrice;
-
-            result = UnitConversion.ConvertDecimals(result, Nexus.FiatTokenDecimals, quoteToken.Decimals);
-
-            return result;
+            return content;
         }
     }
 }

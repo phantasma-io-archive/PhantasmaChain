@@ -38,8 +38,6 @@ namespace Phantasma.Blockchain
         public static readonly int MinimumBlockTime = 2; // in seconds
         public static readonly int MaxTransactionsPerBlock = 5000;
 
-        public OracleReaderDelegate OracleReader { get; private set; }
-
         private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
         private HashSet<Hash> _pendingSet = new HashSet<Hash>();
         private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
@@ -63,12 +61,11 @@ namespace Phantasma.Blockchain
 
         public readonly int BlockTime; // in seconds
 
-        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime, OracleReaderDelegate oracleReader)
+        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 
             this._validatorKeys = validatorKeys;
-            this.OracleReader = oracleReader;
             this.Nexus = nexus;
             this.BlockTime = blockTime;
         }
@@ -281,7 +278,7 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    chain.AddBlock(block, transactions, OracleReader);
+                    chain.AddBlock(block, transactions);
                 }
                 catch (InvalidTransactionException e)
                 {

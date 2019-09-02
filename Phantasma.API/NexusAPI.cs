@@ -872,12 +872,8 @@ namespace Phantasma.API
             //System.IO.File.AppendAllLines(@"c:\code\bug_vm.txt", new []{string.Join("\n", new VM.Disassembler(script).Instructions)});
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
-            var vm = new RuntimeVM(script, chain, null, null, null, changeSet, true);
-
-            if (Mempool != null)
-            {
-                vm.OracleReader = Mempool.OracleReader;
-            }
+            var oracle = Nexus.CreateOracle();
+            var vm = new RuntimeVM(script, chain, null, null, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 
@@ -905,9 +901,11 @@ namespace Phantasma.API
                 encodedResult = Base16.Encode(resultBytes);
             }
 
-            var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) });
+            var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
-            return new ScriptResult { result = encodedResult, events = evts.ToArray() };
+            var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) } ).ToArray();
+
+            return new ScriptResult { result = encodedResult, events = evts, oracles = oracleReads };
         }
 
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.")]

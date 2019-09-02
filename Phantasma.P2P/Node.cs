@@ -544,7 +544,7 @@ namespace Phantasma.Network.P2P
                                     // TODO this wont work in the future...
                                     try
                                     {
-                                        chain.AddBlock(block, transactions, null);
+                                        chain.AddBlock(block, transactions);
 
                                         foreach (var hash in block.TransactionHashes)
                                         {

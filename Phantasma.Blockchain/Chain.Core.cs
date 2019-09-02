@@ -147,7 +147,7 @@ namespace Phantasma.Blockchain
             return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
         }
 
-        public void AddBlock(Block block, IEnumerable<Transaction> transactions, OracleReaderDelegate oracleReader)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions)
         {
             /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
             {
@@ -197,12 +197,14 @@ namespace Phantasma.Blockchain
 
             var targetEpoch = CurrentEpoch != null ? CurrentEpoch : GenerateEpoch();
 
+            var oracle = Nexus.CreateOracle();
+
             foreach (var tx in transactions)
             {
                 byte[] result;
                 try
                 {
-                    if (tx.Execute(this, targetEpoch, block, changeSet, block.Notify, oracleReader, out result))
+                    if (tx.Execute(this, targetEpoch, block, changeSet, block.Notify, oracle, out result))
                     {
                         if (result != null)
                         {
@@ -223,6 +225,8 @@ namespace Phantasma.Blockchain
                     throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
             }
+
+            block.MergeOracle(oracle);
 
             // from here on, the block is accepted
             _blockHeightMap[block.Height] = block.Hash;
@@ -486,11 +490,11 @@ namespace Phantasma.Blockchain
             return result.ToObject(); // TODO remove ToObject and let the callers convert as they want
         }
 
-        public VMObject InvokeScript(byte[] script, OracleReaderDelegate oracleReader = null)
+        public VMObject InvokeScript(byte[] script)
         {
+            var oracle = Nexus.CreateOracle();
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null,  this.LastBlock, null, changeSet, true);
-            vm.OracleReader = oracleReader;
+            var vm = new RuntimeVM(script, this, null,  this.LastBlock, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 

@@ -20,6 +20,7 @@ namespace Phantasma.Blockchain.Contracts
         public Chain ParentChain { get; private set; }
         public Block Block { get; private set; }
         public Epoch Epoch { get; private set; }
+        public OracleReader Oracle { get; private set; }
         public Nexus Nexus => Chain.Nexus;
         public Timestamp Time => Block != null ? Block.Timestamp : Timestamp.Now;
 
@@ -37,11 +38,10 @@ namespace Phantasma.Blockchain.Contracts
         public readonly bool readOnlyMode;
         public readonly bool DelayPayment;
 
-        public OracleReaderDelegate OracleReader = null;
-
         private BigInteger seed;
 
-        public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Block block, Transaction transaction, StorageChangeSetContext changeSet, bool readOnlyMode, bool delayPayment = false) : base(script)
+
+        public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Block block, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -60,6 +60,7 @@ namespace Phantasma.Blockchain.Contracts
             this.Epoch = epoch;
             this.Block = block;
             this.Transaction = transaction;
+            this.Oracle = oracle;
             this.ChangeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
 
@@ -317,6 +318,52 @@ namespace Phantasma.Blockchain.Contracts
 
                 default: return 1;
             }
+        }
+        #endregion
+
+        #region ORACLES
+        // returns value in FIAT token
+        public BigInteger GetTokenPrice(string symbol)
+        {
+            if (symbol == Nexus.FiatTokenSymbol)
+            {
+                return 1;
+            }
+
+            if (symbol == Nexus.FuelTokenSymbol)
+            {
+                var result = GetTokenPrice(Nexus.StakingTokenSymbol);
+                result /= 5;
+                return result;
+            }
+
+            Throw.If(Oracle == null, "cannot read price from null oracle");
+
+            Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
+
+            var bytes = Oracle.Read("price://" + symbol);
+            var value = BigInteger.FromUnsignedArray(bytes, true);
+            return value;
+        }
+
+        public BigInteger GetTokenQuote(string baseSymbol, string quoteSymbol, BigInteger amount)
+        {
+            var basePrice = GetTokenPrice(baseSymbol);
+            var quotePrice = GetTokenPrice(quoteSymbol);
+
+            BigInteger result;
+
+            var baseToken = Nexus.GetTokenInfo(baseSymbol);
+            var quoteToken = Nexus.GetTokenInfo(quoteSymbol);
+
+            result = basePrice * amount;
+            result = UnitConversion.ConvertDecimals(result, baseToken.Decimals, Nexus.FiatTokenDecimals);
+
+            result /= quotePrice;
+
+            result = UnitConversion.ConvertDecimals(result, Nexus.FiatTokenDecimals, quoteToken.Decimals);
+
+            return result;
         }
         #endregion
     }
