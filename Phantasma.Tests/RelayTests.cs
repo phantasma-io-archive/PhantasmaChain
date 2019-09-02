@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -15,6 +15,7 @@ using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM.Utils;
+using static Phantasma.Blockchain.Contracts.Native.RelayContract;
 
 namespace Phantasma.Tests
 {
@@ -24,7 +25,7 @@ namespace Phantasma.Tests
         private static readonly string testWIF = "Kx9Kr8MwQ9nAJbHEYNAjw5n99B2GpU6HQFf75BGsC3hqB1ZoZm5W";
         private static readonly string nodeWIF = "L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25";
 
-        private ApiTests.TestData CreateAPI(bool useMempool = false)
+        private ApiTests.TestData CreateAPI(bool useMempool = true)
         {
             var owner = KeyPair.FromWIF(testWIF);
             var sim = new ChainSimulator(owner, 1234);
@@ -75,11 +76,13 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
 
-            TopUpChannel(simulator, testUser, 100);
+            var desiredChannelBalance = RelayFeePerMessage;
+
+            TopUpChannel(simulator, testUser, desiredChannelBalance);
 
             var channelBalance = (BigInteger) nexus.RootChain.InvokeContract("relay", "GetBalance", testUser.Address);
 
-            Assert.IsTrue(channelBalance == 100);
+            Assert.IsTrue(channelBalance == desiredChannelBalance);
 
             
         }
@@ -101,11 +104,13 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
 
-            TopUpChannel(simulator, sender, 100);
+            var desiredChannelBalance = RelayFeePerMessage * 10;
+
+            TopUpChannel(simulator, sender, desiredChannelBalance);
 
             var channelBalance = (BigInteger)nexus.RootChain.InvokeContract("relay", "GetBalance", sender.Address);
 
-            Assert.IsTrue(channelBalance == 100);
+            Assert.IsTrue(channelBalance == desiredChannelBalance);
 
             var messageCount = 5;
             var messages = new RelayMessage[messageCount];
@@ -167,6 +172,8 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var api = test.api;
 
+            var contractAddress = simulator.Nexus.FindContract("relay").Address;
+
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
@@ -222,7 +229,7 @@ namespace Phantasma.Tests
             var lastReceipt = RelayReceipt.FromMessage(lastMessage, sender);
 
             var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, sender.Address);
-            var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, nexus.RootChainAddress);
+            var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, contractAddress);
             var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, node.Address);
 
             simulator.BeginBlock();
@@ -235,17 +242,17 @@ namespace Phantasma.Tests
             var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
 
             var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, sender.Address);
-            var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, simulator.Nexus.RootChainAddress);
+            var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, contractAddress);
             var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, receiver.Address);
 
-            var expectedFee = RelayContract.RelayFeePerMessage * messageCount;
+            var expectedFee = RelayFeePerMessage * messageCount;
 
             Assert.IsTrue(senderFinalBalance == senderInitialBalance - txCost);
-            Assert.IsTrue(chainFinalBalance == chainInitialBalance - (expectedFee/2) + txCost);
             Assert.IsTrue(receiverFinalBalance == receiverInitialBalance + (expectedFee / 2));
+            Assert.IsTrue(chainFinalBalance == chainInitialBalance - (expectedFee / 2));    //the sender's balance is escrowed in the chain address, so the chain just sends the other half of the fee away to the receiver
         }
 
-        //test claiming each receipt in sequence and verify that it claims each receipt successfully
+        //test claiming every 10th receipt 
         [TestMethod]
         public void TestMultiSendMultiClaim()
         {
@@ -259,14 +266,18 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var api = test.api;
 
+            var contractAddress = simulator.Nexus.FindContract("relay").Address;
+
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
 
-            TopUpChannel(simulator, sender, 1000000);
+            
 
-            var messageCount = 5;
+            var messageCount = 100;
             var messages = new RelayMessage[messageCount];
+
+            TopUpChannel(simulator, sender, messageCount * RelayFeePerMessage);
 
             var random = new Random();
 
@@ -296,7 +307,9 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(receipts.values.Length == messageCount);
 
-            for (int i = 0; i < messageCount; i++)
+            var receiptStep = 10;
+
+            for (int i = 9; i < messageCount; i+=receiptStep)
             {
                 var obj = receipts.values[i];
                 Assert.IsTrue(obj is ReceiptResult);
@@ -313,7 +326,7 @@ namespace Phantasma.Tests
                 var lastReceipt = RelayReceipt.FromMessage(lastMessage, sender);
 
                 var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, sender.Address);
-                var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, nexus.RootChainAddress);
+                var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, contractAddress);
                 var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, receiver.Address);
 
                 simulator.BeginBlock();
@@ -326,14 +339,14 @@ namespace Phantasma.Tests
                 var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
 
                 var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, sender.Address);
-                var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, nexus.RootChainAddress);
+                var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, contractAddress);
                 var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, receiver.Address);
 
-                var expectedFee = RelayContract.RelayFeePerMessage;
+                var expectedFee = RelayFeePerMessage * receiptStep;
 
                 Assert.IsTrue(senderFinalBalance == senderInitialBalance - txCost);
-                Assert.IsTrue(chainFinalBalance == chainInitialBalance - (expectedFee / 2) + txCost);
                 Assert.IsTrue(receiverFinalBalance == receiverInitialBalance + (expectedFee / 2));
+                Assert.IsTrue(chainFinalBalance == chainInitialBalance - (expectedFee / 2));    //the sender's balance is escrowed in the chain address, so the chain just sends the other half of the fee away to the receiver
             }
         }
 
