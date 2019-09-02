@@ -146,26 +146,26 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // migrates the full stake from one address to other
-        public void Migrate(Address source, Address target)
+        public void Migrate(Address from, Address to)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
-            var targetStake = _stakes.Get<Address, EnergyAction>(target);
+            var targetStake = _stakes.Get<Address, EnergyAction>(to);
             Runtime.Expect(targetStake.totalAmount == 0, "Tried to migrate to an account that's already staking");
 
             //migrate stake
-            var sourceStake = _stakes.Get<Address, EnergyAction>(source);
+            var sourceStake = _stakes.Get<Address, EnergyAction>(from);
             
-            _stakes.Set(target, sourceStake);
-            _stakes.Remove(source);
+            _stakes.Set(to, sourceStake);
+            _stakes.Remove(from);
 
             //migrate master claim
             if (sourceStake.totalAmount >= MasterAccountThreshold)
             {
                 var count = _mastersList.Count();
                 var index = -1;
-                Timestamp claimDate;
+                Timestamp claimDate = Runtime.Time;
                 for (int i = 0; i < count; i++)
                 {
                     var master = _mastersList.Get<EnergyMaster>(i);
@@ -181,13 +181,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(index >= 0,"Expected this address to be a master");
 
                 _mastersList.RemoveAt<EnergyMaster>(index);
-                _mastersList.Add(new EnergyMaster() { address = target, claimDate = claimDate });
+                _mastersList.Add(new EnergyMaster() { address = to, claimDate = claimDate });
             }
 
             //migrate voting power
-            var votingLogbook = _voteHistory.Get<Address, StorageList>(source);
-            votingLogbook.Add(target);
-            votingLogbook.Remove(source);
+            var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
+            votingLogbook.Add(to);
+            votingLogbook.Remove(from);
         }
 
         public void MasterClaim(Address from)
