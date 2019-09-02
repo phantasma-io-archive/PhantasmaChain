@@ -701,6 +701,7 @@ namespace Phantasma.Blockchain.Utils
                             break;
                         }
 
+                        /*
                     // stable claim
                     case 3:
                         {
@@ -738,7 +739,7 @@ namespace Phantasma.Blockchain.Utils
                             }
 
                             break;
-                        }
+                        }*/
 
                     // name register
                     case 5:
