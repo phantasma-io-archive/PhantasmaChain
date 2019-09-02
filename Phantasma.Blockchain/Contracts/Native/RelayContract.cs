@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -203,6 +203,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void TopUpChannel(Address from, BigInteger amount)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(amount >= RelayFeePerMessage, "insufficient topup amount");
 
             BigInteger balance = _balances.ContainsKey(from) ? _balances.Get<Address, BigInteger>(from) : 0;
 
@@ -217,6 +218,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void UpdateChannel(RelayReceipt receipt)
         {
             var channelIndex = GetIndex(receipt.message.sender, receipt.message.receiver);
+            Runtime.Expect(receipt.message.nexus == Runtime.Nexus.Name, "different nexus name, possible replay attack detected");
             // here we count how many receipts we are implicitly accepting
             // this means that we don't need to accept every receipt, allowing skipping several
             var receiptCount = 1 + receipt.message.index - channelIndex;
@@ -233,7 +235,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             balance -= expectedFee;
             _balances.Set<Address, BigInteger>(receipt.message.sender, balance);
             var key = MakeKey(receipt.message.sender, receipt.message.receiver);
-            _indices.Set<string, BigInteger>(key, receipt.message.index);
+            _indices.Set<string, BigInteger>(key, receipt.message.index + 1);
 
             Runtime.Expect(expectedFee > 0, "invalid payout");
 
@@ -244,7 +246,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenReceive, this.Address, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
 
             // send half to the receiver
-            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, receipt.message.receiver, this.Address, payout);
+            Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, receipt.message.receiver, payout);
             Runtime.Notify(EventKind.TokenReceive, receipt.message.receiver, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
         }
     }
