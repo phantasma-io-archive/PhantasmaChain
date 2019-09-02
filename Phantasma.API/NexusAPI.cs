@@ -874,6 +874,11 @@ namespace Phantasma.API
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var vm = new RuntimeVM(script, chain, null, null, null, changeSet, true);
 
+            if (Mempool != null)
+            {
+                vm.OracleReader = Mempool.OracleReader;
+            }
+
             var state = vm.Execute();
 
             if (state != ExecutionState.Halt)
