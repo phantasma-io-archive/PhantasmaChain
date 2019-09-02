@@ -42,11 +42,18 @@ namespace Phantasma.Blockchain
     public static class OracleUtils
     {
         // returns USD value
-        public static BigInteger GetPrice(OracleReaderDelegate reader, string symbol)
+        public static BigInteger GetPrice(OracleReaderDelegate reader, Nexus nexus, string symbol)
         {
             if (symbol == "USD")
             {
                 return 1;
+            }
+
+            if (symbol == "KCAL")
+            {
+                var result = GetPrice(reader, nexus, "SOUL");
+                result /= 5;
+                return result;
             }
 
             var bytes = reader("price://" + symbol);
@@ -54,11 +61,24 @@ namespace Phantasma.Blockchain
             return value;
         }
 
-        public static BigInteger GetQuote(OracleReaderDelegate reader, BigInteger amount, string baseSymbol, string quoteSymbol)
+        public static BigInteger GetQuote(OracleReaderDelegate reader, Nexus nexus, string baseSymbol, string quoteSymbol, BigInteger amount)
         {
-            var basePrice = GetPrice(reader, baseSymbol);
-            var quotePrice = GetPrice(reader, quoteSymbol);
-            throw new NotImplementedException();
+            var basePrice = GetPrice(reader, nexus, baseSymbol);
+            var quotePrice = GetPrice(reader, nexus, quoteSymbol);
+
+            BigInteger result;
+
+            var baseToken = nexus.GetTokenInfo(baseSymbol);
+            var quoteToken = nexus.GetTokenInfo(quoteSymbol);
+
+            result = basePrice * amount;
+            result = UnitConversion.ConvertDecimals(result, baseToken.Decimals, Nexus.FiatTokenDecimals);
+
+            result /= quotePrice;
+
+            result = UnitConversion.ConvertDecimals(result, Nexus.FiatTokenDecimals, quoteToken.Decimals);
+
+            return result;
         }
     }
 }
