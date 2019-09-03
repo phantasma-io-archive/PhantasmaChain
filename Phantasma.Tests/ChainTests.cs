@@ -320,6 +320,10 @@ namespace Phantasma.Tests
             Assert.IsTrue(blockB != null);
             Assert.IsTrue(blockB.OracleData.Any());
 
+            var bytes = blockB.ToByteArray();
+            var otherBlock = Block.Unserialize(bytes);
+            Assert.IsTrue(otherBlock.Hash == blockB.Hash);
+
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
             Assert.IsTrue(finalBalance > originalBalance);
         }

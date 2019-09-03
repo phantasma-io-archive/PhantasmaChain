@@ -286,9 +286,10 @@ namespace Phantasma.Blockchain
             _oracleData.Clear();
             while (oracleCount > 0)
             {
-                var key = reader.ReadString();
+                var key = reader.ReadVarString();
                 var val = reader.ReadByteArray();
                 _oracleData.Add(new OracleEntry( key, val));
+                oracleCount--;
             }
 
             this.Payload = reader.ReadByteArray();
