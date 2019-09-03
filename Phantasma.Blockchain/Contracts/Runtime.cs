@@ -15,14 +15,13 @@ namespace Phantasma.Blockchain.Contracts
 {
     public class RuntimeVM : VirtualMachine
     {
+        public Timestamp Time { get; private set; }
         public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
         public Chain ParentChain { get; private set; }
-        public Block Block { get; private set; }
         public Epoch Epoch { get; private set; }
         public OracleReader Oracle { get; private set; }
         public Nexus Nexus => Chain.Nexus;
-        public Timestamp Time => Block != null ? Block.Timestamp : Timestamp.Now;
 
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
@@ -41,7 +40,7 @@ namespace Phantasma.Blockchain.Contracts
         private BigInteger seed;
 
 
-        public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Block block, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
+        public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -58,7 +57,7 @@ namespace Phantasma.Blockchain.Contracts
 
             this.Chain = chain;
             this.Epoch = epoch;
-            this.Block = block;
+            this.Time = time;
             this.Transaction = transaction;
             this.Oracle = oracle;
             this.ChangeSet = changeSet;
@@ -207,35 +206,6 @@ namespace Phantasma.Blockchain.Contracts
             _events.Add(evt);
         }
 
-        public static readonly uint RND_A = 16807;
-        public static readonly uint RND_M = 2147483647;
-
-        // returns a first initial pseudo random number
-        public BigInteger Randomize(byte[] init)
-        {
-            byte[] temp;
-
-            if (Block != null)
-            {
-                temp = Block.Hash.ToByteArray();
-            }
-            else
-            {
-                var time = System.BitConverter.GetBytes(Time.Value);
-                temp = ByteArrayUtils.ConcatBytes(time, init);
-            }
-
-            var seed = BigInteger.FromSignedArray(temp);
-            return seed;
-        }
-
-        // returns a next random number
-        public BigInteger NextRandom()
-        {
-            seed = ((RND_A * seed) % RND_M);
-            return seed;
-        }
-
         public void Expect(bool condition, string description)
         {
 #if DEBUG
@@ -364,6 +334,30 @@ namespace Phantasma.Blockchain.Contracts
             result = UnitConversion.ConvertDecimals(result, Nexus.FiatTokenDecimals, quoteToken.Decimals);
 
             return result;
+        }
+        #endregion
+
+        #region RANDOM NUMBERS
+        public static readonly uint RND_A = 16807;
+        public static readonly uint RND_M = 2147483647;
+
+        // returns a first initial pseudo random number
+        public BigInteger Randomize(byte[] init)
+        {
+            byte[] temp;
+
+            var time = System.BitConverter.GetBytes(Time.Value);
+            temp = ByteArrayUtils.ConcatBytes(time, init);
+
+            var seed = BigInteger.FromSignedArray(temp);
+            return seed;
+        }
+
+        // returns a next random number
+        public BigInteger NextRandom()
+        {
+            seed = ((RND_A * seed) % RND_M);
+            return seed;
         }
         #endregion
     }

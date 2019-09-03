@@ -13,7 +13,6 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
-using System.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -23,7 +22,6 @@ namespace Phantasma.Blockchain
         private static readonly string ChainNameMapKey = "chain.name.";
         private static readonly string ChainAddressMapKey = "chain.addr.";
         private static readonly string ChainParentNameKey = "chain.parent.";
-        private static readonly string ChainParentBlockKey = "chain.block.";
         private static readonly string ChainChildrenBlockKey = "chain.children.";
 
         public static readonly string GasContractName = "gas";
@@ -409,11 +407,11 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CHAINS
-        internal Chain CreateChain(StorageContext storage, Address owner, string name, Chain parentChain, Block parentBlock, IEnumerable<string> contractNames)
+        internal Chain CreateChain(StorageContext storage, Address owner, string name, Chain parentChain, IEnumerable<string> contractNames)
         {
             if (name != RootChainName)
             {
-                if (parentChain == null || parentBlock == null)
+                if (parentChain == null)
                 {
                     return null;
                 }
@@ -454,7 +452,6 @@ namespace Phantasma.Blockchain
             if (parentChain != null)
             {
                 this._vars.Set(ChainParentNameKey + chain.Name, Encoding.UTF8.GetBytes(parentChain.Name));
-                this._vars.Set(ChainParentBlockKey + chain.Name, parentBlock.Hash.ToByteArray());
 
                 var childrenList = GetChildrenListOfChain(parentChain.Name);
                 childrenList.Add<string>(chain.Name);
@@ -566,23 +563,6 @@ namespace Phantasma.Blockchain
             var key = Encoding.UTF8.GetBytes(ChainChildrenBlockKey + chainName);
             var list = new StorageList(key, new KeyStoreStorage(_vars.Adapter));
             return list;
-        }
-
-        public Hash GetParentBlockByName(string chainName)
-        {
-            if (chainName == RootChainName)
-            {
-                return null;
-            }
-
-            var key = ChainParentBlockKey + chainName;
-            if (_vars.ContainsKey(key))
-            {
-                var bytes = _vars.Get(key);
-                return new Hash(bytes);
-            }
-
-            throw new Exception("Parent block not found for chain: " + chainName);
         }
 
         public Chain FindChainByAddress(Address address)
@@ -1275,7 +1255,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);

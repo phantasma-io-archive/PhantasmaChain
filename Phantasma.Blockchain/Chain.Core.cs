@@ -204,7 +204,7 @@ namespace Phantasma.Blockchain
                 byte[] result;
                 try
                 {
-                    if (tx.Execute(this, targetEpoch, block, changeSet, block.Notify, oracle, out result))
+                    if (tx.Execute(this, targetEpoch, block.Timestamp, changeSet, block.Notify, oracle, out result))
                     {
                         if (result != null)
                         {
@@ -494,7 +494,7 @@ namespace Phantasma.Blockchain
         {
             var oracle = Nexus.CreateOracle();
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null,  this.LastBlock, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(script, this, null,  Timestamp.Now, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 

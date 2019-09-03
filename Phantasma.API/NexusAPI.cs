@@ -15,6 +15,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.VM.Contracts;
 using Phantasma.Network.P2P;
+using Phantasma.Core.Types;
 
 namespace Phantasma.API
 {
@@ -873,7 +874,7 @@ namespace Phantasma.API
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var oracle = Nexus.CreateOracle();
-            var vm = new RuntimeVM(script, chain, null, null, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(script, chain, null, Timestamp.Now, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 

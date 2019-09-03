@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var msg = new AddressMessage()
             {
                 from = from,
-                timestamp = Runtime.Block.Timestamp,
+                timestamp = Runtime.Time,
                 content = content
             };
 

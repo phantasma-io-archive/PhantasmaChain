@@ -97,7 +97,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var parent = this.Runtime.Nexus.FindChainByName(parentName);
             Runtime.Expect(parent != null, "invalid parent");
 
-            var chain = this.Runtime.Nexus.CreateChain(this.Storage, owner, name, parent, this.Runtime.Block, contracts);
+            var chain = this.Runtime.Nexus.CreateChain(this.Storage, owner, name, parent, contracts);
             Runtime.Expect(chain != null, "chain creation failed");
 
             Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
