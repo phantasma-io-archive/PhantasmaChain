@@ -44,31 +44,33 @@ namespace Phantasma.Pay.Chains
             });
         }
 
-        public static Address DecodeAddress(string addressText)
+        public static Address EncodeAddress(string addressText)
         {
             var bytes = addressText.Base58CheckDecode();
-
-            byte[] temp = new byte[32];
-            int i = 0;
-            temp[i] = (byte)'*'; i++;
-            temp[i] = (byte)'N'; i++;
-            temp[i] = (byte)'E'; i++;
-            temp[i] = (byte)'O'; i++;
-            temp[i] = (byte)'*'; i++;
-            for (int count =0; count<20; count++)
-            {
-                temp[i] = bytes[count + 1];
-                i++;
-            }
-
-            return new Cryptography.Address(temp);
+            return Cryptography.Address.EncodeInterop("NEO", bytes);
         }
 
-        public static string EncodeAddress(Address address)
+        public static string DecodeAddress(Address address)
         {
-            byte[] data = new byte[21];
-            data[0] = 23;
-            Buffer.BlockCopy(address.PublicKey, 5, data, 1, 20);
+            if (!address.IsInterop)
+            {
+                throw new Exception("not an interop address");
+            }
+
+            string chainName;
+            byte[] data;
+            address.DecodeInterop(out chainName, out data, 21);
+
+            if (chainName != "NEO")
+            {
+                throw new Exception("not a NEO interop address");
+            }
+
+            if (data[0] != 23)
+            {
+                throw new Exception("invalid NEO address");
+            }
+
             return data.Base58CheckEncode();
         }
 

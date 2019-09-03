@@ -194,5 +194,53 @@ namespace Phantasma.Cryptography
 
             throw new Exception("error decoding interop address");
         }
+
+        public void DecodeInterop(out string chainName, out byte[] data, int expectedDataLength)
+        {
+            var sb = new StringBuilder();
+            int i = 1;
+            while (i < PublicKeyLength)
+            {
+                var ch = (char)_publicKey[i];
+                if (ch == '*')
+                {
+                    break;
+                }
+
+                sb.Append(ch);
+                i++;
+            }
+
+            i++;
+            chainName = sb.ToString();
+
+            data = new byte[expectedDataLength];
+            for (int n=0; n<expectedDataLength; n++)
+            {
+                data[n] = _publicKey[i+n];
+            }
+        }
+
+        public static Address EncodeInterop(string chainSymbol, byte[] data)
+        {
+            var bytes = new byte[PublicKeyLength];
+            bytes[0] = (byte)'*';
+            int i = 1;
+            foreach (var ch in chainSymbol)
+            {
+                bytes[i] = (byte)ch;
+                i++;
+            }
+            bytes[i] = (byte)'*';
+            i++;
+
+            foreach (var ch in data)
+            {
+                bytes[i] = (byte)ch;
+                i++;
+            }
+
+            return new Address(bytes);
+        }
     }
 }

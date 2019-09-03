@@ -58,9 +58,11 @@ namespace Phantasma.Tests
             string expectedAddress = "AU2eYJkpZ2nG81RyqnzF5UL2qjdkpPEJqN";
             Assert.IsTrue(address.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
 
-            var decodedAddress = NeoWallet.DecodeAddress(expectedAddress);
-            var encodedAddress = NeoWallet.EncodeAddress(decodedAddress);
-            Assert.IsTrue(encodedAddress.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
+            var encodedAddress = NeoWallet.EncodeAddress(expectedAddress);
+            Assert.IsTrue(encodedAddress.IsInterop);
+
+            var newAddress = NeoWallet.DecodeAddress(encodedAddress);
+            Assert.IsTrue(newAddress.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]
