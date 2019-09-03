@@ -197,7 +197,7 @@ namespace Phantasma.Blockchain
 
             var targetEpoch = CurrentEpoch != null ? CurrentEpoch : GenerateEpoch();
 
-            var oracle = Nexus.CreateOracle();
+            var oracle = Nexus.CreateOracleReader();
 
             foreach (var tx in transactions)
             {
@@ -492,7 +492,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeScript(byte[] script)
         {
-            var oracle = Nexus.CreateOracle();
+            var oracle = Nexus.CreateOracleReader();
             var changeSet = new StorageChangeSetContext(this.Storage);
             var vm = new RuntimeVM(script, this, null,  Timestamp.Now, null, changeSet, oracle, true);
 

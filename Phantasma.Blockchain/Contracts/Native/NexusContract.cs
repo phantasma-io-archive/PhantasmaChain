@@ -103,6 +103,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
         }
 
+        public void CreateFeed(Address owner, string name, OracleFeedMode mode)
+        {
+            Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
+
+            Runtime.Expect(IsWitness(owner), "invalid witness");
+
+            Runtime.Expect(Runtime.Nexus.CreateFeed(owner, name, mode), "feed creation failed");
+
+            Runtime.Notify(EventKind.FeedCreate, owner, name);
+        }
+
         public void SetTokenMetadata(string symbol, string key, byte[] value)
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");

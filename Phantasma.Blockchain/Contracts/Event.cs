@@ -30,8 +30,8 @@ namespace Phantasma.Blockchain.Contracts
         OrderCancelled = 18,
         OrderFilled = 19,
         OrderClosed = 20,
-        //AddFriend = 21, // NOTE Those two were replaced by addressAdd and AddressRemove
-        //RemoveFriend = 22,
+        FeedCreate = 21,
+        FeedUpdate = 22,
         FileCreate = 23,
         FileDelete = 24,
         ValidatorAdd = 25,

@@ -170,6 +170,25 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public IEnumerable<string> Feeds
+        {
+            get
+            {
+                if (_vars.ContainsKey(nameof(Feeds)))
+                {
+                    return Serialization.Unserialize<string[]>(_vars.Get(nameof(Feeds)));
+                }
+
+                return Enumerable.Empty<string>();
+            }
+
+            private set
+            {
+                var names = value.ToArray();
+                _vars.Set(nameof(Feeds), Serialization.Serialize(names));
+            }
+        }
+
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
         private readonly Logger _logger;
@@ -539,7 +558,7 @@ namespace Phantasma.Blockchain
             return GetChildChainsByName(chain.Name);
         }
 
-        public OracleReader CreateOracle()
+        public OracleReader CreateOracleReader()
         {
             Throw.If(_oracleFactory == null, "oracle factory is not setup");
             return _oracleFactory();
@@ -599,6 +618,67 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        #endregion
+
+        #region FEEDS
+        internal bool CreateFeed(Address owner, string name, OracleFeedMode mode)
+        {
+            if (name == null)
+            {
+                return false;
+            }
+
+            if (owner == Address.Null || owner.IsInterop)
+            {
+                return false;
+            }
+
+            // check if already exists something with that name
+            if (FeedExists(name))
+            {
+                return false;
+            }
+
+            var feedInfo = new OracleFeed(name, owner, mode);
+            EditFeed(name, feedInfo);
+
+            // add to persistent list of feeds
+            var feedList = this.Feeds.ToList();
+            feedList.Add(name);
+            this.Feeds = feedList;
+
+            return true;
+        }
+
+        private string GetFeedInfoKey(string name)
+        {
+            return "feed:" + name.ToUpper();
+        }
+
+        private void EditFeed(string name, OracleFeed feed)
+        {
+            var key = GetFeedInfoKey(name);
+            var bytes = Serialization.Serialize(feed);
+            _vars.Set(key, bytes);
+        }
+
+        public bool FeedExists(string name)
+        {
+            var key = GetFeedInfoKey(name);
+            return _vars.ContainsKey(key);
+        }
+
+        public OracleFeed GetFeedInfo(string name)
+        {
+            var key = GetFeedInfoKey(name);
+            if (_vars.ContainsKey(key))
+            {
+                var bytes = _vars.Get(key);
+                return Serialization.Unserialize<OracleFeed>(bytes);
+            }
+
+            throw new ChainException($"Oracle feed does not exist ({name})");
+        }
         #endregion
 
         #region TOKENS

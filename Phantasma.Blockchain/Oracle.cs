@@ -1,12 +1,74 @@
-﻿using System;
+﻿using Phantasma.Cryptography;
+using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 using System.Collections.Generic;
-using Phantasma.Blockchain.Contracts;
-using Phantasma.Core;
-using Phantasma.Cryptography;
-using Phantasma.Numerics;
+using System.IO;
 
 namespace Phantasma.Blockchain
 {
+    public enum OracleFeedMode
+    {
+        First,
+        Last,
+        Max,
+        Min,
+        Average
+    }
+
+    public struct OracleFeed: ISerializable
+    {
+        public string Name;
+        public Address Address;
+        public OracleFeedMode Mode;
+
+        public OracleFeed(string name, Address address, OracleFeedMode mode)
+        {
+            Name = name;
+            Address = address;
+            Mode = mode;
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarString(Name);
+            writer.WriteAddress(Address);
+            writer.Write((byte)Mode);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            Name = reader.ReadVarString();
+            Address = reader.ReadAddress();
+            Mode = (OracleFeedMode)reader.ReadByte();
+        }
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    SerializeData(writer);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        public static OracleFeed Unserialize(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    var entity = new OracleFeed();
+                    entity.UnserializeData(reader);
+                    return entity;
+                }
+            }
+        }
+    }
+
     public struct OracleEntry
     {
         public readonly string URL;
