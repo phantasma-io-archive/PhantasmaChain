@@ -1,6 +1,9 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -14,9 +17,6 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "swap";
 
-        internal StorageMap _balances; //<string, BigInteger> 
-        internal BigInteger _total; 
-
         public SwapContract() : base()
         {
         }
@@ -26,11 +26,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
-            Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
-            Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
+            Runtime.Expect(Runtime.Nexus.TokenExists(fromSymbol), "invalid from symbol");
+            Runtime.Expect(Runtime.Nexus.TokenExists(toSymbol), "invalid to symbol");
 
             var fromBalance = GetAvailableForSymbol(fromSymbol);
+            Runtime.Expect(fromBalance > 0, fromSymbol + " not available in pot");
+
             var toBalance = GetAvailableForSymbol(toSymbol);
+            Runtime.Expect(toBalance > 0, toSymbol + " not available in pot");
 
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
@@ -52,44 +55,34 @@ namespace Phantasma.Blockchain.Contracts.Native
             var unitAmount = UnitConversion.GetUnitValue(info.Decimals);
             Runtime.Expect(amount >= unitAmount, "invalid amount");
 
-            _total += amount;
-
-            var balance = GetAvailableForSymbol(symbol);
-            balance += amount;
-            _balances.Set<string, BigInteger>(symbol, balance);
-
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "tokens transfer failed");
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = symbol, value = amount });
         }
 
         private BigInteger GetAvailableForSymbol(string symbol)
         {
-            return _balances.ContainsKey<string>(symbol) ? _balances.Get<string, BigInteger>(symbol) : 0;
+            var balances = new BalanceSheet(symbol);
+            return balances.Get(this.Storage, this.Address);
         }
 
         // TODO optimize this method without using .NET native stuff
         public SwapPair[] GetAvailable()
         {
-            var resultSize = (int)_balances.Count();
+            var symbols = Runtime.Nexus.Tokens.Where(x => GetAvailableForSymbol(x) > 0);
 
-            var result = new SwapPair[resultSize];
-            int index = 0;
-            foreach (var symbol in Runtime.Nexus.Tokens)
+            var result = new List<SwapPair>();
+
+            foreach (var symbol in symbols)
             {
-                if (_balances.ContainsKey<string>(symbol))
+                var amount = GetAvailableForSymbol(symbol);
+                result.Add( new SwapPair()
                 {
-                    var amount = _balances.Get<string, BigInteger>(symbol);
-                    result[index] = new SwapPair()
-                    {
-                        Symbol = symbol,
-                        Value = amount
-                    };
-
-                    index++;
-                }
+                    Symbol = symbol,
+                    Value = amount
+                });
             }
 
-            return result;
+            return result.ToArray();
         }
 
         // TODO optimize this method without using .NET native stuff
@@ -98,9 +91,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
 
-            Runtime.Expect(_balances.ContainsKey<string>(fromSymbol), fromSymbol + " not available in pot");
+            var fromBalance = GetAvailableForSymbol(fromSymbol);
+            Runtime.Expect(fromBalance >= amount, "not enough "+fromSymbol+" available in pot");
 
-            int resultSize = 0;
+            var result = new List<SwapPair>();
             foreach (var toSymbol in Runtime.Nexus.Tokens)
             {
                 if (toSymbol == fromSymbol)
@@ -108,46 +102,26 @@ namespace Phantasma.Blockchain.Contracts.Native
                     continue;
                 }
 
-                if (!_balances.ContainsKey<string>(toSymbol))
+                var toBalance = GetAvailableForSymbol(toSymbol);
+
+                if (toBalance <= 0)
                 {
 
-                    continue;
-                }
-                var rate = GetRate(fromSymbol, toSymbol, amount);
-                if (rate > 0)
-                {
-                    resultSize++;
-                }
-            }
-
-            var result = new SwapPair[resultSize];
-            int index = 0;
-            foreach (var toSymbol in Runtime.Nexus.Tokens)
-            {
-                if (toSymbol == fromSymbol)
-                {
-                    continue;
-                }
-
-                if (!_balances.ContainsKey<string>(toSymbol))
-                {
                     continue;
                 }
 
                 var rate = GetRate(fromSymbol, toSymbol, amount);
                 if (rate > 0)
                 {
-                    result[index] = new SwapPair()
+                    result.Add(new SwapPair()
                     {
                         Symbol = toSymbol,
                         Value = rate
-                    };
-
-                    index++;
+                    });
                 }
             }
 
-            return result;
+            return result.ToArray();
         }
 
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
@@ -161,11 +135,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
             Runtime.Expect(toInfo.IsFungible, "must be fungible");
 
-            Runtime.Expect(_balances.ContainsKey<string>(toSymbol), toSymbol + " not available in pot");
+            var toBalance = GetAvailableForSymbol(toSymbol);
+
+            Runtime.Expect(toBalance > 0, toSymbol + " not available in pot");
 
             var total = GetRate(fromSymbol, toSymbol, amount);
 
-            var toBalance = GetAvailableForSymbol(toSymbol);
             Runtime.Expect(toBalance >= total, "insufficient balance in pot");
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, fromSymbol, from, this.Address, amount), "source tokens transfer failed");
