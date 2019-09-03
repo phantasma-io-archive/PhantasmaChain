@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Tokens
         Divisible = 1 << 3,
         Fuel = 1 << 4,
         Stakable = 1 << 5,
-        Stable = 1 << 6,
+        Fiat = 1 << 6,
         External = 1 << 7,
         Burnable = 1 << 8,
     }

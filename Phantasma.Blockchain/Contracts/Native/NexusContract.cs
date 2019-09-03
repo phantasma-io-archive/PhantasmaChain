@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (symbol == Nexus.FiatTokenSymbol)
             {
-                Runtime.Expect(flags.HasFlag(TokenFlags.Stable), "token should be stable");
+                Runtime.Expect(flags.HasFlag(TokenFlags.Fiat), "token should be fiat");
             }
 
             if (flags.HasFlag(TokenFlags.External))
