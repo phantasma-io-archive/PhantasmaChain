@@ -1587,7 +1587,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         Platinum
     }
 
-    public enum PraticeLevel
+    public enum PracticeLevel
     {
         None,
         Wood,
@@ -1899,7 +1899,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger score;
         public string nickname;
         public BigInteger battleCount;
-        public PraticeLevel praticeLevel;
+        public PracticeLevel practiceLevel;
         public Timestamp mojoTime;
         public Timestamp gymTime;
         public Timestamp perfumeTime;
@@ -1966,7 +1966,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Timestamp queueJoinTime;
         public Timestamp queueUpdateTime;
         public Address queueVersus;
-        public PraticeLevel queueLevel;
+        public PracticeLevel queueLevel;
         public BigInteger[] queueWrestlerIDs;
         public Address lastOpponent;
 
@@ -3244,45 +3244,45 @@ namespace Phantasma.Blockchain.Contracts.Native
             BigInteger botItemID;
             string introText = "";
 
-            var botLevel = (PraticeLevel)(botID);
+            var botLevel = (PracticeLevel)(botID);
             switch (botLevel)
             {
-                case PraticeLevel.Wood - (int)PraticeLevel.Wood * 2: // PraticeLevel.Wood = -1
+                case PracticeLevel.Wood - (int)PracticeLevel.Wood * 2: // PraticeLevel.Wood = -1
                     level = 1; botItemID = 0; genes = new byte[] { 120, 46, 40, 40, 131, 93, 80, 221, 68, 155, };
                     introText = "Beep boop... amigo, entrena conmigo!";
                     break;
 
-                case PraticeLevel.Iron - (int)PraticeLevel.Iron * 2: // PraticeLevel.Iron = -2
+                case PracticeLevel.Iron - (int)PracticeLevel.Iron * 2: // PraticeLevel.Iron = -2
                     level = 4; botItemID = 0; genes = new byte[] { 222, 50, 52, 48, 131, 88, 144, 8, 51, 104, };
                     introText = "I'm made from iron and because of that, I'm stronger than my wood brother!";
                     break;
 
-                case PraticeLevel.Steel - (int)PraticeLevel.Steel * 2: // PraticeLevel.Steel = -3
+                case PracticeLevel.Steel - (int)PracticeLevel.Steel * 2: // PraticeLevel.Steel = -3
                     level = 6; botItemID = 0; genes = new byte[] { 114, 50, 53, 59, 131, 123, 122, 223, 181, 184, };
                     introText = "Get ready.. because I'm faster and stronger than my iron brother!";
                     break;
 
-                case PraticeLevel.Silver - (int)PraticeLevel.Silver * 2: // PraticeLevel.Silver = -4
+                case PracticeLevel.Silver - (int)PracticeLevel.Silver * 2: // PraticeLevel.Silver = -4
                     level = 8; botItemID = 0; genes = new byte[] { 72, 59, 61, 64, 131, 115, 18, 108, 11, 195, };
                     introText = "Counters are for plebs!";
                     break;
 
-                case PraticeLevel.Gold - (int)PraticeLevel.Gold * 2: // PraticeLevel.Gold = -5
+                case PracticeLevel.Gold - (int)PracticeLevel.Gold * 2: // PraticeLevel.Gold = -5
                     level = 10; botItemID = 0; genes = new byte[] { 138, 66, 65, 61, 131, 51, 148, 143, 99, 55, };
                     introText = "Luchador... My congratulations for getting so far!";
                     break;
 
-                case PraticeLevel.Ruby - (int)PraticeLevel.Ruby * 2: // PraticeLevel.Ruby = -6
+                case PracticeLevel.Ruby - (int)PracticeLevel.Ruby * 2: // PraticeLevel.Ruby = -6
                     level = 13; botItemID = 0; genes = new byte[] { 12, 65, 68, 65, 131, 110, 146, 11, 100, 111 };
                     introText = "Amigo... I'm too strong to fail!";
                     break;
 
-                case PraticeLevel.Emerald - (int)PraticeLevel.Emerald * 2: // PraticeLevel.Emerald = -7
+                case PracticeLevel.Emerald - (int)PracticeLevel.Emerald * 2: // PraticeLevel.Emerald = -7
                     level = 16; botItemID = 329390; genes = new byte[] { 240, 76, 73, 79, 131, 68, 218, 145, 232, 20 };
                     introText = "Beep...Beep...My hobby is wasting time in asian basket weaving foruns...";
                     break;
 
-                case PraticeLevel.Diamond - (int)PraticeLevel.Diamond * 2: // PraticeLevel.Diamond = -8
+                case PracticeLevel.Diamond - (int)PracticeLevel.Diamond * 2: // PraticeLevel.Diamond = -8
                     level = 20; botItemID = 35808; genes = new byte[] { 144, 76, 77, 76, 131, 46, 168, 202, 141, 188, };
                     introText = "Beep... boop... I am become Death, the destroyer of worlds!";
                     break;
@@ -4585,7 +4585,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_ENTRY_COST, Constants.NACHO_TOKEN_DECIMALS);
         }
 
-        public void JoinPraticeQueue(Address from, BigInteger wrestlerID, PraticeLevel level)
+        public void JoinPracticeQueue(Address from, BigInteger wrestlerID, PracticeLevel level)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
             JoinQueue(from, new BigInteger[] { wrestlerID }, 0, BattleMode.Pratice, Address.Null, level);
@@ -4594,14 +4594,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void JoinSingleUnrankedQueue(Address from, BigInteger wrestlerID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
-            JoinQueue(from, new BigInteger[] { wrestlerID }, 0, BattleMode.Unranked, Address.Null, PraticeLevel.None);
+            JoinQueue(from, new BigInteger[] { wrestlerID }, 0, BattleMode.Unranked, Address.Null, PracticeLevel.None);
         }
 
         public void JoinSingleRankedQueue(Address from, BigInteger wrestlerID)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
             var bet = GetRankedBet();
-            JoinQueue(from, new BigInteger[] { wrestlerID }, bet, BattleMode.Ranked, Address.Null, PraticeLevel.None);
+            JoinQueue(from, new BigInteger[] { wrestlerID }, bet, BattleMode.Ranked, Address.Null, PracticeLevel.None);
         }
 
         public void JoinSingleVersusQueue(Address from, BigInteger wrestlerID, Address other, BigInteger bet)
@@ -4609,14 +4609,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "witness failed");
             Runtime.Expect(from != other, "same address");
             Runtime.Expect(DevelopersAddress != other, "invalid target");
-            JoinQueue(from, new BigInteger[] { wrestlerID }, bet, BattleMode.Versus, other, PraticeLevel.None);
+            JoinQueue(from, new BigInteger[] { wrestlerID }, bet, BattleMode.Versus, other, PracticeLevel.None);
         }
 
         public void JoinDoubleUnrankedQueue(Address from, BigInteger[] wrestlerIDs)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
             Runtime.Expect(wrestlerIDs.Length == 2, "double failed");
-            JoinQueue(from, wrestlerIDs, 0, BattleMode.Unranked, Address.Null, PraticeLevel.None);
+            JoinQueue(from, wrestlerIDs, 0, BattleMode.Unranked, Address.Null, PracticeLevel.None);
         }
 
         public void JoinDoubleRankedQueue(Address from, BigInteger[] wrestlerIDs)
@@ -4624,7 +4624,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "witness failed");
             Runtime.Expect(wrestlerIDs.Length == 2, "double failed");
             var bet = GetRankedBet();
-            JoinQueue(from, wrestlerIDs, bet, BattleMode.Ranked, Address.Null, PraticeLevel.None);
+            JoinQueue(from, wrestlerIDs, bet, BattleMode.Ranked, Address.Null, PracticeLevel.None);
         }
 
         /*
@@ -4791,7 +4791,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // NOTE - bet parameter is hijacked for JoinPratice, who passes level of bot inside bet arg
-        private void JoinQueue(Address from, BigInteger[] wrestlerIDs, BigInteger bet, BattleMode mode, Address versus, PraticeLevel praticeLevel)
+        private void JoinQueue(Address from, BigInteger[] wrestlerIDs, BigInteger bet, BattleMode mode, Address versus, PracticeLevel practiceLevel)
         {
             Runtime.Expect(mode != BattleMode.None, "invalid queue mode");
 
@@ -4833,7 +4833,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (mode != BattleMode.Pratice)
             {
-                Runtime.Expect(praticeLevel == PraticeLevel.None, "unexpected pratice level");
+                Runtime.Expect(practiceLevel == PracticeLevel.None, "unexpected pratice level");
             }
 
             //var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
@@ -4924,20 +4924,20 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         // against bots the battle can start instantly...
 
-                        Runtime.Expect(praticeLevel < PraticeLevel.None, "invalid bot ID");
+                        Runtime.Expect(practiceLevel < PracticeLevel.None, "invalid bot ID");
 
-                        if (praticeLevel >= PraticeLevel.Diamond)
+                        if (practiceLevel >= PracticeLevel.Diamond)
                         {
-                            var maxPraticeLevelAllowed = (PraticeLevel)(1 + (int)wrestlers[0].praticeLevel);
-                            if (maxPraticeLevelAllowed < PraticeLevel.Diamond)
+                            var maxPraticeLevelAllowed = (PracticeLevel)(1 + (int)wrestlers[0].practiceLevel);
+                            if (maxPraticeLevelAllowed < PracticeLevel.Diamond)
                             {
-                                maxPraticeLevelAllowed = PraticeLevel.Diamond;
+                                maxPraticeLevelAllowed = PracticeLevel.Diamond;
                             }
 
-                            Runtime.Expect(praticeLevel >= maxPraticeLevelAllowed, "locked bot");
+                            Runtime.Expect(practiceLevel >= maxPraticeLevelAllowed, "locked bot");
                         }
 
-                        StartBotMatch(from, (int)praticeLevel);
+                        StartBotMatch(from, (int)practiceLevel);
 
                         return;
                     }
@@ -6479,10 +6479,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                             wrestler.currentMojo = wrestler.maxMojo;
                         }
 
-                        if (sideIndex == 1 && nextPraticeLevel > 0 && nextPraticeLevel > (int)wrestler.praticeLevel)
+                        if (sideIndex == 1 && nextPraticeLevel > 0 && nextPraticeLevel > (int)wrestler.practiceLevel)
                         {
-                            wrestler.praticeLevel = (PraticeLevel)nextPraticeLevel;
-                            Runtime.Notify(NachoEvent.Unlock, battle.sides[sideIndex].address, wrestler.praticeLevel);
+                            wrestler.practiceLevel = (PracticeLevel)nextPraticeLevel;
+                            Runtime.Notify(NachoEvent.Unlock, battle.sides[sideIndex].address, wrestler.practiceLevel);
                         }
 
                         if (Rules.IsModeWithMatchMaker(battle.mode))
@@ -6655,7 +6655,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             IncreaseBattleCounter(ref battle, index);
 
             var wrestlerID = states[side].wrestlerID;
-            if (wrestlerID <= (int)PraticeLevel.Diamond)
+            if (wrestlerID <= (int)PracticeLevel.Diamond)
             {
                 return; // bots cant get drunk
             }
