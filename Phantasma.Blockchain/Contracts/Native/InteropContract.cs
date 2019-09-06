@@ -43,17 +43,19 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void RegisterAddress(Address address)
+        public void RegisterAddress(Address target)
         {
             Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
 
-            Runtime.Expect(address.IsInterop, "address must be interop");
+            Runtime.Expect(target.IsInterop, "address must be interop");
 
             string chainName;
             byte[] data;
-            address.DecodeInterop(out chainName, out data, 0);
+            target.DecodeInterop(out chainName, out data, 0);
 
-            _addresses.Set<string, Address>(chainName, address);
+            _addresses.Set<string, Address>(chainName, target);
+
+            Runtime.Notify(EventKind.AddressRegister, target, chainName);
         }
 
         public void SettleTransaction(Address from, string chainName, Hash hash)
