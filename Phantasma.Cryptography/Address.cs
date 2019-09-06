@@ -168,39 +168,20 @@ namespace Phantasma.Cryptography
             this._text = null;
         }
 
-        public string DecodeChainSymbol()
-        {
-            if (!IsInterop)
-            {
-                throw new Exception("not an interop address");
-            }
-
-            var sb = new StringBuilder();
-            for (int i=1; i<_publicKey.Length; i++)
-            {
-                var ch = (char)_publicKey[i];
-                if (ch == '*')
-                {
-                    if (sb.Length == 0)
-                    {
-                        throw new Exception("invalid interop address");
-                    }
-
-                    return sb.ToString();
-                }
-
-                sb.Append(ch);
-            }
-
-            throw new Exception("error decoding interop address");
-        }
-
         public void DecodeInterop(out string chainName, out byte[] data, int expectedDataLength)
         {
+            Throw.If(expectedDataLength < 0, "invalid data length");
+            Throw.If(!IsInterop, "must be an interop address");
+ 
             var sb = new StringBuilder();
             int i = 1;
-            while (i < PublicKeyLength)
+            while (true)
             {
+                if (i >= PublicKeyLength)
+                {
+                    throw new Exception("invalid interop address");
+                }
+
                 var ch = (char)_publicKey[i];
                 if (ch == '*')
                 {
@@ -211,13 +192,25 @@ namespace Phantasma.Cryptography
                 i++;
             }
 
+            if (sb.Length == 0)
+            {
+                throw new Exception("invalid interop address");
+            }
+
             i++;
             chainName = sb.ToString();
 
-            data = new byte[expectedDataLength];
-            for (int n=0; n<expectedDataLength; n++)
+            if (expectedDataLength > 0)
             {
-                data[n] = _publicKey[i+n];
+                data = new byte[expectedDataLength];
+                for (int n = 0; n < expectedDataLength; n++)
+                {
+                    data[n] = _publicKey[i + n];
+                }
+            }
+            else
+            {
+                data = null;
             }
         }
 

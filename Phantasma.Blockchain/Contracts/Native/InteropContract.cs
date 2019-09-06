@@ -166,7 +166,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(transferToken.Flags.HasFlag(TokenFlags.Transferable), "transfer token must be transferable");
             Runtime.Expect(transferToken.Flags.HasFlag(TokenFlags.External), "transfer token must be external");
 
-            var feeSymbol = to.DecodeChainSymbol();
+            string feeSymbol;
+            byte[] dummy;
+            to.DecodeInterop(out feeSymbol, out dummy, 0);
             Runtime.Expect(Runtime.Nexus.TokenExists(feeSymbol), "invalid token");
 
             var feeToken = this.Runtime.Nexus.GetTokenInfo(feeSymbol);
