@@ -1,12 +1,10 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using Phantasma.Core;
-using static Phantasma.Numerics.BigInteger;
 
 /*
  * Implementation of BigInteger class, written for Phantasma project
- * Author: Simão Pavlovich
+ * Author: Simão Pavlovich and Bernardo Pinho
  */
 
 namespace Phantasma.Numerics
