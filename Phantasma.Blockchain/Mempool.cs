@@ -220,10 +220,11 @@ namespace Phantasma.Blockchain
 
         protected override bool Run()
         {
+            Thread.Sleep(BlockTime * 1000);
+
             // we must be a staked validator to do something...
             if (!Nexus.IsValidator(this.ValidatorAddress))
             {
-                Thread.Sleep(1000);
                 return true;
             }
             
