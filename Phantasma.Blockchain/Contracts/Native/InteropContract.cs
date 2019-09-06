@@ -35,10 +35,25 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _hashes;
         private StorageList _withdraws;
 
+        private StorageMap _addresses;
+
         public static BigInteger InteropFeeRate => 2;
 
         public InteropContract() : base()
         {
+        }
+
+        public void RegisterAddress(Address address)
+        {
+            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
+
+            Runtime.Expect(address.IsInterop, "address must be interop");
+
+            string chainName;
+            byte[] data;
+            address.DecodeInterop(out chainName, out data, 0);
+
+            _addresses.Set<string, Address>(chainName, address);
         }
 
         public void SettleTransaction(Address from, string chainName, Hash hash)
@@ -60,9 +75,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(interopTx.ChainAddress == expectedChainAddress, "unxpected chain address");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
+            Address linkedChainAddress;
+            if (_addresses.ContainsKey<string>(chainName))
+            {
+                linkedChainAddress = _addresses.Get<string, Address>(chainName);
+            }
+            else
+            {
+                linkedChainAddress = Address.Null;
+            }
+
             foreach (var evt in interopTx.Events)
             {
-                if (evt.Kind == EventKind.TokenReceive && evt.Address == expectedChainAddress)
+                if (evt.Kind == EventKind.TokenReceive && (evt.Address == expectedChainAddress || evt.Address == linkedChainAddress))
                 {
                     var destination = evt.Address;
                     Runtime.Expect(destination != Address.Null, "invalid destination");
