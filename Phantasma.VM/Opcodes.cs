@@ -1,4 +1,4 @@
-﻿namespace Phantasma.VM
+namespace Phantasma.VM
 {
     public enum Opcode
     {
@@ -24,7 +24,7 @@
         LOAD,
         CAST,
         CAT,
-        SUBSTR,
+        SUBSTR, //TODO: needs to be implemented
         LEFT,
         RIGHT,
         SIZE,

@@ -881,6 +881,18 @@ namespace Phantasma.Blockchain.Utils
             var txCost = Nexus.RootChain.GetTransactionFee(tx);
         }
 
+        public void TimeSkipToDate(DateTime date)
+        {
+            CurrentTime = date;
+
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+        }
+
         public void TimeSkipDays(double days, bool roundUp = false)
         {
             CurrentTime = CurrentTime.AddDays(days);
