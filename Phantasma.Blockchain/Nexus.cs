@@ -1293,14 +1293,12 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction TokenMetadataTx(KeyPair owner, string symbol, string field, object val)
+        private Transaction TokenMetadataTx(KeyPair owner, string symbol, string field, string val)
         {
-            var bytes = Serialization.Serialize(val);
-
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("nexus", "SetTokenMetadata", symbol, field, bytes).
+                CallContract("nexus", "SetTokenMetadata", symbol, field, val).
                 SpendGas(owner.Address).
                 EndScript();
 
