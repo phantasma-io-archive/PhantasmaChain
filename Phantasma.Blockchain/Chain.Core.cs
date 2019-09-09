@@ -492,9 +492,14 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeScript(byte[] script)
         {
+            return InvokeScript(script, Timestamp.Now);
+        }
+
+        public VMObject InvokeScript(byte[] script, Timestamp time)
+        {
             var oracle = Nexus.CreateOracleReader();
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null,  Timestamp.Now, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(script, this, null,  time, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 
