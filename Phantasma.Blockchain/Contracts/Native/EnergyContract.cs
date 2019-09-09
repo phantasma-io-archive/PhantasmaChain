@@ -304,6 +304,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return 0;
             }
 
+            Runtime.Expect(Runtime.Time >= stake.timestamp, "Negative time diff");
+
             var diff = Runtime.Time - stake.timestamp;
             var days = diff / 86400; // convert seconds to days
 
@@ -429,12 +431,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
-            var currentTime = Runtime.Time;
+            
 
             if (lastClaim.timestamp.Value == 0)
                 lastClaim.timestamp = stake.timestamp;
 
-            var diff = currentTime - lastClaim.timestamp;
+            Runtime.Expect(Runtime.Time >= stake.timestamp, "Negative time diff");
+
+            var diff = Runtime.Time - lastClaim.timestamp;
 
             var days = diff / 86400; // convert seconds to days
 
@@ -450,7 +454,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 currentStake = 0;
             }
 
-            return CalculateRewardsWithHalving(currentStake, GetLastAction(stakeAddress).unclaimedPartials, lastClaim.timestamp, currentTime); ;
+            return CalculateRewardsWithHalving(currentStake, GetLastAction(stakeAddress).unclaimedPartials, lastClaim.timestamp, Runtime.Time);
         }
 
         public void Claim(Address from, Address stakeAddress)
