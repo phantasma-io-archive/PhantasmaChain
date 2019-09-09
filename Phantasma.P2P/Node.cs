@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Linq;
 using System.Net;
@@ -662,15 +662,15 @@ namespace Phantasma.Network.P2P
             foreach (var otherReceipt in list)
             {
                 var temp = otherReceipt.message;
-                if (temp.sender == msg.sender && temp.index > expectedMessageIndex)
+                if (temp.sender == msg.sender && temp.index >= expectedMessageIndex)
                 {
                     expectedMessageIndex = temp.index + 1;
                 }
             }
 
-            if (expectedMessageIndex != msg.index)
+            if (expectedMessageIndex > msg.index)
             {
-                throw new RelayException("unexpected message index, should be "+expectedMessageIndex);
+                throw new RelayException("unexpected message index, should be at least "+expectedMessageIndex+" but it's "+msg.index);
             }
 
             list.Add(receipt);

@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
@@ -83,6 +85,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static RelayReceipt FromMessage(RelayMessage msg, KeyPair keys)
         {
+            if(msg.script == null || msg.script.SequenceEqual(new byte[0]))
+                throw new Exception("RelayMessage script cannot be empty or null");
+
             var bytes = msg.ToByteArray();
             var signature = keys.Sign(bytes);
             return new RelayReceipt()
@@ -101,8 +106,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) / (1000 * EnergyContract.BaseEnergyRatioDivisor);
 
-        internal StorageMap _balances; //<address, BigiInteger>
-        internal StorageMap _indices; //<string, BigiInteger>
+        internal StorageMap _balances; //<address, BigInteger>
+        internal StorageMap _indices; //<string, BigInteger>
 
         public RelayContract() : base()
         {

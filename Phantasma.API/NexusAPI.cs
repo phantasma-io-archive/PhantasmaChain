@@ -460,7 +460,7 @@ namespace Phantasma.API
                 timestamp = receipt.message.timestamp.Value,
                 sender = receipt.message.sender.Text,
                 receiver = receipt.message.receiver.Text,
-                script = Base16.Encode(receipt.message.script)
+                script = Base16.Encode(receipt.message.script ?? new byte[0])
             };
         }
         #endregion

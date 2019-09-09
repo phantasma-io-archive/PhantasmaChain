@@ -346,7 +346,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestMalformedReceipts()
+        public void TestWrongNexusName()
         {
             var test = CreateAPI();
 
@@ -356,19 +356,23 @@ namespace Phantasma.Tests
             var node = KeyPair.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
+            var random = new Random();
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, RelayFeePerMessage * 100);
             simulator.EndBlock();
 
-            TopUpChannel(simulator, sender, 100);
+            TopUpChannel(simulator, sender, RelayFeePerMessage * 10);
+
+            var script = new byte[20];
+            random.NextBytes(script);
 
             var message = new RelayMessage
             {
                 nexus = "invalid nexus",
                 index = 0,
                 receiver = node.Address,
-                script = new byte[0],
+                script = script,
                 sender = sender.Address,
                 timestamp = Timestamp.Now
             };
@@ -378,7 +382,7 @@ namespace Phantasma.Tests
 
             api.RelaySend(serializedHex);
 
-            Assert.ThrowsException<Exception>(() =>
+            Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, () =>
@@ -388,6 +392,153 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             }, "should have thrown exception due to wrong nexus name");
             
+        }
+
+        [TestMethod]
+        public void TestWrongSender()
+        {
+            var test = CreateAPI();
+
+            var simulator = test.simulator;
+            var owner = test.owner;
+            var sender = KeyPair.Generate();
+            var node = KeyPair.FromWIF(nodeWIF);
+            var nexus = simulator.Nexus;
+            var api = test.api;
+            var random = new Random();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, RelayFeePerMessage * 100);
+            simulator.EndBlock();
+
+            TopUpChannel(simulator, sender, RelayFeePerMessage * 10);
+
+            var script = new byte[20];
+            random.NextBytes(script);
+
+            var message = new RelayMessage
+            {
+                nexus = "invalid nexus",
+                index = 0,
+                receiver = node.Address,
+                script = script,
+                sender = KeyPair.Generate().Address,
+                timestamp = Timestamp.Now
+            };
+
+            var receipt = RelayReceipt.FromMessage(message, sender);
+            string serializedHex = Base16.Encode(receipt.Serialize());
+
+            api.RelaySend(serializedHex);
+
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                    ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
+                        .CallContract("relay", "UpdateChannel", receipt).
+                        SpendGas(sender.Address).EndScript());
+                simulator.EndBlock();
+            }, "should have thrown exception due to wrong sender");
+
+        }
+
+        [TestMethod]
+        public void TestInvalidIndex()
+        {
+            var test = CreateAPI();
+
+            var simulator = test.simulator;
+            var owner = test.owner;
+            var sender = KeyPair.Generate();
+            var node = KeyPair.FromWIF(nodeWIF);
+            var nexus = simulator.Nexus;
+            var api = test.api;
+            var random = new Random();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, RelayFeePerMessage * 100);
+            simulator.EndBlock();
+
+            TopUpChannel(simulator, sender, RelayFeePerMessage * 10);
+
+            var script = new byte[20];
+            random.NextBytes(script);
+
+            var message = new RelayMessage
+            {
+                nexus = "invalid nexus",
+                index = -123540,
+                receiver = node.Address,
+                script = script,
+                sender = sender.Address,
+                timestamp = Timestamp.Now
+            };
+
+            var receipt = RelayReceipt.FromMessage(message, sender);
+            string serializedHex = Base16.Encode(receipt.Serialize());
+
+            api.RelaySend(serializedHex);
+
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                    ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
+                        .CallContract("relay", "UpdateChannel", receipt).
+                        SpendGas(sender.Address).EndScript());
+                simulator.EndBlock();
+            }, "should have thrown exception due to invalid index");
+
+        }
+
+        [TestMethod]
+        public void TestInvalidTimestamp()
+        {
+            var test = CreateAPI();
+
+            var simulator = test.simulator;
+            var owner = test.owner;
+            var sender = KeyPair.Generate();
+            var node = KeyPair.FromWIF(nodeWIF);
+            var nexus = simulator.Nexus;
+            var api = test.api;
+            var random = new Random();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, RelayFeePerMessage * 100);
+            simulator.EndBlock();
+
+            TopUpChannel(simulator, sender, RelayFeePerMessage * 10);
+
+            var script = new byte[20];
+            random.NextBytes(script);
+
+            var message = new RelayMessage
+            {
+                nexus = "invalid nexus",
+                index = 0,
+                receiver = node.Address,
+                script = script,
+                sender = sender.Address,
+                timestamp = DateTime.Now.AddYears(200)
+            };
+
+            var receipt = RelayReceipt.FromMessage(message, sender);
+            string serializedHex = Base16.Encode(receipt.Serialize());
+
+            api.RelaySend(serializedHex);
+
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                    ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
+                        .CallContract("relay", "UpdateChannel", receipt).
+                        SpendGas(sender.Address).EndScript());
+                simulator.EndBlock();
+            }, "should have thrown exception due to wrong nexus name");
+
         }
 
         /*
