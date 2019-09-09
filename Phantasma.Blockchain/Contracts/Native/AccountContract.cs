@@ -97,12 +97,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.Metadata, target, new MetadataEventData() { type = "account", metadata = metadata });
         }
 
-        public string GetMetadata(string symbol, string key)
+        public string GetMetadata(Address address, string key)
         {
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
-            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
-
-            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
+            var metadataEntries = _metadata.Get<Address, StorageList>(address);
 
             var count = metadataEntries.Count();
             for (int i = 0; i < count; i++)
@@ -117,13 +114,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             return null;
         }
 
-        public Metadata[] GetMetadata(string symbol)
+        public Metadata[] GetMetadataList(Address address)
         {
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
-            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
-
-            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
-
+            var metadataEntries = _metadata.Get<Address, StorageList>(address);
             return metadataEntries.All<Metadata>();
         }
 
