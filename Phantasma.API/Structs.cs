@@ -42,6 +42,9 @@ namespace Phantasma.API
 
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
+
+        [APIDescription("Metadata associated with the account")]
+        public MetadataResult[] metadata;
     }
 
     public struct ChainResult : IAPIResult
@@ -158,7 +161,7 @@ namespace Phantasma.API
         public string reward;
     }
 
-    public struct TokenMetadataResult : IAPIResult
+    public struct MetadataResult : IAPIResult
     {
         public string key;
         public string value;
@@ -184,7 +187,7 @@ namespace Phantasma.API
         public string ownerAddress;
 
         [APIDescription("Metadata associated with the token")]
-        public TokenMetadataResult[] metadataList;
+        public MetadataResult[] metadata;
 
         public string flags;
     }

@@ -7,6 +7,12 @@ using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public struct Metadata
+    {
+        public string key;
+        public string value;
+    }
+
     public struct TokenEventData
     {
         public string symbol;
@@ -14,22 +20,16 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Address chainAddress;
     }
 
-    public struct TokenMetadata
-    {
-        public string key;
-        public byte[] value;
-    }
-
-    public struct MetadataEventData
-    {
-        public string symbol;
-        public TokenMetadata metadata;
-    }
-
     public struct RoleEventData
     {
         public string role;
         public Timestamp date;
+    }
+
+    public struct MetadataEventData
+    {
+        public string type;
+        public Metadata metadata;
     }
 
     public sealed class NexusContract : SmartContract
@@ -114,7 +114,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.FeedCreate, owner, name);
         }
 
-        public void SetTokenMetadata(string symbol, string key, byte[] value)
+        public void SetTokenMetadata(string symbol, string key, string value)
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -128,7 +128,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var count = metadataEntries.Count();
             for (int i = 0; i < count; i++)
             {
-                var temp = metadataEntries.Get<TokenMetadata>(i);
+                var temp = metadataEntries.Get<Metadata>(i);
                 if (temp.key == key)
                 {
                     index = i;
@@ -136,20 +136,20 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            var metadata = new TokenMetadata() { key = key, value = value };
+            var metadata = new Metadata() { key = key, value = value };
             if (index >= 0)
             {
-                metadataEntries.Replace<TokenMetadata>(index, metadata);
+                metadataEntries.Replace<Metadata>(index, metadata);
             }
             else
             {
-                metadataEntries.Add<TokenMetadata>(metadata);
+                metadataEntries.Add<Metadata>(metadata);
             }
 
-            Runtime.Notify(EventKind.Metadata, tokenInfo.Owner, new MetadataEventData() { symbol = symbol, metadata = metadata });
+            Runtime.Notify(EventKind.Metadata, tokenInfo.Owner, new MetadataEventData() { type = "token", metadata = metadata });
         }
 
-        public byte[] GetTokenMetadata(string symbol, string key)
+        public string GetTokenMetadata(string symbol, string key)
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
             var token = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -159,7 +159,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var count = metadataEntries.Count();
             for (int i = 0; i < count; i++)
             {
-                var temp = metadataEntries.Get<TokenMetadata>(i);
+                var temp = metadataEntries.Get<Metadata>(i);
                 if (temp.key == key)
                 {
                     return temp.value;
@@ -169,14 +169,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             return null;
         }
 
-        public TokenMetadata[] GetTokenMetadataList(string symbol)
+        public Metadata[] GetTokenMetadataList(string symbol)
         {
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
             var token = this.Runtime.Nexus.GetTokenInfo(symbol);
 
             var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
 
-            return metadataEntries.All<TokenMetadata>();
+            return metadataEntries.All<Metadata>();
         }
 
     }

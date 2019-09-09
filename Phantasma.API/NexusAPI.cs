@@ -284,17 +284,13 @@ namespace Phantasma.API
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             var currentSupply = Nexus.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
-            var metadata = (TokenMetadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol);
-            var metadataResults = new List<TokenMetadataResult>();
-
-            for (int i = 0; i < metadata.Length; i++)
+            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol);
+            var metadataResults = metadata.Select(x => new MetadataResult
             {
-                metadataResults.Add(new TokenMetadataResult
-                {
-                    key = metadata[i].key,
-                    value = metadata[i].value.Encode()
-                });
+                key = x.key,
+                value = x.value
             }
+            );
 
             return new TokenResult
             {
@@ -305,7 +301,7 @@ namespace Phantasma.API
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 ownerAddress = tokenInfo.Owner.Text,
-                metadataList = metadataResults.ToArray()
+                metadata = metadataResults.ToArray()
             };
         }
 
@@ -520,6 +516,15 @@ namespace Phantasma.API
             }
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
+
+            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("account", "GetMetadataList", address);
+            var metadataResults = metadata.Select(x => new MetadataResult
+            {
+                key = x.key,
+                value = x.value
+            }
+            );
+            result.metadata = metadataResults.ToArray();
 
             return result;
         }

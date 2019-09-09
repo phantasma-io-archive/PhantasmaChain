@@ -26,6 +26,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 
         internal StorageMap _scriptMap; //<Address, byte[]> 
+        internal StorageMap _metadata;
 
         public static readonly BigInteger RegistrationCost = UnitConversion.ToBigInteger(0.1m, Nexus.FuelTokenDecimals);
 
@@ -61,7 +62,69 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _scriptMap.Set(target, script);
 
-           // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
+            // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
+        }
+
+        public void SetMetadata(Address target, string key, string value)
+        {
+            Runtime.Expect(IsWitness(target), "invalid witness");
+
+            var metadataEntries = _metadata.Get<Address, StorageList>(target);
+
+            int index = -1;
+
+            var count = metadataEntries.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var temp = metadataEntries.Get<Metadata>(i);
+                if (temp.key == key)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            var metadata = new Metadata() { key = key, value = value };
+            if (index >= 0)
+            {
+                metadataEntries.Replace<Metadata>(index, metadata);
+            }
+            else
+            {
+                metadataEntries.Add<Metadata>(metadata);
+            }
+
+            Runtime.Notify(EventKind.Metadata, target, new MetadataEventData() { type = "account", metadata = metadata });
+        }
+
+        public string GetMetadata(string symbol, string key)
+        {
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
+
+            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
+
+            var count = metadataEntries.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var temp = metadataEntries.Get<Metadata>(i);
+                if (temp.key == key)
+                {
+                    return temp.value;
+                }
+            }
+
+            return null;
+        }
+
+        public Metadata[] GetMetadata(string symbol)
+        {
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
+
+            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
+
+            return metadataEntries.All<Metadata>();
         }
 
         public string LookUpAddress(Address target)
