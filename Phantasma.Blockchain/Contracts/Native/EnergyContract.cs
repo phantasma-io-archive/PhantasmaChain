@@ -380,9 +380,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetTimeBeforeUnstake(Address from)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(IsMaster(from), "invalid master");
-
             if (!_stakes.ContainsKey<Address>(from))
             {
                 return 0;
