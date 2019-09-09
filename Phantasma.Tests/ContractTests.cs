@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
@@ -17,6 +17,7 @@ using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Core.Utils;
 using static Phantasma.Blockchain.Contracts.Native.StorageContract;
 
 namespace Phantasma.Tests
@@ -358,6 +359,8 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.StakingTokenSymbol, accountBalance);
             simulator.EndBlock();
 
+            simulator.TimeSkipToDate(DateTime.UtcNow);
+
             //-----------
             //Perform a valid Stake call
             var desiredStake = MinimumValidStake;
@@ -367,9 +370,12 @@ namespace Phantasma.Tests
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, desiredStake).
                     SpendGas(testUser.Address).EndScript());
-            simulator.EndBlock();
+            var blocks = simulator.EndBlock();
 
-            BigInteger stakedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
+            simulator.TimeSkipToDate(blocks.ElementAt(0).Timestamp);
+
+            BigInteger stakedAmount =
+                (BigInteger) simulator.Nexus.RootChain.InvokeContract("energy", "GetStake", testUser.Address);
             Assert.IsTrue(stakedAmount == desiredStake);
 
             unclaimedAmount = (BigInteger)simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
@@ -634,6 +640,22 @@ namespace Phantasma.Tests
 
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
+            txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(finalFuelBalance == (startingFuelBalance + unclaimedAmount - txCost));
+
+            unclaimedAmount =
+                (BigInteger) simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", testUser.Address);
+            Assert.IsTrue(unclaimedAmount == 0);
+        }
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
