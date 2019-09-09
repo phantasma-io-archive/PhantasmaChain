@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Linq;
 using System.Collections.Generic;
@@ -472,15 +472,14 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-
-        public object InvokeContract(string contractName, string methodName, params object[] args)
+        public object InvokeContract(string contractName, string methodName, Timestamp time, params object[] args)
         {
             var contract = Nexus.FindContract(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
-
-            var result = InvokeScript(script);
+            
+            var result = InvokeScript(script, time);
 
             if (result == null)
             {
@@ -488,6 +487,11 @@ namespace Phantasma.Blockchain
             }
 
             return result.ToObject(); // TODO remove ToObject and let the callers convert as they want
+        }
+
+        public object InvokeContract(string contractName, string methodName, params object[] args)
+        {
+            return InvokeContract(contractName, methodName, Timestamp.Now, args);
         }
 
         public VMObject InvokeScript(byte[] script)
