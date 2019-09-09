@@ -482,10 +482,10 @@ namespace Phantasma.Tests
                 $"alias r7, $receivedAmount",
                 $"alias r8, $symbol",
                 $"alias r9, $methodName",
-                
+
+                $"pop $symbol",
                 $"pop $sourceAddress",
                 $"pop $receivedAmount",
-                $"pop $symbol",
 
                 $"load r11 0x{receivingAddressStr}",
                 $"push r11",
