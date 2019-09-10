@@ -1373,7 +1373,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         };
 
         public const decimal   NACHO_IAP_FIRST_STAGE_TOTAL_TOKENS             = 35000000.00m;
-        public const decimal   NACHO_IAP_FIRST_STAGE_INIITAL_TOKENS_CAMBIO    = 100.00m;
+        public const decimal   NACHO_IAP_FIRST_STAGE_INITIAL_TOKENS_CAMBIO    = 100.00m;
         public const int       NACHO_IAP_STAGES_COUNT                         = 10;
         public const int       NACHO_IAP_STAGE_MILESTONES_COUNT               = 10;
         public const decimal   NACHO_IAP_MILESTONE_TOKEN_DECREASE_FACTOR      = 0.05m;
@@ -2345,7 +2345,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private static decimal GetInAppStageInitialTokenCambio(int stage)
         {
-            return Constants.NACHO_IAP_FIRST_STAGE_INIITAL_TOKENS_CAMBIO / (decimal)Math.Pow(2, stage - 1);
+            return Constants.NACHO_IAP_FIRST_STAGE_INITIAL_TOKENS_CAMBIO / (decimal)Math.Pow(2, stage - 1);
         }
 
         private static decimal GetInAppTokenDecreaseFactor(int milestone)
