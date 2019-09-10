@@ -2160,9 +2160,25 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void BuyInApp()
+        private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
-            // TODO
+            return dollarAmount * 100; // TODO make proper calculations here
+        }
+
+        public void BuyInApp(Address from, string symbol, BigInteger amount)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            var dollarAmount = Runtime.GetTokenQuote(symbol, Nexus.FiatTokenSymbol, amount);
+            Runtime.Expect(dollarAmount >= UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals), "unsuficient amount");
+
+            var nachoAmount = DollarsToNachos(dollarAmount);
+            Runtime.Expect(nachoAmount > 0, "invalid nacho amount");
+
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, from, nachoAmount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
+
+            Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
         }
 
         #region ACCOUNT API
