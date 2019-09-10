@@ -2212,11 +2212,56 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal BigInteger _roomCounter;
         internal BigInteger _roomSequence;
 
+        internal BigInteger _nachoIAPCurrentStage;
+        internal BigInteger _nachoRewardsAndCostsCurrentStage;
+
+        internal BigInteger _nachoIAPCurrentTokens;
+        internal BigInteger _nachoRewardsCurrentTokens;
+
+
         public NachoContract() : base()
         {
         }
 
         #region NACHO TOKEN ECONOMICS
+
+        /// <summary>
+        /// Keep track of the amount of Nacho tokens solds via In-App Purchases and update current Stage.
+        /// Call this method every time a player buys nachos through in-app purchases.
+        /// </summary>
+        /// <param name="amount"></param>
+        private void NachoTokensSold(BigInteger amount)
+        {
+            var currentStageCap = GetIAPStageTokens((int)_nachoIAPCurrentStage);
+
+            if (_nachoIAPCurrentTokens + amount > currentStageCap)
+            {
+                var extra = currentStageCap - (_nachoIAPCurrentTokens + amount);
+
+                _nachoIAPCurrentStage++;
+
+                _nachoIAPCurrentTokens = extra;
+            }
+        }
+
+        /// <summary>
+        /// Keep track of the amount of Nacho tokens given away in battle rewards and update current Stage~.
+        /// Call this method every time a player receives a nacho rewards after a battle and when nachos are given to the ranked pot.
+        /// </summary>
+        /// <param name="amount"></param>
+        private void NachoTokenDistributed(BigInteger amount)
+        {
+            var currentStageCap = GetNachoRewardsStageTokens((int) _nachoRewardsAndCostsCurrentStage);
+
+            if (_nachoRewardsCurrentTokens + amount > currentStageCap)
+            {
+                var extra = currentStageCap - (_nachoRewardsCurrentTokens + amount);
+
+                _nachoRewardsAndCostsCurrentStage++;
+
+                _nachoRewardsCurrentTokens = extra;
+            }
+        }
 
         private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
@@ -2225,6 +2270,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void BuyInApp(Address from, string symbol, BigInteger amount)
         {
+            // TODO call NachoTokensSold with the amount of nachos bought. 
+            // NOTA: por ex: se fizeres uma compra e estás no stage 2. Com os tokens dessa compra passa para o stage 3. Então compra é feita com os valors do stage 2 ou 3 ?
+
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
@@ -2290,9 +2338,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
         }
 
-        private static decimal GetIAPStageTokens(int stage)
+        private static BigInteger GetIAPStageTokens(int stage)
         {
-            return Constants.NACHO_IAP_FIRST_STAGE_TOTAL_TOKENS / (decimal)Math.Pow(2, stage - 1);
+            return UnitConversion.ToBigInteger(Constants.NACHO_IAP_FIRST_STAGE_TOTAL_TOKENS / (decimal)Math.Pow(2, stage - 1), Constants.NACHO_TOKEN_DECIMALS);
         }
 
         private static decimal GetInAppStageInitialTokenCambio(int stage)
@@ -2327,6 +2375,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         private static decimal GetNachoRewardTokenDecreaseFactor(int stage)
         {
             return (decimal)Math.Pow(Constants.NACHO_REWARDS_STAGE_TOKEN_DECREASE_FACTOR, stage);
+        }
+
+        private static BigInteger GetNachoRewardsStageTokens(int stage)
+        {
+            return UnitConversion.ToBigInteger(Constants.NACHO_REWARDS_FIRST_STAGE_TOTAL_TOKENS * GetNachoRewardTokenDecreaseFactor(stage), Constants.NACHO_TOKEN_DECIMALS);
         }
 
         /// <summary>
