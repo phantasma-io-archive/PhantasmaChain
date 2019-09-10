@@ -623,11 +623,6 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, string value)
         {
-            return GenerateSetTokenMetadata(source, tokenSymbol, key, value);
-        }
-
-        public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, byte[] value)
-        {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("nexus", "SetTokenMetadata", tokenSymbol, key, value).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
