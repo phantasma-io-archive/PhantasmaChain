@@ -10,8 +10,10 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using Phantasma.Storage;
+using Phantasma.Blockchain;
+using Phantasma.Pay;
 
-namespace Phantasma.Blockchain.Utils
+namespace Phantasma.Simulator
 {
     public class SideChainPendingBlock
     {
@@ -122,8 +124,13 @@ namespace Phantasma.Blockchain.Utils
                 throw new Exception("Funds missing oops");
             }
 
+            // TODO this should be moved to other place later
+            var neoKeys = InteropUtils.GenerateInteropKeys(_owner, "NEO");
+            var neoAddress = Phantasma.Neo.Cryptography.KeyPair.FromWIF(neoKeys.ToWIF()).address;
+
             BeginBlock();
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
+            GenerateCustomTransaction(_owner, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 9999).CallContract("interop", "RegisterChain", neoAddress).SpendGas(_owner.Address).EndScript());
             EndBlock();
 
             /*

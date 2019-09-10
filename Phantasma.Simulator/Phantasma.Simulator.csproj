@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
+    <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
+    <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
+    <ProjectReference Include="..\Phantasma.Neo\Phantasma.Neo.csproj" />
+    <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
+    <ProjectReference Include="..\Phantasma.Pay\Phantasma.Pay.csproj" />
+    <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
+    <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />
+  </ItemGroup>
+
+</Project>

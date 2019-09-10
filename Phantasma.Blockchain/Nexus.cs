@@ -1256,10 +1256,6 @@ namespace Phantasma.Blockchain
             sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
             sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
 
-            // TODO this should be moved to other place later
-            var neoAddress = InteropUtils.GenerateInteropKeys(owner, "NEO");
-            sb.CallContract("interop", "RegisterChain", neoAddress.Address);
-
             var script = sb.EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));

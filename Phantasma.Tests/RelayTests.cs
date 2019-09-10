@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.API;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Utils;
+using Phantasma.Simulator;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;

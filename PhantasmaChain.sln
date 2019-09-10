@@ -29,6 +29,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.CodeGen", "Phanta
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.RocksDB", "Phantasma.RocksDB\Phantasma.RocksDB.csproj", "{DB3D3908-D85D-4C05-A9A4-B403975393E8}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Simulator", "Phantasma.Simulator\Phantasma.Simulator.csproj", "{789570CC-423F-4533-B8CF-E9E90907CE84}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Neo", "Phantasma.Neo\Phantasma.Neo.csproj", "{DFBB3699-7431-4142-897B-168EE063D7A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +91,14 @@ Global
 		{DB3D3908-D85D-4C05-A9A4-B403975393E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB3D3908-D85D-4C05-A9A4-B403975393E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB3D3908-D85D-4C05-A9A4-B403975393E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{789570CC-423F-4533-B8CF-E9E90907CE84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{789570CC-423F-4533-B8CF-E9E90907CE84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{789570CC-423F-4533-B8CF-E9E90907CE84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{789570CC-423F-4533-B8CF-E9E90907CE84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFBB3699-7431-4142-897B-168EE063D7A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFBB3699-7431-4142-897B-168EE063D7A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFBB3699-7431-4142-897B-168EE063D7A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFBB3699-7431-4142-897B-168EE063D7A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@ using Phantasma.Blockchain;
 using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Blockchain.Utils;
+using Phantasma.Simulator;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;

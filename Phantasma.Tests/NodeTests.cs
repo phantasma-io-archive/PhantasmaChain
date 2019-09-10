@@ -11,7 +11,7 @@ using Phantasma.Cryptography;
 using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using Phantasma.Blockchain.Utils;
+using Phantasma.Simulator;
 using System.Linq;
 
 namespace Phantasma.Tests

@@ -24,6 +24,7 @@
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
     <ProjectReference Include="..\Phantasma.P2P\Phantasma.P2P.csproj" />
     <ProjectReference Include="..\Phantasma.Pay\Phantasma.Pay.csproj" />
+    <ProjectReference Include="..\Phantasma.Simulator\Phantasma.Simulator.csproj" />
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
     <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />
     <ProjectReference Include="..\Phantasma.RocksDB\Phantasma.RocksDB.csproj" />

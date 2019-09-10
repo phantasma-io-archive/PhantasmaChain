@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
@@ -9,14 +10,12 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.VM;
-using System.Linq;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Utils;
+using Phantasma.Simulator;
 using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
-using static Phantasma.Blockchain.Contracts.Native.TokenContract;
 
 namespace Phantasma.Tests
 {

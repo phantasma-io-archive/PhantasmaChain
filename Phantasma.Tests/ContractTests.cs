@@ -6,7 +6,7 @@ using System.Threading;
 using Phantasma.API;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Utils;
+using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
 using Phantasma.Blockchain;

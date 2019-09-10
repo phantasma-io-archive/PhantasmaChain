@@ -2,7 +2,7 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Utils;
+using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
