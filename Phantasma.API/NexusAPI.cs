@@ -284,7 +284,7 @@ namespace Phantasma.API
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             var currentSupply = Nexus.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
-            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol);
+            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol).ToObject();
             var metadataResults = metadata.Select(x => new MetadataResult
             {
                 key = x.key,
@@ -479,7 +479,7 @@ namespace Phantasma.API
             result.address = address.Text;
             result.name = Nexus.LookUpAddressName(address);
 
-            var stake = (BigInteger)Nexus.RootChain.InvokeContract("energy", "GetStake", address);
+            var stake = Nexus.RootChain.InvokeContract("energy", "GetStake", address).AsNumber();
             result.stake = stake.ToString();
 
             var balanceList = new List<BalanceResult>();
@@ -517,7 +517,7 @@ namespace Phantasma.API
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
 
-            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("account", "GetMetadataList", address);
+            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("account", "GetMetadataList", address).ToObject();
             var metadataResults = metadata.Select(x => new MetadataResult
             {
                 key = x.key,
@@ -1048,7 +1048,7 @@ namespace Phantasma.API
 
             if (chain != null && chain.HasContract("market"))
             {
-                forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
+                forSale = chain.InvokeContract("market", "HasAuction", ID).AsBool();
             }
             else
             {
@@ -1065,7 +1065,7 @@ namespace Phantasma.API
             var appList = new List<object>();
 
             var chain = Nexus.RootChain;
-            var apps = (AppInfo[])chain.InvokeContract("apps", "GetApps", new string[] { });
+            var apps = (AppInfo[])chain.InvokeContract("apps", "GetApps", new string[] { }).ToObject();
 
             foreach (var appInfo in apps)
             {
@@ -1209,7 +1209,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions");
+            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions").ToObject();
 
             if (!string.IsNullOrEmpty(symbol))
             {
@@ -1247,7 +1247,7 @@ namespace Phantasma.API
 
             var paginatedResult = new PaginatedResult();
 
-            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions");
+            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions").ToObject();
 
             if (!string.IsNullOrEmpty(symbol))
             {
@@ -1300,13 +1300,13 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var forSale = (bool)chain.InvokeContract("market", "HasAuction", ID);
+            var forSale = chain.InvokeContract("market", "HasAuction", ID).AsBool();
             if (!forSale)
             {
                 return new ErrorResult { error = "Token not for sale" };
             }
 
-            var auction = (MarketAuction)chain.InvokeContract("market", "GetAuction", ID);
+            var auction = (MarketAuction)chain.InvokeContract("market", "GetAuction", ID).ToObject();
 
             return new AuctionResult()
             {
@@ -1517,5 +1517,37 @@ namespace Phantasma.API
 
             return new ArrayResult() { values = eventList.ToArray() };
         }
+
+        [APIInfo(typeof(string), "Obtains a swap address mapping.")]
+        public IAPIResult GetSwapAddress([APIParameter("Address or account name", "helloman")] string accountInput, [APIParameter("Name of an external blockchain", "neo")] string chainName)
+        {
+            Address address;
+
+            if (Address.IsValidAddress(accountInput))
+            {
+                address = Address.FromText(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(accountInput);
+                if (address == Address.Null)
+                {
+                    return new ErrorResult { error = "name not owned" };
+                }
+            }
+
+            chainName = chainName.ToLower();
+
+            var target = Nexus.RootChain.InvokeContract("interop", "GetLink", address, chainName).AsAddress();
+
+            if (target == Address.Null)
+            {
+                return new ErrorResult { error = "no mapping found for this address and chain" };
+            }
+
+            return new SingleResult { value = target.Text };
+        }
+
+
     }
 }

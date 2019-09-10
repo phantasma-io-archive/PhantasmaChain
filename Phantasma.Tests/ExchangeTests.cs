@@ -44,8 +44,8 @@ namespace Phantasma.Tests
             //-----------------------------------------
             //test order amount and prices at the limit
 
-            var minimumBaseToken = UnitConversion.ToDecimal((BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.baseToken), buyer.baseToken.Decimals);
-            var minimumQuoteToken = UnitConversion.ToDecimal((BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.quoteToken), buyer.baseToken.Decimals);
+            var minimumBaseToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.baseToken).AsNumber(), buyer.baseToken.Decimals);
+            var minimumQuoteToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.quoteToken).AsNumber(), buyer.baseToken.Decimals);
 
             buyer.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Buy, IoC: true);
             seller.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Sell, IoC: true);
@@ -208,8 +208,8 @@ namespace Phantasma.Tests
             //-----------------------------------------
             //test order amount and prices at the limit
 
-            var minimumBaseToken = UnitConversion.ToDecimal((BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.baseToken), buyer.baseToken.Decimals);
-            var minimumQuoteToken = UnitConversion.ToDecimal((BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.quoteToken), buyer.baseToken.Decimals);
+            var minimumBaseToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.baseToken).AsNumber(), buyer.baseToken.Decimals);
+            var minimumQuoteToken = UnitConversion.ToDecimal(simulator.Nexus.RootChain.InvokeContract("exchange", "GetMinimumTokenQuantity", buyer.quoteToken).AsNumber(), buyer.baseToken.Decimals);
 
             buyer.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Buy);
             seller.OpenLimitOrder(minimumBaseToken, minimumQuoteToken, Sell);
@@ -511,7 +511,7 @@ namespace Phantasma.Tests
 
                 //get the starting balance for every address on the opposite side of the orderbook, so we can compare it to the final balance of each of those addresses
                 var otherSide = side == Buy ? Sell : Buy;
-                var startingOppositeOrderbook = (ExchangeOrder[])simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderBook", baseSymbol, quoteSymbol, otherSide);
+                var startingOppositeOrderbook = (ExchangeOrder[])simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderBook", baseSymbol, quoteSymbol, otherSide).ToObject();
                 var OtherAddressesTokensInitial = new Dictionary<Address, BigInteger>();
 
                 //*******************************************************************************************************************************************************************************
@@ -604,7 +604,7 @@ namespace Phantasma.Tests
                     //check that it still exists on the orderbook
                     try
                     {
-                        createdOrderPostFill = (ExchangeOrder)simulator.Nexus.RootChain.InvokeContract("exchange", "GetExchangeOrder", createdOrderUid);
+                        createdOrderPostFill = (ExchangeOrder)simulator.Nexus.RootChain.InvokeContract("exchange", "GetExchangeOrder", createdOrderUid).ToObject();
                     }
                     catch (Exception e)
                     {
@@ -691,7 +691,7 @@ namespace Phantasma.Tests
                     }
                     else
                     {
-                        actualRemainingEscrow = (BigInteger)simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderLeftoverEscrow", createdOrderUid);
+                        actualRemainingEscrow = simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderLeftoverEscrow", createdOrderUid).AsNumber();
                     }
                     
                     Assert.IsTrue(expectedRemainingEscrow == actualRemainingEscrow);
@@ -744,7 +744,7 @@ namespace Phantasma.Tests
 
                 //get the starting balance for every address on the opposite side of the orderbook, so we can compare it to the final balance of each of those addresses
                 var otherSide = side == Buy ? Sell : Buy;
-                var startingOppositeOrderbook = (ExchangeOrder[])simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderBook", baseSymbol, quoteSymbol, otherSide);
+                var startingOppositeOrderbook = (ExchangeOrder[])simulator.Nexus.RootChain.InvokeContract("exchange", "GetOrderBook", baseSymbol, quoteSymbol, otherSide).ToObject();
                 var OtherAddressesTokensInitial = new Dictionary<Address, BigInteger>();
 
                 //*******************************************************************************************************************************************************************************

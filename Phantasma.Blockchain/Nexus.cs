@@ -348,19 +348,19 @@ namespace Phantasma.Blockchain
             }
 
             var chain = RootChain;
-            return (Address)chain.InvokeContract("account", "LookUpName", name);
+            return chain.InvokeContract("account", "LookUpName", name).AsAddress();
         }
 
         public string LookUpAddressName(Address address)
         {
             var chain = RootChain;
-            return (string)chain.InvokeContract("account", "LookUpAddress", address);
+            return chain.InvokeContract("account", "LookUpAddress", address).AsString();
         }
 
         public byte[] LookUpAddressScript(Address address)
         {
             var chain = RootChain;
-            return (byte[])chain.InvokeContract("account", "LookUpScript", address);
+            return chain.InvokeContract("account", "LookUpScript", address).AsByteArray();
         }
         #endregion
 
@@ -396,6 +396,7 @@ namespace Phantasma.Blockchain
                 case "apps": contract  = new AppsContract(); break;
                 case "dex": contract = new ExchangeContract(); break;
                 case "sale": contract = new SaleContract(); break;
+                case "interop": contract = new InteropContract(); break;
                 case "nacho": contract = new NachoContract(); break;
                 default:
                     throw new Exception("Unknown contract: " + contractName);
@@ -1255,6 +1256,10 @@ namespace Phantasma.Blockchain
             sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
             sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
 
+            // TODO this should be moved to other place later
+            var neoAddress = InteropUtils.GenerateInteropKeys(owner, "NEO");
+            sb.CallContract("interop", "RegisterChain", neoAddress.Address);
+
             var script = sb.EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
@@ -1432,13 +1437,13 @@ namespace Phantasma.Blockchain
         #region VALIDATORS
         public IEnumerable<Address> GetValidators()
         {
-            var validators = (Address[])RootChain.InvokeContract("consensus", "GetValidators");
+            var validators = (Address[])RootChain.InvokeContract("consensus", "GetValidators").ToObject();
             return validators;
         }
 
         public int GetValidatorCount()
         {
-            var count = (BigInteger)RootChain.InvokeContract("consensus", "GetActiveValidatorss");
+            var count = RootChain.InvokeContract("consensus", "GetActiveValidatorss").AsNumber();
             return (int)count;
         }
 
@@ -1459,7 +1464,7 @@ namespace Phantasma.Blockchain
                 return -1;
             }
 
-            var result = (int)(BigInteger)RootChain.InvokeContract("consensus", "GetIndexOfValidator", address);
+            var result = (int)RootChain.InvokeContract("consensus", "GetIndexOfValidator", address).AsNumber();
             return result;
         }
 
@@ -1472,7 +1477,7 @@ namespace Phantasma.Blockchain
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = (Address)RootChain.InvokeContract("consensus", "GetValidatorByIndex", (BigInteger)index);
+            var result = RootChain.InvokeContract("consensus", "GetValidatorByIndex", (BigInteger)index).AsAddress();
             return result;
         }
         #endregion
@@ -1580,7 +1585,7 @@ namespace Phantasma.Blockchain
             var chain = RootChain;
             try
             {
-                var result = (BigInteger)chain.InvokeContract("relay", "GetBalance", address);
+                var result = chain.InvokeContract("relay", "GetBalance", address).AsNumber();
                 return result;
             }
             catch

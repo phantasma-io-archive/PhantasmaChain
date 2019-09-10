@@ -472,7 +472,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public object InvokeContract(string contractName, string methodName, Timestamp time, params object[] args)
+        public VMObject InvokeContract(string contractName, string methodName, Timestamp time, params object[] args)
         {
             var contract = Nexus.FindContract(contractName);
             Throw.IfNull(contract, nameof(contract));
@@ -486,10 +486,10 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"Invocation of method '{methodName}' of contract '{contractName}' failed");
             }
 
-            return result.ToObject(); // TODO remove ToObject and let the callers convert as they want
+            return result;
         }
 
-        public object InvokeContract(string contractName, string methodName, params object[] args)
+        public VMObject InvokeContract(string contractName, string methodName, params object[] args)
         {
             return InvokeContract(contractName, methodName, Timestamp.Now, args);
         }

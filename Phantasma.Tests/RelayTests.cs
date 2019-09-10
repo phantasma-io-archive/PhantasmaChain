@@ -75,11 +75,9 @@ namespace Phantasma.Tests
 
             TopUpChannel(simulator, testUser, desiredChannelBalance);
 
-            var channelBalance = (BigInteger) nexus.RootChain.InvokeContract("relay", "GetBalance", testUser.Address);
+            var channelBalance = nexus.RootChain.InvokeContract("relay", "GetBalance", testUser.Address).AsNumber();
 
-            Assert.IsTrue(channelBalance == desiredChannelBalance);
-
-            
+            Assert.IsTrue(channelBalance == desiredChannelBalance);            
         }
 
         [TestMethod]
@@ -103,7 +101,7 @@ namespace Phantasma.Tests
 
             TopUpChannel(simulator, sender, desiredChannelBalance);
 
-            var channelBalance = (BigInteger)nexus.RootChain.InvokeContract("relay", "GetBalance", sender.Address);
+            var channelBalance = nexus.RootChain.InvokeContract("relay", "GetBalance", sender.Address).AsNumber();
 
             Assert.IsTrue(channelBalance == desiredChannelBalance);
 

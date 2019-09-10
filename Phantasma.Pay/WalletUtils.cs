@@ -22,5 +22,17 @@ namespace Phantasma.Pay
                     throw new NotImplementedException($"cannot decode addresses for {chainName} chain");
             }
         }
+
+        public static Address EncodeAddress(string source, string chainName)
+        {
+            switch (chainName)
+            {
+                case "NEO":
+                    return NeoWallet.EncodeAddress(source);
+
+                default:
+                    throw new NotImplementedException($"cannot encode addresses for {chainName} chain");
+            }
+        }
     }
 }
