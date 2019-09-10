@@ -126,7 +126,8 @@ namespace Phantasma.Simulator
 
             // TODO this should be moved to other place later
             var neoKeys = InteropUtils.GenerateInteropKeys(_owner, "NEO");
-            var neoAddress = Phantasma.Neo.Cryptography.KeyPair.FromWIF(neoKeys.ToWIF()).address;
+            var neoText = Phantasma.Neo.Cryptography.KeyPair.FromWIF(neoKeys.ToWIF()).address;
+            var neoAddress = Phantasma.Pay.Chains.NeoWallet.EncodeAddress(neoText);
 
             BeginBlock();
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
