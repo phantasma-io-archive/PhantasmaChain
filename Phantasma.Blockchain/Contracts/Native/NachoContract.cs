@@ -911,6 +911,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
     }
+
+
+
     #endregion
 
     #region CONSTANTS
@@ -1367,6 +1370,39 @@ namespace Phantasma.Blockchain.Contracts.Native
             { LuchadorHoroscope.Knife, new byte[]{ 0, 4, 2} },
             { LuchadorHoroscope.Flower, new byte[]{ 2, 0, 3} },
             { LuchadorHoroscope.Storm, new byte[]{ 3, 4, 0 } },
+        };
+
+        public const decimal   NACHO_IAP_FIRST_STAGE_TOTAL_TOKENS             = 35000000.00m;
+        public const decimal   NACHO_IAP_FIRST_STAGE_INIITAL_TOKENS_CAMBIO    = 100.00m;
+        public const int       NACHO_IAP_STAGES_COUNT                         = 10;
+        public const int       NACHO_IAP_STAGE_MILESTONES_COUNT               = 10;
+        public const decimal   NACHO_IAP_MILESTONE_TOKEN_DECREASE_FACTOR      = 0.05m;
+
+        public const decimal   NACHO_REWARDS_FIRST_STAGE_TOTAL_TOKENS     = 17500000.00m;
+        public const int       NACHO_REWARDS_STAGES_COUNT                 = 31;
+        public const double    NACHO_REWARDS_STAGE_TOKEN_DECREASE_FACTOR  = 0.75;
+
+        public const int       NACHO_COSTS_STAGES_COUNT                   = 31;
+        public const double    NACHO_COSTS_STAGE_TOKEN_DECREASE_FACTOR    = 0.75;
+
+        public static readonly Dictionary<NachoRewardType, decimal> NACHO_REWARDS_FIRST_STAGE_REWARD = new Dictionary<NachoRewardType, decimal>()
+        {
+            { NachoRewardType.Unranked_Win,              5.0m },
+            { NachoRewardType.Unranked_Loss,             1.0m },
+            { NachoRewardType.Unranked_Draw,             2.5m },
+            { NachoRewardType.Ranked_Win,                10.0m },
+            { NachoRewardType.Ranked_Loss,               2.0m },
+            { NachoRewardType.Ranked_Draw,               5.0m },
+            { NachoRewardType.Ranked_Battle_Pot_Giveway, 3.0m },
+        };
+
+        public static readonly Dictionary<PurchaseType, decimal> PURCHASE_TYPE_FIRST_STAGE_COST = new Dictionary<PurchaseType, decimal>()
+        {
+            { PurchaseType.Ranked_Battle,     5.0m },
+            { PurchaseType.Wrestler_Loot_Box, 50.0m },
+            { PurchaseType.Item_Loot_Box,     25.0m },
+            { PurchaseType.Make_Up_Loot_Box,  10.0m },
+            { PurchaseType.Avatar_Loot_Box,   10.0m }
         };
 
     }
@@ -1844,6 +1880,26 @@ namespace Phantasma.Blockchain.Contracts.Native
         Wrapped = 4, // wrapped as gift
     }
 
+    public enum NachoRewardType
+    {
+        Unranked_Win,
+        Unranked_Loss,
+        Unranked_Draw,
+        Ranked_Win,
+        Ranked_Loss,
+        Ranked_Draw,
+        Ranked_Battle_Pot_Giveway
+    }
+
+    public enum PurchaseType
+    {
+        Ranked_Battle,
+        Wrestler_Loot_Box,
+        Item_Loot_Box,
+        Make_Up_Loot_Box,
+        Avatar_Loot_Box
+    }
+
     #endregion
 
     #region STRUCTS
@@ -2160,6 +2216,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
+        #region NACHO TOKEN ECONOMICS
+
         private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
             return dollarAmount * 100; // TODO make proper calculations here
@@ -2188,38 +2246,31 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 bonus = 40;
             }
-            else
-            if (dollarAmount >= 250)
+            else if (dollarAmount >= 250)
             {
                 bonus = 35;
             }
-            else
-            if (dollarAmount >= 100)
+            else if (dollarAmount >= 100)
             {
                 bonus = 30;
             }
-            else
-            if (dollarAmount >= 50)
+            else if (dollarAmount >= 50)
             {
                 bonus = 25;
             }
-            else
-            if (dollarAmount >= 20)
+            else if (dollarAmount >= 20)
             {
                 bonus = 20;
             }
-            else
-            if (dollarAmount >= 10)
+            else if (dollarAmount >= 10)
             {
                 bonus = 15;
             }
-            else
-            if (dollarAmount >= 5)
+            else if (dollarAmount >= 5)
             {
                 bonus = 10;
             }
-            else
-            if (dollarAmount >= 2)
+            else if (dollarAmount >= 2)
             {
                 bonus = 5;
             }
@@ -2238,6 +2289,83 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
         }
+
+        private static decimal GetIAPStageTokens(int stage)
+        {
+            return Constants.NACHO_IAP_FIRST_STAGE_TOTAL_TOKENS / (decimal)Math.Pow(2, stage - 1);
+        }
+
+        private static decimal GetInAppStageInitialTokenCambio(int stage)
+        {
+            return Constants.NACHO_IAP_FIRST_STAGE_INIITAL_TOKENS_CAMBIO / (decimal)Math.Pow(2, stage - 1);
+        }
+
+        private static decimal GetInAppTokenDecreaseFactor(int milestone)
+        {
+            return 1 - Constants.NACHO_IAP_MILESTONE_TOKEN_DECREASE_FACTOR * milestone;
+        }
+
+        /// <summary>
+        /// Get the amount of tokens bought for 1$
+        /// </summary>
+        /// <param name="stage">Current stage</param>
+        /// <param name="milestone">Current milestone inside the give stage</param>
+        /// <returns></returns>
+        private static BigInteger GetCurrentTokenCambio(int stage, int milestone)
+        {
+            var stageInitialTokens = GetInAppStageInitialTokenCambio(stage);
+
+            //return UnitConversion.ToBigInteger(stageInitialTokens * MILESTONE_TOKEN_DECREASE[milestone - 1], _NACHO_TOKEN_DECIMALS);
+            return UnitConversion.ToBigInteger(stageInitialTokens * GetInAppTokenDecreaseFactor(milestone), Constants.NACHO_TOKEN_DECIMALS);
+        }
+
+        private static decimal GetNachoFirstStageReward(NachoRewardType reward)
+        {
+            return Constants.NACHO_REWARDS_FIRST_STAGE_REWARD[reward];
+        }
+
+        private static decimal GetNachoRewardTokenDecreaseFactor(int stage)
+        {
+            return (decimal)Math.Pow(Constants.NACHO_REWARDS_STAGE_TOKEN_DECREASE_FACTOR, stage);
+        }
+
+        /// <summary>
+        /// Get the amount of tokens bought for 1$
+        /// </summary>
+        /// <param name="stage">Current stage</param>
+        /// <param name="rewardType">Type of battle reward</param>
+        /// <returns></returns>
+        private static BigInteger GetCurrentNachoReward(int stage, NachoRewardType rewardType)
+        {
+            var firstStageReward = GetNachoFirstStageReward(rewardType);
+
+            return UnitConversion.ToBigInteger(firstStageReward * GetNachoRewardTokenDecreaseFactor(stage), Constants.NACHO_TOKEN_DECIMALS);
+        }
+
+        private static decimal GetNachoFirstStageCost(PurchaseType reward)
+        {
+            return Constants.PURCHASE_TYPE_FIRST_STAGE_COST[reward];
+        }
+
+        private static decimal GetNachoCostTokenDecreaseFactor(int stage)
+        {
+            return (decimal)Math.Pow(Constants.NACHO_COSTS_STAGE_TOKEN_DECREASE_FACTOR, stage);
+        }
+
+        /// <summary>
+        /// Get the amount of tokens bought for 1$
+        /// </summary>
+        /// <param name="stage">Current stage</param>
+        /// <param name="rewardType">Type of battle reward</param>
+        /// <returns></returns>
+        private static BigInteger GetCurrentNachoCost(int stage, PurchaseType purchaseType)
+        {
+            var firstStageCost = GetNachoFirstStageCost(purchaseType);
+
+            return UnitConversion.ToBigInteger(firstStageCost * GetNachoCostTokenDecreaseFactor(stage), Constants.NACHO_TOKEN_DECIMALS);
+        }
+
+        #endregion
 
         #region ACCOUNT API
 
