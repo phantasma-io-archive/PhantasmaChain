@@ -148,7 +148,17 @@ namespace Phantasma.Blockchain
             Throw.If(owner == null, "invalid keypair");
 
             var msg = this.ToByteArray(false);
-            this.Signatures = new Signature[] { owner.Sign(msg) };
+            var sig = owner.Sign(msg);
+
+            var sigs = new List<Signature>();
+
+            if (this.Signatures != null)
+            {
+                sigs.AddRange(this.Signatures);
+            }
+
+            sigs.Add(sig);
+            this.Signatures = sigs.ToArray();
         }
 
         public bool IsSignedBy(Address address)

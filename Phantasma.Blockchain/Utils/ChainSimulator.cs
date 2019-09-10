@@ -406,6 +406,24 @@ namespace Phantasma.Blockchain.Utils
             return tx;
         }
 
+        public Transaction GenerateCustomMultiSigTransaction(IEnumerable<KeyPair> owners, Func<byte[]> scriptGenerator)
+        {
+            return GenerateCustomMultiSigTransaction(owners, Nexus.RootChain, scriptGenerator);
+        }
+
+        public Transaction GenerateCustomMultiSigTransaction(IEnumerable<KeyPair> owners, Chain chain, Func<byte[]> scriptGenerator)
+        {
+            var script = scriptGenerator();
+
+            var tx = MakeTransaction(owners.First(), chain, script);
+            foreach (var owner in owners)
+            {
+                tx.Sign(owner);
+            }
+
+            return tx;
+        }
+
         public Transaction GenerateToken(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
         {
             var chain = Nexus.RootChain;
