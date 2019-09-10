@@ -2230,7 +2230,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// Call this method every time a player buys nachos through in-app purchases.
         /// </summary>
         /// <param name="amount"></param>
-        private void NachoTokensSold(BigInteger amount)
+        private void UpdateNachoTokensSold(BigInteger amount)
         {
             var currentStageCap = GetIAPStageTokens((int)_nachoIAPCurrentStage);
 
@@ -2249,7 +2249,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// Call this method every time a player receives a nacho rewards after a battle and when nachos are given to the ranked pot.
         /// </summary>
         /// <param name="amount"></param>
-        private void NachoTokenDistributed(BigInteger amount)
+        private void UpdateNachoTokenDistributed(BigInteger amount)
         {
             var currentStageCap = GetNachoRewardsStageTokens((int) _nachoRewardsAndCostsCurrentStage);
 
@@ -2270,9 +2270,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void BuyInApp(Address from, string symbol, BigInteger amount)
         {
-            // TODO call NachoTokensSold with the amount of nachos bought. 
-            // NOTA: por ex: se fizeres uma compra e estás no stage 2. Com os tokens dessa compra passa para o stage 3. Então compra é feita com os valors do stage 2 ou 3 ?
-
             Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
@@ -2334,6 +2331,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, from, nachoAmount), "mint failed");
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
+
+            UpdateNachoTokensSold(amount);
 
             Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
         }
@@ -6281,10 +6280,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void AddToPot(Address address, BigInteger amount)
         {
-            if (amount <= 0)
-            {
-                return;
-            }
+            if (amount <= 0) return;
 
             if (_pot.startTime == 0)
             {
@@ -6294,6 +6290,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             ClosePot();
 
             _pot.currentBalance += amount;
+
+            UpdateNachoTokenDistributed(amount);
 
             if (address != Address.Null)
             {
@@ -6410,6 +6408,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         loserAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Unranked_Loss);
                         //drawAmount      = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_DRAW_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
                         drawAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Unranked_Draw);
+
                         break;
                     case BattleMode.Ranked:
                         //winnerAmount    = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_WINNER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
@@ -6476,12 +6475,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                     if (winnerAmount > 0)
                     {
                         Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
+
+                        UpdateNachoTokenDistributed(winnerAmount);
                     }
 
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
                     if (loserAmount > 0)
                     {
                         Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
+
+                        UpdateNachoTokenDistributed(loserAmount);
                     }
 
                     var other = 1 - winnerSide;
@@ -6509,6 +6512,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         //Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
                         Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[i].address, refundAmount), "refund failed");
+
+                        UpdateNachoTokenDistributed(drawAmount);
 
                         if (potAmount > 0)
                         {
