@@ -1,4 +1,4 @@
-﻿// notes: Keep the structs here simple only using primitive C# types or arrays
+// notes: Keep the structs here simple only using primitive C# types or arrays
 namespace Phantasma.API
 {
     public interface IAPIResult
@@ -367,14 +367,5 @@ namespace Phantasma.API
 
         [APIDescription("Script of message, in hex")]
         public string script;
-    }
-
-    public struct RelayResult : IAPIResult
-    {
-        [APIDescription("Address")]
-        public string address;
-
-        [APIDescription("List of receipts")]
-        public ReceiptResult[] receipts;
     }
 }
