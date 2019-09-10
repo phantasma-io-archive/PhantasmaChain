@@ -2177,10 +2177,61 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var dollarAmount = Runtime.GetTokenQuote(symbol, Nexus.FiatTokenSymbol, amount);
             var minimumAmount = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / 2; // fifty cents as minimum
-            Runtime.Expect(dollarAmount >= , "unsuficient amount");
+            Runtime.Expect(dollarAmount >= minimumAmount, "unsuficient amount");
 
             var nachoAmount = DollarsToNachos(dollarAmount);
             Runtime.Expect(nachoAmount > 0, "invalid nacho amount");
+
+            BigInteger bonus = 0;
+
+            if (dollarAmount >= 500)
+            {
+                bonus = 40;
+            }
+            else
+            if (dollarAmount >= 250)
+            {
+                bonus = 35;
+            }
+            else
+            if (dollarAmount >= 100)
+            {
+                bonus = 30;
+            }
+            else
+            if (dollarAmount >= 50)
+            {
+                bonus = 25;
+            }
+            else
+            if (dollarAmount >= 20)
+            {
+                bonus = 20;
+            }
+            else
+            if (dollarAmount >= 10)
+            {
+                bonus = 15;
+            }
+            else
+            if (dollarAmount >= 5)
+            {
+                bonus = 10;
+            }
+            else
+            if (dollarAmount >= 2)
+            {
+                bonus = 5;
+            }
+            else
+            {
+                bonus = 0;
+            }
+
+            if (bonus > 0)
+            {
+                nachoAmount += (nachoAmount * bonus) / 100;
+            }
 
             Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, from, nachoAmount), "mint failed");
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
