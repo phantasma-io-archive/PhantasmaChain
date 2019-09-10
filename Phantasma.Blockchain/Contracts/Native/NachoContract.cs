@@ -2169,8 +2169,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+
+            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.IsFungible, "purchase token must be fungible");
+            Runtime.Expect(tokenInfo.IsTransferable, "purchase token must be transferable");
+
             var dollarAmount = Runtime.GetTokenQuote(symbol, Nexus.FiatTokenSymbol, amount);
-            Runtime.Expect(dollarAmount >= UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals), "unsuficient amount");
+            var minimumAmount = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / 2; // fifty cents as minimum
+            Runtime.Expect(dollarAmount >= , "unsuficient amount");
 
             var nachoAmount = DollarsToNachos(dollarAmount);
             Runtime.Expect(nachoAmount > 0, "invalid nacho amount");

@@ -34,6 +34,7 @@ namespace Phantasma.Blockchain.Tokens
 
         public bool IsFungible => Flags.HasFlag(TokenFlags.Fungible);
         public bool IsBurnable => Flags.HasFlag(TokenFlags.Burnable);
+        public bool IsTransferable => Flags.HasFlag(TokenFlags.Transferable);
         public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
 
         public Address Owner { get; private set; }
