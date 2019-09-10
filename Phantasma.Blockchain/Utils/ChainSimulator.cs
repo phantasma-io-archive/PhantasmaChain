@@ -623,8 +623,7 @@ namespace Phantasma.Blockchain.Utils
 
         public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, string value)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(value);
-            return GenerateSetTokenMetadata(source, tokenSymbol, key, bytes);
+            return GenerateSetTokenMetadata(source, tokenSymbol, key, value);
         }
 
         public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, byte[] value)
