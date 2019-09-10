@@ -937,15 +937,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int DEFAULT_AVATARS = 10;
 
-        public const float RANKED_BATTLE_ENTRY_COST     = 5;
-        public const float RANKED_BATTLE_WINNER_PRIZE   = 10;
-        public const float RANKED_BATTLE_DRAW_PRIZE     = 5;
-        public const float RANKED_BATTLE_LOSER_PRIZE    = 2;
-        public const float RANKED_BATTLE_POT_GIVEAWAY   = 3;
-
-        public const float UNRANKED_BATTLE_WINNER_PRIZE   = 5;
-        public const float UNRANKED_BATTLE_DRAW_PRIZE     = 2.5f;
-        public const float UNRANKED_BATTLE_LOSER_PRIZE    = 1;
+        // This values are no more a constant value. They are calculated through the Nacho Token Economics formulas
+        //public const float RANKED_BATTLE_ENTRY_COST     = 5;
+        //public const float RANKED_BATTLE_WINNER_PRIZE   = 10;
+        //public const float RANKED_BATTLE_DRAW_PRIZE     = 5;
+        //public const float RANKED_BATTLE_LOSER_PRIZE    = 2;
+        //public const float RANKED_BATTLE_POT_GIVEAWAY   = 3;
+        //public const float UNRANKED_BATTLE_WINNER_PRIZE = 5;
+        //public const float UNRANKED_BATTLE_DRAW_PRIZE   = 2.5f;
+        //public const float UNRANKED_BATTLE_LOSER_PRIZE  = 1;
 
         public const decimal DOLLAR_NACHOS_RATE = 100; // 1 USD = 100 NACHOS //TODO set this with the in-apps conversion rate
 
@@ -4837,7 +4837,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         private BigInteger GetRankedBet()
         {
             //return GetConfig().rankedFee;
-            return UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_ENTRY_COST, Constants.NACHO_TOKEN_DECIMALS);
+            //return UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_ENTRY_COST, Constants.NACHO_TOKEN_DECIMALS);
+            return GetCurrentNachoCost((int)_nachoRewardsAndCostsCurrentStage, PurchaseType.Ranked_Battle);
         }
 
         public void JoinPracticeQueue(Address from, BigInteger wrestlerID, PracticeLevel level)
@@ -6403,14 +6404,20 @@ namespace Phantasma.Blockchain.Contracts.Native
                         // Battles against bots do not give nacho prizes
                         break;
                     case BattleMode.Unranked:
-                        winnerAmount    = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_WINNER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
-                        loserAmount     = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_LOSER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
-                        drawAmount      = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_DRAW_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        //winnerAmount    = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_WINNER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        winnerAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Unranked_Win);
+                        //loserAmount     = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_LOSER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        loserAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Unranked_Loss);
+                        //drawAmount      = UnitConversion.ToBigInteger((decimal)Constants.UNRANKED_BATTLE_DRAW_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        drawAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Unranked_Draw);
                         break;
                     case BattleMode.Ranked:
-                        winnerAmount    = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_WINNER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
-                        loserAmount     = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_LOSER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
-                        drawAmount      = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_DRAW_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        //winnerAmount    = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_WINNER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        winnerAmount    = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Ranked_Win);
+                        //loserAmount     = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_LOSER_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        loserAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Ranked_Loss);
+                        //drawAmount      = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_DRAW_PRIZE, Constants.NACHO_TOKEN_DECIMALS);
+                        drawAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Ranked_Draw);
 
                         break;
                     case BattleMode.Versus:
@@ -6427,7 +6434,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     //potAmount = (winnerAmount * Constants.POT_FEE_PERCENTAGE) / 100;
                     //winnerAmount -= potAmount;
 
-                    potAmount = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_POT_GIVEAWAY, Constants.NACHO_TOKEN_DECIMALS); 
+                    //potAmount = UnitConversion.ToBigInteger((decimal)Constants.RANKED_BATTLE_POT_GIVEAWAY, Constants.NACHO_TOKEN_DECIMALS); 
+                    potAmount = GetCurrentNachoReward((int)_nachoRewardsAndCostsCurrentStage, NachoRewardType.Ranked_Battle_Pot_Giveway); 
                 }
                 else
                 {
