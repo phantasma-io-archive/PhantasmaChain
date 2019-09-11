@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            return new EnergyMaster{address=Address.Null};
+            return new EnergyMaster { address = Address.Null };
         }
 
         public bool IsMaster(Address address)
@@ -91,12 +91,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var count = GetCurrentMasterCount();
             var result = count;
-            DateTime requestedClaimDate = new DateTime(((DateTime) claimDate).Year, ((DateTime)claimDate).Month, 1);
+            DateTime requestedClaimDate = new DateTime(((DateTime)claimDate).Year, ((DateTime)claimDate).Month, 1);
 
             for (int i = 0; i < count; i++)
             {
                 DateTime currentMasterClaimDate = _mastersList.Get<EnergyMaster>(i).claimDate;
-                if ( currentMasterClaimDate > requestedClaimDate)
+                if (currentMasterClaimDate > requestedClaimDate)
                     result--;
             }
 
@@ -118,8 +118,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             else
                 referenceDate = _lastMasterClaim;
 
-            var nextMasterClaim = (Timestamp)(new DateTime(referenceDate.Year, referenceDate.Month, 1, 0, 0, 0)).AddMonths((int) claimDistance);
-            var dateTimeClaim = (DateTime) nextMasterClaim;
+            var nextMasterClaim = (Timestamp)(new DateTime(referenceDate.Year, referenceDate.Month, 1, 0, 0, 0)).AddMonths((int)claimDistance);
+            var dateTimeClaim = (DateTime)nextMasterClaim;
 
             if (dateTimeClaim.Hour == 23)
                 nextMasterClaim = dateTimeClaim.AddHours(1);
@@ -156,7 +156,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //migrate stake
             var sourceStake = _stakes.Get<Address, EnergyAction>(from);
-            
+
             _stakes.Set(to, sourceStake);
             _stakes.Remove(from);
 
@@ -178,7 +178,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
                 }
 
-                Runtime.Expect(index >= 0,"Expected this address to be a master");
+                Runtime.Expect(index >= 0, "Expected this address to be a master");
 
                 _mastersList.RemoveAt<EnergyMaster>(index);
                 _mastersList.Add(new EnergyMaster() { address = to, claimDate = claimDate });
@@ -284,7 +284,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "master", date = nextClaim });
             }
 
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = stakeAmount});
+            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = stakeAmount });
         }
 
         public BigInteger Unstake(Address from, BigInteger unstakeAmount)
@@ -321,8 +321,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(availableStake >= unstakeAmount, "tried to unstake more than what was staked");
 
             //if this is a partial unstake
-            if(availableStake - unstakeAmount > 0)
-                Runtime.Expect(availableStake - unstakeAmount >= MinimumValidStake, "leftover stake would be below minimum staking amount" );
+            if (availableStake - unstakeAmount > 0)
+                Runtime.Expect(availableStake - unstakeAmount >= MinimumValidStake, "leftover stake would be below minimum staking amount");
 
             Runtime.Expect(balances.Subtract(this.Storage, Runtime.Chain.Address, unstakeAmount), "balance subtract failed");
             Runtime.Expect(balances.Add(this.Storage, from, unstakeAmount), "balance add failed");
@@ -354,7 +354,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var count = _mastersList.Count();
                 var index = -1;
-                for (int i=0; i<count; i++)
+                for (int i = 0; i < count; i++)
                 {
                     var master = _mastersList.Get<EnergyMaster>(i);
                     if (master.address == from)
@@ -388,6 +388,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             var stake = _stakes.Get<Address, EnergyAction>(from);
             return 86400 - (Runtime.Time - stake.timestamp);
 
+        }
+
+        public Timestamp GetStakeTimestamp(Address from)
+        {
+            if (!_stakes.ContainsKey(from))
+            {
+                return 0;
+            }
+
+            var stake = _stakes.Get<Address, EnergyAction>(from);
+            return stake.timestamp;
         }
 
         private void RemoveVotingPower(Address from, BigInteger amount)
@@ -428,7 +439,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
-            
+
 
             if (lastClaim.timestamp.Value == 0)
                 lastClaim.timestamp = stake.timestamp;
@@ -519,7 +530,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _claims.Set<Address, EnergyAction>(stakeAddress, action);
 
-            Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = unclaimedAmount});
+            Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.StakingTokenSymbol, value = unclaimedAmount });
             Runtime.Notify(EventKind.TokenMint, stakeAddress, new TokenEventData() { chainAddress = Runtime.Chain.Address, symbol = Nexus.FuelTokenSymbol, value = fuelAmount });
         }
 
@@ -541,7 +552,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var usedStorageSize = (BigInteger)temp;
             var usedStake = usedStorageSize * UnitConversion.ToBigInteger(1, Nexus.StakingTokenDecimals);
             usedStake = usedStake / (StorageContract.KilobytesPerStake * 1024);
-            
+
             return usedStake;
         }
 
@@ -606,7 +617,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
                 else
                 {*/
-                    sum += proxy.percentage;
+                sum += proxy.percentage;
                 //}
             }
 
