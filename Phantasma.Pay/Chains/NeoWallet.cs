@@ -103,5 +103,10 @@ namespace Phantasma.Pay.Chains
             yield break;
         }
 
+        public static bool IsValidAddress(string text)
+        {
+            return Phantasma.Neo.Utils.LuxUtils.IsValidAddress(text);
+        }
+
     }
 }
