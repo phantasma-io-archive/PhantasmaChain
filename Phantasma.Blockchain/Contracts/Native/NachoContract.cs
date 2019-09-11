@@ -3187,13 +3187,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             //TransferItem(from, DevelopersAddress, itemID);
             Runtime.Nexus.TransferToken(Runtime, Constants.ITEM_SYMBOL, from, DevelopersAddress, itemID);
         }
-        
-        /* TODO LATER*/
+
         //public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
-        //{
-        //    Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
-        //    return CreateItem(to, itemID, itemKind, wrapped);
-        //}
+        public BigInteger GenerateItem(Address to, ItemKind itemKind, bool wrapped)
+        {
+            Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
+            //return CreateItem(to, itemID, itemKind, wrapped);
+            return CreateItem(to, itemKind, wrapped);
+        }
 
         private BigInteger CreateItem(Address to, ItemKind itemKind, bool wrapped)
         {
@@ -3376,22 +3377,22 @@ namespace Phantasma.Blockchain.Contracts.Native
             return ownerships.GetOwner(this.Storage, wrestlerID) == address;
         }
 
-        /* TODO LATER
         public BigInteger GenerateWrestler(Address to, byte[] genes, uint experience, bool wrapped)
         {
             Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
             return CreateWrestler(to, genes, experience, wrapped);
         }
-        
+
         private BigInteger CreateWrestler(Address to, byte[] genes, uint experience, bool wrapped)
         {
-            var wrestlers = Storage.FindMapForContract<BigInteger, NachoWrestler>(GLOBAL_WRESTLERS_LIST);
+            // TODO FIX
+            //var wrestlers = Storage.FindMapForContract<BigInteger, NachoWrestler>(GLOBAL_WRESTLERS_LIST);
 
-            BigInteger wrestlerID = wrestlers.Count() + Constants.BASE_LUCHADOR_ID;
+            //BigInteger wrestlerID = wrestlers.Count() + Constants.BASE_LUCHADOR_ID;
 
             var wrestler = new NachoWrestler()
             {
-                owner = to,
+                //owner = to,
                 genes = genes,
                 itemID = 0,
                 nickname = "",
@@ -3408,14 +3409,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             // save wrestler
-            wrestlers.Set(wrestlerID, wrestler);
+            //wrestlers.Set(wrestlerID, wrestler);
 
-            var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, to);
-            team.Add(wrestlerID);
+            //var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, to);
+            //team.Add(wrestlerID);
 
-            Runtime.Notify(to, NachoEvent.WrestlerReceived, wrestlerID);
-            return wrestlerID;
-        }*/
+            //Runtime.Notify(to, NachoEvent.WrestlerReceived, wrestlerID);
+            //return wrestlerID;
+
+            return new BigInteger(0);
+        }
 
         public void RenameWrestler(Address from, BigInteger wrestlerID, string name)
         {
