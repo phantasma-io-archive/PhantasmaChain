@@ -148,7 +148,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var interopBytes = Runtime.Oracle.Read($"interop://{platformName}/tx/{hash}");
             var interopTx = Serialization.Unserialize<InteropTransaction>(interopBytes);
 
-            Runtime.Expect(interopTx.Platform == platformName, "unxpected chain name");
+            Runtime.Expect(interopTx.Platform == platformName, "unxpected platform name");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
             int swapCount = 0;
