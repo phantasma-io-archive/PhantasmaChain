@@ -318,6 +318,9 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetTokenQuote(string baseSymbol, string quoteSymbol, BigInteger amount)
         {
+            if (baseSymbol == quoteSymbol)
+                return amount;
+
             var basePrice = GetTokenPrice(baseSymbol);
             var quotePrice = GetTokenPrice(quoteSymbol);
 
