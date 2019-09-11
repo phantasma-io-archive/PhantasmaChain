@@ -79,6 +79,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             return new InteropChainInfo[] { };
         }
 
+        public void RegisterChain(Address target)
+        {
+            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
+
+            Runtime.Expect(target.IsInterop, "external address must be interop");
+
+            string chainName;
+            byte[] data;
+            target.DecodeInterop(out chainName, out data, 0);
+
+            _externalAddresses.Set<string, Address>(chainName, target);
+
+            Runtime.Notify(EventKind.AddressRegister, target, chainName);
+        }
+
         public void RegisterLink(Address from, Address target)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -127,7 +142,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = _links.Get<Address, StorageList>(from);
             var count = list.Count();
 
-            for (int i=0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 var address = list.Get<Address>(i);
 
@@ -142,21 +157,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return Address.Null;
-        }
-
-        public void RegisterChain(Address target)
-        {
-            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
-
-            Runtime.Expect(target.IsInterop, "external address must be interop");
-
-            string chainName;
-            byte[] data;
-            target.DecodeInterop(out chainName, out data, 0);
-
-            _externalAddresses.Set<string, Address>(chainName, target);
-
-            Runtime.Notify(EventKind.AddressRegister, target, chainName);
         }
 
         public void SettleTransaction(Address from, string chainName, Hash hash)
