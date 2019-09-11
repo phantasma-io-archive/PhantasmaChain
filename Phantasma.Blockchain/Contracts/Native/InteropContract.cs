@@ -108,6 +108,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = _links.Get<Address, StorageList>(from);
 
             var count = list.Count();
+            int index = -1;
+
             for (int i = 0; i < count; i++)
             {
                 var address = list.Get<Address>(i);
@@ -115,10 +117,24 @@ namespace Phantasma.Blockchain.Contracts.Native
                 string otherChainName;
                 address.DecodeInterop(out otherChainName, out data, 0);
 
-                Runtime.Expect(otherChainName != chainName, "chain interop already linked");
+                if (otherChainName ==  chainName)
+                {
+                    index = i;
+                    break;
+                }
             }
 
-            list.Add(target);
+            if (index >= 0)
+            {
+                var previous = list.Get<Address>(index);
+                _reverseMap.Remove<Address>(previous);
+                list.Replace<Address>(index, target);
+            }
+            else
+            {
+                list.Add(target);
+            }
+
             _reverseMap.Set<Address, Address>(target, from);
 
             Runtime.Notify(EventKind.AddressRegister, from, target);
