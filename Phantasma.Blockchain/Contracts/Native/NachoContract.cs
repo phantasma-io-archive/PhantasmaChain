@@ -2329,7 +2329,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 nachoAmount += (nachoAmount * bonus) / 100;
             }
 
-            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, from, nachoAmount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
 
             UpdateNachoTokensSold(amount);
