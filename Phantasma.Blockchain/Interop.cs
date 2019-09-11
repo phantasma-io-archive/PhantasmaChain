@@ -46,7 +46,7 @@ namespace Phantasma.Blockchain
     {
         public static KeyPair GenerateInteropKeys(KeyPair genesisKeys, string platformName)
         {
-            var temp = platformName + "!" + genesisKeys.ToWIF();
+            var temp = platformName.ToUpper() + "!" + genesisKeys.ToWIF();
             var privateKey = CryptoExtensions.Sha256(temp);
             var key = new KeyPair(privateKey);
             return key;
