@@ -92,9 +92,9 @@ namespace Phantasma.Blockchain
             var chain = Nexus.FindChainByName(tx.ChainName);
             Throw.IfNull(chain, nameof(chain));
 
-            if (_hashMap.ContainsKey(tx.Hash))
+            if (tx.Signatures == null || tx.Signatures.Length < 1)
             {
-                throw new MempoolSubmissionException("already in mempool");
+                RejectTransaction(tx, "at least one signature required");
             }
 
             var currentTime = Timestamp.Now;
@@ -112,6 +112,11 @@ namespace Phantasma.Blockchain
             if (tx.NexusName != this.Nexus.Name)
             {
                 RejectTransaction(tx, "invalid nexus name");
+            }
+
+            if (_hashMap.ContainsKey(tx.Hash))
+            {
+                throw new MempoolSubmissionException("already in mempool");
             }
 
             var entry = new MempoolEntry() { transaction = tx, timestamp = Timestamp.Now };
