@@ -41,7 +41,7 @@ namespace Phantasma.Blockchain.Contracts
         Custom = 32,
     }
 
-    public class Event
+    public struct Event
     {
         public readonly EventKind Kind;
         public readonly Address Address;

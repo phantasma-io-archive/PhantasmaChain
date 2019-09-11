@@ -4,6 +4,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
+using System;
 using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -125,7 +126,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public Address GetLink(Address from, string chainName)
         {
-            if (chainName == "phantasma")
+            if (Nexus.PlatformName.Equals(chainName, StringComparison.OrdinalIgnoreCase))
             {
                 Runtime.Expect(from.IsInterop, "must be interop");
                 if (_reverseMap.ContainsKey<Address>(from))
@@ -182,8 +183,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 if (evt.Kind == EventKind.TokenReceive && evt.Address == externalAddress)
                 {
-                    var destination = evt.Address;
-                    Runtime.Expect(destination != Address.Null, "invalid destination");
+                    Runtime.Expect(evt.Address != Address.Null, "invalid source address");
 
                     var transfer = evt.GetContent<TokenEventData>();
                     Runtime.Expect(transfer.value > 0, "amount must be positive and greater than zero");
@@ -195,7 +195,26 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
-                    var source = Address.Null;
+                    Address destination = Address.Null;
+                    foreach (var otherEvt in interopTx.Events)
+                    {
+                        if (otherEvt.Kind == EventKind.TokenSend)
+                        {
+                            var otherTransfer = otherEvt.GetContent<TokenEventData>();
+                            if (otherTransfer.chainAddress == transfer.chainAddress && otherTransfer.symbol == transfer.symbol)
+                            {
+                                destination = otherEvt.Address;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (destination.IsInterop)
+                    {
+                        destination = GetLink(destination, Nexus.PlatformName);
+                    }
+
+                    Runtime.Expect(destination != Address.Null, "invalid destination address");
 
                     Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = transfer.value, symbol = transfer.symbol });
