@@ -169,7 +169,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var chainHashes = _hashes.Get<string, StorageSet>(chainName);
             Runtime.Expect(!chainHashes.Contains<Hash>(hash), "hash already seen");
-            chainHashes.Add<Hash>(hash);
 
             var interopBytes = Runtime.Oracle.Read($"interop://{chainName}/tx/{hash}");
             var interopTx = Serialization.Unserialize<InteropTransaction>(interopBytes);
@@ -217,7 +216,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(destination != Address.Null, "invalid destination address");
 
                     Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
-                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = transfer.value, symbol = transfer.symbol });
+                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = chainInfo.Address, value = transfer.value, symbol = transfer.symbol });
                     break;
                 }
 
@@ -261,6 +260,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     break;
                 }
             }
+
+            chainHashes.Add<Hash>(hash);
         }
 
         // send to external chain
