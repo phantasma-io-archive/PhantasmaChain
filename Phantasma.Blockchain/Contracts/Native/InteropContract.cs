@@ -178,6 +178,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(interopTx.ChainName == chainName, "unxpected chain name");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
+            int swapCount = 0;
+
             foreach (var evt in interopTx.Events)
             {
                 if (evt.Kind == EventKind.TokenReceive && evt.Address == externalAddress)
@@ -217,6 +219,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = chainInfo.Address, value = transfer.value, symbol = transfer.symbol });
+
+                    swapCount++;
                     break;
                 }
 
@@ -257,10 +261,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = externalAddress, value = withdraw.transferAmount, symbol = withdraw.transferSymbol});
+
+                    swapCount++;
                     break;
                 }
             }
 
+            Runtime.Expect(swapCount > 0, "nothing to settle");
             chainHashes.Add<Hash>(hash);
         }
 
