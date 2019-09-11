@@ -1579,6 +1579,34 @@ namespace Phantasma.API
             return new SingleResult { value = target.Text };
         }
 
+        [APIInfo(typeof(InteropResult[]), "Returns an array of available interop chains.")]
+        public IAPIResult GetInterops()
+        {
+            var interopList = new List<InteropResult>();
+
+            var chains = (InteropChainInfo[])Nexus.RootChain.InvokeContract("interop", "GetAvailableChains").ToObject();
+
+            foreach (var chain in chains)
+            {
+                string outChainName;
+                string outAddress;
+                try
+                {
+                    WalletUtils.DecodeChainAndAddress(chain.Address, out outChainName, out outAddress);
+                    var entry = new InteropResult();
+                    entry.chain = chain.Name;
+                    entry.interop = chain.Address.Text;
+                    entry.address = outAddress;
+                    interopList.Add(entry);
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            return new ArrayResult() { values = interopList.Select(x => (object)x).ToArray() };
+        }
 
     }
 }
