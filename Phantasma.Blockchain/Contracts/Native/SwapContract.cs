@@ -21,13 +21,34 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
+        public bool IsSupportedToken(string symbol)
+        {
+            if (!Runtime.Nexus.TokenExists(symbol))
+            {
+                return false;
+            }
+
+            if (symbol == Nexus.StakingTokenSymbol)
+            {
+                return true;
+            }
+
+            if (symbol == Nexus.FuelTokenSymbol)
+            {
+                return true;
+            }
+
+            var info = Runtime.Nexus.GetTokenInfo(symbol);
+            return info.IsFungible && info.Flags.HasFlag(TokenFlags.External);
+        }
+
         // returns how many tokens would be obtained by trading from one type of another
         public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
-            Runtime.Expect(Runtime.Nexus.TokenExists(fromSymbol), "invalid from symbol");
-            Runtime.Expect(Runtime.Nexus.TokenExists(toSymbol), "invalid to symbol");
+            Runtime.Expect(IsSupportedToken(fromSymbol), "unsupported from symbol");
+            Runtime.Expect(IsSupportedToken(toSymbol), "unsupported to symbol");
 
             var fromBalance = GetAvailableForSymbol(fromSymbol);
             Runtime.Expect(fromBalance > 0, fromSymbol + " not available in pot");
@@ -49,9 +70,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var info = Runtime.Nexus.GetTokenInfo(symbol);
-            Runtime.Expect(info.IsFungible, "must be fungible");
+            Runtime.Expect(IsSupportedToken(symbol), "token is unsupported");
 
+            var info = Runtime.Nexus.GetTokenInfo(symbol);
             var unitAmount = UnitConversion.GetUnitValue(info.Decimals);
             Runtime.Expect(amount >= unitAmount, "invalid amount");
 
@@ -130,10 +151,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(amount > 0, "invalid amount");
 
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
-            Runtime.Expect(fromInfo.IsFungible, "must be fungible");
+            Runtime.Expect(IsSupportedToken(fromSymbol), "source token is unsupported");
 
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
-            Runtime.Expect(toInfo.IsFungible, "must be fungible");
+            Runtime.Expect(IsSupportedToken(toSymbol), "destination token is unsupported");
 
             var toBalance = GetAvailableForSymbol(toSymbol);
 
