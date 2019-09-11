@@ -16,6 +16,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.VM.Contracts;
 using Phantasma.Network.P2P;
 using Phantasma.Core.Types;
+using Phantasma.Pay;
 
 namespace Phantasma.API
 {
@@ -516,6 +517,36 @@ namespace Phantasma.API
             }
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
+
+            var interops = (Address[])Nexus.RootChain.InvokeContract("interop", "GetLinks", address).ToObject();
+            if (interops.Length > 0)
+            {
+                var interopList = new List<InteropResult>();
+                foreach (var interopAddress in interops)
+                {
+                    string outChainName;
+                    string outAddress;
+                    try
+                    {
+                        WalletUtils.DecodeChainAndAddress(interopAddress, out outChainName, out outAddress);
+                        interopList.Add(new InteropResult()
+                        {
+                            chain = outChainName,
+                            interop = interopAddress.Text,
+                            address = outAddress,
+                        });
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
+                result.interops = interopList.ToArray();
+            }
+            else
+            {
+                result.interops = new InteropResult[0];
+            }
 
             var metadata = (Metadata[])Nexus.RootChain.InvokeContract("account", "GetMetadataList", address).ToObject();
             var metadataResults = metadata.Select(x => new MetadataResult

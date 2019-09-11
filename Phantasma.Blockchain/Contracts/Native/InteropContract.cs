@@ -140,6 +140,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.AddressRegister, from, target);
         }
 
+        public Address[] GetLinks(Address from)
+        {
+            var list = _links.Get<Address, StorageList>(from);
+
+            return list.All<Address>();
+        }
+
         public Address GetLink(Address from, string chainName)
         {
             if (Nexus.PlatformName.Equals(chainName, StringComparison.OrdinalIgnoreCase))

@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\PhantasmaChain\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
     <ProjectReference Include="..\Phantasma.P2P\Phantasma.P2P.csproj" />
+    <ProjectReference Include="..\Phantasma.Pay\Phantasma.Pay.csproj" />
   </ItemGroup>
 
 </Project>

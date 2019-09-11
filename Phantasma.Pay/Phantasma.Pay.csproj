@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
+    <ProjectReference Include="..\Phantasma.Neo\Phantasma.Neo.csproj" />
   </ItemGroup>
 
 </Project>

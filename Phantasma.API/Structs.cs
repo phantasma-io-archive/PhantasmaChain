@@ -29,6 +29,13 @@ namespace Phantasma.API
         public string[] ids;
     }
 
+    public struct InteropResult: IAPIResult
+    {
+        public string chain;
+        public string address;
+        public string interop;
+    }
+
     public struct AccountResult : IAPIResult
     {
         public string address;
@@ -45,6 +52,9 @@ namespace Phantasma.API
 
         [APIDescription("Metadata associated with the account")]
         public MetadataResult[] metadata;
+
+        [APIDescription("List of interop addresses associated with the account")]
+        public InteropResult[] interops;
     }
 
     public struct ChainResult : IAPIResult
