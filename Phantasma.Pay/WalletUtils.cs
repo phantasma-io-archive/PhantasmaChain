@@ -14,7 +14,11 @@ namespace Phantasma.Pay
 
             switch (chainName)
             {
-                case "NEO":
+                case NeoWallet.NeoPlatform:
+                    address = NeoWallet.DecodeAddress(source);
+                    break;
+
+                case EthereumWallet.EthereumPlatform:
                     address = NeoWallet.DecodeAddress(source);
                     break;
 
@@ -27,7 +31,10 @@ namespace Phantasma.Pay
         {
             switch (chainName)
             {
-                case "NEO":
+                case NeoWallet.NeoPlatform:
+                    return NeoWallet.EncodeAddress(source);
+
+                case EthereumWallet.EthereumPlatform:
                     return NeoWallet.EncodeAddress(source);
 
                 default:

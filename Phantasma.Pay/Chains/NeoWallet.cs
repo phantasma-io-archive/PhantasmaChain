@@ -9,7 +9,7 @@ namespace Phantasma.Pay.Chains
 {
     public class NeoWallet : CryptoWallet
     {
-        public static readonly string NeoPlatform = "neo";
+        public const string NeoPlatform = "neo";
 
         public NeoWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {

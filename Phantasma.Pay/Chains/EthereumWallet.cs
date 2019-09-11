@@ -11,7 +11,7 @@ namespace Phantasma.Pay.Chains
 {
     public class EthereumWallet: CryptoWallet
     {
-        public static readonly string EthereumPlatform = "ethereum";
+        public const string EthereumPlatform = "ethereum";
 
         public EthereumWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
