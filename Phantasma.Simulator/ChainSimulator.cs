@@ -362,14 +362,11 @@ namespace Phantasma.Simulator
             return Enumerable.Empty<Block>();
         }
 
-        private Transaction MakeTransaction(KeyPair source, List<KeyPair> signees, Chain chain, byte[] script)
+        private Transaction MakeTransaction(IEnumerable<KeyPair> signees, Chain chain, byte[] script)
         {
             var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
-            if (source != null)
-            {
-                signees.Add(source);
-            }
+            Throw.If(!signees.Any(), "at least one signer required");
 
             Signature[] existing = tx.Signatures;
             var msg = tx.ToByteArray(false);
@@ -389,14 +386,17 @@ namespace Phantasma.Simulator
             txHashMap[tx.Hash] = tx;
             transactions.Add(tx);
 
-            usedAddresses.Add(source.Address);
+            foreach (var signer in signees)
+            {
+                usedAddresses.Add(signer.Address);
+            }
 
             return tx;
         }
 
         private Transaction MakeTransaction(KeyPair source, Chain chain, byte[] script)
         {
-            return MakeTransaction(source, new List<KeyPair>(), chain, script);
+            return MakeTransaction(new KeyPair[] { source }, chain, script);
         }
 
         public Transaction GenerateCustomTransaction(KeyPair owner, Func<byte[]> scriptGenerator)
@@ -409,26 +409,18 @@ namespace Phantasma.Simulator
             var script = scriptGenerator();
 
             var tx = MakeTransaction(owner, chain, script);
-            tx.Sign(owner);
-
             return tx;
         }
 
-        public Transaction GenerateCustomMultiSigTransaction(IEnumerable<KeyPair> owners, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(IEnumerable<KeyPair> owners, Func<byte[]> scriptGenerator)
         {
-            return GenerateCustomMultiSigTransaction(owners, Nexus.RootChain, scriptGenerator);
+            return GenerateCustomTransaction(owners, Nexus.RootChain, scriptGenerator);
         }
 
-        public Transaction GenerateCustomMultiSigTransaction(IEnumerable<KeyPair> owners, Chain chain, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(IEnumerable<KeyPair> owners, Chain chain, Func<byte[]> scriptGenerator)
         {
             var script = scriptGenerator();
-
-            var tx = MakeTransaction(owners.First(), chain, script);
-            foreach (var owner in owners)
-            {
-                tx.Sign(owner);
-            }
-
+            var tx = MakeTransaction(owners, chain, script);
             return tx;
         }
 
@@ -446,7 +438,6 @@ namespace Phantasma.Simulator
                 EndScript();
 
             var tx = MakeTransaction(owner, chain, script);
-            tx.Sign(owner);
 
             return tx;
         }
@@ -463,7 +454,6 @@ namespace Phantasma.Simulator
                 EndScript();
 
             var tx = MakeTransaction(owner, chain, script);
-            tx.Sign(owner);
 
             return tx;
         }
@@ -529,7 +519,6 @@ namespace Phantasma.Simulator
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("bank", "Claim", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
-            tx.Sign(source);
             return tx;
         }
 
@@ -566,12 +555,27 @@ namespace Phantasma.Simulator
         public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<KeyPair> signees = null)
         {
             signees = signees ?? new List<KeyPair>();
+            var found = false;
+            foreach (var signer in signees)
+            {
+                if (signer.Address == source.Address)
+                {
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                signees.Add(source);
+            }
+
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, 1, 9999).
                 CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
-            var tx = MakeTransaction(source, signees, chain, script);
+
+            var tx = MakeTransaction(signees, chain, script);
             return tx;
         }
 

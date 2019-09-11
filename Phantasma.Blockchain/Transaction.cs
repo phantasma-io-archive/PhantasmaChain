@@ -152,7 +152,7 @@ namespace Phantasma.Blockchain
 
             var sigs = new List<Signature>();
 
-            if (this.Signatures != null)
+            if (this.Signatures != null && this.Signatures.Length > 0)
             {
                 sigs.AddRange(this.Signatures);
             }
