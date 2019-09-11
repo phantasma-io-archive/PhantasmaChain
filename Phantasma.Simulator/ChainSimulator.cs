@@ -132,6 +132,12 @@ namespace Phantasma.Simulator
             BeginBlock();
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
             GenerateCustomTransaction(_owner, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 9999).CallContract("interop", "RegisterChain", neoAddress).SpendGas(_owner.Address).EndScript());
+
+            GenerateToken(_owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
+            GenerateToken(_owner, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External);
+            GenerateToken(_owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
+            GenerateToken(_owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
+
             EndBlock();
 
             /*
