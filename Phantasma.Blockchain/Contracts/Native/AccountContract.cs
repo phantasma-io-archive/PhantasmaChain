@@ -172,7 +172,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return false;
             }
 
-            if (name.Length < 4 || name.Length > 15)
+            if (name.Length < 3 || name.Length > 15)
             {
                 return false;
             }

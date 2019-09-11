@@ -455,7 +455,7 @@ namespace Phantasma.Tests
                         break;
                 }
 
-                simulator.GenerateToken(simulatorOwner, symbol, $"{symbol}Token", supply, decimals, flags);
+                simulator.GenerateToken(simulatorOwner, symbol, $"{symbol}Token", Nexus.PlatformName, Hash.FromString(symbol), supply, decimals, flags);
                 simulator.MintTokens(simulatorOwner, symbol, supply);
             }
 

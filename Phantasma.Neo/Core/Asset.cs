@@ -1,5 +1,5 @@
-﻿using Phantasma.Neo.Cryptography;
-using Phantasma.Neo.Cryptography.ECC;
+﻿using Phantasma.Cryptography.ECC;
+using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
 using System.IO;

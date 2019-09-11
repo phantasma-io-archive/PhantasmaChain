@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Simulator", "Phan
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Neo", "Phantasma.Neo\Phantasma.Neo.csproj", "{DFBB3699-7431-4142-897B-168EE063D7A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phantasma.Ethereum", "Phantasma.Ethereum\Phantasma.Ethereum.csproj", "{D31CFFD6-4BDF-47CB-9195-04AAF44D2014}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,10 @@ Global
 		{DFBB3699-7431-4142-897B-168EE063D7A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFBB3699-7431-4142-897B-168EE063D7A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFBB3699-7431-4142-897B-168EE063D7A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D31CFFD6-4BDF-47CB-9195-04AAF44D2014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D31CFFD6-4BDF-47CB-9195-04AAF44D2014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D31CFFD6-4BDF-47CB-9195-04AAF44D2014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D31CFFD6-4BDF-47CB-9195-04AAF44D2014}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -99,7 +99,7 @@ namespace Phantasma.Neo.Utils
             {
                 try
                 {
-                    pubkey = Cryptography.ECC.ECPoint.DecodePoint(pubkey, Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                    pubkey = Phantasma.Cryptography.ECC.ECPoint.DecodePoint(pubkey, Phantasma.Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
                 }
                 catch
                 {
@@ -206,7 +206,7 @@ namespace Phantasma.Neo.Utils
 
         public static byte[] Base58CheckDecode(this string input)
         {
-            byte[] buffer = Base58.Decode(input);
+            byte[] buffer = Phantasma.Numerics.Base58.Decode(input);
             if (buffer.Length < 4) throw new FormatException();
             byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
             if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
@@ -220,7 +220,7 @@ namespace Phantasma.Neo.Utils
             byte[] buffer = new byte[data.Length + 4];
             Buffer.BlockCopy(data, 0, buffer, 0, data.Length);
             Buffer.BlockCopy(checksum, 0, buffer, data.Length, 4);
-            return Base58.Encode(buffer);
+            return Phantasma.Numerics.Base58.Encode(buffer);
         }
 
         /// <summary>

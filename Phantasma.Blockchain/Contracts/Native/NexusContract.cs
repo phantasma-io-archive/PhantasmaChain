@@ -44,13 +44,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, BigInteger decimals, TokenFlags flags, byte[] script)
+        public void CreateToken(Address owner, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, BigInteger decimals, TokenFlags flags, byte[] script)
         {
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
             Runtime.Expect(!string.IsNullOrEmpty(name), "token name required");
             Runtime.Expect(maxSupply >= 0, "token supply cant be negative");
             Runtime.Expect(decimals >= 0, "token decimals cant be negative");
             Runtime.Expect(decimals <= MAX_TOKEN_DECIMALS, $"token decimals cant exceed {MAX_TOKEN_DECIMALS}");
+
+            Runtime.Expect(!Runtime.Nexus.TokenExists(symbol), "token already exists");
 
             if (symbol == Nexus.FuelTokenSymbol)
             {
@@ -71,16 +73,24 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(flags.HasFlag(TokenFlags.Fiat), "token should be fiat");
             }
 
+            Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
+
             if (flags.HasFlag(TokenFlags.External))
             {
                 Runtime.Expect(owner == Runtime.Nexus.GenesisAddress, "external token not permitted");
+                Runtime.Expect(platform != Nexus.PlatformName, "external token chain required");
+                Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "platform not found");
+            }
+            else
+            {
+                Runtime.Expect(platform == Nexus.PlatformName, "chain name is invalid");
             }
 
             Runtime.Expect(IsWitness(owner), "invalid witness");
 
             symbol = symbol.ToUpperInvariant();
 
-            Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, maxSupply, (int)decimals, flags, script), "token creation failed");
+            Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
 
@@ -113,6 +123,61 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(EventKind.FeedCreate, owner, name);
         }
+
+        /*
+        public bool IsPlatformSupported(string name)
+        {
+            var count = _platforms.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _platforms.Get<InteropPlatformInfo>(i);
+                if (entry.Name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public InteropPlatformInfo GetPlatformInfo(string name)
+        {
+            var count = _platforms.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _platforms.Get<InteropPlatformInfo>(i);
+                if (entry.Name == name)
+                {
+                    return entry;
+                }
+            }
+
+            Runtime.Expect(false, "invalid platform");
+            return new InteropPlatformInfo();
+        }
+
+        public InteropPlatformInfo[] GetAvailablePlatforms()
+        {
+            return _platforms.All<InteropPlatformInfo>();
+        }*/
+
+        public void CreatePlatform(Address target, string fuelSymbol)
+        {
+            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
+
+            Runtime.Expect(target.IsInterop, "external address must be interop");
+
+            string platformName;
+            byte[] data;
+            target.DecodeInterop(out platformName, out data, 0);
+
+            Runtime.Expect(AccountContract.ValidateName(platformName), "invalid platform name");
+
+            Runtime.Expect(Runtime.Nexus.CreatePlatform(target, platformName, fuelSymbol), "creation of platform failed");
+
+            Runtime.Notify(EventKind.AddressRegister, target, platformName);
+        }
+
 
         public void SetTokenMetadata(string symbol, string key, string value)
         {

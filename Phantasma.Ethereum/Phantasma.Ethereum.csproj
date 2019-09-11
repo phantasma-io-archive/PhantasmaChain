@@ -9,11 +9,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Cryptography\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
+    <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
   </ItemGroup>
 
 </Project>

@@ -93,7 +93,7 @@ namespace Phantasma.Simulator
         {
 
         }
-
+       
         public ChainSimulator(Nexus nexus, KeyPair ownerKey, int seed, Logger logger = null)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
@@ -124,19 +124,29 @@ namespace Phantasma.Simulator
                 throw new Exception("Funds missing oops");
             }
 
-            // TODO this should be moved to other place later
-            var neoKeys = InteropUtils.GenerateInteropKeys(_owner, "NEO");
-            var neoText = Phantasma.Neo.Cryptography.KeyPair.FromWIF(neoKeys.ToWIF()).address;
+            var neoPlatform = Pay.Chains.NeoWallet.NeoPlatform;
+            var neoKeys = InteropUtils.GenerateInteropKeys(_owner, neoPlatform);
+            var neoText = Phantasma.Neo.Core.NeoKey.FromWIF(neoKeys.ToWIF()).address;
             var neoAddress = Phantasma.Pay.Chains.NeoWallet.EncodeAddress(neoText);
+
+            var ethPlatform = Pay.Chains.EthereumWallet.EthereumPlatform;
+            var ethKeys = InteropUtils.GenerateInteropKeys(_owner, ethPlatform);
+            var ethText = Phantasma.Ethereum.EthereumKey.FromWIF(ethKeys.ToWIF()).address;
+            var ethAddress = Phantasma.Pay.Chains.EthereumWallet.EncodeAddress(ethText);
 
             BeginBlock();
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
-            GenerateCustomTransaction(_owner, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 9999).CallContract("interop", "RegisterChain", neoAddress).SpendGas(_owner.Address).EndScript());
 
-            GenerateToken(_owner, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
-            GenerateToken(_owner, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External);
-            GenerateToken(_owner, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
-            GenerateToken(_owner, "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
+            GenerateCustomTransaction(_owner, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 9999).
+                CallContract("nexus", "CreatePlatform", neoAddress, "GAS").
+                CallContract("nexus", "CreatePlatform", ethAddress, "ETH").
+            SpendGas(_owner.Address).EndScript());
+
+            GenerateToken(_owner, "NEO", "NEO", neoPlatform, Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
+            GenerateToken(_owner, "GAS", "GAS", neoPlatform, Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External);
+            GenerateToken(_owner, "ETH", "Ethereum", ethPlatform, Hash.FromString("ETH"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
+            GenerateToken(_owner, "DAI", "Dai Stablecoin", ethPlatform, Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
+            //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
             EndBlock();
 
@@ -430,20 +440,18 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateToken(KeyPair owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
+        public Transaction GenerateToken(KeyPair owner, string symbol, string name, string platform, Hash hash, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
         {
-            var chain = Nexus.RootChain;
-
             tokenScript = tokenScript ?? new byte[0];
 
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("nexus", "CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript).
+                CallContract("nexus", "CreateToken", owner.Address, symbol, name, platform, hash, totalSupply, decimals, flags, tokenScript).
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = MakeTransaction(owner, chain, script);
+            var tx = MakeTransaction(owner, Nexus.RootChain, script);
 
             return tx;
         }

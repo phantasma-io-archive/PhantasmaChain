@@ -170,6 +170,25 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public IEnumerable<string> Platforms
+        {
+            get
+            {
+                if (_vars.ContainsKey(nameof(Platforms)))
+                {
+                    return Serialization.Unserialize<string[]>(_vars.Get(nameof(Platforms)));
+                }
+
+                return Enumerable.Empty<string>();
+            }
+
+            private set
+            {
+                var names = value.ToArray();
+                _vars.Set(nameof(Platforms), Serialization.Serialize(names));
+            }
+        }
+
         public IEnumerable<string> Feeds
         {
             get
@@ -683,7 +702,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal bool CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        internal bool CreateToken(Address owner, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -716,7 +735,7 @@ namespace Phantasma.Blockchain
                 Throw.If(decimals > 0, "indivisible token can't have decimals");
             }
 
-            var tokenInfo = new TokenInfo(owner, symbol, name, maxSupply, decimals, flags, script);
+            var tokenInfo = new TokenInfo(owner, symbol, name, platform, hash, maxSupply, decimals, flags, script);
             EditToken(symbol, tokenInfo);
 
             // add to persistent list of tokens
@@ -729,7 +748,7 @@ namespace Phantasma.Blockchain
 
         private string GetTokenInfoKey(string symbol)
         {
-            return "info:" + symbol.ToUpper();
+            return "info:" + symbol;
         }
 
         private void EditToken(string symbol, TokenInfo tokenInfo)
@@ -1338,9 +1357,9 @@ namespace Phantasma.Blockchain
             var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
-            CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
-            CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
-            CreateToken(owner.Address, FiatTokenSymbol, FiatTokenName, 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, PlatformName, Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
+            CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformName, Hash.FromString(FuelTokenSymbol), PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
+            CreateToken(owner.Address, FiatTokenSymbol, FiatTokenName, PlatformName, Hash.FromString(FiatTokenSymbol), 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
 
             // create genesis transactions
             var transactions = new List<Transaction>
@@ -1583,6 +1602,62 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
+        #region PLATFORMS
+        internal bool CreatePlatform(Address address, string name, string fuelSymbol)
+        {
+            // check if already exists something with that name
+            if (PlatformExists(name))
+            {
+                return false;
+            }
+
+            var entry = new PlatformInfo()
+            {
+                Address = address,
+                Name = name,
+                Symbol = fuelSymbol
+            };
+
+            // add to persistent list of tokens
+            var platformList = this.Platforms.ToList();
+            platformList.Add(name);
+            this.Platforms = platformList;
+
+            EditPlatform(name, entry);
+            return true;
+        }
+
+        private string GetPlatformInfoKey(string name)
+        {
+            return "platform:" + name;
+        }
+
+        private void EditPlatform(string name, PlatformInfo platformInfo)
+        {
+            var key = GetPlatformInfoKey(name);
+            var bytes = Serialization.Serialize(platformInfo);
+            _vars.Set(key, bytes);
+        }
+
+        public bool PlatformExists(string name)
+        {
+            var key = GetPlatformInfoKey(name);
+            return _vars.ContainsKey(key);
+        }
+
+        public PlatformInfo GetPlatformInfo(string name)
+        {
+            var key = GetPlatformInfoKey(name);
+            if (_vars.ContainsKey(key))
+            {
+                var bytes = _vars.Get(key);
+                return Serialization.Unserialize<PlatformInfo>(bytes);
+            }
+
+            throw new ChainException($"Platform does not exist ({name})");
+        }
+        #endregion
+        
         /*
         public void SerializeData(BinaryWriter writer)
         {

@@ -33,10 +33,10 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "interop";
 
+        private StorageList _platforms;
+
         private StorageMap _hashes;
         private StorageList _withdraws;
-
-        private StorageMap _externalAddresses;
 
         private StorageMap _links;
         private StorageMap _reverseMap;
@@ -47,63 +47,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public bool IsChainSupported(string name)
-        {
-            return _externalAddresses.ContainsKey<string>(name);
-        }
-
-        public InteropChainInfo GetChainInfo(string name)
-        {
-            var extAddr = _externalAddresses.Get<string, Address>(name);
-            Runtime.Expect(extAddr != Address.Null, "external chain not initialized");
-
-            switch (name)
-            {
-                case "NEO":
-                    {
-                        return new InteropChainInfo() { Name = name, Symbol = "GAS", Address = extAddr };
-                    }
-
-                default:
-                    Runtime.Expect(false, "unknown chain");
-                    return new InteropChainInfo();
-            }
-        }
-
-        public InteropChainInfo[] GetAvailableChains()
-        {
-            if (IsChainSupported("NEO"))
-            {
-                return new InteropChainInfo[] { GetChainInfo("NEO")};
-            }
-
-            return new InteropChainInfo[] { };
-        }
-
-        public void RegisterChain(Address target)
-        {
-            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
-
-            Runtime.Expect(target.IsInterop, "external address must be interop");
-
-            string chainName;
-            byte[] data;
-            target.DecodeInterop(out chainName, out data, 0);
-
-            _externalAddresses.Set<string, Address>(chainName, target);
-
-            Runtime.Notify(EventKind.AddressRegister, target, chainName);
-        }
-
         public void RegisterLink(Address from, Address target)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(target.IsInterop, "address must be interop");
 
-            string chainName;
+            string platformName;
             byte[] data;
-            target.DecodeInterop(out chainName, out data, 0);
-            Runtime.Expect(IsChainSupported(chainName), "unsupported chain");
+            target.DecodeInterop(out platformName, out data, 0);
+            Runtime.Expect(Runtime.Nexus.PlatformExists(platformName), "unsupported chain");
 
             var list = _links.Get<Address, StorageList>(from);
 
@@ -117,7 +69,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 string otherChainName;
                 address.DecodeInterop(out otherChainName, out data, 0);
 
-                if (otherChainName ==  chainName)
+                if (otherChainName ==  platformName)
                 {
                     index = i;
                     break;
@@ -147,9 +99,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             return list.All<Address>();
         }
 
-        public Address GetLink(Address from, string chainName)
+        public Address GetLink(Address from, string platformName)
         {
-            if (Nexus.PlatformName.Equals(chainName, StringComparison.OrdinalIgnoreCase))
+            if (Nexus.PlatformName.Equals(platformName, StringComparison.OrdinalIgnoreCase))
             {
                 Runtime.Expect(from.IsInterop, "must be interop");
                 if (_reverseMap.ContainsKey<Address>(from))
@@ -161,7 +113,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(!from.IsInterop, "cant be interop");
-            Runtime.Expect(IsChainSupported(chainName), "unsupported chain");
+            Runtime.Expect(Runtime.Nexus.PlatformExists(platformName), "unsupported chain");
 
             var list = _links.Get<Address, StorageList>(from);
             var count = list.Count();
@@ -170,11 +122,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var address = list.Get<Address>(i);
 
-                string otherChainName;
+                string otherPlatform;
                 byte[] data;
-                address.DecodeInterop(out otherChainName, out data, 0);
+                address.DecodeInterop(out otherPlatform, out data, 0);
 
-                if (otherChainName == chainName)
+                if (otherPlatform == platformName)
                 {
                     return address;
                 }
@@ -183,29 +135,27 @@ namespace Phantasma.Blockchain.Contracts.Native
             return Address.Null;
         }
 
-        public void SettleTransaction(Address from, string chainName, Hash hash)
+        public void SettleTransaction(Address from, string platformName, Hash hash)
         {
-            Runtime.Expect(IsChainSupported(chainName), "unsupported chain");
-            var chainInfo = GetChainInfo(chainName);
+            Runtime.Expect(Runtime.Nexus.PlatformExists(platformName), "unsupported platform");
+            var platformInfo = Runtime.Nexus.GetPlatformInfo(platformName);
 
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var chainHashes = _hashes.Get<string, StorageSet>(chainName);
+            var chainHashes = _hashes.Get<string, StorageSet>(platformName);
             Runtime.Expect(!chainHashes.Contains<Hash>(hash), "hash already seen");
 
-            var interopBytes = Runtime.Oracle.Read($"interop://{chainName}/tx/{hash}");
+            var interopBytes = Runtime.Oracle.Read($"interop://{platformName}/tx/{hash}");
             var interopTx = Serialization.Unserialize<InteropTransaction>(interopBytes);
 
-            var externalAddress = _externalAddresses.Get<string, Address>(chainName);
-
-            Runtime.Expect(interopTx.ChainName == chainName, "unxpected chain name");
+            Runtime.Expect(interopTx.Platform == platformName, "unxpected chain name");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
             int swapCount = 0;
 
             foreach (var evt in interopTx.Events)
             {
-                if (evt.Kind == EventKind.TokenReceive && evt.Address == externalAddress)
+                if (evt.Kind == EventKind.TokenReceive && evt.Address == platformInfo.Address)
                 {
                     Runtime.Expect(evt.Address != Address.Null, "invalid source address");
 
@@ -241,7 +191,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(destination != Address.Null, "invalid destination address");
 
                     Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
-                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = chainInfo.Address, value = transfer.value, symbol = transfer.symbol });
+                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = transfer.value, symbol = transfer.symbol });
 
                     swapCount++;
                     break;
@@ -283,7 +233,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, withdraw.feeSymbol, this.Address, from, withdraw.feeAmount), "fee payment failed");
 
                     Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
-                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = externalAddress, value = withdraw.transferAmount, symbol = withdraw.transferSymbol});
+                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = withdraw.transferAmount, symbol = withdraw.transferSymbol});
 
                     swapCount++;
                     break;

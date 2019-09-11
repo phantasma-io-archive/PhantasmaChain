@@ -1,5 +1,5 @@
-﻿using Phantasma.Neo.Cryptography;
-using Phantasma.Neo.Cryptography.ECC;
+﻿using Phantasma.Cryptography.ECC;
+using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
 using System.Collections.Generic;
@@ -346,7 +346,7 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public void Sign(KeyPair key, IEnumerable<Witness> witnesses = null)
+        public void Sign(NeoKey key, IEnumerable<Witness> witnesses = null)
         {
             var txdata = this.Serialize(false);
 

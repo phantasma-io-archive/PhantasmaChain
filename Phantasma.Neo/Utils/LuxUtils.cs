@@ -79,7 +79,7 @@ namespace Phantasma.Neo.Utils
             byte[] buffer;
             try
             {
-                buffer = Base58.Decode(address);
+                buffer = Numerics.Base58.Decode(address);
 
             }
             catch
@@ -334,19 +334,6 @@ namespace Phantasma.Neo.Utils
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
             return new BigInteger(b);
-        }
-
-        public static Fixed8 Sum(this IEnumerable<Fixed8> source)
-        {
-            long sum = 0;
-            checked
-            {
-                foreach (Fixed8 item in source)
-                {
-                    sum += item.value;
-                }
-            }
-            return new Fixed8(sum);
         }
 
         internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, long> weightSelector, Func<T, long, TResult> resultSelector)

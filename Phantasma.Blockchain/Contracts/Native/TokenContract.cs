@@ -66,6 +66,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
@@ -85,6 +86,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(tokenInfo.IsBurnable, "token must be burnable");
+            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
             Runtime.Expect(this.Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount), "burning failed");
 

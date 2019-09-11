@@ -36,9 +36,10 @@ namespace Phantasma.Cryptography
         }
 
         public const int PublicKeyLength = 32;
+        public const int MaxPlatformNameLength = 10;
 
         // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
-        public bool IsInterop => _publicKey != null && _publicKey[0] == (byte)'*' && _publicKey[4] == (byte)'*';
+        public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == (byte)'*';
 
         private string _text;
         public string Text
@@ -168,9 +169,10 @@ namespace Phantasma.Cryptography
             this._text = null;
         }
 
-        public void DecodeInterop(out string chainName, out byte[] data, int expectedDataLength)
+        public void DecodeInterop(out string platformName, out byte[] data, int expectedDataLength)
         {
             Throw.If(expectedDataLength < 0, "invalid data length");
+            Throw.If(expectedDataLength > 27, "data is too large");
             Throw.If(!IsInterop, "must be an interop address");
  
             var sb = new StringBuilder();
@@ -198,7 +200,7 @@ namespace Phantasma.Cryptography
             }
 
             i++;
-            chainName = sb.ToString();
+            platformName = sb.ToString();
 
             if (expectedDataLength > 0)
             {
@@ -214,12 +216,15 @@ namespace Phantasma.Cryptography
             }
         }
 
-        public static Address EncodeInterop(string chainSymbol, byte[] data)
+        public static Address EncodeInterop(string platformName, byte[] data)
         {
+            Throw.If(string.IsNullOrEmpty(platformName), "platform name cant be null");
+            Throw.If(platformName.Length > MaxPlatformNameLength, "platform name is too big");
+
             var bytes = new byte[PublicKeyLength];
             bytes[0] = (byte)'*';
             int i = 1;
-            foreach (var ch in chainSymbol)
+            foreach (var ch in platformName)
             {
                 bytes[i] = (byte)ch;
                 i++;

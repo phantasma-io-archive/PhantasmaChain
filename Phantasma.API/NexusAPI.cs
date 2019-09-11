@@ -1584,7 +1584,7 @@ namespace Phantasma.API
         {
             var interopList = new List<InteropResult>();
 
-            var chains = (InteropChainInfo[])Nexus.RootChain.InvokeContract("interop", "GetAvailableChains").ToObject();
+            var chains = (PlatformInfo[])Nexus.RootChain.InvokeContract("interop", "GetAvailableChains").ToObject();
 
             foreach (var chain in chains)
             {

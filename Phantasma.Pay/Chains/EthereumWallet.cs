@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core;
+using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
@@ -10,6 +11,8 @@ namespace Phantasma.Pay.Chains
 {
     public class EthereumWallet: CryptoWallet
     {
+        public static readonly string EthereumPlatform = "ethereum";
+
         public EthereumWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
         {
         }
@@ -50,6 +53,38 @@ namespace Phantasma.Pay.Chains
 
             var kak = SHA3Keccak.CalculateHash(publicKey);
             return "0x" + Base16.Encode(kak.Skip(12).ToArray());
+        }
+
+        public static Address EncodeAddress(string addressText)
+        {
+            Throw.If(!IsValidAddress(addressText), "invalid ethereum address");
+            var input = addressText.Substring(2);
+            var bytes = Base16.Decode(input);
+            return Cryptography.Address.EncodeInterop(EthereumPlatform, bytes);
+        }
+
+        private static bool IsValidAddress(string addressText)
+        {
+            return addressText.StartsWith("0x") && addressText.Length == 42;
+        }
+
+        public static string DecodeAddress(Address address)
+        {
+            if (!address.IsInterop)
+            {
+                throw new Exception("not an interop address");
+            }
+
+            string platformName;
+            byte[] data;
+            address.DecodeInterop(out platformName, out data, 20);
+
+            if (platformName != EthereumPlatform)
+            {
+                throw new Exception("not a Ethereum interop address");
+            }
+
+            return $"0x{Base16.Encode(data)}";
         }
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()

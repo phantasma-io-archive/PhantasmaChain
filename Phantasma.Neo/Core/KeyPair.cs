@@ -1,12 +1,12 @@
-﻿using Phantasma.Neo.Cryptography.ECC;
-using Phantasma.Neo.Core;
+﻿using Phantasma.Cryptography.ECC;
+using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
 using System.Linq;
 
-namespace Phantasma.Neo.Cryptography
+namespace Phantasma.Neo.Core
 {
-    public class KeyPair 
+    public class NeoKey 
     {
         public readonly byte[] PrivateKey;
         public readonly byte[] PublicKey;
@@ -18,7 +18,7 @@ namespace Phantasma.Neo.Cryptography
         public readonly UInt160 signatureHash;
         public readonly byte[] signatureScript;
 
-        public KeyPair(byte[] privateKey)
+        public NeoKey(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
                 throw new ArgumentException();
@@ -50,7 +50,7 @@ namespace Phantasma.Neo.Cryptography
             this.WIF = GetWIF();
         }
 
-        public static KeyPair FromWIF(string wif)
+        public static NeoKey FromWIF(string wif)
         {
             if (wif == null) throw new ArgumentNullException();
             byte[] data = wif.Base58CheckDecode();
@@ -59,19 +59,19 @@ namespace Phantasma.Neo.Cryptography
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
-            return new KeyPair(privateKey);
+            return new NeoKey(privateKey);
         }
 
         private static System.Security.Cryptography.RandomNumberGenerator rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
 
-        public static KeyPair Generate()
+        public static NeoKey Generate()
         {
             var bytes = new byte[32];
             lock (rnd)
             {
                 rnd.GetBytes(bytes);
             }
-            return new KeyPair(bytes);
+            return new NeoKey(bytes);
         }
 
         public static byte[] CreateSignatureScript(byte[] bytes)

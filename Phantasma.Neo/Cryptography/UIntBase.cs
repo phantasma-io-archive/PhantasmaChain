@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Phantasma.Neo.Cryptography
 {
-    public abstract class UIntBase : IEquatable<UIntBase>, ISerializable
+    public abstract class UIntBase : IEquatable<UIntBase>
     {
         private byte[] data_bytes;
 
@@ -21,11 +21,6 @@ namespace Phantasma.Neo.Cryptography
             if (value.Length != bytes)
                 throw new ArgumentException();
             this.data_bytes = value;
-        }
-
-        void ISerializable.Deserialize(BinaryReader reader)
-        {
-            reader.Read(data_bytes, 0, data_bytes.Length);
         }
 
         public bool Equals(UIntBase other)
@@ -65,11 +60,6 @@ namespace Phantasma.Neo.Cryptography
                 hash += hash << 5;
                 return hash;
             }
-        }
-
-        void ISerializable.Serialize(BinaryWriter writer)
-        {
-            writer.Write(data_bytes);
         }
 
         public byte[] ToArray()

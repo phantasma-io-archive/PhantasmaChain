@@ -169,7 +169,7 @@ namespace Phantasma.Neo.Core
             return BalanceOf(address.GetScriptHashFromAddress());
         }
 
-        public decimal BalanceOf(KeyPair keys)
+        public decimal BalanceOf(NeoKey keys)
         {
             return BalanceOf(keys.address);
         }
@@ -194,17 +194,17 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public Transaction Transfer(KeyPair from_key, string to_address, decimal value)
+        public Transaction Transfer(NeoKey from_key, string to_address, decimal value)
         {
             return Transfer(from_key, to_address.GetScriptHashFromAddress(), value);
         }
 
-        public Transaction Transfer(KeyPair from_key, UInt160 to_address_hash, decimal value)
+        public Transaction Transfer(NeoKey from_key, UInt160 to_address_hash, decimal value)
         {
             return Transfer(from_key, to_address_hash.ToArray(), value);
         }
 
-        public Transaction Transfer(KeyPair from_key, byte[] to_address_hash, decimal value)
+        public Transaction Transfer(NeoKey from_key, byte[] to_address_hash, decimal value)
         {
             BigInteger amount = ConvertToBigInt(value);
 
@@ -214,7 +214,7 @@ namespace Phantasma.Neo.Core
         }
 
         // transfer to multiple addresses
-        public Transaction Transfer(KeyPair from_key, Dictionary<string, decimal> transfers)
+        public Transaction Transfer(NeoKey from_key, Dictionary<string, decimal> transfers)
         {
             var temp = new Dictionary<byte[], decimal>(new ByteArrayComparer());
             foreach (var entry in transfers)
@@ -234,7 +234,7 @@ namespace Phantasma.Neo.Core
         public const int max_transfer_count = 3;
 
         // transfer to multiple addresses
-        public Transaction Transfer(KeyPair from_key, Dictionary<byte[], decimal> transfers)
+        public Transaction Transfer(NeoKey from_key, Dictionary<byte[], decimal> transfers)
         {
             if (transfers.Count > max_transfer_count)
             {
@@ -313,13 +313,13 @@ namespace Phantasma.Neo.Core
 
     public static class TokenSale
     {
-        public static Transaction Deploy(NEP5 token, KeyPair owner_key)
+        public static Transaction Deploy(NEP5 token, NeoKey owner_key)
         {
             var response = token.api.CallContract(owner_key, token.ScriptHash, "deploy", new object[] { });
             return response;
         }
 
-        public static Transaction MintTokens(NEP5 token, KeyPair buyer_key, string symbol, decimal amount)
+        public static Transaction MintTokens(NEP5 token, NeoKey buyer_key, string symbol, decimal amount)
         {
             var attachs = new List<Transaction.Output>();
             attachs.Add(new Transaction.Output() { assetID = NeoAPI.GetAssetID(symbol), scriptHash = token.ScriptHash, value = amount });
