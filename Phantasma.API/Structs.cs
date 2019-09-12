@@ -196,6 +196,12 @@ namespace Phantasma.API
         [APIDescription("Address that controls minting of tokens")]
         public string ownerAddress;
 
+        [APIDescription("Platform of token")]
+        public string platform;
+
+        [APIDescription("Hash of token")]
+        public string hash;
+
         [APIDescription("Metadata associated with the token")]
         public MetadataResult[] metadata;
 
