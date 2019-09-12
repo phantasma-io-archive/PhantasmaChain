@@ -57,7 +57,7 @@ namespace Phantasma.Cryptography
 
         public override string ToString()
         {
-            return "0x" + Base16.Encode(ByteArrayUtils.ReverseBytes(_data));
+            return Base16.Encode(ByteArrayUtils.ReverseBytes(_data));
         }
 
         public static readonly Hash Zero = new Hash();

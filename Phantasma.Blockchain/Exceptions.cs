@@ -43,4 +43,11 @@ namespace Phantasma.Blockchain
         }
     }
 
+    public class SwapException : Exception
+    {
+        public SwapException(string msg) : base(msg)
+        {
+
+        }
+    }
 }
