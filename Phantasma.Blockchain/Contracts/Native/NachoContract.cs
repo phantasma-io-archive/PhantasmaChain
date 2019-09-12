@@ -2081,12 +2081,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte[] levels;
     }
 
-    public struct InAppData
+    public struct NachoIAPData
     {
         public string name;
         public BigInteger contentID;
-        public BigInteger price;
+        public BigInteger dollarPrice;
+        public BigInteger coinPrice;
         public BigInteger nachos;
+        public BigInteger nachosBonus;
     }
 
     public struct Friend
