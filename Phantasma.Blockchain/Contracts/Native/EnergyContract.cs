@@ -580,7 +580,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 for (int i = 0; i < count; i++)
                 {
                     var proxy = stakersList.Get<EnergyProxy>(i);
-                    Runtime.Notify(EventKind.AddressRemove, from, proxy.address);
+                    Runtime.Notify(EventKind.AddressUnlink, from, proxy.address);
 
                     var receiversList = _proxyReceiversMap.Get<Address, StorageList>(proxy.address);
                     receiversList.Remove(from);
@@ -634,7 +634,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 stakersList.Replace<EnergyProxy>(index, entry);
             }*/
 
-            Runtime.Notify(EventKind.AddressAdd, from, to);
+            Runtime.Notify(EventKind.AddressLink, from, to);
         }
 
         public void RemoveProxy(Address from, Address to)
@@ -661,7 +661,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             stakersList.RemoveAt<EnergyProxy>(index);
             receiversList.Remove<Address>(from);
-            Runtime.Notify(EventKind.AddressRemove, from, to);
+            Runtime.Notify(EventKind.AddressUnlink, from, to);
         }
 
         public static BigInteger FuelToStake(BigInteger fuelAmount)

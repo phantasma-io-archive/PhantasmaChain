@@ -89,7 +89,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _reverseMap.Set<Address, Address>(target, from);
 
-            Runtime.Notify(EventKind.AddressRegister, from, target);
+            Runtime.Notify(EventKind.AddressLink, from, target);
         }
 
         public Address[] GetLinks(Address from)

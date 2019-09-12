@@ -12,6 +12,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger amount;
     }
 
+    public struct GasLendEntry
+    {
+        public Hash hash;
+        public Address target;
+        public BigInteger amount;
+    }
+
     public class GasContract : SmartContract
     {
         public override string Name => "gas";
@@ -19,41 +26,65 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
 
-        public void AllowGas(Address from, Address to, BigInteger price, BigInteger limit)
+        internal StorageMap _borrowerMap; // Address, GasLendEntry
+        internal StorageList _lenderList; // Address
+
+        public const int MaxLendAmount = 9999;
+        public const int LendReturn = 50;
+
+        public void AllowGas(Address target, Address from, BigInteger price, BigInteger limit)
         {
             if (Runtime.readOnlyMode)
             {
                 return;
             }
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(from != to, "invalid gas target");
-            Runtime.Expect(Runtime.Chain.Address != to, "invalid gas target");
+            Runtime.Expect(IsWitness(target), "invalid witness");
+            Runtime.Expect(target != from, "cannot lend from itself");
 
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
 
-            //var token = this.Runtime.Nexus.FuelToken;
-            //Runtime.Expect(token != null, "invalid token");
-            //Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
-
-            var balances = new BalanceSheet(Nexus.FuelTokenSymbol);
             var maxAmount = price * limit;
 
-            var balance = balances.Get(this.Storage, from);
-            Runtime.Expect(balance >= maxAmount, "not enough gas in address");
-
-            Runtime.Expect(balances.Subtract(this.Storage, from, maxAmount), "gas escrow withdraw failed");
-            Runtime.Expect(balances.Add(this.Storage, Runtime.Chain.Address, maxAmount), "gas escrow deposit failed");
-
-            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
+            var allowance = _allowanceMap.ContainsKey(target) ? _allowanceMap.Get<Address, BigInteger>(target) : 0;
             Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
             allowance += maxAmount;
-            _allowanceMap.Set(from, allowance);
-            _allowanceTargets.Set(from, to);
+            _allowanceMap.Set(target, allowance);
+            _allowanceTargets.Set(target, from);
 
-            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = Runtime.Chain.Address, price = price, amount = limit });
+            BigInteger lendedAmount;
+
+            if (from != Address.Null)
+            {
+                Runtime.Expect(IsLender(from), "invalid lender address");
+
+                Runtime.Expect(GetLendAmount(target) == 0, "already has an active lend");
+
+                lendedAmount = maxAmount;
+                Runtime.Expect(lendedAmount <= MaxLendAmount, "limit exceeds maximum allowed for lend");
+
+                var temp = (lendedAmount * LendReturn) / 100;
+                var borrowEntry = new GasLendEntry()
+                {
+                    amount = temp,
+                    hash = Runtime.Transaction.Hash,
+                    target = from
+                };
+                _borrowerMap.Set<Address, GasLendEntry>(target, borrowEntry);
+
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, Runtime.Chain.Address, borrowEntry.amount), "gas lend failed");
+                Runtime.Notify(EventKind.GasLend, target, new GasEventData() { address = from, price = price, amount = limit });
+            }
+            else
+            {
+                lendedAmount = 0;
+
+
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, target, Runtime.Chain.Address, maxAmount), "gas escrow failed");
+                Runtime.Notify(EventKind.GasEscrow, target, new GasEventData() { address = Runtime.Chain.Address, price = price, amount = limit });
+            }
         }
 
         public void SpendGas(Address from)
@@ -114,6 +145,18 @@ namespace Phantasma.Blockchain.Contracts.Native
             _allowanceMap.Remove(from);
             _allowanceTargets.Remove(from);
 
+            // check if there is an active lend and it is time to pay it
+            if (_borrowerMap.ContainsKey<Address>(from))
+            {
+                var borrowEntry = _borrowerMap.Get<Address, GasLendEntry>(from);
+                if (borrowEntry.hash != Runtime.Transaction.Hash)
+                {
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, borrowEntry.target, borrowEntry.amount), "lend payment failed");
+                    _borrowerMap.Remove<Address>(from);
+                    Runtime.Notify(EventKind.GasPayment, borrowEntry.target, new GasEventData() { address = from, price = 1, amount = borrowEntry.amount});
+                }
+            }
+
             if (targetGas > 0)
             {
                 Runtime.Notify(EventKind.GasPayment, targetAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = targetGas });
@@ -122,5 +165,67 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.GasPayment, Runtime.Chain.Address, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
         }
 
+        public Address[] GetLenders()
+        {
+            return _lenderList.All<Address>();
+        }
+
+        public bool IsLender(Address address)
+        {
+            var count = _lenderList.Count();
+            for (int i=0; i<count; i++)
+            {
+                var entry = _lenderList.Get<Address>(i);
+                if (entry == address)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public BigInteger GetLendAmount(Address address)
+        {
+            if (_borrowerMap.ContainsKey<Address>(address))
+            {
+                var entry = _borrowerMap.Get<Address, GasLendEntry>(address);
+                return entry.amount;
+            }
+
+            return 0;
+        }
+
+        public void StartLend(Address from)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(!IsLender(from), "already lending");
+
+            _lenderList.Add<Address>(from);
+
+            Runtime.Notify(EventKind.AddressLink, from, Runtime.Chain.Address);
+        }
+
+        public void StopLend(Address from)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            int index = -1;
+            var count = _lenderList.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _lenderList.Get<Address>(i);
+                if (entry == from)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            Runtime.Expect(index >= 0, "not lending");
+
+            _lenderList.RemoveAt<Address>(index);
+
+            Runtime.Notify(EventKind.AddressUnlink, from, Runtime.Chain.Address);
+        }
     }
 }
