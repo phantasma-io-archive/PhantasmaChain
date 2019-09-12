@@ -6,13 +6,13 @@ namespace Phantasma.Pay
 {
     public static class WalletUtils
     {
-        public static void DecodePlatformAndAddress(Address source, out string chainName, out string address)
+        public static void DecodePlatformAndAddress(Address source, out string platform, out string address)
         {
             byte[] bytes;
 
-            source.DecodeInterop(out chainName, out bytes, 0);
+            source.DecodeInterop(out platform, out bytes, 0);
 
-            switch (chainName)
+            switch (platform)
             {
                 case NeoWallet.NeoPlatform:
                     address = NeoWallet.DecodeAddress(source);
@@ -23,7 +23,7 @@ namespace Phantasma.Pay
                     break;
 
                 default:
-                    throw new NotImplementedException($"cannot decode addresses for {chainName} chain");
+                    throw new NotImplementedException($"cannot decode addresses for {platform} chain");
             }
         }
 

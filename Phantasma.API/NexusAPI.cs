@@ -1552,8 +1552,13 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(string), "Obtains a swap address mapping.")]
-        public IAPIResult GetSwapAddress([APIParameter("Address or account name", "helloman")] string accountInput, [APIParameter("Name of an external blockchain", "neo")] string chainName)
+        public IAPIResult GetSwapAddress([APIParameter("Address or account name", "helloman")] string accountInput, [APIParameter("Name of platform", "neo")] string platform)
         {
+            if (!Nexus.PlatformExists(platform))
+            {
+                return new ErrorResult { error = "invalid platform" };
+            }
+
             Address address;
 
             if (Address.IsValidAddress(accountInput))
@@ -1563,15 +1568,24 @@ namespace Phantasma.API
             else
             {
                 address = Nexus.LookUpName(accountInput);
-                if (address == Address.Null)
-                {
-                    return new ErrorResult { error = "name not owned" };
-                }
             }
 
-            chainName = chainName.ToLower();
+            if (address == Address.Null)
+            {
+                return new ErrorResult { error = "invalid address" };
+            }
 
-            var target = Nexus.RootChain.InvokeContract("interop", "GetLink", address, chainName).AsAddress();
+            if (!address.IsInterop && platform == Nexus.PlatformName)
+            {
+                return new ErrorResult { error = "must be interop address" };
+            }
+            else
+            if (address.IsInterop && platform != Nexus.PlatformName)
+            {
+                return new ErrorResult { error = "cannot be interop address" };
+            }
+
+            var target = Nexus.RootChain.InvokeContract("interop", "GetLink", address, platform).AsAddress();
 
             if (target == Address.Null)
             {

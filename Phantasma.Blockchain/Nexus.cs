@@ -1641,6 +1641,11 @@ namespace Phantasma.Blockchain
 
         public bool PlatformExists(string name)
         {
+            if (name == Nexus.PlatformName)
+            {
+                return true;
+            }
+
             var key = GetPlatformInfoKey(name);
             return _vars.ContainsKey(key);
         }
