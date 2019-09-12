@@ -530,10 +530,10 @@ namespace Phantasma.API
                     string outAddress;
                     try
                     {
-                        WalletUtils.DecodeChainAndAddress(interopAddress, out outChainName, out outAddress);
+                        WalletUtils.DecodePlatformAndAddress(interopAddress, out outChainName, out outAddress);
                         interopList.Add(new InteropResult()
                         {
-                            chain = outChainName,
+                            platform = outChainName,
                             interop = interopAddress.Text,
                             address = outAddress,
                         });
@@ -1581,33 +1581,28 @@ namespace Phantasma.API
             return new SingleResult { value = target.Text };
         }
 
-        [APIInfo(typeof(InteropResult[]), "Returns an array of available interop chains.")]
-        public IAPIResult GetInterops()
+        [APIInfo(typeof(PlatformResult[]), "Returns an array of available interop chains.")]
+        public IAPIResult GetPlatforms()
         {
-            var interopList = new List<InteropResult>();
+            var platformList = new List<PlatformResult>();
 
-            var chains = (PlatformInfo[])Nexus.RootChain.InvokeContract("interop", "GetAvailableChains").ToObject();
-
-            foreach (var chain in chains)
+            foreach (var platform in Nexus.Platforms)
             {
-                string outChainName;
+                var info = Nexus.GetPlatformInfo(platform);
+
+                string outName;
                 string outAddress;
-                try
-                {
-                    WalletUtils.DecodeChainAndAddress(chain.Address, out outChainName, out outAddress);
-                    var entry = new InteropResult();
-                    entry.chain = chain.Name;
-                    entry.interop = chain.Address.Text;
-                    entry.address = outAddress;
-                    interopList.Add(entry);
-                }
-                catch
-                {
-                    // ignore
-                }
+                WalletUtils.DecodePlatformAndAddress(info.Address, out outName, out outAddress);
+
+                var entry = new PlatformResult();
+                entry.platform = platform;
+                entry.interop = info.Address.Text;
+                entry.address = outAddress;
+                entry.tokens = Nexus.Tokens.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
+                platformList.Add(entry);
             }
 
-            return new ArrayResult() { values = interopList.Select(x => (object)x).ToArray() };
+            return new ArrayResult() { values = platformList.Select(x => (object)x).ToArray() };
         }
 
     }

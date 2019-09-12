@@ -6,7 +6,7 @@ namespace Phantasma.Pay
 {
     public static class WalletUtils
     {
-        public static void DecodeChainAndAddress(Address source, out string chainName, out string address)
+        public static void DecodePlatformAndAddress(Address source, out string chainName, out string address)
         {
             byte[] bytes;
 
@@ -19,7 +19,7 @@ namespace Phantasma.Pay
                     break;
 
                 case EthereumWallet.EthereumPlatform:
-                    address = NeoWallet.DecodeAddress(source);
+                    address = EthereumWallet.DecodeAddress(source);
                     break;
 
                 default:

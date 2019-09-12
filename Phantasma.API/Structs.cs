@@ -29,9 +29,17 @@ namespace Phantasma.API
         public string[] ids;
     }
 
+    public struct PlatformResult : IAPIResult
+    {
+        public string platform;
+        public string address;
+        public string interop;
+        public string[] tokens;
+    }
+
     public struct InteropResult: IAPIResult
     {
-        public string chain;
+        public string platform;
         public string address;
         public string interop;
     }
