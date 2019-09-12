@@ -1340,7 +1340,7 @@ namespace Phantasma.Blockchain
         public const int FiatTokenDecimals = 8;
 
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
-        public static readonly string PlatformName = "Phantasma";
+        public static readonly string PlatformName = "phantasma";
 
         public bool CreateGenesisBlock(string name, KeyPair owner, Timestamp timestamp)
         {
