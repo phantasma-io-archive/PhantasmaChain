@@ -1038,7 +1038,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             { Rarity.Legendary, 3 }
         };
 
-        public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
+        public static readonly Dictionary<int, int> NACHO_IAPS_DOLLAR_PRICE = new Dictionary<int, int>()
         {
             { 0,    1 },
             { 1,    2 },
@@ -1047,19 +1047,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             { 4,    20 },
             { 5,    50 },
             { 6,    100 },
-            { 7,    150 }
-        };
-
-        public static readonly Dictionary<int, int> IN_APPS_NACHOS = new Dictionary<int, int>()
-        {
-            { 0,    100 },
-            { 1,    250 },
-            { 2,    600 },
-            { 3,    1300 },
-            { 4,    2750 },
-            { 5,    7500 },
-            { 6,    17500 },
-            { 7,    30000 }
+            { 7,    250 },
+            { 8,    500 }
         };
 
         public const int CHANGE_FACTION_COST = 500;
@@ -2083,8 +2072,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoIAPData
     {
-        public string name;
-        public BigInteger contentID;
         public BigInteger dollarPrice;
         public BigInteger coinPrice;
         public BigInteger nachos;
@@ -2270,6 +2257,22 @@ namespace Phantasma.Blockchain.Contracts.Native
             return dollarAmount * 100; // TODO make proper calculations here
         }
 
+        public NachoIAPData[] GetNachoIAPs(string symbol)
+        {
+            // TODO FIX this => return multiple nacho iaps or make one call for each one
+            var nachoIAPs = new NachoIAPData[Constants.NACHO_IAPS_DOLLAR_PRICE.Keys.Count];
+
+            for (int i = 0; i < nachoIAPs.Length; i++)
+            {
+                nachoIAPs[i].dollarPrice    = Constants.NACHO_IAPS_DOLLAR_PRICE[i];
+                nachoIAPs[i].coinPrice      = 10; // TODO get value from coin market cap for token symbol
+                nachoIAPs[i].nachos         = DollarsToNachos(nachoIAPs[i].dollarPrice);
+                nachoIAPs[i].nachosBonus    = GetBonusNachos(nachoIAPs[i].nachos, nachoIAPs[i].dollarPrice);
+            }
+
+            return nachoIAPs;
+        }
+
         public void BuyInApp(Address from, string symbol, BigInteger amount)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
@@ -2337,6 +2340,56 @@ namespace Phantasma.Blockchain.Contracts.Native
             UpdateNachoTokensSold(amount);
 
             Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
+        }
+
+        private BigInteger GetBonusNachos(BigInteger baseNachos, BigInteger dollarAmount)
+        {
+            var bonusFactor = new BigInteger(0);
+            var bonusNachos = new BigInteger(0);
+
+            if (dollarAmount >= 500)
+            {
+                bonusFactor = 40;
+            }
+            else if (dollarAmount >= 250)
+            {
+                bonusFactor = 35;
+            }
+            else if (dollarAmount >= 100)
+            {
+                bonusFactor = 30;
+            }
+            else if (dollarAmount >= 50)
+            {
+                bonusFactor = 25;
+            }
+            else if (dollarAmount >= 20)
+            {
+                bonusFactor = 20;
+            }
+            else if (dollarAmount >= 10)
+            {
+                bonusFactor = 15;
+            }
+            else if (dollarAmount >= 5)
+            {
+                bonusFactor = 10;
+            }
+            else if (dollarAmount >= 2)
+            {
+                bonusFactor = 5;
+            }
+            else
+            {
+                bonusFactor = 0;
+            }
+
+            if (bonusFactor > 0)
+            {
+                bonusNachos = (baseNachos * bonusFactor) / 100;
+            }
+
+            return bonusNachos;
         }
 
         private static BigInteger GetIAPStageTokens(int stage)
