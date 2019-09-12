@@ -1589,13 +1589,13 @@ namespace Phantasma.API
 
             if (target == Address.Null)
             {
-                return new ErrorResult { error = "no mapping found for this address and chain" };
+                return new ErrorResult { error = "no mapping found for this address and platform" };
             }
 
             return new SingleResult { value = target.Text };
         }
 
-        [APIInfo(typeof(PlatformResult[]), "Returns an array of available interop chains.")]
+        [APIInfo(typeof(PlatformResult[]), "Returns an array of available interop platforms.")]
         public IAPIResult GetPlatforms()
         {
             var platformList = new List<PlatformResult>();
