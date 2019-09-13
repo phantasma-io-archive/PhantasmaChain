@@ -1037,20 +1037,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             { Rarity.Epic,      12 },
             { Rarity.Legendary, 3 }
         };
-
-        public static readonly Dictionary<int, int> NACHO_IAPS_DOLLAR_PRICE = new Dictionary<int, int>()
-        {
-            { 0,    1 },
-            { 1,    2 },
-            { 2,    5 },
-            { 3,    10 },
-            { 4,    20 },
-            { 5,    50 },
-            { 6,    100 },
-            { 7,    250 },
-            { 8,    500 }
-        };
-
+        
         public const int CHANGE_FACTION_COST = 500;
 
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
@@ -2257,87 +2244,60 @@ namespace Phantasma.Blockchain.Contracts.Native
             return dollarAmount * 100; // TODO make proper calculations here
         }
 
-        public NachoIAPData[] GetNachoIAPs(string symbol)
+        //public NachoIAPData[] GetNachoIAPs(string symbol, int[] dollarPrices)
+        //{
+        //    // TODO FIX this => return multiple nacho iaps or make one call for each one
+        //    var nachoIAPs = new NachoIAPData[dollarPrices.Length];
+
+        //    for (int i = 0; i < nachoIAPs.Length; i++)
+        //    {
+        //        nachoIAPs[i].dollarPrice    = dollarPrices[i];
+        //        nachoIAPs[i].coinPrice      = 10; // TODO get value from coin market cap for token symbol
+        //        nachoIAPs[i].nachos         = DollarsToNachos(nachoIAPs[i].dollarPrice);
+        //        nachoIAPs[i].nachosBonus    = GetBonusNachos(nachoIAPs[i].nachos, nachoIAPs[i].dollarPrice);
+        //    }
+
+        //    return nachoIAPs;
+        //}
+
+        public NachoIAPData GetNachoIAP(string symbol, int dollarPrice)
         {
-            // TODO FIX this => return multiple nacho iaps or make one call for each one
-            var nachoIAPs = new NachoIAPData[Constants.NACHO_IAPS_DOLLAR_PRICE.Keys.Count];
+            var baseNachos = DollarsToNachos(dollarPrice);
 
-            for (int i = 0; i < nachoIAPs.Length; i++)
+            var nachoIAPData = new NachoIAPData()
             {
-                nachoIAPs[i].dollarPrice    = Constants.NACHO_IAPS_DOLLAR_PRICE[i];
-                nachoIAPs[i].coinPrice      = 10; // TODO get value from coin market cap for token symbol
-                nachoIAPs[i].nachos         = DollarsToNachos(nachoIAPs[i].dollarPrice);
-                nachoIAPs[i].nachosBonus    = GetBonusNachos(nachoIAPs[i].nachos, nachoIAPs[i].dollarPrice);
-            }
+                dollarPrice = dollarPrice,
+                coinPrice   = 10, // TODO get value from coin market cap for token symbol
+                nachos      = baseNachos,
+                nachosBonus = GetBonusNachos(baseNachos, dollarPrice)
+            };
 
-            return nachoIAPs;
+            return nachoIAPData;
         }
 
-        public void BuyInApp(Address from, string symbol, BigInteger amount)
+        public void BuyNachoIAP(Address from, string tokenSymbol, BigInteger tokenAmount) 
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(tokenSymbol), "invalid token");
 
-            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
+            var tokenInfo = Runtime.Nexus.GetTokenInfo(tokenSymbol);
             Runtime.Expect(tokenInfo.IsFungible, "purchase token must be fungible");
             Runtime.Expect(tokenInfo.IsTransferable, "purchase token must be transferable");
 
-            var dollarAmount = Runtime.GetTokenQuote(symbol, Nexus.FiatTokenSymbol, amount);
+            var dollarAmount = Runtime.GetTokenQuote(tokenSymbol, Nexus.FiatTokenSymbol, tokenAmount);
             var minimumAmount = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / 2; // fifty cents as minimum
             Runtime.Expect(dollarAmount >= minimumAmount, "unsuficient amount");
 
             var nachoAmount = DollarsToNachos(dollarAmount);
             Runtime.Expect(nachoAmount > 0, "invalid nacho amount");
 
-            BigInteger bonus = 0;
-
-            if (dollarAmount >= 500)
-            {
-                bonus = 40;
-            }
-            else if (dollarAmount >= 250)
-            {
-                bonus = 35;
-            }
-            else if (dollarAmount >= 100)
-            {
-                bonus = 30;
-            }
-            else if (dollarAmount >= 50)
-            {
-                bonus = 25;
-            }
-            else if (dollarAmount >= 20)
-            {
-                bonus = 20;
-            }
-            else if (dollarAmount >= 10)
-            {
-                bonus = 15;
-            }
-            else if (dollarAmount >= 5)
-            {
-                bonus = 10;
-            }
-            else if (dollarAmount >= 2)
-            {
-                bonus = 5;
-            }
-            else
-            {
-                bonus = 0;
-            }
-
-            if (bonus > 0)
-            {
-                nachoAmount += (nachoAmount * bonus) / 100;
-            }
+            nachoAmount += GetBonusNachos(nachoAmount, dollarAmount);
 
             Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
 
-            UpdateNachoTokensSold(amount);
+            UpdateNachoTokensSold(nachoAmount); // TODO confirmar se nestas contas entram os nachos de bónus ou só os nachos base comprados
 
             Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
         }
