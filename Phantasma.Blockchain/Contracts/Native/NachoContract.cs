@@ -1037,31 +1037,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             { Rarity.Epic,      12 },
             { Rarity.Legendary, 3 }
         };
-
-        public static readonly Dictionary<int, int> IN_APPS_DOLLAR_PRICE = new Dictionary<int, int>()
-        {
-            { 0,    1 },
-            { 1,    2 },
-            { 2,    5 },
-            { 3,    10 },
-            { 4,    20 },
-            { 5,    50 },
-            { 6,    100 },
-            { 7,    150 }
-        };
-
-        public static readonly Dictionary<int, int> IN_APPS_NACHOS = new Dictionary<int, int>()
-        {
-            { 0,    100 },
-            { 1,    250 },
-            { 2,    600 },
-            { 3,    1300 },
-            { 4,    2750 },
-            { 5,    7500 },
-            { 6,    17500 },
-            { 7,    30000 }
-        };
-
+        
         public const int CHANGE_FACTION_COST = 500;
 
         public const int UPDATE_MARKET_CONVERSIONS_INTERVAL = 5; // minutes
@@ -2083,8 +2059,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public struct NachoIAPData
     {
-        public string name;
-        public BigInteger contentID;
         public BigInteger dollarPrice;
         public BigInteger coinPrice;
         public BigInteger nachos;
@@ -2215,6 +2189,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal BigInteger _roomSequence;
 
         internal BigInteger _nachoIAPCurrentStage;
+        internal BigInteger _nachoIAPCurrentMilestone;
         internal BigInteger _nachoRewardsAndCostsCurrentStage;
 
         internal BigInteger _nachoIAPCurrentTokens;
@@ -2234,8 +2209,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <param name="amount"></param>
         private void UpdateNachoTokensSold(BigInteger amount)
         {
-            var currentStageCap = GetIAPStageTokens((int)_nachoIAPCurrentStage);
+            var currentMilestoneCap = GetIAPSMilestoneTokens((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone);
+            if (_nachoIAPCurrentTokens + amount > currentMilestoneCap)
+            {
+                _nachoIAPCurrentMilestone++;
+            }
 
+            var currentStageCap = GetIAPStageTokens((int)_nachoIAPCurrentStage);
             if (_nachoIAPCurrentTokens + amount > currentStageCap)
             {
                 var extra = currentStageCap - (_nachoIAPCurrentTokens + amount);
@@ -2243,6 +2223,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 _nachoIAPCurrentStage++;
 
                 _nachoIAPCurrentTokens = extra;
+            }
+            else
+            {
+                _nachoIAPCurrentTokens += amount;
             }
         }
 
@@ -2265,83 +2249,116 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
         }
 
+        /// <summary>
+        /// Return the amount of Nachos equivalent to the dollar amount, according to the current milestone and stage of the tokens sold
+        /// </summary>
+        /// <param name="dollarAmount"></param>
+        /// <returns></returns>
         private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
-            return dollarAmount * 100; // TODO make proper calculations here
+            return GetCurrentTokenCambio((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone) * dollarAmount;
         }
 
-        public void BuyInApp(Address from, string symbol, BigInteger amount)
+        public NachoIAPData GetNachoIAP(string symbol, BigInteger dollarPrice)
+        {
+            var baseNachos = DollarsToNachos(dollarPrice);
+
+            var nachoIAPData = new NachoIAPData()
+            {
+                dollarPrice = dollarPrice,
+                coinPrice   = Runtime.GetTokenQuote(Nexus.FiatTokenSymbol, symbol, dollarPrice),
+                nachos      = baseNachos,
+                nachosBonus = GetBonusNachos(baseNachos, dollarPrice)
+            };
+
+            return nachoIAPData;
+        }
+
+        public void BuyNachoIAP(Address from, string tokenSymbol, BigInteger tokenAmount) 
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            Runtime.Expect(Runtime.Nexus.TokenExists(tokenSymbol), "invalid token");
 
-            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
+            var tokenInfo = Runtime.Nexus.GetTokenInfo(tokenSymbol);
             Runtime.Expect(tokenInfo.IsFungible, "purchase token must be fungible");
             Runtime.Expect(tokenInfo.IsTransferable, "purchase token must be transferable");
 
-            var dollarAmount = Runtime.GetTokenQuote(symbol, Nexus.FiatTokenSymbol, amount);
+            var dollarAmount = Runtime.GetTokenQuote(tokenSymbol, Nexus.FiatTokenSymbol, tokenAmount);
             var minimumAmount = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / 2; // fifty cents as minimum
             Runtime.Expect(dollarAmount >= minimumAmount, "unsuficient amount");
 
             var nachoAmount = DollarsToNachos(dollarAmount);
             Runtime.Expect(nachoAmount > 0, "invalid nacho amount");
 
-            BigInteger bonus = 0;
+            nachoAmount += GetBonusNachos(nachoAmount, dollarAmount);
+
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
+
+            UpdateNachoTokensSold(nachoAmount);
+
+            Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
+        }
+
+        private BigInteger GetBonusNachos(BigInteger baseNachos, BigInteger dollarAmount)
+        {
+            var bonusFactor = new BigInteger(0);
+            var bonusNachos = new BigInteger(0);
 
             if (dollarAmount >= 500)
             {
-                bonus = 40;
+                bonusFactor = 40;
             }
             else if (dollarAmount >= 250)
             {
-                bonus = 35;
+                bonusFactor = 35;
             }
             else if (dollarAmount >= 100)
             {
-                bonus = 30;
+                bonusFactor = 30;
             }
             else if (dollarAmount >= 50)
             {
-                bonus = 25;
+                bonusFactor = 25;
             }
             else if (dollarAmount >= 20)
             {
-                bonus = 20;
+                bonusFactor = 20;
             }
             else if (dollarAmount >= 10)
             {
-                bonus = 15;
+                bonusFactor = 15;
             }
             else if (dollarAmount >= 5)
             {
-                bonus = 10;
+                bonusFactor = 10;
             }
             else if (dollarAmount >= 2)
             {
-                bonus = 5;
+                bonusFactor = 5;
             }
             else
             {
-                bonus = 0;
+                bonusFactor = 0;
             }
 
-            if (bonus > 0)
+            if (bonusFactor > 0)
             {
-                nachoAmount += (nachoAmount * bonus) / 100;
+                bonusNachos = (baseNachos * bonusFactor) / 100;
             }
 
-            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "transfer failed");
-
-            UpdateNachoTokensSold(amount);
-
-            Runtime.Notify(NachoEvent.Purchase, from, nachoAmount);
+            return bonusNachos;
         }
 
         private static BigInteger GetIAPStageTokens(int stage)
         {
             return UnitConversion.ToBigInteger(Constants.NACHO_IAP_FIRST_STAGE_TOTAL_TOKENS / (decimal)Math.Pow(2, stage - 1), Constants.NACHO_TOKEN_DECIMALS);
+        }
+
+        private static BigInteger GetIAPSMilestoneTokens(int stage, int milestone)
+        {
+            return GetIAPStageTokens(stage) / Constants.NACHO_IAP_STAGE_MILESTONES_COUNT * milestone;
         }
 
         private static decimal GetInAppStageInitialTokenCambio(int stage)
@@ -2384,7 +2401,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         /// <summary>
-        /// Get the amount of tokens bought for 1$
+        /// Get the amount of nacho tokens as a reward
         /// </summary>
         /// <param name="stage">Current stage</param>
         /// <param name="rewardType">Type of battle reward</param>
