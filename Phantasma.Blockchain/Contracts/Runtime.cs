@@ -297,7 +297,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (symbol == Nexus.FiatTokenSymbol)
             {
-                return 1;
+                return UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals);
             }
 
             if (symbol == Nexus.FuelTokenSymbol)
