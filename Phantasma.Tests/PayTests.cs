@@ -9,18 +9,6 @@ using Phantasma.Pay.Chains;
 
 namespace Phantasma.Tests
 {
-    public class TestWalletManager : WalletManager
-    {
-        public TestWalletManager(KeyPair keys, params WalletKind[] kinds) : base(keys, kinds)
-        {
-        }
-
-        public override void FetchURL(string url, Action<string> callback)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     [TestClass]
     public class PayTests
     {
@@ -28,8 +16,8 @@ namespace Phantasma.Tests
         public void TestEthereumWallet()
         {
             var keys = new KeyPair(Base16.Decode("a95bd75a7b3b1c0a2a14595e8065a95cb06417f6aaedcc3bc45fda52900ab9e8"));
-            var wallet = new TestWalletManager(keys);
-            var address = wallet.GetAddress(WalletKind.Ethereum);
+            var wallet = new EthereumWallet(keys);
+            var address = wallet.Address;
             Assert.IsTrue(address.Equals("0xe57a6c074d1db5ed7c98228df71ce5fa35b6bc72", StringComparison.OrdinalIgnoreCase));
         }
 
@@ -43,8 +31,8 @@ namespace Phantasma.Tests
             ByteArrayUtils.CopyBytes(data, 1, privateKey, 0, privateKey.Length);
 
             var keys = new KeyPair(privateKey);
-            var wallet = new TestWalletManager(keys);
-            var address = wallet.GetAddress(WalletKind.EOS);
+            var wallet = new EOSWallet(keys);
+            var address = wallet.Address;
             Assert.IsTrue(address.Equals("EOS8dBKtG9fbhC1wi1SscL32iFRsSi4PsZDT2EHJcYXwV5dAMiBcK", StringComparison.OrdinalIgnoreCase));
         }
 
@@ -52,8 +40,8 @@ namespace Phantasma.Tests
         public void TestNeoWallet()
         {
             var keys = KeyPair.FromWIF("L1nuBmNJ2HvLat5xyvpqmHpmXNe6rGGdAzGJgLjDLECaTCVgqjdx");
-            var wallet = new TestWalletManager(keys);
-            var address = wallet.GetAddress(WalletKind.Neo);
+            var wallet = new NeoWallet(keys, "https://api.neoscan.io");
+            var address = wallet.Address;
 
             string expectedAddress = "AU2eYJkpZ2nG81RyqnzF5UL2qjdkpPEJqN";
             Assert.IsTrue(address.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
@@ -69,8 +57,8 @@ namespace Phantasma.Tests
         public void TestBitcoinWallet()
         {
             var keys = new KeyPair(Base16.Decode("60cf347dbc59d31c1358c8e5cf5e45b822ab85b79cb32a9f3d98184779a9efc2"));
-            var wallet = new TestWalletManager(keys);
-            var address = wallet.GetAddress(WalletKind.Bitcoin);
+            var wallet = new BitcoinWallet(keys);
+            var address = wallet.Address;
             Assert.IsTrue(address.Equals("17JsmEygbbEUEpvt4PFtYaTeSqfb9ki1F1", StringComparison.OrdinalIgnoreCase));
         }
 

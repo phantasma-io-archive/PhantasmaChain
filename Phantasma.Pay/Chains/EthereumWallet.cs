@@ -13,11 +13,11 @@ namespace Phantasma.Pay.Chains
     {
         public const string EthereumPlatform = "ethereum";
 
-        public EthereumWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
+        public EthereumWallet(KeyPair keys) : base(keys)
         {
         }
 
-        public override WalletKind Kind => WalletKind.Ethereum;
+        public override string Platform => EthereumPlatform;
 
         public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
         {
@@ -89,7 +89,8 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("ETH", "Ether", 8, WalletKind.Ethereum, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("ETH", "Ether", 8, EthereumPlatform, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("DAI", "Dai", 8, EthereumPlatform, CryptoCurrencyCaps.Balance);
             yield break;
         }
     }

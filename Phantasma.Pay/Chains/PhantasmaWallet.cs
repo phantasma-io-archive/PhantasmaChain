@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
@@ -8,11 +7,20 @@ namespace Phantasma.Pay.Chains
 {
     public class PhantasmaWallet : CryptoWallet
     {
-        public PhantasmaWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
+        private string rpcURL;
+
+        public PhantasmaWallet(KeyPair keys, string rpcURL) : base(keys)
         {
+            if (!rpcURL.EndsWith("/"))
+            {
+                rpcURL += "/";
+            }
+            this.rpcURL = rpcURL;
         }
 
-        public override WalletKind Kind => WalletKind.Phantasma;
+        public const string PhantasmaPlatform = "phantasma";
+
+        public override string Platform => PhantasmaPlatform;
 
         public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
         {
@@ -23,7 +31,7 @@ namespace Phantasma.Pay.Chains
         {
             _balances.Clear();
 
-            var url = "http://localhost:7078/api/getAccount/" + this.Address; // TODO change this later
+            var url = $"{rpcURL}getAccount/{Address}"; 
             JSONRequest(url, (root) =>
             {
                 if (root == null)
@@ -32,17 +40,20 @@ namespace Phantasma.Pay.Chains
                     return;
                 }
 
+                this.Name = root.GetString("name");
+
                 root = root.GetNode("balances");
                 foreach (var child in root.Children)
                 {
                     var symbol = child.GetString("symbol");
                     var decimals = child.GetInt32("decimals");
+                    var chain = child.GetString("chain");
 
                     var temp = child.GetString("amount");
                     var n = BigInteger.Parse(temp);
                     var amount = UnitConversion.ToDecimal(n, decimals);
 
-                    _balances.Add(new WalletBalance(symbol, amount));
+                    _balances.Add(new WalletBalance(symbol, amount, chain));
                 }
 
                 callback(true);
@@ -57,8 +68,8 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Phantasma, CryptoCurrencyCaps.Balance | CryptoCurrencyCaps.Transfer | CryptoCurrencyCaps.Stake);
-            yield return new CryptoCurrencyInfo("KCAL", "Phantasma Energy", 10, WalletKind.Phantasma, CryptoCurrencyCaps.Balance | CryptoCurrencyCaps.Transfer);
+            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, PhantasmaWallet.PhantasmaPlatform, CryptoCurrencyCaps.Balance | CryptoCurrencyCaps.Transfer | CryptoCurrencyCaps.Stake);
+            yield return new CryptoCurrencyInfo("KCAL", "Phantasma Energy", 10, PhantasmaWallet.PhantasmaPlatform, CryptoCurrencyCaps.Balance | CryptoCurrencyCaps.Transfer);
             yield break;
         }
     }

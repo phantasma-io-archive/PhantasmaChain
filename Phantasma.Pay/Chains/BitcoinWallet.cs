@@ -22,11 +22,12 @@ namespace Phantasma.Pay.Chains
             public string script;
         }
 
-        public BitcoinWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
+        public BitcoinWallet(KeyPair keys) : base(keys)
         {
         }
 
-        public override WalletKind Kind => WalletKind.Bitcoin;
+        public const string BitcoinPlatform = "bitcoin";
+        public override string Platform => BitcoinPlatform;
 
         public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
         {
@@ -128,7 +129,7 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("BTC", "Bitcoin", 8, WalletKind.Bitcoin, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("BTC", "Bitcoin", 8, BitcoinPlatform, CryptoCurrencyCaps.Balance);
             yield break;
         }
     }
