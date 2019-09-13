@@ -2260,7 +2260,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         //    return nachoIAPs;
         //}
 
-        public NachoIAPData GetNachoIAP(string symbol, int dollarPrice)
+        public NachoIAPData GetNachoIAP(string symbol, BigInteger dollarPrice)
         {
             var baseNachos = DollarsToNachos(dollarPrice);
 
