@@ -41,7 +41,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageMap _links;
         private StorageMap _reverseMap;
 
-        public static BigInteger InteropFeeRate => 2;
+        public static BigInteger InteropFeeRacio => 2;
 
         public InteropContract() : base()
         {
@@ -135,20 +135,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             return Address.Null;
         }
 
-        public void SettleTransaction(Address from, string platformName, Hash hash)
+        public void SettleTransaction(Address from, string platform, Hash hash)
         {
-            Runtime.Expect(Runtime.Nexus.PlatformExists(platformName), "unsupported platform");
-            var platformInfo = Runtime.Nexus.GetPlatformInfo(platformName);
+            Runtime.Expect(platform != Nexus.PlatformName, "must be external platform");
+            Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "unsupported platform");
+            var platformInfo = Runtime.Nexus.GetPlatformInfo(platform);
 
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            var chainHashes = _hashes.Get<string, StorageSet>(platformName);
+            var chainHashes = _hashes.Get<string, StorageSet>(platform);
             Runtime.Expect(!chainHashes.Contains<Hash>(hash), "hash already seen");
 
-            var interopBytes = Runtime.Oracle.Read($"interop://{platformName}/tx/{hash}");
+            var interopBytes = Runtime.Oracle.Read($"interop://{platform}/tx/{hash}");
             var interopTx = Serialization.Unserialize<InteropTransaction>(interopBytes);
 
-            Runtime.Expect(interopTx.Platform == platformName, "unxpected platform name");
+            Runtime.Expect(interopTx.Platform == platform, "unxpected platform name");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
             int swapCount = 0;
@@ -255,20 +256,26 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
 
-            var transferToken = this.Runtime.Nexus.GetTokenInfo(symbol);
-            Runtime.Expect(transferToken.Flags.HasFlag(TokenFlags.Transferable), "transfer token must be transferable");
-            Runtime.Expect(transferToken.Flags.HasFlag(TokenFlags.External), "transfer token must be external");
+            var transferTokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "transfer token must be transferable");
+            Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.External), "transfer token must be external");
+            Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "transfer token must be fungible");
 
-            string feeSymbol;
+            string platform;
             byte[] dummy;
-            to.DecodeInterop(out feeSymbol, out dummy, 0);
-            Runtime.Expect(Runtime.Nexus.TokenExists(feeSymbol), "invalid token");
+            to.DecodeInterop(out platform, out dummy, 0);
+            Runtime.Expect(platform != Nexus.PlatformName, "must be external platform");
+            Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "invalid platform");
+            var platformInfo = Runtime.Nexus.GetPlatformInfo(platform);
 
-            var feeToken = this.Runtime.Nexus.GetTokenInfo(feeSymbol);
-            Runtime.Expect(feeToken.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
-            Runtime.Expect(feeToken.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
+            var feeSymbol = platformInfo.Symbol;
+            Runtime.Expect(Runtime.Nexus.TokenExists(feeSymbol), "invalid fee token");
 
-            var basePrice = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals) / InteropFeeRate;
+            var feeTokenInfo = this.Runtime.Nexus.GetTokenInfo(feeSymbol);
+            Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
+            Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
+
+            var basePrice = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / InteropFeeRacio; // 50cents
             var feeAmount = Runtime.GetTokenQuote(Nexus.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
@@ -289,8 +296,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
-            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = feeAmount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Address, value = feeAmount, symbol = symbol });
+            Runtime.Notify(EventKind.BrokerRequest, from, Runtime.Transaction.Hash);
         }
 
 
