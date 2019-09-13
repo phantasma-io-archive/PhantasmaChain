@@ -25,6 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger transferAmount;
         public string feeSymbol;
         public BigInteger feeAmount;
+        public BigInteger collateralAmount;
         public Address broker;
         public Timestamp timestamp;
     }
@@ -267,6 +268,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(platform != Nexus.PlatformName, "must be external platform");
             Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "invalid platform");
             var platformInfo = Runtime.Nexus.GetPlatformInfo(platform);
+            Runtime.Expect(to != platformInfo.Address, "invalid target address");
 
             var feeSymbol = platformInfo.Symbol;
             Runtime.Expect(Runtime.Nexus.TokenExists(feeSymbol), "invalid fee token");
@@ -283,6 +285,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount), "burn failed");
 
+            var collateralAmount = Runtime.GetTokenQuote(Nexus.FiatTokenSymbol, Nexus.FuelTokenSymbol, basePrice);
+
             var withdraw = new InteropWithdraw()
             {
                 destination = to,
@@ -292,15 +296,15 @@ namespace Phantasma.Blockchain.Contracts.Native
                 feeSymbol = feeSymbol,
                 hash = Runtime.Transaction.Hash,
                 broker = Address.Null,
+                collateralAmount = collateralAmount,
                 timestamp = Runtime.Time
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = symbol });
             Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Address, value = feeAmount, symbol = symbol });
-            Runtime.Notify(EventKind.BrokerRequest, from, Runtime.Transaction.Hash);
+            Runtime.Notify(EventKind.BrokerRequest, from, to);
         }
-
 
         public void SetBroker(Address from, Hash hash)
         {
@@ -324,12 +328,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var withdraw = _withdraws.Get<InteropWithdraw>(index);
             Runtime.Expect(withdraw.broker == Address.Null, "broker already set");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, withdraw.feeSymbol, from, this.Address, withdraw.feeAmount), "fee payment failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, this.Address, withdraw.collateralAmount), "collateral payment failed");
             Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
 
             withdraw.broker = from;
             withdraw.timestamp = Runtime.Time;
-            withdraw.feeAmount *= 2; 
             _withdraws.Replace<InteropWithdraw>(index, withdraw);
 
             var expireDate = new Timestamp(Runtime.Time.Value + 86400); // 24 hours from now
@@ -365,17 +368,29 @@ namespace Phantasma.Blockchain.Contracts.Native
             var days = diff / 86400; // convert seconds to days
             Runtime.Expect(days >= 1, "still waiting for broker");
 
-            var escrowAmount = withdraw.feeAmount / 2;
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, withdraw.feeSymbol, this.Address, from, escrowAmount), "fee payment failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, from, withdraw.collateralAmount), "fee payment failed");
 
             withdraw.broker = Address.Null;
             withdraw.timestamp = Runtime.Time;
-            withdraw.feeAmount -= escrowAmount;
             _withdraws.Replace<InteropWithdraw>(index, withdraw);
 
-            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = escrowAmount, symbol = withdraw.feeSymbol });
-
+            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.collateralAmount, symbol = withdraw.feeSymbol });
             Runtime.Notify(EventKind.RoleDemote, brokerAddress, new RoleEventData() { role = "broker", date = Runtime.Time});
+        }
+
+        public Address GetBroker(string chainName, Hash hash)
+        {
+            var count = _withdraws.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var entry = _withdraws.Get<InteropWithdraw>(i);
+                if (entry.hash == hash)
+                {
+                    return entry.broker;
+                }
+            }
+
+            return Address.Null;
         }
 
         public InteropTransferStatus GetStatus(string chainName, Hash hash)

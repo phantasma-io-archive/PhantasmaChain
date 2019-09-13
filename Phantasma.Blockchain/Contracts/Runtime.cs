@@ -159,8 +159,14 @@ namespace Phantasma.Blockchain.Contracts
             var temp = context.Execute(this.CurrentFrame, this.Stack);
             Expect(temp == ExecutionState.Halt, "expected call success");
 
-            Expect(this.Stack.Count > 0, "expected result on stack");
-            return this.Stack.Pop().ToObject();
+            if (this.Stack.Count > 0)
+            {
+                return this.Stack.Pop().ToObject();
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public void Notify<T>(Enum kind, Address address, T content)
