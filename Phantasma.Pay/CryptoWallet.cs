@@ -20,38 +20,63 @@ namespace Phantasma.Pay
         public readonly string Symbol;
         public readonly string Name;
         public readonly int Decimals;
-        public readonly WalletKind Kind;
+        public readonly string Platform;
         public readonly CryptoCurrencyCaps Caps;
 
-        public CryptoCurrencyInfo(string symbol, string name, int decimals, WalletKind kind, CryptoCurrencyCaps caps)
+        public CryptoCurrencyInfo(string symbol, string name, int decimals, string platform, CryptoCurrencyCaps caps)
         {
             Symbol = symbol;
             Name = name;
             Decimals = decimals;
-            Kind = kind;
+            Platform = platform;
             Caps = caps;
+        }
+    }
+
+    public struct WalletBalance
+    {
+        public readonly string Symbol;
+        public readonly decimal Amount;
+        public readonly string Chain;
+
+        public WalletBalance(string symbol, decimal amount, string chain = "main")
+        {
+            Symbol = symbol;
+            Amount = amount;
+            Chain = chain;
         }
     }
 
     public abstract class CryptoWallet
     {
-        public abstract WalletKind Kind { get; }
+        public abstract string Platform { get; }
         public readonly string Address;
+        public string Name { get; protected set; }
 
         protected List<WalletBalance> _balances = new List<WalletBalance>();
         public IEnumerable<WalletBalance> Balances => _balances;
 
-        private Action<string, Action<string>> _urlFetcher;
-
-        public CryptoWallet(KeyPair keys, Action<string, Action<string>> urlFetcher)
+        public CryptoWallet(KeyPair keys)
         {
             this.Address = DeriveAddress(keys);
-            this._urlFetcher = urlFetcher;
+            this.Name = Address;
         }
 
         protected void FetchURL(string url, Action<string> callback)
         {
-            _urlFetcher(url, callback);
+            try
+            {
+                string json;
+                using (var wc = new System.Net.WebClient())
+                {
+                    json = wc.DownloadString(url);
+                    callback(json);
+                }
+            }
+            catch (Exception e)
+            {
+                callback(null);
+            }
         }
 
         protected abstract string DeriveAddress(KeyPair keys);

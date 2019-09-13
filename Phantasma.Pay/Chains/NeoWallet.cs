@@ -11,11 +11,19 @@ namespace Phantasma.Pay.Chains
     {
         public const string NeoPlatform = "neo";
 
-        public NeoWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
+        private string neoscanURL;
+
+        public NeoWallet(KeyPair keys, string neoscanURL) : base(keys)
         {
+            if (!neoscanURL.EndsWith("/"))
+            {
+                neoscanURL += "/";
+            }
+
+            this.neoscanURL = neoscanURL;
         }
 
-        public override WalletKind Kind => WalletKind.Neo;
+        public override string Platform => NeoPlatform;
 
         public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
         {
@@ -26,7 +34,7 @@ namespace Phantasma.Pay.Chains
         {
             _balances.Clear();
 
-            var url = "https://api.neoscan.io/api/main_net/v1/get_balance/" + this.Address;
+            var url = $"{neoscanURL}api/main_net/v1/get_balance/{Address}";
             JSONRequest(url, (root) =>
             {
                 if (root == null)
@@ -35,12 +43,18 @@ namespace Phantasma.Pay.Chains
                     return;
                 }
 
+                var temp = GetCryptoCurrencyInfos().Select(x => x.Symbol);
+                var symbols = new HashSet<string>(temp);
+
                 root = root.GetNode("balance");
                 foreach (var child in root.Children)
                 {
                     var symbol = child.GetString("asset_symbol");
                     var amount = child.GetDecimal("amount");
-                    _balances.Add(new WalletBalance(symbol, amount));
+                    if (amount > 0 && symbols.Contains(symbol))
+                    {
+                        _balances.Add(new WalletBalance(symbol, amount));
+                    }
                 }
 
                 callback(true);
@@ -101,9 +115,9 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("NEO", "NEO", 0, WalletKind.Neo, CryptoCurrencyCaps.Balance); // TODO check if 1 or 0
-            yield return new CryptoCurrencyInfo("GAS", "GAS", 8, WalletKind.Neo, CryptoCurrencyCaps.Balance);
-            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, WalletKind.Neo, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("NEO", "NEO", 0, NeoPlatform, CryptoCurrencyCaps.Balance); // TODO check if 1 or 0
+            yield return new CryptoCurrencyInfo("GAS", "GAS", 8, NeoPlatform, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("SOUL", "Phantasma Stake", 8, NeoPlatform, CryptoCurrencyCaps.Balance);
             yield break;
         }
 

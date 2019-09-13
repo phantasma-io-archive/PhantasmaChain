@@ -11,11 +11,12 @@ namespace Phantasma.Pay.Chains
 {
     public class EOSWallet: CryptoWallet
     {
-        public EOSWallet(KeyPair keys, Action<string, Action<string>> urlFetcher) : base(keys, urlFetcher)
+        public EOSWallet(KeyPair keys) : base(keys)
         {
         }
 
-        public override WalletKind Kind => WalletKind.EOS;
+        public const string EOSPlatform = "eos";
+        public override string Platform => EOSPlatform;
 
         public override void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback)
         {
@@ -45,7 +46,7 @@ namespace Phantasma.Pay.Chains
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {
-            yield return new CryptoCurrencyInfo("EOS", "EOS", 18, WalletKind.EOS, CryptoCurrencyCaps.Balance);
+            yield return new CryptoCurrencyInfo("EOS", "EOS", 18, EOSPlatform, CryptoCurrencyCaps.Balance);
             yield break;
         }
 
