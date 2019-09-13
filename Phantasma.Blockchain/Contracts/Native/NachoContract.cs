@@ -2188,9 +2188,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal BigInteger _roomCounter;
         internal BigInteger _roomSequence;
 
-        internal BigInteger _nachoIAPCurrentStage;
-        internal BigInteger _nachoIAPCurrentMilestone;
-        internal BigInteger _nachoRewardsAndCostsCurrentStage;
+        internal BigInteger _nachoIAPCurrentStage = 1;
+        internal BigInteger _nachoIAPCurrentMilestone = 1;
+        internal BigInteger _nachoRewardsAndCostsCurrentStage = 0;
 
         internal BigInteger _nachoIAPCurrentTokens;
         internal BigInteger _nachoRewardsCurrentTokens;
@@ -2256,7 +2256,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <returns></returns>
         private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
-            return GetCurrentTokenCambio((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone) * dollarAmount;
+            return GetCurrentTokenCambio((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone) * (int)UnitConversion.ToDecimal(dollarAmount, Nexus.FiatTokenDecimals);
         }
 
         public NachoIAPData GetNachoIAP(string symbol, BigInteger dollarPrice)
