@@ -19,6 +19,8 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Core.Utils;
 using static Phantasma.Blockchain.Contracts.Native.StorageContract;
+using static Phantasma.Blockchain.Nexus;
+using static Phantasma.Numerics.UnitConversion;
 
 namespace Phantasma.Tests
 {
@@ -2049,6 +2051,39 @@ namespace Phantasma.Tests
             var objBytesB = Base16.Decode(apiResultB.result);
             var resultEmpty = Serialization.Unserialize<VMObject>(objBytesB);
             Assert.IsTrue(resultEmpty != null);
+        }
+
+        [TestMethod]
+        public void TestInfiniteTokenTransfer()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            simulator.GenerateToken(owner, "INFI", "infinity stable token", "phantasma",
+                Hash.FromString("infinity stable token"), BigInteger.Zero, 8,
+                TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible);
+
+            var user = KeyPair.Generate();
+            var nexus = simulator.Nexus;
+
+            var infiToken = nexus.GetTokenInfo("INFI");
+
+            var infiAmount = 1000 * GetUnitValue(infiToken.Decimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, user.Address, nexus.RootChain, FuelTokenSymbol, 100000000);
+            simulator.MintTokens(owner, infiToken.Symbol, infiAmount);
+            simulator.EndBlock();
+
+            var balance = nexus.RootChain.GetTokenBalance(infiToken.Symbol, owner.Address);
+            Assert.IsTrue(balance == infiAmount);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, user.Address, nexus.RootChain, infiToken.Symbol, infiAmount);
+            simulator.EndBlock();
+
+            balance = nexus.RootChain.GetTokenBalance(infiToken.Symbol, user.Address);
+            Assert.IsTrue(balance == infiAmount);
         }
 
            
