@@ -59,7 +59,7 @@ namespace Phantasma.Neo.Core
             jsonRpcData.AddField("id", id);
 
             Logger("QueryRPC: " + method);
-            LogData(jsonRpcData);
+            //LogData(jsonRpcData);
 
             int retryCount = 0;
             do

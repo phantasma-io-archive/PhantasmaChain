@@ -17,6 +17,11 @@ namespace Phantasma.Neo.Utils
         {
             string contents;
 
+            if (!url.StartsWith("http://"))
+            {
+                url = "http://" + url;
+            }
+
             try
             {
                 switch (kind)
@@ -52,6 +57,11 @@ namespace Phantasma.Neo.Utils
 
         public static string GetWebRequest(string url)
         {
+            if (!url.StartsWith("http://"))
+            {
+                url = "http://" + url;
+            }
+
             using (var  client = new WebClient { Encoding = System.Text.Encoding.UTF8 })
             {
 				client.Headers.Add("Content-Type", "application/json-rpc");
