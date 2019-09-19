@@ -2256,10 +2256,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <returns></returns>
         private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
-            //if ((int) _nachoIAPCurrentStage == 0)
-            //{
-            //    _nachoIAPCurrentStage = 1;
-            //}
+            // TODO ver se há uma forma melhor de fazer isto já que não podemos inicializar esta var na declaração com o valor 1
+            if ((int) _nachoIAPCurrentStage == 0)
+            {
+                _nachoIAPCurrentStage = 1;
+            }
 
             //if ((int)_nachoIAPCurrentMilestone == 0)
             //{
