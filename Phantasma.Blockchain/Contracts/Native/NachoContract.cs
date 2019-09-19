@@ -2222,6 +2222,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 _nachoIAPCurrentStage++;
 
+                _nachoIAPCurrentMilestone = 0;
+
                 _nachoIAPCurrentTokens = extra;
             }
             else
