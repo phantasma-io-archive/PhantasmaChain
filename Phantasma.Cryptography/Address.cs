@@ -38,8 +38,16 @@ namespace Phantasma.Cryptography
         public const int PublicKeyLength = 32;
         public const int MaxPlatformNameLength = 10;
 
+        public bool IsSystem => _publicKey != null && (_publicKey.Length > 0 && _publicKey[0] == (byte)'!' || _publicKey.SequenceEqual(Address.Null.PublicKey));
+
         // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
         public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == (byte)'*';
+
+        public bool IsUser => !IsSystem && !IsInterop;
+
+        private const byte UserOpcode = 75;
+        private const byte SystemOpcode = 85;
+        private const byte InteropOpcode = 102;
 
         private string _text;
         public string Text
@@ -48,7 +56,22 @@ namespace Phantasma.Cryptography
             {
                 if (string.IsNullOrEmpty(_text))
                 {
-                    var opcode = (byte)(IsInterop ? 102 : 74);
+                    byte opcode;
+
+                    if (IsSystem)
+                    {
+                        opcode = SystemOpcode;
+                    }
+                    else
+                    if (IsInterop)
+                    {
+                        opcode = InteropOpcode;
+                    }
+                    else
+                    {
+                        opcode = UserOpcode;
+                    }
+
                     var bytes = ByteArrayUtils.ConcatBytes(new byte[] { opcode }, PublicKey);
                     _text = Base58.Encode(bytes);
                 }
@@ -64,6 +87,19 @@ namespace Phantasma.Cryptography
             _publicKey = new byte[PublicKeyLength];
             Array.Copy(publicKey, this._publicKey, PublicKeyLength);
             this._text = null;
+        }
+
+        public Address FromHash(string str)
+        {
+            var bytes = Encoding.UTF8.GetBytes(str);
+            return FromHash(bytes);
+        }
+
+        public Address FromHash(byte[] bytes)
+        {
+            var hash = CryptoExtensions.SHA256(bytes);
+            hash[0] = SystemOpcode;
+            return new Address(hash);
         }
 
         public static bool operator ==(Address A, Address B) { return A.PublicKey.SequenceEqual(B.PublicKey); }
@@ -129,7 +165,7 @@ namespace Phantasma.Cryptography
             var bytes = Base58.Decode(text);
             var opcode = bytes[0];
 
-            Throw.If(opcode != 74 && opcode != 102, "Invalid address opcode");
+            Throw.If(opcode != UserOpcode && opcode != SystemOpcode && opcode != InteropOpcode, "Invalid address opcode");
 
             return new Address(bytes.Skip(1).ToArray());
         }

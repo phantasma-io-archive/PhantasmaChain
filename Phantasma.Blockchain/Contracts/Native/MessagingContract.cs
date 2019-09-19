@@ -27,6 +27,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SendMessage(Address from, Address to, byte[] content)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(to.IsUser, "destination must be user address");
 
             Runtime.Expect(content.Length >= MAX_MESSAGE_LENGTH, "message too small");
             Runtime.Expect(content.Length <= MIN_MESSAGE_LENGTH, "message too large");

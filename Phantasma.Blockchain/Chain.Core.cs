@@ -80,10 +80,7 @@ namespace Phantasma.Blockchain
             this.Name = name;
             this.Nexus = nexus;
 
-            var bytes = System.Text.Encoding.UTF8.GetBytes(name.ToLower());
-            var hash = CryptoExtensions.SHA256(bytes);
-
-            this.Address = new Address(hash);
+            this.Address = Address.FromHash(this.Name);
 
             // init stores
             _transactions = new KeyValueStore<Hash, Transaction>(Nexus.CreateKeyStoreAdapter(this.Address, "txs"));

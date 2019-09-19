@@ -470,7 +470,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
 
-            Runtime.Expect(!seller.IsInterop, "seller cannot be interop address");
+            Runtime.Expect(seller.IsUser, "seller must be user address");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
@@ -516,7 +516,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
 
-            Runtime.Expect(!seller.IsInterop, "seller cannot be interop address");
+            Runtime.Expect(seller.IsUser, "seller must be user address");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(baseSymbol), "invalid base token");
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);

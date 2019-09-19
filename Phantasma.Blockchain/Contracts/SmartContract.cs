@@ -28,12 +28,13 @@ namespace Phantasma.Blockchain.Contracts
         private Dictionary<string, MethodInfo> _methodTable = new Dictionary<string, MethodInfo>();
 
         private Address _address;
-        public Address Address { get
+        public Address Address
+        {
+            get
             {
                 if (_address == Address.Null)
                 {
-                    var publicKey = Name.Sha256();
-                   _address = new Address(publicKey);
+                   _address = Address.FromHash(Name);
                 }
 
                 return _address;
@@ -77,6 +78,11 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var frame = Runtime.frames.Skip(1).FirstOrDefault();
                 return frame != null && frame.Context.Admin;
+            }
+
+            if (address.IsInterop)
+            {
+                return false;
             }
 
             if (Runtime.Transaction == null)

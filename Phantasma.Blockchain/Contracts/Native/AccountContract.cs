@@ -36,7 +36,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void RegisterName(Address target, string name)
         {
-            Runtime.Expect(target != Address.Null, "address must not be null");
+            Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(IsWitness(target), "invalid witness");
             Runtime.Expect(ValidateName(name), "invalid name");
@@ -52,7 +52,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void RegisterScript(Address target, byte[] script)
         {
-            Runtime.Expect(target != Address.Null, "address must not be null");
+            Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(IsWitness(target), "invalid witness");
 
@@ -67,6 +67,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetMetadata(Address target, string key, string value)
         {
+            Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(IsWitness(target), "invalid witness");
 
             var metadataEntries = _metadata.Get<Address, StorageList>(target);

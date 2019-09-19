@@ -87,6 +87,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(IsWitness(owner), "invalid witness");
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
 
             symbol = symbol.ToUpperInvariant();
 
@@ -100,6 +101,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
 
             Runtime.Expect(IsWitness(owner), "invalid witness");
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
 
             name = name.ToLowerInvariant();
             Runtime.Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase), "same name as parent");
@@ -118,6 +120,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
 
             Runtime.Expect(IsWitness(owner), "invalid witness");
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
 
             Runtime.Expect(Runtime.Nexus.CreateFeed(owner, name, mode), "feed creation failed");
 

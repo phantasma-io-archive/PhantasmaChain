@@ -149,7 +149,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void Migrate(Address from, Address to)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
+            Runtime.Expect(to.IsUser, "destination must be user address");
 
             var targetStake = _stakes.Get<Address, EnergyAction>(to);
             Runtime.Expect(targetStake.totalAmount == 0, "Tried to migrate to an account that's already staking");

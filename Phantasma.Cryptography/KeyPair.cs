@@ -37,7 +37,7 @@ namespace Phantasma.Cryptography
             {
                 var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
                 var pair = new KeyPair(privateKey);
-                if (!pair.Address.IsInterop)
+                if (pair.Address.IsUser)
                 {
                     return pair;
                 }

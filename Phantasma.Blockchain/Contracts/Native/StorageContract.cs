@@ -36,6 +36,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void UploadFile(Address from, string name, BigInteger contentSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(from.IsUser, "address must be user address");
             Runtime.Expect(contentSize >= Archive.MinSize, "file too small");
             Runtime.Expect(contentSize <= Archive.MaxSize, "file too big");
 

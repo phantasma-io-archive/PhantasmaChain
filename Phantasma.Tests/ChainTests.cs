@@ -19,6 +19,14 @@ namespace Phantasma.Tests
     public class ChainTests
     {
         [TestMethod]
+        public void NullAddress()
+        {
+            Assert.IsTrue(Address.Null.IsSystem);
+            Assert.IsFalse(Address.Null.IsUser);
+            Assert.IsFalse(Address.Null.IsInterop);
+        }
+
+        [TestMethod]
         public void Decimals()
         {
             var places = 8;
@@ -58,6 +66,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.GenesisHash != Hash.Null);
 
             var rootChain = nexus.RootChain;
+
+            Assert.IsTrue(rootChain.Address.IsSystem);
 
             var symbol = Nexus.FuelTokenSymbol;
             Assert.IsTrue(nexus.TokenExists(symbol));
@@ -1012,7 +1022,7 @@ namespace Phantasma.Tests
         public void TestAddressComparison()
         {
             var owner = KeyPair.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
-            var address = Address.FromText("P2f7ZFuj6NfZ76ymNMnG3xRBT5hAMicDrQRHE4S7SoxEr");
+            var address = Address.FromText("PKtRvkhUhAiHsg4YnaxSM9dyyLBogTpHwtUEYvMYDKuV8");
 
             var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;

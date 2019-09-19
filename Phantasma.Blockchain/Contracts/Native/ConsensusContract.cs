@@ -48,6 +48,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void AddValidator(Address from)
         {
+            Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var count = _validatorList.Count();
@@ -75,6 +76,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void RemoveValidator(Address from)
         {
+            Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(IsValidator(from), "validator failed");
 
             var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
@@ -130,7 +132,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
+            Runtime.Expect(to.IsUser, "destination must be user address");
 
             var index = GetIndexOfValidator(from);
             Runtime.Expect(index >= 0, "not a validator");
@@ -152,6 +154,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsValidator(from), "validator failed");
             Runtime.Expect(Runtime.Epoch.ValidatorAddress == from, "epoch validator mismatch");
+            Runtime.Expect(IsWitness(from), "witness failed");
 
             var validator = _validatorMap.Get<Address, ValidatorEntry>(from);
             validator.lastActivity = Runtime.Time;

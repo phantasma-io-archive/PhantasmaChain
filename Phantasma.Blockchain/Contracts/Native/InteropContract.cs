@@ -51,7 +51,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void RegisterLink(Address from, Address target)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(target.IsInterop, "address must be interop");
+            Runtime.Expect(from.IsUser, "source address must be user address");
+            Runtime.Expect(target.IsInterop, "target address must be interop address");
 
             string platformName;
             byte[] data;
@@ -104,7 +105,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (Nexus.PlatformName.Equals(platformName, StringComparison.OrdinalIgnoreCase))
             {
-                Runtime.Expect(from.IsInterop, "must be interop");
+                Runtime.Expect(from.IsInterop, "must be interop address");
                 if (_reverseMap.ContainsKey<Address>(from))
                 {
                     return _reverseMap.Get<Address, Address>(from);
@@ -113,7 +114,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return Address.Null;
             }
 
-            Runtime.Expect(!from.IsInterop, "cant be interop");
+            Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(Runtime.Nexus.PlatformExists(platformName), "unsupported chain");
 
             var list = _links.Get<Address, StorageList>(from);
@@ -143,6 +144,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var platformInfo = Runtime.Nexus.GetPlatformInfo(platform);
 
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(from.IsUser, "must be user address");
 
             var chainHashes = _hashes.Get<string, StorageSet>(platform);
             Runtime.Expect(!chainHashes.Contains<Hash>(hash), "hash already seen");
@@ -252,7 +254,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(!from.IsInterop, "source can't be interop address");
+            Runtime.Expect(from.IsUser, "source must be user address");
             Runtime.Expect(to.IsInterop, "destination must be interop address");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");

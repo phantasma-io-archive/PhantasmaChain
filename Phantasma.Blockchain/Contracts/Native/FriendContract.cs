@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
 
-            Runtime.Expect(friend != Address.Null, "friend address must not be null");
+            Runtime.Expect(friend.IsUser, "friend must be user addres");
             Runtime.Expect(friend != target, "friend must be different from target address");
 
             var friendList = _friendMap.Get<Address, StorageList>(target);
@@ -30,9 +30,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void RemoveFriend(Address target, Address friend)
         {
             Runtime.Expect(IsWitness(target), "invalid witness");
-
-            Runtime.Expect(friend != Address.Null, "friend address must not be null");
-            Runtime.Expect(friend != target, "friend must be different from target address");
 
             var friendList = _friendMap.Get<Address, StorageList>(target);
 

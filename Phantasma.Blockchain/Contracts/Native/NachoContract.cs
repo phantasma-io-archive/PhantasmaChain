@@ -757,7 +757,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     #endregion
 
-        #region FORMULAS
+    #region FORMULAS
     public static class Formulas
     {
         public const int MaxBaseStat = 120;
