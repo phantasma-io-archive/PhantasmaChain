@@ -392,4 +392,13 @@ namespace Phantasma.API
         [APIDescription("Script of message, in hex")]
         public string script;
     }
+
+    public struct PeerResult: IAPIResult
+    {
+        [APIDescription("URL of peer")]
+        public string url;
+
+        [APIDescription("Features supported by peer")]
+        public string flags;
+    }
 }

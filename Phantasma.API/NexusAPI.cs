@@ -1440,6 +1440,29 @@ namespace Phantasma.API
             return FillABI(contractName, contract.ABI);
         }
 
+        [APIInfo(typeof(PeerResult[]), "Returns list of known peers.", false)]
+        public IAPIResult GetPeers()
+        {
+            if (Node == null)
+            {
+                return new ErrorResult { error = "No node available" };
+            }
+
+            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), flags = "None" });
+
+            if (peers.Any())
+            {
+                return new ArrayResult()
+                {
+                    values = peers.Select(x => (object)x).ToArray()
+                };
+            }
+            else
+            {
+                return new ErrorResult { error = "No peers known" };
+            }
+        }
+
         [APIInfo(typeof(bool), "Writes a message to the relay network.", false)]
         public IAPIResult RelaySend([APIParameter("Serialized receipt, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string receiptHex)
         {
