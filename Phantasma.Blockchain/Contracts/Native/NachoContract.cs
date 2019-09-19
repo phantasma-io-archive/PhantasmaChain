@@ -2188,8 +2188,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal BigInteger _roomCounter;
         internal BigInteger _roomSequence;
 
-        internal BigInteger _nachoIAPCurrentStage = 1;
-        internal BigInteger _nachoIAPCurrentMilestone = 1;
+        internal BigInteger _nachoIAPCurrentStage;
+        internal BigInteger _nachoIAPCurrentMilestone;
         internal BigInteger _nachoRewardsAndCostsCurrentStage = 0;
 
         internal BigInteger _nachoIAPCurrentTokens;
@@ -2221,6 +2221,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var extra = currentStageCap - (_nachoIAPCurrentTokens + amount);
 
                 _nachoIAPCurrentStage++;
+
+                _nachoIAPCurrentMilestone = 0;
 
                 _nachoIAPCurrentTokens = extra;
             }
@@ -2256,6 +2258,17 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <returns></returns>
         private BigInteger DollarsToNachos(BigInteger dollarAmount)
         {
+            // TODO ver se há uma forma melhor de fazer isto já que não podemos inicializar esta var na declaração com o valor 1
+            if ((int) _nachoIAPCurrentStage == 0)
+            {
+                _nachoIAPCurrentStage = 1;
+            }
+
+            //if ((int)_nachoIAPCurrentMilestone == 0)
+            //{
+            //    _nachoIAPCurrentMilestone = 1;
+            //}
+
             return GetCurrentTokenCambio((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone) * (int)UnitConversion.ToDecimal(dollarAmount, Nexus.FiatTokenDecimals);
         }
 
