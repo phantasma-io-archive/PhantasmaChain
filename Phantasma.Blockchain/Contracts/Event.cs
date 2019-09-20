@@ -47,18 +47,20 @@ namespace Phantasma.Blockchain.Contracts
     {
         public readonly EventKind Kind;
         public readonly Address Address;
+        public readonly string Contract;
         public readonly byte[] Data;
 
-        public Event(EventKind kind, Address address, byte[] data = null)
+        public Event(EventKind kind, Address address, string contract, byte[] data = null)
         {
             this.Kind = kind;
             this.Address = address;
+            this.Contract = contract;
             this.Data = data;
         }
 
         public override string ToString()
         {
-            return $"{Kind} @ {Address}: {Base16.Encode(Data)}";
+            return $"{Kind}/{Contract} @ {Address}: {Base16.Encode(Data)}";
         }
 
         public T GetKind<T>()
@@ -76,6 +78,7 @@ namespace Phantasma.Blockchain.Contracts
             var n = (int)(object)this.Kind; // TODO is this the most clean way to do this?
             writer.Write((byte)n);
             writer.WriteAddress(this.Address);
+            writer.WriteVarString(this.Contract);
             writer.WriteByteArray(this.Data);
         }
 
@@ -83,8 +86,9 @@ namespace Phantasma.Blockchain.Contracts
         {
             var kind = (EventKind)reader.ReadByte();
             var address = reader.ReadAddress();
+            var contract = reader.ReadVarString();
             var data = reader.ReadByteArray();
-            return new Event(kind, address, data);
+            return new Event(kind, address, contract, data);
         }
     }
 

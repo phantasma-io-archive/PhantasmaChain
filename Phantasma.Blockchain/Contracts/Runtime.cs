@@ -211,8 +211,8 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         public void Notify(EventKind kind, Address address, byte[] bytes)
-        {
-            var evt = new Event(kind, address, bytes);
+        {            
+            var evt = new Event(kind, address, CurrentContext.Name, bytes);
             _events.Add(evt);
         }
 

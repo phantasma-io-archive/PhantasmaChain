@@ -83,7 +83,7 @@ namespace Phantasma.Tests
             {
                 var data = new TokenEventData() { symbol = symbol, chainAddress = keysA.Address, value = amounts[index] };
                 var dataBytes = Serialization.Serialize(data);
-                block.Notify(hash, new Event(EventKind.TokenSend, keysA.Address, dataBytes));
+                block.Notify(hash, new Event(EventKind.TokenSend, keysA.Address, "test", dataBytes));
                 index++;
             }
 
