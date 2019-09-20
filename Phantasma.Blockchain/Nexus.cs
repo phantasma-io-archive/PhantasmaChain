@@ -1382,6 +1382,9 @@ namespace Phantasma.Blockchain
 
                 ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),
                 ValueCreateTx(owner, GasContract.MaxLenderCountTag, 10, 1, 100),
+                ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
+                ValueCreateTx(owner, ConsensusContract.MaxEntriesPerPollTag, 10, 2, 1000),
+                ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
 
                 ChainCreateTx(owner, "privacy", "privacy"),
                 ChainCreateTx(owner, "sale", "sale"),

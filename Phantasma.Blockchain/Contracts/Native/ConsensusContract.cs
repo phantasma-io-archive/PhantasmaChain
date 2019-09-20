@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -52,6 +51,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Timestamp startTime;
         public Timestamp endTime;
         public BigInteger votesPerUser;
+        public BigInteger totalVotes;
         public byte[] script;
     }
 
@@ -69,10 +69,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         private StorageList _pollList; 
         private StorageMap _presences; // address, List<PollPresence>
 
-        public const int MaxEntriesPerPoll = 100;
-        private const int MinimumPollLength = 86400;
-        private const int MaximumPollLength = MinimumPollLength * 90;
-        public const int PollVoteLimit = 50000;
+        public const int MinimumPollLength = 86400;
+        public const string MaximumPollLengthTag = "poll.max.length";
+        public const string MaxEntriesPerPollTag = "poll.max.entries";
+        public const string PollVoteLimitTag = "poll.vote.limit";
 
         public const string SystemPoll = "system.";
 
@@ -86,6 +86,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (!Runtime.readOnlyMode)
             {
+                var MaxVotesPerPoll = Runtime.GetGovernanceValue(PollVoteLimitTag);
+
                 if (Runtime.Time < poll.startTime && poll.state != PollState.Inactive)
                 {
                     poll.state = PollState.Inactive;
@@ -97,7 +99,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     _pollList.Add<string>(subject);
                 }
                 else
-                if (Runtime.Time >= poll.endTime && poll.state == PollState.Active)
+                if ((Runtime.Time >= poll.endTime || poll.totalVotes >= MaxVotesPerPoll) && poll.state == PollState.Active)
                 {
                     // its time to count votes...
                     poll.selected = -1;
@@ -172,8 +174,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(kind == ConsensusKind.Validators, "community polls not yet");
 
+            var maxEntriesPerPoll = Runtime.GetGovernanceValue(MaxEntriesPerPollTag);
             Runtime.Expect(entries.Length > 1, "invalid amount of entries");
-            Runtime.Expect(entries.Length <= MaxEntriesPerPoll, "too many entries");
+            Runtime.Expect(entries.Length <= maxEntriesPerPoll, "too many entries");
+
+            var MaximumPollLength = (uint)Runtime.GetGovernanceValue(MaximumPollLengthTag);
 
             Runtime.Expect(startTime >= Runtime.Time, "invalid start time");
             var minEndTime = new Timestamp(startTime.Value + MinimumPollLength);
@@ -212,6 +217,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             poll.selected = -1;
             poll.state = PollState.Inactive;
             poll.votesPerUser = votesPerUser;
+            poll.totalVotes = 0;
 
             _pollMap.Set<string, ConsensusPoll>(subject, poll);
 
@@ -279,6 +285,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var targetIndex = (int)choices[i].index;
                 poll.entries[targetIndex].votes += votes;
             }
+
+            poll.totalVotes += 1;
+            _pollMap.Set<string, ConsensusPoll>(subject, poll);
 
             // finally add this voting round to the presences list
             var temp = new PollPresence()

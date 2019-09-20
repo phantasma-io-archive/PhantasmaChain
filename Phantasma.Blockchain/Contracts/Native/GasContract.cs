@@ -91,7 +91,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             lendedAmount = price * limit;
 
-            var maxLoanAmount = Runtime.GetValue(MaxLoanAmountTag);
+            var maxLoanAmount = Runtime.GetGovernanceValue(MaxLoanAmountTag);
             Runtime.Expect(lendedAmount <= maxLoanAmount, "limit exceeds maximum allowed for lend");
 
             var loan = new GasLoanEntry()
@@ -276,7 +276,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <param name="to">Address that will receive the profits from the lending (can be the same as the first address)</param>
         public void StartLend(Address from, Address to)
         {
-            var maxLenderCount = Runtime.GetValue(MaxLenderCountTag);
+            var maxLenderCount = Runtime.GetGovernanceValue(MaxLenderCountTag);
             Runtime.Expect(_lenderList.Count() < maxLenderCount, "too many lenders already");
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(to.IsUser, "invalid destination address");

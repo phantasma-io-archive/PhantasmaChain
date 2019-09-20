@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger Value;
     }
 
-    public class GovernanceContract : SmartContract
+    public sealed class GovernanceContract : SmartContract
     {
         public override string Name => "governance";
 
