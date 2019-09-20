@@ -1265,7 +1265,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction TokenInitTx(KeyPair owner)
+        private Transaction SetupNexusTx(KeyPair owner)
         {
             var sb = ScriptUtils.BeginScript();
 
@@ -1289,6 +1289,20 @@ namespace Phantasma.Blockchain
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name, contracts).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            tx.Sign(owner);
+            return tx;
+        }
+
+        private Transaction ValueCreateTx(KeyPair owner, string name, BigInteger initial, BigInteger min, BigInteger max)
+        {
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, 1, 9999).
+                CallContract(ScriptBuilderExtensions.GovernanceContract, "CreateValue", name, initial, min, max).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -1364,7 +1378,10 @@ namespace Phantasma.Blockchain
             // create genesis transactions
             var transactions = new List<Transaction>
             {
-                TokenInitTx(owner),
+                SetupNexusTx(owner),
+
+                ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),
+                ValueCreateTx(owner, GasContract.MaxLenderCountTag, 10, 1, 100),
 
                 ChainCreateTx(owner, "privacy", "privacy"),
                 ChainCreateTx(owner, "sale", "sale"),

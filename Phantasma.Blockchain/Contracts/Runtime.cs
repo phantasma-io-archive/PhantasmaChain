@@ -392,5 +392,12 @@ namespace Phantasma.Blockchain.Contracts
             return seed;
         }
         #endregion
+
+        // fetches a chain-governed value
+        internal BigInteger GetValue(string name)
+        {
+            var value = Nexus.RootChain.InvokeContract("governance", "GetValue", name).AsNumber();
+            return value;
+        }
     }
 }

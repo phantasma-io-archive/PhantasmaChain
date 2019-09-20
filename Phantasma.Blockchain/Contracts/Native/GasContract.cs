@@ -33,9 +33,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _lenderMap; // Address, Address
         internal StorageList _lenderList; // Address
 
-        public const int MaxLendAmount = 9999;
         public const int LendReturn = 50;
-        public const int MaxLenderCount = 10;
+
+        internal const string MaxLoanAmountTag = "gas.max.loan"; //9999 * 10000;
+        internal const string MaxLenderCountTag = "gas.lender.count";
 
         public void AllowGas(Address user, Address target, BigInteger price, BigInteger limit)
         {
@@ -89,7 +90,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(GetLoanAmount(from) == 0, "already has an active loan");
 
             lendedAmount = price * limit;
-            Runtime.Expect(lendedAmount <= MaxLendAmount, "limit exceeds maximum allowed for lend");
+
+            var maxLoanAmount = Runtime.GetValue(MaxLoanAmountTag);
+            Runtime.Expect(lendedAmount <= maxLoanAmount, "limit exceeds maximum allowed for lend");
 
             var loan = new GasLoanEntry()
             {
@@ -273,7 +276,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <param name="to">Address that will receive the profits from the lending (can be the same as the first address)</param>
         public void StartLend(Address from, Address to)
         {
-            Runtime.Expect(_lenderList.Count() < MaxLenderCount, "too many lenders already");
+            var maxLenderCount = Runtime.GetValue(MaxLenderCountTag);
+            Runtime.Expect(_lenderList.Count() < maxLenderCount, "too many lenders already");
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(to.IsUser, "invalid destination address");
             Runtime.Expect(!IsLender(from), "already lending at source address");

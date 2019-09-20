@@ -39,8 +39,10 @@ namespace Phantasma.Blockchain.Contracts
         ValidatorRemove = 27,
         ValidatorUpdate = 28,
         BrokerRequest = 29,
-        Metadata = 31,
-        Custom = 32,
+        ValueCreate = 30,
+        ValueUpdate = 31,
+        Metadata = 47,
+        Custom = 48,
     }
 
     public struct Event

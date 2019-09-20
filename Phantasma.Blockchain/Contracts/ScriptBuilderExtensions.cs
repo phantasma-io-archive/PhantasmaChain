@@ -8,6 +8,7 @@ namespace Phantasma.Blockchain.Contracts
     public static class ScriptBuilderExtensions
     {
         public static readonly string NexusContract = "nexus";
+        public static readonly string GovernanceContract = "governance";
         public static readonly string TokenContract = "token";
         public static readonly string EnergyContract = "energy";
         public static readonly string SwapContract = "swap";

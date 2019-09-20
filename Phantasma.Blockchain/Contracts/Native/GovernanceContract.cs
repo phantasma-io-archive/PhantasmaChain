@@ -1,3 +1,4 @@
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
@@ -24,6 +25,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger Minimum;
         public BigInteger Maximum;
         public BigInteger Deviation;
+        public Hash Hash;
+    }
+
+    public struct ChainValueEventData
+    {
+        public string Name;
+        public BigInteger Value;
     }
 
     public class GovernanceContract : SmartContract
@@ -49,7 +57,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return _valueMap.ContainsKey<string>(name);
         }
 
-        public void RegisterValue(string name, BigInteger initial, BigInteger minimum, BigInteger maximum)
+        public void CreateValue(string name, BigInteger initial, BigInteger minimum, BigInteger maximum)
         {
             Runtime.Expect(!HasName(name), "name already exists");
             Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "genesis must be witness");
@@ -63,15 +71,17 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Name = name,
                 Current = initial,
                 Minimum = minimum,
-                Maximum = maximum
+                Maximum = maximum,
+                Hash = Runtime.Transaction.Hash
             };
 
             _valueMap.Set<string, ChainValue>(name, value);
+            Runtime.Notify(EventKind.ValueCreate, Runtime.Nexus.GenesisAddress, new ChainValueEventData() { Name = name, Value = initial });
         }
 
         public BigInteger GetValue(string name)
         {
-            Runtime.Expect(!HasValue(name), "invalid value name");
+            Runtime.Expect(HasValue(name), "invalid value name");
             var temp = _valueMap.Get<string, ChainValue>(name);
             return temp.Current;
         }
@@ -90,7 +100,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(hasConsensus, "consensus not reached");
 
             temp.Current = value;
+            temp.Hash = Runtime.Transaction.Hash;
+
             _valueMap.Set<string, ChainValue>(name, temp);
+
+            Runtime.Notify(EventKind.ValueUpdate, Runtime.Nexus.GenesisAddress, new ChainValueEventData() { Name = name, Value = value});
         }
         #endregion
     }
