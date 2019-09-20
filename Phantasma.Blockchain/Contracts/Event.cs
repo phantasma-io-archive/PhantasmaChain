@@ -26,7 +26,7 @@ namespace Phantasma.Blockchain.Contracts
         AddressUnlink = 14,
         GasEscrow = 15,
         GasPayment = 16,
-        GasLend = 17,
+        GasLoan = 17,
         OrderCreated = 18,
         OrderCancelled = 19,
         OrderFilled = 20,

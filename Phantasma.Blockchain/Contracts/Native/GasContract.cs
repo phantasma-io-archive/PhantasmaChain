@@ -59,21 +59,22 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.GasEscrow, user, new GasEventData() { address = Runtime.Chain.Address, price = price, amount = limit });
         }
 
-        public void LendGas(Address user, Address target, Address from, BigInteger price, BigInteger limit)
+        public void LoanGas(Address user, Address target, BigInteger price, BigInteger limit)
         {
             if (Runtime.readOnlyMode)
             {
                 return;
             }
 
+            Runtime.Expect(user.IsUser, "must be a user address");
+            Runtime.Expect(target.IsSystem, "destination must be system address");
             Runtime.Expect(IsWitness(user), "invalid witness");
-            Runtime.Expect(user != from, "cannot lend from itself");
-            Runtime.Expect(IsLender(from), "not a valid lender");
 
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
 
-            Runtime.Expect(target.IsSystem, "target cant be user address");
+            var from = FindLender();
+            Runtime.Expect(!from.IsNull, "no lender available");
 
             var maxAmount = price * limit;
 
@@ -103,7 +104,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _borrowerMap.Set<Address, GasLendEntry>(user, borrowEntry);
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, Runtime.Chain.Address, borrowEntry.amount), "gas lend failed");
-            Runtime.Notify(EventKind.GasLend, user, new GasEventData() { address = from, price = price, amount = limit });
+            Runtime.Notify(EventKind.GasLoan, user, new GasEventData() { address = from, price = price, amount = limit });
         }
 
         public void SpendGas(Address from)
@@ -212,6 +213,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return 0;
+        }
+
+        private Address FindLender()
+        {
+            if (_lenderList.Count() > 0)
+            {
+                return _lenderList.Get<Address>(0);
+            }
+
+            return Address.Null;
         }
 
         public void StartLend(Address from)
