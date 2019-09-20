@@ -18,6 +18,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Address borrower;
         public Address lender;
         public BigInteger amount;
+        public BigInteger interest;
     }
 
     public class GasContract : SmartContract
@@ -28,7 +29,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _allowanceTargets; //<Address, Address>
 
         internal StorageMap _loanMap; // Address, GasLendEntry
-        internal StorageMap _loanList; // Address, List<GasLendEntry>
+        internal StorageMap _loanList; // Address, List<Address>
         internal StorageMap _lenderMap; // Address, Address
         internal StorageList _lenderList; // Address
 
@@ -95,12 +96,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 amount = lendedAmount,
                 hash = Runtime.Transaction.Hash,
                 borrower = from,
-                lender = lender
+                lender = lender,
+                interest = 0
             };
             _loanMap.Set<Address, GasLoanEntry>(from, loan);
 
             var list = _loanList.Get<Address, StorageList>(lender);
-            list.Add<GasLoanEntry>(loan);
+            list.Add<Address>(from);
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, lender, from, loan.amount), "gas lend failed");
             Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lender, price = price, amount = limit });
@@ -169,24 +171,26 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var loan = _loanMap.Get<Address, GasLoanEntry>(from);
 
-                Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
-                var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
-
                 if (loan.hash == Runtime.Transaction.Hash)
                 {
                     var unusedLoanAmount = loan.amount - requiredAmount;
                     Runtime.Expect(unusedLoanAmount >= 0, "loan amount overflow");
 
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, unusedLoanAmount), "unspend loan payment failed");
-                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
+                    // here we return the gas to the original pool, not the the payment address, because this is not a payment
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, loan.borrower, unusedLoanAmount), "unspend loan payment failed");
+                    Runtime.Notify(EventKind.GasPayment, loan.borrower, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
 
-                    var profitAmount = (requiredAmount * LendReturn) / 100;
-                    loan.amount = requiredAmount + profitAmount;
+                    loan.amount = requiredAmount;
+                    loan.interest = (requiredAmount * LendReturn) / 100;
                     _loanMap.Set<Address, GasLoanEntry>(from, loan);
                 }
                 else
                 {
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, loan.amount), "lend payment failed");
+                    Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
+                    var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
+
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, loan.borrower, loan.amount), "loan payment failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, loan.interest), "loan interest failed");
                     _loanMap.Remove<Address>(from);
 
                     var list = _loanList.Get<Address, StorageList>(loan.lender);
@@ -194,8 +198,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var count = list.Count();
                     for (int i=0; i<count; i++)
                     {
-                        var temp = list.Get<GasLoanEntry>(i);
-                        if (temp.borrower == from)
+                        var temp = list.Get<Address>(i);
+                        if (temp == from)
                         {
                             index = i;
                             break;
@@ -203,9 +207,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     Runtime.Expect(index >= 0, "loan missing from list");
-                    list.RemoveAt<GasLoanEntry>(index);
+                    list.RemoveAt<Address>(index);
 
-                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.amount });
+                    Runtime.Notify(EventKind.GasPayment, loan.lender, new GasEventData() { address = from, price = 1, amount = loan.amount });
+                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.interest});
                 }
             }
 
@@ -255,10 +260,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             return Address.Null;
         }
 
-        public GasLoanEntry[] GetLoans(Address from)
+        public Address[] GetBorrowers(Address from)
         {
             var list = _loanList.Get<Address, StorageList>(from);
-            return list.All<GasLoanEntry>();
+            return list.All<Address>();
         }
 
         /// <summary>
