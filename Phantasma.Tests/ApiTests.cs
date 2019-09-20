@@ -25,7 +25,7 @@ namespace Phantasma.Tests
         }
 
         private static readonly string testWIF = "Kx9Kr8MwQ9nAJbHEYNAjw5n99B2GpU6HQFf75BGsC3hqB1ZoZm5W";
-        private static readonly string testAddress = "P9dKgENhREKbRNsecvVeyPLvrMVJJqDHSWBwFZPyEJjSy";
+        private static readonly string testAddress = "PSre3jAT22NLBwxS39fqGaZjNbywdaRMXzEtaRKPzpghF";
 
         private TestData CreateAPI(bool useMempool = false)
         {
@@ -52,7 +52,8 @@ namespace Phantasma.Tests
         {
             var test = CreateAPI();
 
-            var account = (AccountResult)test.api.GetAccount(testAddress);
+            var temp = test.api.GetAccount(testAddress);
+            var account = (AccountResult)temp;
             Assert.IsTrue(account.address == testAddress);
             Assert.IsTrue(account.name == "genesis");
             Assert.IsTrue(account.balances.Length > 0);
@@ -78,6 +79,7 @@ namespace Phantasma.Tests
             var chainName = Nexus.RootChainName;
             test.simulator.CurrentTime = Timestamp.Now;
             var tx = new Transaction("simnet", chainName, script, test.simulator.CurrentTime + TimeSpan.FromHours(1));
+            tx.Sign(KeyPair.FromWIF(testWIF));
             var txBytes = tx.ToByteArray(true);
             var temp = test.api.SendRawTransaction(Base16.Encode(txBytes));
             var result = (SingleResult)temp;
