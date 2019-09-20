@@ -41,6 +41,9 @@ namespace Phantasma.Blockchain.Contracts
         BrokerRequest = 29,
         ValueCreate = 30,
         ValueUpdate = 31,
+        PollStarted = 32,
+        PollFinished = 33,
+        PollVote = 34,
         Metadata = 47,
         Custom = 48,
     }

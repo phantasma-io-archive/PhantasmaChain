@@ -152,6 +152,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     _pollMap.Set<string, ConsensusPoll>(subject, poll);
+
+                    Runtime.Notify(EventKind.PollFinished, this.Address, subject);
                 }
             }
 
@@ -211,6 +213,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             poll.votesPerUser = votesPerUser;
 
             _pollMap.Set<string, ConsensusPoll>(subject, poll);
+
+            Runtime.Notify(EventKind.PollStarted, this.Address, subject);
         }
 
         public void SingleVote(Address from, string subject, BigInteger index)
@@ -290,6 +294,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 presences.Add(temp);
             }
+
+            Runtime.Notify(EventKind.PollVote, from, subject);
         }
 
         public bool HasConsensus(string subject, byte[] value)
