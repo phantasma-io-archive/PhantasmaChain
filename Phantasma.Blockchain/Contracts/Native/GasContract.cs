@@ -82,28 +82,19 @@ namespace Phantasma.Blockchain.Contracts.Native
             var lender = FindLender();
             Runtime.Expect(!lender.IsNull, "no lender available");
 
-            var maxAmount = price * limit;
-
-            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
-            Runtime.Expect(allowance == 0, "unexpected pending allowance");
-
-            allowance += maxAmount;
-            _allowanceMap.Set(from, allowance);
-            _allowanceTargets.Set(from, lender);
-
             BigInteger lendedAmount;
 
             Runtime.Expect(IsLender(lender), "invalid lender address");
 
             Runtime.Expect(GetLoanAmount(from) == 0, "already has an active loan");
 
-            lendedAmount = maxAmount;
+            lendedAmount = price * limit;
             Runtime.Expect(lendedAmount <= MaxLendAmount, "limit exceeds maximum allowed for lend");
 
-            var temp = (lendedAmount * LendReturn) / 100;
+            var paybackAmount = (lendedAmount * LendReturn) / 100;
             var loan = new GasLoanEntry()
             {
-                amount = temp,
+                amount = paybackAmount,
                 hash = Runtime.Transaction.Hash,
                 borrower = from,
                 lender = lender
