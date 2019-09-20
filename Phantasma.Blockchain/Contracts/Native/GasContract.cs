@@ -27,6 +27,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _allowanceTargets; //<Address, Address>
 
         internal StorageMap _borrowerMap; // Address, GasLendEntry
+        internal StorageMap _lenderMap; // Address, Address
         internal StorageList _lenderList; // Address
 
         public const int MaxLendAmount = 9999;
@@ -195,15 +196,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool IsLender(Address address)
         {
-            var count = _lenderList.Count();
-            for (int i=0; i<count; i++)
+            if (address.IsUser)
             {
-                var entry = _lenderList.Get<Address>(i);
-                if (entry == address)
-                {
-                    return true;
-                }
+                return _lenderMap.ContainsKey<Address>(address);
             }
+
             return false;
         }
 
@@ -230,13 +227,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             return Address.Null;
         }
 
-        public void StartLend(Address from)
+        public void StartLend(Address from, Address to)
         {
             Runtime.Expect(_lenderList.Count() < MaxLenderCount, "too many lenders already");
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(!IsLender(from), "already lending");
+            Runtime.Expect(to.IsUser, "invalid destination address");
+            Runtime.Expect(!IsLender(from), "already lending at source address");
+            Runtime.Expect(!IsLender(to), "already lending at destination address");
 
             _lenderList.Add<Address>(from);
+            _lenderMap.Set<Address, Address>(from, to);
 
             Runtime.Notify(EventKind.AddressLink, from, Runtime.Chain.Address);
         }
@@ -244,6 +244,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void StopLend(Address from)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(IsLender(from), "not a lender");
 
             int index = -1;
             var count = _lenderList.Count();
@@ -260,6 +261,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(index >= 0, "not lending");
 
             _lenderList.RemoveAt<Address>(index);
+            _lenderMap.Remove<Address>(from);
 
             Runtime.Notify(EventKind.AddressUnlink, from, Runtime.Chain.Address);
         }
