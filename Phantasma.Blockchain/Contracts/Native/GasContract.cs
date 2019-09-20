@@ -67,6 +67,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return;
             }
 
+            Runtime.Expect(Runtime.Chain.IsRoot, "must be a root chain");
+
             Runtime.Expect(user.IsUser, "must be a user address");
             Runtime.Expect(target.IsSystem, "destination must be system address");
             Runtime.Expect(IsWitness(user), "invalid witness");
