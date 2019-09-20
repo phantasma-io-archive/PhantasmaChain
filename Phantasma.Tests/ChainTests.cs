@@ -70,6 +70,7 @@ namespace Phantasma.Tests
             var rootChain = nexus.RootChain;
 
             Assert.IsTrue(rootChain.Address.IsSystem);
+            Assert.IsFalse(rootChain.Address.IsNull);
 
             var symbol = Nexus.FuelTokenSymbol;
             Assert.IsTrue(nexus.TokenExists(symbol));

@@ -39,10 +39,10 @@ namespace Phantasma.Cryptography
         public const int PublicKeyLength = 32;
         public const int MaxPlatformNameLength = 10;
 
-        public bool IsSystem => _publicKey != null && (_publicKey.Length > 0 && _publicKey[0] == (byte)'!' || IsNull);
+        public bool IsSystem => _publicKey != null && (_publicKey.Length > 0 && _publicKey[0] == SystemOpcode || IsNull);
 
         // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
-        public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == (byte)'*';
+        public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == InteropOpcode;
 
         public bool IsUser => !IsSystem && !IsInterop;
 
@@ -261,12 +261,12 @@ namespace Phantasma.Cryptography
                     throw new Exception("invalid interop address");
                 }
 
-                var ch = (char)_publicKey[i];
-                if (ch == '*')
+                if (_publicKey[i] == InteropOpcode)
                 {
                     break;
                 }
 
+                var ch = _publicKey[i];
                 sb.Append(ch);
                 i++;
             }
@@ -299,14 +299,14 @@ namespace Phantasma.Cryptography
             Throw.If(platformName.Length > MaxPlatformNameLength, "platform name is too big");
 
             var bytes = new byte[PublicKeyLength];
-            bytes[0] = (byte)'*';
+            bytes[0] = InteropOpcode;
             int i = 1;
             foreach (var ch in platformName)
             {
                 bytes[i] = (byte)ch;
                 i++;
             }
-            bytes[i] = (byte)'*';
+            bytes[i] = InteropOpcode;
             i++;
 
             foreach (var ch in data)
