@@ -213,12 +213,12 @@ namespace Phantasma.Blockchain
         private readonly Logger _logger;
 
         private Func<string, IKeyValueStoreAdapter> _adapterFactory = null;
-        private Func<OracleReader> _oracleFactory = null;
+        private Func<Nexus, OracleReader> _oracleFactory = null;
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory= null, Func<OracleReader> oracleFactory = null)
+        public Nexus(Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory= null, Func<Nexus, OracleReader> oracleFactory = null)
         {
             this._adapterFactory = adapterFactory;
             this._oracleFactory = oracleFactory;
@@ -581,7 +581,7 @@ namespace Phantasma.Blockchain
         public OracleReader CreateOracleReader()
         {
             Throw.If(_oracleFactory == null, "oracle factory is not setup");
-            return _oracleFactory();
+            return _oracleFactory(this);
         }
 
         public IEnumerable<string> GetChildChainsByName(string chainName)
