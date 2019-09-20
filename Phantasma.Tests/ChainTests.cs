@@ -28,6 +28,7 @@ namespace Phantasma.Tests
             Assert.IsFalse(addr.IsInterop);
         }
 
+        #region Lending Tests
         [TestMethod]
         public void LendGas()
         {
@@ -47,17 +48,7 @@ namespace Phantasma.Tests
                 10 * UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals));
             simulator.EndBlock();
 
-            simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(lender, () =>
-                ScriptUtils.BeginScript().
-                    AllowGas(lender.Address, Address.Null, 1, 9999).
-                    CallContract("gas", "StartLend", lender.Address, lender.Address).
-                    SpendGas(lender.Address).
-                    EndScript());
-            simulator.EndBlock();
-
-            var isLender = nexus.RootChain.InvokeContract("gas", "IsLender", lender.Address).AsBool();
-            Assert.IsTrue(isLender);
+            SetupLender(simulator, lender);
 
             var initialSoulBalanceA = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userA.Address);
             var initialFuelBalanceA = nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, userA.Address);
@@ -76,10 +67,141 @@ namespace Phantasma.Tests
             var finalSoulBalanceB = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userB.Address);
 
             Assert.IsTrue(finalSoulBalanceA == 0);
-            Assert.IsTrue(finalFuelBalanceA >= 0);
+            Assert.IsTrue(finalFuelBalanceA == 0);
+            Assert.IsTrue(finalSoulBalanceB == soulAmount);
+        }
+
+        [TestMethod]
+        public void TestNoRepaymentSecondLoan()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var lender = KeyPair.Generate();
+            var userA = KeyPair.Generate();
+            var userB = KeyPair.Generate();
+
+            var soulAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, userA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, soulAmount);
+            simulator.GenerateTransfer(owner, lender.Address, nexus.RootChain, Nexus.FuelTokenSymbol,
+                10 * UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals));
+            simulator.EndBlock();
+
+            SetupLender(simulator, lender);
+
+            var initialSoulBalanceA = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userA.Address);
+            var initialFuelBalanceA = nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, userA.Address);
+            var initialSoulBalanceB = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userB.Address);
+
+            Assert.IsTrue(initialSoulBalanceA == soulAmount);
+            Assert.IsTrue(initialFuelBalanceA == 0);
+            Assert.IsTrue(initialSoulBalanceB == 0);
+
+            simulator.BeginBlock();
+            simulator.GenerateLoanTransfer(userA, userB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals));
+            simulator.EndBlock();
+
+            var finalSoulBalanceA = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userA.Address);
+            var finalFuelBalanceA = nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, userA.Address);
+            var finalSoulBalanceB = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userB.Address);
+
+            Assert.IsTrue(finalSoulBalanceA == 0);
+            Assert.IsTrue(finalFuelBalanceA == 0);
             Assert.IsTrue(finalSoulBalanceB == soulAmount);
 
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.BeginBlock();
+                simulator.GenerateCustomTransaction(userA, () =>
+                    ScriptUtils.BeginScript().
+                        LoanGas(userA.Address, 1, 999).
+                        EndScript());
+                simulator.EndBlock();
+            });
+
+            Assert.IsTrue(finalSoulBalanceA == 0);
+            Assert.IsTrue(finalFuelBalanceA == 0);
+            Assert.IsTrue(finalSoulBalanceB == soulAmount);
         }
+
+        [TestMethod]
+        public void TestLoanRepayment()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var lender = KeyPair.Generate();
+            var userA = KeyPair.Generate();
+            var userB = KeyPair.Generate();
+
+            var soulAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, userA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, soulAmount);
+            simulator.GenerateTransfer(owner, lender.Address, nexus.RootChain, Nexus.FuelTokenSymbol,
+                10 * UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals));
+            simulator.EndBlock();
+
+            SetupLender(simulator, lender);
+
+            var initialSoulBalanceA = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userA.Address);
+            var initialFuelBalanceA = nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, userA.Address);
+            var initialSoulBalanceB = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userB.Address);
+
+            Assert.IsTrue(initialSoulBalanceA == soulAmount);
+            Assert.IsTrue(initialFuelBalanceA == 0);
+            Assert.IsTrue(initialSoulBalanceB == 0);
+
+            simulator.BeginBlock();
+            simulator.GenerateLoanTransfer(userA, userB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals));
+            simulator.EndBlock();
+
+            var finalSoulBalanceA = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userA.Address);
+            var finalFuelBalanceA = nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, userA.Address);
+            var finalSoulBalanceB = nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, userB.Address);
+
+            Assert.IsTrue(finalSoulBalanceA == 0);
+            Assert.IsTrue(finalFuelBalanceA == 0);
+            Assert.IsTrue(finalSoulBalanceB == soulAmount);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, userA.Address, nexus.RootChain, Nexus.FuelTokenSymbol, UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals));
+            simulator.GenerateTransfer(owner, userA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, soulAmount);
+            simulator.EndBlock();
+
+            var outstandingDebt = simulator.Nexus.RootChain.InvokeContract("gas", "GetLoanAmount", userA.Address).AsNumber();
+
+            Assert.IsTrue(outstandingDebt > 0);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(userA, userB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals));
+            simulator.EndBlock();
+
+            outstandingDebt = simulator.Nexus.RootChain.InvokeContract("gas", "GetLoanAmount", userA.Address).AsNumber();
+
+            Assert.IsTrue(outstandingDebt == 0);
+        }
+
+        private void SetupLender(ChainSimulator simulator, KeyPair lender)
+        {
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(lender, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(lender.Address, Address.Null, 1, 9999).
+                    CallContract("gas", "StartLend", lender.Address, lender.Address).
+                    SpendGas(lender.Address).
+                    EndScript());
+            simulator.EndBlock();
+
+            var isLender = simulator.Nexus.RootChain.InvokeContract("gas", "IsLender", lender.Address).AsBool();
+            Assert.IsTrue(isLender);
+        }
+
+#endregion
 
         [TestMethod]
         public void Decimals()
