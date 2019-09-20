@@ -90,10 +90,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             lendedAmount = price * limit;
             Runtime.Expect(lendedAmount <= MaxLendAmount, "limit exceeds maximum allowed for lend");
 
-            var paybackAmount = (lendedAmount * LendReturn) / 100;
             var loan = new GasLoanEntry()
             {
-                amount = paybackAmount,
+                amount = lendedAmount,
                 hash = Runtime.Transaction.Hash,
                 borrower = from,
                 lender = lender
@@ -169,10 +168,24 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (_loanMap.ContainsKey<Address>(from))
             {
                 var loan = _loanMap.Get<Address, GasLoanEntry>(from);
-                if (loan.hash != Runtime.Transaction.Hash)
+
+                Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
+                var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
+
+                if (loan.hash == Runtime.Transaction.Hash)
                 {
-                    Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
-                    var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
+                    var unusedLoanAmount = loan.amount - requiredAmount;
+                    Runtime.Expect(unusedLoanAmount >= 0, "loan amount overflow");
+
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, unusedLoanAmount), "unspend loan payment failed");
+                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
+
+                    var profitAmount = (requiredAmount * LendReturn) / 100;
+                    loan.amount = requiredAmount + profitAmount;
+                    _loanMap.Set<Address, GasLoanEntry>(from, loan);
+                }
+                else
+                {
                     Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, loan.amount), "lend payment failed");
                     _loanMap.Remove<Address>(from);
 
@@ -192,7 +205,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(index >= 0, "loan missing from list");
                     list.RemoveAt<GasLoanEntry>(index);
 
-                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.amount});
+                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.amount });
                 }
             }
 
