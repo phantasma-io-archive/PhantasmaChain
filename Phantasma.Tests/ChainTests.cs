@@ -236,7 +236,7 @@ namespace Phantasma.Tests
         public void GenesisBlock()
         {
             var owner = KeyPair.Generate();
-            var nexus = new Nexus(null, null, () => new OracleSimulator());
+            var nexus = new Nexus(null, null, (n) => new OracleSimulator(n));
 
             Assert.IsTrue(nexus.CreateGenesisBlock("simnet", owner, DateTime.Now));
 
@@ -479,7 +479,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void SwapSimple()
+        public void CosmicSwapSimple()
         {
             var owner = KeyPair.Generate();
             var simulator = new ChainSimulator(owner, 1234);
@@ -514,6 +514,64 @@ namespace Phantasma.Tests
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUserA.Address);
             Assert.IsTrue(finalBalance > originalBalance);
+        }
+
+        [TestMethod]
+        public void ChainSwapSimple()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+
+            var testUser = KeyPair.Generate();
+            var neoKeys = Neo.Core.NeoKey.Generate();
+
+            // 0 - create a lender, this is not part of the swaps, it is a one-time thing
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, () =>
+            {
+                return new ScriptBuilder()
+                .AllowGas(owner.Address, Address.Null, simulator.MinimumFee, 9999)
+                .CallContract("gas", "StartLend", owner.Address, owner.Address)
+                .SpendGas(owner.Address).EndScript();
+            });
+            simulator.EndBlock();
+
+            // 1 - associate a Neo address to a Phantasma address
+            var interopAddress = Pay.Chains.NeoWallet.EncodeAddress(neoKeys.address);
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+            {
+                return new ScriptBuilder()
+                .LoanGas(testUser.Address, simulator.MinimumFee, 9999)
+                .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, 9999)
+                .CallContract("interop", "RegisterLink", testUser.Address, interopAddress)
+                .SpendGas(testUser.Address).EndScript();
+            });
+            simulator.EndBlock();
+
+            // 2 - at this point a real NEO transaction would be done to the NEO address obtained from getPlatforms in the API
+            // here we just use a random hardcoded hash and a fake oracle to simulate it
+            var swapSymbol = Nexus.StakingTokenSymbol;
+            var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", neoKeys.address, swapSymbol, 10);
+
+            var tokenInfo = nexus.GetTokenInfo(swapSymbol);
+
+            // 3 - settle the Neo transaction on Phantasma
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, () =>
+            {
+                return new ScriptBuilder()
+                .CallContract("interop", "SettleTransaction", testUser.Address, Pay.Chains.NeoWallet.NeoPlatform, neoTxHash)
+                .CallContract("swap", "SwapTokens", testUser.Address, swapSymbol, Nexus.FuelTokenSymbol, UnitConversion.ToBigInteger(0.1m, tokenInfo.Decimals))
+                .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, 9999)
+                .SpendGas(testUser.Address).EndScript();
+            });
+            simulator.EndBlock();
+
+            var balance = nexus.RootChain.GetTokenBalance(swapSymbol, testUser.Address);
+            Assert.IsTrue(balance > 0);
         }
 
         [TestMethod]
