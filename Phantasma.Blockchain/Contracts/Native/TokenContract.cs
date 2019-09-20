@@ -14,7 +14,7 @@ using Phantasma.Storage.Context;
 */
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public class TokenContract : SmartContract
+    public sealed class TokenContract : SmartContract
     {
         public override string Name => "token";
 

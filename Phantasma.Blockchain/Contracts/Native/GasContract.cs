@@ -21,7 +21,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger interest;
     }
 
-    public class GasContract : SmartContract
+    public sealed class GasContract : SmartContract
     {
         public override string Name => "gas";
 

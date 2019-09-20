@@ -13,7 +13,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Hash icon;
     }
 
-    public class AppsContract : SmartContract
+    public sealed class AppsContract : SmartContract
     {
         public override string Name => "apps";
 
