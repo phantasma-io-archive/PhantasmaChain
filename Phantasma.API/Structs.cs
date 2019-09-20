@@ -175,7 +175,7 @@ namespace Phantasma.API
         [APIDescription("Address of validator who minted the block")]
         public string validatorAddress;
 
-        [APIDescription("Amount of SOUL rewarded by this fees in this block")]
+        [APIDescription("Amount of KCAL rewarded by this fees in this block")]
         public string reward;
     }
 
