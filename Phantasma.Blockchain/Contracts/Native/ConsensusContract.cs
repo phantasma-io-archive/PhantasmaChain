@@ -165,6 +165,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (subject.StartsWith(SystemPoll))
             {
                 Runtime.Expect(IsValidator(from), "must be validator");
+                Runtime.Expect(mode != ConsensusMode.Popularity, "cannot use popularity mode for system governance");
             }
 
             Runtime.Expect(Runtime.Chain.IsRoot, "not root chain");
