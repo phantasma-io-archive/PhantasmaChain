@@ -27,7 +27,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
 
-        internal StorageMap _borrowerMap; // Address, GasLendEntry
+        internal StorageMap _loanMap; // Address, GasLendEntry
         internal StorageMap _loanList; // Address, List<GasLendEntry>
         internal StorageMap _lenderMap; // Address, Address
         internal StorageList _lenderList; // Address
@@ -108,7 +108,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 borrower = user,
                 lender = lender
             };
-            _borrowerMap.Set<Address, GasLoanEntry>(user, loan);
+            _loanMap.Set<Address, GasLoanEntry>(user, loan);
 
             var list = _loanList.Get<Address, StorageList>(lender);
             list.Add<GasLoanEntry>(loan);
@@ -177,15 +177,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             _allowanceTargets.Remove(from);
 
             // check if there is an active lend and it is time to pay it
-            if (_borrowerMap.ContainsKey<Address>(from))
+            if (_loanMap.ContainsKey<Address>(from))
             {
-                var loan = _borrowerMap.Get<Address, GasLoanEntry>(from);
+                var loan = _loanMap.Get<Address, GasLoanEntry>(from);
                 if (loan.hash != Runtime.Transaction.Hash)
                 {
                     Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
                     var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
                     Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, loan.amount), "lend payment failed");
-                    _borrowerMap.Remove<Address>(from);
+                    _loanMap.Remove<Address>(from);
 
                     var list = _loanList.Get<Address, StorageList>(loan.lender);
                     int index = -1;
@@ -232,9 +232,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetLoanAmount(Address address)
         {
-            if (_borrowerMap.ContainsKey<Address>(address))
+            if (_loanMap.ContainsKey<Address>(address))
             {
-                var entry = _borrowerMap.Get<Address, GasLoanEntry>(address);
+                var entry = _loanMap.Get<Address, GasLoanEntry>(address);
                 return entry.amount;
             }
 
@@ -251,6 +251,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return Address.Null;
+        }
+
+        public GasLoanEntry[] GetLoans(Address from)
+        {
+            var list = _loanList.Get<Address, StorageList>(from);
+            return list.All<GasLoanEntry>();
         }
 
         public void StartLend(Address from, Address to)
