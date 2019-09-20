@@ -676,6 +676,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetAddressVotingPower(Address address)
         {
+            if (GetStake(address) < UnitConversion.ToBigInteger(1000, Nexus.StakingTokenDecimals))
+            {
+                return 0;
+            }
+
             var votingLogbook = _voteHistory.Get<Address, StorageList>(address);
             BigInteger power = 0;
 

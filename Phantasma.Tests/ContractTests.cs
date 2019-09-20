@@ -1253,7 +1253,7 @@ namespace Phantasma.Tests
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract("energy", "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
-            var accountBalance = MinimumValidStake * 100;
+            var accountBalance = MinimumValidStake * 5000;
 
             Transaction tx = null;
 
@@ -1265,7 +1265,10 @@ namespace Phantasma.Tests
             var actualVotingPower = simulator.Nexus.RootChain.InvokeContract("energy", "GetAddressVotingPower", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(actualVotingPower == 0);
 
-            var initialStake = MinimumValidStake;
+            var MinimumVotingStake = MinimumValidStake * 1000;
+            Assert.IsTrue(accountBalance >= MinimumVotingStake);
+
+            var initialStake = MinimumVotingStake;
 
             //-----------
             //Perform stake operation
@@ -1281,7 +1284,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Perform stake operation
-            var addedStake = MinimumValidStake * 2;
+            var addedStake = MinimumVotingStake * 2;
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, () =>
@@ -1330,7 +1333,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Try a partial unstake
-            var stakeReduction = MinimumValidStake;
+            var stakeReduction = MinimumVotingStake;
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, () =>
