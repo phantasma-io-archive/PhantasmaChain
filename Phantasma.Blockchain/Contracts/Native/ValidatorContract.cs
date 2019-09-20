@@ -1,5 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
-using Phantasma.Core.Types;
+﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
@@ -14,14 +13,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         public int slashes;
     }
 
-    public sealed class ConsensusContract : SmartContract
+    public sealed class ValidatorContract : SmartContract
     {
-        public override string Name => "consensus";
+        public override string Name => "validator";
 
         private StorageList _validatorList; //<Address> 
         private StorageMap _validatorMap; // <Address, ValidatorInfo>
 
-        public ConsensusContract() : base()
+        public ValidatorContract() : base()
         {
         }
 
@@ -161,6 +160,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             _validatorMap.Set<Address, ValidatorEntry>(from, validator);
 
             Runtime.Notify(EventKind.ValidatorUpdate, Runtime.Chain.Address, from);
-        }
+        }        
     }
 }

@@ -399,7 +399,7 @@ namespace Phantasma.Blockchain
             switch (contractName)
             {
                 case "nexus": contract= new NexusContract(); break;
-                case "consensus":  contract = new ConsensusContract(); break;
+                case "validator":  contract = new ValidatorContract(); break;
                 case "governance":  contract = new GovernanceContract(); break;
                 case "account":  contract  = new AccountContract(); break;
                 case "friends": contract  = new FriendContract(); break;
@@ -1302,7 +1302,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("consensus", "AddValidator", owner.Address).
+                CallContract("validator", "AddValidator", owner.Address).
                 CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
                 CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 SpendGas(owner.Address).
@@ -1354,7 +1354,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "consensus", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "validator", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
             CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
@@ -1444,13 +1444,13 @@ namespace Phantasma.Blockchain
         #region VALIDATORS
         public IEnumerable<Address> GetValidators()
         {
-            var validators = (Address[])RootChain.InvokeContract("consensus", "GetValidators").ToObject();
+            var validators = (Address[])RootChain.InvokeContract("validator", "GetValidators").ToObject();
             return validators;
         }
 
         public int GetValidatorCount()
         {
-            var count = RootChain.InvokeContract("consensus", "GetActiveValidatorss").AsNumber();
+            var count = RootChain.InvokeContract("validator", "GetActiveValidatorss").AsNumber();
             return (int)count;
         }
 
@@ -1471,7 +1471,7 @@ namespace Phantasma.Blockchain
                 return -1;
             }
 
-            var result = (int)RootChain.InvokeContract("consensus", "GetIndexOfValidator", address).AsNumber();
+            var result = (int)RootChain.InvokeContract("validator", "GetIndexOfValidator", address).AsNumber();
             return result;
         }
 
@@ -1484,7 +1484,7 @@ namespace Phantasma.Blockchain
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = RootChain.InvokeContract("consensus", "GetValidatorByIndex", (BigInteger)index).AsAddress();
+            var result = RootChain.InvokeContract("validator", "GetValidatorByIndex", (BigInteger)index).AsAddress();
             return result;
         }
         #endregion
