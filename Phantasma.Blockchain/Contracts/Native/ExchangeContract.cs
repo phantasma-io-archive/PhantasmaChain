@@ -30,6 +30,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly BigInteger Uid;
         public readonly Timestamp Timestamp;
         public readonly Address Creator;
+        public readonly Address Provider;
 
         public readonly BigInteger Amount;
         public readonly string BaseSymbol;
@@ -40,11 +41,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly ExchangeOrderSide Side;
         public readonly ExchangeOrderType Type;
 
-        public ExchangeOrder(BigInteger uid, Timestamp timestamp, Address creator, BigInteger amount, string baseSymbol, BigInteger price, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType type)
+        public ExchangeOrder(BigInteger uid, Timestamp timestamp, Address creator, Address provider, BigInteger amount, string baseSymbol, BigInteger price, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType type)
         {
             Uid = uid;
             Timestamp = timestamp;
             Creator = creator;
+            Provider = provider;
 
             Amount = amount;
             BaseSymbol = baseSymbol;
@@ -61,6 +63,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Uid = order.Uid;
             Timestamp = order.Timestamp;
             Creator = order.Creator;
+            Provider = order.Provider;
 
             Amount = newOrderSize;
             BaseSymbol = order.BaseSymbol;
@@ -84,6 +87,14 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger price;
     }
 
+    public struct ExchangeProvider
+    {
+        public Address address;
+        public string id;
+        public string name;
+        public Hash dapp;
+    }
+
     public sealed class ExchangeContract : SmartContract
     {
         public override string Name => "exchange";
@@ -94,6 +105,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _orderMap; //<uid, string> // maps orders ids to pairs
         internal StorageMap _fills; //<uid, BigInteger>
         internal StorageMap _escrows; //<uid, BigInteger>
+
+        internal StorageList _exchanges;
 
         public ExchangeContract() : base()
         {
@@ -110,9 +123,47 @@ namespace Phantasma.Blockchain.Contracts.Native
             return GetMinimumQuantity(token.Decimals);
         }
 
-        private void OpenOrder(Address from, string baseSymbol, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType orderType, BigInteger orderSize, BigInteger price)
+        public bool IsExchange(Address address)
+        {
+            var count = _exchanges.Count();
+            for (int i=0; i<count; i++)
+            {
+                var exchange = _exchanges.Get<ExchangeProvider>(i);
+                if (exchange.address == address)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void CreateExchange(Address from, string id, string name)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
+
+            Runtime.Expect(AccountContract.ValidateName(id), "invalid id");
+
+            var exchange = new ExchangeProvider()
+            {
+                address = from,
+                id = id,
+                name = name,
+            };
+
+            _exchanges.Add<ExchangeProvider>(exchange);
+        }
+
+        public ExchangeProvider[] GetExchanges()
+        {
+            return _exchanges.All<ExchangeProvider>();
+        }
+
+        private void OpenOrder(Address from, Address provider, string baseSymbol, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType orderType, BigInteger orderSize, BigInteger price)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            Runtime.Expect(Runtime.GasTarget == provider, "invalid gas target");
 
             Runtime.Expect(baseSymbol != quoteSymbol, "invalid base/quote pair");
 
@@ -162,7 +213,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             StorageList orderList;
             BigInteger orderIndex = 0;
 
-            thisOrder = new ExchangeOrder(uid, Runtime.Time, from, orderSize, baseSymbol, price, quoteSymbol, side, orderType);
+            thisOrder = new ExchangeOrder(uid, Runtime.Time, from, provider, orderSize, baseSymbol, price, quoteSymbol, side, orderType);
             Runtime.Notify(EventKind.OrderCreated, from, uid);
 
             var key = BuildOrderKey(side, quoteSymbol, baseSymbol);
@@ -313,9 +364,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             //TODO: ADD FEES, SEND THEM TO this.Address FOR NOW
         }
 
-        public void OpenMarketOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, ExchangeOrderSide side)
+        public void OpenMarketOrder(Address from, Address provider, string baseSymbol, string quoteSymbol, BigInteger orderSize, ExchangeOrderSide side)
         {
-            OpenOrder(from, baseSymbol, quoteSymbol, side, Market, orderSize, 0);
+            OpenOrder(from, provider, baseSymbol, quoteSymbol, side, Market, orderSize, 0);
         }
 
         /// <summary>
@@ -328,9 +379,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         /// <param name="price">Amount of quote symbol tokens the user wants to pay/receive per unit of base symbol tokens</param>
         /// <param name="side">If the order is a buy or sell order</param>
         /// <param name="IoC">"Immediate or Cancel" flag: if true, requires any unfulfilled parts of the order to be cancelled immediately after a single attempt at fulfilling it.</param>
-        public void OpenLimitOrder(Address from, string baseSymbol, string quoteSymbol, BigInteger orderSize, BigInteger price, ExchangeOrderSide side, bool IoC)
+        public void OpenLimitOrder(Address from, Address provider, string baseSymbol, string quoteSymbol, BigInteger orderSize, BigInteger price, ExchangeOrderSide side, bool IoC)
         {
-            OpenOrder(from, baseSymbol, quoteSymbol, side, IoC ? ImmediateOrCancel : Limit, orderSize, price);
+            OpenOrder(from, provider, baseSymbol, quoteSymbol, side, IoC ? ImmediateOrCancel : Limit, orderSize, price);
         }
 
         public void CancelOrder(BigInteger uid)
