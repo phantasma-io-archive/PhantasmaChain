@@ -41,6 +41,7 @@ namespace Phantasma.Blockchain.Contracts
         private bool randomized;
         private BigInteger seed;
 
+        public BigInteger MinimumFee;
 
         public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
@@ -51,6 +52,7 @@ namespace Phantasma.Blockchain.Contracts
             //Throw.IfNull(block, nameof(block));
             //Throw.IfNull(transaction, nameof(transaction));
 
+            this.MinimumFee = 1;
             this.GasPrice = 0;
             this.UsedGas = 0;
             this.PaidGas = 0;
@@ -188,6 +190,7 @@ namespace Phantasma.Blockchain.Contracts
                 case EventKind.GasEscrow:
                     {
                         var gasInfo = (GasEventData)(object)content;
+                        Expect(gasInfo.price >= this.MinimumFee, "gas fee is too low");
                         this.MaxGas = gasInfo.amount;
                         this.GasPrice = gasInfo.price;
                         break;

@@ -31,7 +31,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.FromWIF(testWIF);
             var sim = new ChainSimulator(owner, 1234);
-            var mempool = useMempool? new Mempool(owner, sim.Nexus, 2) : null;
+            var mempool = useMempool? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var api = new NexusAPI(sim.Nexus, mempool);
 
             var data = new TestData()

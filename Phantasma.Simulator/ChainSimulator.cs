@@ -89,6 +89,8 @@ namespace Phantasma.Simulator
 
         public readonly Logger Logger;
 
+        public BigInteger MinimumFee = 1;
+
         public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, () => new OracleSimulator()), ownerKey, seed, logger)
         {
 
@@ -327,7 +329,7 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                chain.AddBlock(block, txs);
+                                chain.AddBlock(block, txs, MinimumFee);
                                 submitted = true;
                             }
                             catch (Exception e)
@@ -584,7 +586,7 @@ namespace Phantasma.Simulator
             }
 
             var script = ScriptUtils.BeginScript().
-                AllowGas(source.Address, Address.Null, 1, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();

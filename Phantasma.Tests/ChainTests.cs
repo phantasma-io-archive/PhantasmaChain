@@ -415,7 +415,7 @@ namespace Phantasma.Tests
             {
                 if (entry.Symbol == Nexus.FuelTokenSymbol)
                 {
-                    targetRate = UnitConversion.ToDecimal( entry.Value, Nexus.FuelTokenDecimals);
+                    targetRate = UnitConversion.ToDecimal(entry.Value, Nexus.FuelTokenDecimals);
                     break;
                 }
             }
@@ -665,7 +665,7 @@ namespace Phantasma.Tests
 
             var extraFree = UnitConversion.ToBigInteger(0.01m, token.Decimals);
 
-            sideAmount -= extraFree*10;
+            sideAmount -= extraFree * 10;
 
             // do another side chain send using test user balance from apps to target chain
             simulator.BeginBlock();
@@ -677,7 +677,7 @@ namespace Phantasma.Tests
             var appSupplies = new SupplySheet(symbol, sideChain, nexus);
             var childBalance = appSupplies.GetChildBalance(sideChain.Storage, targetChain.Name);
             var expectedChildBalance = sideAmount + extraFree;
-            
+
             // finish the chain transfer
             simulator.BeginBlock();
             var txD = simulator.GenerateSideChainSettlement(receiver, sideChain, targetChain, blockC.Hash);
@@ -1145,7 +1145,7 @@ namespace Phantasma.Tests
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
-            
+
             var initialBalance = sim.Nexus.RootChain.GetTokenBalance(symbol, sim.Nexus.RootChainAddress);
             Assert.IsTrue(initialBalance > 10000);
 
@@ -1170,5 +1170,41 @@ namespace Phantasma.Tests
             Assert.IsTrue(initialBalance == finalBalance);
         }
 
+        [TestMethod]
+        public void TransactionFees()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+            simulator.MinimumFee = 100000;
+
+            var nexus = simulator.Nexus;
+
+            var testUserA = KeyPair.Generate();
+            var testUserB = KeyPair.Generate();
+
+            var fuelAmount = UnitConversion.ToBigInteger(10, Nexus.FuelTokenDecimals);
+            var transferAmount = UnitConversion.ToBigInteger(10, Nexus.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.FuelTokenSymbol, fuelAmount);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            // Send from user A to user B
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
+            var block = simulator.EndBlock().FirstOrDefault();
+
+            Assert.IsTrue(block != null);
+
+            var hash = block.TransactionHashes.First();
+
+            var fee = UnitConversion.ToDecimal(nexus.RootChain.GetTransactionFee(hash), Nexus.FuelTokenDecimals);
+            Assert.IsTrue(fee >= 0.001m);
+
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserB.Address);
+            Assert.IsTrue(finalBalance == transferAmount);
+        }
     }
+
 }

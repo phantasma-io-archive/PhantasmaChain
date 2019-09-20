@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using Phantasma.Storage;
 
 namespace Phantasma.Blockchain
@@ -59,15 +60,18 @@ namespace Phantasma.Blockchain
         private int _size = 0;
         public int Size => _size;
 
+        public BigInteger MinimumFee { get; private set; }
+
         public readonly int BlockTime; // in seconds
 
-        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime)
+        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 
             this._validatorKeys = validatorKeys;
             this.Nexus = nexus;
             this.BlockTime = blockTime;
+            this.MinimumFee = minimumFee;
         }
 
         private void RejectTransaction(Transaction tx, string reason)
@@ -284,7 +288,7 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    chain.AddBlock(block, transactions);
+                    chain.AddBlock(block, transactions, MinimumFee);
                 }
                 catch (InvalidTransactionException e)
                 {

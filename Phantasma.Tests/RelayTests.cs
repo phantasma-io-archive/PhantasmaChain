@@ -26,7 +26,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.FromWIF(testWIF);
             var sim = new ChainSimulator(owner, 1234);
-            var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2) : null;
+            var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var node = useMempool ? new Node(sim.Nexus, mempool, owner, 7073, new List<string>() { "192.168.0.1:7073" }, null) : null;
             var api = useMempool ? new NexusAPI(sim.Nexus, mempool, node) : null;
 
