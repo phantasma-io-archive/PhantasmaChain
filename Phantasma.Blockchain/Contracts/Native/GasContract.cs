@@ -90,7 +90,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsLender(from), "invalid lender address");
 
-            Runtime.Expect(GetLendAmount(user) == 0, "already has an active lend");
+            Runtime.Expect(GetLoanAmount(user) == 0, "already has an active loan");
 
             lendedAmount = maxAmount;
             Runtime.Expect(lendedAmount <= MaxLendAmount, "limit exceeds maximum allowed for lend");
@@ -205,7 +205,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return false;
         }
 
-        public BigInteger GetLendAmount(Address address)
+        public BigInteger GetLoanAmount(Address address)
         {
             if (_borrowerMap.ContainsKey<Address>(address))
             {
