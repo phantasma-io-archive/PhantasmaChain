@@ -31,6 +31,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int MaxLendAmount = 9999;
         public const int LendReturn = 50;
+        public const int MaxLenderCount = 10;
 
         public void AllowGas(Address user, Address target, BigInteger price, BigInteger limit)
         {
@@ -217,8 +218,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private Address FindLender()
         {
-            if (_lenderList.Count() > 0)
+            var count = _lenderList.Count();
+            if (count > 0)
             {
+                var index = Runtime.NextRandom();
                 return _lenderList.Get<Address>(0);
             }
 
@@ -227,6 +230,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void StartLend(Address from)
         {
+            Runtime.Expect(_lenderList.Count() < MaxLenderCount, "too many lenders already");
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(!IsLender(from), "already lending");
 

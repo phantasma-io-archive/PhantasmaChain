@@ -10,6 +10,7 @@ using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
+using System.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -37,6 +38,7 @@ namespace Phantasma.Blockchain.Contracts
         public readonly bool readOnlyMode;
         public readonly bool DelayPayment;
 
+        private bool randomized;
         private BigInteger seed;
 
 
@@ -62,6 +64,8 @@ namespace Phantasma.Blockchain.Contracts
             this.Oracle = oracle;
             this.ChangeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
+
+            this.randomized = false;
 
             this.FeeTargetAddress = Address.Null;
 
@@ -350,22 +354,35 @@ namespace Phantasma.Blockchain.Contracts
         public static readonly uint RND_A = 16807;
         public static readonly uint RND_M = 2147483647;
 
-        // returns a first initial pseudo random number
-        public BigInteger Randomize(byte[] init)
-        {
-            byte[] temp;
-
-            var time = System.BitConverter.GetBytes(Time.Value);
-            temp = ByteArrayUtils.ConcatBytes(time, init);
-
-            var seed = BigInteger.FromSignedArray(temp);
-            return seed;
-        }
-
         // returns a next random number
         public BigInteger NextRandom()
         {
-            seed = ((RND_A * seed) % RND_M);
+            if (!randomized)
+            {
+                // calculates first initial pseudo random number seed
+                byte[] bytes = Transaction != null ? Transaction.Hash.ToByteArray() : new byte[32];
+
+                for (int i = 0; i < this.entryScript.Length; i++)
+                {
+                    var index = i % bytes.Length;
+                    bytes[index] ^= entryScript[i];
+                }
+
+                var time = System.BitConverter.GetBytes(Time.Value);
+
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] ^= time[i % time.Length];
+                }
+
+                seed = BigInteger.FromUnsignedArray(bytes, true);
+                randomized = true;
+            }
+            else
+            {
+                seed = ((RND_A * seed) % RND_M);
+            }
+
             return seed;
         }
         #endregion

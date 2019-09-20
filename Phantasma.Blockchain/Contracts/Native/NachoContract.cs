@@ -7005,7 +7005,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_IDLE;
 
-            BigInteger seed = Runtime.Randomize(battleID.ToSignedByteArray());
+            BigInteger seed = Runtime.NextRandom();
 
             int localIndex = -1;
 
