@@ -46,7 +46,25 @@ namespace Phantasma.Cryptography
 
         public bool IsUser => !IsSystem && !IsInterop;
 
-        public bool IsNull => !_publicKey.Any(x => x != 0);
+        public bool IsNull
+        {
+            get
+            {
+                if (_publicKey == null)
+                {
+                    return true;
+                }
+
+                for (int i = 0; i < _publicKey.Length; i++)
+                {
+                    if (_publicKey[i] != 0)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
 
         private const byte UserOpcode = 75;
         private const byte SystemOpcode = 85;
