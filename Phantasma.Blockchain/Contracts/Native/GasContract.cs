@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
@@ -74,7 +74,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(from.IsUser, "must be a user address");
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(from.IsUser, "destination must be system address");
 
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
@@ -104,7 +103,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = _loanList.Get<Address, StorageList>(lender);
             list.Add<GasLoanEntry>(loan);
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, lender, Runtime.Chain.Address, loan.amount), "gas lend failed");
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, lender, from, loan.amount), "gas lend failed");
             Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lender, price = price, amount = limit });
         }
 
@@ -249,6 +248,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             return list.All<GasLoanEntry>();
         }
 
+        /// <summary>
+        /// Setup a new lender
+        /// </summary>
+        /// <param name="from">Address from which KCAL will be lent</param>
+        /// <param name="to">Address that will receive the profits from the lending (can be the same as the first address)</param>
         public void StartLend(Address from, Address to)
         {
             Runtime.Expect(_lenderList.Count() < MaxLenderCount, "too many lenders already");

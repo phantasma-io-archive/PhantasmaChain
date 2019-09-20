@@ -593,6 +593,34 @@ namespace Phantasma.Simulator
             return tx;
         }
 
+        public Transaction GenerateLoanTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<KeyPair> signees = null)
+        {
+            signees = signees ?? new List<KeyPair>();
+            var found = false;
+            foreach (var signer in signees)
+            {
+                if (signer.Address == source.Address)
+                {
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                signees.Add(source);
+            }
+
+            var script = ScriptUtils.BeginScript().
+                LoanGas(source.Address, 1, 9999).
+                AllowGas(source.Address, Address.Null, 1, 9999).
+                CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
+                SpendGas(source.Address).
+                EndScript();
+
+            var tx = MakeTransaction(signees, chain, script);
+            return tx;
+        }
+
         public Transaction GenerateSwap(KeyPair source, Chain chain, string fromSymbol, string toSymbol, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().
