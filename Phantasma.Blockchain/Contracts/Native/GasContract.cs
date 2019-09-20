@@ -221,8 +221,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var count = _lenderList.Count();
             if (count > 0)
             {
-                var index = Runtime.NextRandom();
-                return _lenderList.Get<Address>(0);
+                var index = Runtime.NextRandom() % count;
+                return _lenderList.Get<Address>(index);
             }
 
             return Address.Null;
