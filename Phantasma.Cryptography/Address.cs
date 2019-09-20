@@ -266,7 +266,7 @@ namespace Phantasma.Cryptography
                     break;
                 }
 
-                var ch = _publicKey[i];
+                var ch = (char)_publicKey[i];
                 sb.Append(ch);
                 i++;
             }
