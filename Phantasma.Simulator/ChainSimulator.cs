@@ -139,7 +139,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
 
-            GenerateCustomTransaction(_owner, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 9999).
+            GenerateCustomTransaction(_owner, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
                 CallContract("nexus", "CreatePlatform", neoAddress, "GAS").
                 CallContract("nexus", "CreatePlatform", ethAddress, "ETH").
             SpendGas(_owner.Address).EndScript());
@@ -448,7 +448,7 @@ namespace Phantasma.Simulator
 
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, 1, 9999).
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
                 CallContract("nexus", "CreateToken", owner.Address, symbol, name, platform, hash, totalSupply, decimals, flags, tokenScript).
                 SpendGas(owner.Address).
                 EndScript();
@@ -464,7 +464,7 @@ namespace Phantasma.Simulator
 
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, 1, 9999).
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
                 CallContract("token", "MintTokens", owner.Address, symbol, amount).
                 SpendGas(owner.Address).
                 EndScript();
@@ -493,7 +493,7 @@ namespace Phantasma.Simulator
 
             var sb = ScriptUtils.
                 BeginScript().
-                AllowGas(source.Address, Address.Null, 1, 9999);
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999);
 
             if (targetAddress != source.Address)
             {
@@ -524,7 +524,7 @@ namespace Phantasma.Simulator
             var script = ScriptUtils.
                 BeginScript().
                 CallContract("token", "SettleBlock", sourceChain.Address, targetHash).
-                AllowGas(source.Address, Address.Null, 1, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 SpendGas(source.Address).
                 EndScript();
             var tx = MakeTransaction(source, destChain, script);
@@ -533,14 +533,14 @@ namespace Phantasma.Simulator
 
         public Transaction GenerateStableClaim(KeyPair source, Chain sourceChain, BigInteger amount)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("bank", "Claim", source.Address, amount).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("bank", "Claim", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
 
         public Transaction GenerateStableRedeem(KeyPair source, Chain sourceChain, BigInteger amount)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("bank", "Redeem", source.Address, amount).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("bank", "Redeem", source.Address, amount).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
@@ -548,7 +548,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateAccountRegistration(KeyPair source, string name)
         {
             var sourceChain = this.Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("account", "RegisterName", source.Address, name).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("account", "RegisterName", source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
 
             pendingNames.Add(source.Address);
@@ -560,7 +560,7 @@ namespace Phantasma.Simulator
             Throw.IfNull(parentchain, nameof(parentchain));
 
             var script = ScriptUtils.BeginScript().
-                AllowGas(source.Address, Address.Null, 1, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name, contracts).
                 SpendGas(source.Address).
                 EndScript();
@@ -613,8 +613,8 @@ namespace Phantasma.Simulator
             }
 
             var script = ScriptUtils.BeginScript().
-                LoanGas(source.Address, 1, 9999).
-                AllowGas(source.Address, Address.Null, 1, 9999).
+                LoanGas(source.Address, MinimumFee, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
@@ -627,7 +627,7 @@ namespace Phantasma.Simulator
         {
             var script = ScriptUtils.BeginScript().
                 CallContract("swap", "SwapTokens", source.Address, fromSymbol, toSymbol, amount).
-                AllowGas(source.Address, Address.Null, 1, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 SpendGas(source.Address).
                 EndScript();
             var tx = MakeTransaction(source, chain, script);
@@ -636,7 +636,7 @@ namespace Phantasma.Simulator
 
         public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
@@ -644,14 +644,14 @@ namespace Phantasma.Simulator
         public Transaction GenerateNftSidechainTransfer(KeyPair source, Address destAddress, Chain sourceChain,
             Chain destChain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "SendToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "SendToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, sourceChain, script);
             return tx;
         }
 
         public Transaction GenerateNftBurn(KeyPair source, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("token", "BurnToken", source.Address, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "BurnToken", source.Address, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
@@ -659,7 +659,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateNftSale(KeyPair source, Chain chain, string tokenSymbol, BigInteger tokenId, BigInteger price)
         {
             Timestamp endDate = this.CurrentTime + TimeSpan.FromDays(5);
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("market", "SellToken", source.Address, tokenSymbol, Nexus.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("market", "SellToken", source.Address, tokenSymbol, Nexus.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
             return tx;
         }
@@ -669,7 +669,7 @@ namespace Phantasma.Simulator
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(source.Address, Address.Null, 1, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 CallContract("token", "MintToken", destAddress, tokenSymbol, rom, ram, value).
                 SpendGas(source.Address).
                 EndScript();
@@ -683,13 +683,13 @@ namespace Phantasma.Simulator
             var contract = "apps";
 
             var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "RegisterApp", source.Address, name).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(contract, "RegisterApp", source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "SetAppUrl", name, url).SpendGas(source.Address).EndScript();
+            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(contract, "SetAppUrl", name, url).SpendGas(source.Address).EndScript();
             tx = MakeTransaction(source, chain, script);
 
-            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract(contract, "SetAppDescription", name, description).SpendGas(source.Address).EndScript();
+            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(contract, "SetAppDescription", name, description).SpendGas(source.Address).EndScript();
             tx = MakeTransaction(source, chain, script);
 
             return tx;
@@ -698,7 +698,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, string value)
         {
             var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, 1, 9999).CallContract("nexus", "SetTokenMetadata", tokenSymbol, key, value).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("nexus", "SetTokenMetadata", tokenSymbol, key, value).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, chain, script);
 
             return tx;
@@ -941,7 +941,7 @@ namespace Phantasma.Simulator
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, () =>
-                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
                     .CallContract("energy", "GetUnclaimed", _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
@@ -955,7 +955,7 @@ namespace Phantasma.Simulator
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, () =>
-                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
                     .CallContract("energy", "GetUnclaimed", _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
@@ -980,7 +980,7 @@ namespace Phantasma.Simulator
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, () =>
-                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, 1, 9999)
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
                     .CallContract("energy", "GetUnclaimed", _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
