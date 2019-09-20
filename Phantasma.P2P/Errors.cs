@@ -4,6 +4,7 @@
     {
         None,
         MessageShouldBeSigned,
+        InvalidAddress,
         InvalidRequest,
         InvalidNexus,
     }

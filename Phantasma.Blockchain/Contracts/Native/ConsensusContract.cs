@@ -108,7 +108,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetIndexOfValidator(Address address)
         {
-            if (address == Address.Null)
+            if (address.IsNull)
             {
                 return -1;
             }

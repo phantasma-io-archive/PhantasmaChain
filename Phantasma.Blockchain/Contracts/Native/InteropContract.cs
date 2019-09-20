@@ -161,7 +161,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 if (evt.Kind == EventKind.TokenReceive && evt.Address == platformInfo.Address)
                 {
-                    Runtime.Expect(evt.Address != Address.Null, "invalid source address");
+                    Runtime.Expect(!evt.Address.IsNull, "invalid source address");
 
                     var transfer = evt.GetContent<TokenEventData>();
                     Runtime.Expect(transfer.value > 0, "amount must be positive and greater than zero");
@@ -191,8 +191,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                     {
                         destination = GetLink(destination, Nexus.PlatformName);
                     }
-
-                    Runtime.Expect(destination != Address.Null, "invalid destination address");
+                    else
+                    {
+                        Runtime.Expect(destination.IsUser, "invalid destination address");
+                    }
 
                     Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = transfer.value, symbol = transfer.symbol });
@@ -204,7 +206,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (evt.Kind == EventKind.TokenClaim)
                 {
                     var destination = evt.Address;
-                    Runtime.Expect(destination != Address.Null, "invalid destination");
+                    Runtime.Expect(!destination.IsNull, "invalid destination");
 
                     var transfer = evt.GetContent<TokenEventData>();
                     Runtime.Expect(transfer.value > 0, "amount must be positive and greater than zero");
@@ -328,7 +330,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(index >= 0, "invalid hash");
 
             var withdraw = _withdraws.Get<InteropWithdraw>(index);
-            Runtime.Expect(withdraw.broker == Address.Null, "broker already set");
+            Runtime.Expect(withdraw.broker.IsNull, "broker already set");
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, this.Address, withdraw.collateralAmount), "collateral payment failed");
             Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
@@ -364,7 +366,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var withdraw = _withdraws.Get<InteropWithdraw>(index);
 
             var brokerAddress = withdraw.broker;
-            Runtime.Expect(brokerAddress != Address.Null, "no broker set");
+            Runtime.Expect(!brokerAddress.IsNull, "no broker set");
 
             var diff = Runtime.Time - withdraw.timestamp;
             var days = diff / 86400; // convert seconds to days
@@ -409,7 +411,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var entry = _withdraws.Get<InteropWithdraw>(i);
                 if (entry.hash == hash)
                 {
-                    if (entry.broker != Address.Null)
+                    if (!entry.broker.IsNull)
                     {
                         return InteropTransferStatus.Pending;
                     }

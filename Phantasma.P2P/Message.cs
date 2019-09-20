@@ -17,7 +17,7 @@ namespace Phantasma.Network.P2P
         public Address Address { get; private set; }
         public Signature Signature { get; private set; }
 
-        public bool IsSigned => Address != Address.Null && Signature != null;
+        public bool IsSigned => !Address.IsNull && Signature != null;
 
         public Message(Opcode opcode, Address address) {
             this.Opcode = opcode;

@@ -572,7 +572,7 @@ namespace Phantasma.API
             }
 
             var address = Nexus.LookUpName(name);
-            if (address == Address.Null)
+            if (address.IsNull)
             {
                 return new ErrorResult { error = "name not owned" };
             }
@@ -1521,7 +1521,7 @@ namespace Phantasma.API
             else
             {
                 address = Nexus.LookUpName(accountInput);
-                if (address == Address.Null)
+                if (address.IsNull)
                 {
                     return new ErrorResult { error = "name not owned" };
                 }
@@ -1557,7 +1557,7 @@ namespace Phantasma.API
             else
             {
                 address = Nexus.LookUpName(accountInput);
-                if (address == Address.Null)
+                if (address.IsNull)
                 {
                     return new ErrorResult { error = "name not owned" };
                 }
@@ -1593,7 +1593,7 @@ namespace Phantasma.API
                 address = Nexus.LookUpName(accountInput);
             }
 
-            if (address == Address.Null)
+            if (address.IsNull)
             {
                 return new ErrorResult { error = "invalid address" };
             }
@@ -1610,7 +1610,7 @@ namespace Phantasma.API
 
             var target = Nexus.RootChain.InvokeContract("interop", "GetLink", address, platform).AsAddress();
 
-            if (target == Address.Null)
+            if (target.IsNull)
             {
                 return new ErrorResult { error = "no mapping found for this address and platform" };
             }

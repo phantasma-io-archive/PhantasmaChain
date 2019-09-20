@@ -2632,11 +2632,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 account.flags |= AccountFlags.Admin;
             }
 
-            if (account.referral == Address.Null)
-            {
-                account.referral = Address.Null;
-            }
-
             if (account.creationTime == 0)
             {
                 account.creationTime = GetCurrentTime();
@@ -2681,7 +2676,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         var fromAccount = GetAccount(from);
         Runtime.Expect(fromAccount.creationTime > 0, "invalid account");
-        Runtime.Expect(fromAccount.referral == Address.Null, "already has referal");
+        Runtime.Expect(fromAccount.referral.IsNull, "already has referal");
 
         var targetAccount = GetAccount(target);
 
@@ -2699,7 +2694,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             referral = referrals.Get<NachoReferral>(i);
             Runtime.Expect(referral.address != from, "already referral");
 
-            if (referral.address == Address.Null && referral.stakeAmount> 0)
+            if (referral.address.IsNull && referral.stakeAmount> 0)
             {
                 referralIndex = i;
             }
@@ -2756,7 +2751,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private BigInteger RegisterReferalPurchase(Address from, BigInteger totalAmount, BigInteger auctionID)
         {
             var fromAccount = GetAccount(from);
-            if (fromAccount.referral == Address.Null)
+            if (fromAccount.referral.IsNull)
             {
                 return 0;
             }
@@ -5105,7 +5100,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (mode == BattleMode.Versus)
             {
                 Runtime.Expect(bet >= 0, "invalid bet");
-                Runtime.Expect(versus != Address.Null, "invalid versus address");
+                Runtime.Expect(!versus.IsNull, "invalid versus address");
             }
             else
             {
@@ -5118,7 +5113,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(bet == 0, "invalid bet");
                 }
 
-                Runtime.Expect(versus == Address.Null, "unexpected versus address");
+                Runtime.Expect(!versus.IsNull, "unexpected versus address");
             }
 
             if (mode != BattleMode.Practice)
@@ -6328,7 +6323,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             UpdateNachoTokenDistributed(amount);
 
-            if (address != Address.Null)
+            if (address.IsUser)
             {
                 var list = _pot.entries.ToList();
 

@@ -32,9 +32,9 @@ namespace Phantasma.Blockchain.Contracts
         {
             get
             {
-                if (_address == Address.Null)
+                if (_address.IsNull)
                 {
-                   _address = Address.FromHash(Name);
+                   _address = Cryptography.Address.FromHash(Name);
                 }
 
                 return _address;

@@ -648,7 +648,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (owner == Address.Null || owner.IsInterop)
+            if (!owner.IsUser)
             {
                 return false;
             }
@@ -1461,7 +1461,7 @@ namespace Phantasma.Blockchain
 
         public int GetIndexOfValidator(Address address)
         {
-            if (address == Address.Null)
+            if (!address.IsUser)
             {
                 return -1;
             }

@@ -372,9 +372,16 @@ namespace Phantasma.Network.P2P
 
         private Message HandleMessage(Peer peer, Message msg)
         {
-            if (msg.IsSigned && msg.Address != Address.Null)
+            if (msg.IsSigned && !msg.Address.IsNull)
             {
-                peer.SetAddress(msg.Address);
+                if (msg.Address.IsUser)
+                {
+                    peer.SetAddress(msg.Address);
+                }
+                else
+                {
+                    return new ErrorMessage(Address, P2PError.InvalidAddress);
+                }
             }
             else
             {

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Collections.Generic;
 using Phantasma.Core;
 using System;
 using Phantasma.Numerics;
@@ -14,7 +13,9 @@ namespace Phantasma.Cryptography
 {
     public struct Address: ISerializable
     {
-        public static readonly Address Null = new Address(new byte[PublicKeyLength]);
+        public static readonly Address Null = new Address(NullPublicKey);
+
+        private static byte[] NullPublicKey => new byte[PublicKeyLength];
 
         private byte[] _publicKey;
         public byte[] PublicKey
@@ -23,7 +24,7 @@ namespace Phantasma.Cryptography
             {
                 if (_publicKey == null)
                 {
-                    return Null.PublicKey;
+                    return NullPublicKey;
                 }
 
                 return _publicKey;
@@ -38,12 +39,14 @@ namespace Phantasma.Cryptography
         public const int PublicKeyLength = 32;
         public const int MaxPlatformNameLength = 10;
 
-        public bool IsSystem => _publicKey != null && (_publicKey.Length > 0 && _publicKey[0] == (byte)'!' || _publicKey.SequenceEqual(Address.Null.PublicKey));
+        public bool IsSystem => _publicKey != null && (_publicKey.Length > 0 && _publicKey[0] == (byte)'!' || IsNull);
 
         // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
         public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == (byte)'*';
 
         public bool IsUser => !IsSystem && !IsInterop;
+
+        public bool IsNull => !_publicKey.Any(x => x != 0);
 
         private const byte UserOpcode = 75;
         private const byte SystemOpcode = 85;
@@ -89,26 +92,46 @@ namespace Phantasma.Cryptography
             this._text = null;
         }
 
-        public Address FromHash(string str)
+        public static Address FromHash(string str)
         {
             var bytes = Encoding.UTF8.GetBytes(str);
             return FromHash(bytes);
         }
 
-        public Address FromHash(byte[] bytes)
+        public static Address FromHash(byte[] bytes)
         {
             var hash = CryptoExtensions.SHA256(bytes);
             hash[0] = SystemOpcode;
             return new Address(hash);
         }
 
-        public static bool operator ==(Address A, Address B) { return A.PublicKey.SequenceEqual(B.PublicKey); }
+        public static bool operator ==(Address A, Address B)
+        {
+            if (A._publicKey == null)
+            {
+                return B._publicKey == null;
+            }
+
+            if (B._publicKey == null || A._publicKey.Length != B._publicKey.Length)
+            {
+                return false;
+            }
+
+            for (int i=0; i<A._publicKey.Length; i++)
+            {
+                if (A._publicKey[i] != B._publicKey[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         public static bool operator !=(Address A, Address B) { return !A.PublicKey.SequenceEqual(B.PublicKey); }
 
         public override string ToString()
         {
-            if (this == Null)
+            if (this.IsNull)
             {
                 return "[Null address]";
             }

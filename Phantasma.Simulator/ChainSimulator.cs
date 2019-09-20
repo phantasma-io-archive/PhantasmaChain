@@ -844,7 +844,7 @@ namespace Phantasma.Simulator
                                 if (currentName == AccountContract.ANONYMOUS)
                                 {
                                     var lookup = Nexus.LookUpName(randomName);
-                                    if (lookup == Address.Null)
+                                    if (lookup.IsNull)
                                     {
                                         Logger.Debug($"Rnd.GenerateAccount: {source.Address} => {randomName}");
                                         GenerateAccountRegistration(source, randomName);

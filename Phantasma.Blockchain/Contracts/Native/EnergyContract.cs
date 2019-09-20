@@ -78,7 +78,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool IsMaster(Address address)
         {
-            return GetMaster(address).address != Address.Null;
+            return !GetMaster(address).address.IsNull;
         }
 
         public BigInteger GetCurrentMasterCount()

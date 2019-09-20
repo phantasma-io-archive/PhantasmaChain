@@ -40,7 +40,7 @@ namespace Phantasma.Network.P2P
         public void SetAddress(Address address)
         {
             this.Address = address;
-            this.Status = address != Address.Null ? Status.Identified : Status.Anonymous;
+            this.Status = address.IsNull ? Status.Anonymous : Status.Identified;
         }
     }
 }

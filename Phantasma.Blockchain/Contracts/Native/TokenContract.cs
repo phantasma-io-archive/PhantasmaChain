@@ -266,7 +266,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var value = data.value;
 
             Runtime.Expect(value > 0, "value must be greater than zero");
-            Runtime.Expect(targetAddress != Address.Null, "target must not be null");
+            Runtime.Expect(targetAddress.IsUser, "target must not user address");
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);

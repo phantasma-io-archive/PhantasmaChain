@@ -21,9 +21,11 @@ namespace Phantasma.Tests
         [TestMethod]
         public void NullAddress()
         {
-            Assert.IsTrue(Address.Null.IsSystem);
-            Assert.IsFalse(Address.Null.IsUser);
-            Assert.IsFalse(Address.Null.IsInterop);
+            var addr = Address.Null;
+            Assert.IsTrue(addr.IsNull);
+            Assert.IsTrue(addr.IsSystem);
+            Assert.IsFalse(addr.IsUser);
+            Assert.IsFalse(addr.IsInterop);
         }
 
         [TestMethod]
@@ -1021,8 +1023,8 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestAddressComparison()
         {
-            var owner = KeyPair.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
-            var address = Address.FromText("PKtRvkhUhAiHsg4YnaxSM9dyyLBogTpHwtUEYvMYDKuV8");
+            var owner = KeyPair.FromWIF("KxWUCAD2wECLfA7diT7sV7V3jcxAf9GSKqZy3cvAt79gQLHQ2Qo8");
+            var address = Address.FromText("PWx9mn1hEtQCNxBEhKPj32L3yjJZFiEcLEGVJtY7xg8Ss");
 
             var simulator = new ChainSimulator(owner, 1234);
             var nexus = simulator.Nexus;

@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            if (GetOwner(storage, tokenID) != Address.Null)
+            if (!GetOwner(storage, tokenID).IsNull)
             {
                 return false;
             }
