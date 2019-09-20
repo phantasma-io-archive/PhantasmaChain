@@ -53,6 +53,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "source address must be user address");
             Runtime.Expect(target.IsInterop, "target address must be interop address");
+            Runtime.Expect(!IsValidator(from), "source address cant be chain validator");
 
             string platformName;
             byte[] data;
