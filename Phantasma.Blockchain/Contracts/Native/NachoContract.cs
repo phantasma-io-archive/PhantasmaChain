@@ -5113,7 +5113,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(bet == 0, "invalid bet");
                 }
 
-                Runtime.Expect(!versus.IsNull, "unexpected versus address");
+                Runtime.Expect(versus.IsNull, "unexpected versus address"); // TODO confirmar se antes estava bem (versus == address.null)
             }
 
             if (mode != BattleMode.Practice)
