@@ -63,7 +63,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.GasEscrow, user, new GasEventData() { address = target, price = price, amount = limit });
         }
 
-        public void LoanGas(Address user, Address target, BigInteger price, BigInteger limit)
+        public void LoanGas(Address from, BigInteger price, BigInteger limit)
         {
             if (Runtime.readOnlyMode)
             {
@@ -72,9 +72,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Chain.IsRoot, "must be a root chain");
 
-            Runtime.Expect(user.IsUser, "must be a user address");
-            Runtime.Expect(target.IsSystem, "destination must be system address");
-            Runtime.Expect(IsWitness(user), "invalid witness");
+            Runtime.Expect(from.IsUser, "must be a user address");
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(from.IsUser, "destination must be system address");
 
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
@@ -84,18 +84,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var maxAmount = price * limit;
 
-            var allowance = _allowanceMap.ContainsKey(user) ? _allowanceMap.Get<Address, BigInteger>(user) : 0;
+            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
             Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
             allowance += maxAmount;
-            _allowanceMap.Set(user, allowance);
-            _allowanceTargets.Set(user, lender);
+            _allowanceMap.Set(from, allowance);
+            _allowanceTargets.Set(from, lender);
 
             BigInteger lendedAmount;
 
             Runtime.Expect(IsLender(lender), "invalid lender address");
 
-            Runtime.Expect(GetLoanAmount(user) == 0, "already has an active loan");
+            Runtime.Expect(GetLoanAmount(from) == 0, "already has an active loan");
 
             lendedAmount = maxAmount;
             Runtime.Expect(lendedAmount <= MaxLendAmount, "limit exceeds maximum allowed for lend");
@@ -105,17 +105,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 amount = temp,
                 hash = Runtime.Transaction.Hash,
-                borrower = user,
+                borrower = from,
                 lender = lender
             };
-            _loanMap.Set<Address, GasLoanEntry>(user, loan);
+            _loanMap.Set<Address, GasLoanEntry>(from, loan);
 
             var list = _loanList.Get<Address, StorageList>(lender);
             list.Add<GasLoanEntry>(loan);
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, lender, Runtime.Chain.Address, loan.amount), "gas lend failed");
-            Runtime.Notify(EventKind.GasEscrow, lender, new GasEventData() { address = target, price = price, amount = limit });
-            Runtime.Notify(EventKind.GasLoan, user, new GasEventData() { address = lender, price = price, amount = limit });
+            Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lender, price = price, amount = limit });
         }
 
         public void SpendGas(Address from)
