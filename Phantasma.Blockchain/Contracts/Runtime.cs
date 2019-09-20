@@ -35,6 +35,7 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
+        public Address GasTarget { get; private set; }
         public readonly bool readOnlyMode;
         public readonly bool DelayPayment;
 
@@ -56,6 +57,7 @@ namespace Phantasma.Blockchain.Contracts
             this.GasPrice = 0;
             this.UsedGas = 0;
             this.PaidGas = 0;
+            this.GasTarget = chain.Address;
             this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
             this.DelayPayment = delayPayment;
 
@@ -193,6 +195,7 @@ namespace Phantasma.Blockchain.Contracts
                         Expect(gasInfo.price >= this.MinimumFee, "gas fee is too low");
                         this.MaxGas = gasInfo.amount;
                         this.GasPrice = gasInfo.price;
+                        this.GasTarget = address;
                         break;
                     }
 
