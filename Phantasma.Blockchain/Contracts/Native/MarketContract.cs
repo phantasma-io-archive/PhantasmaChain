@@ -64,9 +64,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var baseToken = Runtime.Nexus.GetTokenInfo(baseSymbol);
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "base token must be non-fungible");
 
-            var ownerships = new OwnershipSheet(baseSymbol);
-            var owner = ownerships.GetOwner(this.Storage, tokenID);
-            Runtime.Expect(owner == from, "invalid owner");
+            var nft = Runtime.Nexus.GetNFT(baseSymbol, tokenID);
+            Runtime.Expect(nft.CurrentChain == Runtime.Chain.Address, "token not currently in this chain");
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             Runtime.Expect(Runtime.Nexus.TransferToken(Runtime, baseToken.Symbol, from, this.Address, tokenID), "transfer failed");
 
@@ -92,9 +92,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var baseToken = Runtime.Nexus.GetTokenInfo(auction.BaseSymbol);
             Runtime.Expect(!baseToken.Flags.HasFlag(TokenFlags.Fungible), "token must be non-fungible");
 
-            var ownerships = new OwnershipSheet(baseToken.Symbol);
-            var owner = ownerships.GetOwner(this.Storage, auction.TokenID);
-            Runtime.Expect(owner == this.Address, "invalid owner");
+            var nft = Runtime.Nexus.GetNFT(symbol, tokenID);
+            Runtime.Expect(nft.CurrentChain == Runtime.Chain.Address, "token not currently in this chain");
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             if (auction.Creator != from)
             {
