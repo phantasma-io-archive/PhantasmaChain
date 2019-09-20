@@ -261,7 +261,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                votingPower = (BigInteger)Runtime.CallContext("energy", "GetAddressVotingPower", from); 
+                votingPower = (BigInteger)Runtime.CallContext("energy", "GetAddressVotingPower", from);
             }
 
             Runtime.Expect(votingPower > 0, "not enough voting power");
@@ -294,6 +294,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasConsensus(string subject, byte[] value)
         {
+            if (subject.StartsWith(SystemPoll))
+            {
+                var validatorCount = (BigInteger)Runtime.CallContext("validator", "GetValidatorCount");
+                if (validatorCount == 1)
+                {
+                    return true;
+                }
+            }
+
             Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
 
             var poll = FetchPoll(subject);

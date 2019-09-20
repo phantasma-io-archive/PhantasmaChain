@@ -39,6 +39,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             return _validatorList.All<Address>();
         }
 
+        public BigInteger GetValidatorCount()
+        {
+            return _validatorList.Count();
+        }
+
         // here we reintroduce this method, as a faster way to check if an address is a validator
         private new bool IsValidator(Address address)
         {
