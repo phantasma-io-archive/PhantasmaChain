@@ -400,5 +400,8 @@ namespace Phantasma.API
 
         [APIDescription("Features supported by peer")]
         public string flags;
+
+        [APIDescription("Minimum fee required by node")]
+        public string fee;
     }
 }
