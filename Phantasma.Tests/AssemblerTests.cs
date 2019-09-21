@@ -394,11 +394,11 @@ namespace Phantasma.Tests
 
                 $"jmp @end",
 
-                $"@sendHandler: throw",
+                $"@sendHandler: jmp @end",
 
-                $"@receiveHandler: throw",
+                $"@receiveHandler: jmp @end",
 
-                $"@burnHandler: throw",
+                $"@burnHandler: jmp @end",
 
                 $"@mintHandler: load r11 0x{addressStr}",
                 $"push r11",
