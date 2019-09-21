@@ -90,7 +90,7 @@ namespace Phantasma.Tests
             SetupLender(simulator, lender);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(lender, ProofOfWork.None, () =>
+            simulator.GenerateCustomTransaction(lender, ProofOfWork.Moderate, () =>
                 ScriptUtils.BeginScript().
                     LoanGas(lender.Address, 1, 999).
                     AllowGas(lender.Address, Address.Null, 1, 9999).

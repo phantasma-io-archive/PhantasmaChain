@@ -12,7 +12,7 @@ namespace Phantasma.Blockchain.Contracts
         Unknown = 0,
         ChainCreate = 1,
         BlockCreate = 2,
-        Unused2 = 3,
+        BlockClose = 3,
         TokenCreate = 4,
         TokenSend = 5,
         TokenReceive = 6,

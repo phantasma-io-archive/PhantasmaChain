@@ -41,6 +41,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             var amountPerValidator = totalAvailable / validators.Length;
             Runtime.Expect(amountPerValidator > 0, "not enough fees available");
 
+            Runtime.Notify(EventKind.BlockClose, from, Runtime.Chain.Address);
+
             int delivered = 0;
             for (int i = 0; i < validators.Length; i++)
             {

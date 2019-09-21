@@ -36,6 +36,8 @@ namespace Phantasma.Blockchain.Contracts
         public bool DelayPayment { get; private set; }
         public readonly bool readOnlyMode;
 
+        private bool isBlockOperation;
+
         private bool randomized;
         private BigInteger seed;
 
@@ -65,6 +67,7 @@ namespace Phantasma.Blockchain.Contracts
             this.ChangeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
 
+            this.isBlockOperation = false;
             this.randomized = false;
 
             this.FeeTargetAddress = Address.Null;
@@ -91,6 +94,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionState ExecuteInterop(string method)
         {
+            Expect(!isBlockOperation, "no interops available in block operations");
+
             if (handlers.ContainsKey(method))
             {
                 return handlers[method](this);
@@ -138,6 +143,11 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(string contextName)
         {
+            if (isBlockOperation && Nexus.Ready && contextName != Nexus.TokenContractName)
+            {
+                throw new VMDebugException(this, "context not available in block operations");
+            }
+
             var contract = this.Nexus.FindContract(contextName);
             if (contract != null)
             {
@@ -220,8 +230,11 @@ namespace Phantasma.Blockchain.Contracts
             switch (kind)
             {
                 case EventKind.BlockCreate:
+                case EventKind.BlockClose:
+                    Expect(_events.Count == 0, "cannot have events previous to a block event");
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
-                    DelayPayment = true;
+                    isBlockOperation = true;
+                    UsedGas = 0;
                     break;
 
                 case EventKind.GasEscrow:
@@ -293,7 +306,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public ExecutionState ConsumeGas(BigInteger gasCost)
         {
-            if (gasCost == 0)
+            if (gasCost == 0 || isBlockOperation)
             {
                 return ExecutionState.Running;
             }
