@@ -40,7 +40,7 @@ namespace Phantasma.Tests
                 $"ret"
             };
 
-            vm = ExecuteScript(scriptString);
+            vm = ExecuteScriptIsolated(scriptString);
 
             var result = vm.Stack.Pop().AsNumber();
             Assert.IsTrue(result == 5);
@@ -490,7 +490,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 2);
 
@@ -526,7 +526,7 @@ namespace Phantasma.Tests
                 @"ret"
             };
 
-            vm = ExecuteScript(scriptString);
+            vm = ExecuteScriptIsolated(scriptString);
 
             var r1struct = vm.Stack.Pop().AsInterop<TestVM.DebugStruct>();
             var r2struct = vm.Stack.Pop().AsInterop<TestVM.DebugStruct>();
@@ -559,7 +559,7 @@ namespace Phantasma.Tests
                 $"ret"
             };
 
-            vm = ExecuteScript(scriptString);
+            vm = ExecuteScriptIsolated(scriptString);
 
             Assert.IsTrue(vm.Stack.Count == 3);
 
@@ -611,7 +611,7 @@ namespace Phantasma.Tests
                 $"ret"
             };
 
-            vm = ExecuteScript(scriptString);
+            vm = ExecuteScriptIsolated(scriptString);
 
             Assert.IsTrue(vm.Stack.Count == 3);
 
@@ -641,7 +641,7 @@ namespace Phantasma.Tests
                 $"ret"
             };
 
-            vm = ExecuteScript(scriptString);
+            vm = ExecuteScriptIsolated(scriptString);
 
             Assert.IsTrue(vm.Stack.Count == 2);
 
@@ -672,7 +672,7 @@ namespace Phantasma.Tests
                 $"ret"
             };
 
-            var vm = ExecuteScript(scriptString);
+            var vm = ExecuteScriptIsolated(scriptString);
 
             Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -705,7 +705,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -740,7 +740,7 @@ namespace Phantasma.Tests
                     $"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -781,7 +781,7 @@ namespace Phantasma.Tests
                     $"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 2);
 
@@ -821,7 +821,7 @@ namespace Phantasma.Tests
                     $"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -846,7 +846,7 @@ namespace Phantasma.Tests
                 @"ret"
             };
 
-            var vm = ExecuteScript(scriptString);
+            var vm = ExecuteScriptIsolated(scriptString);
 
             Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -863,7 +863,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -904,7 +904,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -923,7 +923,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -964,7 +964,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -983,7 +983,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1024,7 +1024,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1043,7 +1043,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1089,7 +1089,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1128,7 +1128,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1147,7 +1147,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1187,7 +1187,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1206,7 +1206,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1246,7 +1246,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1265,7 +1265,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1305,7 +1305,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1324,7 +1324,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1362,7 +1362,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1380,7 +1380,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1416,7 +1416,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1434,7 +1434,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1472,7 +1472,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1490,7 +1490,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1528,7 +1528,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1546,7 +1546,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1584,7 +1584,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1602,7 +1602,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1640,7 +1640,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1660,7 +1660,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1698,7 +1698,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1718,7 +1718,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1756,7 +1756,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1776,7 +1776,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1814,7 +1814,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1834,7 +1834,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1872,7 +1872,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1892,7 +1892,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1930,7 +1930,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -1950,7 +1950,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -1988,7 +1988,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2008,7 +2008,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -2049,7 +2049,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2068,7 +2068,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -2108,7 +2108,7 @@ namespace Phantasma.Tests
                     @"ret"
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2127,7 +2127,7 @@ namespace Phantasma.Tests
 
             try
             {
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
             }
             catch (Exception e)
             {
@@ -2170,7 +2170,7 @@ namespace Phantasma.Tests
                     @"ret",
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 2);
 
@@ -2214,7 +2214,7 @@ namespace Phantasma.Tests
                     @"ret",
                 };
 
-                vm = ExecuteScript(scriptString);
+                vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2271,7 +2271,7 @@ namespace Phantasma.Tests
                 @"ret",
             };
 
-            vm = ExecuteScript(scriptString, (_vm) =>
+            vm = ExecuteScriptIsolated(scriptString, (_vm) =>
             {
                 // here we register the interop for extcall "Address()"
                 // this part would not need to be here... 
@@ -2326,7 +2326,7 @@ namespace Phantasma.Tests
             script.Add("push r3");
             script.Add("ret");
 
-            vm = ExecuteScript(script);
+            vm = ExecuteScriptIsolated(script);
 
             Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2402,7 +2402,7 @@ namespace Phantasma.Tests
                         break;
                 }
 
-                var vm = ExecuteScript(scriptString);
+                var vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2421,7 +2421,7 @@ namespace Phantasma.Tests
 
             try
             {
-                var vm2 = ExecuteScript(scriptString2);
+                var vm2 = ExecuteScriptIsolated(scriptString2);
             }
             catch (Exception e)
             {
@@ -2459,7 +2459,7 @@ namespace Phantasma.Tests
                 };
         
 
-                var vm = ExecuteScript(scriptString);
+                var vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2479,7 +2479,7 @@ namespace Phantasma.Tests
 
             try
             {
-                var vm2 = ExecuteScript(scriptString2);
+                var vm2 = ExecuteScriptIsolated(scriptString2);
             }
             catch (Exception e)
             {
@@ -2517,7 +2517,7 @@ namespace Phantasma.Tests
                 };
 
 
-                var vm = ExecuteScript(scriptString);
+                var vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2537,7 +2537,7 @@ namespace Phantasma.Tests
 
             try
             {
-                var vm2 = ExecuteScript(scriptString2);
+                var vm2 = ExecuteScriptIsolated(scriptString2);
             }
             catch (Exception e)
             {
@@ -2574,7 +2574,7 @@ namespace Phantasma.Tests
                 };
 
 
-                var vm = ExecuteScript(scriptString);
+                var vm = ExecuteScriptIsolated(scriptString);
 
                 Assert.IsTrue(vm.Stack.Count == 1);
 
@@ -2593,7 +2593,7 @@ namespace Phantasma.Tests
 
             try
             {
-                var vm2 = ExecuteScript(scriptString2);
+                var vm2 = ExecuteScriptIsolated(scriptString2);
             }
             catch (Exception e)
             {
@@ -2627,12 +2627,11 @@ namespace Phantasma.Tests
         #endregion
 
         #region AuxFunctions
-        private TestVM ExecuteScript(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
+        private TestVM ExecuteScriptWithNexus(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
         {
             var owner = KeyPair.Generate();
             var script = AssemblerUtils.BuildScript(scriptString);
 
-            var keys = KeyPair.Generate();
             var nexus = new Nexus(new ConsoleLogger());
             nexus.CreateGenesisBlock("asmnet", owner, Timestamp.Now);
             var tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);
@@ -2647,7 +2646,21 @@ namespace Phantasma.Tests
             return vm;
         }
 
-        private TestVM ExecuteScript(IEnumerable<string> scriptString, out Transaction tx, Action<TestVM> beforeExecute = null)
+        private TestVM ExecuteScriptIsolated(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
+        {
+            var script = AssemblerUtils.BuildScript(scriptString);
+
+            var vm = new TestVM(script);
+            vm.ThrowOnFault = true;
+
+            beforeExecute?.Invoke(vm);
+
+            vm.Execute();
+
+            return vm;
+        }
+
+        private TestVM ExecuteScriptIsolated(IEnumerable<string> scriptString, out Transaction tx, Action<TestVM> beforeExecute = null)
         {
             var owner = KeyPair.Generate();
             var script = AssemblerUtils.BuildScript(scriptString);
