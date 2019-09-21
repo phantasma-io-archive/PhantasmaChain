@@ -13,6 +13,7 @@ using Phantasma.Storage;
 using Phantasma.Blockchain;
 using Phantasma.Pay;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.CodeGen.Assembler;
 
 namespace Phantasma.Simulator
 {
@@ -507,7 +508,37 @@ namespace Phantasma.Simulator
 
         public Transaction GenerateToken(KeyPair owner, string symbol, string name, string platform, Hash hash, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
         {
-            tokenScript = tokenScript ?? new byte[0];
+            if (tokenScript == null)
+            {
+                // small script that restricts minting of tokens to owner
+                var addressStr = Base16.Encode(owner.Address.PublicKey);
+                var scriptString = new string[] {
+                $"alias r1, $triggerMint",
+                $"alias r2, $currentTrigger",
+                $"alias r3, $comparisonResult",
+                $"alias r4, $from",
+                $"alias r5, $owner",
+
+                $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
+                $"pop $currentTrigger",
+
+                $"equal $triggerMint, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @mintHandler",
+                $"jmp @end",
+
+                $"@mintHandler: pop $from",
+                $"load $owner 0x{addressStr}",
+                "push $owner",
+                "extcall \"Address()\"",
+                "pop $owner",
+                $"equal $from, $owner, $comparisonResult",
+                $"jmpif $comparisonResult, @end",
+                $"throw",
+
+                $"@end: ret"
+                };
+                tokenScript = AssemblerUtils.BuildScript(scriptString);
+            }
 
             var script = ScriptUtils.
                 BeginScript().
@@ -521,14 +552,14 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction MintTokens(KeyPair owner, string symbol, BigInteger amount)
+        public Transaction MintTokens(KeyPair owner, Address destination, string symbol, BigInteger amount)
         {
             var chain = Nexus.RootChain;
 
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallContract("token", "MintTokens", owner.Address, symbol, amount).
+                CallContract("token", "MintTokens", owner.Address, destination, symbol, amount).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -719,7 +750,7 @@ namespace Phantasma.Simulator
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallContract("token", "MintToken", destAddress, tokenSymbol, rom, ram, value).
+                CallContract("token", "MintToken", source.Address, destAddress, tokenSymbol, rom, ram, value).
                 SpendGas(source.Address).
                 EndScript();
 

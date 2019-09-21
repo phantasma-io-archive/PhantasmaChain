@@ -2075,7 +2075,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, user.Address, nexus.RootChain, FuelTokenSymbol, 100000000);
-            simulator.MintTokens(owner, infiToken.Symbol, infiAmount);
+            simulator.MintTokens(owner, owner.Address, infiToken.Symbol, infiAmount);
             simulator.EndBlock();
 
             var balance = nexus.RootChain.GetTokenBalance(infiToken.Symbol, owner.Address);

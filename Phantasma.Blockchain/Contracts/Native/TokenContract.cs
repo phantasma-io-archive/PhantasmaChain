@@ -7,10 +7,11 @@ using Phantasma.Storage.Context;
 
 /*
  * Token script triggers
- * OnMint(symbol, address, amount)
- * OnBurn(symbol, address, amount)
- * OnSend(symbol, address, amount)
- * OnReceive(symbol, address, amount)
+ * OnMint(address, symbol, amount)
+ * OnBurn(address, symbol, amount)
+ * OnSend(address, symbol, amount)
+ * OnReceive(address, symbol, amount)
+ * OnMetadata(address, symbol, key, value)
 */
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -22,6 +23,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string TriggerBurn = "OnBurn";
         public static readonly string TriggerSend = "OnSend";
         public static readonly string TriggerReceive = "OnReceive";
+        public static readonly string TriggerMetadata = "OnMetadata";
+
+        private StorageMap _metadata;
 
         #region FUNGIBLE TOKENS
         public void SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount)
@@ -59,8 +63,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChainAddress });
         }
 
-        public void MintTokens(Address to, string symbol, BigInteger amount)
+        public void MintTokens(Address from, Address to, string symbol, BigInteger amount)
         {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
@@ -69,8 +75,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
-
-            Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, to, amount), "minting failed");
 
@@ -140,12 +144,12 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // TODO minting a NFT will require a certain amount of KCAL that is released upon burning
-        public BigInteger MintToken(Address to, string symbol, byte[] rom, byte[] ram, BigInteger value)
+        public BigInteger MintToken(Address from, Address to, string symbol, byte[] rom, byte[] ram, BigInteger value)
         {
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(!tokenInfo.IsFungible, "token must be non-fungible");
-            Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
+            Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
             Runtime.Expect(Runtime.Chain.Name == Nexus.RootChainName, "can only mint nft in root chain");
@@ -161,7 +165,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (tokenInfo.IsBurnable)
             {
                 Runtime.Expect(value > 0, "token must have value");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, tokenInfo.Owner, Runtime.Chain.Address, tokenID), "minting escrow failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, Runtime.Chain.Address, tokenID), "minting escrow failed");
                 Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = value, chainAddress = Runtime.Chain.Address });
             }
             else
@@ -330,6 +334,76 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(settlements > 0, "no settlements in the block");
             RegisterHashAsKnown(hash);
+        }
+        #endregion
+
+        #region METADATA
+        public void SetMetadata(Address from, string symbol, string key, string value)
+        {
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            var tokenTriggerResult = SmartContract.InvokeTrigger(Runtime, tokenInfo.Script, TokenContract.TriggerMetadata, from, symbol, key, value);
+            Runtime.Expect(tokenTriggerResult, "trigger failed");
+
+            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
+
+            int index = -1;
+
+            var count = metadataEntries.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var temp = metadataEntries.Get<Metadata>(i);
+                if (temp.key == key)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            var metadata = new Metadata() { key = key, value = value };
+            if (index >= 0)
+            {
+                metadataEntries.Replace<Metadata>(index, metadata);
+            }
+            else
+            {
+                metadataEntries.Add<Metadata>(metadata);
+            }
+
+            Runtime.Notify(EventKind.Metadata, from, new MetadataEventData() { type = "token", metadata = metadata });
+        }
+
+        public string GetMetadata(string symbol, string key)
+        {
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
+
+            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
+
+            var count = metadataEntries.Count();
+            for (int i = 0; i < count; i++)
+            {
+                var temp = metadataEntries.Get<Metadata>(i);
+                if (temp.key == key)
+                {
+                    return temp.value;
+                }
+            }
+
+            return null;
+        }
+
+        public Metadata[] GetMetadataList(string symbol)
+        {
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
+            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
+
+            var metadataEntries = _metadata.Get<string, StorageList>(symbol);
+
+            return metadataEntries.All<Metadata>();
         }
         #endregion
     }

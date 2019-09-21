@@ -702,7 +702,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal bool CreateToken(Address owner, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        internal bool CreateToken(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             if (symbol == null || name == null || maxSupply < 0)
             {
@@ -735,7 +735,7 @@ namespace Phantasma.Blockchain
                 Throw.If(decimals > 0, "indivisible token can't have decimals");
             }
 
-            var tokenInfo = new TokenInfo(owner, symbol, name, platform, hash, maxSupply, decimals, flags, script);
+            var tokenInfo = new TokenInfo(symbol, name, platform, hash, maxSupply, decimals, flags, script);
             EditToken(symbol, tokenInfo);
 
             // add to persistent list of tokens
@@ -818,14 +818,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, symbol, target, amount);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, symbol, target, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -861,14 +861,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, symbol, target, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, target, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, symbol, target, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -910,14 +910,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, symbol, target, amount);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, symbol, target, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -960,14 +960,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, symbol, target, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, target, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, symbol, target, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1015,27 +1015,27 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, symbol, source, amount);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, source, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, symbol, destination, amount);
+            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, destination, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(source);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, symbol, source, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, source, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
             accountScript = this.LookUpAddressScript(destination);
-            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerReceive, symbol, destination, amount);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerReceive, destination, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1084,27 +1084,27 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, symbol, source, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, source, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, symbol, destination, tokenID);
+            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, destination, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(source);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, symbol, source, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerSend, source, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
             accountScript = this.LookUpAddressScript(destination);
-            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerReceive, symbol, destination, tokenID);
+            accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerReceive, destination, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1269,7 +1269,7 @@ namespace Phantasma.Blockchain
         {
             var sb = ScriptUtils.BeginScript();
 
-            sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
+            sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             // requires staking token to be created previously
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
             sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
@@ -1372,9 +1372,9 @@ namespace Phantasma.Blockchain
             var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "validator", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
-            CreateToken(owner.Address, StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
-            CreateToken(owner.Address, FuelTokenSymbol, FuelTokenName, PlatformName, Hash.FromString(FuelTokenSymbol), PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
-            CreateToken(owner.Address, FiatTokenSymbol, FiatTokenName, PlatformName, Hash.FromString(FiatTokenSymbol), 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            CreateToken(StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
+            CreateToken(FuelTokenSymbol, FuelTokenName, PlatformName, Hash.FromString(FuelTokenSymbol), PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
+            CreateToken(FiatTokenSymbol, FiatTokenName, PlatformName, Hash.FromString(FiatTokenSymbol), 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
 
             // create genesis transactions
             var transactions = new List<Transaction>

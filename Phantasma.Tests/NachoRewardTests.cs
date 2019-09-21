@@ -38,7 +38,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateToken(owner, NACHO_SYMBOL, NACHO_SYMBOL, Nexus.PlatformName, Hash.FromString(NACHO_SYMBOL), tokenSupply, NACHO_TOKEN_DECIMALS, Fungible | Transferable | Finite | Divisible);
-            simulator.MintTokens(owner, NACHO_SYMBOL, tokenSupply);
+            simulator.MintTokens(owner, owner.Address, NACHO_SYMBOL, tokenSupply);
             simulator.EndBlock();
 
             var buyer = KeyPair.Generate();
@@ -47,7 +47,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, buyer.Address, nexus.RootChain, FuelTokenSymbol, 100000000);
-            simulator.MintTokens(owner, FiatTokenSymbol,
+            simulator.MintTokens(owner, owner.Address, FiatTokenSymbol,
                 new BigInteger("1000000000000000000000000000000000000000000000000", 10) * GetUnitValue(FiatTokenDecimals));
             //simulator.GenerateTransfer(owner, buyer.Address, nexus.RootChain, Nexus.FiatTokenSymbol, 1000000 * UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals));
             simulator.EndBlock();
@@ -109,7 +109,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateToken(owner, NACHO_SYMBOL, NACHO_SYMBOL, Nexus.PlatformName, Hash.FromString(NACHO_SYMBOL), tokenSupply, NACHO_TOKEN_DECIMALS, Fungible | Transferable | Finite | Divisible);
-            simulator.MintTokens(owner, NACHO_SYMBOL, tokenSupply);
+            simulator.MintTokens(owner, owner.Address, NACHO_SYMBOL, tokenSupply);
             simulator.EndBlock();
 
             var buyer = KeyPair.Generate();
@@ -118,7 +118,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, buyer.Address, nexus.RootChain, FuelTokenSymbol, 100000000);
-            simulator.MintTokens(owner, FiatTokenSymbol,
+            simulator.MintTokens(owner, owner.Address, FiatTokenSymbol,
                 new BigInteger("1000000000000000000000000000000000000000000000000", 10) * GetUnitValue(FiatTokenDecimals));
             //simulator.GenerateTransfer(owner, buyer.Address, nexus.RootChain, Nexus.FiatTokenSymbol, 1000000 * UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals));
             simulator.EndBlock();

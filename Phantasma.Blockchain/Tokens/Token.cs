@@ -39,15 +39,12 @@ namespace Phantasma.Blockchain.Tokens
         public bool IsTransferable => Flags.HasFlag(TokenFlags.Transferable);
         public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
 
-        public Address Owner { get; private set; }
-
         public int Decimals { get; private set; }
 
         public byte[] Script { get; private set; }
 
-        internal TokenInfo(Address owner, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        internal TokenInfo(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
-            this.Owner = owner;
             this.Symbol = symbol;
             this.Name = name;
             this.Platform = platform;
@@ -65,7 +62,6 @@ namespace Phantasma.Blockchain.Tokens
 
         public void SerializeData(BinaryWriter writer)
         {
-            writer.WriteAddress(Owner);
             writer.WriteVarString(Symbol);
             writer.WriteVarString(Name);
             writer.WriteVarString(Platform);
@@ -78,7 +74,6 @@ namespace Phantasma.Blockchain.Tokens
 
         public void UnserializeData(BinaryReader reader)
         {
-            Owner = reader.ReadAddress();
             Symbol = reader.ReadVarString();
             Name = reader.ReadVarString();
             Platform = reader.ReadVarString();

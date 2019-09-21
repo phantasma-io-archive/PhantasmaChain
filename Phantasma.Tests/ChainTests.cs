@@ -355,7 +355,7 @@ namespace Phantasma.Tests
             var tokenSupply = UnitConversion.ToBigInteger(10000, 18);
             simulator.BeginBlock();
             simulator.GenerateToken(owner, symbol, "BlaToken", Nexus.PlatformName, Hash.FromString(symbol), tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
-            simulator.MintTokens(owner, symbol, tokenSupply);
+            simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
             var token = nexus.GetTokenInfo(symbol);
@@ -395,7 +395,7 @@ namespace Phantasma.Tests
             var tokenSupply = UnitConversion.ToBigInteger(100000000, 18);
             simulator.BeginBlock();
             simulator.GenerateToken(owner, symbol, "BlaToken", Nexus.PlatformName, Hash.FromString(symbol), tokenSupply, 0, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
-            simulator.MintTokens(owner, symbol, tokenSupply);
+            simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
             var token = nexus.GetTokenInfo(symbol);

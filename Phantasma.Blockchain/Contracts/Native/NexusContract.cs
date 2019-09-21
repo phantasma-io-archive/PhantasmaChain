@@ -38,13 +38,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int MAX_TOKEN_DECIMALS = 18;
 
-        private StorageMap _tokenMetadata;
-
         public NexusContract() : base()
         {
         }
 
-        public void CreateToken(Address owner, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, BigInteger decimals, TokenFlags flags, byte[] script)
+        public void CreateToken(Address from, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, BigInteger decimals, TokenFlags flags, byte[] script)
         {
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
@@ -80,7 +78,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (flags.HasFlag(TokenFlags.External))
             {
-                Runtime.Expect(owner == Runtime.Nexus.GenesisAddress, "external token not permitted");
+                Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "genesis address only");
                 Runtime.Expect(platform != Nexus.PlatformName, "external token chain required");
                 Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "platform not found");
             }
@@ -89,13 +87,13 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(platform == Nexus.PlatformName, "chain name is invalid");
             }
 
-            Runtime.Expect(IsWitness(owner), "invalid witness");
-            Runtime.Expect(owner.IsUser, "owner address must be user address");
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(from.IsUser, "owner address must be user address");
 
             symbol = symbol.ToUpperInvariant();
 
-            Runtime.Expect(this.Runtime.Nexus.CreateToken(owner, symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
-            Runtime.Notify(EventKind.TokenCreate, owner, symbol);
+            Runtime.Expect(this.Runtime.Nexus.CreateToken(symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
+            Runtime.Notify(EventKind.TokenCreate, from, symbol);
         }
 
         public void CreateChain(Address owner, string name, string parentName, string[] contracts)
@@ -189,72 +187,5 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Notify(EventKind.AddressRegister, target, platformName);
         }
-
-
-        public void SetTokenMetadata(string symbol, string key, string value)
-        {
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
-            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
-
-            Runtime.Expect(IsWitness(tokenInfo.Owner), "invalid witness");
-
-            var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
-
-            int index = -1;
-
-            var count = metadataEntries.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var temp = metadataEntries.Get<Metadata>(i);
-                if (temp.key == key)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            var metadata = new Metadata() { key = key, value = value };
-            if (index >= 0)
-            {
-                metadataEntries.Replace<Metadata>(index, metadata);
-            }
-            else
-            {
-                metadataEntries.Add<Metadata>(metadata);
-            }
-
-            Runtime.Notify(EventKind.Metadata, tokenInfo.Owner, new MetadataEventData() { type = "token", metadata = metadata });
-        }
-
-        public string GetTokenMetadata(string symbol, string key)
-        {
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
-            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
-
-            var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
-
-            var count = metadataEntries.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var temp = metadataEntries.Get<Metadata>(i);
-                if (temp.key == key)
-                {
-                    return temp.value;
-                }
-            }
-
-            return null;
-        }
-
-        public Metadata[] GetTokenMetadataList(string symbol)
-        {
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
-            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
-
-            var metadataEntries = _tokenMetadata.Get<string, StorageList>(symbol);
-
-            return metadataEntries.All<Metadata>();
-        }
-
     }
 }

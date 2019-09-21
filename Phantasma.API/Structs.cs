@@ -201,9 +201,6 @@ namespace Phantasma.API
         [APIDescription("Max amount of tokens that can be minted")]
         public string maxSupply;
 
-        [APIDescription("Address that controls minting of tokens")]
-        public string ownerAddress;
-
         [APIDescription("Platform of token")]
         public string platform;
 
