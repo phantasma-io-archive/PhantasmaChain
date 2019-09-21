@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
-using Phantasma.VM.Contracts;
 using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Types;
-using Phantasma.Core.Utils;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
-using System.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -360,7 +357,7 @@ namespace Phantasma.Blockchain.Contracts
         public static readonly uint RND_M = 2147483647;
 
         // returns a next random number
-        public BigInteger NextRandom()
+        public BigInteger GetRandomNumber()
         {
             if (!randomized)
             {

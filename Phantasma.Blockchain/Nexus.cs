@@ -1468,9 +1468,23 @@ namespace Phantasma.Blockchain
             return (int)count;
         }
 
-        public bool IsValidator(Address address)
+        public bool IsActiveValidator(Address address)
         {
-            return GetIndexOfValidator(address) >= 0;
+            var result = RootChain.InvokeContract("validator", "IsActiveValidator", address).AsBool();
+            return result;
+        }
+
+        public bool IsWaitingValidator(Address address)
+        {
+            var result = RootChain.InvokeContract("validator", "IsWaitingValidator", address).AsBool();
+            return result;
+        }
+
+        // this returns true for both active and waiting
+        public bool IsKnownValidator(Address address)
+        {
+            var result = RootChain.InvokeContract("validator", "IsKnownValidator", address).AsBool();
+            return result;
         }
 
         public int GetIndexOfValidator(Address address)

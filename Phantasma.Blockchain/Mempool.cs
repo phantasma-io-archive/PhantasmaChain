@@ -232,7 +232,7 @@ namespace Phantasma.Blockchain
             Thread.Sleep(BlockTime * 1000);
 
             // we must be a staked validator to do something...
-            if (!Nexus.IsValidator(this.ValidatorAddress))
+            if (!Nexus.IsActiveValidator(this.ValidatorAddress))
             {
                 return true;
             }

@@ -299,10 +299,10 @@ namespace Phantasma.Tests
             var children = nexus.GetChildChainsByName(rootChain.Name);
             Assert.IsTrue(children.Any());
 
-            Assert.IsTrue(nexus.IsValidator(owner.Address));
+            Assert.IsTrue(nexus.IsActiveValidator(owner.Address));
 
             var randomKey = KeyPair.Generate();
-            Assert.IsFalse(nexus.IsValidator(randomKey.Address));
+            Assert.IsFalse(nexus.IsActiveValidator(randomKey.Address));
 
             /*var txCount = nexus.GetTotalTransactionCount();
             Assert.IsTrue(txCount > 0);*/

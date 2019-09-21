@@ -93,11 +93,6 @@ namespace Phantasma.Blockchain.Contracts
             return Runtime.Transaction.IsSignedBy(address);
         }
 
-        public bool IsValidator(Address address)
-        {
-            return Runtime.Nexus.IsValidator(address);
-        }
-
         #region METHOD TABLE
         private void BuildMethodTable()
         {

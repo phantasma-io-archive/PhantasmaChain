@@ -53,7 +53,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "source address must be user address");
             Runtime.Expect(target.IsInterop, "target address must be interop address");
-            Runtime.Expect(!IsValidator(from), "source address cant be chain validator");
+            Runtime.Expect(!Runtime.Nexus.IsKnownValidator(from), "source address cant be chain validator");
 
             string platformName;
             byte[] data;
@@ -314,7 +314,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SetBroker(Address from, Hash hash)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(IsValidator(from), "invalid validator");
+            Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "invalid validator");
 
             var count = _withdraws.Count();
             var index = -1;

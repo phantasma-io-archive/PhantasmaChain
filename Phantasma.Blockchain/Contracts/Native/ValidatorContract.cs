@@ -8,7 +8,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public enum ValidatorStatus
     {
         Active,
-        StandBy,
+        Waiting, // aka StandBy
         Rejected,
     }
 
@@ -25,6 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public const string ActiveValidatorCountTag = "validator.active.count";
         public const string StandByValidatorCountTag = "validator.standby.count";
+        public const string ValidatorPollTag = "elections";
 
         public override string Name => "validator";
 
@@ -33,11 +34,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public ValidatorContract() : base()
         {
-        }
-
-        public BigInteger GetRequiredStake()
-        {
-            return UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals); // TODO this should be dynamic
         }
 
         public Address[] GetValidators()
@@ -52,14 +48,52 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public ValidatorEntry GetValidator(Address address)
         {
-            Runtime.Expect(IsValidator(address), "not a validator");
+            Runtime.Expect(IsKnownValidator(address), "not a validator");
             return _validatorMap.Get<Address, ValidatorEntry>(address);
         }
 
-        // here we reintroduce this method, as a faster way to check if an address is a validator
-        private new bool IsValidator(Address address)
+        private bool IsActiveValidator(Address address)
         {
-            return _validatorMap.ContainsKey(address);
+            if (_validatorMap.ContainsKey(address))
+            {
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
+                return validator.status == ValidatorStatus.Active;
+            }
+
+            return false;
+        }
+
+        private bool IsWaitingValidator(Address address)
+        {
+            if (_validatorMap.ContainsKey(address))
+            {
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
+                return validator.status == ValidatorStatus.Waiting;
+            }
+
+            return false;
+        }
+
+        private bool IsRejectedValidator(Address address)
+        {
+            if (_validatorMap.ContainsKey(address))
+            {
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
+                return validator.status == ValidatorStatus.Rejected;
+            }
+
+            return false;
+        }
+
+        private bool IsKnownValidator(Address address)
+        {
+            if (_validatorMap.ContainsKey(address))
+            {
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
+                return validator.status != ValidatorStatus.Rejected;
+            }
+
+            return false;
         }
 
         public void AddValidator(Address from)
@@ -74,12 +108,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var max = Runtime.GetGovernanceValue(ActiveValidatorCountTag);
                 Runtime.Expect(count < max, "no open validators spots");
 
-                var pollName = ConsensusContract.SystemPoll + "validators";
+                var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
                 var hasConsensus = (bool)Runtime.CallContext("consensus", "HasRank", pollName, from, max);
                 Runtime.Expect(hasConsensus, "no consensus for electing this address");
             }
 
-            var requiredStake = GetRequiredStake();
+            var requiredStake = EnergyContract.MasterAccountThreshold;
             var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
@@ -101,7 +135,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void RemoveValidator(Address from)
         {
             Runtime.Expect(from.IsUser, "must be user address");
-            Runtime.Expect(IsValidator(from), "validator failed");
+            Runtime.Expect(IsKnownValidator(from), "not a validator");
 
             var count = _validatorList.Count();
             Runtime.Expect(count > 1, "cant remove last validator");
@@ -117,7 +151,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 brokenRules = true;
             }
 
-            var requiredStake = GetRequiredStake();
+            var requiredStake = EnergyContract.MasterAccountThreshold;
             var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
 
             if (stakedAmount < requiredStake)
@@ -184,7 +218,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var count = _validatorList.Count();
             if (count > 0)
             {
-                Runtime.Expect(IsValidator(from), "validator failed");
+                Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "validator failed");
                 Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
 
                 var validator = _validatorMap.Get<Address, ValidatorEntry>(from);
@@ -197,7 +231,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CloseBlock(Address from)
         {
-            Runtime.Expect(IsValidator(from), "validator failed");
+            Runtime.Expect(IsActiveValidator(from), "validator failed");
             Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
             Runtime.Expect(IsWitness(from), "witness failed");
 

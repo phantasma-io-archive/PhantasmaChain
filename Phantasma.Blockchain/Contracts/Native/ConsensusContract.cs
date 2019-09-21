@@ -58,7 +58,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Timestamp endTime;
         public BigInteger votesPerUser;
         public BigInteger totalVotes;
-        public byte[] script;
     }
 
     public struct PollPresence
@@ -179,11 +178,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             return poll;
         }
 
-        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, PollChoice[] choices, BigInteger votesPerUser, byte[] script)
+        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, PollChoice[] choices, BigInteger votesPerUser)
         {
             if (subject.StartsWith(SystemPoll))
             {
-                Runtime.Expect(IsValidator(from), "must be validator");
+                Runtime.Expect(Runtime.Nexus.IsActiveValidator(from), "must be validator");
                 Runtime.Expect(mode == ConsensusMode.Majority, "must use majority mode for system governance");
             }
 
@@ -202,8 +201,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             var maxEndTime = new Timestamp(startTime.Value + MaximumPollLength);
             Runtime.Expect(endTime >= minEndTime, "invalid end time");
             Runtime.Expect(endTime <= maxEndTime, "invalid end time");
-
-            Runtime.Expect(script != null && script.Length > 0, "invalid script");
 
             Runtime.Expect(votesPerUser > 0, "number of votes per user too low");
             Runtime.Expect(votesPerUser < choices.Length, "number of votes per user too high");
@@ -229,13 +226,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             poll.endTime = endTime;
             poll.kind = kind;
             poll.mode = mode;
-            poll.script = script;
             poll.state = PollState.Inactive;
             poll.votesPerUser = votesPerUser;
             poll.totalVotes = 0;
 
+            var electionName = SystemPoll + ValidatorContract.ValidatorPollTag;
+            if (subject == electionName)
+            {
+                for (int i = 0; i < choices.Length; i++)
+                {
+                    Runtime.Expect(choices[i].value.Length == Address.PublicKeyLength, "election choices must be public addresses");
+                    var address = new Address(choices[i].value);
+                    Runtime.Expect(Runtime.Nexus.IsKnownValidator(address), "election choice must be active or waiting validator");
+                }
+            }
+
             poll.entries = new PollValue[choices.Length];
-            for (int i=0; i<choices.Length; i++)
+            for (int i = 0; i < choices.Length; i++)
             {
                 poll.entries[i] = new PollValue()
                 {

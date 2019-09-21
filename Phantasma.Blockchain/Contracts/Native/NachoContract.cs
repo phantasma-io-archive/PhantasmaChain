@@ -7005,7 +7005,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_IDLE;
 
-            BigInteger seed = Runtime.NextRandom();
+            BigInteger seed = Runtime.GetRandomNumber();
 
             int localIndex = -1;
 
@@ -7049,7 +7049,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var aiWrestler = GetWrestler(aiWrestlerID);
                 var aiMove = Rules.GetMoveFromMoveset(aiWrestler.genes, aiSlot, aiStance);
 
-                seed = Runtime.NextRandom();
+                seed = Runtime.GetRandomNumber();
 
                 if (battle.mode == BattleMode.Practice)
                 {
@@ -7063,7 +7063,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     var chance = (int)(seed % 100);
-                    seed = Runtime.NextRandom();
+                    seed = Runtime.GetRandomNumber();
 
                     smartness -= chance;
 
@@ -7422,7 +7422,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
                     info[i] = CalculateTurnInfo(battle.sides[i], wrestlers[i], battle.sides[i].wrestlers[0].wrestlerID, battle.sides[i].move, states[i].lastMove, states[i], seed);
 
-                    seed = Runtime.NextRandom();
+                    seed = Runtime.GetRandomNumber();
 
                     if (info[i].move == WrestlingMove.Tart_Throw && info[i].item != ItemKind.Cooking_Hat && !Rules.IsSucessful((int)info[i].chance, Constants.TART_THROW_ACCURACY))
                     {
@@ -7539,7 +7539,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 if (ActivateItem(ref states, ref info, i, true, true))
                                 {
-                                    seed = Runtime.NextRandom();
+                                    seed = Runtime.GetRandomNumber();
                                     var roll = seed % 6;
 
                                     int target = roll < 4 ? i : 1 - i;
@@ -8050,7 +8050,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
 
                     var dmg = CalculateMoveResult(info[other], info[i], seed);
-                    seed = Runtime.NextRandom();
+                    seed = Runtime.GetRandomNumber();
 
                     if (dmg > 0)
                     {
