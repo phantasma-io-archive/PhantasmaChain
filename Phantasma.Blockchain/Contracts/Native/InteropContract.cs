@@ -197,7 +197,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         Runtime.Expect(destination.IsUser, "invalid destination address");
                     }
 
-                    Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value), "mint failed");
+                    Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, transfer.symbol, destination, transfer.value, true), "mint failed");
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = transfer.value, symbol = transfer.symbol });
 
                     swapCount++;
@@ -288,7 +288,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, feeSymbol, from, this.Address, feeAmount), "fee transfer failed");
 
-            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount, true), "burn failed");
 
             var collateralAmount = Runtime.GetTokenQuote(Nexus.FiatTokenSymbol, Nexus.FuelTokenSymbol, basePrice);
 
@@ -306,7 +306,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
 
-            Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = symbol });
             Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Address, value = feeAmount, symbol = symbol });
             Runtime.Notify(EventKind.BrokerRequest, from, to);
         }

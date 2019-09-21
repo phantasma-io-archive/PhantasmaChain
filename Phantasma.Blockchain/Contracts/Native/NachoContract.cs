@@ -2306,7 +2306,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             nachoAmount += GetBonusNachos(nachoAmount, dollarAmount);
 
-            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
+            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount, false), "mint failed");
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
 
             UpdateNachoTokensSold(nachoAmount);
@@ -2920,7 +2920,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
             ownerships.Remove(this.Storage, from, wrestlerID);
             //token.Burn(balances, from,)
-            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.WRESTLER_SYMBOL, from, wrestlerID), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.WRESTLER_SYMBOL, from, wrestlerID, false), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, wrestlerID);
         }
@@ -3071,7 +3071,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
             ownerships.Remove(this.Storage, from, itemID);
             //token.Burn(balances, from,)
-            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.ITEM_SYMBOL, from, itemID), "burn failed");
+            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.ITEM_SYMBOL, from, itemID, false), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, itemID);
         }
@@ -3264,7 +3264,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //playerItems.Add(tokenID);
             ownership.Add(this.Storage, to, tokenID);
             
-            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID), "minting failed");
+            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID, false), "minting failed");
             //Runtime.Notify(EventKind.ItemReceived, to, itemID);
             Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = this.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
 
@@ -6382,7 +6382,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
                 //Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
-                Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, target, amount), "mint failed");
+                Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, target, amount, false), "mint failed");
 
                 //Runtime.Notify(NachoEvent.Deposit, target, amount);
                 Runtime.Notify(EventKind.TokenReceive, target, amount);

@@ -787,7 +787,7 @@ namespace Phantasma.Blockchain
             return supplies.GetTotal(storage);
         }
 
-        internal bool MintTokens(RuntimeVM runtimeVM, string symbol, Address target, BigInteger amount)
+        internal bool MintTokens(RuntimeVM runtimeVM, string symbol, Address target, BigInteger amount, bool isSettlement)
         {
             if (!TokenExists(symbol))
             {
@@ -818,14 +818,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, target, symbol, amount);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerReceive: TokenContract.TriggerMint, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, target, symbol, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, isSettlement ? AccountContract.TriggerReceive:  AccountContract.TriggerMint, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -835,7 +835,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal bool MintToken(RuntimeVM runtimeVM, string symbol, Address target, BigInteger tokenID)
+        internal bool MintToken(RuntimeVM runtimeVM, string symbol, Address target, BigInteger tokenID, bool isSettlement)
         {
             if (!TokenExists(symbol))
             {
@@ -861,14 +861,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerMint, target, symbol, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerReceive : TokenContract.TriggerMint, target, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerMint, target, symbol, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, isSettlement ? AccountContract.TriggerReceive:  AccountContract.TriggerMint, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -878,7 +878,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool BurnTokens(RuntimeVM runtimeVM, string symbol, Address target, BigInteger amount)
+        internal bool BurnTokens(RuntimeVM runtimeVM, string symbol, Address target, BigInteger amount, bool isSettlement)
         {
             if (!TokenExists(symbol))
             {
@@ -910,14 +910,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, target, symbol, amount);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerSend:  TokenContract.TriggerBurn, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, target, symbol, amount);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, isSettlement ? AccountContract.TriggerSend: AccountContract.TriggerBurn, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -927,7 +927,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal bool BurnToken(RuntimeVM runtimeVM, string symbol, Address target, BigInteger tokenID)
+        internal bool BurnToken(RuntimeVM runtimeVM, string symbol, Address target, BigInteger tokenID, bool isSettlement)
         {
             if (!TokenExists(symbol))
             {
@@ -960,14 +960,14 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerBurn, target, symbol, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerSend : TokenContract.TriggerBurn, target, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
             var accountScript = this.LookUpAddressScript(target);
-            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, AccountContract.TriggerBurn, target, symbol, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTrigger(runtimeVM, accountScript, isSettlement ? AccountContract.TriggerSend:  AccountContract.TriggerBurn, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
