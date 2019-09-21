@@ -380,7 +380,7 @@ namespace Phantasma.API
                 chainAddress = chain.Address.ToString(),
                 payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(),
                 reward = chain.GetBlockReward(block).ToString(),
-                validatorAddress = Nexus.FindValidatorForBlock(block).ToString(),
+                validatorAddress = chain.GetValidatorForBlock(block).ToString(),
             };
 
             var txs = new List<TransactionResult>();
@@ -911,7 +911,7 @@ namespace Phantasma.API
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var oracle = Nexus.CreateOracleReader();
-            var vm = new RuntimeVM(script, chain, null, Timestamp.Now, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(script, chain, Timestamp.Now, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 

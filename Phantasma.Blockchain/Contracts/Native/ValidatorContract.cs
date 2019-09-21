@@ -5,16 +5,27 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public enum ValidatorStatus
+    {
+        Active,
+        StandBy,
+        Rejected,
+    }
+
     public struct ValidatorEntry
     {
         public Address address;
         public Timestamp joinDate;
         public Timestamp lastActivity;
+        public ValidatorStatus status;
         public int slashes;
     }
 
     public sealed class ValidatorContract : SmartContract
     {
+        public const string ActiveValidatorCountTag = "validator.active.count";
+        public const string StandByValidatorCountTag = "validator.standby.count";
+
         public override string Name => "validator";
 
         private StorageList _validatorList; //<Address> 
@@ -22,11 +33,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public ValidatorContract() : base()
         {
-        }
-
-        public BigInteger GetMaxValidators()
-        {
-            return 10; // TODO this should be dynamic
         }
 
         public BigInteger GetRequiredStake()
@@ -44,6 +50,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return _validatorList.Count();
         }
 
+        public ValidatorEntry GetValidator(Address address)
+        {
+            Runtime.Expect(IsValidator(address), "not a validator");
+            return _validatorMap.Get<Address, ValidatorEntry>(address);
+        }
+
         // here we reintroduce this method, as a faster way to check if an address is a validator
         private new bool IsValidator(Address address)
         {
@@ -56,8 +68,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var count = _validatorList.Count();
-            var max = GetMaxValidators();
-            Runtime.Expect(count < max, "no open validators spots");
+
+            if (count > 0)
+            {
+                var max = Runtime.GetGovernanceValue(ActiveValidatorCountTag);
+                Runtime.Expect(count < max, "no open validators spots");
+            }
 
             var requiredStake = GetRequiredStake();
             var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
@@ -82,6 +98,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(IsValidator(from), "validator failed");
+
+            var count = _validatorList.Count();
+            Runtime.Expect(count > 1, "cant remove last validator");
 
             var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
 
@@ -154,17 +173,62 @@ namespace Phantasma.Blockchain.Contracts.Native
             _validatorMap.Set<Address, ValidatorEntry>(to, entry);
         }
 
-        public void Validate(Address from)
+        public void CreateBlock(Address from)
         {
-            Runtime.Expect(IsValidator(from), "validator failed");
-            Runtime.Expect(Runtime.Epoch.ValidatorAddress == from, "epoch validator mismatch");
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var validator = _validatorMap.Get<Address, ValidatorEntry>(from);
-            validator.lastActivity = Runtime.Time;
-            _validatorMap.Set<Address, ValidatorEntry>(from, validator);
+            var count = _validatorList.Count();
+            if (count > 0)
+            {
+                Runtime.Expect(IsValidator(from), "validator failed");
+                Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
 
-            Runtime.Notify(EventKind.ValidatorUpdate, Runtime.Chain.Address, from);
-        }        
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(from);
+                validator.lastActivity = Runtime.Time;
+                _validatorMap.Set<Address, ValidatorEntry>(from, validator);
+            }
+
+            Runtime.Notify(EventKind.BlockCreate, from, Runtime.Chain.Address);
+        }
+
+        public void CloseBlock(Address from)
+        {
+            Runtime.Expect(IsValidator(from), "validator failed");
+            Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
+            Runtime.Expect(IsWitness(from), "witness failed");
+
+            var count = _validatorList.Count();
+
+            var totalValidators = 0;
+            for (int i = 0; i < count; i++)
+            {
+                var address = _validatorList.Get<Address>(i);
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
+                if (validator.status == ValidatorStatus.Active)
+                {
+                    totalValidators++;
+                }
+            }
+
+            var totalAvailable = Runtime.Chain.GetTokenBalance(Nexus.FuelTokenSymbol, this.Address);
+            var amountPerValidator = totalAvailable / count;
+
+            int delivered = 0;
+            for (int i = 0; i < count; i++)
+            {
+                var address = _validatorList.Get<Address>(i);
+                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
+                if (validator.status == ValidatorStatus.Active)
+                {
+                    if (Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
+                    {
+                        Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = Nexus.FuelTokenSymbol });
+                        delivered = 0;
+                    }
+                }
+            }
+
+            Runtime.Expect(delivered > 0, "failed to claim fees");
+        }
     }
 }

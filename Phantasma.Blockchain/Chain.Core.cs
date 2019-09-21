@@ -41,7 +41,6 @@ namespace Phantasma.Blockchain
         private KeyValueStore<Hash, Transaction> _transactions;
         private KeyValueStore<Hash, Block> _blocks;
         private KeyValueStore<Hash, Hash> _transactionBlockMap;
-        private KeyValueStore<Hash, Epoch> _epochMap;
         private KeyValueStore<string, bool> _contracts;
         private KeyValueStore<BigInteger, Hash> _blockHeightMap;
 
@@ -57,8 +56,6 @@ namespace Phantasma.Blockchain
 
         public string Name { get; private set; }
         public Address Address { get; private set; }
-
-        public Epoch CurrentEpoch { get; private set; }
 
         public uint BlockHeight => (uint)_blocks.Count;
 
@@ -86,7 +83,6 @@ namespace Phantasma.Blockchain
             _transactions = new KeyValueStore<Hash, Transaction>(Nexus.CreateKeyStoreAdapter(this.Address, "txs"));
             _blocks = new KeyValueStore<Hash, Block>(Nexus.CreateKeyStoreAdapter(this.Address, "blocks"));
             _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
-            _epochMap = new KeyValueStore<Hash, Epoch>(Nexus.CreateKeyStoreAdapter(this.Address, "epoch"));
             _contracts = new KeyValueStore<string, bool>(Nexus.CreateKeyStoreAdapter(this.Address, "contracts"));
             _blockHeightMap = new KeyValueStore<BigInteger, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "heights"));
 
@@ -192,8 +188,6 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
-            var targetEpoch = CurrentEpoch != null ? CurrentEpoch : GenerateEpoch();
-
             var oracle = Nexus.CreateOracleReader();
 
             foreach (var tx in transactions)
@@ -201,7 +195,7 @@ namespace Phantasma.Blockchain
                 byte[] result;
                 try
                 {
-                    if (tx.Execute(this, targetEpoch, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
+                    if (tx.Execute(this, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
                     {
                         if (result != null)
                         {
@@ -231,10 +225,6 @@ namespace Phantasma.Blockchain
             _blockChangeSets[block.Hash] = changeSet;
 
             changeSet.Execute();
-
-            CurrentEpoch = targetEpoch;
-            CurrentEpoch.AddBlockHash(block.Hash);
-            CurrentEpoch.UpdateHash();
 
             Dictionary<string, BigInteger> synchMap = null;
 
@@ -289,6 +279,12 @@ namespace Phantasma.Blockchain
             if (synchMap != null)
             {
                 SynchronizeSupplies(synchMap);
+            }
+
+            var blockValidator = GetValidatorForBlock(block);
+            if (blockValidator.IsNull)
+            {
+                throw new BlockGenerationException("no validator for this block");
             }
 
             Nexus.PluginTriggerBlock(this, block);
@@ -507,7 +503,7 @@ namespace Phantasma.Blockchain
         {
             var oracle = Nexus.CreateOracleReader();
             var changeSet = new StorageChangeSetContext(this.Storage);
-            var vm = new RuntimeVM(script, this, null,  time, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(script, this, time, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 
@@ -587,56 +583,37 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-        #region EPOCH
+        #region validators
         public bool IsCurrentValidator(Address address)
         {
-            if (CurrentEpoch != null)
-            {
-                return CurrentEpoch.ValidatorAddress == address;
-            }
-
-            var firstValidator = Nexus.GetValidatorByIndex(0);
-            return address == firstValidator;
+            return address == Nexus.GenesisAddress;
         }
 
-        private Epoch GenerateEpoch()
+        public Address GetValidatorForBlock(Hash hash)
         {
-            Address nextValidator;
+            return GetValidatorForBlock(FindBlockByHash(hash));
+        }
 
-            uint epochIndex;
-
-            if (CurrentEpoch != null)
+        public Address GetValidatorForBlock(Block block)
+        {
+            if (block.TransactionCount == 0)
             {
-                epochIndex = CurrentEpoch.Index + 1;
+                return Address.Null;
+            }
 
-                var currentIndex = Nexus.GetIndexOfValidator(CurrentEpoch.ValidatorAddress);
-                currentIndex++;
+            var firstTxHash = block.TransactionHashes.First();
+            var events = block.GetEventsForTransaction(firstTxHash);
 
-                var validatorCount = Nexus.GetValidatorCount();
-
-                if (currentIndex >= validatorCount)
+            foreach (var evt in events)
+            {
+                if (evt.Kind == EventKind.BlockCreate && evt.Contract == "validator")
                 {
-                    currentIndex = 0;
+                    return evt.Address;
                 }
-
-                nextValidator = Nexus.GetValidatorByIndex(currentIndex);
-            }
-            else
-            if (BlockHeight == 0)
-            {
-                epochIndex = 0;
-                nextValidator = Nexus.GenesisAddress;
-            }
-            else
-            {
-                epochIndex = 0;
-                nextValidator = Nexus.GetValidatorByIndex(0);
             }
 
-            var epoch = new Epoch(epochIndex, Timestamp.Now, nextValidator, CurrentEpoch != null ? CurrentEpoch.Hash : Hash.Null);
-            return epoch;
+            return Address.Null;
         }
         #endregion
-
     }
 }

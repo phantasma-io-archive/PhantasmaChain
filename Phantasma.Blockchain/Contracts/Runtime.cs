@@ -20,7 +20,6 @@ namespace Phantasma.Blockchain.Contracts
         public Transaction Transaction { get; private set; }
         public Chain Chain { get; private set; }
         public Chain ParentChain { get; private set; }
-        public Epoch Epoch { get; private set; }
         public OracleReader Oracle { get; private set; }
         public Nexus Nexus => Chain.Nexus;
 
@@ -44,7 +43,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger MinimumFee;
 
-        public RuntimeVM(byte[] script, Chain chain, Epoch epoch, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
+        public RuntimeVM(byte[] script, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
             Throw.IfNull(chain, nameof(chain));
             Throw.IfNull(changeSet, nameof(changeSet));
@@ -61,9 +60,8 @@ namespace Phantasma.Blockchain.Contracts
             this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
             this.DelayPayment = delayPayment;
 
-            this.Chain = chain;
-            this.Epoch = epoch;
             this.Time = time;
+            this.Chain = chain;
             this.Transaction = transaction;
             this.Oracle = oracle;
             this.ChangeSet = changeSet;
@@ -134,9 +132,10 @@ namespace Phantasma.Blockchain.Contracts
             return result;
         }
 
-        public T GetContract<T>(Address address) where T : IContract
+        public Address GetContractAddress(string name)
         {
-            throw new System.NotImplementedException();
+            var contract = Nexus.FindContract(name);
+            return contract.Address;
         }
 
         public override ExecutionContext LoadContext(string contextName)

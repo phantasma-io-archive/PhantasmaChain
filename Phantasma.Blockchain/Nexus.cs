@@ -305,25 +305,6 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public Address FindValidatorForBlock(Block block)
-        {
-            Throw.IfNull(block, nameof(block));
-
-            var chain = FindChainForBlock(block);
-            if (chain == null)
-            {
-                return Address.Null;
-            }
-
-            var epoch = chain.CurrentEpoch;//todo was chain.FindEpochForBlockHash(block.Hash);
-            if (epoch == null)
-            {
-                return Address.Null;
-            }
-
-            return epoch.ValidatorAddress;
-        }
-
         public Block FindBlockByTransaction(Transaction tx)
         {
             return FindBlockByHash(tx.Hash);
@@ -1269,6 +1250,8 @@ namespace Phantasma.Blockchain
         {
             var sb = ScriptUtils.BeginScript();
 
+            sb.CallContract("validator", "CreateBlock", owner.Address);
+
             sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             // requires staking token to be created previously
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
@@ -1381,6 +1364,8 @@ namespace Phantasma.Blockchain
             {
                 SetupNexusTx(owner),
 
+                ValueCreateTx(owner, ValidatorContract.ActiveValidatorCountTag, 1, 1, 100),
+                ValueCreateTx(owner, ValidatorContract.StandByValidatorCountTag, 10, 1, 1000),
                 ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),
                 ValueCreateTx(owner, GasContract.MaxLenderCountTag, 10, 1, 100),
                 ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),

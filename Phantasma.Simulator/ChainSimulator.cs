@@ -299,6 +299,11 @@ namespace Phantasma.Simulator
 
         public void BeginBlock()
         {
+            BeginBlock(_owner);
+        }
+
+        public void BeginBlock(KeyPair validator)
+        {
             if (blockOpen)
             {
                 throw new Exception("Simulator block not terminated");
@@ -326,6 +331,10 @@ namespace Phantasma.Simulator
 
             step++;
             Logger.Message($"Begin block #{step}");
+
+            var chain = Nexus.RootChain;
+            var script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, MinimumFee, 9999).CallContract("validator", "CreateBlock", validator.Address).SpendGas(validator.Address).EndScript();
+            var tx = MakeTransaction(validator, ProofOfWork.None, chain, script);
         }
 
         public void CancelBlock()
@@ -452,6 +461,11 @@ namespace Phantasma.Simulator
 
         private Transaction MakeTransaction(IEnumerable<KeyPair> signees, ProofOfWork pow, Chain chain, byte[] script)
         {
+            if (!blockOpen)
+            {
+                throw new Exception("Call BeginBlock first");
+            }
+
             var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             Throw.If(!signees.Any(), "at least one signer required");
