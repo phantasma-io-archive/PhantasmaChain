@@ -17,6 +17,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         Unanimity,
         Majority,
         Popularity,
+        Ranking,
     }
 
     public enum PollState
@@ -27,9 +28,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         Failure
     }
 
+    public struct PollChoice
+    {
+        public byte[] value;
+    }
+
     public struct PollValue
     {
         public byte[] value;
+        public BigInteger ranking;
         public BigInteger votes;
     }
 
@@ -46,7 +53,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public ConsensusMode mode;
         public PollState state;
         public PollValue[] entries;
-        public BigInteger selected;
         public BigInteger round;
         public Timestamp startTime;
         public Timestamp endTime;
@@ -102,55 +108,66 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if ((Runtime.Time >= poll.endTime || poll.totalVotes >= MaxVotesPerPoll) && poll.state == PollState.Active)
                 {
                     // its time to count votes...
-                    poll.selected = -1;
-                    BigInteger bestVotes = -1;
                     BigInteger totalVotes = 0;
-                    int ties = 0;
-
-                    for (int i=0; i<poll.entries.Length; i++)
+                    for (int i = 0; i < poll.entries.Length; i++)
                     {
                         var entry = poll.entries[i];
                         totalVotes += entry.votes;
+                    }
 
-                        if (entry.votes > bestVotes)
-                        {
-                            bestVotes = entry.votes;
-                            poll.selected = i;
-                            ties = 0;
-                        }
-                        else
-                        if (entry.votes == bestVotes)
+                    var rankings = poll.entries.OrderByDescending(x => x.votes).ToArray();
+
+                    var winner = rankings[0];
+                    int ties = 0;
+
+                    for (int i = 1; i < rankings.Length; i++)
+                    {
+                        if (rankings[i].votes == winner.votes)
                         {
                             ties++;
                         }
+                        else
+                        {
+                            break;
+                        }
                     }
 
-                    BigInteger percentage = (bestVotes * 100) / totalVotes;
+                    for (int i = 0; i < poll.entries.Length; i++)
+                    {
+                        var val = poll.entries[i].value;
+                        int index = -1;
+                        for (int j = 0; j < rankings.Length; j++)
+                        {
+                            if (rankings[j].value == val)
+                            {
+                                index = j;
+                                break;
+                            }
+                        }
+                        Runtime.Expect(index >= 0, "missing entry in poll rankings");
 
-                    if (poll.selected == -1)
+                        poll.entries[i].ranking = index + 1;
+                    }
+
+                    BigInteger percentage = (winner.votes * 100) / totalVotes;
+
+                    if (poll.mode == ConsensusMode.Unanimity && percentage < 100)
+                    {
+                        poll.state = PollState.Failure;
+                    }
+                    else
+                    if (poll.mode == ConsensusMode.Majority && percentage < 51)
+                    {
+                        poll.state = PollState.Failure;
+                    }
+                    else
+                    if (poll.mode == ConsensusMode.Popularity && ties > 0)
                     {
                         poll.state = PollState.Failure;
                     }
                     else
                     {
-                        if (poll.mode == ConsensusMode.Unanimity && percentage < 100)
-                        {
-                            poll.state = PollState.Failure;
-                        }
-                        else
-                        if (poll.mode == ConsensusMode.Majority && percentage < 51)
-                        {
-                            poll.state = PollState.Failure;
-                        }
-                        else
-                        if (poll.mode == ConsensusMode.Popularity && ties > 0)
-                        {
-                            poll.state = PollState.Failure;
-                        }
-                        else
-                        {
-                            poll.state = PollState.Consensus;
-                        }
+                        poll.state = PollState.Consensus;
                     }
 
                     _pollMap.Set<string, ConsensusPoll>(subject, poll);
@@ -162,12 +179,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             return poll;
         }
 
-        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, PollValue[] entries, BigInteger votesPerUser, byte[] script)
+        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, PollChoice[] choices, BigInteger votesPerUser, byte[] script)
         {
             if (subject.StartsWith(SystemPoll))
             {
                 Runtime.Expect(IsValidator(from), "must be validator");
-                Runtime.Expect(mode != ConsensusMode.Popularity, "cannot use popularity mode for system governance");
+                Runtime.Expect(mode == ConsensusMode.Majority, "must use majority mode for system governance");
             }
 
             Runtime.Expect(Runtime.Chain.IsRoot, "not root chain");
@@ -175,8 +192,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(kind == ConsensusKind.Validators, "community polls not yet");
 
             var maxEntriesPerPoll = Runtime.GetGovernanceValue(MaxEntriesPerPollTag);
-            Runtime.Expect(entries.Length > 1, "invalid amount of entries");
-            Runtime.Expect(entries.Length <= maxEntriesPerPoll, "too many entries");
+            Runtime.Expect(choices.Length > 1, "invalid amount of entries");
+            Runtime.Expect(choices.Length <= maxEntriesPerPoll, "too many entries");
 
             var MaximumPollLength = (uint)Runtime.GetGovernanceValue(MaximumPollLengthTag);
 
@@ -189,7 +206,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(script != null && script.Length > 0, "invalid script");
 
             Runtime.Expect(votesPerUser > 0, "number of votes per user too low");
-            Runtime.Expect(votesPerUser < entries.Length, "number of votes per user too high");
+            Runtime.Expect(votesPerUser < choices.Length, "number of votes per user too high");
 
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -210,14 +227,23 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             poll.startTime = startTime;
             poll.endTime = endTime;
-            poll.entries = entries;
             poll.kind = kind;
             poll.mode = mode;
             poll.script = script;
-            poll.selected = -1;
             poll.state = PollState.Inactive;
             poll.votesPerUser = votesPerUser;
             poll.totalVotes = 0;
+
+            poll.entries = new PollValue[choices.Length];
+            for (int i=0; i<choices.Length; i++)
+            {
+                poll.entries[i] = new PollValue()
+                {
+                    ranking = -1,
+                    value = choices[i].value,
+                    votes = 0
+                };
+            }
 
             _pollMap.Set<string, ConsensusPoll>(subject, poll);
 
@@ -322,11 +348,49 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
 
             var poll = FetchPoll(subject);
-
-            if (poll.state == PollState.Consensus && poll.selected>=0 && poll.selected<poll.entries.Length)
+            if (poll.state != PollState.Consensus)
             {
-                var winner = poll.entries[(int)poll.selected].value;
-                return value.SequenceEqual(winner);
+                return false;
+            }
+
+            int index = -1;
+            for (int i = 0; i < poll.entries.Length; i++)
+            {
+                if (poll.entries[i].value.SequenceEqual(value))
+                {
+                    return poll.entries[i].ranking == 0;
+                }
+            }
+
+            return false;
+        }
+
+        // note this returns true if the rank is same or better than the argument
+        public bool HasRank(string subject, byte[] value, BigInteger rank)
+        {
+            if (subject.StartsWith(SystemPoll))
+            {
+                var validatorCount = (BigInteger)Runtime.CallContext("validator", "GetValidatorCount");
+                if (validatorCount == 1)
+                {
+                    return true;
+                }
+            }
+
+            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
+
+            var poll = FetchPoll(subject);
+            if (poll.state != PollState.Consensus)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < poll.entries.Length; i++)
+            {
+                if (poll.entries[i].value.SequenceEqual(value))
+                {
+                    return poll.entries[i].ranking <= rank;
+                }
             }
 
             return false;

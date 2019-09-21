@@ -73,6 +73,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var max = Runtime.GetGovernanceValue(ActiveValidatorCountTag);
                 Runtime.Expect(count < max, "no open validators spots");
+
+                var pollName = ConsensusContract.SystemPoll + "validators";
+                var hasConsensus = (bool)Runtime.CallContext("consensus", "HasRank", pollName, from, max);
+                Runtime.Expect(hasConsensus, "no consensus for electing this address");
             }
 
             var requiredStake = GetRequiredStake();
