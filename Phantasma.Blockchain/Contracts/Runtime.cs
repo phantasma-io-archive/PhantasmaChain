@@ -8,6 +8,7 @@ using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Types;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -390,10 +391,27 @@ namespace Phantasma.Blockchain.Contracts
         #endregion
 
         // fetches a chain-governed value
-        internal BigInteger GetGovernanceValue(string name)
+        public BigInteger GetGovernanceValue(string name)
         {
             var value = Nexus.RootChain.InvokeContract("governance", "GetValue", name).AsNumber();
             return value;
         }
+
+        public BigInteger GetBalance(string tokenSymbol, Address address)
+        {
+            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            {
+                var balances = new BalanceSheet(tokenSymbol);
+                return balances.Get(this.ChangeSet, address);
+            }
+            else
+            {
+                var ownerships = new OwnershipSheet(tokenSymbol);
+                var items = ownerships.Get(this.ChangeSet, address);
+                return items.Length;
+            }
+        }
+
     }
 }

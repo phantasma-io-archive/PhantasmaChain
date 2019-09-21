@@ -140,6 +140,37 @@ namespace Phantasma.Blockchain
             return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
         }
 
+        public void BakeBlock(ref Block block, ref List<Transaction> transactions, BigInteger minimumFee, KeyPair validator, Timestamp time)
+        {
+            if (transactions.Count <= 0)
+            {
+                throw new ChainException("not enough transactions in block");
+            }
+
+            byte[] script;
+
+            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("validator", "CreateBlock", validator.Address).SpendGas(validator.Address).EndScript();
+            var firstTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
+            firstTx.Sign(validator);
+
+            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("validator", "CloseBlock", validator.Address).SpendGas(validator.Address).EndScript();
+            var lastTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
+            lastTx.Sign(validator);
+
+            var hashes = new List<Hash>();
+            hashes.Add(firstTx.Hash);
+            hashes.AddRange(block.TransactionHashes);
+            hashes.Add(lastTx.Hash);
+
+            var txs = new List<Transaction>();
+            txs.Add(firstTx);
+            txs.AddRange(transactions);
+            txs.Add(lastTx);
+
+            transactions = txs;
+            block = new Block(block.Height, block.ChainAddress, block.Timestamp, hashes, block.PreviousHash, block.Payload);
+        }
+
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
         {
             /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
@@ -362,7 +393,7 @@ namespace Phantasma.Blockchain
             return null; // TODO Should thrown an exception?
         }
 
-        // NOTE should never be used directly from a contract!
+        // NOTE should never be used directly from a contract, instead use Runtime.GetBalance!
         public BigInteger GetTokenBalance(string tokenSymbol, Address address)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
@@ -375,7 +406,7 @@ namespace Phantasma.Blockchain
             {
                 var ownerships = new OwnershipSheet(tokenSymbol);
                 var items = ownerships.Get(this.Storage, address);
-                return items.Count();
+                return items.Length;
             }
         }
 

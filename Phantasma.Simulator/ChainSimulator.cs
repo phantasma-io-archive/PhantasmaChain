@@ -296,6 +296,7 @@ namespace Phantasma.Simulator
         private HashSet<Address> pendingNames = new HashSet<Address>();
 
         private bool blockOpen = false;
+        private KeyPair blockValidator;
 
         public void BeginBlock()
         {
@@ -308,6 +309,8 @@ namespace Phantasma.Simulator
             {
                 throw new Exception("Simulator block not terminated");
             }
+
+            this.blockValidator = validator;
 
             transactions.Clear();
             txChainMap.Clear();
@@ -331,10 +334,6 @@ namespace Phantasma.Simulator
 
             step++;
             Logger.Message($"Begin block #{step}");
-
-            var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, MinimumFee, 9999).CallContract("validator", "CreateBlock", validator.Address).SpendGas(validator.Address).EndScript();
-            var tx = MakeTransaction(validator, ProofOfWork.None, chain, script);
         }
 
         public void CancelBlock()
@@ -407,6 +406,7 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
+                                chain.BakeBlock(ref block, ref txs, MinimumFee, blockValidator, CurrentTime);
                                 chain.AddBlock(block, txs, MinimumFee);
                                 submitted = true;
                             }

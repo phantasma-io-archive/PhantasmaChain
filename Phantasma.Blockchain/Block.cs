@@ -64,11 +64,11 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(uint height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] data = null)
+        public Block(uint height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] payload = null)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
-            this.Payload = data;
+            this.Payload = payload != null ? payload : new byte[0];
 
             //this.Height = previous != null && previous.Chain == chain ? previous.Height + 1 : 0;
             //this.PreviousHash = previous != null ? previous.Hash : null;

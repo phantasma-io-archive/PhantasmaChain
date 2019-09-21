@@ -1278,9 +1278,9 @@ namespace Phantasma.Blockchain
         {
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, 1, 9999).
+                //AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name, contracts).
-                SpendGas(owner.Address).
+                //SpendGas(owner.Address).
                 EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
@@ -1293,9 +1293,9 @@ namespace Phantasma.Blockchain
         {
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, 1, 9999).
+                //AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract(ScriptBuilderExtensions.GovernanceContract, "CreateValue", name, initial, min, max).
-                SpendGas(owner.Address).
+                //SpendGas(owner.Address).
                 EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
@@ -1307,11 +1307,11 @@ namespace Phantasma.Blockchain
         {
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, 1, 9999).
+                //AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("validator", "AddValidator", owner.Address).
                 CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
                 CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
-                SpendGas(owner.Address).
+                //SpendGas(owner.Address).
                 EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));

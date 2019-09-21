@@ -129,6 +129,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var spentGas = Runtime.UsedGas;
             var requiredAmount = spentGas * Runtime.GasPrice;
+            Runtime.Expect(requiredAmount > 0, "gas fee must exist");
 
             Runtime.Expect(availableAmount >= requiredAmount, "gas allowance is not enough");
 

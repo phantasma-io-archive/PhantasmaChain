@@ -9,7 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         Active,
         Waiting, // aka StandBy
-        Rejected,
+        Demoted,
     }
 
     public struct ValidatorEntry
@@ -18,7 +18,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Timestamp joinDate;
         public Timestamp lastActivity;
         public ValidatorStatus status;
-        public int slashes;
     }
 
     public sealed class ValidatorContract : SmartContract
@@ -52,7 +51,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return _validatorMap.Get<Address, ValidatorEntry>(address);
         }
 
-        private bool IsActiveValidator(Address address)
+        public bool IsActiveValidator(Address address)
         {
             if (_validatorMap.ContainsKey(address))
             {
@@ -63,7 +62,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return false;
         }
 
-        private bool IsWaitingValidator(Address address)
+        public bool IsWaitingValidator(Address address)
         {
             if (_validatorMap.ContainsKey(address))
             {
@@ -74,23 +73,23 @@ namespace Phantasma.Blockchain.Contracts.Native
             return false;
         }
 
-        private bool IsRejectedValidator(Address address)
+        public bool IsRejectedValidator(Address address)
         {
             if (_validatorMap.ContainsKey(address))
             {
                 var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                return validator.status == ValidatorStatus.Rejected;
+                return validator.status == ValidatorStatus.Demoted;
             }
 
             return false;
         }
 
-        private bool IsKnownValidator(Address address)
+        public bool IsKnownValidator(Address address)
         {
             if (_validatorMap.ContainsKey(address))
             {
                 var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                return validator.status != ValidatorStatus.Rejected;
+                return validator.status != ValidatorStatus.Demoted;
             }
 
             return false;
@@ -125,7 +124,6 @@ namespace Phantasma.Blockchain.Contracts.Native
                 address = from,
                 joinDate = Runtime.Time,
                 lastActivity = Runtime.Time,
-                slashes = 0
             };
             _validatorMap.Set(from, entry);
 
@@ -247,9 +245,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                     totalValidators++;
                 }
             }
+            Runtime.Expect(totalValidators > 0, "no active validators found");
 
-            var totalAvailable = Runtime.Chain.GetTokenBalance(Nexus.FuelTokenSymbol, this.Address);
+            var totalAvailable = Runtime.GetBalance(Nexus.FuelTokenSymbol, this.Address);
             var amountPerValidator = totalAvailable / count;
+            Runtime.Expect(amountPerValidator > 0, "not enough fees available");
 
             int delivered = 0;
             for (int i = 0; i < count; i++)
@@ -261,12 +261,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                     if (Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
                     {
                         Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = Nexus.FuelTokenSymbol });
-                        delivered = 0;
+                        delivered++;
                     }
                 }
             }
 
             Runtime.Expect(delivered > 0, "failed to claim fees");
+
+            var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
+            entry.lastActivity = Runtime.Time;
+            _validatorMap.Set<Address, ValidatorEntry>(from, entry);
         }
     }
 }
