@@ -510,29 +510,28 @@ namespace Phantasma.Simulator
         {
             if (tokenScript == null)
             {
-                // small script that restricts minting of tokens to owner
+                // small script that restricts minting of tokens to transactions where the owner is a witness
                 var addressStr = Base16.Encode(owner.Address.PublicKey);
                 var scriptString = new string[] {
                 $"alias r1, $triggerMint",
                 $"alias r2, $currentTrigger",
-                $"alias r3, $comparisonResult",
-                $"alias r4, $from",
-                $"alias r5, $owner",
+                $"alias r3, $result",
+                $"alias r4, $owner",
 
                 $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
                 $"pop $currentTrigger",
 
-                $"equal $triggerMint, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @mintHandler",
+                $"equal $triggerMint, $currentTrigger, $result",
+                $"jmpif $result, @mintHandler",
                 $"jmp @end",
 
-                $"@mintHandler: pop $from",
+                $"@mintHandler: nop",
                 $"load $owner 0x{addressStr}",
                 "push $owner",
                 "extcall \"Address()\"",
-                "pop $owner",
-                $"equal $from, $owner, $comparisonResult",
-                $"jmpif $comparisonResult, @end",
+                "extcall \"Runtime.IsWitness\"",
+                "pop $result",
+                $"jmpif $result, @end",
                 $"throw",
 
                 $"@end: ret"

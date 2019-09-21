@@ -13,11 +13,11 @@ namespace Phantasma.Blockchain
     public partial class Chain
     {
         // naming scheme should be "namespace.methodName" for methods, and "type()" for constructors
-        internal static void RegisterInterop(RuntimeVM vm)
+        internal static void RegisterExtCalls(RuntimeVM vm)
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Event", Runtime_Event);
-            vm.RegisterMethod("Runtime.CheckWitness", Constructor_CheckWitness);
+            vm.RegisterMethod("Runtime.IsWitness", Constructor_IsWitness);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -253,7 +253,7 @@ namespace Phantasma.Blockchain
 
         #endregion
 
-        private static ExecutionState Constructor_CheckWitness(RuntimeVM vm)
+        private static ExecutionState Constructor_IsWitness(RuntimeVM vm)
         {
             try
             {

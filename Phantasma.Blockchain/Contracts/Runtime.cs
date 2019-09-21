@@ -83,7 +83,7 @@ namespace Phantasma.Blockchain.Contracts
                 this.ParentChain = null;
             }
 
-            Chain.RegisterInterop(this);
+            Chain.RegisterExtCalls(this);
         }
 
         internal void RegisterMethod(string name, Func<RuntimeVM, ExecutionState> handler)
