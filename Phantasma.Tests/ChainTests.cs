@@ -89,7 +89,7 @@ namespace Phantasma.Tests
             SetupLender(simulator, lender);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(lender, () =>
+            simulator.GenerateCustomTransaction(lender, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     LoanGas(lender.Address, 1, 999).
                     AllowGas(lender.Address, Address.Null, 1, 9999).
@@ -148,7 +148,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(finalSoulBalanceB == soulAmount);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(userA, () =>
+            simulator.GenerateCustomTransaction(userA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     LoanGas(userA.Address, 1, 999).
                     AllowGas(userA.Address, Address.Null, 1, 9999).
