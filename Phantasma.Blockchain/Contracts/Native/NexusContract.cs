@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -88,8 +88,6 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "owner address must be user address");
-
-            symbol = symbol.ToUpperInvariant();
 
             Runtime.Expect(this.Runtime.Nexus.CreateToken(symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
             Runtime.Notify(EventKind.TokenCreate, from, symbol);
