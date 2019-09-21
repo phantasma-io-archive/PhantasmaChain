@@ -20,9 +20,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static readonly string TriggerSend = "OnSend";
         public static readonly string TriggerReceive = "OnReceive";
 
-        public static readonly string ANONYMOUS = "anonymous";
-        public static readonly string GENESIS = "genesis";
-
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 
         internal StorageMap _scriptMap; //<Address, byte[]> 
@@ -39,7 +36,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(IsWitness(target), "invalid witness");
-            Runtime.Expect(ValidateName(name), "invalid name");
+            Runtime.Expect(ValidationUtils.ValidateName(name), "invalid name");
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used");
@@ -125,7 +122,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (target == Runtime.Nexus.GenesisAddress)
             {
-                return GENESIS;
+                return ValidationUtils.GENESIS;
             }
 
             if (_addressMap.ContainsKey(target))
@@ -133,7 +130,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return _addressMap.Get<Address, string>(target);
             }
 
-            return ANONYMOUS;
+            return ValidationUtils.ANONYMOUS;
         }
 
         public byte[] LookUpScript(Address target)
@@ -148,12 +145,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public Address LookUpName(string name)
         {
-            if (name == ANONYMOUS)
+            if (name == ValidationUtils.ANONYMOUS)
             {
                 return Address.Null;
             }
 
-            if (name == GENESIS)
+            if (name == ValidationUtils.GENESIS)
             {
                 return Runtime.Nexus.GenesisAddress;
             }
@@ -164,39 +161,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             return Address.Null;
-        }
-
-        public static bool ValidateName(string name)
-        {
-            if (name == null)
-            {
-                return false;
-            }
-
-            if (name.Length < 3 || name.Length > 15)
-            {
-                return false;
-            }
-
-            if (name == ANONYMOUS)
-            {
-                return false;
-            }
-
-            int index = 0;
-            while (index < name.Length)
-            {
-                var c = name[index];
-                index++;
-
-                if (c >= 97 && c <= 122) continue; // lowercase allowed
-                if (c == 95) continue; // underscore allowed
-                if (c >= 48 && c <= 57) continue; // numbers allowed
-
-                return false;
-            }
-
-            return true;
         }
     }
 }

@@ -142,7 +142,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Runtime.Expect(AccountContract.ValidateName(id), "invalid id");
+            Runtime.Expect(ValidationUtils.ValidateName(id), "invalid id");
 
             var exchange = new ExchangeProvider()
             {

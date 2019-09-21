@@ -351,7 +351,7 @@ namespace Phantasma.Blockchain
         #region NAME SERVICE
         public Address LookUpName(string name)
         { 
-            if (!AccountContract.ValidateName(name))
+            if (!ValidationUtils.ValidateName(name))
             {
                 return Address.Null;
             }

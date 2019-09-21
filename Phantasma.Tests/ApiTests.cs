@@ -137,7 +137,7 @@ namespace Phantasma.Tests
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);
             Assert.IsTrue(account.address == testUser.Address.Text);
-            Assert.IsTrue(account.name == Blockchain.Contracts.Native.AccountContract.ANONYMOUS);
+            Assert.IsTrue(account.name == ValidationUtils.ANONYMOUS);
             Assert.IsTrue(account.balances.Length == 1);
 
             var balance = account.balances[0];

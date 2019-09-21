@@ -565,7 +565,7 @@ namespace Phantasma.API
         [APIFailCase("address is invalid", "ABCD123")]
         public IAPIResult LookUpName([APIParameter("Name of account", "blabla")] string name)
         {
-            if (!AccountContract.ValidateName(name))
+            if (!ValidationUtils.ValidateName(name))
             {
                 return new ErrorResult { error = "invalid name" };
             }

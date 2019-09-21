@@ -320,7 +320,7 @@ namespace Phantasma.Simulator
             foreach (var address in pendingNames)
             {
                 var currentName = Nexus.LookUpAddressName(address);
-                if (currentName != AccountContract.ANONYMOUS)
+                if (currentName != ValidationUtils.ANONYMOUS)
                 {
                     readyNames.Add(address);
                 }
@@ -968,7 +968,7 @@ namespace Phantasma.Simulator
                                 }
 
                                 var currentName = Nexus.LookUpAddressName(source.Address);
-                                if (currentName == AccountContract.ANONYMOUS)
+                                if (currentName == ValidationUtils.ANONYMOUS)
                                 {
                                     var lookup = Nexus.LookUpName(randomName);
                                     if (lookup.IsNull)

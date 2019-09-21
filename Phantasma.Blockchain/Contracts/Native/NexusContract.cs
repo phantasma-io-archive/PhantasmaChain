@@ -178,7 +178,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             byte[] data;
             target.DecodeInterop(out platformName, out data, 0);
 
-            Runtime.Expect(AccountContract.ValidateName(platformName), "invalid platform name");
+            Runtime.Expect(ValidationUtils.ValidateName(platformName), "invalid platform name");
 
             Runtime.Expect(Runtime.Nexus.CreatePlatform(target, platformName, fuelSymbol), "creation of platform failed");
 
