@@ -72,6 +72,41 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void SelfLoanGas()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new ChainSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+            var lender = KeyPair.Generate();
+
+            var soulAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, lender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 10 * UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals));
+            simulator.EndBlock();
+
+            SetupLender(simulator, lender);
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(lender, () =>
+                ScriptUtils.BeginScript().
+                    LoanGas(lender.Address, 1, 999).
+                    AllowGas(lender.Address, Address.Null, 1, 9999).
+                    SpendGas(lender.Address).
+                    EndScript());
+
+            Assert.ThrowsException<ChainException>(() =>
+            {
+                simulator.EndBlock();
+            });
+
+            var outstandingDebt = simulator.Nexus.RootChain.InvokeContract("gas", "GetLoanAmount", lender.Address).AsNumber();
+            Assert.IsTrue(outstandingDebt == 0);
+            
+        }
+
+        [TestMethod]
         public void TestNoRepaymentSecondLoan()
         {
             var owner = KeyPair.Generate();
@@ -112,13 +147,16 @@ namespace Phantasma.Tests
             Assert.IsTrue(finalFuelBalanceA == 0);
             Assert.IsTrue(finalSoulBalanceB == soulAmount);
 
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(userA, () =>
+                ScriptUtils.BeginScript().
+                    LoanGas(userA.Address, 1, 999).
+                    AllowGas(userA.Address, Address.Null, 1, 9999).
+                    SpendGas(userA.Address).
+                    EndScript());
+
             Assert.ThrowsException<ChainException>(() =>
             {
-                simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(userA, ProofOfWork.Moderate, () =>
-                    ScriptUtils.BeginScript().
-                        LoanGas(userA.Address, 1, 999).
-                        EndScript());
                 simulator.EndBlock();
             });
 
