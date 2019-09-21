@@ -2062,9 +2062,11 @@ namespace Phantasma.Tests
             var owner = KeyPair.Generate();
             var simulator = new ChainSimulator(owner, 1234);
 
-            simulator.GenerateToken(owner, "INFI", "infinity stable token", "phantasma",
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, "INFI", "infinity token", "phantasma",
                 Hash.FromString("infinity stable token"), BigInteger.Zero, 8,
-                TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible);
+            TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible);
+            simulator.EndBlock();
 
             var user = KeyPair.Generate();
             var nexus = simulator.Nexus;
