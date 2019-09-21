@@ -319,30 +319,34 @@ namespace Phantasma.Tests
             var symbol = Nexus.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);
 
-            var testUser = KeyPair.Generate();
+            var testUserA = KeyPair.Generate();
+            var testUserB = KeyPair.Generate();
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
-
-            Assert.IsTrue(oldBalance > amount);
-
-            // Send from Genesis address to test user
+            // Send from Genesis address to test user A
             simulator.BeginBlock();
-            var tx = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, symbol, amount);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, symbol, amount);
+            simulator.EndBlock();
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, testUserA.Address);
+
+            Assert.IsTrue(oldBalance == amount);
+
+            // Send from test user A address to test user B
+            amount /= 2;
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, testUserB.Address);
             Assert.IsTrue(transferBalance == amount);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(symbol, testUserA.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
             var sum = transferBalance + newBalance + gasFee;
-            var strA = sum.ToString();
-            var strB = oldBalance.ToString();
-            var strC = newBalance.ToString();
             Assert.IsTrue(sum == oldBalance);
         }
 
