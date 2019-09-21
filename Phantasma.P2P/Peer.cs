@@ -1,5 +1,6 @@
 ﻿using Phantasma.Blockchain;
 using Phantasma.Cryptography;
+using Phantasma.Numerics;
 using System;
 
 namespace Phantasma.Network.P2P
@@ -12,6 +13,8 @@ namespace Phantasma.Network.P2P
         Archive = 0x2,
         Relay = 0x4,
         Event = 0x8,
+        RPC = 0x10,
+        REST = 0x20,
     }
 
     public abstract class Peer
@@ -19,9 +22,12 @@ namespace Phantasma.Network.P2P
         public Address Address { get; private set; }
         public readonly Endpoint Endpoint;
 
-        public PeerCaps Capabilities { get; private set; }
+        public PeerCaps Capabilities { get; set; }
 
         public Status Status { get; protected set; }
+
+        public BigInteger MinimumFee { get; set; }
+        public int MinimumPoW { get; set; }
 
         public abstract void Send(Message msg);
         public abstract Message Receive();
@@ -30,11 +36,8 @@ namespace Phantasma.Network.P2P
         {
             this.Endpoint = endpoint;
             this.Status = Status.Disconnected;
-        }
-
-        public void SetCaps(PeerCaps caps)
-        {
-            this.Capabilities = caps;
+            this.MinimumFee = 1;
+            this.MinimumPoW = 0;
         }
 
         public void SetAddress(Address address)

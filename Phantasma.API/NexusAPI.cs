@@ -1447,7 +1447,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No node available" };
             }
 
-            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), flags = "None", fee = "100000" });
+            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint) x.MinimumPoW });
 
             if (peers.Any())
             {

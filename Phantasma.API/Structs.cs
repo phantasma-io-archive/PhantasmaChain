@@ -400,5 +400,8 @@ namespace Phantasma.API
 
         [APIDescription("Minimum fee required by node")]
         public string fee;
+
+        [APIDescription("Minimum proof of work required by node")]
+        public uint pow;
     }
 }
