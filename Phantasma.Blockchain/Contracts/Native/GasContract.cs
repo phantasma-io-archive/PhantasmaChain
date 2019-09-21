@@ -38,15 +38,15 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal const string MaxLoanAmountTag = "gas.max.loan"; //9999 * 10000;
         internal const string MaxLenderCountTag = "gas.lender.count";
 
-        public void AllowGas(Address user, Address target, BigInteger price, BigInteger limit)
+        public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
         {
             if (Runtime.readOnlyMode)
             {
                 return;
             }
 
-            Runtime.Expect(user.IsUser, "must be a user address");
-            Runtime.Expect(IsWitness(user), "invalid witness");
+            Runtime.Expect(from.IsUser, "must be a user address");
+            Runtime.Expect(IsWitness(from), "invalid witness");
             Runtime.Expect(target.IsSystem, "destination must be system address");
 
             Runtime.Expect(price > 0, "price must be positive amount");
@@ -54,15 +54,15 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var maxAmount = price * limit;
 
-            var allowance = _allowanceMap.ContainsKey(user) ? _allowanceMap.Get<Address, BigInteger>(user) : 0;
+            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
             Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
             allowance += maxAmount;
-            _allowanceMap.Set(user, allowance);
-            _allowanceTargets.Set(user, target);
+            _allowanceMap.Set(from, allowance);
+            _allowanceTargets.Set(from, target);
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, user, this.Address, maxAmount), "gas escrow failed");
-            Runtime.Notify(EventKind.GasEscrow, user, new GasEventData() { address = target, price = price, amount = limit });
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, this.Address, maxAmount), "gas escrow failed");
+            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = target, price = price, amount = limit });
         }
 
         public void LoanGas(Address from, BigInteger price, BigInteger limit)

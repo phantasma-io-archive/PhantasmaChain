@@ -309,7 +309,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void FungibleTokenTransfer()
+        public void FuelTokenTransfer()
         {
             var owner = KeyPair.Generate();
             var simulator = new ChainSimulator(owner, 1234);
@@ -339,7 +339,11 @@ namespace Phantasma.Tests
             var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
-            Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
+            var sum = transferBalance + newBalance + gasFee;
+            var strA = sum.ToString();
+            var strB = oldBalance.ToString();
+            var strC = newBalance.ToString();
+            Assert.IsTrue(sum == oldBalance);
         }
 
         [TestMethod]
