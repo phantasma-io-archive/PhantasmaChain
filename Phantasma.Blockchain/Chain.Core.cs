@@ -306,11 +306,6 @@ namespace Phantasma.Blockchain
                     continue;
                 }
 
-                if (balance < 0)
-                {
-                    throw new ChainException($"balance sync issue detected with {symbol}");
-                }
-
                 var parentName = Nexus.GetParentChainByName(this.Name);
                 var parentChain = Nexus.FindChainByName(parentName);
                 if (parentChain != null)

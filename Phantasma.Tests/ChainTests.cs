@@ -872,8 +872,6 @@ namespace Phantasma.Tests
             var txB = simulator.GenerateSideChainSettlement(sender, nexus.RootChain, sideChain, blockA.Hash);
             Assert.IsTrue(simulator.EndBlock().Any());
 
-            // we cant transfer the full side amount due to fees
-            // TODO  calculate the proper fee values instead of this
             var txCostA = simulator.Nexus.RootChain.GetTransactionFee(txA);
             var txCostB = sideChain.GetTransactionFee(txB);
             sideAmount = sideAmount - txCostB;
