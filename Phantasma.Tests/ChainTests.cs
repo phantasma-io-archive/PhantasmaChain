@@ -1201,24 +1201,29 @@ namespace Phantasma.Tests
 
             // Send from Genesis address to test user
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, amount);
+            var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             var oldBalance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             Assert.IsTrue(oldBalance == amount);
 
+            var gasFee = nexus.RootChain.GetTransactionFee(tx);
+            Assert.IsTrue(gasFee > 0);
+
             amount /= 2;
             simulator.BeginBlock();
-            var tx = simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, symbol, amount);
+            simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             // verify test user balance
             var transferBalance = nexus.RootChain.GetTokenBalance(symbol, receiver.Address);
 
             var newBalance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
-            var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
             Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
+
+            // create a new receiver
+            receiver = KeyPair.Generate();
 
             //Try to send the entire balance without affording fees from sender to receiver
             try
