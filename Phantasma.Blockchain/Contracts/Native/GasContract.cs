@@ -113,7 +113,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, lender, from, loan.amount), "gas lend failed");
             Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lender, price = price, amount = limit });
         }
-
+        
         public void SpendGas(Address from)
         {
             if (Runtime.readOnlyMode)
@@ -183,7 +183,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(unusedLoanAmount >= 0, "loan amount overflow");
 
                     // here we return the gas to the original pool, not the the payment address, because this is not a payment
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, loan.borrower, unusedLoanAmount), "unspend loan payment failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, loan.lender, unusedLoanAmount), "unspend loan payment failed");
                     Runtime.Notify(EventKind.GasPayment, loan.borrower, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
 
                     loan.amount = requiredAmount;
@@ -195,7 +195,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
                     var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
 
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, loan.borrower, loan.amount), "loan payment failed");
+                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, loan.lender, loan.amount), "loan payment failed");
                     Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, paymentAddress, loan.interest), "loan interest failed");
                     _loanMap.Remove<Address>(from);
 
