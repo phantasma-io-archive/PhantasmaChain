@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -94,7 +94,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var nft = Runtime.Nexus.GetNFT(symbol, tokenID);
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Address, "token not currently in this chain");
-            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
+            Runtime.Expect(nft.CurrentOwner == this.Address, "invalid owner");
 
             if (auction.Creator != from)
             {
