@@ -544,7 +544,7 @@ namespace Phantasma.Tests
             var blockB = simulator.EndBlock().FirstOrDefault();
 
             Assert.IsTrue(blockB != null);
-            Assert.IsTrue(blockB.OracleData.Any());
+            Assert.IsFalse(blockB.OracleData.Any());
 
             var bytes = blockB.ToByteArray();
             var otherBlock = Block.Unserialize(bytes);

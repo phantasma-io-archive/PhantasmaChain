@@ -668,7 +668,7 @@ namespace Phantasma.Simulator
                 SpendGas(source.Address).
                 EndScript();
 
-            var tx = MakeTransaction(signees, ProofOfWork.None, chain, script);
+            var tx = MakeTransaction(signees, ProofOfWork.Moderate, chain, script);
             return tx;
         }
 

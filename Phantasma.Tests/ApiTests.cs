@@ -190,11 +190,11 @@ namespace Phantasma.Tests
 
             var parameters = method.GetParameters();
 
-            Assert.IsTrue(parameters.Length == 5);
+            Assert.IsTrue(parameters.Length == 6);
             Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(string)) == 2);
             Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(ExchangeOrderSide)) == 1);
             Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(BigInteger)) == 1);
-            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(Address)) == 1);
+            Assert.IsTrue(parameters.Count(x => x.ParameterType == typeof(Address)) == 2);
 
             var returnType = method.ReturnType;
 
