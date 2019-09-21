@@ -7,7 +7,9 @@ namespace Phantasma.Blockchain
         None = 0,
         Minimal = 4,
         Moderate = 14,
-        Hard = 20
+        Hard = 19,
+        Heavy = 23,
+        Extreme = 26
     }
 
     public static class PoWUtils

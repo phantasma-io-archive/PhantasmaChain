@@ -57,14 +57,17 @@ namespace Phantasma.Blockchain
         public event MempoolEventHandler OnTransactionRemoved;
         public event MempoolEventHandler OnTransactionFailed;
 
+        public uint MinimumProofOfWork => (uint)CalculateCurrentPoW() + defaultPoW;
+
         private int _size = 0;
         public int Size => _size;
 
         public BigInteger MinimumFee { get; private set; }
 
         public readonly int BlockTime; // in seconds
+        private uint defaultPoW;
 
-        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee)
+        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, uint defaultPoW = 0)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 
@@ -72,6 +75,7 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
             this.BlockTime = blockTime;
             this.MinimumFee = minimumFee;
+            this.defaultPoW = defaultPoW;
         }
 
         private void RejectTransaction(Transaction tx, string reason)
@@ -366,5 +370,33 @@ namespace Phantasma.Blockchain
 
             return false;
         }
+
+        private ProofOfWork CalculateCurrentPoW()
+        {
+            if (Size > 10000)
+            {
+                return ProofOfWork.Heavy;
+            }
+            else
+            if (Size > 5000)
+            {
+                return ProofOfWork.Hard;
+            }
+            else
+            if (Size > 1000)
+            {
+                return ProofOfWork.Moderate;
+            }
+            else
+            if (Size > 500)
+            {
+                return ProofOfWork.Minimal;
+            }
+            else
+            {
+                return ProofOfWork.None;
+            }
+        }
+
     }
 }

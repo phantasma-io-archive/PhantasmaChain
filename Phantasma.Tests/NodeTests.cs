@@ -141,7 +141,7 @@ namespace Phantasma.Tests
             mempool.Start();
 
             // node setup
-            node = new Node(nexus, mempool, node_keys, port, Enumerable.Empty<String>(), log);
+            node = new Node(nexus, mempool, node_keys, port, PeerCaps.Mempool, Enumerable.Empty<String>(), log);
             log.Message("Phantasma Node address: " + node_keys.Address.Text);
             node.Start();
         }

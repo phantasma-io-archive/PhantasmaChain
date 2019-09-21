@@ -9,10 +9,11 @@ namespace Phantasma.Network.P2P
     [Flags]
     public enum PeerCaps
     {
-        Chain = 0x1,
+        None = 0,
+        Mempool = 0x1,
         Archive = 0x2,
         Relay = 0x4,
-        Event = 0x8,
+        Events = 0x8,
         RPC = 0x10,
         REST = 0x20,
     }

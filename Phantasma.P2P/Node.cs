@@ -64,21 +64,44 @@ namespace Phantasma.Network.P2P
 
         public Nexus Nexus { get; private set; }
 
+        public BigInteger MinimumFee => _mempool.MinimumFee;
+        public uint MinimumPoW => _mempool.MinimumProofOfWork;
+
         private Dictionary<string, uint> _receipts = new Dictionary<string, uint>();
         private Dictionary<Address, Cache<Event>> _events = new Dictionary<Address, Cache<Event>>();
 
-        public Node(Nexus nexus, Mempool mempool, KeyPair keys, int port, IEnumerable<string> seeds, Logger log)
+        public readonly string PublicIP;
+        public readonly PeerCaps Capabilities;
+
+        public Node(Nexus nexus, Mempool mempool, KeyPair keys, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
-            Throw.IfNull(mempool, nameof(mempool));
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
 
             this.Nexus = nexus;
             this.Port = port;
             this.Keys = keys;
+            this.Capabilities = caps;
+
+            if (Capabilities.HasFlag(PeerCaps.Events))
+            {
+                this.Nexus.AddPlugin(new NodePlugin(this));
+            }
+
+            if (Capabilities.HasFlag(PeerCaps.Mempool))
+            {
+                Throw.IfNull(mempool, nameof(mempool));
+                this._mempool = mempool;
+            }
+            else
+            {
+                this._mempool = null;
+            }
+
+            // obtains the public IP of the node. This might not be the most sane way to do it...
+            this.PublicIP = new WebClient().DownloadString("http://icanhazip.com").Trim();
+            Throw.IfNullOrEmpty(PublicIP, nameof(PublicIP));
 
             this.Logger = Logger.Init(log);
-
-            this._mempool = mempool;
 
             QueueEndpoints(seeds.Select(seed => ParseEndpoint(seed)));
 
@@ -333,7 +356,13 @@ namespace Phantasma.Network.P2P
             }
 
             // this initial message is not only used to fetch chains but also to verify identity of peers
-            var request = new RequestMessage(RequestKind.Chains | RequestKind.Peers | RequestKind.Mempool, Nexus.Name, this.Address);
+            var requestKind = RequestKind.Chains | RequestKind.Peers;
+            if (Capabilities.HasFlag(PeerCaps.Mempool))
+            {
+                requestKind |= RequestKind.Mempool;
+            }
+
+            var request = new RequestMessage(requestKind, Nexus.Name, this.Address);
             var active = SendMessage(peer, request);
 
             while (active)
@@ -424,7 +453,7 @@ namespace Phantasma.Network.P2P
                             answer.SetChains(chains);
                         }
 
-                        if (request.Kind.HasFlag(RequestKind.Mempool))
+                        if (request.Kind.HasFlag(RequestKind.Mempool) && Capabilities.HasFlag(PeerCaps.Mempool))
                         {
                             var txs = _mempool.GetTransactions().Select(x => Base16.Encode(x.ToByteArray(true)));
                             answer.SetMempool(txs);
@@ -501,7 +530,7 @@ namespace Phantasma.Network.P2P
                             }
                         }
 
-                        if (listMsg.Kind.HasFlag(RequestKind.Mempool))
+                        if (listMsg.Kind.HasFlag(RequestKind.Mempool) && Capabilities.HasFlag(PeerCaps.Mempool))
                         {
                             int submittedCount = 0;
                             foreach (var txStr in listMsg.Mempool)
@@ -552,15 +581,6 @@ namespace Phantasma.Network.P2P
                                     try
                                     {
                                         chain.AddBlock(block, transactions, 1);
-
-                                        foreach (var hash in block.TransactionHashes)
-                                        {
-                                            var events = block.GetEventsForTransaction(hash);
-                                            foreach (var evt in events)
-                                            {
-                                                AddEvent(evt);
-                                            } 
-                                        }
                                     }
                                     catch (Exception e)
                                     {
@@ -601,14 +621,17 @@ namespace Phantasma.Network.P2P
 
                 case Opcode.MEMPOOL_Add:
                     {
-                        var memtx = (MempoolAddMessage)msg;
-                        var prevSize = _mempool.Size;
-                        foreach (var tx in memtx.Transactions)
+                        if (Capabilities.HasFlag(PeerCaps.Mempool))
                         {
-                            _mempool.Submit(tx);
+                            var memtx = (MempoolAddMessage)msg;
+                            var prevSize = _mempool.Size;
+                            foreach (var tx in memtx.Transactions)
+                            {
+                                _mempool.Submit(tx);
+                            }
+                            var count = _mempool.Size - prevSize;
+                            Logger.Message($"Added {count} txs to the mempool");
                         }
-                        var count = _mempool.Size - prevSize;
-                        Logger.Message($"Added {count} txs to the mempool");
                         break;
                     }
 
@@ -683,8 +706,13 @@ namespace Phantasma.Network.P2P
             list.Add(receipt);
         }
 
-        private void AddEvent(Event evt)
+        internal void AddEvent(Event evt)
         {
+            if (!Capabilities.HasFlag(PeerCaps.Events))
+            {
+                return;
+            }
+
             Cache<Event> cache;
 
             if (_events.ContainsKey(evt.Address))
@@ -693,7 +721,7 @@ namespace Phantasma.Network.P2P
             }
             else
             {
-                cache = new Cache<Event>(100, TimeSpan.FromMinutes(60)); // TODO make this configurable
+                cache = new Cache<Event>(250, TimeSpan.FromMinutes(60)); // TODO make this configurable
                 _events[evt.Address] = cache;
             }
 
@@ -711,9 +739,16 @@ namespace Phantasma.Network.P2P
 
         public IEnumerable<Event> GetEvents(Address address)
         {
-            if (_events.ContainsKey(address))
+            if (Capabilities.HasFlag(PeerCaps.Events))
             {
-                return _events[address].Items;
+                if (_events.ContainsKey(address))
+                {
+                    return _events[address].Items;
+                }
+                else
+                {
+                    return Enumerable.Empty<Event>();
+                }
             }
             else
             {
