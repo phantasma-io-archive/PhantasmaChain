@@ -21,24 +21,6 @@ namespace Phantasma.VM.Utils
             return sb.ToScript();
         }
 
-        public static ScriptBuilder LoanGas(this ScriptBuilder sb, Address from, BigInteger gasPrice, BigInteger gasLimit)
-        {
-            CallContract(sb, "gas", "LoanGas", from, gasPrice, gasLimit);
-            return sb;
-        }
-
-        public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address from, Address to, BigInteger gasPrice, BigInteger gasLimit)
-        {
-            CallContract(sb, "gas", "AllowGas", from, to, gasPrice, gasLimit);
-            return sb;
-        }
-
-        public static ScriptBuilder SpendGas(this ScriptBuilder sb, Address address)
-        {
-            CallContract(sb, "gas", "SpendGas", address);
-            return sb;
-        }
-
         // NOTE when arg is an array, this method will corrupt the two registers adjacent to target_reg
         // "corrupt" in the sense of any value being there previousvly will be lost
         // this should be taken into account by methods that call this method

@@ -61,6 +61,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             _allowanceMap.Set(from, allowance);
             _allowanceTargets.Set(from, target);
 
+            Runtime.Expect(Runtime.GetBalance(Nexus.FuelTokenSymbol, from) >= maxAmount, "not enough gas in address");
+
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, this.Address, maxAmount), "gas escrow failed");
             Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = target, price = price, amount = limit });
         }

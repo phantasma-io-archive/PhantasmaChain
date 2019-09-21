@@ -149,7 +149,7 @@ namespace Phantasma.Blockchain
 
             byte[] script;
 
-            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("block", "OpenBlock", validator.Address).SpendGas(validator.Address).EndScript();
+            script = ScriptUtils.BeginScript().CallContract("block", "OpenBlock", validator.Address).EndScript();
             var firstTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
             firstTx.Sign(validator);
 

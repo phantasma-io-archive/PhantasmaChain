@@ -8,6 +8,7 @@ using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using static Phantasma.Blockchain.Contracts.Native.EnergyContract;
 using static Phantasma.Blockchain.Contracts.Native.StorageContract;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Tests
 {

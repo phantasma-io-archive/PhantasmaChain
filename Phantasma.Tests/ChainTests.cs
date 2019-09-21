@@ -12,6 +12,7 @@ using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Tests
 {
@@ -1426,10 +1427,12 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(block != null);
 
-            var hash = block.TransactionHashes.First();
+            // here we skip the first one as it is always the OpenBlock tx
+            var hash = block.TransactionHashes.Skip(1).First();
 
-            var fee = UnitConversion.ToDecimal(nexus.RootChain.GetTransactionFee(hash), Nexus.FuelTokenDecimals);
-            Assert.IsTrue(fee >= 0.001m);
+            var feeValue = nexus.RootChain.GetTransactionFee(hash);
+            var feeAmount = UnitConversion.ToDecimal(feeValue, Nexus.FuelTokenDecimals);
+            Assert.IsTrue(feeAmount >= 0.001m);
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(finalBalance == transferAmount);

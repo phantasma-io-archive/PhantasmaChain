@@ -27,6 +27,14 @@ namespace Phantasma.Blockchain
         public static readonly string GasContractName = "gas";
         public static readonly string TokenContractName = "token";
         public static readonly string BlockContractName = "block";
+        public static readonly string NexusContractName = "nexus";
+        public static readonly string EnergyContractName = "energy";
+        public static readonly string SwapContractName = "swap";
+        public static readonly string ConsensusContractName = "consensus";
+        public static readonly string GovernanceContractName = "governance";
+        public static readonly string StorageContractName = "storage";
+        public static readonly string ValidatorContractName = "validator";
+        public static readonly string InteropContractName = "interop";
 
         public Chain RootChain => FindChainByName(RootChainName);
 
@@ -1263,11 +1271,11 @@ namespace Phantasma.Blockchain
 
             sb.CallContract("block", "OpenBlock", owner.Address);
 
-            sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
+            sb.CallContract(Nexus.TokenContractName, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             // requires staking token to be created previously
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
-            sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
-            sb.CallContract(ScriptBuilderExtensions.EnergyContract, "Claim", owner.Address, owner.Address);
+            sb.CallContract(Nexus.EnergyContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
+            sb.CallContract(Nexus.EnergyContractName, "Claim", owner.Address, owner.Address);
 
             var script = sb.EndScript();
 
@@ -1282,7 +1290,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract(ScriptBuilderExtensions.NexusContract, "CreateChain", owner.Address, name, RootChain.Name, contracts).
+                CallContract(Nexus.NexusContractName, "CreateChain", owner.Address, name, RootChain.Name, contracts).
                 //SpendGas(owner.Address).
                 EndScript();
 
@@ -1297,7 +1305,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract(ScriptBuilderExtensions.GovernanceContract, "CreateValue", name, initial, min, max).
+                CallContract(Nexus.GovernanceContractName, "CreateValue", name, initial, min, max).
                 //SpendGas(owner.Address).
                 EndScript();
 
@@ -1312,8 +1320,8 @@ namespace Phantasma.Blockchain
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("validator", "AddValidator", owner.Address).
-                CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
-                CallContract(ScriptBuilderExtensions.SwapContract, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
+                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
+                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 //SpendGas(owner.Address).
                 EndScript();
 

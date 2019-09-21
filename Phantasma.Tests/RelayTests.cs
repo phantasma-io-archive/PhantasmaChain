@@ -13,6 +13,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM.Utils;
 using static Phantasma.Blockchain.Contracts.Native.RelayContract;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Tests
 {

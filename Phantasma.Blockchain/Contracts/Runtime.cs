@@ -33,8 +33,8 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
         public Address GasTarget { get; private set; }
+        public bool DelayPayment { get; private set; }
         public readonly bool readOnlyMode;
-        public readonly bool DelayPayment;
 
         private bool randomized;
         private BigInteger seed;
@@ -214,8 +214,55 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         public void Notify(EventKind kind, Address address, byte[] bytes)
-        {            
-            var evt = new Event(kind, address, CurrentContext.Name, bytes);
+        {
+            var contract = CurrentContext.Name;
+
+            switch (kind)
+            {
+                case EventKind.BlockCreate:
+                    Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
+                    DelayPayment = true;
+                    break;
+
+                case EventKind.GasEscrow:
+                case EventKind.GasPayment:
+                case EventKind.GasLoan:
+                    Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
+                    break;
+
+                case EventKind.PollStarted:
+                case EventKind.PollFinished:
+                case EventKind.PollVote:
+                    Expect(contract == Nexus.ConsensusContractName, $"event kind only in {Nexus.ConsensusContractName} contract");
+                    break;
+
+                case EventKind.ChainCreate:
+                case EventKind.TokenCreate:
+                case EventKind.FeedCreate:
+                    Expect(contract == Nexus.NexusContractName, $"event kind only in {Nexus.NexusContractName} contract");
+                    break;
+
+                case EventKind.FileCreate:
+                case EventKind.FileDelete:
+                    Expect(contract == Nexus.StorageContractName, $"event kind only in {Nexus.StorageContractName } contract");
+                    break;
+
+                case EventKind.ValidatorAdd:
+                case EventKind.ValidatorRemove:
+                    Expect(contract == Nexus.ValidatorContractName, $"event kind only in {Nexus.ValidatorContractName} contract");
+                    break;
+
+                case EventKind.BrokerRequest:
+                    Expect(contract == Nexus.InteropContractName, $"event kind only in {Nexus.InteropContractName} contract");
+                    break;
+
+                case EventKind.ValueCreate:
+                case EventKind.ValueUpdate:
+                    Expect(contract == Nexus.GovernanceContractName, $"event kind only in {Nexus.GovernanceContractName} contract");
+                    break;
+            }
+
+            var evt = new Event(kind, address, contract, bytes);
             _events.Add(evt);
         }
 
@@ -264,7 +311,7 @@ namespace Phantasma.Blockchain.Contracts
 
             UsedGas += gasCost;
 
-            if (UsedGas > MaxGas)
+            if (UsedGas > MaxGas && !DelayPayment)
             {
 #if DEBUG
                 throw new VMDebugException(this, "VM gas limit exceeded");
