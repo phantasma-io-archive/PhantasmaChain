@@ -375,6 +375,8 @@ namespace Phantasma.Simulator
 
                         bool submitted;
 
+                        string reason = "unknown";
+
                         if (mempool != null)
                         {
                             submitted = true;
@@ -384,8 +386,9 @@ namespace Phantasma.Simulator
                                 {
                                     mempool.Submit(tx);
                                 }
-                                catch
+                                catch (Exception e)
                                 {
+                                    reason = e.Message;
                                     submitted = false;
                                     break;
                                 }
@@ -400,6 +403,7 @@ namespace Phantasma.Simulator
                             }
                             catch (Exception e)
                             {
+                                reason = e.Message;
                                 submitted = false;
                             }
                         }
@@ -434,7 +438,7 @@ namespace Phantasma.Simulator
                         }
                         else
                         {
-                            throw new ChainException($"add block @ {chain.Name} failed");
+                            throw new ChainException($"add block @ {chain.Name} failed, reason: {reason}");
                         }
                     }
                 }
