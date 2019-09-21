@@ -2,6 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -15,8 +16,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public struct ValidatorEntry
     {
         public Address address;
-        public Timestamp joinDate;
-        public Timestamp lastActivity;
+        public Timestamp election;
         public ValidatorStatus status;
     }
 
@@ -35,12 +35,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        public Address[] GetValidators()
+        public Address[] GetActiveValidatorAddresses()
         {
-            return _validatorList.All<Address>();
+            var addresses = _validatorList.All<Address>();
+            return addresses.Select(x => _validatorMap.Get<Address, ValidatorEntry>(x)).Where(x => x.status == ValidatorStatus.Active).Select(x => x.address).ToArray();
         }
 
-        public BigInteger GetValidatorCount()
+        public BigInteger GetActiveValidators()
         {
             return _validatorList.Count();
         }
@@ -122,27 +123,26 @@ namespace Phantasma.Blockchain.Contracts.Native
             var entry = new ValidatorEntry()
             {
                 address = from,
-                joinDate = Runtime.Time,
-                lastActivity = Runtime.Time,
+                election = Runtime.Time,
             };
             _validatorMap.Set(from, entry);
 
             Runtime.Notify(EventKind.ValidatorAdd, Runtime.Chain.Address, from);
         }
 
-        public void RemoveValidator(Address from)
+        public void RemoveValidator(Address target)
         {
-            Runtime.Expect(from.IsUser, "must be user address");
-            Runtime.Expect(IsKnownValidator(from), "not a validator");
+            Runtime.Expect(target.IsUser, "must be user address");
+            Runtime.Expect(IsKnownValidator(target), "not a validator");
 
             var count = _validatorList.Count();
             Runtime.Expect(count > 1, "cant remove last validator");
 
-            var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
+            var entry = _validatorMap.Get<Address, ValidatorEntry>(target);
 
             bool brokenRules = false;
 
-            var diff = Timestamp.Now - entry.lastActivity;
+            var diff = Timestamp.Now - Runtime.Nexus.GetValidatorLastActivity(target);
             var maxPeriod = 3600 * 2; // 2 hours
             if (diff > maxPeriod)
             {
@@ -150,7 +150,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var requiredStake = EnergyContract.MasterAccountThreshold;
-            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
+            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", target);
 
             if (stakedAmount < requiredStake)
             {
@@ -159,10 +159,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(brokenRules, "no rules broken");
 
-            _validatorMap.Remove(from);
-            _validatorList.Remove(from);
+            _validatorMap.Remove(target);
+            _validatorList.Remove(target);
 
-            Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, from);
+            Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, target);
         }
 
         public BigInteger GetIndexOfValidator(Address address)
@@ -205,72 +205,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _validatorMap.Remove<Address>(from);
 
             entry.address = to;
-            entry.lastActivity = Runtime.Time;
             _validatorMap.Set<Address, ValidatorEntry>(to, entry);
-        }
-
-        public void CreateBlock(Address from)
-        {
-            Runtime.Expect(IsWitness(from), "witness failed");
-
-            var count = _validatorList.Count();
-            if (count > 0)
-            {
-                Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "validator failed");
-                Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
-
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(from);
-                validator.lastActivity = Runtime.Time;
-                _validatorMap.Set<Address, ValidatorEntry>(from, validator);
-            }
-
-            Runtime.Notify(EventKind.BlockCreate, from, Runtime.Chain.Address);
-        }
-
-        public void CloseBlock(Address from)
-        {
-            Runtime.Expect(IsActiveValidator(from), "validator failed");
-            Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
-            Runtime.Expect(IsWitness(from), "witness failed");
-
-            var count = _validatorList.Count();
-
-            var totalValidators = 0;
-            for (int i = 0; i < count; i++)
-            {
-                var address = _validatorList.Get<Address>(i);
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                if (validator.status == ValidatorStatus.Active)
-                {
-                    totalValidators++;
-                }
-            }
-            Runtime.Expect(totalValidators > 0, "no active validators found");
-
-            var totalAvailable = Runtime.GetBalance(Nexus.FuelTokenSymbol, this.Address);
-            var amountPerValidator = totalAvailable / count;
-            Runtime.Expect(amountPerValidator > 0, "not enough fees available");
-
-            int delivered = 0;
-            for (int i = 0; i < count; i++)
-            {
-                var address = _validatorList.Get<Address>(i);
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                if (validator.status == ValidatorStatus.Active)
-                {
-                    if (Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
-                    {
-                        Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = Nexus.FuelTokenSymbol });
-                        delivered++;
-                    }
-                }
-            }
-
-            Runtime.Expect(delivered > 0, "failed to claim fees");
-
-            var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
-            entry.lastActivity = Runtime.Time;
-            _validatorMap.Set<Address, ValidatorEntry>(from, entry);
         }
     }
 }

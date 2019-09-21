@@ -149,11 +149,11 @@ namespace Phantasma.Blockchain
 
             byte[] script;
 
-            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("validator", "CreateBlock", validator.Address).SpendGas(validator.Address).EndScript();
+            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("block", "OpenBlock", validator.Address).SpendGas(validator.Address).EndScript();
             var firstTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
             firstTx.Sign(validator);
 
-            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("validator", "CloseBlock", validator.Address).SpendGas(validator.Address).EndScript();
+            script = ScriptUtils.BeginScript().AllowGas(validator.Address, Address.Null, minimumFee, 9999).CallContract("block", "CloseBlock", validator.Address).SpendGas(validator.Address).EndScript();
             var lastTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
             lastTx.Sign(validator);
 
@@ -637,7 +637,7 @@ namespace Phantasma.Blockchain
 
             foreach (var evt in events)
             {
-                if (evt.Kind == EventKind.BlockCreate && evt.Contract == "validator")
+                if (evt.Kind == EventKind.BlockCreate && evt.Contract == Nexus.BlockContractName)
                 {
                     return evt.Address;
                 }

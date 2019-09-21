@@ -44,7 +44,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var usedSize = GetUsedSpace(from);
 
-            var stakedAmount = (BigInteger) Runtime.CallContext("energy", "GetStake", from);
+            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
             var availableSize = CalculateStorageSizeForStake(stakedAmount);
             
 

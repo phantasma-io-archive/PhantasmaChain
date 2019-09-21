@@ -26,6 +26,7 @@ namespace Phantasma.Blockchain
 
         public static readonly string GasContractName = "gas";
         public static readonly string TokenContractName = "token";
+        public static readonly string BlockContractName = "block";
 
         public Chain RootChain => FindChainByName(RootChainName);
 
@@ -389,7 +390,8 @@ namespace Phantasma.Blockchain
                 case "energy":   contract  = new EnergyContract(); break;
                 case "token": contract = new TokenContract(); break;
                 case "swap": contract = new SwapContract(); break;
-                case "gas":  contract  = new GasContract(); break;
+                case "gas": contract = new GasContract(); break;
+                case "block": contract = new BlockContract(); break;
                 case "relay": contract = new RelayContract(); break;
                 case "storage": contract  = new StorageContract(); break;
                 case "vault": contract  = new VaultContract(); break;
@@ -458,6 +460,7 @@ namespace Phantasma.Blockchain
             var contractSet = new HashSet<string>(contractNames);
             contractSet.Add(GasContractName);
             contractSet.Add(TokenContractName);
+            contractSet.Add(BlockContractName);
             chain.DeployContracts(contractSet);
 
             // add to persistent list of chains
@@ -1258,7 +1261,7 @@ namespace Phantasma.Blockchain
         {
             var sb = ScriptUtils.BeginScript();
 
-            sb.CallContract("validator", "CreateBlock", owner.Address);
+            sb.CallContract("block", "OpenBlock", owner.Address);
 
             sb.CallContract(ScriptBuilderExtensions.TokenContract, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             // requires staking token to be created previously
@@ -1456,15 +1459,20 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region VALIDATORS
-        public IEnumerable<Address> GetValidators()
+        public Timestamp GetValidatorLastActivity(Address target)
         {
-            var validators = (Address[])RootChain.InvokeContract("validator", "GetValidators").ToObject();
+            throw new NotImplementedException();
+        }
+
+        public Address[] GetActiveValidatorAddresses()
+        {
+            var validators = (Address[])RootChain.InvokeContract("validator", "GetActiveValidatorAddresses").ToObject();
             return validators;
         }
 
-        public int GetValidatorCount()
+        public int GetActiveValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetActiveValidatorss").AsNumber();
+            var count = RootChain.InvokeContract("validator", "GetActiveValidators").AsNumber();
             return (int)count;
         }
 
