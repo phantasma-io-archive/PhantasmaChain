@@ -246,14 +246,30 @@ namespace Phantasma.Blockchain
                 var evts = block.GetEventsForTransaction(tx.Hash);
                 foreach (var evt in evts)
                 {
-                    if (evt.Kind == EventKind.TokenMint || evt.Kind == EventKind.TokenBurn || evt.Kind == EventKind.TokenReceive || evt.Kind == EventKind.TokenSend)
+                    if (evt.Kind == EventKind.TokenMint || evt.Kind == EventKind.TokenBurn/* || evt.Kind == EventKind.TokenReceive || evt.Kind == EventKind.TokenSend*/)
                     {
-                        if (synchMap == null)
-                        {
-                            synchMap = new Dictionary<string, BigInteger>();
+                        var eventData = evt.GetContent<TokenEventData>();
+                        var token = Nexus.GetTokenInfo(eventData.symbol);
 
-                            var eventData = evt.GetContent<TokenEventData>();
-                            var balance = synchMap.ContainsKey(eventData.symbol) ? synchMap[eventData.symbol] : 0;
+                        if (!token.IsFungible)
+                        {
+                            // TODO support this
+                            continue;
+                        }
+
+                        if (token.IsCapped)
+                        {
+                            BigInteger balance;
+
+                            if (synchMap == null)
+                            {
+                                synchMap = new Dictionary<string, BigInteger>();
+                                balance = 0;
+                            }
+                            else
+                            {
+                                balance = synchMap.ContainsKey(eventData.symbol) ? synchMap[eventData.symbol] : 0;
+                            }
 
                             if (evt.Kind == EventKind.TokenBurn || evt.Kind == EventKind.TokenSend)
                             {
@@ -290,14 +306,6 @@ namespace Phantasma.Blockchain
                     continue;
                 }
 
-                var token = Nexus.GetTokenInfo(symbol);
-
-                if (!token.IsFungible)
-                {
-                    // TODO support this
-                    continue;
-                }
-
                 var parentName = Nexus.GetParentChainByName(this.Name);
                 var parentChain = Nexus.FindChainByName(parentName);
                 if (parentChain != null)
@@ -314,7 +322,6 @@ namespace Phantasma.Blockchain
                     childSupplies.Synch(childChain.Storage, this.Name, balance);
                 }
             }
-
         }
 
         public bool ContainsTransaction(Hash hash)
