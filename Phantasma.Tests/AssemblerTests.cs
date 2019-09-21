@@ -101,7 +101,7 @@ namespace Phantasma.Tests
 
             var owner = KeyPair.Generate();
             var target = KeyPair.Generate();
-            var symbol = "debugNFT";
+            var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new ChainSimulator(owner, 1234);
 
@@ -177,7 +177,7 @@ namespace Phantasma.Tests
 
             var owner = KeyPair.Generate();
             var target = KeyPair.Generate();
-            var symbol = "debugNFT";
+            var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new ChainSimulator(owner, 1234);
 
@@ -273,7 +273,7 @@ namespace Phantasma.Tests
 
             var owner = KeyPair.Generate();
             var target = KeyPair.Generate();
-            var symbol = "debugNFT";
+            var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new ChainSimulator(owner, 1234);
 
@@ -358,7 +358,7 @@ namespace Phantasma.Tests
 
             var owner = KeyPair.Generate();
             var target = KeyPair.Generate();
-            var symbol = "debugNFT";
+            var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new ChainSimulator(owner, 1234);
 
