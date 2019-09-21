@@ -1198,18 +1198,23 @@ namespace Phantasma.Tests
 
             var amount = UnitConversion.ToBigInteger(1, token.Decimals);
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
-
             // Send from Genesis address to test user
             simulator.BeginBlock();
-            var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, amount);
+            simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, amount);
+            simulator.EndBlock();
+
+            var oldBalance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
+            Assert.IsTrue(oldBalance == amount);
+
+            amount /= 2;
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(sender, receiver.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
-            Assert.IsTrue(transferBalance == amount);
+            var transferBalance = nexus.RootChain.GetTokenBalance(symbol, receiver.Address);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(symbol, sender.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
             Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);

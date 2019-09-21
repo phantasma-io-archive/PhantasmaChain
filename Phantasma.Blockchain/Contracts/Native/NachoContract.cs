@@ -3246,7 +3246,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenROM = new byte[0]; //itemBytes;
             var tokenRAM = itemBytes;   //new byte[0];
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, this.Address, tokenROM, tokenRAM, 0);
+            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, this.Address, tokenROM, tokenRAM);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);

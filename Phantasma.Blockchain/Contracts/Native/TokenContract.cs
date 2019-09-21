@@ -157,7 +157,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram, value);
+            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             Runtime.Expect(Runtime.Nexus.MintToken(Runtime, symbol, to, tokenID, false), "minting failed");
@@ -190,10 +190,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, symbol, from, tokenID, false), "burn failed");
 
-            Runtime.Expect(this.Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, Runtime.Chain.Address, from, nft.Value), "energy claim failed");
-
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
-            Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { symbol = Nexus.FuelTokenName, value = nft.Value, chainAddress = Runtime.Chain.Address });
         }
 
         public void TransferToken(Address source, Address destination, string symbol, BigInteger tokenID)
