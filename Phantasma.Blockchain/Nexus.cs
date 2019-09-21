@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
@@ -683,6 +683,14 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
+        private void ValidateSymbol(string symbol)
+        {
+            foreach (var c in symbol)
+            {
+                Throw.If(c < 'A'  || c > 'Z', "Symbol must only contain capital letters, no other characters are allowed");
+            }
+        }
+
         internal bool CreateToken(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             if (symbol == null || name == null || maxSupply < 0)
@@ -690,7 +698,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            symbol = symbol.ToUpper();
+            ValidateSymbol(symbol);
 
             // check if already exists something with that name
             if (TokenExists(symbol))
