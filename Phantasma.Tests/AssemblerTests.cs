@@ -75,7 +75,7 @@ namespace Phantasma.Tests
             };
 
             simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(owner, (() =>
+            var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, (() =>
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
                     EmitRaw(AssemblerUtils.BuildScript(scriptString)).
@@ -321,7 +321,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
-            simulator.GenerateCustomTransaction(target,
+            simulator.GenerateCustomTransaction(target, ProofOfWork.None,
                 () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
                     .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
                     .EndScript());
@@ -415,7 +415,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
-            simulator.GenerateCustomTransaction(target,
+            simulator.GenerateCustomTransaction(target, ProofOfWork.None,
                 () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
                     .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
                     .EndScript());

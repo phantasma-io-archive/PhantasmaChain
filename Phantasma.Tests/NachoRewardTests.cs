@@ -82,7 +82,7 @@ namespace Phantasma.Tests
                     var initialFiat = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FiatTokenSymbol, receiver.Address);
 
                     simulator.BeginBlock();
-                    simulator.GenerateCustomTransaction(buyer, () =>
+                    simulator.GenerateCustomTransaction(buyer, ProofOfWork.None, () =>
                         ScriptUtils.BeginScript().AllowGas(buyer.Address, Address.Null, 1, 9999)
                             .CallContract("nacho", "BuyInApp", buyer.Address, FiatTokenSymbol, bigintMoney).
                             SpendGas(buyer.Address).EndScript());
@@ -158,7 +158,7 @@ namespace Phantasma.Tests
                         var initialFiat = simulator.Nexus.RootChain.GetTokenBalance(FiatTokenSymbol, receiver.Address);
 
                         simulator.BeginBlock();
-                        simulator.GenerateCustomTransaction(buyer, () =>
+                        simulator.GenerateCustomTransaction(buyer, ProofOfWork.None, () =>
                             ScriptUtils.BeginScript().AllowGas(buyer.Address, Address.Null, 1, 9999)
                                 .CallContract("nacho", "BuyInApp", buyer.Address, FiatTokenSymbol, purchaseAmountsBigint).
                                 SpendGas(buyer.Address).EndScript());
@@ -187,7 +187,7 @@ namespace Phantasma.Tests
                     simulator.EndBlock();
 
                     simulator.BeginBlock();
-                    simulator.GenerateCustomTransaction(buyer, () =>
+                    simulator.GenerateCustomTransaction(buyer, ProofOfWork.None, () =>
                         ScriptUtils.BeginScript().AllowGas(buyer.Address, Address.Null, 1, 9999)
                             .CallContract("nacho", "BuyInApp", buyer.Address, FiatTokenSymbol, bigintMoney).
                             SpendGas(buyer.Address).EndScript());

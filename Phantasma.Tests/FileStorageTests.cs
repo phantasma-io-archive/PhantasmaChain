@@ -42,7 +42,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -69,7 +69,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -116,7 +116,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -137,7 +137,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -175,7 +175,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakedAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -192,7 +192,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -212,7 +212,7 @@ namespace Phantasma.Tests
             var stakeReduction = stakedAmount / 5;
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                     SpendGas(testUser.Address).EndScript());
@@ -249,7 +249,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakedAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -266,7 +266,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -280,7 +280,7 @@ namespace Phantasma.Tests
             //Delete the file
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "DeleteFile", testUser.Address, filename).
                     SpendGas(testUser.Address).EndScript());
@@ -297,7 +297,7 @@ namespace Phantasma.Tests
             //-----------
             //Try to unstake everything: should succeed
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, stakedAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -334,7 +334,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -356,7 +356,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -378,7 +378,7 @@ namespace Phantasma.Tests
             contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -400,7 +400,7 @@ namespace Phantasma.Tests
             contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -437,7 +437,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -459,7 +459,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -475,7 +475,7 @@ namespace Phantasma.Tests
             //Delete the file
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "DeleteFile", testUser.Address, filename).
                     SpendGas(testUser.Address).EndScript());
@@ -488,7 +488,7 @@ namespace Phantasma.Tests
             //----------
             //Upload the same file: should succeed
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -528,7 +528,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserA.Address, stakeAmount).
                     SpendGas(testUserA.Address).EndScript());
@@ -545,7 +545,7 @@ namespace Phantasma.Tests
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserB.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserB, () =>
+            tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserB.Address, stakeAmount).
                     SpendGas(testUserB.Address).EndScript());
@@ -567,7 +567,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUserA.Address).EndScript());
@@ -582,7 +582,7 @@ namespace Phantasma.Tests
             contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserB, () =>
+            tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUserB.Address).EndScript());
@@ -622,7 +622,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakedAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -639,7 +639,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -664,7 +664,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                         SpendGas(testUser.Address).EndScript());
@@ -705,7 +705,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -729,7 +729,7 @@ namespace Phantasma.Tests
                 var contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
@@ -767,7 +767,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -789,7 +789,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -813,7 +813,7 @@ namespace Phantasma.Tests
                 contentMerkle = new MerkleTree(content);
 
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
@@ -849,7 +849,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -871,7 +871,7 @@ namespace Phantasma.Tests
             var contentMerkle = new MerkleTree(content);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
@@ -888,7 +888,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());

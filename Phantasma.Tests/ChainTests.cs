@@ -115,7 +115,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(userA, () =>
+                simulator.GenerateCustomTransaction(userA, ProofOfWork.Moderate, () =>
                     ScriptUtils.BeginScript().
                         LoanGas(userA.Address, 1, 999).
                         EndScript());
@@ -189,7 +189,7 @@ namespace Phantasma.Tests
         private void SetupLender(ChainSimulator simulator, KeyPair lender)
         {
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(lender, () =>
+            simulator.GenerateCustomTransaction(lender, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(lender.Address, Address.Null, 1, 9999).
                     CallContract("gas", "StartLend", lender.Address, lender.Address).
@@ -529,7 +529,7 @@ namespace Phantasma.Tests
 
             // 0 - create a lender, this is not part of the swaps, it is a one-time thing
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, () =>
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
             {
                 return new ScriptBuilder()
                 .AllowGas(owner.Address, Address.Null, simulator.MinimumFee, 9999)
@@ -541,7 +541,7 @@ namespace Phantasma.Tests
             // 1 - associate a Neo address to a Phantasma address
             var interopAddress = Pay.Chains.NeoWallet.EncodeAddress(neoKeys.address);
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.Moderate, () =>
             {
                 return new ScriptBuilder()
                 .LoanGas(testUser.Address, simulator.MinimumFee, 9999)
@@ -560,7 +560,7 @@ namespace Phantasma.Tests
 
             // 3 - settle the Neo transaction on Phantasma
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
             {
                 return new ScriptBuilder()
                 .CallContract("interop", "SettleTransaction", testUser.Address, Pay.Chains.NeoWallet.NeoPlatform, neoTxHash)
@@ -655,7 +655,7 @@ namespace Phantasma.Tests
             var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(symbol, testUser.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, () =>
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
                     .CallContract("token", "TransferTokens", owner.Address, targetName, token.Symbol, transferAmount)
                     .SpendGas(owner.Address).EndScript());
@@ -1330,7 +1330,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(initialBalance > 10000);
 
             sim.BeginBlock();
-            sim.GenerateCustomTransaction(user, () =>
+            sim.GenerateCustomTransaction(user, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(user.Address, Address.Null, 1, 9999).
                     EmitRaw(script).

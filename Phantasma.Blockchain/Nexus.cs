@@ -1293,6 +1293,7 @@ namespace Phantasma.Blockchain
                 EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            tx.Mine((int)ProofOfWork.Moderate);
             tx.Sign(owner);
             return tx;
         }

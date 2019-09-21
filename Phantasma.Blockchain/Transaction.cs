@@ -17,11 +17,12 @@ namespace Phantasma.Blockchain
 {
     public sealed class Transaction : ISerializable
     {
-        public Timestamp Expiration { get; private set; }
         public byte[] Script { get; private set; }
 
         public string NexusName { get; private set; }
         public string ChainName { get; private set; }
+
+        public Timestamp Expiration { get; private set; }
 
         public Signature[] Signatures { get; private set; }
         public Hash Hash { get; private set; }
@@ -64,13 +65,6 @@ namespace Phantasma.Blockchain
         public override string ToString()
         {
             return $"{Hash}";
-        }
-
-        // TODO should run the script and return true if sucess or false if exception
-        private bool Validate(Chain chain, out BigInteger fee)
-        {
-            fee = 0;
-            return true;
         }
 
         internal bool Execute(Chain chain, Epoch epoch, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
@@ -189,51 +183,7 @@ namespace Phantasma.Blockchain
 
         public bool IsValid(Chain chain)
         {
-            if (chain.Name != this.ChainName)
-            {
-                return false;
-            }
-
-            if (chain.Nexus.Name != this.NexusName)
-            {
-                return false;
-            }
-
-            // TODO unsigned tx should be supported too
-            /* if (!IsSigned) 
-             {
-                 return false;
-             }
-
-             var data = ToArray(false);
-             if (!this.Signature.Verify(data, this.SourceAddress))
-             {
-                 return false;
-             }*/
-
-            BigInteger cost;
-            var validation = Validate(chain, out cost);
-            if (!validation)
-            {
-                return false;
-            }
-
-            /*if (chain.NativeTokenAddress != null)
-            {
-                if (this.Fee < cost)
-                {
-                    return false;
-                }
-
-                var balance = chain.GetTokenBalance(chain.NativeTokenAddress, this.SourceAddress);
-
-                if (balance < this.Fee)
-                {
-                    return false;
-                }
-            }*/
-
-            return true;
+            return (chain.Name == this.ChainName && chain.Nexus.Name == this.NexusName);
         }
 
         private void UpdateHash()
@@ -271,6 +221,36 @@ namespace Phantasma.Blockchain
             }
 
             this.UpdateHash();
+        }
+
+        // TODO this can be optimized by serializing the TX once then manually editing the indices that belong to the expiration
+        public void Mine(int targetDifficulty)
+        {
+            Throw.If(targetDifficulty < 0 || targetDifficulty > 256, "invalid difficulty");
+            Throw.If(Signatures.Length > 0, "cannot be signed");
+
+            if (targetDifficulty == 0)
+            {
+                return; // no mining necessary 
+            }
+
+            var baseExpiration = this.Expiration.Value;
+            uint offset = 0;
+            while (true)
+            {
+                if (this.Hash.GetDifficulty() >= targetDifficulty)
+                {
+                    return;
+                }
+
+                offset++;
+                if (offset == 0)
+                {
+                    throw new ChainException("Transaction mining failed");
+                }
+                this.Expiration = new Timestamp(baseExpiration + offset);
+                UpdateHash();
+            }
         }
     }
 }

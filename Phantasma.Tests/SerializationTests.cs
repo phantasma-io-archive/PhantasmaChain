@@ -96,5 +96,26 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(block.Hash == block2.Hash);
         }
+
+        [TestMethod]
+        public void TransactionMining()
+        {
+            var keysA = KeyPair.Generate();
+            var keysB = KeyPair.Generate();
+
+            var script = ScriptUtils.BeginScript().
+                AllowGas(keysA.Address, Address.Null, 1, 9999).
+                TransferTokens(Nexus.FuelTokenSymbol, keysA.Address, keysB.Address, UnitConversion.ToBigInteger(25, Nexus.FuelTokenDecimals)).
+                SpendGas(keysA.Address).
+                EndScript();
+
+            var tx = new Transaction("simnet", "main", script, Timestamp.Now);
+            var expectedDiff = 14;
+            tx.Mine(expectedDiff);
+
+            var diff = tx.Hash.GetDifficulty();
+            Assert.IsTrue(diff >= expectedDiff);
+        }
+
     }
 }

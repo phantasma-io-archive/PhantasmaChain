@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Tests
 {
@@ -414,6 +415,27 @@ namespace Phantasma.Tests
             Assert.IsTrue(posBigint.Sign== 1);
             Assert.IsTrue(negBigInt.Sign== -1);
             Assert.IsTrue(negBigInt.ToUintArray().SequenceEqual(posBigint.ToUintArray()));
+        }
+        #endregion
+
+        #region Proof of Work
+        [TestMethod]
+        public void PowDifficulty()
+        {
+            int diff;
+            var bytes = new byte[32];
+
+            bytes[0] = 1;
+            diff = new Hash(bytes).GetDifficulty();
+            Assert.IsTrue(diff == 255);
+
+            bytes[31] = 1;
+            diff = new Hash(bytes).GetDifficulty();
+            Assert.IsTrue(diff == 7);
+
+            bytes[31] = 128;
+            diff = new Hash(bytes).GetDifficulty();
+            Assert.IsTrue(diff == 0);
         }
         #endregion
     }

@@ -85,7 +85,7 @@ namespace Phantasma.Tests
             Timestamp endDate = simulator.CurrentTime + TimeSpan.FromDays(2);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
             ScriptUtils.
                   BeginScript().
                   AllowGas(testUser.Address, Address.Null, 1, 9999).
@@ -99,7 +99,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(auctions.Length == 1 + previousAuctionCount, "auction ids missing");
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, () =>
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
             ScriptUtils.
                   BeginScript().
                   AllowGas(owner.Address, Address.Null, 1, 9999).
@@ -140,7 +140,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -176,7 +176,7 @@ namespace Phantasma.Tests
 
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                         SpendGas(testUser.Address).EndScript());
@@ -215,7 +215,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, desiredStakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -239,7 +239,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                         SpendGas(testUser.Address).EndScript());
@@ -261,7 +261,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Unstake", testUser.Address,
                             stakeReduction).SpendGas(testUser.Address).EndScript());
@@ -282,7 +282,7 @@ namespace Phantasma.Tests
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                     SpendGas(testUser.Address).EndScript());
@@ -303,7 +303,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Unstake", testUser.Address, stakeReduction).SpendGas(testUser.Address)
                         .EndScript());
@@ -327,7 +327,7 @@ namespace Phantasma.Tests
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                     SpendGas(testUser.Address).EndScript());
@@ -369,7 +369,7 @@ namespace Phantasma.Tests
             var t1 = simulator.CurrentTime;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, desiredStake).
                     SpendGas(testUser.Address).EndScript());
@@ -395,7 +395,7 @@ namespace Phantasma.Tests
             var startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -418,7 +418,7 @@ namespace Phantasma.Tests
             var addedStake = MinimumValidStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -435,7 +435,7 @@ namespace Phantasma.Tests
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -458,7 +458,7 @@ namespace Phantasma.Tests
             addedStake = MinimumValidStake * 3;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -475,7 +475,7 @@ namespace Phantasma.Tests
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -499,7 +499,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
                         .EndScript());
@@ -522,7 +522,7 @@ namespace Phantasma.Tests
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -549,7 +549,7 @@ namespace Phantasma.Tests
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -569,7 +569,7 @@ namespace Phantasma.Tests
             addedStake = MinimumValidStake * 2;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -595,7 +595,7 @@ namespace Phantasma.Tests
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -615,7 +615,7 @@ namespace Phantasma.Tests
             addedStake = MinimumValidStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -633,7 +633,7 @@ namespace Phantasma.Tests
 
             //Total unstake
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, previousStake + addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -650,7 +650,7 @@ namespace Phantasma.Tests
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
                     .EndScript());
@@ -693,7 +693,7 @@ namespace Phantasma.Tests
             var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, desiredStakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -734,7 +734,7 @@ namespace Phantasma.Tests
             var startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -775,7 +775,7 @@ namespace Phantasma.Tests
             var initialStake = MinimumValidStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, initialStake).
                     SpendGas(testUser.Address).EndScript());
@@ -792,7 +792,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "AddProxy", testUser.Address, testUser.Address, 50).
                         SpendGas(testUser.Address).EndScript());
@@ -814,7 +814,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 0).
                         SpendGas(testUser.Address).EndScript());
@@ -831,7 +831,7 @@ namespace Phantasma.Tests
             //-----------
             //Add and remove 90% proxy: should pass
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 90).
                     SpendGas(testUser.Address).EndScript());
@@ -844,7 +844,7 @@ namespace Phantasma.Tests
             apiResult = api.InvokeRawScript("main", Base16.Encode(script));
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "RemoveProxy", testUser.Address, proxyA.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -856,7 +856,7 @@ namespace Phantasma.Tests
             //-----------
             //Add and remove 100% proxy: should pass
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 100).
                     SpendGas(testUser.Address).EndScript());
@@ -867,7 +867,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(proxyList[0].percentage == 100);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "RemoveProxy", testUser.Address, proxyA.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -881,7 +881,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 101).
                         SpendGas(testUser.Address).EndScript());
@@ -894,7 +894,7 @@ namespace Phantasma.Tests
             //-----------
             //Add 25% proxy A: should pass
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, proxyAPercentage).
                     SpendGas(testUser.Address).EndScript());
@@ -909,7 +909,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, 25).
                         SpendGas(testUser.Address).EndScript());
@@ -930,7 +930,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 80).
                         SpendGas(testUser.Address).EndScript());
@@ -943,7 +943,7 @@ namespace Phantasma.Tests
             //-----------
             //Add 25% proxy B and remove it: should pass
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 25).
                     SpendGas(testUser.Address).EndScript());
@@ -954,7 +954,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(proxyList[0].percentage == 25 && proxyList[1].percentage == 25);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "RemoveProxy", testUser.Address, proxyB.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -966,7 +966,7 @@ namespace Phantasma.Tests
             //-----------
             //Add 75% proxy B and remove it: should pass
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 75).
                     SpendGas(testUser.Address).EndScript());
@@ -977,7 +977,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(proxyList[0].percentage == 25 && proxyList[1].percentage == 75);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "RemoveProxy", testUser.Address, proxyB.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -991,7 +991,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "RemoveProxy", testUser.Address, proxyB.Address).
                         SpendGas(testUser.Address).EndScript());
@@ -1006,7 +1006,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "AddProxy", testUser.Address, proxyB.Address, 76).
                         SpendGas(testUser.Address).EndScript());
@@ -1024,7 +1024,7 @@ namespace Phantasma.Tests
             var startingProxyFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, proxyA.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
                     .EndScript());
@@ -1053,7 +1053,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                         SpendGas(testUser.Address).EndScript());
@@ -1071,7 +1071,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(proxyA, () =>
+                simulator.GenerateCustomTransaction(proxyA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
                         .EndScript());
@@ -1099,7 +1099,7 @@ namespace Phantasma.Tests
             startingProxyFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, proxyA.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(proxyA, () =>
+            tx = simulator.GenerateCustomTransaction(proxyA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
                     .EndScript());
@@ -1124,7 +1124,7 @@ namespace Phantasma.Tests
             //-----------
             //Remove proxy A
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "RemoveProxy", testUser.Address, proxyA.Address).
                     SpendGas(testUser.Address).EndScript());
@@ -1135,7 +1135,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(proxyA, () =>
+                simulator.GenerateCustomTransaction(proxyA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
                         .EndScript());
@@ -1147,7 +1147,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(testUser, () =>
+                tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Claim", testUser.Address, testUser.Address).
                         SpendGas(testUser.Address).EndScript());
@@ -1162,7 +1162,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(proxyA, () =>
+                simulator.GenerateCustomTransaction(proxyA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(proxyA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Claim", proxyA.Address, testUser.Address).SpendGas(proxyA.Address)
                         .EndScript());
@@ -1177,7 +1177,7 @@ namespace Phantasma.Tests
             startingProxyFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, proxyA.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
                     .EndScript());
@@ -1196,7 +1196,7 @@ namespace Phantasma.Tests
             //-----------
             //Add 25% proxy A: should pass
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "AddProxy", testUser.Address, proxyA.Address, proxyAPercentage).
                     SpendGas(testUser.Address).EndScript());
@@ -1221,7 +1221,7 @@ namespace Phantasma.Tests
             startingProxyFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, proxyA.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Claim", testUser.Address, testUser.Address).SpendGas(testUser.Address)
                     .EndScript());
@@ -1273,7 +1273,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform stake operation
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, initialStake).
                     SpendGas(testUser.Address).EndScript());
@@ -1287,7 +1287,7 @@ namespace Phantasma.Tests
             var addedStake = MinimumVotingStake * 2;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -1312,7 +1312,7 @@ namespace Phantasma.Tests
             //------------
             //Perform stake operation
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -1336,7 +1336,7 @@ namespace Phantasma.Tests
             var stakeReduction = MinimumVotingStake;
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                     SpendGas(testUser.Address).EndScript());
@@ -1356,7 +1356,7 @@ namespace Phantasma.Tests
             stakeReduction = addedStake - stakeReduction;
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUser.Address, stakeReduction).
                     SpendGas(testUser.Address).EndScript());
@@ -1406,7 +1406,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Stake", testUser.Address, initialStake).
                         SpendGas(testUser.Address).EndScript());
@@ -1424,7 +1424,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUser, () =>
+                simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "Stake", testUser.Address, accountBalance * 10).
                         SpendGas(testUser.Address).EndScript());
@@ -1440,7 +1440,7 @@ namespace Phantasma.Tests
             startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, initialStake).
                     SpendGas(testUser.Address).EndScript());
@@ -1464,7 +1464,7 @@ namespace Phantasma.Tests
             var totalExpectedStake = initialStake + addedStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUser, () =>
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, addedStake).
                     SpendGas(testUser.Address).EndScript());
@@ -1507,7 +1507,7 @@ namespace Phantasma.Tests
             var initialStake = accountBalance - MinimumValidStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserA.Address, initialStake).
                     SpendGas(testUserA.Address).EndScript());
@@ -1522,7 +1522,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUserA, () =>
+                simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "MasterClaim", testUserA.Address).
                         SpendGas(testUserA.Address).EndScript());
@@ -1538,7 +1538,7 @@ namespace Phantasma.Tests
             var missingStake = MasterAccountThreshold - initialStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserA.Address, missingStake).
                     SpendGas(testUserA.Address).EndScript());
@@ -1554,7 +1554,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUserA, () =>
+                simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "MasterClaim", testUserA.Address).SpendGas(testUserA.Address)
                         .EndScript());
@@ -1575,7 +1575,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUserA, () =>
+                simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "MasterClaim", testUserA.Address).SpendGas(testUserA.Address)
                         .EndScript());
@@ -1595,7 +1595,7 @@ namespace Phantasma.Tests
             var claimMasterCount = simulator.Nexus.RootChain.InvokeContract("energy", "GetClaimMasterCount", simulator.CurrentTime, (Timestamp)simulator.CurrentTime).AsNumber();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "MasterClaim", testUserA.Address).
                     SpendGas(testUserA.Address).EndScript());
@@ -1614,7 +1614,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUserA, () =>
+                simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "MasterClaim", testUserA.Address).
                         SpendGas(testUserA.Address).EndScript());
@@ -1630,7 +1630,7 @@ namespace Phantasma.Tests
             var stakeReduction = MinimumValidStake;
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Unstake", testUserA.Address, stakeReduction).
                     SpendGas(testUserA.Address).EndScript());
@@ -1644,7 +1644,7 @@ namespace Phantasma.Tests
             missingStake = MasterAccountThreshold - initialStake;
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserA, () =>
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserA.Address, missingStake).
                     SpendGas(testUserA.Address).EndScript());
@@ -1665,7 +1665,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUserA, () =>
+                simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                         .CallContract("energy", "MasterClaim", testUserA.Address).
                         SpendGas(testUserA.Address).EndScript());
@@ -1686,7 +1686,7 @@ namespace Phantasma.Tests
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserA.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "MasterClaim", testUserA.Address).
                     SpendGas(testUserA.Address).EndScript());
@@ -1712,14 +1712,14 @@ namespace Phantasma.Tests
             //B and C stake the master threshold -> verify both become masters
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserB, () =>
+            tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserB.Address, accountBalance).
                     SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            tx = simulator.GenerateCustomTransaction(testUserC, () =>
+            tx = simulator.GenerateCustomTransaction(testUserC, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserC.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUserC.Address, accountBalance).
                     SpendGas(testUserC.Address).EndScript());
@@ -1752,7 +1752,7 @@ namespace Phantasma.Tests
             var startingBalanceC = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserC.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "MasterClaim", testUserA.Address).
                     SpendGas(testUserA.Address).EndScript());
@@ -1778,7 +1778,7 @@ namespace Phantasma.Tests
             startingBalanceC = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserC.Address);
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "MasterClaim", testUserA.Address).
                     SpendGas(testUserA.Address).EndScript());
@@ -1829,7 +1829,7 @@ namespace Phantasma.Tests
             BigInteger swapAmount = UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals) / 100;
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("swap", "SwapTokens", testUser.Address, Nexus.StakingTokenSymbol, Nexus.FuelTokenSymbol, swapAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -1864,7 +1864,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUser, () =>
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("energy", "Stake", testUser.Address, stakeAmount).
                     SpendGas(testUser.Address).EndScript());
@@ -1910,14 +1910,14 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("friends", "AddFriend", testUserA.Address, testUserB.Address).
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("friends", "AddFriend", testUserA.Address, testUserC.Address).
                     SpendGas(testUserA.Address).EndScript());
@@ -2010,14 +2010,14 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("friends", "AddFriend", testUserA.Address, testUserB.Address).
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(testUserA, () =>
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
                     .CallContract("friends", "AddFriend", testUserA.Address, testUserC.Address).
                     SpendGas(testUserA.Address).EndScript());

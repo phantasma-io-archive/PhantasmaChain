@@ -1060,9 +1060,11 @@ namespace Phantasma.Numerics
             int w = 0;
             while (b[w] == 0)
                 w++;
+
             for (int x = 0; x < 8; x++)
                 if ((b[w] & 1 << x) > 0)
                     return x + w * 8;
+
             throw new Exception();
         }
 

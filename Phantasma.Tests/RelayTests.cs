@@ -46,7 +46,7 @@ namespace Phantasma.Tests
         private void TopUpChannel(ChainSimulator simulator, KeyPair from, BigInteger amount)
         {
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(from, () =>
+            simulator.GenerateCustomTransaction(from, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(from.Address, Address.Null, 1, 9999)
                     .CallContract("relay", "TopUpChannel", from.Address, amount).
                     SpendGas(from.Address).EndScript());
@@ -223,7 +223,7 @@ namespace Phantasma.Tests
             var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, node.Address);
 
             simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(sender, () =>
+            var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                     .CallContract("relay", "UpdateChannel", lastReceipt).
                     SpendGas(sender.Address).EndScript());
@@ -320,7 +320,7 @@ namespace Phantasma.Tests
                 var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, receiver.Address);
 
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                         .CallContract("relay", "UpdateChannel", lastReceipt).
                         SpendGas(sender.Address).EndScript());
@@ -380,7 +380,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                         .CallContract("relay", "UpdateChannel", receipt).
                         SpendGas(sender.Address).EndScript());
@@ -429,7 +429,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                         .CallContract("relay", "UpdateChannel", receipt).
                         SpendGas(sender.Address).EndScript());
@@ -478,7 +478,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                         .CallContract("relay", "UpdateChannel", receipt).
                         SpendGas(sender.Address).EndScript());
@@ -527,7 +527,7 @@ namespace Phantasma.Tests
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(sender, () =>
+                var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                         .CallContract("relay", "UpdateChannel", receipt).
                         SpendGas(sender.Address).EndScript());
@@ -658,7 +658,7 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, autoSender.Address, simulator.Nexus.RootChain, Nexus.FuelTokenSymbol, 100000);
-            simulator.GenerateCustomTransaction(autoSender,
+            simulator.GenerateCustomTransaction(autoSender, ProofOfWork.None,
                 () => ScriptUtils.BeginScript().AllowGas(autoSender.Address, Address.Null, 1, 9999)
                     .CallContract("account", "RegisterScript", autoSender.Address, script).SpendGas(autoSender.Address)
                     .EndScript());
@@ -750,7 +750,7 @@ namespace Phantasma.Tests
             var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, node.Address);
 
             simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(sender, () =>
+            var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
                     .CallContract("relay", "UpdateChannel", lastReceipt).
                     SpendGas(sender.Address).EndScript());

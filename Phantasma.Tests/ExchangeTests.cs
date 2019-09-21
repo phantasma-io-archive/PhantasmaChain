@@ -528,7 +528,7 @@ namespace Phantasma.Tests
 
 
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(user, () =>
+                var tx = simulator.GenerateCustomTransaction(user, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(user.Address, Address.Null, 1, 9999)
                         .CallContract("exchange", "OpenLimitOrder", user.Address, baseSymbol, quoteSymbol, orderSizeBigint, orderPriceBigint, side, IoC).
                         SpendGas(user.Address).EndScript());
@@ -761,7 +761,7 @@ namespace Phantasma.Tests
 
 
                 simulator.BeginBlock();
-                var tx = simulator.GenerateCustomTransaction(user, () =>
+                var tx = simulator.GenerateCustomTransaction(user, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(user.Address, Address.Null, 1, 9999)
                         .CallContract("exchange", "OpenMarketOrder", user.Address, baseSymbol, quoteSymbol, orderSizeBigint, side).
                         SpendGas(user.Address).EndScript());
