@@ -168,7 +168,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, fromSymbol, from, this.Address, amount), "source tokens transfer failed");
             Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, toSymbol, this.Address, from, total), "target tokens transfer failed");
+
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });
+            Runtime.Notify(EventKind.TokenReceive, this.Address, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });
+            Runtime.Notify(EventKind.TokenSend, this.Address, new TokenEventData() { chainAddress = this.Address, symbol = toSymbol, value = total });
             Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Address, symbol = toSymbol, value = total });
         }
     }
