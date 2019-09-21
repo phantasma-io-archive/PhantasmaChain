@@ -47,7 +47,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void CreateToken(Address owner, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, BigInteger decimals, TokenFlags flags, byte[] script)
         {
             var pow = Runtime.Transaction.Hash.GetDifficulty();
-            Runtime.Expect(pow >= (int)ProofOfWork.Moderate, "expected proof of work");
+            Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
             Runtime.Expect(!string.IsNullOrEmpty(name), "token name required");
@@ -101,7 +101,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void CreateChain(Address owner, string name, string parentName, string[] contracts)
         {
             var pow = Runtime.Transaction.Hash.GetDifficulty();
-            Runtime.Expect(pow >= (int)ProofOfWork.Moderate, "expected proof of work");
+            Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
@@ -124,7 +124,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void CreateFeed(Address owner, string name, OracleFeedMode mode)
         {
             var pow = Runtime.Transaction.Hash.GetDifficulty();
-            Runtime.Expect(pow >= (int)ProofOfWork.Moderate, "expected proof of work");
+            Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
 

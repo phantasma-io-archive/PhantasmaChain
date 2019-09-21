@@ -5,6 +5,7 @@ namespace Phantasma.Blockchain
     public enum ProofOfWork
     {
         None = 0,
+        Minimal = 4,
         Moderate = 14,
         Hard = 20
     }

@@ -516,7 +516,7 @@ namespace Phantasma.Simulator
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = MakeTransaction(owner, ProofOfWork.Moderate, Nexus.RootChain, script);
+            var tx = MakeTransaction(owner, ProofOfWork.Minimal, Nexus.RootChain, script);
 
             return tx;
         }
@@ -598,7 +598,7 @@ namespace Phantasma.Simulator
         {
             var sourceChain = this.Nexus.RootChain;
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("account", "RegisterName", source.Address, name).SpendGas(source.Address).EndScript();
-            var tx = MakeTransaction(source, ProofOfWork.Moderate, sourceChain, script);
+            var tx = MakeTransaction(source, ProofOfWork.Minimal, sourceChain, script);
 
             pendingNames.Add(source.Address);
             return tx;
@@ -613,7 +613,7 @@ namespace Phantasma.Simulator
                 CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name, contracts).
                 SpendGas(source.Address).
                 EndScript();
-            var tx = MakeTransaction(source, ProofOfWork.Moderate, Nexus.RootChain, script);
+            var tx = MakeTransaction(source, ProofOfWork.Minimal, Nexus.RootChain, script);
             return tx;
         }
 
