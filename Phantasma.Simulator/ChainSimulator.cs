@@ -795,7 +795,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, string value)
         {
             var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("nexus", "SetTokenMetadata", tokenSymbol, key, value).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "SetMetadata", tokenSymbol, key, value).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
 
             return tx;
