@@ -82,11 +82,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             return -1;
         }
 
+        public int GetMaxTotalValidators()
+        {
+            if (Runtime.Nexus.Ready)
+            {
+                return (int)Runtime.GetGovernanceValue(ValidatorCountTag);
+            }
+
+            return 1;
+        }
+
         public ValidatorEntry GetValidatorByIndex(BigInteger index)
         {
             Runtime.Expect(index >= 0, "invalid validator index");
 
-            var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
+            var totalValidators = GetMaxTotalValidators();
             Runtime.Expect(index < totalValidators, "invalid validator index");
 
             if (_validators.ContainsKey<BigInteger>(index))
@@ -125,14 +135,24 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetMaxPrimaryValidators()
         {
-            var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
-            return (totalValidators * 10) / 25;
+            if (Runtime.Nexus.Ready)
+            {
+                var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
+                return (totalValidators * 10) / 25;
+            }
+
+            return 1;
         }
 
         public BigInteger GetMaxSecondaryValidators()
         {
-            var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
-            return totalValidators - GetMaxPrimaryValidators();
+            if (Runtime.Nexus.Ready)
+            {
+                var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
+                return totalValidators - GetMaxPrimaryValidators();
+            }
+
+            return 0;
         }
 
         // NOTE - witness not required, as anyone should be able to call this, permission is granted based on consensus
@@ -140,14 +160,16 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(type != ValidatorType.Invalid, "invalid validator type");
+            
+            var activeValidators = GetValidatorCount(ValidatorType.Primary);
 
-            if (Runtime.Nexus.Ready)
+            Runtime.Expect(index >= 0, "invalid index");
+
+            var totalValidators = GetMaxTotalValidators();
+            Runtime.Expect(index < totalValidators, "invalid index");
+
+            if (activeValidators > 1)
             {
-                Runtime.Expect(index >= 0, "invalid index");
-
-                var totalValidators = (int)Runtime.GetGovernanceValue(ValidatorCountTag);
-                Runtime.Expect(index < totalValidators, "invalid index");
-
                 var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
                 var obtainedRank = Runtime.CallContext("consensus", "GetRank", pollName, from).AsNumber();
                 Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
@@ -158,7 +180,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                Runtime.Expect(index == 0, "invalid index");
                 Runtime.Expect(type == ValidatorType.Primary, "type must be primary");
             }
 

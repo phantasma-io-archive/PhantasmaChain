@@ -264,7 +264,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void MultiVote(Address from, string subject, PollVote[] choices)
         {
-            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
+            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid poll subject");
 
             Runtime.Expect(choices.Length > 0, "invalid number of choices");
 
@@ -352,7 +352,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
+            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid poll subject");
 
             var poll = FetchPoll(subject);
             if (poll.state != PollState.Consensus)
@@ -375,16 +375,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // note this returns true if the rank is same or better than the argument
         public BigInteger GetRank(string subject, byte[] value)
         {
-            if (subject.StartsWith(SystemPoll))
-            {
-                var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
-                if (validatorCount == 1)
-                {
-                    return 0;
-                }
-            }
-
-            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
+            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid poll subject");
 
             var poll = FetchPoll(subject);
             Runtime.Expect(poll.state == PollState.Consensus, "no consensus reached");

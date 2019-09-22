@@ -1463,6 +1463,9 @@ namespace Phantasma.Tests
                     CallContract("governance", "SetValue", ValidatorContract.ValidatorCountTag, new BigInteger(2)).
                     SpendGas(owner.Address).
                     EndScript());
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(otherValidator, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(otherValidator.Address, Address.Null, 1, 9999).
