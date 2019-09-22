@@ -12,6 +12,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using System.Text;
 using System.IO;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -81,6 +82,7 @@ namespace Phantasma.Blockchain.Contracts
                     var obj = Activator.CreateInstance(field.FieldType, args);
 
                     field.SetValue(this, obj);
+                    continue;
                 }
 
                 if (typeof(ISerializable).IsAssignableFrom(field.FieldType))
@@ -100,7 +102,15 @@ namespace Phantasma.Blockchain.Contracts
                         }
 
                         field.SetValue(this, obj);
+                        continue;
                     }
+                }
+
+                if (VM.ChangeSet.Has(baseKey))
+                {
+                    var obj = VM.ChangeSet.Get(baseKey, field.FieldType);
+                    field.SetValue(this, obj);
+                    continue;
                 }
             }
         }
@@ -109,6 +119,11 @@ namespace Phantasma.Blockchain.Contracts
         internal void UnloadRuntimeData()
         {
             Throw.IfNull(this.Runtime, nameof(Runtime));
+
+            if (Runtime.readOnlyMode)
+            {
+                return;
+            }
 
             var contractType = this.GetType();
             FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
@@ -127,6 +142,12 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     var obj = (ISerializable)field.GetValue(this);
                     var bytes = obj.Serialize();
+                    this.Runtime.ChangeSet.Put(baseKey, bytes);
+                }
+                else
+                {
+                    var obj = field.GetValue(this);
+                    var bytes = Serialization.Serialize(obj);
                     this.Runtime.ChangeSet.Put(baseKey, bytes);
                 }
             }
