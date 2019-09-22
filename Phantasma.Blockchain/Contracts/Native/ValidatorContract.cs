@@ -184,9 +184,15 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
             }
             else
+            if (primaryValidators == 1)
             {
                 var firstValidator = GetValidatorByIndex(0).address;
                 Runtime.Expect(IsWitness(firstValidator), "invalid witness");
+            }
+            else
+            if (primaryValidators == 0)
+            {
+                Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "invalid witness");
             }
 
             var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
