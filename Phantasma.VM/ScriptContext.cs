@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Phantasma.Core;
 using Phantasma.Numerics;
 
@@ -839,6 +840,11 @@ namespace Phantasma.VM
 #endif
             catch (Exception ex)
             {
+                if (ex is TargetInvocationException)
+                {
+                    ex = ((TargetInvocationException)ex).InnerException;
+                }
+
                 Trace.WriteLine(ex.ToString());
                 SetState(ExecutionState.Fault);
 #if DEBUG
