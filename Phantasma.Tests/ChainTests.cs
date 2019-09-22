@@ -1457,6 +1457,7 @@ namespace Phantasma.Tests
             var fuelAmount = UnitConversion.ToBigInteger(10, Nexus.FuelTokenDecimals);
             var stakeAmount = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
 
+            // make first validator allocate 5 more validator spots       
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.FuelTokenSymbol, fuelAmount);
             simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.StakingTokenSymbol, stakeAmount);
@@ -1468,16 +1469,27 @@ namespace Phantasma.Tests
                     EndScript());
             simulator.EndBlock();
 
+            // make new validator candidate stake enough to become a stake master
             simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(otherValidator, ProofOfWork.None, () =>
+            simulator.GenerateCustomTransaction(otherValidator, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(otherValidator.Address, Address.Null, 1, 9999).
                     CallContract(Nexus.StakeContractName, "Stake", otherValidator.Address, stakeAmount).
-                    CallContract(Nexus.ValidatorContractName, "SetValidator", otherValidator.Address, 1, ValidatorType.Primary).
                     SpendGas(otherValidator.Address).
+                    EndScript());
+            simulator.EndBlock();
+
+            // set a second validator, no election required because theres only one validator for now
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(owner.Address, Address.Null, 1, 9999).
+                    CallContract(Nexus.ValidatorContractName, "SetValidator", otherValidator.Address, 1, ValidatorType.Primary).
+                    SpendGas(owner.Address).
                     EndScript());
             var block = simulator.EndBlock().First();
 
+            // verify that we suceed adding a new validator
             var events = block.GetEventsForTransaction(tx.Hash).ToArray();
             Assert.IsTrue(events.Length > 0);
             Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorAdd));
@@ -1496,6 +1508,7 @@ namespace Phantasma.Tests
             simulator.CurrentTime = (DateTime)simulator.Nexus.GenesisTime + TimeSpan.FromSeconds(180);
 
             // Send from user A to user B
+            // NOTE this block is baked by the second validator
             simulator.BeginBlock(otherValidator);
             simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
             var lastBlock = simulator.EndBlock().First();
