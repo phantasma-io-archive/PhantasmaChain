@@ -4,6 +4,7 @@ using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -64,7 +65,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
-        //UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals)
         public BigInteger GetMasterThreshold()
         {
             if (Runtime.Nexus.Ready)
@@ -96,15 +96,20 @@ namespace Phantasma.Blockchain.Contracts.Native
             return !GetMaster(address).address.IsNull;
         }
 
-        public BigInteger GetCurrentMasterCount()
+        public BigInteger GetMasterCount()
         {
             return _mastersList.Count();
+        }
+
+        public Address[] GetMasterAddresses()
+        {
+            return _mastersList.All<EnergyMaster>().Select(x => x.address).ToArray();
         }
 
         //verifies how many valid masters are in the condition to claim the reward for a specific master claim date, assuming no changes in their master status in the meantime
         public BigInteger GetClaimMasterCount(Timestamp claimDate)
         {
-            var count = GetCurrentMasterCount();
+            var count = GetMasterCount();
             var result = count;
             DateTime requestedClaimDate = new DateTime(((DateTime)claimDate).Year, ((DateTime)claimDate).Month, 1);
 

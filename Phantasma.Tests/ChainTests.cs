@@ -1452,15 +1452,15 @@ namespace Phantasma.Tests
 
             var nexus = simulator.Nexus;
 
-            var otherValidator = KeyPair.Generate();
+            var secondValidator = KeyPair.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, Nexus.FuelTokenDecimals);
             var stakeAmount = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
 
             // make first validator allocate 5 more validator spots       
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.FuelTokenSymbol, fuelAmount);
-            simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.StakingTokenSymbol, stakeAmount);
+            simulator.GenerateTransfer(owner, secondValidator.Address, nexus.RootChain, Nexus.FuelTokenSymbol, fuelAmount);
+            simulator.GenerateTransfer(owner, secondValidator.Address, nexus.RootChain, Nexus.StakingTokenSymbol, stakeAmount);
             simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
@@ -1469,13 +1469,13 @@ namespace Phantasma.Tests
                     EndScript());
             simulator.EndBlock();
 
-            // make new validator candidate stake enough to become a stake master
+            // make second validator candidate stake enough to become a stake master
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(otherValidator, ProofOfWork.None, () =>
+            simulator.GenerateCustomTransaction(secondValidator, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
-                    AllowGas(otherValidator.Address, Address.Null, 1, 9999).
-                    CallContract(Nexus.StakeContractName, "Stake", otherValidator.Address, stakeAmount).
-                    SpendGas(otherValidator.Address).
+                    AllowGas(secondValidator.Address, Address.Null, 1, 9999).
+                    CallContract(Nexus.StakeContractName, "Stake", secondValidator.Address, stakeAmount).
+                    SpendGas(secondValidator.Address).
                     EndScript());
             simulator.EndBlock();
 
@@ -1484,7 +1484,7 @@ namespace Phantasma.Tests
             var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
-                    CallContract(Nexus.ValidatorContractName, "SetValidator", otherValidator.Address, 1, ValidatorType.Primary).
+                    CallContract(Nexus.ValidatorContractName, "SetValidator", secondValidator.Address, 1, ValidatorType.Primary).
                     SpendGas(owner.Address).
                     EndScript());
             var block = simulator.EndBlock().First();
@@ -1509,7 +1509,7 @@ namespace Phantasma.Tests
 
             // Send from user A to user B
             // NOTE this block is baked by the second validator
-            simulator.BeginBlock(otherValidator);
+            simulator.BeginBlock(secondValidator);
             simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
             var lastBlock = simulator.EndBlock().First();
 

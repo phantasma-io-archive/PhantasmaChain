@@ -520,7 +520,7 @@ namespace Phantasma.API
             result.address = address.Text;
             result.name = Nexus.LookUpAddressName(address);
 
-            var stake = Nexus.RootChain.InvokeContract(Nexus.StakeContractName, "GetStake", address).AsNumber();
+            var stake = Nexus.GetStakeFromAddress(address);
             result.stake = stake.ToString();
 
             var balanceList = new List<BalanceResult>();
