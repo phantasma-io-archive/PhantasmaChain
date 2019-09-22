@@ -138,7 +138,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (Runtime.Nexus.Ready)
             {
                 var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
-                return (totalValidators * 10) / 25;
+                var result = (totalValidators * 10) / 25;
+
+                if (totalValidators > 0 && result < 1)
+                {
+                    result = 1;
+                }
+
+                return result;
             }
 
             return 1;
@@ -160,28 +167,25 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(type != ValidatorType.Invalid, "invalid validator type");
-            
-            var activeValidators = GetValidatorCount(ValidatorType.Primary);
+
+            var primaryValidators = GetValidatorCount(ValidatorType.Primary);
+            var secondaryValidators = GetValidatorCount(ValidatorType.Secondary);
 
             Runtime.Expect(index >= 0, "invalid index");
 
             var totalValidators = GetMaxTotalValidators();
             Runtime.Expect(index < totalValidators, "invalid index");
 
-            if (activeValidators > 1)
+            if (primaryValidators > 1)
             {
                 var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
                 var obtainedRank = Runtime.CallContext("consensus", "GetRank", pollName, from).AsNumber();
                 Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
                 Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
+            }
 
-                var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
-                Runtime.Expect(type == expectedType, "unexpected validator type");
-            }
-            else
-            {
-                Runtime.Expect(type == ValidatorType.Primary, "type must be primary");
-            }
+            var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
+            Runtime.Expect(type == expectedType, "unexpected validator type");
 
             var requiredStake = StakeContract.MasterAccountThreshold;
             var stakedAmount = Runtime.CallContext(Nexus.StakeContractName, "GetStake", from).AsNumber();
@@ -201,6 +205,18 @@ namespace Phantasma.Blockchain.Contracts.Native
                 type = type,
             };
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);
+
+            if (type == ValidatorType.Primary)
+            {
+                var newValidators = GetValidatorCount(ValidatorType.Primary);
+                Runtime.Expect(newValidators > primaryValidators, "number of primary validators did not change");
+            }
+            else
+            if (type == ValidatorType.Secondary)
+            {
+                var newValidators = GetValidatorCount(ValidatorType.Secondary);
+                Runtime.Expect(newValidators > secondaryValidators, "number of secondary validators did not change");
+            }
 
             Runtime.Notify(EventKind.ValidatorAdd, Runtime.Chain.Address, from);
         }

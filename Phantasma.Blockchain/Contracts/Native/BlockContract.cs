@@ -84,6 +84,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(Runtime.Chain.IsRoot, "must be root chain");
             }
 
+            if (previousValidator != from)
+            {
+                Runtime.Notify(EventKind.ValidatorSwitch, from, previousValidator);
+                previousValidator = from;
+            }
+
             Runtime.Notify(EventKind.BlockCreate, from, Runtime.Chain.Address);
         }
 
@@ -121,12 +127,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(delivered > 0, "failed to claim fees");
-
-            if (previousValidator.IsUser && previousValidator != from)
-            {
-                Runtime.Notify(EventKind.ValidatorSwitch, from, previousValidator);
-                previousValidator = from;
-            }
         }
     }
 }

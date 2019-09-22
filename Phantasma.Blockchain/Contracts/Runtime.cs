@@ -196,33 +196,6 @@ namespace Phantasma.Blockchain.Contracts
         public void Notify<T>(EventKind kind, Address address, T content)
         {
             var bytes = content == null ? new byte[0] : Serialization.Serialize(content);
-
-            switch (kind)
-            {
-                case EventKind.GasEscrow:
-                    {
-                        var gasInfo = (GasEventData)(object)content;
-                        Expect(gasInfo.price >= this.MinimumFee, "gas fee is too low");
-                        this.MaxGas = gasInfo.amount;
-                        this.GasPrice = gasInfo.price;
-                        this.GasTarget = address;
-                        break;
-                    }
-
-                case EventKind.GasPayment:
-                    {
-                        var gasInfo = (GasEventData)(object)content;
-                        this.PaidGas += gasInfo.amount;
-
-                        if (address != this.Chain.Address)
-                        {
-                            this.FeeTargetAddress = address;
-                        }
-
-                        break;
-                    }
-            }
-
             Notify(kind, address, bytes);
         }
 
@@ -232,9 +205,39 @@ namespace Phantasma.Blockchain.Contracts
 
             switch (kind)
             {
+                case EventKind.GasEscrow:
+                    {
+                        Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
+
+                        var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
+                        Expect(gasInfo.price >= this.MinimumFee, "gas fee is too low");
+                        this.MaxGas = gasInfo.amount;
+                        this.GasPrice = gasInfo.price;
+                        this.GasTarget = address;
+                        break;
+                    }
+
+                case EventKind.GasPayment:
+                    {
+                        Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
+
+                        var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
+                        this.PaidGas += gasInfo.amount;
+
+                        if (address != this.Chain.Address)
+                        {
+                            this.FeeTargetAddress = address;
+                        }
+
+                        break;
+                    }
+
+                case EventKind.GasLoan:
+                    Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
+                    break;
+
                 case EventKind.BlockCreate:
                 case EventKind.BlockClose:
-                    Expect(_events.Count == 0, "cannot have events previous to a block event");
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
 
                     isBlockOperation = true;
@@ -243,12 +246,6 @@ namespace Phantasma.Blockchain.Contracts
 
                 case EventKind.ValidatorSwitch:
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
-                    break;
-
-                case EventKind.GasEscrow:
-                case EventKind.GasPayment:
-                case EventKind.GasLoan:
-                    Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
                     break;
 
                 case EventKind.PollStarted:

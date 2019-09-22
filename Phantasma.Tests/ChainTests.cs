@@ -1448,19 +1448,22 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
             var simulator = new ChainSimulator(owner, 1234);
+            simulator.blockTimeSkip = TimeSpan.FromSeconds(10);
 
             var nexus = simulator.Nexus;
 
             var otherValidator = KeyPair.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, Nexus.FuelTokenDecimals);
+            var stakeAmount = StakeContract.MasterAccountThreshold;
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.FuelTokenSymbol, fuelAmount);
+            simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.StakingTokenSymbol, stakeAmount);
             simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
-                    CallContract("governance", "SetValue", ValidatorContract.ValidatorCountTag, new BigInteger(2)).
+                    CallContract(Nexus.GovernanceContractName, "SetValue", ValidatorContract.ValidatorCountTag, new BigInteger(5)).
                     SpendGas(owner.Address).
                     EndScript());
             simulator.EndBlock();
@@ -1469,7 +1472,8 @@ namespace Phantasma.Tests
             var tx = simulator.GenerateCustomTransaction(otherValidator, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(otherValidator.Address, Address.Null, 1, 9999).
-                    CallContract("validator", "SetValidator", otherValidator.Address, 1, ValidatorType.Primary).
+                    CallContract(Nexus.StakeContractName, "Stake", otherValidator.Address, stakeAmount).
+                    CallContract(Nexus.ValidatorContractName, "SetValidator", otherValidator.Address, 1, ValidatorType.Primary).
                     SpendGas(otherValidator.Address).
                     EndScript());
             var block = simulator.EndBlock().First();
@@ -1488,10 +1492,18 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
             simulator.EndBlock();
 
+            // here we skip to a time where its supposed to be the turn of the second validator
+            simulator.CurrentTime = (DateTime)simulator.Nexus.GenesisTime + TimeSpan.FromSeconds(180);
+
             // Send from user A to user B
-            simulator.BeginBlock();
+            simulator.BeginBlock(otherValidator);
             simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, Nexus.StakingTokenSymbol, transferAmount);
-            simulator.EndBlock();
+            var lastBlock = simulator.EndBlock().First();
+
+            var firstTxHash = lastBlock.TransactionHashes.First();
+            events = lastBlock.GetEventsForTransaction(firstTxHash).ToArray();
+            Assert.IsTrue(events.Length > 0);
+            Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorSwitch));
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(Nexus.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(finalBalance == transferAmount);
