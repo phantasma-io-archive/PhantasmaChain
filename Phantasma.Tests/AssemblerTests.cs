@@ -54,7 +54,7 @@ namespace Phantasma.Tests
             var owner = KeyPair.Generate();
             var addressStr = Base16.Encode(owner.Address.PublicKey);
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
 
@@ -103,7 +103,7 @@ namespace Phantasma.Tests
             var target = KeyPair.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
             var addressStr = Base16.Encode(owner.Address.PublicKey);
@@ -179,7 +179,7 @@ namespace Phantasma.Tests
             var target = KeyPair.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
             var addressStr = Base16.Encode(owner.Address.PublicKey);
@@ -275,7 +275,7 @@ namespace Phantasma.Tests
             var target = KeyPair.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             scriptString = new string[]
             {
@@ -360,7 +360,7 @@ namespace Phantasma.Tests
             var target = KeyPair.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
             var addressStr = Base16.Encode(owner.Address.PublicKey);

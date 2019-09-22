@@ -145,6 +145,25 @@ namespace Phantasma.Blockchain.Contracts.Native
             var targetAddress = _allowanceTargets.Get<Address, Address>(from);
             BigInteger targetGas;
 
+            // TODO the transfers around here should pass through Nexus.TransferTokens!!
+            // return unused gas to transaction creator
+            if (leftoverAmount > 0)
+            {
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, from, leftoverAmount), "gas leftover return failed");
+            }
+
+            Runtime.Expect(spentGas > 1, "gas spent too low");
+            var bombGas = spentGas / 2;
+
+            if (bombGas > 0)
+            {
+                var bombPayment = bombGas * Runtime.GasPrice;
+                var bombAddress = GetAddressForName(Nexus.BombContractName);
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, targetAddress, bombPayment), "gas target payment failed");
+                Runtime.Notify(EventKind.GasPayment, bombAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = bombGas});
+                spentGas -= bombGas;
+            }
+
             if (!targetAddress.IsNull)
             {
                 targetGas = spentGas / 2; // 50% for dapps
@@ -152,13 +171,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             else
             {
                 targetGas = 0;
-            }
-
-            // TODO the transfers around here should pass through Nexus.TransferTokens!!
-            // return unused gas to transaction creator
-            if (leftoverAmount > 0)
-            {
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, from, leftoverAmount), "gas leftover return failed");
             }
 
             if (targetGas > 0)
@@ -172,7 +184,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (spentGas > 0)
             {
                 var validatorPayment = spentGas * Runtime.GasPrice;
-                var validatorAddress = GetAddressForName("block");
+                var validatorAddress = GetAddressForName(Nexus.BlockContractName);
                 Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment), "gas validator payment failed");
                 Runtime.Notify(EventKind.GasPayment, validatorAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
                 spentGas = 0;

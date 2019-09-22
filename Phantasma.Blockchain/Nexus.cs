@@ -39,6 +39,7 @@ namespace Phantasma.Blockchain
         public const string ExchangeContractName = "exchange";
         public const string PrivacyContractName = "privacy";
         public const string RelayContractName = "relay";
+        public const string BombContractName = "bomb";
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
 
@@ -1402,6 +1403,7 @@ namespace Phantasma.Blockchain
                 InteropContractName,
                 StorageContractName,
                 RelayContractName,
+                BombContractName,
                 PrivacyContractName,
                 "friends", "market",  "vault", "apps"});
 
