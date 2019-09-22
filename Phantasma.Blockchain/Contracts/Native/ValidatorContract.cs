@@ -5,18 +5,18 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public enum ValidatorStatus
+    public enum ValidatorType
     {
         Invalid,
-        Active,
-        Waiting, // aka StandBy
+        Primary,
+        Secondary, // aka StandBy
     }
 
     public struct ValidatorEntry
     {
         public Address address;
         public Timestamp election;
-        public ValidatorStatus status;
+        public ValidatorType type;
     }
 
     public sealed class ValidatorContract : SmartContract
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             return result;
         }
 
-        public ValidatorStatus GetValidatorStatus(Address address)
+        public ValidatorType GetValidatorType(Address address)
         {
             var totalValidators = (int)Runtime.GetGovernanceValue(ValidatorCountTag);
 
@@ -54,11 +54,11 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var validator = _validators.Get<BigInteger, ValidatorEntry>(i);
                 if (validator.address == address)
                 {
-                    return validator.status;
+                    return validator.type;
                 }
             }
 
-            return ValidatorStatus.Invalid;
+            return ValidatorType.Invalid;
         }
 
         public BigInteger GetIndexOfValidator(Address address)
@@ -98,30 +98,21 @@ namespace Phantasma.Blockchain.Contracts.Native
             return new ValidatorEntry()
             {
                 address = Address.Null,
-                status = ValidatorStatus.Invalid,
+                type = ValidatorType.Invalid,
                 election = new Timestamp(0)
             };
         }
 
-        public BigInteger GetActiveValidatorCount()
+        public BigInteger GetPrimaryValidatorCount()
         {
             var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
             return (totalValidators * 10) / 25;
         }
 
-        public bool IsActiveValidator(Address address)
+        public BigInteger GetSecondaryValidatorCount()
         {
-            return GetValidatorStatus(address) == ValidatorStatus.Active;
-        }
-
-        public bool IsWaitingValidator(Address address)
-        {
-            return GetValidatorStatus(address) == ValidatorStatus.Waiting;
-        }
-
-        public bool IsKnownValidator(Address address)
-        {
-            return GetValidatorStatus(address) != ValidatorStatus.Invalid;
+            var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
+            return totalValidators - GetPrimaryValidatorCount();
         }
 
         // NOTE - witness not required, as anyone should be able to call this, permission is granted based on consensus
@@ -129,7 +120,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(from.IsUser, "must be user address");
 
-            ValidatorStatus status;
+            ValidatorType status;
 
             if (Runtime.Nexus.Ready)
             {
@@ -143,12 +134,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
                 Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
 
-                status = index < GetActiveValidatorCount() ? ValidatorStatus.Active : ValidatorStatus.Waiting;
+                status = index < GetPrimaryValidatorCount() ? ValidatorType.Primary : ValidatorType.Secondary;
             }
             else
             {
                 Runtime.Expect(index == 0, "invalid index");
-                status = ValidatorStatus.Active;
+                status = ValidatorType.Primary;
             }
 
             var requiredStake = EnergyContract.MasterAccountThreshold;
@@ -160,7 +151,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 address = from,
                 election = Runtime.Time,
-                status = status,
+                type = status,
             };
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);
 

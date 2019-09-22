@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             int validatorIndex = (int)(diff / slotDuration);
-            var validatorCount = Runtime.Nexus.GetActiveValidatorCount();
+            var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
             validatorIndex = validatorIndex % validatorCount;
 
             var currentIndex = validatorIndex;
@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             do
             {
                 var validator = Runtime.Nexus.GetValidatorByIndex(validatorIndex);
-                if (validator.status == ValidatorStatus.Active && !validator.address.IsNull)
+                if (validator.type == ValidatorType.Primary && !validator.address.IsNull)
                 {
                     return validator.address;
                 }
@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var count = Runtime.Nexus.Ready ? Runtime.Nexus.GetActiveValidatorCount() : 0;
+            var count = Runtime.Nexus.Ready ? Runtime.Nexus.GetPrimaryValidatorCount() : 0;
             if (count > 0)
             {
                 Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "validator failed");
@@ -95,7 +95,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(validators.Length > 0, "no active validators found");
 
             var totalAvailable = Runtime.GetBalance(Nexus.FuelTokenSymbol, this.Address);
-            var totalValidators = Runtime.Nexus.GetActiveValidatorCount();
+            var totalValidators = Runtime.Nexus.GetPrimaryValidatorCount();
             var amountPerValidator = totalAvailable / totalValidators;
             Runtime.Expect(amountPerValidator > 0, "not enough fees available");
 
@@ -105,7 +105,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             for (int i = 0; i < totalValidators; i++)
             {
                 var validator = validators[i];
-                if (validator.status != ValidatorStatus.Active)
+                if (validator.type != ValidatorType.Primary)
                 {
                     continue;
                 }

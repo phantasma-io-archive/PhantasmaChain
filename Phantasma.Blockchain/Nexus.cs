@@ -1500,29 +1500,41 @@ namespace Phantasma.Blockchain
             return validators;
         }
 
-        public int GetActiveValidatorCount()
+        public int GetPrimaryValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetActiveValidatorCount").AsNumber();
+            var count = RootChain.InvokeContract("validator", "GetPrimaryValidatorCount").AsNumber();
             return (int)count;
         }
 
-        public bool IsActiveValidator(Address address)
+        public int GetSecondaryValidatorCount()
         {
-            var result = RootChain.InvokeContract("validator", "IsActiveValidator", address).AsBool();
+            var count = RootChain.InvokeContract("validator", "GetSecondaryValidatorCount").AsNumber();
+            return (int)count;
+        }
+
+        public ValidatorType GetValidatorType(Address address)
+        {
+            var result = RootChain.InvokeContract("validator", "GetValidatorType", address).AsEnum<ValidatorType>();
             return result;
         }
 
-        public bool IsWaitingValidator(Address address)
+        public bool IsPrimaryValidator(Address address)
         {
-            var result = RootChain.InvokeContract("validator", "IsWaitingValidator", address).AsBool();
-            return result;
+            var result = GetValidatorType(address);
+            return result == ValidatorType.Primary;
+        }
+
+        public bool IsSecondaryValidator(Address address)
+        {
+            var result = GetValidatorType(address);
+            return result == ValidatorType.Secondary;
         }
 
         // this returns true for both active and waiting
         public bool IsKnownValidator(Address address)
         {
-            var result = RootChain.InvokeContract("validator", "IsKnownValidator", address).AsBool();
-            return result;
+            var result = GetValidatorType(address);
+            return result != ValidatorType.Invalid;
         }
 
         public int GetIndexOfValidator(Address address)
@@ -1549,7 +1561,7 @@ namespace Phantasma.Blockchain
                 {
                     address = Address.Null,
                     election = new Timestamp(0),
-                    status = ValidatorStatus.Invalid
+                    type = ValidatorType.Invalid
                 };
             }
 

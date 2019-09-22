@@ -404,4 +404,14 @@ namespace Phantasma.API
         [APIDescription("Minimum proof of work required by node")]
         public uint pow;
     }
+
+    public struct ValidatorResult : IAPIResult
+    {
+        [APIDescription("Address of validator")]
+        public string address;
+
+        [APIDescription("Either primary or secondary")]
+        public string type;
+    }
+
 }

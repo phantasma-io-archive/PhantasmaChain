@@ -182,7 +182,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (subject.StartsWith(SystemPoll))
             {
-                Runtime.Expect(Runtime.Nexus.IsActiveValidator(from), "must be validator");
+                Runtime.Expect(Runtime.Nexus.IsPrimaryValidator(from), "must be validator");
                 Runtime.Expect(mode == ConsensusMode.Majority, "must use majority mode for system governance");
             }
 
@@ -377,7 +377,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (subject.StartsWith(SystemPoll))
             {
-                var validatorCount = Runtime.Nexus.GetActiveValidatorCount();
+                var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
                 if (validatorCount == 1)
                 {
                     return 0;

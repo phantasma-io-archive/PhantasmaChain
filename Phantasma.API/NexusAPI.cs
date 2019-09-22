@@ -1691,5 +1691,15 @@ namespace Phantasma.API
             return new ArrayResult() { values = platformList.Select(x => (object)x).ToArray() };
         }
 
+        [APIInfo(typeof(ValidatorResult[]), "Returns an array of available validators.", false, 300)]
+        public IAPIResult GetValidators()
+        {
+            var validators = Nexus.GetValidators().
+                Where(x => !x.address.IsNull).
+                Select(x => new ValidatorResult() { address = x.address.ToString(), type = x.type.ToString() });
+
+            return new ArrayResult() { values = validators.Select(x => (object)x).ToArray() };
+        }
+
     }
 }
