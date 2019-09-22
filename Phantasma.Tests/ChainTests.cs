@@ -1455,7 +1455,7 @@ namespace Phantasma.Tests
             var otherValidator = KeyPair.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, Nexus.FuelTokenDecimals);
-            var stakeAmount = StakeContract.MasterAccountThreshold;
+            var stakeAmount = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, otherValidator.Address, nexus.RootChain, Nexus.FuelTokenSymbol, fuelAmount);

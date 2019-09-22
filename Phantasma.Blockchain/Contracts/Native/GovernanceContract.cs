@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(HasValue(name), "invalid value name");
 
             var temp = _valueMap.Get<string, ChainValue>(name);
-            Runtime.Expect(value != temp.Current, "same value");
+            Runtime.Expect(value != temp.Current, "value already set");
             Runtime.Expect(value >= temp.Minimum, "less than minimum value");
             Runtime.Expect(value <= temp.Maximum, "greater than maximum value");
 

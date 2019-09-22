@@ -1425,6 +1425,8 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
                 ValueCreateTx(owner, ConsensusContract.MaxEntriesPerPollTag, 10, 2, 1000),
                 ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
+                ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, Nexus.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, Nexus.StakingTokenDecimals)),
+                ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, Nexus.StakingTokenDecimals), UnitConversion.ToBigInteger(1, Nexus.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, Nexus.StakingTokenDecimals)),
 
                 ChainCreateTx(owner, "sale", "sale"),
 
@@ -1508,13 +1510,13 @@ namespace Phantasma.Blockchain
 
         public ValidatorEntry[] GetValidators()
         {
-            var validators = (ValidatorEntry[])RootChain.InvokeContract("validator", "GetValidators").ToObject();
+            var validators = (ValidatorEntry[])RootChain.InvokeContract(Nexus.ValidatorContractName, "GetValidators").ToObject();
             return validators;
         }
 
         public int GetPrimaryValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetValidatorCount", ValidatorType.Primary).AsNumber();
+            var count = RootChain.InvokeContract(Nexus.ValidatorContractName, "GetValidatorCount", ValidatorType.Primary).AsNumber();
             if (count < 1)
             {
                 return 1;
@@ -1524,13 +1526,13 @@ namespace Phantasma.Blockchain
 
         public int GetSecondaryValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetValidatorCount", ValidatorType.Primary).AsNumber();
+            var count = RootChain.InvokeContract(Nexus.ValidatorContractName, "GetValidatorCount", ValidatorType.Primary).AsNumber();
             return (int)count;
         }
 
         public ValidatorType GetValidatorType(Address address)
         {
-            var result = RootChain.InvokeContract("validator", "GetValidatorType", address).AsEnum<ValidatorType>();
+            var result = RootChain.InvokeContract(Nexus.ValidatorContractName, "GetValidatorType", address).AsEnum<ValidatorType>();
             return result;
         }
 
@@ -1551,6 +1553,19 @@ namespace Phantasma.Blockchain
         {
             var result = GetValidatorType(address);
             return result != ValidatorType.Invalid;
+        }
+
+        public BigInteger GetStakeFromAddress(Address address)
+        {
+            var result = RootChain.InvokeContract(Nexus.ValidatorContractName, "GetValidatorType", address).AsNumber();
+            return result;
+        }
+
+        public bool IsStakeMaster(Address address)
+        {
+            var stake = GetStakeFromAddress(address);
+            var masterThresold = RootChain.InvokeContract(Nexus.StakeContractName, "GetMasterThreshold").AsNumber();
+            return stake >= masterThresold;
         }
 
         public int GetIndexOfValidator(Address address)

@@ -248,8 +248,8 @@ namespace Phantasma.Blockchain.Contracts
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
                     break;
 
-                case EventKind.PollStarted:
-                case EventKind.PollFinished:
+                case EventKind.PollCreated:
+                case EventKind.PollClosed:
                 case EventKind.PollVote:
                     Expect(contract == Nexus.ConsensusContractName, $"event kind only in {Nexus.ConsensusContractName} contract");
                     break;
@@ -458,7 +458,7 @@ namespace Phantasma.Blockchain.Contracts
         // fetches a chain-governed value
         public BigInteger GetGovernanceValue(string name)
         {
-            var value = Nexus.RootChain.InvokeContract("governance", "GetValue", name).AsNumber();
+            var value = Nexus.RootChain.InvokeContract(Nexus.GovernanceContractName, "GetValue", name).AsNumber();
             return value;
         }
 

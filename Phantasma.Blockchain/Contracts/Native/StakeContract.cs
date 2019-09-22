@@ -48,17 +48,32 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private Timestamp genesisTimestamp = 0;
 
-        public readonly static BigInteger MasterAccountThreshold = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
+        public static readonly BigInteger DefaultMasterThreshold = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, Nexus.StakingTokenDecimals);
 
         public readonly static BigInteger BaseEnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
         public static BigInteger MinimumValidStake => UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+
+        public const string MasterStakeThresholdTag = "stake.master.threshold";
+        public const string VotingStakeThresholdTag = "stake.vote.threshold";
 
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
 
         public StakeContract() : base()
         {
+        }
+
+        //UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals)
+        public BigInteger GetMasterThreshold()
+        {
+            if (Runtime.Nexus.Ready)
+            {
+                var amount = Runtime.GetGovernanceValue(MasterStakeThresholdTag);
+                return amount;
+            }
+
+            return DefaultMasterThreshold;
         }
 
         public EnergyMaster GetMaster(Address address)
@@ -161,7 +176,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             _stakes.Remove(from);
 
             //migrate master claim
-            if (sourceStake.totalAmount >= MasterAccountThreshold)
+            var masterAccountThreshold = GetMasterThreshold();
+            if (sourceStake.totalAmount >= masterAccountThreshold)
             {
                 var count = _mastersList.Count();
                 var index = -1;
@@ -276,7 +292,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
             votingLogbook.Add(logEntry);
 
-            if (Runtime.Nexus.GenesisAddress != from && newStake >= MasterAccountThreshold && !IsMaster(from))
+            var masterAccountThreshold = GetMasterThreshold();
+
+            if (Runtime.Nexus.GenesisAddress != from && newStake >= masterAccountThreshold && !IsMaster(from))
             {
                 var nextClaim = GetMasterClaimDate(2);
 
@@ -350,7 +368,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                 RemoveVotingPower(from, unstakeAmount);
             }
 
-            if (stake.totalAmount < MasterAccountThreshold)
+            var masterAccountThreshold = GetMasterThreshold();
+
+            if (stake.totalAmount < masterAccountThreshold)
             {
                 var count = _mastersList.Count();
                 var index = -1;
@@ -675,7 +695,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetAddressVotingPower(Address address)
         {
-            if (GetStake(address) < UnitConversion.ToBigInteger(1000, Nexus.StakingTokenDecimals))
+            var requiredVotingThreshold = Runtime.GetGovernanceValue(VotingStakeThresholdTag);
+            if (GetStake(address) < requiredVotingThreshold)
             {
                 return 0;
             }

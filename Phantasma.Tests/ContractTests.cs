@@ -1495,7 +1495,7 @@ namespace Phantasma.Tests
 
             Transaction tx = null;
 
-            BigInteger accountBalance = MasterAccountThreshold;
+            BigInteger accountBalance = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
@@ -1535,7 +1535,8 @@ namespace Phantasma.Tests
 
             //----------
             //A stakes the master threshold -> verify A is master
-            var missingStake = MasterAccountThreshold - initialStake;
+            var masterAccountThreshold = UnitConversion.ToBigInteger(50000, Nexus.StakingTokenDecimals);
+            var missingStake = masterAccountThreshold - initialStake;
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
@@ -1641,7 +1642,7 @@ namespace Phantasma.Tests
 
             //-----------
             //A restakes to the master threshold -> verify won master status again
-            missingStake = MasterAccountThreshold - initialStake;
+            missingStake = masterAccountThreshold - initialStake;
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>

@@ -9,6 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public enum ConsensusKind
     {
         Validators,
+        Masters,
         Community
     }
 
@@ -56,7 +57,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger round;
         public Timestamp startTime;
         public Timestamp endTime;
-        public BigInteger votesPerUser;
+        public BigInteger choicesPerUser;
         public BigInteger totalVotes;
     }
 
@@ -171,7 +172,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                     _pollMap.Set<string, ConsensusPoll>(subject, poll);
 
-                    Runtime.Notify(EventKind.PollFinished, this.Address, subject);
+                    Runtime.Notify(EventKind.PollClosed, this.Address, subject);
                 }
             }
 
@@ -183,6 +184,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (subject.StartsWith(SystemPoll))
             {
                 Runtime.Expect(Runtime.Nexus.IsPrimaryValidator(from), "must be validator");
+
+                if (subject.StartsWith(SystemPoll + "stake."))
+                {
+                    Runtime.Expect(kind >= ConsensusKind.Masters, "must require votes from masters or community");
+                }
+
                 Runtime.Expect(mode == ConsensusMode.Majority, "must use majority mode for system governance");
             }
 
@@ -227,7 +234,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             poll.kind = kind;
             poll.mode = mode;
             poll.state = PollState.Inactive;
-            poll.votesPerUser = votesPerUser;
+            poll.choicesPerUser = votesPerUser;
             poll.totalVotes = 0;
 
             var electionName = SystemPoll + ValidatorContract.ValidatorPollTag;
@@ -254,7 +261,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             _pollMap.Set<string, ConsensusPoll>(subject, poll);
 
-            Runtime.Notify(EventKind.PollStarted, this.Address, subject);
+            Runtime.Notify(EventKind.PollCreated, this.Address, subject);
         }
 
         public void SingleVote(Address from, string subject, BigInteger index)
@@ -272,7 +279,18 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(poll.state == PollState.Active, "poll not active");
 
-            Runtime.Expect(choices.Length <= poll.votesPerUser, "too many choices");
+            switch (poll.kind)
+            {
+                case ConsensusKind.Validators:
+                    Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "must be primary or secondary validator");
+                    break;
+
+                case ConsensusKind.Masters:
+                    Runtime.Expect(Runtime.Nexus.IsStakeMaster(from), "must be stake master");
+                    break;
+            }
+
+            Runtime.Expect(choices.Length <= poll.choicesPerUser, "too many choices");
 
             Runtime.Expect(IsWitness(from), "invalid witness");
 
@@ -299,13 +317,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             BigInteger votingPower;
 
-            if (poll.kind == ConsensusKind.Validators)
+            if (poll.kind == ConsensusKind.Community)
             {
-                votingPower = 100;
+                votingPower = Runtime.CallContext(Nexus.StakeContractName, "GetAddressVotingPower", from).AsNumber();
             }
             else
             {
-                votingPower = Runtime.CallContext(Nexus.StakeContractName, "GetAddressVotingPower", from).AsNumber();
+                votingPower = 100;
             }
 
             Runtime.Expect(votingPower > 0, "not enough voting power");
@@ -352,27 +370,10 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid poll subject");
-
-            var poll = FetchPoll(subject);
-            if (poll.state != PollState.Consensus)
-            {
-                return false;
-            }
-
-            int index = -1;
-            for (int i = 0; i < poll.entries.Length; i++)
-            {
-                if (poll.entries[i].value.SequenceEqual(value))
-                {
-                    return poll.entries[i].ranking == 0;
-                }
-            }
-
-            return false;
+            var rank = GetRank(subject, value);
+            return rank == 0;
         }
 
-        // note this returns true if the rank is same or better than the argument
         public BigInteger GetRank(string subject, byte[] value)
         {
             Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid poll subject");
