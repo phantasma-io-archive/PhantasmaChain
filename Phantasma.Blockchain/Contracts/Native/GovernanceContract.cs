@@ -1,4 +1,3 @@
-using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
@@ -21,7 +20,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class GovernanceContract : SmartContract
     {
-        public override string Name => "governance";
+        public override string Name => Nexus.GovernanceContractName;
 
         internal StorageMap _valueMap;
 

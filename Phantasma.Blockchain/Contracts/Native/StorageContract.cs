@@ -14,7 +14,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class StorageContract : SmartContract
     {
-        public override string Name => "storage";
+        public override string Name => Nexus.StorageContractName;
 
         public const int KilobytesPerStake = 40;
 
@@ -44,7 +44,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var usedSize = GetUsedSpace(from);
 
-            var stakedAmount = Runtime.CallContext("energy", "GetStake", from).AsNumber();
+            var stakedAmount = Runtime.CallContext(Nexus.StakeContractName, "GetStake", from).AsNumber();
             var availableSize = CalculateStorageSizeForStake(stakedAmount);
             
 

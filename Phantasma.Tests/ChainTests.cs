@@ -722,7 +722,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var targetChain = nexus.FindChainByName("privacy");
+            var targetChain = nexus.FindChainByName("sale");
 
             var symbol = Nexus.FuelTokenSymbol;
 
@@ -778,7 +778,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var targetChain = nexus.FindChainByName("privacy");
+            var targetChain = nexus.FindChainByName("sale");
 
             var symbol = Nexus.FuelTokenSymbol;
 
@@ -1103,7 +1103,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var targetChain = nexus.FindChainByName("privacy");
+            var targetChain = nexus.FindChainByName("sale");
 
             var nftSymbol = "COOL";
 
@@ -1251,7 +1251,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var targetChain = nexus.FindChainByName("privacy");
+            var targetChain = nexus.FindChainByName("sale");
 
             var symbol = Nexus.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);

@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class SwapContract : SmartContract
     {
-        public override string Name => "swap";
+        public override string Name => Nexus.SwapContractName;
 
         public SwapContract() : base()
         {

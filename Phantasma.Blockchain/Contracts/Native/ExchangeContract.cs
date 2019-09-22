@@ -97,7 +97,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class ExchangeContract : SmartContract
     {
-        public override string Name => "exchange";
+        public override string Name => Nexus.ExchangeContractName;
 
         internal StorageList _availableBases; // string
         internal StorageList _availableQuotes; // string

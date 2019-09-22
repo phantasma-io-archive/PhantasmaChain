@@ -25,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public const string ValidatorRotationTimeTag = "validator.rotation.time";
         public const string ValidatorPollTag = "elections";
 
-        public override string Name => "validator";
+        public override string Name => Nexus.ValidatorContractName;
 
         private StorageMap _validators; // <BigInteger, ValidatorInfo>
 
@@ -183,8 +183,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(type == ValidatorType.Primary, "type must be primary");
             }
 
-            var requiredStake = EnergyContract.MasterAccountThreshold;
-            var stakedAmount = Runtime.CallContext("energy", "GetStake", from).AsNumber();
+            var requiredStake = StakeContract.MasterAccountThreshold;
+            var stakedAmount = Runtime.CallContext(Nexus.StakeContractName, "GetStake", from).AsNumber();
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
 
@@ -227,7 +227,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var requiredStake = EnergyContract.MasterAccountThreshold;
-            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", target);
+            var stakedAmount = (BigInteger)Runtime.CallContext(Nexus.StakeContractName, "GetStake", target);
 
             if (stakedAmount < requiredStake)
             {
@@ -252,7 +252,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var index = GetIndexOfValidator(from);
             Runtime.Expect(index >= 0, "not a validator");
 
-            var transferResult = (bool)Runtime.CallContext("energy", "Migrate", from, to);
+            var transferResult = (bool)Runtime.CallContext(Nexus.StakeContractName, "Migrate", from, to);
             Runtime.Expect(transferResult, "stake transfer failed");
 
             var entry = _validatorMap.Get<Address, ValidatorEntry>(from);

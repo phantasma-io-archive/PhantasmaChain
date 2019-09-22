@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class ConsensusContract : SmartContract
     {
-        public override string Name => "consensus";
+        public override string Name => Nexus.ConsensusContractName;
 
         private StorageMap _pollMap; //<Address> 
         private StorageList _pollList; 
@@ -305,7 +305,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                votingPower = Runtime.CallContext("energy", "GetAddressVotingPower", from).AsNumber();
+                votingPower = Runtime.CallContext(Nexus.StakeContractName, "GetAddressVotingPower", from).AsNumber();
             }
 
             Runtime.Expect(votingPower > 0, "not enough voting power");

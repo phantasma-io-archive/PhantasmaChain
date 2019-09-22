@@ -100,11 +100,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class RelayContract : SmartContract
     {
-        public override string Name => "relay";
+        public override string Name => Nexus.RelayContractName;
 
         public static readonly int MinimumReceiptsPerTransaction = 20;
 
-        public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) / (1000 * EnergyContract.BaseEnergyRatioDivisor);
+        public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) / (1000 * StakeContract.BaseEnergyRatioDivisor);
 
         internal StorageMap _balances; //<address, BigInteger>
         internal StorageMap _indices; //<string, BigInteger>

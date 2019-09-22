@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class PrivacyContract : SmartContract
     {
-        public override string Name => "privacy";
+        public override string Name => Nexus.PrivacyContractName;
 
         public static readonly BigInteger TransferAmount = 10;
 

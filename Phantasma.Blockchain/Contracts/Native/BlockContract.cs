@@ -5,7 +5,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class BlockContract: SmartContract
     {
-        public override string Name => "block";
+        public override string Name => Nexus.BlockContractName;
 
         private Address previousValidator;
 

@@ -13,7 +13,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     */
     public sealed class AccountContract : SmartContract
     {
-        public override string Name => "account";
+        public override string Name => Nexus.AccountContractName;
 
         public static readonly string TriggerMint = "OnMint";
         public static readonly string TriggerBurn = "OnBurn";

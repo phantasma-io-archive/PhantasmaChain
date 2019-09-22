@@ -1039,7 +1039,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
 
@@ -1053,7 +1053,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
         }
@@ -1078,7 +1078,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract("energy", "GetUnclaimed", _owner.Address).
+                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
 

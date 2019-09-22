@@ -24,17 +24,21 @@ namespace Phantasma.Blockchain
         private static readonly string ChainParentNameKey = "chain.parent.";
         private static readonly string ChainChildrenBlockKey = "chain.children.";
 
-        public static readonly string GasContractName = "gas";
-        public static readonly string TokenContractName = "token";
-        public static readonly string BlockContractName = "block";
-        public static readonly string NexusContractName = "nexus";
-        public static readonly string EnergyContractName = "energy";
-        public static readonly string SwapContractName = "swap";
-        public static readonly string ConsensusContractName = "consensus";
-        public static readonly string GovernanceContractName = "governance";
-        public static readonly string StorageContractName = "storage";
-        public static readonly string ValidatorContractName = "validator";
-        public static readonly string InteropContractName = "interop";
+        public const string GasContractName = "gas";
+        public const string TokenContractName = "token";
+        public const string BlockContractName = "block";
+        public const string NexusContractName = "nexus";
+        public const string StakeContractName = "stake";
+        public const string SwapContractName = "swap";
+        public const string AccountContractName = "account";
+        public const string ConsensusContractName = "consensus";
+        public const string GovernanceContractName = "governance";
+        public const string StorageContractName = "storage";
+        public const string ValidatorContractName = "validator";
+        public const string InteropContractName = "interop";
+        public const string ExchangeContractName = "exchange";
+        public const string PrivacyContractName = "privacy";
+        public const string RelayContractName = "relay";
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
 
@@ -421,7 +425,7 @@ namespace Phantasma.Blockchain
                 case "friends": contract  = new FriendContract(); break;
                 case "exchange": contract  = new ExchangeContract(); break;
                 case "market":    contract  = new MarketContract(); break;
-                case "energy":   contract  = new EnergyContract(); break;
+                case Nexus.StakeContractName:   contract  = new StakeContract(); break;
                 case "token": contract = new TokenContract(); break;
                 case "swap": contract = new SwapContract(); break;
                 case "gas": contract = new GasContract(); break;
@@ -1299,8 +1303,8 @@ namespace Phantasma.Blockchain
             sb.CallContract(Nexus.TokenContractName, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
             // requires staking token to be created previously
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
-            sb.CallContract(Nexus.EnergyContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
-            sb.CallContract(Nexus.EnergyContractName, "Claim", owner.Address, owner.Address);
+            sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
+            sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
 
             var script = sb.EndScript();
 
@@ -1385,7 +1389,21 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "validator", "governance", "consensus", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] {
+                NexusContractName,
+                ValidatorContractName,
+                GovernanceContractName,
+                ConsensusContractName,
+                AccountContractName,
+                ExchangeContractName,
+                SwapContractName,
+                InteropContractName,
+                StakeContractName,
+                InteropContractName,
+                StorageContractName,
+                RelayContractName,
+                PrivacyContractName,
+                "friends", "market",  "vault", "apps"});
 
             var tokenScript = new byte[0];
             CreateToken(StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
@@ -1406,7 +1424,6 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, ConsensusContract.MaxEntriesPerPollTag, 10, 2, 1000),
                 ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
 
-                ChainCreateTx(owner, "privacy", "privacy"),
                 ChainCreateTx(owner, "sale", "sale"),
 
                 ConsensusStakeCreateTx(owner)

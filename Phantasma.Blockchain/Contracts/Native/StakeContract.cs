@@ -32,9 +32,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public Timestamp claimDate;
     }
 
-    public sealed class EnergyContract : SmartContract
+    public sealed class StakeContract : SmartContract
     {
-        public override string Name => "energy";
+        public override string Name => Nexus.StakeContractName;
 
         private StorageMap _stakes; // <Address, EnergyAction>
         private StorageMap _proxyStakersMap; // <Address, List<EnergyProxy>>
@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
 
-        public EnergyContract() : base()
+        public StakeContract() : base()
         {
         }
 

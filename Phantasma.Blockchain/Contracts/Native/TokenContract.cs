@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 {
     public sealed class TokenContract : SmartContract
     {
-        public override string Name => "token";
+        public override string Name => Nexus.TokenContractName;
 
         public static readonly string TriggerMint = "OnMint";
         public static readonly string TriggerBurn = "OnBurn";

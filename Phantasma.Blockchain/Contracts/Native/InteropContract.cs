@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class InteropContract : SmartContract
     {
-        public override string Name => "interop";
+        public override string Name => Nexus.InteropContractName;
 
         private StorageList _platforms;
 

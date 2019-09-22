@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class GasContract : SmartContract
     {
-        public override string Name => "gas";
+        public override string Name => Nexus.GasContractName;
 
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
