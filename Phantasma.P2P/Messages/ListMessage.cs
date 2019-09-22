@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Phantasma.Storage.Utils;
+using Phantasma.Numerics;
 
 namespace Phantasma.Network.P2P.Messages
 {
@@ -39,7 +40,7 @@ namespace Phantasma.Network.P2P.Messages
 
     public struct BlockRange
     {
-        public uint startHeight;
+        public BigInteger startHeight;
         public string[] rawBlocks;
     }
 
@@ -234,7 +235,7 @@ namespace Phantasma.Network.P2P.Messages
             yield break;
         }
 
-        public void AddBlockRange(string chainName, uint startHeight, IEnumerable<string> rawBlocks)
+        public void AddBlockRange(string chainName, BigInteger startHeight, IEnumerable<string> rawBlocks)
         {
             if (_blockRanges == null)
             {

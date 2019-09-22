@@ -449,7 +449,7 @@ namespace Phantasma.API
             {
                 name = chain.Name,
                 address = chain.Address.Text,
-                height = chain.BlockHeight,
+                height = (uint)chain.BlockHeight,
                 parentAddress = parentChain != null ? parentChain.Address.ToString() : "",
                 contracts = chain.GetContracts()
             };

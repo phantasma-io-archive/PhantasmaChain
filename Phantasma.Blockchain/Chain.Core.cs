@@ -57,7 +57,7 @@ namespace Phantasma.Blockchain
         public string Name { get; private set; }
         public Address Address { get; private set; }
 
-        public uint BlockHeight => (uint)_blocks.Count;
+        public BigInteger BlockHeight => _blocks.Count;
 
         public Block LastBlock => FindBlockByHeight(BlockHeight);
 
@@ -615,9 +615,9 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region validators
-        public bool IsCurrentValidator(Address address)
+        public Address GetCurrentValidator()
         {
-            return address == Nexus.GenesisAddress;
+            return InvokeContract(Nexus.BlockContractName, "GetCurrentValidator").AsAddress();
         }
 
         public Address GetValidatorForBlock(Hash hash)

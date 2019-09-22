@@ -36,6 +36,23 @@ namespace Phantasma.Blockchain
         public static readonly string ValidatorContractName = "validator";
         public static readonly string InteropContractName = "interop";
 
+        public const string NexusProtocolVersionTag = "nexus.protocol.version";
+
+        public const string FuelTokenSymbol = "KCAL";
+        public const string FuelTokenName = "Phantasma Energy";
+        public const int FuelTokenDecimals = 10;
+
+        public const string StakingTokenSymbol = "SOUL";
+        public const string StakingTokenName = "Phantasma Stake";
+        public const int StakingTokenDecimals = 8;
+
+        public const string FiatTokenSymbol = "USD";
+        public const string FiatTokenName = "Dollars";
+        public const int FiatTokenDecimals = 8;
+
+        public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
+        public static readonly string PlatformName = "phantasma";
+
         public Chain RootChain => FindChainByName(RootChainName);
 
         private KeyValueStore<string, byte[]> _vars;
@@ -119,6 +136,21 @@ namespace Phantasma.Blockchain
             private set
             {
                 _vars.Set(nameof(GenesisHash), Serialization.Serialize(value));
+            }
+        }
+
+        private Timestamp _genesisDate;
+        public Timestamp GenesisTime
+        {
+            get
+            {
+                if (_genesisDate.Value == 0 && Ready)
+                {
+                    var genesisBlock = RootChain.FindBlockByHash(GenesisHash);
+                    _genesisDate = genesisBlock.Timestamp;
+                }
+
+                return _genesisDate;
             }
         }
 
@@ -479,7 +511,7 @@ namespace Phantasma.Blockchain
             // add address and name mapping 
             this._vars.Set(ChainNameMapKey + chain.Name, chain.Address.PublicKey);
             this._vars.Set(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
-
+            
             if (parentChain != null)
             {
                 this._vars.Set(ChainParentNameKey + chain.Name, Encoding.UTF8.GetBytes(parentChain.Name));
@@ -506,7 +538,7 @@ namespace Phantasma.Blockchain
             return chain;
         }
 
-        private string LookUpChainNameByAddress(Address address)
+        public string LookUpChainNameByAddress(Address address)
         {
             var key = ChainAddressMapKey + address.Text;
             if (_vars.ContainsKey(key))
@@ -517,7 +549,7 @@ namespace Phantasma.Blockchain
 
             return null;
         }
-
+        
         public bool ChainExists(string chainName)
         {
             if (string.IsNullOrEmpty(chainName))
@@ -1344,21 +1376,6 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public const string FuelTokenSymbol = "KCAL";
-        public const string FuelTokenName = "Phantasma Energy";
-        public const int FuelTokenDecimals = 10;
-
-        public const string StakingTokenSymbol = "SOUL";
-        public const string StakingTokenName = "Phantasma Stake";
-        public const int StakingTokenDecimals = 8;
-
-        public const string FiatTokenSymbol = "USD";
-        public const string FiatTokenName = "Dollars";
-        public const int FiatTokenDecimals = 8;
-
-        public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
-        public static readonly string PlatformName = "phantasma";
-
         public bool CreateGenesisBlock(string name, KeyPair owner, Timestamp timestamp)
         {
             if (Ready)
@@ -1366,7 +1383,11 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            // TODO validate name
+            if (!ValidationUtils.ValidateName(name))
+            {
+                throw new ChainException("invalid nexus name");
+            }
+
             this.Name = name;
 
             this.GenesisAddress = owner.Address;
@@ -1383,6 +1404,8 @@ namespace Phantasma.Blockchain
             {
                 SetupNexusTx(owner),
 
+                ValueCreateTx(owner, NexusProtocolVersionTag, 1, 1, 1000),
+                ValueCreateTx(owner, ValidatorContract.ValidatorRotationTimeTag, 120, 30, 3600),
                 ValueCreateTx(owner, ValidatorContract.ActiveValidatorCountTag, 1, 1, 100),
                 ValueCreateTx(owner, ValidatorContract.StandByValidatorCountTag, 10, 1, 1000),
                 ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),

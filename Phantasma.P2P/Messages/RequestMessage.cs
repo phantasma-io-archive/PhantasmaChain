@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using Phantasma.Core;
-using Phantasma.Storage;
 using Phantasma.Cryptography;
 using Phantasma.Storage.Utils;
+using Phantasma.Numerics;
 
 namespace Phantasma.Network.P2P.Messages
 {
@@ -23,8 +23,8 @@ namespace Phantasma.Network.P2P.Messages
         public readonly RequestKind Kind;
         public readonly string NexusName;
 
-        private Dictionary<string, uint> _blockFetches;
-        public IEnumerable<KeyValuePair<string, uint>> Blocks => _blockFetches;
+        private Dictionary<string, BigInteger> _blockFetches;
+        public IEnumerable<KeyValuePair<string, BigInteger>> Blocks => _blockFetches;
 
         public RequestMessage(RequestKind kind, string nexusName, Address address) :base(Opcode.REQUEST, address)
         {
@@ -32,7 +32,7 @@ namespace Phantasma.Network.P2P.Messages
             NexusName = nexusName;
         }
 
-        public void SetBlocks(Dictionary<string, uint> blockFetches)
+        public void SetBlocks(Dictionary<string, BigInteger> blockFetches)
         {
             this._blockFetches = blockFetches;
         }
@@ -46,11 +46,11 @@ namespace Phantasma.Network.P2P.Messages
             if (kind.HasFlag(RequestKind.Blocks))
             {
                 var count = reader.ReadVarInt();
-                var fetches = new Dictionary<string, uint>();
+                var fetches = new Dictionary<string, BigInteger>();
                 while (count > 0)
                 {
                     var key = reader.ReadVarString();
-                    var height = reader.ReadUInt32();
+                    var height = reader.ReadBigInteger();
                     fetches[key] = height;
                     count--;
                 }

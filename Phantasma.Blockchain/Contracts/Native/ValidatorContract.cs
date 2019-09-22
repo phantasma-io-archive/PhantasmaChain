@@ -24,6 +24,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public const string ActiveValidatorCountTag = "validator.active.count";
         public const string StandByValidatorCountTag = "validator.standby.count";
+        public const string ValidatorRotationTimeTag = "validator.rotation.time";
         public const string ValidatorPollTag = "elections";
 
         public override string Name => "validator";

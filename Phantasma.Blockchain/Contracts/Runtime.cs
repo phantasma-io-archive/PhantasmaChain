@@ -233,6 +233,7 @@ namespace Phantasma.Blockchain.Contracts
                 case EventKind.BlockClose:
                     Expect(_events.Count == 0, "cannot have events previous to a block event");
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
+
                     isBlockOperation = true;
                     UsedGas = 0;
                     break;

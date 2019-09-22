@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -10,6 +11,43 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
         }
 
+        public Address GetCurrentValidator()
+        {
+            Address lastValidator;
+            Timestamp validationSlotTime;
+
+            var slotDuration = (int)Runtime.GetGovernanceValue(ValidatorContract.ValidatorRotationTimeTag);
+            var chainCreationTime = Runtime.Nexus.GenesisTime;
+
+            if (Runtime.Chain.BlockHeight > 0)
+            {
+                var lastBlock = Runtime.Chain.LastBlock;
+                lastValidator = Runtime.Chain.GetValidatorForBlock(lastBlock);
+                validationSlotTime = lastBlock.Timestamp;
+            }
+            else
+            {
+                lastValidator = Runtime.Nexus.GetValidatorByIndex(0);
+                validationSlotTime = chainCreationTime;
+            }
+
+            var adjustedSeconds = (uint)((validationSlotTime.Value / slotDuration) * slotDuration);
+            validationSlotTime = new Timestamp(adjustedSeconds);
+
+
+            var diff = Runtime.Time - validationSlotTime;
+            if (diff < slotDuration)
+            {
+                return lastValidator;
+            }
+
+            int validatorIndex = (int)(diff / slotDuration);
+            var validatorCount = Runtime.Nexus.GetActiveValidatorCount();
+            validatorIndex = validatorIndex % validatorCount;
+
+            return Runtime.Nexus.GetValidatorByIndex(validatorIndex);
+        }
+
         public void OpenBlock(Address from)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -18,7 +56,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (count > 0)
             {
                 Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "validator failed");
-                Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
+                var expectedValidator = GetCurrentValidator();
+                Runtime.Expect(from == expectedValidator, "current validator mismatch");
             }
             else
             {
@@ -30,8 +69,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CloseBlock(Address from)
         {
-            Runtime.Expect(Runtime.Nexus.IsActiveValidator(from), "validator failed");
-            Runtime.Expect(Runtime.Chain.IsCurrentValidator(from), "current validator mismatch");
+            var expectedValidator = GetCurrentValidator();
+            Runtime.Expect(from == expectedValidator, "current validator mismatch");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var validators = Runtime.Nexus.GetActiveValidatorAddresses();

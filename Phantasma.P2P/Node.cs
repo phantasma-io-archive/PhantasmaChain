@@ -516,7 +516,7 @@ namespace Phantasma.Network.P2P
                             QueueEndpoints(newPeers);
                         }
 
-                        var blockFetches = new Dictionary<string, uint>();
+                        var blockFetches = new Dictionary<string, BigInteger>();
                         if (listMsg.Kind.HasFlag(RequestKind.Chains))
                         {
                             foreach (var entry in listMsg.Chains)

@@ -253,7 +253,7 @@ namespace Phantasma.Blockchain
                     }
 
                     // we must be the validator of the current epoch to do something with this chain...
-                    if (!chain.IsCurrentValidator(this.ValidatorAddress))
+                    if (chain.GetCurrentValidator() != this.ValidatorAddress)
                     {
                         continue;
                     }
