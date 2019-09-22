@@ -44,7 +44,7 @@ namespace Phantasma.Cryptography
         // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
         public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == InteropOpcode;
 
-        public bool IsUser => !IsSystem && !IsInterop;
+        public bool IsUser => !IsNull && !IsSystem && !IsInterop;
 
         public bool IsNull
         {
