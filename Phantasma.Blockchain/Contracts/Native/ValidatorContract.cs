@@ -2,15 +2,14 @@
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
-using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
     public enum ValidatorStatus
     {
+        Invalid,
         Active,
         Waiting, // aka StandBy
-        Demoted,
     }
 
     public struct ValidatorEntry
@@ -22,96 +21,134 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public sealed class ValidatorContract : SmartContract
     {
-        public const string ActiveValidatorCountTag = "validator.active.count";
-        public const string StandByValidatorCountTag = "validator.standby.count";
+        public const string ValidatorCountTag = "validator.count";
         public const string ValidatorRotationTimeTag = "validator.rotation.time";
         public const string ValidatorPollTag = "elections";
 
         public override string Name => "validator";
 
-        private StorageList _validatorList; //<Address> 
-        private StorageMap _validatorMap; // <Address, ValidatorInfo>
+        private StorageMap _validators; // <BigInteger, ValidatorInfo>
 
         public ValidatorContract() : base()
         {
         }
 
-        public Address[] GetActiveValidatorAddresses()
+        public ValidatorEntry[] GetValidators()
         {
-            var addresses = _validatorList.All<Address>();
-            return addresses.Select(x => _validatorMap.Get<Address, ValidatorEntry>(x)).Where(x => x.status == ValidatorStatus.Active).Select(x => x.address).ToArray();
+            var totalValidators = (int)Runtime.GetGovernanceValue(ValidatorCountTag);
+            var result = new ValidatorEntry[totalValidators];
+
+            for (int i = 0; i < totalValidators; i++)
+            {
+                result[i] = GetValidatorByIndex(i);
+            }
+            return result;
         }
 
-        public BigInteger GetActiveValidators()
+        public ValidatorStatus GetValidatorStatus(Address address)
         {
-            return _validatorList.Count();
+            var totalValidators = (int)Runtime.GetGovernanceValue(ValidatorCountTag);
+
+            for (int i = 0; i < totalValidators; i++)
+            {
+                var validator = _validators.Get<BigInteger, ValidatorEntry>(i);
+                if (validator.address == address)
+                {
+                    return validator.status;
+                }
+            }
+
+            return ValidatorStatus.Invalid;
         }
 
-        public ValidatorEntry GetValidator(Address address)
+        public BigInteger GetIndexOfValidator(Address address)
         {
-            Runtime.Expect(IsKnownValidator(address), "not a validator");
-            return _validatorMap.Get<Address, ValidatorEntry>(address);
+            if (!address.IsUser)
+            {
+                return -1;
+            }
+
+            var totalValidators = (int)Runtime.GetGovernanceValue(ValidatorCountTag);
+
+            for (int i = 0; i < totalValidators; i++)
+            {
+                var validator = GetValidatorByIndex(i);
+                if (validator.address == address)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public ValidatorEntry GetValidatorByIndex(BigInteger index)
+        {
+            Runtime.Expect(index >= 0, "invalid validator index");
+
+            var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
+            Runtime.Expect(index < totalValidators, "invalid validator index");
+
+            if (_validators.ContainsKey<BigInteger>(index))
+            {
+                var validator = _validators.Get<BigInteger, ValidatorEntry>(index);
+                return validator;
+            }
+
+            return new ValidatorEntry()
+            {
+                address = Address.Null,
+                status = ValidatorStatus.Invalid,
+                election = new Timestamp(0)
+            };
+        }
+
+        public BigInteger GetActiveValidatorCount()
+        {
+            var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
+            return (totalValidators * 10) / 25;
         }
 
         public bool IsActiveValidator(Address address)
         {
-            if (_validatorMap.ContainsKey(address))
-            {
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                return validator.status == ValidatorStatus.Active;
-            }
-
-            return false;
+            return GetValidatorStatus(address) == ValidatorStatus.Active;
         }
 
         public bool IsWaitingValidator(Address address)
         {
-            if (_validatorMap.ContainsKey(address))
-            {
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                return validator.status == ValidatorStatus.Waiting;
-            }
-
-            return false;
-        }
-
-        public bool IsRejectedValidator(Address address)
-        {
-            if (_validatorMap.ContainsKey(address))
-            {
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                return validator.status == ValidatorStatus.Demoted;
-            }
-
-            return false;
+            return GetValidatorStatus(address) == ValidatorStatus.Waiting;
         }
 
         public bool IsKnownValidator(Address address)
         {
-            if (_validatorMap.ContainsKey(address))
-            {
-                var validator = _validatorMap.Get<Address, ValidatorEntry>(address);
-                return validator.status != ValidatorStatus.Demoted;
-            }
-
-            return false;
+            return GetValidatorStatus(address) != ValidatorStatus.Invalid;
         }
 
-        public void AddValidator(Address from)
+        // NOTE - witness not required, as anyone should be able to call this, permission is granted based on consensus
+        public void SetValidator(Address from, BigInteger index)
         {
             Runtime.Expect(from.IsUser, "must be user address");
-            Runtime.Expect(IsWitness(from), "witness failed");
 
-            var count = _validatorList.Count();
+            ValidatorStatus status;
 
-            if (count > 0)
+            if (Runtime.Nexus.Ready)
             {
-                var max = Runtime.GetGovernanceValue(ActiveValidatorCountTag);
-                Runtime.Expect(count < max, "no open validators spots");
+                Runtime.Expect(index >= 0, "invalid index");
+
+                var totalValidators = (int)Runtime.GetGovernanceValue(ValidatorCountTag);
+                Runtime.Expect(index < totalValidators, "invalid index");
 
                 var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
-                var hasConsensus = (bool)Runtime.CallContext("consensus", "HasRank", pollName, from, max);
-                Runtime.Expect(hasConsensus, "no consensus for electing this address");
+                var obtainedRank = (BigInteger)Runtime.CallContext("consensus", "GetRank", pollName, from);
+                Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
+                Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
+
+                status = index < GetActiveValidatorCount() ? ValidatorStatus.Active : ValidatorStatus.Waiting;
+            }
+            else
+            {
+                Runtime.Expect(index == 0, "invalid index");
+                status = ValidatorStatus.Active;
             }
 
             var requiredStake = EnergyContract.MasterAccountThreshold;
@@ -119,20 +156,21 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
 
-            _validatorList.Add(from);
-
             var entry = new ValidatorEntry()
             {
                 address = from,
                 election = Runtime.Time,
+                status = status,
             };
-            _validatorMap.Set(from, entry);
+            _validators.Set<BigInteger, ValidatorEntry>(index, entry);
 
             Runtime.Notify(EventKind.ValidatorAdd, Runtime.Chain.Address, from);
         }
 
-        public void RemoveValidator(Address target)
+        /*public void DemoteValidator(Address target)
         {
+            Runtime.Expect(false, "not fully implemented");
+
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(IsKnownValidator(target), "not a validator");
 
@@ -164,30 +202,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             _validatorList.Remove(target);
 
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, target);
-        }
+        }*/
 
-        public BigInteger GetIndexOfValidator(Address address)
-        {
-            if (address.IsNull)
-            {
-                return -1;
-            }
-
-            var index = _validatorList.IndexOf(address);
-            return index;
-        }
-
-        public Address GetValidatorByIndex(BigInteger index)
-        {
-            Runtime.Expect(index >= 0, "invalid validator index");
-
-            var count = _validatorList.Count();
-            Runtime.Expect(index < count, "invalid validator index");
-
-            var address = _validatorList.Get<Address>(index);
-            return address;
-        }
-
+            /*
         public void Migrate(Address from, Address to)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
@@ -200,13 +217,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var transferResult = (bool)Runtime.CallContext("energy", "Migrate", from, to);
             Runtime.Expect(transferResult, "stake transfer failed");
 
-            _validatorList.Replace<Address>(index, to);
-
             var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
             _validatorMap.Remove<Address>(from);
 
             entry.address = to;
             _validatorMap.Set<Address, ValidatorEntry>(to, entry);
-        }
+        }*/
     }
 }

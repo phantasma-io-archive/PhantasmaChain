@@ -27,7 +27,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                lastValidator = Runtime.Nexus.GetValidatorByIndex(0);
+                lastValidator = Runtime.Nexus.GetValidatorByIndex(0).address;
                 validationSlotTime = chainCreationTime;
             }
 
@@ -45,14 +45,32 @@ namespace Phantasma.Blockchain.Contracts.Native
             var validatorCount = Runtime.Nexus.GetActiveValidatorCount();
             validatorIndex = validatorIndex % validatorCount;
 
-            return Runtime.Nexus.GetValidatorByIndex(validatorIndex);
+            var currentIndex = validatorIndex;
+
+            do
+            {
+                var validator = Runtime.Nexus.GetValidatorByIndex(validatorIndex);
+                if (validator.status == ValidatorStatus.Active && !validator.address.IsNull)
+                {
+                    return validator.address;
+                }
+
+                validatorIndex++;
+                if (validatorIndex >= validatorCount)
+                {
+                    validatorIndex = 0;
+                }
+            } while (currentIndex != validatorIndex);
+
+            // should never reached here, failsafe
+            return Runtime.Nexus.GenesisAddress;
         }
 
         public void OpenBlock(Address from)
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var count = Runtime.Nexus.GetActiveValidatorCount();
+            var count = Runtime.Nexus.Ready ? Runtime.Nexus.GetActiveValidatorCount() : 0;
             if (count > 0)
             {
                 Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "validator failed");
@@ -73,22 +91,28 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(from == expectedValidator, "current validator mismatch");
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var validators = Runtime.Nexus.GetActiveValidatorAddresses();
+            var validators = Runtime.Nexus.GetValidators();
             Runtime.Expect(validators.Length > 0, "no active validators found");
 
             var totalAvailable = Runtime.GetBalance(Nexus.FuelTokenSymbol, this.Address);
-            var amountPerValidator = totalAvailable / validators.Length;
+            var totalValidators = Runtime.Nexus.GetActiveValidatorCount();
+            var amountPerValidator = totalAvailable / totalValidators;
             Runtime.Expect(amountPerValidator > 0, "not enough fees available");
 
             Runtime.Notify(EventKind.BlockClose, from, Runtime.Chain.Address);
 
             int delivered = 0;
-            for (int i = 0; i < validators.Length; i++)
+            for (int i = 0; i < totalValidators; i++)
             {
-                var validatorAddress = validators[i];
-                if (Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validatorAddress, amountPerValidator))
+                var validator = validators[i];
+                if (validator.status != ValidatorStatus.Active)
                 {
-                    Runtime.Notify(EventKind.TokenReceive, validatorAddress, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = Nexus.FuelTokenSymbol });
+                    continue;
+                }
+
+                if (Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
+                {
+                    Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = Nexus.FuelTokenSymbol });
                     delivered++;
                 }
             }

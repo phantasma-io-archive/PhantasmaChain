@@ -145,7 +145,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                         }
                         Runtime.Expect(index >= 0, "missing entry in poll rankings");
 
-                        poll.entries[i].ranking = index + 1;
+                        poll.entries[i].ranking = index;
                     }
 
                     BigInteger percentage = (winner.votes * 100) / totalVotes;
@@ -373,34 +373,32 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // note this returns true if the rank is same or better than the argument
-        public bool HasRank(string subject, byte[] value, BigInteger rank)
+        public BigInteger GetRank(string subject, byte[] value)
         {
             if (subject.StartsWith(SystemPoll))
             {
-                var validatorCount = (BigInteger)Runtime.CallContext("validator", "GetValidatorCount");
+                var validatorCount = Runtime.Nexus.GetActiveValidatorCount();
                 if (validatorCount == 1)
                 {
-                    return true;
+                    return 0;
                 }
             }
 
             Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid subject");
 
             var poll = FetchPoll(subject);
-            if (poll.state != PollState.Consensus)
-            {
-                return false;
-            }
+            Runtime.Expect(poll.state == PollState.Consensus, "no consensus reached");
 
             for (int i = 0; i < poll.entries.Length; i++)
             {
                 if (poll.entries[i].value.SequenceEqual(value))
                 {
-                    return poll.entries[i].ranking <= rank;
+                    return poll.entries[i].ranking;
                 }
             }
 
-            return false;
+            Runtime.Expect(_pollMap.ContainsKey<string>(subject), "invalid value");
+            return -1;
         }
     }
 }

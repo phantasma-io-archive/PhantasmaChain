@@ -1351,7 +1351,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("validator", "AddValidator", owner.Address).
+                CallContract("validator", "SetValidator", owner.Address, new BigInteger(0)).
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 //SpendGas(owner.Address).
@@ -1406,8 +1406,7 @@ namespace Phantasma.Blockchain
 
                 ValueCreateTx(owner, NexusProtocolVersionTag, 1, 1, 1000),
                 ValueCreateTx(owner, ValidatorContract.ValidatorRotationTimeTag, 120, 30, 3600),
-                ValueCreateTx(owner, ValidatorContract.ActiveValidatorCountTag, 1, 1, 100),
-                ValueCreateTx(owner, ValidatorContract.StandByValidatorCountTag, 10, 1, 1000),
+                ValueCreateTx(owner, ValidatorContract.ValidatorCountTag, 10, 1, 100),
                 ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),
                 ValueCreateTx(owner, GasContract.MaxLenderCountTag, 10, 1, 100),
                 ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
@@ -1495,15 +1494,15 @@ namespace Phantasma.Blockchain
             throw new NotImplementedException();
         }
 
-        public Address[] GetActiveValidatorAddresses()
+        public ValidatorEntry[] GetValidators()
         {
-            var validators = (Address[])RootChain.InvokeContract("validator", "GetActiveValidatorAddresses").ToObject();
+            var validators = (ValidatorEntry[])RootChain.InvokeContract("validator", "GetValidators").ToObject();
             return validators;
         }
 
         public int GetActiveValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetActiveValidators").AsNumber();
+            var count = RootChain.InvokeContract("validator", "GetActiveValidatorCount").AsNumber();
             return (int)count;
         }
 
@@ -1542,16 +1541,21 @@ namespace Phantasma.Blockchain
             return result;
         }
 
-        public Address GetValidatorByIndex(int index)
+        public ValidatorEntry GetValidatorByIndex(int index)
         {
             if (RootChain == null)
             {
-                return Address.Null;
+                return new ValidatorEntry()
+                {
+                    address = Address.Null,
+                    election = new Timestamp(0),
+                    status = ValidatorStatus.Invalid
+                };
             }
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = RootChain.InvokeContract("validator", "GetValidatorByIndex", (BigInteger)index).AsAddress();
+            var result = (ValidatorEntry) RootChain.InvokeContract("validator", "GetValidatorByIndex", (BigInteger)index).ToObject();
             return result;
         }
         #endregion

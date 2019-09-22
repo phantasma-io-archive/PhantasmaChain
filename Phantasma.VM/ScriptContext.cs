@@ -1,11 +1,9 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Phantasma.Core;
 using Phantasma.Numerics;
-
 
 namespace Phantasma.VM
 {
