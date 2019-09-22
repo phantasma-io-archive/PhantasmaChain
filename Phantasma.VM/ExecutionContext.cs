@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Phantasma.VM
 {
@@ -15,8 +14,12 @@ namespace Phantasma.VM
     {
         public abstract string Name { get; }
         public abstract bool Admin { get; }
-        public abstract int GetSize();
 
         public abstract ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack);
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

@@ -172,7 +172,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (spentGas > 0)
             {
                 var validatorPayment = spentGas * Runtime.GasPrice;
-                var validatorAddress = Runtime.GetContractAddress("block");
+                var validatorAddress = GetAddressForName("block");
                 Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment), "gas validator payment failed");
                 Runtime.Notify(EventKind.GasPayment, validatorAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
                 spentGas = 0;

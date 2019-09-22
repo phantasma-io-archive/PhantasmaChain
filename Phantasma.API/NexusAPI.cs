@@ -1473,7 +1473,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Contract not found" };
             }
 
-            var contract = this.Nexus.FindContract(contractName);
+            var contract = this.Nexus.AllocContract(contractName);
             return FillABI(contractName, contract.ABI);
         }
 

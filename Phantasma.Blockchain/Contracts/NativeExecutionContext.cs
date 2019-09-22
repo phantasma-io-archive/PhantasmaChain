@@ -1,5 +1,4 @@
-﻿using Phantasma.Core;
-using Phantasma.Numerics;
+﻿using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.VM.Contracts;
 using System;
@@ -61,17 +60,20 @@ namespace Phantasma.Blockchain.Contracts
 #endif
             }
 
+            var runtime = (RuntimeVM)frame.VM;
+
             BigInteger gasCost;
             if (this.Contract.HasInternalMethod(methodName, out gasCost))
             {
                 ExecutionState result;
                 try
                 {
-                    var runtime = (RuntimeVM)frame.VM;
                     result = runtime.ConsumeGas(gasCost);
                     if (result == ExecutionState.Running)
                     {
+                        Contract.LoadRuntimeData(runtime);
                         result = InternalCall(method, frame, stack);
+                        Contract.UnloadRuntimeData();
                     }
                 }
                 catch (ArgumentException ex)
@@ -126,11 +128,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return ExecutionState.Running;
-        }
-
-        public override int GetSize()
-        {
-            return 0;
         }
     }
 }

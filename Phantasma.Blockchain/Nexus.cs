@@ -406,23 +406,17 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CONTRACTS
-        private Dictionary<string, SmartContract> _contractCache = new Dictionary<string, SmartContract>();
-
-        public SmartContract FindContract(string contractName) 
+        public SmartContract AllocContract(string contractName) 
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
-
-            if (_contractCache.ContainsKey(contractName))
-            {
-                return _contractCache[contractName];
-            }
 
             SmartContract contract;
             switch (contractName)
             {
                 case "nexus": contract= new NexusContract(); break;
                 case "validator":  contract = new ValidatorContract(); break;
-                case "governance":  contract = new GovernanceContract(); break;
+                case "governance": contract = new GovernanceContract(); break;
+                case "consensus": contract = new ConsensusContract(); break;
                 case "account":  contract  = new AccountContract(); break;
                 case "friends": contract  = new FriendContract(); break;
                 case "exchange": contract  = new ExchangeContract(); break;
@@ -444,7 +438,6 @@ namespace Phantasma.Blockchain
                     throw new Exception("Unknown contract: " + contractName);
             }
 
-            _contractCache[contractName] = contract;
             return contract;
         }
 
@@ -1351,7 +1344,7 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("validator", "SetValidator", owner.Address, new BigInteger(0)).
+                CallContract("validator", "SetValidator", owner.Address, new BigInteger(0), ValidatorType.Primary).
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
                 //SpendGas(owner.Address).
@@ -1392,7 +1385,7 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "validator", "governance", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
+            var rootChain = CreateChain(null, owner.Address, RootChainName, null, new[] { "nexus", "validator", "governance", "consensus", "account", "friends", "oracle", "exchange", "market", "energy", "swap", "interop", "vault", "storage", "apps", "relay"});
 
             var tokenScript = new byte[0];
             CreateToken(StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
@@ -1405,8 +1398,8 @@ namespace Phantasma.Blockchain
                 SetupNexusTx(owner),
 
                 ValueCreateTx(owner, NexusProtocolVersionTag, 1, 1, 1000),
+                ValueCreateTx(owner, ValidatorContract.ValidatorCountTag, 1, 1, 100),
                 ValueCreateTx(owner, ValidatorContract.ValidatorRotationTimeTag, 120, 30, 3600),
-                ValueCreateTx(owner, ValidatorContract.ValidatorCountTag, 10, 1, 100),
                 ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),
                 ValueCreateTx(owner, GasContract.MaxLenderCountTag, 10, 1, 100),
                 ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
@@ -1502,13 +1495,17 @@ namespace Phantasma.Blockchain
 
         public int GetPrimaryValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetPrimaryValidatorCount").AsNumber();
+            var count = RootChain.InvokeContract("validator", "GetValidatorCount", ValidatorType.Primary).AsNumber();
+            if (count < 1)
+            {
+                return 1;
+            }
             return (int)count;
         }
 
         public int GetSecondaryValidatorCount()
         {
-            var count = RootChain.InvokeContract("validator", "GetSecondaryValidatorCount").AsNumber();
+            var count = RootChain.InvokeContract("validator", "GetValidatorCount", ValidatorType.Primary).AsNumber();
             return (int)count;
         }
 

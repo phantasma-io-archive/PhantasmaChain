@@ -95,12 +95,12 @@ namespace Phantasma.VM
         public Address EntryAddress { get; private set; }
 
         public readonly ExecutionContext entryContext;
-        public ExecutionContext CurrentContext { get; private set; }
+        public ExecutionContext CurrentContext { get; protected set; }
 
-        private Dictionary<string, ExecutionContext> _contextList = new Dictionary<string, ExecutionContext>();
+        private Dictionary<string, ExecutionContext> _contextMap = new Dictionary<string, ExecutionContext>();
 
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
-        public ExecutionFrame CurrentFrame { get; private set; }
+        public ExecutionFrame CurrentFrame { get; protected set; }
 
         public VirtualMachine(byte[] script)
         {
@@ -115,7 +115,7 @@ namespace Phantasma.VM
 
         internal void RegisterContext(string contextName, ExecutionContext context)
         {
-            _contextList[contextName] = context;
+            _contextMap[contextName] = context;
         }
 
         public abstract ExecutionState ExecuteInterop(string method);
@@ -163,9 +163,9 @@ namespace Phantasma.VM
 
         internal ExecutionContext FindContext(string contextName)
         {
-            if (_contextList.ContainsKey(contextName))
+            if (_contextMap.ContainsKey(contextName))
             {
-                return _contextList[contextName];
+                return _contextMap[contextName];
             }
 
             var result = LoadContext(contextName);
@@ -174,7 +174,7 @@ namespace Phantasma.VM
                 return null;
             }
 
-            _contextList[contextName] = result;
+            _contextMap[contextName] = result;
 
             return result;
         }

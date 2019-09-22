@@ -10,6 +10,8 @@ using Phantasma.VM;
 using Phantasma.VM.Contracts;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
+using System.Text;
+using System.IO;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -34,7 +36,7 @@ namespace Phantasma.Blockchain.Contracts
             {
                 if (_address.IsNull)
                 {
-                   _address = Cryptography.Address.FromHash(Name);
+                   _address = GetAddressForName(Name);
                 }
 
                 return _address;
@@ -50,24 +52,82 @@ namespace Phantasma.Blockchain.Contracts
             _address = Address.Null;
         }
 
-        internal void SetRuntimeData(RuntimeVM VM)
+        public static Address GetAddressForName(string name)
         {
+            return Cryptography.Address.FromHash(name);
+        }
+
+        // here we auto-initialize any fields from storage
+        internal void LoadRuntimeData(RuntimeVM VM)
+        {
+            if (this.Runtime != null && this.Runtime != VM)
+            {
+                throw new ChainException("runtime already set on this contract");
+            }
+
             this.Runtime = VM;
 
             var contractType = this.GetType();
             FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 
-            var storageFields = fields.Where(x => typeof(IStorageCollection).IsAssignableFrom(x.FieldType)).ToList();
-
-            if (storageFields.Count > 0)
+            foreach (var field in fields)
             {
-                foreach (var field in storageFields)
+                var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
+
+                var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
+                if (isStorageField)
                 {
-                    var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
                     var args = new object[] { baseKey, (StorageContext)VM.ChangeSet };
                     var obj = Activator.CreateInstance(field.FieldType, args);
 
                     field.SetValue(this, obj);
+                }
+
+                if (typeof(ISerializable).IsAssignableFrom(field.FieldType))
+                {
+                    ISerializable obj;
+
+                    if (VM.ChangeSet.Has(baseKey))
+                    {
+                        var bytes = VM.ChangeSet.Get(baseKey);
+                        obj = (ISerializable)Activator.CreateInstance(field.FieldType);
+                        using (var stream = new MemoryStream(bytes))
+                        {
+                            using (var reader = new BinaryReader(stream))
+                            {
+                                obj.UnserializeData(reader);
+                            }
+                        }
+
+                        field.SetValue(this, obj);
+                    }
+                }
+            }
+        }
+
+        // here we persist any modifed fields back to storage
+        internal void UnloadRuntimeData()
+        {
+            Throw.IfNull(this.Runtime, nameof(Runtime));
+
+            var contractType = this.GetType();
+            FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+
+            foreach (var field in fields)
+            {
+                var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
+
+                var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
+                if (isStorageField)
+                {
+                    continue;
+                }
+
+                if (typeof(ISerializable).IsAssignableFrom(field.FieldType))
+                {
+                    var obj = (ISerializable)field.GetValue(this);
+                    var bytes = obj.Serialize();
+                    this.Runtime.ChangeSet.Put(baseKey, bytes);
                 }
             }
         }
@@ -191,22 +251,53 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var receivedType = arg.GetType();
-
-            if (expectedType.IsArray && expectedType != typeof(byte[]))
+            if (expectedType == receivedType)
             {
-                var dic = (Dictionary<VMObject, VMObject>)arg;
-                var elementType = expectedType.GetElementType();
-                var array = Array.CreateInstance(elementType, dic.Count);
-                for (int i=0; i<array.Length; i++)
-                {
-                    var key = new VMObject();
-                    key.SetValue(i);
+                return arg;
+            }
 
-                    var val = dic[key].Data;
-                    val = CastArgument(runtime, val, elementType);
-                    array.SetValue(val, i);
+            if (expectedType.IsArray)
+            {
+                if (expectedType == typeof(byte[]))
+                {
+                    if (receivedType == typeof(string))
+                    {
+                        return Encoding.UTF8.GetBytes((string)arg);
+                    }
+
+                    if (receivedType == typeof(BigInteger))
+                    {
+                        return ((BigInteger)arg).ToSignedByteArray();
+                    }
+
+                    if (receivedType == typeof(Hash))
+                    {
+                        return ((Hash)arg).ToByteArray();
+                    }
+
+                    if (receivedType == typeof(Address))
+                    {
+                        return ((Address)arg).PublicKey;
+                    }
+
+                    throw new Exception("cannot cast this object to a byte array");
                 }
-                return array;
+                else
+                {
+                    var dic = (Dictionary<VMObject, VMObject>)arg;
+                    var elementType = expectedType.GetElementType();
+                    var array = Array.CreateInstance(elementType, dic.Count);
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        var key = new VMObject();
+                        key.SetValue(i);
+
+                        var val = dic[key].Data;
+                        val = CastArgument(runtime, val, elementType);
+                        array.SetValue(val, i);
+                    }
+                    return array;
+                }
             }
             
             if (expectedType.IsEnum)

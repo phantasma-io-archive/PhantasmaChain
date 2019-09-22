@@ -15,7 +15,7 @@ namespace Phantasma.Blockchain.Contracts
             Throw.IfNull(script, nameof(script));
             this.Script = script;
 
-            _name = new Hash(CryptoExtensions.SHA256(script)).ToString(); // TODO do something better here
+            _name = Hash.FromBytes(script).ToString(); // TODO do something better here
         }
     }
 }

@@ -11,7 +11,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger Minimum;
         public BigInteger Maximum;
         public BigInteger Deviation;
-        public Hash Hash;
     }
 
     public struct ChainValueEventData
@@ -52,13 +51,17 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(minimum <= initial, "initial should be equal or greater than minimum");
             Runtime.Expect(maximum >= initial, "initial should be equal or lesser than maximum");
 
+            if (name == ValidatorContract.ValidatorCountTag)
+            {
+                Runtime.Expect(initial == 1, "initial number of validators must always be one");
+            }
+
             var value = new ChainValue()
             {
                 Name = name,
                 Current = initial,
                 Minimum = minimum,
                 Maximum = maximum,
-                Hash = Runtime.Transaction.Hash
             };
 
             _valueMap.Set<string, ChainValue>(name, value);
@@ -74,7 +77,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetValue(string name, BigInteger value)
         {
-            Runtime.Expect(!HasValue(name), "invalid value name");
+            Runtime.Expect(HasValue(name), "invalid value name");
 
             var temp = _valueMap.Get<string, ChainValue>(name);
             Runtime.Expect(value != temp.Current, "same value");
@@ -82,11 +85,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(value <= temp.Maximum, "greater than maximum value");
 
             var pollName = ConsensusContract.SystemPoll + name;
-            var hasConsensus = (bool)Runtime.CallContext("consensus", "HasConsensus", pollName, value);
+            var hasConsensus = Runtime.CallContext("consensus", "HasConsensus", pollName, value).AsBool();
             Runtime.Expect(hasConsensus, "consensus not reached");
 
             temp.Current = value;
-            temp.Hash = Runtime.Transaction.Hash;
 
             _valueMap.Set<string, ChainValue>(name, temp);
 

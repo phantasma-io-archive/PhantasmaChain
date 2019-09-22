@@ -163,7 +163,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var api = test.api;
 
-            var contractAddress = simulator.Nexus.FindContract("relay").Address;
+            var contractAddress = SmartContract.GetAddressForName("relay");
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
@@ -257,7 +257,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var api = test.api;
 
-            var contractAddress = simulator.Nexus.FindContract("relay").Address;
+            var contractAddress = SmartContract.GetAddressForName("relay");
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);
@@ -689,7 +689,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var api = test.api;
 
-            var contractAddress = simulator.Nexus.FindContract("relay").Address;
+            var contractAddress = SmartContract.GetAddressForName("relay");
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 100000000);

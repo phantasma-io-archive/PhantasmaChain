@@ -46,7 +46,6 @@ namespace Phantasma.Blockchain
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
 
-        private Dictionary<string, ExecutionContext> _contractContexts = new Dictionary<string, ExecutionContext>();
         #endregion
 
         #region PUBLIC
@@ -487,16 +486,10 @@ namespace Phantasma.Blockchain
 
         internal ExecutionContext GetContractContext(SmartContract contract)
         {
-            if (_contractContexts.ContainsKey(contract.Name))
-            {
-                return _contractContexts[contract.Name];
-            }
-
             if (HasContract(contract.Name))
             {
                 // TODO this needs to suport non-native contexts too..
                 var context = new NativeExecutionContext(contract);
-                this._contractContexts[contract.Name] = context;
                 return context;
             }
 
@@ -505,7 +498,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeContract(string contractName, string methodName, Timestamp time, params object[] args)
         {
-            var contract = Nexus.FindContract(contractName);
+            var contract = Nexus.AllocContract(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();

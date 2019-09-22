@@ -305,7 +305,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                votingPower = (BigInteger)Runtime.CallContext("energy", "GetAddressVotingPower", from);
+                votingPower = Runtime.CallContext("energy", "GetAddressVotingPower", from).AsNumber();
             }
 
             Runtime.Expect(votingPower > 0, "not enough voting power");
@@ -345,10 +345,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (subject.StartsWith(SystemPoll))
             {
-                var validatorCount = (BigInteger)Runtime.CallContext("validator", "GetValidatorCount");
-                if (validatorCount == 1)
+                var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
+                if (validatorCount <= 1)
                 {
-                    return true;
+                    return IsWitness(Runtime.Nexus.GenesisAddress);
                 }
             }
 

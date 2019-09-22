@@ -85,6 +85,11 @@ namespace Phantasma.Blockchain.Contracts
             Chain.RegisterExtCalls(this);
         }
 
+        public override string ToString()
+        {
+            return $"Runtime.Context={CurrentContext}";
+        }
+
         internal void RegisterMethod(string name, Func<RuntimeVM, ExecutionState> handler)
         {
             handlers[name] = handler;
@@ -135,12 +140,6 @@ namespace Phantasma.Blockchain.Contracts
             return result;
         }
 
-        public Address GetContractAddress(string name)
-        {
-            var contract = Nexus.FindContract(name);
-            return contract.Address;
-        }
-
         public override ExecutionContext LoadContext(string contextName)
         {
             if (isBlockOperation && Nexus.Ready && contextName != Nexus.TokenContractName)
@@ -148,18 +147,19 @@ namespace Phantasma.Blockchain.Contracts
                 throw new VMDebugException(this, "context not available in block operations");
             }
 
-            var contract = this.Nexus.FindContract(contextName);
+            var contract = this.Nexus.AllocContract(contextName);
             if (contract != null)
             {
-                contract.SetRuntimeData(this);
                 return Chain.GetContractContext(contract);
             }
 
             return null;
         }
 
-        public object CallContext(string contextName, string methodName, params object[] args)
+        public VMObject CallContext(string contextName, string methodName, params object[] args)
         {
+            var previousContext = CurrentContext;
+
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
@@ -171,16 +171,19 @@ namespace Phantasma.Blockchain.Contracts
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
+            CurrentContext = context;
             var temp = context.Execute(this.CurrentFrame, this.Stack);
             Expect(temp == ExecutionState.Halt, "expected call success");
+            CurrentContext = previousContext;
 
             if (this.Stack.Count > 0)
             {
-                return this.Stack.Pop().ToObject();
+                var result = this.Stack.Pop();
+                return result;
             }
             else
             {
-                return null;
+                return new VMObject();
             }
         }
 
@@ -236,6 +239,10 @@ namespace Phantasma.Blockchain.Contracts
 
                     isBlockOperation = true;
                     UsedGas = 0;
+                    break;
+
+                case EventKind.ValidatorSwitch:
+                    Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
                     break;
 
                 case EventKind.GasEscrow:

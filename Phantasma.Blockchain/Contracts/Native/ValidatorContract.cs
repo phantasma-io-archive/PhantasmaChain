@@ -103,24 +103,43 @@ namespace Phantasma.Blockchain.Contracts.Native
             };
         }
 
-        public BigInteger GetPrimaryValidatorCount()
+        public BigInteger GetValidatorCount(ValidatorType type)
+        {
+            if (type == ValidatorType.Invalid)
+            {
+                return 0;
+            }
+
+            var max = GetMaxPrimaryValidators();
+            var count = 0;
+            for (int i = 0; i < max; i++)
+            {
+                var validator = GetValidatorByIndex(i);
+                if (validator.type == type)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        public BigInteger GetMaxPrimaryValidators()
         {
             var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
             return (totalValidators * 10) / 25;
         }
 
-        public BigInteger GetSecondaryValidatorCount()
+        public BigInteger GetMaxSecondaryValidators()
         {
             var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
-            return totalValidators - GetPrimaryValidatorCount();
+            return totalValidators - GetMaxPrimaryValidators();
         }
 
         // NOTE - witness not required, as anyone should be able to call this, permission is granted based on consensus
-        public void SetValidator(Address from, BigInteger index)
+        public void SetValidator(Address from, BigInteger index, ValidatorType type)
         {
             Runtime.Expect(from.IsUser, "must be user address");
-
-            ValidatorType status;
+            Runtime.Expect(type != ValidatorType.Invalid, "invalid validator type");
 
             if (Runtime.Nexus.Ready)
             {
@@ -130,28 +149,35 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(index < totalValidators, "invalid index");
 
                 var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
-                var obtainedRank = (BigInteger)Runtime.CallContext("consensus", "GetRank", pollName, from);
+                var obtainedRank = Runtime.CallContext("consensus", "GetRank", pollName, from).AsNumber();
                 Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
                 Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
 
-                status = index < GetPrimaryValidatorCount() ? ValidatorType.Primary : ValidatorType.Secondary;
+                var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
+                Runtime.Expect(type == expectedType, "unexpected validator type");
             }
             else
             {
                 Runtime.Expect(index == 0, "invalid index");
-                status = ValidatorType.Primary;
+                Runtime.Expect(type == ValidatorType.Primary, "type must be primary");
             }
 
             var requiredStake = EnergyContract.MasterAccountThreshold;
-            var stakedAmount = (BigInteger)Runtime.CallContext("energy", "GetStake", from);
+            var stakedAmount = Runtime.CallContext("energy", "GetStake", from).AsNumber();
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
+
+            if (index > 0)
+            {
+                var isPreviousSet = _validators.ContainsKey<BigInteger>(index - 1);
+                Runtime.Expect(isPreviousSet, "previous validator slot is not set");
+            }
 
             var entry = new ValidatorEntry()
             {
                 address = from,
                 election = Runtime.Time,
-                type = status,
+                type = type,
             };
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);
 

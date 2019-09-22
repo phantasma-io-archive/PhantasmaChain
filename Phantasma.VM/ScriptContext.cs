@@ -29,11 +29,6 @@ namespace Phantasma.VM
             this.InstructionPointer = 0;
         }
 
-        public override int GetSize()
-        {
-            return this.Script.Length;
-        }
-
         public override ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack)
         {
             while (_state == ExecutionState.Running)

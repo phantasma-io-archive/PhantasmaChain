@@ -7,6 +7,8 @@ namespace Phantasma.Blockchain.Contracts.Native
     {
         public override string Name => "block";
 
+        private Address previousValidator;
+
         public BlockContract() : base()
         {
         }
@@ -89,6 +91,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var expectedValidator = GetCurrentValidator();
             Runtime.Expect(from == expectedValidator, "current validator mismatch");
+            Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(IsWitness(from), "witness failed");
 
             var validators = Runtime.Nexus.GetValidators();
@@ -118,6 +121,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(delivered > 0, "failed to claim fees");
+
+            if (previousValidator.IsUser && previousValidator != from)
+            {
+                Runtime.Notify(EventKind.ValidatorSwitch, from, previousValidator);
+                previousValidator = from;
+            }
         }
     }
 }
