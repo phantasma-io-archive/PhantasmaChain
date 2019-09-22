@@ -183,11 +183,16 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
                 Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
             }
+            else
+            {
+                var firstValidator = GetValidatorByIndex(0).address;
+                Runtime.Expect(IsWitness(firstValidator), "invalid witness");
+            }
 
             var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
             Runtime.Expect(type == expectedType, "unexpected validator type");
 
-            var requiredStake = StakeContract.MasterAccountThreshold;
+            var requiredStake = Runtime.CallContext(Nexus.StakeContractName, "GetMasterThreshold", from).AsNumber();
             var stakedAmount = Runtime.CallContext(Nexus.StakeContractName, "GetStake", from).AsNumber();
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
