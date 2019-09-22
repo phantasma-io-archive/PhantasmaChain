@@ -20,7 +20,7 @@ namespace Phantasma.Tests
     public class ExchangeTests
     {
         private static KeyPair simulatorOwner = KeyPair.Generate();
-        private static ChainSimulator simulator = new ChainSimulator(simulatorOwner, 1234);
+        private static NexusSimulator simulator = new NexusSimulator(simulatorOwner, 1234);
 
         private const string maxDivTokenSymbol = "MADT";        //divisible token with maximum decimal count
         private const string minDivTokenSymbol = "MIDT";        //divisible token with minimum decimal count
@@ -465,7 +465,7 @@ namespace Phantasma.Tests
         private void InitExchange()
         {
             simulatorOwner = KeyPair.Generate();
-            simulator = new ChainSimulator(simulatorOwner, 1234);
+            simulator = new NexusSimulator(simulatorOwner, 1234);
             CreateTokens();
         }
 

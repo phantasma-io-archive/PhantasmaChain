@@ -23,7 +23,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -96,7 +96,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -156,7 +156,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -230,7 +230,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -315,7 +315,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -418,7 +418,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -506,7 +506,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUserA = KeyPair.Generate();
@@ -603,7 +603,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -686,7 +686,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -748,7 +748,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();
@@ -830,7 +830,7 @@ namespace Phantasma.Tests
         {
             var owner = KeyPair.Generate();
 
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var testUser = KeyPair.Generate();

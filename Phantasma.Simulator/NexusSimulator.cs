@@ -41,7 +41,7 @@ namespace Phantasma.Simulator
     }
 
     // TODO this should be moved to a better place, refactored or even just deleted if no longer useful
-    public class ChainSimulator
+    public class NexusSimulator
     {
         public Nexus Nexus { get; private set; }
         public DateTime CurrentTime;
@@ -70,12 +70,12 @@ namespace Phantasma.Simulator
         public TimeSpan blockTimeSkip = TimeSpan.FromMinutes(45);
         public BigInteger MinimumFee = 1;
 
-        public ChainSimulator(KeyPair ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
+        public NexusSimulator(KeyPair ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
         {
 
         }
        
-        public ChainSimulator(Nexus nexus, KeyPair ownerKey, int seed, Logger logger = null)
+        public NexusSimulator(Nexus nexus, KeyPair ownerKey, int seed, Logger logger = null)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
 

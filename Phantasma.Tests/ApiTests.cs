@@ -20,7 +20,7 @@ namespace Phantasma.Tests
         {
             public KeyPair owner;
             public Nexus nexus;
-            public ChainSimulator simulator;
+            public NexusSimulator simulator;
             public NexusAPI api;
         }
 
@@ -30,7 +30,7 @@ namespace Phantasma.Tests
         private TestData CreateAPI(bool useMempool = false)
         {
             var owner = KeyPair.FromWIF(testWIF);
-            var sim = new ChainSimulator(owner, 1234);
+            var sim = new NexusSimulator(owner, 1234);
             var mempool = useMempool? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var api = new NexusAPI(sim.Nexus, mempool);
 

@@ -26,7 +26,7 @@ namespace Phantasma.Tests
         private ApiTests.TestData CreateAPI(bool useMempool = true)
         {
             var owner = KeyPair.FromWIF(testWIF);
-            var sim = new ChainSimulator(owner, 1234);
+            var sim = new NexusSimulator(owner, 1234);
             var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var node = useMempool ? new Node(sim.Nexus, mempool, owner, 7073, PeerCaps.None, new List<string>() { "192.168.0.1:7073" }, null) : null;
             var api = useMempool ? new NexusAPI(sim.Nexus, mempool, node) : null;
@@ -44,7 +44,7 @@ namespace Phantasma.Tests
             return data;
         }
 
-        private void TopUpChannel(ChainSimulator simulator, KeyPair from, BigInteger amount)
+        private void TopUpChannel(NexusSimulator simulator, KeyPair from, BigInteger amount)
         {
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(from, ProofOfWork.None, () =>

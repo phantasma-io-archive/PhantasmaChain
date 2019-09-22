@@ -33,7 +33,7 @@ namespace Phantasma.Tests
         public void TestNachoPurchase()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             var tokenSupply = ToBigInteger(69931640.63m, NACHO_TOKEN_DECIMALS);
 
@@ -104,7 +104,7 @@ namespace Phantasma.Tests
         public void TestNachoPurchaseBonus()
         {
             var owner = KeyPair.Generate();
-            var simulator = new ChainSimulator(owner, 1234);
+            var simulator = new NexusSimulator(owner, 1234);
 
             var tokenSupply = ToBigInteger(69931640.63m, NACHO_TOKEN_DECIMALS);
 
