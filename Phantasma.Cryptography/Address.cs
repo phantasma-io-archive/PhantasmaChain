@@ -135,7 +135,7 @@ namespace Phantasma.Cryptography
                 return false;
             }
 
-            for (int i=0; i<A._publicKey.Length; i++)
+            for (int i = 0; i < A._publicKey.Length; i++)
             {
                 if (A._publicKey[i] != B._publicKey[i])
                 {
@@ -145,7 +145,27 @@ namespace Phantasma.Cryptography
             return true;
         }
 
-        public static bool operator !=(Address A, Address B) { return !A.PublicKey.SequenceEqual(B.PublicKey); }
+        public static bool operator !=(Address A, Address B)
+        {
+            if (A._publicKey == null)
+            {
+                return B._publicKey != null;
+            }
+
+            if (B._publicKey == null || A._publicKey.Length != B._publicKey.Length)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < A._publicKey.Length; i++)
+            {
+                if (A._publicKey[i] != B._publicKey[i])
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         public override string ToString()
         {
