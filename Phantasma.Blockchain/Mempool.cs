@@ -298,6 +298,7 @@ namespace Phantasma.Blockchain
 
                 try
                 {
+                    chain.BakeBlock(ref block, ref transactions, MinimumFee, _validatorKeys, Timestamp.Now);
                     chain.AddBlock(block, transactions, MinimumFee);
                 }
                 catch (InvalidTransactionException e)
