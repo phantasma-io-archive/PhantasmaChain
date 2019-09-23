@@ -61,28 +61,21 @@ namespace Phantasma.Cryptography
         {
             var kind = (SignatureKind)reader.ReadByte();
 
+            Signature signature;
             switch (kind)
             {
-                case SignatureKind.None:
-                    return null;
+                case SignatureKind.None: return null;
 
-                case SignatureKind.Ed25519:
-                    {
-                        var signature = new Ed25519Signature();
-                        signature.UnserializeData(reader);
-                        return signature;
-                    }
-
-                case SignatureKind.Ring:
-                    {
-                        var signature = new RingSignature();
-                        signature.UnserializeData(reader);
-                        return signature;
-                    }
+                case SignatureKind.Ed25519: signature = new Ed25519Signature(); break;
+                case SignatureKind.ECDSA: signature = new ECC.ECDsaSignature(); break;
+                case SignatureKind.Ring: signature = new RingSignature(); break;
 
                 default:
                     throw new NotImplementedException("read signature: " + kind);
             }
+
+            signature.UnserializeData(reader);
+            return signature;
         }
     }
 }
