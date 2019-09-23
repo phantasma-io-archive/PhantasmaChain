@@ -195,7 +195,7 @@ namespace Phantasma.Network.P2P
 
         protected override void OnStart()
         {
-            Logger.Message($"Phantasma node listening on port {Port}, with address {Address}...");
+            Logger.Message($"Phantasma node listening on port {Port}, using address: {Address}");
 
             listener.Start();
         }

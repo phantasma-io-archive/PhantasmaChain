@@ -7,7 +7,6 @@ using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using Phantasma.Storage;
 
 namespace Phantasma.Blockchain
 {
@@ -330,6 +329,7 @@ namespace Phantasma.Blockchain
                     Interlocked.Decrement(ref _size);
                     OnTransactionRemoved?.Invoke(tx);
                 }
+
                 break;
             }
 
