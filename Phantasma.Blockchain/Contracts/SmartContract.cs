@@ -13,6 +13,8 @@ using Phantasma.Storage;
 using System.Text;
 using System.IO;
 using Phantasma.Core.Types;
+using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -421,7 +423,7 @@ namespace Phantasma.Blockchain.Contracts
         #endregion
 
         #region TRIGGERS
-        public static bool InvokeTriggerOnAccount(RuntimeVM runtimeVM, Address address, string triggerName, params object[] args)
+        public static bool InvokeTriggerOnAccount(RuntimeVM runtimeVM, Address address, AccountTrigger trigger, params object[] args)
         {
             if (address.IsNull)
             {
@@ -431,10 +433,15 @@ namespace Phantasma.Blockchain.Contracts
             if (address.IsUser)
             {
                 var accountScript = runtimeVM.Nexus.LookUpAddressScript(address);
-                return InvokeTrigger(runtimeVM, accountScript, triggerName, args);
+                return InvokeTrigger(runtimeVM, accountScript, trigger.ToString(), args);
             }
 
             return true;
+        }
+
+        public static bool InvokeTriggerOnToken(RuntimeVM runtimeVM, TokenInfo token, TokenTrigger trigger, params object[] args)
+        {
+            return InvokeTrigger(runtimeVM, token.Script, trigger.ToString(), args);
         }
 
         public static bool InvokeTrigger(RuntimeVM runtimeVM, byte[] script, string triggerName, params object[] args)

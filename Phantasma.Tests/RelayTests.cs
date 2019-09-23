@@ -613,7 +613,7 @@ namespace Phantasma.Tests
                 $"alias r2, $currentTrigger",
                 $"alias r3, $comparisonResult",
                 
-                $@"load $triggerReceive, ""{AccountContract.TriggerReceive}""",
+                $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerReceive, $currentTrigger, $comparisonResult",

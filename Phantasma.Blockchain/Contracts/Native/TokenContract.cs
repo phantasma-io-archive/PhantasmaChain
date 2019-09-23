@@ -5,16 +5,17 @@ using Phantasma.Numerics;
 using System.Linq;
 using Phantasma.Storage.Context;
 
-/*
- * Token script triggers
- * OnMint(address, symbol, amount)
- * OnBurn(address, symbol, amount)
- * OnSend(address, symbol, amount)
- * OnReceive(address, symbol, amount)
- * OnMetadata(address, symbol, key, value)
-*/
 namespace Phantasma.Blockchain.Contracts.Native
 {
+    public enum TokenTrigger
+    {
+        OnMint, // address, symbol, amount
+        OnBurn, // address, symbol, amount
+        OnSend, // address, symbol, amount
+        OnReceive, // address, symbol, amount
+        OnMetadata // address, symbol, key, value
+    }
+
     public sealed class TokenContract : SmartContract
     {
         public override string Name => Nexus.TokenContractName;

@@ -848,13 +848,13 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerReceive: TokenContract.TriggerMint, target, symbol, amount);
+            var tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountContract.TriggerReceive:  AccountContract.TriggerMint, target, symbol, amount);
+            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -890,13 +890,13 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerReceive : TokenContract.TriggerMint, target, symbol, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint, target, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountContract.TriggerReceive:  AccountContract.TriggerMint, target, symbol, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -938,13 +938,13 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerSend:  TokenContract.TriggerBurn, target, symbol, amount);
+            var tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, isSettlement ? TokenTrigger.OnSend: TokenTrigger.OnBurn, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountContract.TriggerSend: AccountContract.TriggerBurn, target, symbol, amount);
+            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountTrigger.OnSend:  AccountTrigger.OnBurn, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -987,13 +987,13 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, isSettlement ? TokenContract.TriggerSend : TokenContract.TriggerBurn, target, symbol, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, target, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ? AccountContract.TriggerSend:  AccountContract.TriggerBurn, target, symbol, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, target, isSettlement ?  AccountTrigger.OnSend: AccountTrigger.OnBurn, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1046,25 +1046,25 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, source, symbol, amount);
+            var tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, TokenTrigger.OnSend, source, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, destination, symbol, amount);
+            tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, TokenTrigger.OnReceive, destination, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, source, AccountContract.TriggerSend, source, symbol, amount);
+            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, source, AccountTrigger.OnSend, source, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, destination, AccountContract.TriggerReceive, destination, symbol, amount);
+            accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, destination, AccountTrigger.OnReceive, destination, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1118,25 +1118,25 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerSend, source, symbol, tokenID);
+            var tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, TokenTrigger.OnSend, source, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            tokenTriggerResult = SmartContract.InvokeTrigger(runtimeVM, tokenInfo.Script, TokenContract.TriggerReceive, destination, symbol, tokenID);
+            tokenTriggerResult = SmartContract.InvokeTriggerOnToken(runtimeVM, tokenInfo, TokenTrigger.OnReceive, destination, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, source, AccountContract.TriggerSend, source, symbol, tokenID);
+            var accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, source, AccountTrigger.OnSend, source, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, destination, AccountContract.TriggerReceive, destination, symbol, tokenID);
+            accountTriggerResult = SmartContract.InvokeTriggerOnAccount(runtimeVM, destination, AccountTrigger.OnReceive, destination, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;

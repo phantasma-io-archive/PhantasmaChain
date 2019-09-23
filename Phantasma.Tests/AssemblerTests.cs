@@ -286,10 +286,10 @@ namespace Phantasma.Tests
                 $"alias r5, $currentTrigger",
                 $"alias r6, $comparisonResult",
 
-                $@"load $triggerSend, ""{AccountContract.TriggerSend}""",
-                $@"load $triggerReceive, ""{AccountContract.TriggerReceive}""",
-                $@"load $triggerBurn, ""{AccountContract.TriggerBurn}""",
-                $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
+                $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
+                $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
+                $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
+                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",
@@ -374,10 +374,10 @@ namespace Phantasma.Tests
                 $"alias r5, $currentTrigger",
                 $"alias r6, $comparisonResult",
 
-                $@"load $triggerSend, ""{AccountContract.TriggerSend}""",
-                $@"load $triggerReceive, ""{AccountContract.TriggerReceive}""",
-                $@"load $triggerBurn, ""{AccountContract.TriggerBurn}""",
-                $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
+                $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
+                $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
+                $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
+                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",

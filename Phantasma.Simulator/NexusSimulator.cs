@@ -449,7 +449,7 @@ namespace Phantasma.Simulator
                 $"alias r3, $result",
                 $"alias r4, $owner",
 
-                $@"load $triggerMint, ""{AccountContract.TriggerMint}""",
+                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerMint, $currentTrigger, $result",

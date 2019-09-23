@@ -4,21 +4,18 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    /*
-     * Account script triggers
-     * OnMint(symbol, amount)
-     * OnBurn(symbol, amount)
-     * OnSend(symbol, amount)
-     * OnReceive(symbol, amount)
-    */
+    // all trigers have same args: symbol, amount
+    public enum AccountTrigger
+    {
+        OnMint,
+        OnBurn,
+        OnSend,
+        OnReceive,
+    }
+
     public sealed class AccountContract : SmartContract
     {
         public override string Name => Nexus.AccountContractName;
-
-        public static readonly string TriggerMint = "OnMint";
-        public static readonly string TriggerBurn = "OnBurn";
-        public static readonly string TriggerSend = "OnSend";
-        public static readonly string TriggerReceive = "OnReceive";
 
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 
