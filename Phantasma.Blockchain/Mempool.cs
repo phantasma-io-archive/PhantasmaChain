@@ -97,6 +97,12 @@ namespace Phantasma.Blockchain
 
            Throw.IfNull(tx, nameof(tx));
 
+            var requiredPoW = MinimumProofOfWork;
+            if (requiredPoW > 0 && tx.Hash.GetDifficulty() < requiredPoW)
+            {
+                RejectTransaction(tx, $"should be mined with difficulty of {requiredPoW} or more");
+            }
+
             var chain = Nexus.FindChainByName(tx.ChainName);
             Throw.IfNull(chain, nameof(chain));
 
