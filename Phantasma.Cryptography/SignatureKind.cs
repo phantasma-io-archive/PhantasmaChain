@@ -3,9 +3,8 @@
     public enum SignatureKind
     {
         None,
-        Contract,
         Ed25519,
+        ECDSA,
         Ring,
-        ECDSA
     }
 }

@@ -1,22 +1,24 @@
-﻿using Phantasma.Storage;
-using Phantasma.Storage.Utils;
+﻿using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
-namespace Phantasma.Cryptography.EdDSA
+namespace Phantasma.Cryptography.ECC
 {
-    public class Ed25519Signature : Signature
+    public class ECDsaSignature : Signature
     {
+        public static readonly ECCurve Curve = ECCurve.Secp256r1;
+
         public byte[] Bytes { get; private set; }
 
-        public override SignatureKind Kind => SignatureKind.Ed25519;
+        public override SignatureKind Kind =>  SignatureKind.ECDSA;
 
-        internal Ed25519Signature()
+        internal ECDsaSignature()
         {
             this.Bytes = null;
         }
 
-        public Ed25519Signature(byte[] bytes)
+        public ECDsaSignature(byte[] bytes)
         {
             this.Bytes = bytes;
         }
@@ -30,7 +32,9 @@ namespace Phantasma.Cryptography.EdDSA
                     continue;
                 }
 
-                if (Ed25519.Verify(this.Bytes, message, address.PublicKey))
+                var pubKeyBytes = address.PublicKey.Skip(1).ToArray();
+                var pubKey = ECC.ECPoint.DecodePoint(pubKeyBytes, Curve);
+                if (ECDsa.VerifySignature(message, this.Bytes, Curve, pubKey))
                 {
                     return true;
                 }
