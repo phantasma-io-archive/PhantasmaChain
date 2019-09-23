@@ -223,6 +223,11 @@ namespace Phantasma.Blockchain
             this.UpdateHash();
         }
 
+        public void Mine(ProofOfWork targetDifficulty)
+        {
+            Mine((int)targetDifficulty);
+        }
+
         // TODO this can be optimized by serializing the TX once then manually editing the indices that belong to the expiration
         public void Mine(int targetDifficulty)
         {
