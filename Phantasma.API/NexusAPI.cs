@@ -324,7 +324,7 @@ namespace Phantasma.API
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             var currentSupply = Nexus.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
-            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("nexus", "GetTokenMetadataList", tokenInfo.Symbol).ToObject();
+            var metadata = (Metadata[])Nexus.RootChain.InvokeContract(Nexus.TokenContractName, nameof(TokenContract.GetMetadataList), tokenInfo.Symbol).ToObject();
             var metadataResults = metadata.Select(x => new MetadataResult
             {
                 key = x.key,
