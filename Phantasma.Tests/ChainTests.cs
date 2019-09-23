@@ -785,7 +785,7 @@ namespace Phantasma.Tests
             var sender = KeyPair.Generate();
 
             var token = nexus.GetTokenInfo(symbol);
-            var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
+            var originalAmount = UnitConversion.ToBigInteger(1, token.Decimals);
             var sideAmount = originalAmount / 2;
 
             Assert.IsTrue(sideAmount > 0);

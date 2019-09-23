@@ -174,5 +174,24 @@ namespace Phantasma.Tests
             Assert.IsTrue(keys.Address.Text == otherKeys.Address.Text);
         }
 
+        [TestMethod]
+        public void SharedSecret()
+        {
+            var keyA = KeyPair.Generate();
+            var keyB = KeyPair.Generate();
+            var secret = "Hello Phantasma!";
+
+            var pubA = EncryptionUtils.Curve.G * keyA.PrivateKey;
+            var pubB = EncryptionUtils.Curve.G * keyB.PrivateKey;
+
+            var sA = (pubB * keyA.PrivateKey).EncodePoint(false);
+            var sB = (pubA * keyB.PrivateKey).EncodePoint(false);
+            Assert.IsTrue(sA.SequenceEqual(sB));
+
+            var encryptedMessage = EncryptionUtils.Encrypt(secret, keyA, pubB);
+            var decryptedMessage = EncryptionUtils.Decrypt<string>(encryptedMessage, keyB, pubA);
+
+            Assert.IsTrue(decryptedMessage == secret);
+        }
     }
 }

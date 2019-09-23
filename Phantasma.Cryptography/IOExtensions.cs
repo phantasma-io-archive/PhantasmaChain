@@ -1,5 +1,6 @@
 ﻿using Phantasma.Cryptography.EdDSA;
 using Phantasma.Cryptography.Ring;
+using Phantasma.Storage.Utils;
 using System;
 using System.IO;
 
@@ -7,6 +8,12 @@ namespace Phantasma.Cryptography
 {
     public static class IOExtensions
     {
+        public static void WritePublicKey(this BinaryWriter writer, ECC.ECPoint publicKey)
+        {
+            var bytes = publicKey.EncodePoint(true);
+            writer.WriteByteArray(bytes);
+        }
+
         public static void WriteAddress(this BinaryWriter writer, Address address)
         {
             address.SerializeData(writer);
@@ -27,6 +34,13 @@ namespace Phantasma.Cryptography
 
             writer.Write((byte)signature.Kind);
             signature.SerializeData(writer);
+        }
+
+        public static ECC.ECPoint ReadPublicKey(this BinaryReader reader)
+        {
+            var bytes = reader.ReadByteArray();
+            var publicKey = ECC.ECPoint.DecodePoint(bytes, ECC.ECDsaSignature.Curve);
+            return publicKey;
         }
 
         public static Address ReadAddress(this BinaryReader reader)
