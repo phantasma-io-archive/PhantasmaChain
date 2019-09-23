@@ -394,19 +394,25 @@ namespace Phantasma.Blockchain
             }
 
             var chain = RootChain;
-            return chain.InvokeContract("account", "LookUpName", name).AsAddress();
+            return chain.InvokeContract(Nexus.AccountContractName, nameof(AccountContract.LookUpName), name).AsAddress();
         }
 
         public string LookUpAddressName(Address address)
         {
             var chain = RootChain;
-            return chain.InvokeContract("account", "LookUpAddress", address).AsString();
+            return chain.InvokeContract(Nexus.AccountContractName, nameof(AccountContract.LookUpAddress), address).AsString();
         }
 
         public byte[] LookUpAddressScript(Address address)
         {
             var chain = RootChain;
-            return chain.InvokeContract("account", "LookUpScript", address).AsByteArray();
+            return chain.InvokeContract(Nexus.AccountContractName, nameof(AccountContract.LookUpScript), address).AsByteArray();
+        }
+
+        public bool HasScript(Address address)
+        {
+            var chain = RootChain;
+            return chain.InvokeContract(Nexus.AccountContractName, nameof(AccountContract.HasScript)).AsBool();
         }
         #endregion
 

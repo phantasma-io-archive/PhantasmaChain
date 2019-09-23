@@ -4,13 +4,13 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    // all trigers have same args: symbol, amount
     public enum AccountTrigger
     {
-        OnMint,
-        OnBurn,
-        OnSend,
-        OnReceive,
+        OnMint, // address, symbol, amount
+        OnBurn, // address, symbol, amount
+        OnSend, // address, symbol, amount
+        OnReceive, // address, symbol, amount
+        OnWitness, // address
     }
 
     public sealed class AccountContract : SmartContract
@@ -57,6 +57,16 @@ namespace Phantasma.Blockchain.Contracts.Native
             _scriptMap.Set(target, script);
 
             // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
+        }
+
+        public bool HasScript(Address address)
+        {
+            if (address.IsUser)
+            {
+                return _scriptMap.ContainsKey(address);
+            }
+
+            return false;
         }
 
         public void SetMetadata(Address target, string key, string value)

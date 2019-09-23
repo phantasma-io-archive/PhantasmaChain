@@ -173,6 +173,11 @@ namespace Phantasma.Blockchain.Contracts
                 return false;
             }
 
+            if (address.IsUser && Runtime.Nexus.HasScript(address))
+            {
+                return InvokeTriggerOnAccount(Runtime, address, AccountTrigger.OnWitness, address);
+            }
+
             return Runtime.Transaction.IsSignedBy(address);
         }
 
