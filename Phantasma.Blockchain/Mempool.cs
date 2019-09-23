@@ -53,8 +53,9 @@ namespace Phantasma.Blockchain
         public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
 
         public event MempoolEventHandler OnTransactionAdded;
-        public event MempoolEventHandler OnTransactionRemoved;
+        public event MempoolEventHandler OnTransactionDiscarded;
         public event MempoolEventHandler OnTransactionFailed;
+        public event MempoolEventHandler OnTransactionCommitted;
 
         public uint MinimumProofOfWork => (uint)CalculateCurrentPoW() + defaultPoW;
 
@@ -179,7 +180,7 @@ namespace Phantasma.Blockchain
                 }
 
                 Interlocked.Decrement(ref _size);
-                OnTransactionRemoved?.Invoke(tx);
+                OnTransactionDiscarded?.Invoke(tx);
                 return true;
             }
 
@@ -327,7 +328,7 @@ namespace Phantasma.Blockchain
                 foreach (var tx in transactions)
                 {
                     Interlocked.Decrement(ref _size);
-                    OnTransactionRemoved?.Invoke(tx);
+                    OnTransactionCommitted?.Invoke(tx);
                 }
 
                 break;
