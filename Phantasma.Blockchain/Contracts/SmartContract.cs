@@ -421,6 +421,22 @@ namespace Phantasma.Blockchain.Contracts
         #endregion
 
         #region TRIGGERS
+        public static bool InvokeTriggerOnAccount(RuntimeVM runtimeVM, Address address, string triggerName, params object[] args)
+        {
+            if (address.IsNull)
+            {
+                return false;
+            }
+
+            if (address.IsUser)
+            {
+                var accountScript = runtimeVM.Nexus.LookUpAddressScript(address);
+                return InvokeTrigger(runtimeVM, accountScript, triggerName, args);
+            }
+
+            return true;
+        }
+
         public static bool InvokeTrigger(RuntimeVM runtimeVM, byte[] script, string triggerName, params object[] args)
         {
             if (script == null || script.Length == 0)
