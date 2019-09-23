@@ -123,13 +123,20 @@ namespace Phantasma.Storage
             if (type.IsArray)
             {
                 var array = (Array)obj;
-                writer.WriteVarInt(array.Length);
-
-                var elementType = type.GetElementType();
-                for (int i = 0; i < array.Length; i++)
+                if (array == null)
                 {
-                    var item = array.GetValue(i);
-                    Serialize(writer, item, elementType);
+                    writer.WriteVarInt(0);
+                }
+                else
+                {
+                    writer.WriteVarInt(array.Length);
+
+                    var elementType = type.GetElementType();
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        var item = array.GetValue(i);
+                        Serialize(writer, item, elementType);
+                    }
                 }
             }
             else
