@@ -45,6 +45,10 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             int validatorIndex = (int)(diff / slotDuration);
             var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
+            var chainIndex = Runtime.Nexus.GetIndexOfChain(Runtime.Chain.Name);
+            Runtime.Expect(chainIndex >= 0, "invalid chain index");
+
+            validatorIndex += chainIndex;
             validatorIndex = validatorIndex % validatorCount;
 
             var currentIndex = validatorIndex;

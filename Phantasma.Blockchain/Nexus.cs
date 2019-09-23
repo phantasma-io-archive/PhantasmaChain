@@ -37,6 +37,7 @@ namespace Phantasma.Blockchain
         public const string ValidatorContractName = "validator";
         public const string InteropContractName = "interop";
         public const string ExchangeContractName = "exchange";
+
         public const string PrivacyContractName = "privacy";
         public const string RelayContractName = "relay";
         public const string BombContractName = "bomb";
@@ -1565,7 +1566,7 @@ namespace Phantasma.Blockchain
 
         public BigInteger GetStakeFromAddress(Address address)
         {
-            var result = RootChain.InvokeContract(Nexus.ValidatorContractName, nameof(ValidatorContract.GetValidatorType), address).AsNumber();
+            var result = RootChain.InvokeContract(Nexus.StakeContractName, nameof(StakeContract.GetStake), address).AsNumber();
             return result;
         }
 
@@ -1784,31 +1785,21 @@ namespace Phantasma.Blockchain
             throw new ChainException($"Platform does not exist ({name})");
         }
         #endregion
-        
-        /*
-        public void SerializeData(BinaryWriter writer)
+
+        public int GetIndexOfChain(string name)
         {
-            writer.WriteVarString(Name);
-            GenesisAddress.SerializeData(writer);
-
-            int chainCount = _chainMap.Count;
-            writer.WriteVarInt(chainCount);
-            foreach (Chain entry in _chainMap.Values)
+            var chains = this.Chains;
+            int index = 0;
+            foreach (var chain in chains)
             {
-                entry.SerializeData(writer);
-            }
+                if (chain == name)
+                {
+                    return index;
+                }
 
-            int tokenCount = _tokenMap.Count;
-            writer.WriteVarInt(tokenCount);
-            foreach (Token entry in _tokenMap.Values)
-            {
-                entry.SerializeData(writer);
+                index++;
             }
-
-            writer.WriteAddress(RootChain.Address);
-            writer.WriteVarString(FuelToken.Symbol);
-            writer.WriteVarString(StakingToken.Symbol);
-            writer.WriteVarString(StableToken.Symbol);
-        }*/
+            return -1;
+        }
     }
 }
