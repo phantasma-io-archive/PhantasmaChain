@@ -2,6 +2,7 @@
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Storage;
 using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
@@ -179,8 +180,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             return poll;
         }
 
-        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, PollChoice[] choices, BigInteger votesPerUser)
+        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, byte[] serializedChoices, BigInteger votesPerUser)
         {
+            // TODO support for passing structs as args
+            var choices = Serialization.Unserialize<PollChoice[]>(serializedChoices);
+
             if (subject.StartsWith(SystemPoll))
             {
                 Runtime.Expect(Runtime.Nexus.IsPrimaryValidator(from), "must be validator");
