@@ -11,9 +11,11 @@ using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Simulator;
+using Phantasma.Storage;
 using Phantasma.VM.Utils;
 using static Phantasma.Blockchain.Contracts.Native.ConsensusContract;
 using static Phantasma.Blockchain.Contracts.Native.ValidatorContract;
+using static Phantasma.Blockchain.Contracts.Native.ValidatorType;
 using static Phantasma.Blockchain.Nexus;
 
 namespace Phantasma.Tests
@@ -76,15 +78,21 @@ namespace Phantasma.Tests
             var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
-                    CallContract(ValidatorContractName, nameof(ValidatorContract.SetValidator), secondValidator.Address, 1, ValidatorType.Primary).
+                    CallContract(ValidatorContractName, nameof(ValidatorContract.SetValidator), secondValidator.Address, 1, Primary).
                     SpendGas(owner.Address).
                     EndScript());
-            var block = simulator.EndBlock().First();
+            simulator.EndBlock().First();
 
             for (int i = 2; i < validatorKeyPairs.Length; i++)
             {
                 var newValidator = validatorKeyPairs[i];
                 AddNewValidator(newValidator);
+
+                var validatorType = simulator.Nexus.RootChain
+                    .InvokeContract(ValidatorContractName, nameof(ValidatorContract.GetValidatorType),
+                        newValidator.Address).AsEnum<ValidatorType>();
+
+                Assert.IsTrue(validatorType != Invalid);
             }
 
             
@@ -92,8 +100,8 @@ namespace Phantasma.Tests
 
         private void AddNewValidator(KeyPair newValidator)
         {
-            var startTime = simulator.CurrentTime;
-            var endTime = simulator.CurrentTime.AddDays(1);
+            Timestamp startTime = simulator.CurrentTime;
+            Timestamp endTime = simulator.CurrentTime.AddDays(1);
             var pollName = SystemPoll + ValidatorPollTag;
 
             var validators = (ValidatorEntry[]) simulator.Nexus.RootChain.InvokeContract(Nexus.ValidatorContractName,
@@ -111,13 +119,15 @@ namespace Phantasma.Tests
 
             choices[activeValidatorCount] = new PollChoice() {value = newValidator.Address.PublicKey};
 
+            var serializedChoices = choices.Serialize();
+
             //start vote for new validator
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
                     CallContract(ConsensusContractName, nameof(ConsensusContract.InitPoll),
-                        owner.Address, pollName, ConsensusKind.Validators, ConsensusMode.Majority, startTime, endTime, choices, 1).
+                        owner.Address, pollName, ConsensusKind.Validators, ConsensusMode.Majority, startTime, endTime, serializedChoices, 1).
                     SpendGas(owner.Address).
                     EndScript());
             simulator.EndBlock();
@@ -128,17 +138,41 @@ namespace Phantasma.Tests
 
                 //have each already existing validator vote on themselves to preserve the validator order
                 simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                simulator.GenerateCustomTransaction(validator, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().
-                        AllowGas(owner.Address, Address.Null, 1, 9999).
-                        CallContract(ConsensusContractName, nameof(ConsensusContract.InitPoll),
-                            owner.Address, pollName, ConsensusKind.Validators, ConsensusMode.Majority, startTime, endTime, choices, 1).
-                        SpendGas(owner.Address).
+                        AllowGas(validator.Address, Address.Null, 1, 9999).
+                        CallContract(ConsensusContractName, nameof(ConsensusContract.SingleVote),
+                            validator.Address, pollName, i).
+                        SpendGas(validator.Address).
                         EndScript());
                 simulator.EndBlock();
             }
 
-            
+            //skip until the voting is over
+            simulator.TimeSkipDays(1.5);
+
+            var votingRank = simulator.Nexus.RootChain.InvokeContract(ConsensusContractName, nameof(ConsensusContract.GetRank), pollName,
+                choices[activeValidatorCount].Serialize()).AsNumber();
+
+            //call SetValidator for each set validator address
+            for (int i = 0; i <= activeValidatorCount; i++)
+            {
+                var validatorChoice = choices[i].value;
+
+                ValidatorType validatorType = i < 2 ? Primary : Secondary;
+
+                votingRank = simulator.Nexus.RootChain.InvokeContract(ConsensusContractName, nameof(ConsensusContract.GetRank), pollName, validatorChoice).AsNumber();
+
+                simulator.BeginBlock();
+                var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+                    ScriptUtils.BeginScript().
+                        AllowGas(owner.Address, Address.Null, 1, 9999).
+                        CallContract(ValidatorContractName, nameof(ValidatorContract.SetValidator), validatorChoice, votingRank, validatorType).
+                        SpendGas(owner.Address).
+                        EndScript());
+                simulator.EndBlock().First();
+            }
+
         }
 
         [TestMethod]
