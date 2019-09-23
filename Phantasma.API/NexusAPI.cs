@@ -984,7 +984,7 @@ namespace Phantasma.API
             return new ScriptResult { result = encodedResult, events = evts, oracles = oracleReads };
         }
 
-        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, 30)]
+        [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, 10)]
         [APIFailCase("hash is invalid", "43242342")]
         public IAPIResult GetTransaction([APIParameter("Hash of transaction", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
