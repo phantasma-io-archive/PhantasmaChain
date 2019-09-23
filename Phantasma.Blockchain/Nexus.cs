@@ -412,7 +412,7 @@ namespace Phantasma.Blockchain
         public bool HasScript(Address address)
         {
             var chain = RootChain;
-            return chain.InvokeContract(Nexus.AccountContractName, nameof(AccountContract.HasScript)).AsBool();
+            return chain.InvokeContract(Nexus.AccountContractName, nameof(AccountContract.HasScript), address).AsBool();
         }
         #endregion
 
