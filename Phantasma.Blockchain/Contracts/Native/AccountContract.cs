@@ -54,6 +54,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(!_scriptMap.ContainsKey(target), "address already has a script");
 
+            var witnessCheck = InvokeTrigger(Runtime, script, AccountTrigger.OnWitness.ToString(), Address.Null);
+            Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly");
+
             _scriptMap.Set(target, script);
 
             // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
