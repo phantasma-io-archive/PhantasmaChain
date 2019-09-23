@@ -146,7 +146,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (isBlockOperation && Nexus.Ready && contextName != Nexus.TokenContractName)
             {
-                throw new VMDebugException(this, "context not available in block operations");
+                throw new ChainException($"{contextName} context not available in block operations");
             }
 
             var contract = this.Nexus.AllocContract(contextName);
