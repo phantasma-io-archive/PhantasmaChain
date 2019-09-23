@@ -159,7 +159,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var bombPayment = bombGas * Runtime.GasPrice;
                 var bombAddress = GetAddressForName(Nexus.BombContractName);
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, targetAddress, bombPayment), "gas target payment failed");
+                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, bombAddress, bombPayment), "gas bomb payment failed");
                 Runtime.Notify(EventKind.GasPayment, bombAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = bombGas});
                 spentGas -= bombGas;
             }
