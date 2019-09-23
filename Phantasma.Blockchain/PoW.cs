@@ -5,11 +5,11 @@ namespace Phantasma.Blockchain
     public enum ProofOfWork
     {
         None = 0,
-        Minimal = 4,
-        Moderate = 14,
+        Minimal = 5,
+        Moderate = 15,
         Hard = 19,
-        Heavy = 23,
-        Extreme = 26
+        Heavy = 24,
+        Extreme = 30
     }
 
     public static class PoWUtils

@@ -24,6 +24,8 @@ namespace Phantasma.Blockchain
 
         public Timestamp Expiration { get; private set; }
 
+        public byte[] Payload { get; private set; }
+
         public Signature[] Signatures { get; private set; }
         public Hash Hash { get; private set; }
 
@@ -51,6 +53,7 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(this.ChainName);
             writer.WriteByteArray(this.Script);
             writer.Write(this.Expiration.Value);
+            writer.WriteByteArray(this.Payload);
 
             if (withSignature)
             {
@@ -112,6 +115,7 @@ namespace Phantasma.Blockchain
             this.ChainName = chainName;
             this.Script = script;
             this.Expiration = expiration;
+            this.Payload = new byte[0];
 
             this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
 
@@ -204,6 +208,7 @@ namespace Phantasma.Blockchain
             this.ChainName = reader.ReadVarString();
             this.Script = reader.ReadByteArray();
             this.Expiration = reader.ReadUInt32();
+            this.Payload = reader.ReadByteArray();
 
             // check if we have some signatures attached
             try
@@ -228,7 +233,6 @@ namespace Phantasma.Blockchain
             Mine((int)targetDifficulty);
         }
 
-        // TODO this can be optimized by serializing the TX once then manually editing the indices that belong to the expiration
         public void Mine(int targetDifficulty)
         {
             Throw.If(targetDifficulty < 0 || targetDifficulty > 256, "invalid difficulty");
@@ -239,8 +243,8 @@ namespace Phantasma.Blockchain
                 return; // no mining necessary 
             }
 
-            var baseExpiration = this.Expiration.Value;
-            uint offset = 0;
+            uint nonce = 0;
+
             while (true)
             {
                 if (this.Hash.GetDifficulty() >= targetDifficulty)
@@ -248,12 +252,21 @@ namespace Phantasma.Blockchain
                     return;
                 }
 
-                offset++;
-                if (offset == 0)
+                if (nonce == 0)
+                {
+                    this.Payload = new byte[4];
+                }
+
+                nonce++;
+                if (nonce == 0)
                 {
                     throw new ChainException("Transaction mining failed");
                 }
-                this.Expiration = new Timestamp(baseExpiration + offset);
+
+                Payload[0] = (byte)((nonce >> 0) & 0xFF);
+                Payload[1] = (byte)((nonce >> 8) & 0xFF);
+                Payload[2] = (byte)((nonce >> 16) & 0xFF);
+                Payload[3] = (byte)((nonce >> 24) & 0xFF);
                 UpdateHash();
             }
         }

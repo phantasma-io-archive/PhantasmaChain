@@ -110,7 +110,7 @@ namespace Phantasma.Tests
                 EndScript();
 
             var tx = new Transaction("simnet", "main", script, Timestamp.Now);
-            var expectedDiff = 14;
+            var expectedDiff = (int)ProofOfWork.Moderate;
             tx.Mine(expectedDiff);
 
             var diff = tx.Hash.GetDifficulty();
