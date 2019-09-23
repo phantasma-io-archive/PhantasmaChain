@@ -226,7 +226,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                    .CallContract("relay", "UpdateChannel", lastReceipt).
+                    .CallContract("relay", nameof(RelayContract.SettleChannel), lastReceipt).
                     SpendGas(sender.Address).EndScript());
             simulator.EndBlock();
 
@@ -323,7 +323,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                        .CallContract("relay", "UpdateChannel", lastReceipt).
+                        .CallContract("relay", nameof(RelayContract.SettleChannel), lastReceipt).
                         SpendGas(sender.Address).EndScript());
                 simulator.EndBlock();
 
@@ -383,7 +383,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                        .CallContract("relay", "UpdateChannel", receipt).
+                        .CallContract("relay", nameof(RelayContract.SettleChannel), receipt).
                         SpendGas(sender.Address).EndScript());
                 simulator.EndBlock();
             }, "should have thrown exception due to wrong nexus name");
@@ -432,7 +432,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                        .CallContract("relay", "UpdateChannel", receipt).
+                        .CallContract("relay", nameof(RelayContract.SettleChannel), receipt).
                         SpendGas(sender.Address).EndScript());
                 simulator.EndBlock();
             }, "should have thrown exception due to wrong sender");
@@ -481,7 +481,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                        .CallContract("relay", "UpdateChannel", receipt).
+                        .CallContract("relay", nameof(RelayContract.SettleChannel), receipt).
                         SpendGas(sender.Address).EndScript());
                 simulator.EndBlock();
             }, "should have thrown exception due to invalid index");
@@ -530,7 +530,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                        .CallContract("relay", "UpdateChannel", receipt).
+                        .CallContract("relay", nameof(RelayContract.SettleChannel), receipt).
                         SpendGas(sender.Address).EndScript());
                 simulator.EndBlock();
             }, "should have thrown exception due to wrong nexus name");
@@ -753,7 +753,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(sender.Address, Address.Null, 1, 9999)
-                    .CallContract("relay", "UpdateChannel", lastReceipt).
+                    .CallContract("relay", nameof(RelayContract.SettleChannel), lastReceipt).
                     SpendGas(sender.Address).EndScript());
             simulator.EndBlock();
 

@@ -47,6 +47,9 @@ namespace Phantasma.Blockchain.Contracts
         PollCreated = 36,
         PollClosed = 37,
         PollVote = 38,
+        ChannelCreate = 39,
+        ChannelRefill = 40,
+        ChannelSettle = 41,
         Metadata = 47,
         Custom = 48,
     }

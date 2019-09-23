@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Cryptography.ECC;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
@@ -106,6 +107,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(Nexus.FuelTokenDecimals) / (1000 * StakeContract.BaseEnergyRatioDivisor);
 
+        internal StorageMap _keys; //<address, ECPoint>
         internal StorageMap _balances; //<address, BigInteger>
         internal StorageMap _indices; //<string, BigInteger>
 
@@ -205,10 +207,29 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.ChannelClose, from, channelName);
         }*/
 
-        public void TopUpChannel(Address from, BigInteger amount)
+        public void OpenChannel(Address from, ECPoint publicKey)
         {
             Runtime.Expect(IsWitness(from), "invalid witness");
-            Runtime.Expect(amount >= RelayFeePerMessage, "insufficient topup amount");
+            Runtime.Expect(!_keys.ContainsKey<Address>(from), "channel already open");
+
+            _keys.Set<Address, ECPoint>(from, publicKey);
+
+            Runtime.Notify(EventKind.ChannelCreate, from, publicKey);
+        }
+
+        public ECPoint GetKey(Address from)
+        {
+            Runtime.Expect(_keys.ContainsKey<Address>(from), "channel not open");
+            return _keys.Get<Address, ECPoint>(from);
+        }
+
+        public void TopUpChannel(Address from, BigInteger count)
+        {
+            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(count >= 1, "insufficient topup amount");
+            var amount = RelayFeePerMessage * count;
+
+            Runtime.Expect(_keys.ContainsKey<Address>(from), "channel not open");
 
             BigInteger balance = _balances.ContainsKey(from) ? _balances.Get<Address, BigInteger>(from) : 0;
 
@@ -218,12 +239,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             _balances.Set<Address, BigInteger>(from, balance);
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = Nexus.FuelTokenSymbol });
+            Runtime.Notify(EventKind.ChannelRefill, from, count);
         }
 
-        public void UpdateChannel(RelayReceipt receipt)
+        public void SettleChannel(RelayReceipt receipt)
         {
             var channelIndex = GetIndex(receipt.message.sender, receipt.message.receiver);
-            Runtime.Expect(receipt.message.nexus == Runtime.Nexus.Name, "different nexus name, possible replay attack detected");
+            // check for possible replay attack
+            Runtime.Expect(receipt.message.nexus == Runtime.Nexus.Name, "invalid nexus name");
+
             // here we count how many receipts we are implicitly accepting
             // this means that we don't need to accept every receipt, allowing skipping several
             var receiptCount = 1 + receipt.message.index - channelIndex;
@@ -253,6 +277,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             // send half to the receiver
             Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, receipt.message.receiver, payout);
             Runtime.Notify(EventKind.TokenReceive, receipt.message.receiver, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = Nexus.FuelTokenSymbol });
+
+            Runtime.Notify(EventKind.ChannelSettle, receipt.message.sender, receiptCount);
         }
     }
 }
