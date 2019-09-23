@@ -85,6 +85,8 @@ namespace Phantasma.Blockchain.Contracts
             Chain.RegisterExtCalls(this);
         }
 
+        public bool IsTrigger => DelayPayment;
+
         public override string ToString()
         {
             return $"Runtime.Context={CurrentContext}";

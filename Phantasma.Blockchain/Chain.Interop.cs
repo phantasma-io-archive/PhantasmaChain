@@ -17,7 +17,8 @@ namespace Phantasma.Blockchain
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Event", Runtime_Event);
-            vm.RegisterMethod("Runtime.IsWitness", Constructor_IsWitness);
+            vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
+            vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -253,7 +254,7 @@ namespace Phantasma.Blockchain
 
         #endregion
 
-        private static ExecutionState Constructor_IsWitness(RuntimeVM vm)
+        private static ExecutionState Runtime_IsWitness(RuntimeVM vm)
         {
             try
             {
@@ -275,6 +276,27 @@ namespace Phantasma.Blockchain
                 var address = temp.AsInterop<Address>();
 
                 var success = tx.IsSignedBy(address);
+
+                var result = new VMObject();
+                result.SetValue(success);
+                vm.Stack.Push(result);
+            }
+            catch
+            {
+                return ExecutionState.Fault;
+            }
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_IsTrigger(RuntimeVM vm)
+        {
+            try
+            {
+                var tx = vm.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                var success = vm.IsTrigger;
 
                 var result = new VMObject();
                 result.SetValue(success);
