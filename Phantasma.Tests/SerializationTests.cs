@@ -31,6 +31,7 @@ namespace Phantasma.Tests
                 EndScript();
 
             var tx = new Transaction("simnet", "main", script, Timestamp.Now);
+            tx.Mine(3);
 
             var bytesUnsigned = tx.ToByteArray(false);
             Assert.IsTrue(bytesUnsigned != null);

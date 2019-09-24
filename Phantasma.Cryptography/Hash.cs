@@ -52,7 +52,9 @@ namespace Phantasma.Cryptography
 
         public byte[] ToByteArray()
         {
-            return _data;
+            var result = new byte[_data.Length];
+            ByteArrayUtils.CopyBytes(_data, 0, result, 0, _data.Length);
+            return result;
         }
 
         public override string ToString()

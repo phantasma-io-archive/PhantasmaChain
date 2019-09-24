@@ -272,7 +272,7 @@ namespace Phantasma.Blockchain
                     }
 
                     var transactions = GetNextTransactions(chain);
-                    if (transactions != null)
+                    if (transactions != null && transactions.Any())
                     {
                         lock (_pendingBlocks)
                         {
