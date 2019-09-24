@@ -805,7 +805,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var lastClaim = _claims.Get<Address, EnergyAction>(address);
             var lastStake = _stakes.Get<Address, EnergyAction>(address);
 
-            return lastClaim.timestamp > lastStake.timestamp ? lastClaim : lastStake;
+            return lastClaim.timestamp >= lastStake.timestamp ? lastClaim : lastStake;
         }
     }
 }
