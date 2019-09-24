@@ -620,6 +620,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(from != to, "invalid proxy address");
             Runtime.Expect(IsWitness(from), "invalid witness");
 
+            Runtime.Expect(!to.IsNull, "destination cannot be null address");
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
             var stakersList = _proxyStakersMap.Get<Address, StorageList>(from);
