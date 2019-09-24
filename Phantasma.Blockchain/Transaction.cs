@@ -107,7 +107,8 @@ namespace Phantasma.Blockchain
 
         }
 
-        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, IEnumerable<Signature> signatures = null)
+        // transactions are always created unsigned, call Sign() to generate signatures
+        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration)
         {
             Throw.IfNull(script, nameof(script));
 
@@ -117,7 +118,7 @@ namespace Phantasma.Blockchain
             this.Expiration = expiration;
             this.Payload = new byte[0];
 
-            this.Signatures = signatures != null && signatures.Any() ? signatures.ToArray() : new Signature[0];
+            this.Signatures = new Signature[0];
 
             this.UpdateHash();
         }

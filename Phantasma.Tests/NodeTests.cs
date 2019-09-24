@@ -96,7 +96,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestMempoolRejection()
+        public void TestMempoolSubmission()
         {
             InitMainNode();
 
