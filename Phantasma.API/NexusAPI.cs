@@ -382,18 +382,26 @@ namespace Phantasma.API
                 fee = chain!=null ? chain.GetTransactionFee(tx.Hash).ToString(): "0"
             };
 
-            var eventList = new List<EventResult>();
-
-            var evts = block.GetEventsForTransaction(tx.Hash);
-            foreach (var evt in evts)
+            if (block != null)
             {
-                var eventEntry = FillEvent(evt);
-                eventList.Add(eventEntry);
-            }
-            result.events = eventList.ToArray();
+                var eventList = new List<EventResult>();
 
-            var txResult = block.GetResultForTransaction(tx.Hash);
-            result.result = txResult != null ? Base16.Encode(txResult) : "";
+                var evts = block.GetEventsForTransaction(tx.Hash);
+                foreach (var evt in evts)
+                {
+                    var eventEntry = FillEvent(evt);
+                    eventList.Add(eventEntry);
+                }
+
+                var txResult = block.GetResultForTransaction(tx.Hash);
+                result.result = txResult != null ? Base16.Encode(txResult) : "";
+                result.events = eventList.ToArray();
+            }
+            else
+            {
+                result.result = "";
+                result.events = new EventResult[0];
+            }
 
             return result;
         }
