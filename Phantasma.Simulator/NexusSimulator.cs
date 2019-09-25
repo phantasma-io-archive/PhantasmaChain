@@ -289,7 +289,7 @@ namespace Phantasma.Simulator
                             txs.Add(txHashMap[hash]);
                         }
 
-                        uint nextHeight = chain.LastBlock != null ? chain.LastBlock.Height + 1 : Chain.InitialHeight;
+                        BigInteger nextHeight = chain.LastBlock != null ? chain.LastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
 
                         var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash);

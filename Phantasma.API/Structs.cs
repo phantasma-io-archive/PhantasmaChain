@@ -161,6 +161,8 @@ namespace Phantasma.API
         public string previousHash;
 
         public uint timestamp;
+
+        // TODO support bigint here
         public uint height;
 
         [APIDescription("Address of chain where the block belongs")]

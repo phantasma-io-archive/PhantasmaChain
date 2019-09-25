@@ -225,7 +225,7 @@ namespace Phantasma.Blockchain
                 byte[] result;
                 try
                 {
-                    if (tx.Execute(this, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
+                    if (ExecuteTransaction(tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
                     {
                         if (result != null)
                         {
@@ -319,6 +319,38 @@ namespace Phantasma.Blockchain
 
             Nexus.PluginTriggerBlock(this, block);
         }
+
+        private bool ExecuteTransaction(Transaction transaction, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
+        {
+            result = null;
+
+            var runtime = new RuntimeVM(transaction.Script, this, time, transaction, changeSet, oracle, false);
+            runtime.MinimumFee = minimumFee;
+            runtime.ThrowOnFault = true;
+
+            var state = runtime.Execute();
+
+            if (state != ExecutionState.Halt)
+            {
+                return false;
+            }
+
+            var cost = runtime.UsedGas;
+
+            foreach (var evt in runtime.Events)
+            {
+                onNotify(transaction.Hash, evt);
+            }
+
+            if (runtime.Stack.Count > 0)
+            {
+                var obj = runtime.Stack.Pop();
+                result = Serialization.Serialize(obj);
+            }
+
+            return true;
+        }
+
 
         private void SynchronizeSupplies(Dictionary<string, BigInteger> synchMap)
         {

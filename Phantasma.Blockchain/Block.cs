@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
@@ -8,21 +8,18 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Storage;
 using Phantasma.Core;
 using Phantasma.Storage.Utils;
-using System;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Block : ISerializable
+    public sealed class Block : IBlock, ISerializable
     {
-        public static readonly BigInteger InitialDifficulty = 127;
-        public static readonly float IdealBlockTime = 5;
-        public static readonly float BlockTimeFlutuation = 0.2f;
-
         public Address ChainAddress { get; private set; }
 
-        public uint Height { get; private set; }
+        public BigInteger Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
         public Hash PreviousHash { get; private set; }
+        public byte[] Payload { get; private set; }
 
         private bool _dirty;
         private Hash _hash;
@@ -38,8 +35,6 @@ namespace Phantasma.Blockchain
                 return _hash;
             }
         }
-
-        public byte[] Payload { get; private set; }
 
         private List<Hash> _transactionHashes;
         public IEnumerable<Hash> TransactionHashes => _transactionHashes;
@@ -64,14 +59,11 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(uint height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] payload = null)
+        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] payload = null)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
             this.Payload = payload != null ? payload : new byte[0];
-
-            //this.Height = previous != null && previous.Chain == chain ? previous.Height + 1 : 0;
-            //this.PreviousHash = previous != null ? previous.Hash : null;
 
             this.Height = height;
             this.PreviousHash = previousHash;
@@ -81,28 +73,6 @@ namespace Phantasma.Blockchain
             {
                 _transactionHashes.Add(hash);
             }
-
-            /*if (previous != null)
-            {
-                var delta = this.Timestamp - previous.Timestamp;
-
-                if (delta < IdealBlockTime * (1.0f - BlockTimeFlutuation))
-                {
-                    this.difficulty = previous.difficulty - 1;
-                }
-                else
-                if (delta > IdealBlockTime * (1.0f + BlockTimeFlutuation))
-                {
-                    this.difficulty = previous.difficulty - 1;
-                }
-                else {
-                    this.difficulty = previous.difficulty;
-                }
-            }
-            else
-            {
-                this.difficulty = InitialDifficulty;
-            }*/
 
             this.Payload = new byte[0];
             this._dirty = true;
@@ -178,7 +148,7 @@ namespace Phantasma.Blockchain
 
         internal void Serialize(BinaryWriter writer)
         {
-            writer.Write((uint)Height);
+            writer.WriteBigInteger(Height);
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
             writer.WriteAddress(ChainAddress);
@@ -244,7 +214,7 @@ namespace Phantasma.Blockchain
 
         public void UnserializeData(BinaryReader reader)
         {
-            this.Height = reader.ReadUInt32();
+            this.Height = reader.ReadBigInteger();
             this.Timestamp = new Timestamp(reader.ReadUInt32());
             this.PreviousHash = reader.ReadHash();
             this.ChainAddress = reader.ReadAddress();

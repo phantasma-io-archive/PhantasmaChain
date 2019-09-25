@@ -13,9 +13,9 @@ namespace Phantasma.Network.P2P.Messages
     {
         public readonly string name;
         public readonly string parentName;
-        public readonly uint height;
+        public readonly BigInteger height;
 
-        public ChainInfo(string name, string parentName, uint height)
+        public ChainInfo(string name, string parentName, BigInteger height)
         {
             this.name = name;
             this.parentName = parentName;
@@ -26,14 +26,14 @@ namespace Phantasma.Network.P2P.Messages
         {
             writer.WriteVarString(name);
             writer.WriteVarString(parentName);
-            writer.WriteVarInt(height);
+            writer.WriteBigInteger(height);
         }
 
         public static ChainInfo Unserialize(BinaryReader reader)
         {
             var name = reader.ReadVarString();
             var parentName = reader.ReadVarString();
-            var height = (uint)reader.ReadVarInt();
+            var height = reader.ReadBigInteger();
             return new ChainInfo(name, parentName, height);
         }
     }

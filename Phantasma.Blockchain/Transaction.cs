@@ -12,10 +12,11 @@ using Phantasma.Core.Types;
 using Phantasma.Storage.Utils;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Transaction : ISerializable
+    public sealed class Transaction : ITransaction, ISerializable
     {
         public byte[] Script { get; private set; }
 
@@ -68,37 +69,6 @@ namespace Phantasma.Blockchain
         public override string ToString()
         {
             return $"{Hash}";
-        }
-
-        internal bool Execute(Chain chain, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
-        {
-            result = null;
-
-            var runtime = new RuntimeVM(this.Script, chain, time, this, changeSet, oracle, false);
-            runtime.MinimumFee = minimumFee;
-            runtime.ThrowOnFault = true;
-
-            var state = runtime.Execute();
-
-            if (state != ExecutionState.Halt)
-            {
-                return false;
-            }
-
-            var cost = runtime.UsedGas;
-
-            foreach (var evt in runtime.Events)
-            {
-                onNotify(this.Hash, evt);
-            }
-
-            if (runtime.Stack.Count > 0)
-            {
-                var obj = runtime.Stack.Pop();
-                result = Serialization.Serialize(obj);
-            }
-
-            return true;
         }
 
         // required for deserialization
