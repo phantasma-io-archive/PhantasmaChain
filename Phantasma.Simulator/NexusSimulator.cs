@@ -598,7 +598,8 @@ namespace Phantasma.Simulator
 
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
+                //CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
+                CallInterop("Runtime.TransferTokens", source.Address, dest, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
 

@@ -545,5 +545,34 @@ namespace Phantasma.Blockchain.Contracts
         {
             throw new NotImplementedException();
         }
+
+        internal bool TransferTokens(RuntimeVM vm, string symbol, Address source, Address destination, BigInteger amount)
+        {
+            var Runtime = this;
+            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
+            Runtime.Expect(source != destination, "source and destination must be different");
+            Runtime.Expect(Transaction.IsSignedBy(source), "invalid witness");
+            Runtime.Expect(!Runtime.IsTrigger, "not allowed inside a trigger");
+
+            if (destination.IsInterop)
+            {
+                Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
+                Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
+                return true;
+            }
+
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount), "transfer failed");
+
+            Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+
+            return true;
+        }
+
     }
 }
