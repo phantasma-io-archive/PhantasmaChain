@@ -423,7 +423,7 @@ namespace Phantasma.API
                 hash = block.Hash.ToString(),
                 previousHash = block.PreviousHash.ToString(),
                 timestamp = block.Timestamp.Value,
-                height = block.Height,
+                height = (uint)block.Height,
                 chainAddress = chain.Address.ToString(),
                 payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(),
                 reward = chain.GetBlockReward(block).ToString(),
