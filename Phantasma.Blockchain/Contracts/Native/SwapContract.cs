@@ -113,9 +113,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible, "must be fungible");
 
-            var fromBalance = GetAvailableForSymbol(fromSymbol);
-            Runtime.Expect(fromBalance >= amount, "not enough "+fromSymbol+" available in pot");
-
             var result = new List<SwapPair>();
             foreach (var toSymbol in Runtime.Nexus.Tokens)
             {
