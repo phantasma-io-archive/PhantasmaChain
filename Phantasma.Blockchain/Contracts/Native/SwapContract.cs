@@ -40,7 +40,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var info = Runtime.Nexus.GetTokenInfo(symbol);
-            return info.IsFungible && info.Flags.HasFlag(TokenFlags.External);
+            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.External);
         }
 
         // returns how many tokens would be obtained by trading from one type of another
@@ -58,10 +58,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(toBalance > 0, toSymbol + " not available in pot");
 
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
-            Runtime.Expect(fromInfo.IsFungible, "must be fungible");
+            Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
 
             var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
-            Runtime.Expect(toInfo.IsFungible, "must be fungible");
+            Runtime.Expect(toInfo.IsFungible(), "must be fungible");
 
             var rate = Runtime.GetTokenQuote(fromSymbol, toSymbol, amount);
             return rate;
@@ -112,7 +112,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public SwapPair[] GetRates(string fromSymbol, BigInteger amount)
         {
             var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
-            Runtime.Expect(fromInfo.IsFungible, "must be fungible");
+            Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
 
             var result = new List<SwapPair>();
             foreach (var toSymbol in Runtime.Nexus.Tokens)

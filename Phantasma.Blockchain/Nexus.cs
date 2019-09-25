@@ -930,7 +930,7 @@ namespace Phantasma.Blockchain
 
             var supply = new SupplySheet(symbol, runtimeVM.Chain, this);
 
-            if (tokenInfo.IsCapped && !supply.Burn(runtimeVM.ChangeSet, amount))
+            if (tokenInfo.IsCapped() && !supply.Burn(runtimeVM.ChangeSet, amount))
             {
                 return false;
             }

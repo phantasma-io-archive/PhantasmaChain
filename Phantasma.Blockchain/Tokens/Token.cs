@@ -13,18 +13,9 @@ namespace Phantasma.Blockchain.Tokens
         public string Name { get; private set; }
         public string Platform { get; private set; }
         public Hash Hash { get; private set; }
-
         public TokenFlags Flags { get; private set; }
-
-        public BigInteger MaxSupply { get; private set; }
-
-        public bool IsFungible => Flags.HasFlag(TokenFlags.Fungible);
-        public bool IsBurnable => Flags.HasFlag(TokenFlags.Burnable);
-        public bool IsTransferable => Flags.HasFlag(TokenFlags.Transferable);
-        public bool IsCapped => MaxSupply > 0; // equivalent to Flags.HasFlag(TokenFlags.Infinite)
-
+        public BigInteger MaxSupply { get; private set; }    
         public int Decimals { get; private set; }
-
         public byte[] Script { get; private set; }
 
         internal TokenInfo(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)

@@ -19,6 +19,7 @@ using Phantasma.Core.Types;
 using Phantasma.Pay;
 using Phantasma.Core.Utils;
 using System.Text;
+using Phantasma.Domain;
 
 namespace Phantasma.API
 {
@@ -550,7 +551,7 @@ namespace Phantasma.API
                             ids = new string[0]
                         };
 
-                        if (!token.IsFungible)
+                        if (!token.IsFungible())
                         {
                             var ownerships = new OwnershipSheet(symbol);
                             var idList = ownerships.Get(chain.Storage, address);
@@ -1259,7 +1260,7 @@ namespace Phantasma.API
                 chain = chain.Address.Text
             };
 
-            if (!tokenInfo.IsFungible)
+            if (!tokenInfo.IsFungible())
             {
                 var ownerships = new OwnershipSheet(tokenSymbol);
                 var idList = ownerships.Get(chain.Storage, address);

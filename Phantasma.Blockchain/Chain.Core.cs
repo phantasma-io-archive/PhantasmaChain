@@ -254,13 +254,13 @@ namespace Phantasma.Blockchain
                         var eventData = evt.GetContent<TokenEventData>();
                         var token = Nexus.GetTokenInfo(eventData.symbol);
 
-                        if (!token.IsFungible)
+                        if (!token.IsFungible())
                         {
                             // TODO support this
                             continue;
                         }
 
-                        if (token.IsCapped)
+                        if (token.IsCapped())
                         {
                             BigInteger balance;
 
