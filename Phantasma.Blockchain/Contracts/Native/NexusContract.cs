@@ -1,6 +1,7 @@
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using System;
 
@@ -116,7 +117,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
         }
 
-        public void CreateFeed(Address owner, string name, OracleFeedMode mode)
+        public void CreateFeed(Address owner, string name, FeedMode mode)
         {
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");

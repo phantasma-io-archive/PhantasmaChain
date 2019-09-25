@@ -17,10 +17,9 @@ using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Core.Utils;
-using static Phantasma.Blockchain.Contracts.Native.StorageContract;
 using static Phantasma.Blockchain.Nexus;
 using static Phantasma.Numerics.UnitConversion;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -53,7 +52,7 @@ namespace Phantasma.Tests
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 1000000);
-            simulator.GenerateToken(owner, nftSymbol, "CoolToken", Nexus.PlatformName, Hash.FromString(nftSymbol), 0, 0, Blockchain.Tokens.TokenFlags.Transferable);
+            simulator.GenerateToken(owner, nftSymbol, "CoolToken", Nexus.PlatformName, Hash.FromString(nftSymbol), 0, 0, Domain.TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nftSymbol);

@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
 using System.Linq;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -67,7 +68,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetMasterThreshold()
         {
-            if (Runtime.Nexus.Ready)
+            if (Runtime.Nexus.HasGenesis)
             {
                 var amount = Runtime.GetGovernanceValue(MasterStakeThresholdTag);
                 return amount;

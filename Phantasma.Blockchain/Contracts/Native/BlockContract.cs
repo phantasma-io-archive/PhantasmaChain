@@ -1,5 +1,6 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -76,7 +77,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(IsWitness(from), "witness failed");
 
-            var count = Runtime.Nexus.Ready ? Runtime.Nexus.GetPrimaryValidatorCount() : 0;
+            var count = Runtime.Nexus.HasGenesis ? Runtime.Nexus.GetPrimaryValidatorCount() : 0;
             if (count > 0)
             {
                 Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "validator failed");

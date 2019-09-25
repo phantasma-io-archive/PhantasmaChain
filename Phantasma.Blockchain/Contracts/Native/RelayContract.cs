@@ -5,6 +5,7 @@ using System.Text;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;

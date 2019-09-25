@@ -9,6 +9,7 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
@@ -2294,8 +2295,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.Nexus.TokenExists(tokenSymbol), "invalid token");
 
             var tokenInfo = Runtime.Nexus.GetTokenInfo(tokenSymbol);
-            Runtime.Expect(tokenInfo.IsFungible, "purchase token must be fungible");
-            Runtime.Expect(tokenInfo.IsTransferable, "purchase token must be transferable");
+            Runtime.Expect(tokenInfo.IsFungible(), "purchase token must be fungible");
+            Runtime.Expect(tokenInfo.IsTransferable(), "purchase token must be transferable");
 
             var dollarAmount = Runtime.GetTokenQuote(tokenSymbol, Nexus.FiatTokenSymbol, tokenAmount);
             var minimumAmount = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / 2; // fifty cents as minimum

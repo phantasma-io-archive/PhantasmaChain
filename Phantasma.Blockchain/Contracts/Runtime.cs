@@ -9,10 +9,11 @@ using Phantasma.Core.Types;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public class RuntimeVM : VirtualMachine
+    public class RuntimeVM : VirtualMachine, IRuntime
     {
         public Timestamp Time { get; private set; }
         public Transaction Transaction { get; private set; }
@@ -45,8 +46,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public RuntimeVM(byte[] script, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
-            Throw.IfNull(chain, nameof(chain));
-            Throw.IfNull(changeSet, nameof(changeSet));
+            Core.Throw.IfNull(chain, nameof(chain));
+            Core.Throw.IfNull(changeSet, nameof(changeSet));
 
             // NOTE: block and transaction can be null, required for Chain.InvokeContract
             //Throw.IfNull(block, nameof(block));
@@ -129,7 +130,7 @@ namespace Phantasma.Blockchain.Contracts
                     }
                 }
                 else
-                if (PaidGas < UsedGas && Nexus.Ready && !DelayPayment)
+                if (PaidGas < UsedGas && Nexus.HasGenesis && !DelayPayment)
                 {
 #if DEBUG
                     throw new VMDebugException(this, "VM unpaid gas");
@@ -144,7 +145,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(string contextName)
         {
-            if (isBlockOperation && Nexus.Ready && contextName != Nexus.TokenContractName)
+            if (isBlockOperation && Nexus.HasGenesis && contextName != Nexus.TokenContractName)
             {
                 throw new ChainException($"{contextName} context not available in block operations");
             }
@@ -295,14 +296,14 @@ namespace Phantasma.Blockchain.Contracts
             }
 #endif
 
-            Throw.If(!condition, $"contract assertion failed: {description}");
+            Core.Throw.If(!condition, $"contract assertion failed: {description}");
         }
 
         #region GAS
         public override ExecutionState ValidateOpcode(Opcode opcode)
         {
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || !Nexus.Ready)
+            if (readOnlyMode || !Nexus.HasGenesis)
             {
                 return ExecutionState.Running;
             }
@@ -320,11 +321,11 @@ namespace Phantasma.Blockchain.Contracts
 
             if (gasCost < 0)
             {
-                Throw.If(gasCost < 0, "invalid gas amount");
+                Core.Throw.If(gasCost < 0, "invalid gas amount");
             }
 
             // required for allowing transactions to occur pre-minting of native token
-            if (readOnlyMode || !Nexus.Ready)
+            if (readOnlyMode || !Nexus.HasGenesis)
             {
                 return ExecutionState.Running;
             }
@@ -387,9 +388,9 @@ namespace Phantasma.Blockchain.Contracts
                 return result;
             }
 
-            Throw.If(Oracle == null, "cannot read price from null oracle");
+            Core.Throw.If(Oracle == null, "cannot read price from null oracle");
 
-            Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
+            Core.Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
 
             var bytes = Oracle.Read("price://" + symbol);
             var value = BigInteger.FromUnsignedArray(bytes, true);
@@ -480,5 +481,69 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
+        public IBlock GetBlockByHash(IChain chain, Hash hash)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IBlock GetBlockByHeight(IChain chain, BigInteger height)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ITransaction GetTransaction(IChain chain, Hash hash)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IToken GetToken(string symbol)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IFeed GetFeed(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IPlatform GetPlatform(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IChain GetChainByAddress(Address address)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IChain GetChainByName(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Log(string description)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Throw(string description)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Notify(EventKind kind, Address address, VMObject content)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEvent GetTransactionEvents(ITransaction transaction)
+        {
+            throw new NotImplementedException();
+        }
+
+        public BigInteger GetBalance(IChain chain, IToken token, Address address)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

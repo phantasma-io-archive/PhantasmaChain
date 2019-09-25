@@ -12,6 +12,7 @@ using Phantasma.VM.Utils;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Storage;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {

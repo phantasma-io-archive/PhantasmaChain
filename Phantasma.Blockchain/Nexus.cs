@@ -13,10 +13,11 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus
+    public class Nexus: INexus
     {
         public static readonly string RootChainName = "main";
         private static readonly string ChainNameMapKey = "chain.name.";
@@ -67,7 +68,7 @@ namespace Phantasma.Blockchain
         private KeyValueStore<Hash, Archive> _archiveEntries;
         private KeyValueStore<Hash, byte[]> _archiveContents;
 
-        public bool Ready { get; private set; }
+        public bool HasGenesis { get; private set; }
 
         public string Name
         {
@@ -150,7 +151,7 @@ namespace Phantasma.Blockchain
         {
             get
             {
-                if (_genesisDate.Value == 0 && Ready)
+                if (_genesisDate.Value == 0 && HasGenesis)
                 {
                     var genesisBlock = RootChain.FindBlockByHash(GenesisHash);
                     _genesisDate = genesisBlock.Timestamp;
@@ -160,7 +161,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public IEnumerable<string> Tokens
+        public string[] Tokens
         {
             get
             {
@@ -169,17 +170,16 @@ namespace Phantasma.Blockchain
                     return Serialization.Unserialize<string[]>(_vars.Get(nameof(Tokens)));
                 }
 
-                return Enumerable.Empty<string>();
+                return new string[0];
             }
 
             private set
             {
-                var symbols = value.ToArray();
-                _vars.Set(nameof(Tokens), Serialization.Serialize(symbols));
+                _vars.Set(nameof(Tokens), Serialization.Serialize(value));
             }
         }
 
-        public IEnumerable<string> Contracts
+        public string[] Contracts
         {
             get
             {
@@ -188,17 +188,16 @@ namespace Phantasma.Blockchain
                     return Serialization.Unserialize<string[]>(_vars.Get(nameof(Contracts)));
                 }
 
-                return Enumerable.Empty<string>();
+                return new string[0];
             }
 
             private set
             {
-                var names = value.ToArray();
-                _vars.Set(nameof(Contracts), Serialization.Serialize(names));
+                _vars.Set(nameof(Contracts), Serialization.Serialize(value));
             }
         }
 
-        public IEnumerable<string> Chains
+        public string[] Chains
         {
             get
             {
@@ -207,17 +206,16 @@ namespace Phantasma.Blockchain
                     return Serialization.Unserialize<string[]>(_vars.Get(nameof(Chains)));
                 }
 
-                return Enumerable.Empty<string>();
+                return new string[0];
             }
 
             private set
             {
-                var names = value.ToArray();
-                _vars.Set(nameof(Chains), Serialization.Serialize(names));
+                _vars.Set(nameof(Chains), Serialization.Serialize(value));
             }
         }
 
-        public IEnumerable<string> Platforms
+        public string[] Platforms
         {
             get
             {
@@ -226,17 +224,16 @@ namespace Phantasma.Blockchain
                     return Serialization.Unserialize<string[]>(_vars.Get(nameof(Platforms)));
                 }
 
-                return Enumerable.Empty<string>();
+                return new string[0];
             }
 
             private set
             {
-                var names = value.ToArray();
-                _vars.Set(nameof(Platforms), Serialization.Serialize(names));
+                _vars.Set(nameof(Platforms), Serialization.Serialize(value));
             }
         }
 
-        public IEnumerable<string> Feeds
+        public string[] Feeds
         {
             get
             {
@@ -245,13 +242,12 @@ namespace Phantasma.Blockchain
                     return Serialization.Unserialize<string[]>(_vars.Get(nameof(Feeds)));
                 }
 
-                return Enumerable.Empty<string>();
+                return new string[0];
             }
 
             private set
             {
-                var names = value.ToArray();
-                _vars.Set(nameof(Feeds), Serialization.Serialize(names));
+                _vars.Set(nameof(Feeds), Serialization.Serialize(value));
             }
         }
 
@@ -275,9 +271,9 @@ namespace Phantasma.Blockchain
             try
             {
                 var temp = this.Name;
-                Ready = !string.IsNullOrEmpty(temp);
+                HasGenesis = !string.IsNullOrEmpty(temp);
 
-                if (Ready)
+                if (HasGenesis)
                 {
                     var chainList = this.Chains;
                     foreach (var chainName in chainList)
@@ -288,7 +284,7 @@ namespace Phantasma.Blockchain
             }
             catch
             {
-                Ready = false;
+                HasGenesis = false;
             }
 
             _archiveEntries= new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
@@ -511,7 +507,7 @@ namespace Phantasma.Blockchain
             // add to persistent list of chains
             var chainList = this.Chains.ToList();
             chainList.Add(name);
-            this.Chains = chainList;
+            this.Chains = chainList.ToArray();
 
             // add address and name mapping 
             this._vars.Set(ChainNameMapKey + chain.Name, chain.Address.PublicKey);
@@ -670,7 +666,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region FEEDS
-        internal bool CreateFeed(Address owner, string name, OracleFeedMode mode)
+        internal bool CreateFeed(Address owner, string name, FeedMode mode)
         {
             if (name == null)
             {
@@ -694,7 +690,7 @@ namespace Phantasma.Blockchain
             // add to persistent list of feeds
             var feedList = this.Feeds.ToList();
             feedList.Add(name);
-            this.Feeds = feedList;
+            this.Feeds = feedList.ToArray();
 
             return true;
         }
@@ -778,7 +774,7 @@ namespace Phantasma.Blockchain
             // add to persistent list of tokens
             var tokenList = this.Tokens.ToList();
             tokenList.Add(symbol);
-            this.Tokens = tokenList;
+            this.Tokens = tokenList.ToArray();
 
             return true;
         }
@@ -934,7 +930,7 @@ namespace Phantasma.Blockchain
 
             var supply = new SupplySheet(symbol, runtimeVM.Chain, this);
 
-            if (tokenInfo.IsCapped && !supply.Burn(runtimeVM.ChangeSet, amount))
+            if (tokenInfo.IsCapped() && !supply.Burn(runtimeVM.ChangeSet, amount))
             {
                 return false;
             }
@@ -1385,7 +1381,7 @@ namespace Phantasma.Blockchain
 
         public bool CreateGenesisBlock(string name, KeyPair owner, Timestamp timestamp)
         {
-            if (Ready)
+            if (HasGenesis)
             {
                 return false;
             }
@@ -1456,7 +1452,7 @@ namespace Phantasma.Blockchain
             }
 
             GenesisHash = block.Hash;
-            this.Ready = true;
+            this.HasGenesis = true;
             return true;
         }
 
@@ -1734,17 +1730,12 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var entry = new PlatformInfo()
-            {
-                Address = address,
-                Name = name,
-                Symbol = fuelSymbol
-            };
+            var entry = new PlatformInfo(name, fuelSymbol, address);
 
             // add to persistent list of tokens
             var platformList = this.Platforms.ToList();
             platformList.Add(name);
-            this.Platforms = platformList;
+            this.Platforms = platformList.ToArray();
 
             EditPlatform(name, entry);
             return true;

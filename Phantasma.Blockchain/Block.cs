@@ -37,7 +37,7 @@ namespace Phantasma.Blockchain
         }
 
         private List<Hash> _transactionHashes;
-        public IEnumerable<Hash> TransactionHashes => _transactionHashes;
+        public Hash[] TransactionHashes => _transactionHashes.ToArray();
         public int TransactionCount => _transactionHashes.Count;
 
         // stores the events for each included transaction
@@ -48,7 +48,7 @@ namespace Phantasma.Blockchain
 
         // stores the results of oracles
         private List<OracleEntry> _oracleData = new List<OracleEntry>();
-        public IEnumerable<OracleEntry> OracleData => _oracleData;
+        public IOracleEntry[] OracleData => _oracleData.Select(x => (IOracleEntry)x).ToArray();
 
         // required for unserialization
         public Block()

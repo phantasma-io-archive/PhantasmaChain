@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.VisualBasic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Simulator;
@@ -13,8 +9,8 @@ using Phantasma.VM.Utils;
 using static System.MidpointRounding;
 using static Phantasma.Blockchain.Contracts.Native.Constants;
 using static Phantasma.Blockchain.Nexus;
-using static Phantasma.Blockchain.Tokens.TokenFlags;
 using static Phantasma.Numerics.UnitConversion;
+using static Phantasma.Domain.TokenFlags;
 
 namespace Phantasma.Tests
 {

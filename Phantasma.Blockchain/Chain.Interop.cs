@@ -7,6 +7,7 @@ using Phantasma.VM;
 using Phantasma.VM.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Numerics;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {

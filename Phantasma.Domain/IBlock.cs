@@ -4,6 +4,13 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Domain
 {
+    public interface IOracleEntry
+    {
+        string URL { get; }
+        byte[] Content { get; }
+
+    }
+
     public interface IBlock
     {
         Address ChainAddress { get; }
@@ -12,5 +19,7 @@ namespace Phantasma.Domain
         Hash PreviousHash { get; }
         byte[] Payload { get; }
         Hash Hash { get; }
+        Hash[] TransactionHashes { get; }
+        IOracleEntry[] OracleData { get; }
     }
 }
