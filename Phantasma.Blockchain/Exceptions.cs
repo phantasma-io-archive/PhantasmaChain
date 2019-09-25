@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Phantasma.Cryptography;
+using System;
 
 //TODO
 namespace Phantasma.Blockchain
@@ -48,6 +49,25 @@ namespace Phantasma.Blockchain
         public SwapException(string msg) : base(msg)
         {
 
+        }
+    }
+
+
+    public class BlockGenerationException : Exception
+    {
+        public BlockGenerationException(string msg) : base(msg)
+        {
+
+        }
+    }
+
+    public class InvalidTransactionException : Exception
+    {
+        public readonly Hash Hash;
+
+        public InvalidTransactionException(Hash hash, string msg) : base(msg)
+        {
+            this.Hash = hash;
         }
     }
 }

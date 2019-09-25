@@ -1,4 +1,5 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
@@ -8,22 +9,13 @@ using System.Linq;
 
 namespace Phantasma.Blockchain
 {
-    public enum OracleFeedMode
+    public struct OracleFeed: IFeed, ISerializable
     {
-        First,
-        Last,
-        Max,
-        Min,
-        Average
-    }
+        public string Name { get; private set; }
+        public Address Address { get; private set; }
+        public FeedMode Mode { get; private set; }
 
-    public struct OracleFeed: ISerializable
-    {
-        public string Name;
-        public Address Address;
-        public OracleFeedMode Mode;
-
-        public OracleFeed(string name, Address address, OracleFeedMode mode)
+        public OracleFeed(string name, Address address, FeedMode mode)
         {
             Name = name;
             Address = address;
@@ -41,7 +33,7 @@ namespace Phantasma.Blockchain
         {
             Name = reader.ReadVarString();
             Address = reader.ReadAddress();
-            Mode = (OracleFeedMode)reader.ReadByte();
+            Mode = (FeedMode)reader.ReadByte();
         }
 
         public byte[] ToByteArray()
@@ -71,10 +63,10 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public struct OracleEntry
+    public struct OracleEntry: IOracleEntry
     {
-        public readonly string URL;
-        public readonly byte[] Content;
+        public string URL { get; private set; }
+        public byte[] Content { get; private set; }
 
         public OracleEntry(string uRL, byte[] content)
         {

@@ -1,5 +1,6 @@
 ﻿using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,7 +20,7 @@ namespace Phantasma.Blockchain.Plugins
 
             foreach (var evt in evts)
             {
-                if (evt.Kind == Contracts.EventKind.TokenReceive || evt.Kind == Contracts.EventKind.TokenSend)
+                if (evt.Kind == EventKind.TokenReceive || evt.Kind == EventKind.TokenSend)
                 {
                     var info = evt.GetContent<TokenEventData>();
                     RegisterTransaction(info.symbol, transaction);

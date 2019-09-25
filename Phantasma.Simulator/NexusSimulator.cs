@@ -13,6 +13,7 @@ using Phantasma.Storage;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.CodeGen.Assembler;
+using Phantasma.Domain;
 
 namespace Phantasma.Simulator
 {
@@ -84,7 +85,7 @@ namespace Phantasma.Simulator
 
             CurrentTime = new DateTime(2018, 8, 26);
 
-            if (!Nexus.Ready)
+            if (!Nexus.HasGenesis)
             {
                 if (!Nexus.CreateGenesisBlock("simnet", _owner, CurrentTime))
                 {

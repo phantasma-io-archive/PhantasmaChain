@@ -9,6 +9,7 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {

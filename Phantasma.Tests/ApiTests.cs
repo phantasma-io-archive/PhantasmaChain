@@ -124,7 +124,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             test.simulator.BeginBlock();
-            test.simulator.GenerateToken(test.owner, nftSymbol, "CoolToken", Nexus.PlatformName, Hash.FromString(nftSymbol), 0, 0, Blockchain.Tokens.TokenFlags.None);
+            test.simulator.GenerateToken(test.owner, nftSymbol, "CoolToken", Nexus.PlatformName, Hash.FromString(nftSymbol), 0, 0, Domain.TokenFlags.None);
             test.simulator.EndBlock();
 
             var token = test.simulator.Nexus.GetTokenInfo(nftSymbol);

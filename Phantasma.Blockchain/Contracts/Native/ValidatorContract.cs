@@ -1,5 +1,6 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
@@ -84,7 +85,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public int GetMaxTotalValidators()
         {
-            if (Runtime.Nexus.Ready)
+            if (Runtime.Nexus.HasGenesis)
             {
                 return (int)Runtime.GetGovernanceValue(ValidatorCountTag);
             }
@@ -135,7 +136,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetMaxPrimaryValidators()
         {
-            if (Runtime.Nexus.Ready)
+            if (Runtime.Nexus.HasGenesis)
             {
                 var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
                 var result = (totalValidators * 10) / 25;
@@ -153,7 +154,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetMaxSecondaryValidators()
         {
-            if (Runtime.Nexus.Ready)
+            if (Runtime.Nexus.HasGenesis)
             {
                 var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
                 return totalValidators - GetMaxPrimaryValidators();

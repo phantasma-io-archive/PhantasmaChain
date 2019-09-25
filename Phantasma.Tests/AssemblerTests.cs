@@ -16,6 +16,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Simulator;
 using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {

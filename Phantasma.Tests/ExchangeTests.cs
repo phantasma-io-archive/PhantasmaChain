@@ -13,6 +13,7 @@ using Phantasma.Storage;
 using Phantasma.VM.Utils;
 using static Phantasma.Blockchain.Contracts.Native.ExchangeOrderSide;
 using static Phantasma.Numerics.BigInteger;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {

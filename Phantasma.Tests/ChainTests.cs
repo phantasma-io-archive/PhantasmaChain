@@ -13,6 +13,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -455,7 +456,7 @@ namespace Phantasma.Tests
                         Assert.IsTrue(tx != null);
 
                         var evts = lastBlock.GetEventsForTransaction(tx.Hash);
-                        Assert.IsTrue(evts.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
+                        Assert.IsTrue(evts.Any(x => x.Kind == Domain.EventKind.AddressRegister));
                     }
                 }
                 catch (Exception)
@@ -674,7 +675,7 @@ namespace Phantasma.Tests
                         Assert.IsTrue(tx != null);
 
                         var evts = lastBlock.GetEventsForTransaction(tx.Hash);
-                        Assert.IsTrue(evts.Any(x => x.Kind == Blockchain.Contracts.EventKind.AddressRegister));
+                        Assert.IsTrue(evts.Any(x => x.Kind == Domain.EventKind.AddressRegister));
                     }
                 }
                 catch (Exception)
@@ -927,7 +928,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", Nexus.PlatformName, Hash.FromString(symbol), 0, 0, Blockchain.Tokens.TokenFlags.None);
+            simulator.GenerateToken(owner, symbol, "CoolToken", Nexus.PlatformName, Hash.FromString(symbol), 0, 0, Domain.TokenFlags.None);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(symbol);

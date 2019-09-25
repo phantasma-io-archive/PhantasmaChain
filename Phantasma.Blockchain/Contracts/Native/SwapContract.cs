@@ -1,5 +1,6 @@
 ﻿using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;

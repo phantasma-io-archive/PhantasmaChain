@@ -4,6 +4,7 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using System.Linq;
 using Phantasma.Storage.Context;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {

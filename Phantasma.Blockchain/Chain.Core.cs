@@ -14,27 +14,10 @@ using Phantasma.Cryptography;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Storage.Context;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {
-    public class BlockGenerationException : Exception
-    {
-        public BlockGenerationException(string msg) : base(msg)
-        {
-
-        }
-    }
-
-    public class InvalidTransactionException : Exception
-    {
-        public readonly Hash Hash;
-
-        public InvalidTransactionException(Hash hash, string msg) : base(msg)
-        {
-            this.Hash = hash;
-        }
-    }
-
     public partial class Chain 
     {
         #region PRIVATE

@@ -6,6 +6,7 @@ using Phantasma.Storage;
 using Phantasma.Blockchain;
 using Phantasma.Pay;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Domain;
 
 namespace Phantasma.Simulator
 {

@@ -1,29 +1,13 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
-using Phantasma.Storage.Context;
-using System;
 using Phantasma.Storage;
 using System.IO;
 using Phantasma.Storage.Utils;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    [Flags]
-    public enum TokenFlags
-    {
-        None = 0,
-        Transferable = 1 << 0,
-        Fungible = 1 << 1,
-        Finite = 1 << 2,
-        Divisible = 1 << 3,
-        Fuel = 1 << 4,
-        Stakable = 1 << 5,
-        Fiat = 1 << 6,
-        External = 1 << 7,
-        Burnable = 1 << 8,
-    }
-
-    public struct TokenInfo : ISerializable
+    public struct TokenInfo : IToken, ISerializable
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }

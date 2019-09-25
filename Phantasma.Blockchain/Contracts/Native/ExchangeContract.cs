@@ -8,6 +8,7 @@ using Phantasma.Storage.Context;
 using System;
 using static Phantasma.Blockchain.Contracts.Native.ExchangeOrderSide;
 using static Phantasma.Blockchain.Contracts.Native.ExchangeOrderType;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {

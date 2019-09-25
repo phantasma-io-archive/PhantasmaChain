@@ -1,17 +1,24 @@
 ﻿using System.IO;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 
 namespace Phantasma.Blockchain
 {
-    public struct PlatformInfo: ISerializable
+    public struct PlatformInfo: IPlatform, ISerializable
     {
-        public string Name;
-        public string Symbol; // for fuel
-        public Address Address;
-        //public flags;
+        public string Name { get; private set; }
+        public string Symbol { get; private set; } // for fuel
+        public Address Address { get; private set; }
+
+        public PlatformInfo(string name, string symbol, Address address) : this()
+        {
+            Name = name;
+            Symbol = symbol;
+            Address = address;
+        }
 
         public void SerializeData(BinaryWriter writer)
         {
