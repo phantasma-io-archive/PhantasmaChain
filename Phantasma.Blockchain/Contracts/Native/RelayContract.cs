@@ -151,7 +151,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /*
         public void OpenChannel(Address from, Address to, string chainName, string channelName, string tokenSymbol, BigInteger amount, BigInteger fee)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from != to, "invalid target");
 
             Runtime.Expect(amount > 0, "invalid amount");
@@ -195,7 +195,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CloseChannel(Address from, string channelName)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             var key = MakeKey(from, channelName);
             Runtime.Expect(_channelMap.ContainsKey<string>(key), "invalid channel");
@@ -210,7 +210,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void OpenChannel(Address from, ECPoint publicKey)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(!_keys.ContainsKey<Address>(from), "channel already open");
 
             _keys.Set<Address, ECPoint>(from, publicKey);
@@ -226,7 +226,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void TopUpChannel(Address from, BigInteger count)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(count >= 1, "insufficient topup amount");
             var amount = RelayFeePerMessage * count;
 

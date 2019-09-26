@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
-            Runtime.Expect(IsWitness(target), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(ValidationUtils.ValidateName(name), "invalid name");
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
@@ -49,13 +49,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
-            Runtime.Expect(IsWitness(target), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
 
             Runtime.Expect(script.Length < 1024, "invalid script length");
 
             Runtime.Expect(!_scriptMap.ContainsKey(target), "address already has a script");
 
-            var witnessCheck = InvokeTrigger(Runtime, script, AccountTrigger.OnWitness.ToString(), Address.Null);
+            var witnessCheck = Runtime.InvokeTrigger(script, AccountTrigger.OnWitness.ToString(), Address.Null);
             Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly");
 
             _scriptMap.Set(target, script);
@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SetMetadata(Address target, string key, string value)
         {
             Runtime.Expect(target.IsUser, "must be user address");
-            Runtime.Expect(IsWitness(target), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
 
             var metadataEntries = _metadata.Get<Address, StorageList>(target);
 

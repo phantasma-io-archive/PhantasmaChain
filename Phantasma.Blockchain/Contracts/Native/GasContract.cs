@@ -47,7 +47,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(from.IsUser, "must be a user address");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(target.IsSystem, "destination must be system address");
 
             Runtime.Expect(price > 0, "price must be positive amount");
@@ -81,7 +81,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.Chain.IsRoot, "must be a root chain");
 
             Runtime.Expect(from.IsUser, "must be a user address");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
@@ -124,7 +124,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return;
             }
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
 
@@ -297,7 +297,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var maxLenderCount = Runtime.GetGovernanceValue(MaxLenderCountTag);
             Runtime.Expect(_lenderList.Count() < maxLenderCount, "too many lenders already");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(to.IsUser, "invalid destination address");
             Runtime.Expect(!IsLender(from), "already lending at source address");
             Runtime.Expect(!IsLender(to), "already lending at destination address");
@@ -310,7 +310,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void StopLend(Address from)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(IsLender(from), "not a lender");
 
             int index = -1;

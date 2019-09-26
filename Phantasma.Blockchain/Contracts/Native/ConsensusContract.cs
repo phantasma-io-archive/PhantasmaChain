@@ -217,7 +217,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(votesPerUser > 0, "number of votes per user too low");
             Runtime.Expect(votesPerUser < choices.Length, "number of votes per user too high");
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             ConsensusPoll poll;
             if (_pollMap.ContainsKey<string>(subject))
@@ -301,7 +301,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(choices.Length <= poll.choicesPerUser, "too many choices");
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             var presences = _presences.Get<Address, StorageList>(from);
             var count = presences.Count();
@@ -375,7 +375,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
                 if (validatorCount <= 1)
                 {
-                    return IsWitness(Runtime.Nexus.GenesisAddress);
+                    return Runtime.IsWitness(Runtime.Nexus.GenesisAddress);
                 }
             }
 

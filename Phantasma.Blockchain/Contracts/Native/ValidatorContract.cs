@@ -211,7 +211,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 if (isValidatorProposed)
                 {
-                    Runtime.Expect(IsWitness(target), "invalid witness");
+                    Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
                 }
                 else
                 {
@@ -225,7 +225,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     else
                     {
                         var firstValidator = GetValidatorByIndex(0).address;
-                        Runtime.Expect(IsWitness(firstValidator), "invalid witness");
+                        Runtime.Expect(Runtime.IsWitness(firstValidator), "invalid witness");
                     }
 
                     type = ValidatorType.Proposed;
@@ -233,7 +233,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             else
             {
-                Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "invalid witness");
+                Runtime.Expect(Runtime.IsWitness(Runtime.Nexus.GenesisAddress), "invalid witness");
             }
 
             var entry = new ValidatorEntry()
@@ -299,7 +299,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /*
     public void Migrate(Address from, Address to)
     {
-        Runtime.Expect(IsWitness(from), "witness failed");
+        Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
         Runtime.Expect(to.IsUser, "destination must be user address");
 

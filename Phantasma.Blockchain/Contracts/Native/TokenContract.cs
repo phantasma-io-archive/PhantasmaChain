@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #region FUNGIBLE TOKENS
         public void SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(IsAddressOfParentChain(targetChainAddress) || IsAddressOfChildChain(targetChainAddress), "target must be parent or child chain");
 
@@ -67,7 +67,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void MintTokens(Address from, Address to, string symbol, BigInteger amount)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
@@ -86,7 +86,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void BurnTokens(Address from, string symbol, BigInteger amount)
         {
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -103,7 +103,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(source != destination, "source and destination must be different");
-            Runtime.Expect(IsWitness(source), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(source), "invalid witness");
             Runtime.Expect(!Runtime.IsTrigger, "not allowed inside a trigger");
 
             if (destination.IsInterop)
@@ -152,7 +152,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
             Runtime.Expect(!tokenInfo.IsFungible(), "token must be non-fungible");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
             Runtime.Expect(Runtime.Chain.Name == Nexus.RootChainName, "can only mint nft in root chain");
@@ -182,7 +182,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void BurnToken(Address from, string symbol, BigInteger tokenID)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -198,7 +198,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void TransferToken(Address source, Address destination, string symbol, BigInteger tokenID)
         {
-            Runtime.Expect(IsWitness(source), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(source), "invalid witness");
 
             Runtime.Expect(source != destination, "source and destination must be different");
 
@@ -214,7 +214,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(IsAddressOfParentChain(targetChainAddress) || IsAddressOfChildChain(targetChainAddress), "source must be parent or child chain");
 
@@ -343,9 +343,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "token not found");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            var tokenTriggerResult = SmartContract.InvokeTrigger(Runtime, tokenInfo.Script, TokenContract.TriggerMetadata, from, symbol, key, value);
+            var tokenTriggerResult = Runtime.InvokeTrigger(tokenInfo.Script, TokenContract.TriggerMetadata, from, symbol, key, value);
             Runtime.Expect(tokenTriggerResult, "trigger failed");
 
             var metadataEntries = _metadata.Get<string, StorageList>(symbol);

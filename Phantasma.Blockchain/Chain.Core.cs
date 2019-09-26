@@ -15,6 +15,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -24,7 +25,6 @@ namespace Phantasma.Blockchain
         private KeyValueStore<Hash, Transaction> _transactions;
         private KeyValueStore<Hash, Block> _blocks;
         private KeyValueStore<Hash, Hash> _transactionBlockMap;
-        private KeyValueStore<string, bool> _contracts;
         private KeyValueStore<BigInteger, Hash> _blockHeightMap;
 
         private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
@@ -62,44 +62,28 @@ namespace Phantasma.Blockchain
             this.Address = Address.FromHash(this.Name);
 
             // init stores
-            _transactions = new KeyValueStore<Hash, Transaction>(Nexus.CreateKeyStoreAdapter(this.Address, "txs"));
-            _blocks = new KeyValueStore<Hash, Block>(Nexus.CreateKeyStoreAdapter(this.Address, "blocks"));
-            _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "txbk"));
-            _contracts = new KeyValueStore<string, bool>(Nexus.CreateKeyStoreAdapter(this.Address, "contracts"));
-            _blockHeightMap = new KeyValueStore<BigInteger, Hash>(Nexus.CreateKeyStoreAdapter(this.Address, "heights"));
+            _transactions = new KeyValueStore<Hash, Transaction>(Nexus.GetChainStorage(this.Name, ChainStorageShard.Transactions));
+            _blocks = new KeyValueStore<Hash, Block>(Nexus.GetChainStorage(this.Name, ChainStorageShard.Blocks));
+            _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.GetChainStorage(this.Name, ChainStorageShard.TxBlockMap));
+            _blockHeightMap = new KeyValueStore<BigInteger, Hash>(Nexus.GetChainStorage(this.Name, ChainStorageShard.Heights));
 
-            this.Storage = new KeyStoreStorage(Nexus.CreateKeyStoreAdapter( this.Address, "data"));
+            this.Storage = new KeyStoreStorage(Nexus.GetChainStorage(this.Name, ChainStorageShard.Data));
 
             this.Log = Logger.Init(log);
         }
 
         public string[] GetContracts()
         {
-            var list = new string[(int)_contracts.Count];
+            // TODO improve this
+            return new string[] { Nexus.GasContractName, Nexus.BlockContractName, Nexus.TokenContractName };
+            /*var list = new string[(int)_contracts.Count];
             int index = 0;
             _contracts.Visit((contract, _) =>
             {
                 list[index] = contract;
                 index++;
             });
-            return list;
-        }
-
-        public bool HasContract(string contractName)
-        {
-            return _contracts.ContainsKey(contractName);
-        }
-
-        internal void DeployContracts(HashSet<string> contractNames)
-        {
-            Throw.If(contractNames == null || !contractNames.Any(), "contracts required");
-            Throw.If(!contractNames.Contains(Nexus.GasContractName), "gas contract required");
-            Throw.If(!contractNames.Contains(Nexus.TokenContractName), "token contract required");
-
-            foreach (var contractName in contractNames)
-            {
-                this._contracts[contractName] = true;
-            }
+            return list;*/
         }
 
         public override string ToString()
@@ -239,59 +223,10 @@ namespace Phantasma.Blockchain
 
             changeSet.Execute();
 
-            Dictionary<string, BigInteger> synchMap = null;
-
             foreach (Transaction tx in transactions)
             {
                 _transactions[tx.Hash] = tx;
                 _transactionBlockMap[tx.Hash] = block.Hash;
-
-                var evts = block.GetEventsForTransaction(tx.Hash);
-                foreach (var evt in evts)
-                {
-                    if (evt.Kind == EventKind.TokenMint || evt.Kind == EventKind.TokenBurn || evt.Kind == EventKind.TokenReceive || evt.Kind == EventKind.TokenSend)
-                    {
-                        var eventData = evt.GetContent<TokenEventData>();
-                        var token = Nexus.GetTokenInfo(eventData.symbol);
-
-                        if (!token.IsFungible())
-                        {
-                            // TODO support this
-                            continue;
-                        }
-
-                        if (token.IsCapped())
-                        {
-                            BigInteger balance;
-
-                            if (synchMap == null)
-                            {
-                                synchMap = new Dictionary<string, BigInteger>();
-                                balance = 0;
-                            }
-                            else
-                            {
-                                balance = synchMap.ContainsKey(eventData.symbol) ? synchMap[eventData.symbol] : 0;
-                            }
-
-                            if (evt.Kind == EventKind.TokenBurn || evt.Kind == EventKind.TokenSend)
-                            {
-                                balance -= eventData.value;
-                            }
-                            else
-                            {
-                                balance += eventData.value;
-                            }
-
-                            synchMap[eventData.symbol] = balance;
-                        }
-                    }
-                }
-            }
-
-            if (synchMap != null)
-            {
-                SynchronizeSupplies(synchMap);
             }
 
             var blockValidator = GetValidatorForBlock(block);
@@ -332,37 +267,6 @@ namespace Phantasma.Blockchain
             }
 
             return true;
-        }
-
-
-        private void SynchronizeSupplies(Dictionary<string, BigInteger> synchMap)
-        {
-            foreach (var entry in synchMap)
-            {
-                var symbol = entry.Key;
-                var balance = entry.Value;
-
-                if (balance == 0) // usually will happen due to token receive and send in same transaction
-                {
-                    continue;
-                }
-
-                var parentName = Nexus.GetParentChainByName(this.Name);
-                var parentChain = Nexus.FindChainByName(parentName);
-                if (parentChain != null)
-                {
-                    var parentSupplies = new SupplySheet(symbol, parentChain, Nexus);
-                    parentSupplies.Synch(parentChain.Storage, this.Name, balance);
-                }
-
-                var childrenNames = this.Nexus.GetChildChainsByName(this.Name);
-                foreach (var childName in childrenNames)
-                {
-                    var childChain = Nexus.FindChainByName(childName);
-                    var childSupplies = new SupplySheet(symbol, childChain, Nexus);
-                    childSupplies.Synch(childChain.Storage, this.Name, balance);
-                }
-            }
         }
 
         public bool ContainsTransaction(Hash hash)
@@ -499,26 +403,26 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal ExecutionContext GetContractContext(SmartContract contract)
+        internal ExecutionContext GetContractContext(StorageContext storage, SmartContract contract)
         {
-            if (HasContract(contract.Name))
+            if (!IsContractDeployed(storage, contract.Address))
             {
-                // TODO this needs to suport non-native contexts too..
-                var context = new NativeExecutionContext(contract);
-                return context;
+                throw new ChainException($"contract {contract.Name} not deployed on {Name} chain");
             }
 
-            return null;
+            // TODO this needs to suport non-native contexts too..
+            var context = new NativeExecutionContext(contract);
+            return context;
         }
 
-        public VMObject InvokeContract(string contractName, string methodName, Timestamp time, params object[] args)
+        public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
         {
             var contract = Nexus.AllocContractByName(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
             
-            var result = InvokeScript(script, time);
+            var result = InvokeScript(storage, script, time);
 
             if (result == null)
             {
@@ -528,20 +432,20 @@ namespace Phantasma.Blockchain
             return result;
         }
 
-        public VMObject InvokeContract(string contractName, string methodName, params object[] args)
+        public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, params object[] args)
         {
-            return InvokeContract(contractName, methodName, Timestamp.Now, args);
+            return InvokeContract(storage, contractName, methodName, Timestamp.Now, args);
         }
 
-        public VMObject InvokeScript(byte[] script)
+        public VMObject InvokeScript(StorageContext storage, byte[] script)
         {
-            return InvokeScript(script, Timestamp.Now);
+            return InvokeScript(storage, script, Timestamp.Now);
         }
 
-        public VMObject InvokeScript(byte[] script, Timestamp time)
+        public VMObject InvokeScript(StorageContext storage, byte[] script, Timestamp time)
         {
             var oracle = Nexus.CreateOracleReader();
-            var changeSet = new StorageChangeSetContext(this.Storage);
+            var changeSet = new StorageChangeSetContext(storage);
             var vm = new RuntimeVM(script, this, time, null, changeSet, oracle, true);
 
             var state = vm.Execute();
@@ -623,9 +527,9 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region validators
-        public Address GetCurrentValidator()
+        public Address GetCurrentValidator(StorageContext storage)
         {
-            return InvokeContract(Nexus.BlockContractName, "GetCurrentValidator").AsAddress();
+            return InvokeContract(storage, Nexus.BlockContractName, "GetCurrentValidator").AsAddress();
         }
 
         public Address GetValidatorForBlock(Hash hash)
@@ -652,6 +556,64 @@ namespace Phantasma.Blockchain
             }
 
             return Address.Null;
+        }
+        #endregion
+
+        #region Contracts
+        private byte[] GetContractListKey()
+        {
+            return Encoding.ASCII.GetBytes("contracts.");
+        }
+
+        private byte[] GetContractDeploymentKey(Address contractAddress)
+        {
+            var bytes = Encoding.ASCII.GetBytes("deploy.");
+            var key = ByteArrayUtils.ConcatBytes(bytes, contractAddress.PublicKey);
+            return key;
+        }
+
+        public bool IsContractDeployed(StorageContext storage, string name)
+        {
+            return IsContractDeployed(storage, SmartContract.GetAddressForName(name));
+        }
+
+        public bool IsContractDeployed(StorageContext storage, Address contractAddress)
+        {
+            var key = GetContractDeploymentKey(contractAddress);
+            return storage.Has(key);
+        }
+
+        private void AddContractToDeployedList(StorageContext storage, Address contractAddress)
+        {
+            var contractList = new StorageList(GetContractListKey(), storage);
+            contractList.Add<Address>(contractAddress);
+        }
+
+        public bool DeployNativeContract(StorageContext storage, Address contractAddress)
+        {
+            var key = GetContractDeploymentKey(contractAddress);
+            if (storage.Has(key))
+            {
+                return false;
+            }
+
+            storage.Put(key, new byte[] { (byte)Opcode.RET });
+            AddContractToDeployedList(storage, contractAddress);
+            return true;
+        }
+
+        public bool DeployContract(StorageContext storage, byte[] script)
+        {
+            var contractAddress = Address.FromScript(script);
+            var key = GetContractDeploymentKey(contractAddress);
+            if (storage.Has(key))
+            {
+                return false;
+            }
+
+            storage.Put(key, script);
+            AddContractToDeployedList(storage, contractAddress);
+            return true;
         }
         #endregion
     }

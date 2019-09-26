@@ -154,37 +154,6 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
-        public bool IsWitness(Address address)
-        {
-            if (address == this.Runtime.Chain.Address || address == this.Address)
-            {
-                var frame = Runtime.frames.Skip(1).FirstOrDefault();
-                return frame != null && frame.Context.Admin;
-            }
-
-            if (address == this.Runtime.EntryAddress)
-            {
-                return true;
-            }
-
-            if (address.IsInterop)
-            {
-                return false;
-            }
-
-            if (Runtime.Transaction == null)
-            {
-                return false;
-            }
-
-            if (address.IsUser && Runtime.Nexus.HasScript(address))
-            {
-                return InvokeTriggerOnAccount(Runtime, address, AccountTrigger.OnWitness, address);
-            }
-
-            return Runtime.Transaction.IsSignedBy(address);
-        }
-
         #region METHOD TABLE
         private void BuildMethodTable()
         {
@@ -347,7 +316,7 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     // when a string is passed instead of an address we do an automatic lookup and replace
                     var name = (string)arg;
-                    var address = runtime.Nexus.LookUpName(name);
+                    var address = runtime.Nexus.LookUpName(runtime.ChangeSet, name);
                     return address;
                 }
             }
@@ -428,86 +397,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return parent.Address == this.Runtime.Chain.Address;
-        }
-        #endregion
-
-        #region TRIGGERS
-        public static bool InvokeTriggerOnAccount(RuntimeVM runtimeVM, Address address, AccountTrigger trigger, params object[] args)
-        {
-            if (address.IsNull)
-            {
-                return false;
-            }
-
-            if (address.IsUser)
-            {
-                var accountScript = runtimeVM.Nexus.LookUpAddressScript(address);
-                return InvokeTrigger(runtimeVM, accountScript, trigger.ToString(), args);
-            }
-
-            if (address.IsSystem)
-            {
-                var contract = runtimeVM.Nexus.AllocContractByAddress(address);
-                if (contract != null)
-                {
-                    var triggerName = trigger.ToString();
-                    BigInteger gasCost;
-                    if (contract.HasInternalMethod(triggerName, out gasCost))
-                    {
-                        runtimeVM.CallContext(contract.Name, triggerName, args);
-                    }
-                }
-
-                return true;
-            }
-
-            return true;
-        }
-
-        public static bool InvokeTriggerOnToken(RuntimeVM runtimeVM, TokenInfo token, TokenTrigger trigger, params object[] args)
-        {
-            return InvokeTrigger(runtimeVM, token.Script, trigger.ToString(), args);
-        }
-
-        public static bool InvokeTrigger(RuntimeVM runtimeVM, byte[] script, string triggerName, params object[] args)
-        {
-            if (script == null || script.Length == 0)
-            {
-                return true;
-            }
-
-            var leftOverGas = (uint)(runtimeVM.MaxGas - runtimeVM.UsedGas);
-            var runtime = new RuntimeVM(script, runtimeVM.Chain, runtimeVM.Time, runtimeVM.Transaction, runtimeVM.ChangeSet, runtimeVM.Oracle, false, true);
-            runtime.ThrowOnFault = true;
-
-            for (int i=args.Length - 1; i>=0; i--)
-            {
-                var obj = VMObject.FromObject(args[i]);
-                runtime.Stack.Push(obj);
-            }
-            runtime.Stack.Push(VMObject.FromObject(triggerName));
-
-            var state = runtime.Execute();
-            // TODO catch VM exceptions?
-
-            // propagate gas consumption
-            // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
-            runtimeVM.ConsumeGas(runtime.UsedGas);
-
-            if (state == ExecutionState.Halt)
-            {
-                // propagate events to the other runtime
-                foreach (var evt in runtime.Events)
-                {
-                    runtimeVM.Notify(evt.Kind, evt.Address, evt.Data);
-                }
-              
-                return true;
-            }
-            else
-            {
-                return false;
-            }
         }
         #endregion
     }

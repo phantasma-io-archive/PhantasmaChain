@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void OpenBlock(Address from)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var count = Runtime.Nexus.HasGenesis ? Runtime.Nexus.GetPrimaryValidatorCount() : 0;
             if (count > 0)
@@ -103,7 +103,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var expectedValidator = GetCurrentValidator();
             Runtime.Expect(from == expectedValidator, "current validator mismatch");
             Runtime.Expect(from.IsUser, "must be user address");
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var validators = Runtime.Nexus.GetValidators();
             Runtime.Expect(validators.Length > 0, "no active validators found");

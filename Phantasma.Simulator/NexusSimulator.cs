@@ -117,8 +117,7 @@ namespace Phantasma.Simulator
             var ethAddress = Phantasma.Pay.Chains.EthereumWallet.EncodeAddress(ethText);
 
             BeginBlock();
-            GenerateAppRegistration(_owner, "mystore", "https://my.store", "The future of digital content distribution!");
-
+            
             GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
                 CallContract("nexus", "CreatePlatform", neoAddress, "GAS").
                 CallContract("nexus", "CreatePlatform", ethAddress, "ETH").
@@ -233,7 +232,7 @@ namespace Phantasma.Simulator
             var readyNames = new List<Address>();
             foreach (var address in pendingNames)
             {
-                var currentName = Nexus.LookUpAddressName(address);
+                var currentName = Nexus.LookUpAddressName(Nexus.RootStorage, address);
                 if (currentName != ValidationUtils.ANONYMOUS)
                 {
                     readyNames.Add(address);
@@ -570,10 +569,16 @@ namespace Phantasma.Simulator
         {
             Throw.IfNull(parentchain, nameof(parentchain));
 
-            var script = ScriptUtils.BeginScript().
+            var sb = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name, contracts).
-                SpendGas(source.Address).
+                CallContract("nexus", "CreateChain", source.Address, name, parentchain.Name);
+
+            foreach (var contractName in contracts)
+            {
+                sb.CallInterop("Runtime.DeployContract", contractName);
+            }
+
+            var script = sb.SpendGas(source.Address).
                 EndScript();
             var tx = MakeTransaction(source, ProofOfWork.Minimal, Nexus.RootChain, script);
             return tx;
@@ -687,23 +692,6 @@ namespace Phantasma.Simulator
                 EndScript();
 
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
-            return tx;
-        }
-
-        public Transaction GenerateAppRegistration(KeyPair source, string name, string url, string description)
-        {
-            var contract = "apps";
-
-            var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(contract, "RegisterApp", source.Address, name).SpendGas(source.Address).EndScript();
-            var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
-
-            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(contract, "SetAppUrl", name, url).SpendGas(source.Address).EndScript();
-            tx = MakeTransaction(source, ProofOfWork.None, chain, script);
-
-            script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(contract, "SetAppDescription", name, description).SpendGas(source.Address).EndScript();
-            tx = MakeTransaction(source, ProofOfWork.None, chain, script);
-
             return tx;
         }
 
@@ -882,10 +870,10 @@ namespace Phantasma.Simulator
                                         break;
                                 }
 
-                                var currentName = Nexus.LookUpAddressName(source.Address);
+                                var currentName = Nexus.LookUpAddressName(Nexus.RootStorage, source.Address);
                                 if (currentName == ValidationUtils.ANONYMOUS)
                                 {
-                                    var lookup = Nexus.LookUpName(randomName);
+                                    var lookup = Nexus.LookUpName(Nexus.RootStorage, randomName);
                                     if (lookup.IsNull)
                                     {
                                         Logger.Debug($"Rnd.GenerateAccount: {source.Address} => {randomName}");

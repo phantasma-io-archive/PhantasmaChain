@@ -87,14 +87,14 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(platform == Nexus.PlatformName, "chain name is invalid");
             }
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "owner address must be user address");
 
             Runtime.Expect(this.Runtime.Nexus.CreateToken(symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
             Runtime.Notify(EventKind.TokenCreate, from, symbol);
         }
 
-        public void CreateChain(Address owner, string name, string parentName, string[] contracts)
+        public void CreateChain(Address owner, string name, string parentName)
         {
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
@@ -102,16 +102,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
 
-            Runtime.Expect(IsWitness(owner), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
             Runtime.Expect(owner.IsUser, "owner address must be user address");
 
             name = name.ToLowerInvariant();
             Runtime.Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase), "same name as parent");
 
-            var parent = this.Runtime.Nexus.FindChainByName(parentName);
-            Runtime.Expect(parent != null, "invalid parent");
-
-            var chain = this.Runtime.Nexus.CreateChain(this.Storage, owner, name, parent, contracts);
+            var chain = this.Runtime.Nexus.CreateChain(this.Storage, owner, name, parentName);
             Runtime.Expect(chain != null, "chain creation failed");
 
             Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
@@ -124,7 +121,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
 
-            Runtime.Expect(IsWitness(owner), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
             Runtime.Expect(owner.IsUser, "owner address must be user address");
 
             Runtime.Expect(Runtime.Nexus.CreateFeed(owner, name, mode), "feed creation failed");
@@ -171,7 +168,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CreatePlatform(Address target, string fuelSymbol)
         {
-            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
+            Runtime.Expect(Runtime.IsWitness(Runtime.Nexus.GenesisAddress), "must be genesis");
 
             Runtime.Expect(target.IsInterop, "external address must be interop");
 

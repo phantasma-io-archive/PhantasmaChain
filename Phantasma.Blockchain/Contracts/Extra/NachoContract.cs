@@ -2290,7 +2290,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void BuyNachoIAP(Address from, string tokenSymbol, BigInteger tokenAmount) 
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(tokenSymbol), "invalid token");
 
@@ -2489,7 +2489,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void TransferWrestler(/*Address from, Address to, */BigInteger wrestlerID)
         {
-            //Runtime.Expect(IsWitness(from), "invalid witness");
+            //Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             //Runtime.Expect(to != from, "same address");
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
@@ -2525,7 +2525,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         
         public void TransferItem(/*Address from, Address to, */BigInteger itemID)
         {
-            //Runtime.Expect(IsWitness(from), "invalid witness");
+            //Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             //Runtime.Expect(to != from, "same address");
 
@@ -2673,7 +2673,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
     public void RegisterReferral(Address from, Address target)
     {
-        Runtime.Expect(IsWitness(from), "witness failed");
+        Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
         var fromAccount = GetAccount(from);
         Runtime.Expect(fromAccount.creationTime > 0, "invalid account");
@@ -2784,7 +2784,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void StakeReferral(Address from, BigInteger referralIndex)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(referralIndex >= 0, "invalid referral");
 
             var referrals = _referrals.Get<Address, StorageList>(from);
@@ -2870,7 +2870,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void UnstakeReferral(Address from, BigInteger referralIndex)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             var referrals = _referrals.Get<Address, StorageList>(from);
             var count = referrals.Count();
@@ -2903,7 +2903,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         
         public void DeleteWrestler(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
+            Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "dev only");
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
             //Runtime.Expect(wrestlers.Contains(wrestlerID), "not found");
@@ -3059,7 +3059,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void DeleteItem(Address from, BigInteger itemID)
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "dev only");
+            Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "dev only");
             
             Runtime.Expect(HasItem(from, itemID), "invalid owner");
 
@@ -3079,7 +3079,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void UnwrapItem(Address from, BigInteger itemID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(HasItem(from, itemID), "invalid item");
 
@@ -3105,7 +3105,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void UseItem(Address from, BigInteger wrestlerID, BigInteger itemID, ItemKind itemKind)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(from != DevelopersAddress, "no items for developers");
 
@@ -3219,7 +3219,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         //public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
         public BigInteger GenerateItem(Address to, ItemKind itemKind, bool wrapped)
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "witness failed");
             //return CreateItem(to, itemID, itemKind, wrapped);
             return CreateItem(to, itemKind, wrapped);
         }
@@ -3407,7 +3407,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GenerateWrestler(Address to, byte[] genes, uint experience, bool wrapped)
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "witness failed");
             return CreateWrestler(to, genes, experience, wrapped);
         }
 
@@ -3450,7 +3450,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void RenameWrestler(Address from, BigInteger wrestlerID, string name)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             //var nameResult = NameGenerator.ValidateName(name);
             var nameResult = ValidateName(name);
@@ -3469,7 +3469,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetWrestlerComment(Address from, BigInteger wrestlerID, int commentIndex, string comment)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(comment != null, "null comment");
             Runtime.Expect(comment.Length < Constants.MAX_COMMENT_LENGTH, "invalid length");
@@ -3789,7 +3789,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger SellWrestler(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, wrestlerID);
 
@@ -3875,7 +3875,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void BuyWrestler(Address to, BigInteger auctionID)
         {
             // TODO loot boxes backend criar novo auction da mesma raridade do que foi comprado para manter as % das loot boxes
-            Runtime.Expect(IsWitness(to), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(to), "witness failed");
 
             var auction = GetAuction(auctionID);
 
@@ -3913,7 +3913,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger SellItem(Address from, BigInteger itemID, BigInteger startPrice, BigInteger endPrice, AuctionCurrency currency, uint duration, string comment)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(startPrice >= Constants.MINIMUM_AUCTION_PRICE, "start price failed");
             Runtime.Expect(endPrice >= Constants.MINIMUM_AUCTION_PRICE, "end price failed");
@@ -3979,7 +3979,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             // TODO loot boxes backend criar novo auction da mesma raridade do que foi comprado para manter as % das loot boxes
 
-            Runtime.Expect(IsWitness(to), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(to), "witness failed");
 
             var auction = GetAuction(auctionID);
 
@@ -4033,7 +4033,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool UpdateAuction(Address from, BigInteger auctionID, BigInteger contentID, BigInteger startPrice, BigInteger endPrice, uint duration, string comment)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(startPrice >= Constants.MINIMUM_AUCTION_PRICE, "start price failed");
             Runtime.Expect(endPrice >= Constants.MINIMUM_AUCTION_PRICE, "end price failed");
@@ -4126,7 +4126,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void EquipItem(Address from, BigInteger wrestlerID, BigInteger itemID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
             Runtime.Expect(HasItem(from, itemID), "invalid item");
@@ -4157,7 +4157,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void UnequipItem(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
 
@@ -4193,7 +4193,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #region ROOM API
         public void DecorateMysteryRoom(Address from, BigInteger itemID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(HasItem(from, itemID), "invalid item");
 
@@ -4219,7 +4219,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void JoinMysteryRoom(Address from, BigInteger wrestlerID, BigInteger stakeAmount)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             Runtime.Expect(stakeAmount >= 0, "invalid stake amount");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
@@ -4261,7 +4261,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // note - requires that wrestler spent at least one hour training
         public void LeaveMysteryRoom(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
             //var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
@@ -4365,7 +4365,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #region GYM API
         public void RecoverMojo(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
 
@@ -4390,7 +4390,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void StartTrainingWrestler(Address from, BigInteger wrestlerID, StatKind mode)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             //Runtime.Expect(mode >= 1 && mode <= 3, "mode failed");
             Runtime.Expect((int)mode >= 1 && (int)mode <= 3, "mode failed");
@@ -4476,7 +4476,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // note - requires that wrestler spent at least one hour training
         public void EndTrainingWrestler(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(HasWrestler(from, wrestlerID), "invalid wrestler");
 
@@ -4873,26 +4873,26 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void JoinPracticeQueue(Address from, BigInteger wrestlerID, PracticeLevel level)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             JoinQueue(from, new BigInteger[] { wrestlerID }, 0, BattleMode.Practice, Address.Null, level);
         }
 
         public void JoinSingleUnrankedQueue(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             JoinQueue(from, new BigInteger[] { wrestlerID }, 0, BattleMode.Unranked, Address.Null, PracticeLevel.None);
         }
 
         public void JoinSingleRankedQueue(Address from, BigInteger wrestlerID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             var bet = GetRankedBet();
             JoinQueue(from, new BigInteger[] { wrestlerID }, bet, BattleMode.Ranked, Address.Null, PracticeLevel.None);
         }
 
         public void JoinSingleVersusQueue(Address from, BigInteger wrestlerID, Address other, BigInteger bet)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             Runtime.Expect(from != other, "same address");
             Runtime.Expect(DevelopersAddress != other, "invalid target");
             JoinQueue(from, new BigInteger[] { wrestlerID }, bet, BattleMode.Versus, other, PracticeLevel.None);
@@ -4900,14 +4900,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void JoinDoubleUnrankedQueue(Address from, BigInteger[] wrestlerIDs)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             Runtime.Expect(wrestlerIDs.Length == 2, "double failed");
             JoinQueue(from, wrestlerIDs, 0, BattleMode.Unranked, Address.Null, PracticeLevel.None);
         }
 
         public void JoinDoubleRankedQueue(Address from, BigInteger[] wrestlerIDs)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             Runtime.Expect(wrestlerIDs.Length == 2, "double failed");
             var bet = GetRankedBet();
             JoinQueue(from, wrestlerIDs, bet, BattleMode.Ranked, Address.Null, PracticeLevel.None);
@@ -4916,7 +4916,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /*
         public void JoinDoubleVersusQueue(Address from, BigInteger[] wrestlerIDs, Address other, BigInteger bet)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             Runtime.Expect(from != other, "same address");
             Runtime.Expect(this.Address != other, "invalid target");
             Runtime.Expect(wrestlerIDs.Length == 2, "double failed");
@@ -5479,7 +5479,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             
         public void UpdateQueue(Address from)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var account = GetAccount(from);
 
@@ -5538,7 +5538,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CancelQueue(Address from)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var account = GetAccount(from);
             Runtime.Expect(account.queueMode != BattleMode.None, "not in queue");
@@ -6201,7 +6201,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool CancelMatch(Address from, BigInteger battleID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var battle = GetBattle(battleID);
 
@@ -6236,7 +6236,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         
         private void InitPot()
         {
-            //Runtime.Expect(IsWitness(DevelopersAddress), "developer only");
+            //Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "developer only");
             Runtime.Expect(!Storage.Has("pot"), "pot already created");
 
             //Runtime.Expect(DepositNEP5(DevelopersAddress, amount), "deposit failed");
@@ -6356,7 +6356,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void DistributePot(Address from)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             if (_pot.startTime == 0)
             {
@@ -6878,7 +6878,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // changes luchador mode into Auto mode
         public void AutoTurn(Address from, BigInteger battleID)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var battle = GetBattle(battleID);
 
@@ -6994,7 +6994,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool PlayTurn(Address from, BigInteger battleID, BigInteger turn, BigInteger slot)
         {
-            Runtime.Expect(IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             Runtime.Expect(slot >= 0 && slot <= 6, "slot failed");
 
@@ -9182,7 +9182,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(value > 0, "negative value");
                     Runtime.Expect(from != to, "same address");
 
-                    Runtime.Expect(IsWitness(from), "witness failed");
+                    Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
                     var balances = Storage.FindMapForContract<Address, BigInteger>(TOKEN_BALANCE_MAP);
 
@@ -9224,7 +9224,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 public bool Deploy(Address to)
                 {
                     // Only Team/Admmin/Owner can deploy
-                    Runtime.Expect(IsWitness(DevelopersAddress), "developer only");
+                    Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "developer only");
 
                     var balances = Storage.FindMapForContract<Address, BigInteger>(TOKEN_BALANCE_MAP);
                     Runtime.Expect(balances.Count() == 0, "already deployed");
@@ -9248,7 +9248,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         /* TODO LATER
         public void ValidatePurchase(Address address, string hash)
         {
-            Runtime.Expect(IsWitness(address), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(address), "invalid witness");
 
             var map = Storage.FindMapForContract<string, BigInteger>(PURCHASE_MAP);
 
@@ -9287,7 +9287,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SetMOTD(string motd)
         {
-            Runtime.Expect(IsWitness(DevelopersAddress), "developrs only");
+            Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "developrs only");
 
             Storage.Put(MOTD_KEY, motd);
         }

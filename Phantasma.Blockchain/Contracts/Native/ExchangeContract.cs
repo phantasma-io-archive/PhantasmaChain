@@ -141,7 +141,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void CreateExchange(Address from, string id, string name)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.ValidateName(id), "invalid id");
 
@@ -162,7 +162,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private void OpenOrder(Address from, Address provider, string baseSymbol, string quoteSymbol, ExchangeOrderSide side, ExchangeOrderType orderType, BigInteger orderSize, BigInteger price)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.GasTarget == provider, "invalid gas target");
 
@@ -397,7 +397,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var order = orderList.Get<ExchangeOrder>(i);
                 if (order.Uid == uid)
                 {
-                    Runtime.Expect(IsWitness(order.Creator), "invalid witness");
+                    Runtime.Expect(Runtime.IsWitness(order.Creator), "invalid witness");
 
                     orderList.RemoveAt<ExchangeOrder>(i);
                     _orderMap.Remove<BigInteger>(uid);
@@ -465,7 +465,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 order = orderList.Get<ExchangeOrder>(i);
                 if (order.Uid == uid)
                 {
-                    //Runtime.Expect(IsWitness(order.Creator), "invalid witness");
+                    //Runtime.Expect(Runtime.IsWitness(order.Creator), "invalid witness");
                     break;
                 }
             }
@@ -519,7 +519,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         #region OTC TRADES
         public void SwapTokens(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger amount, BigInteger price, byte[] signature)
         {
-            Runtime.Expect(IsWitness(buyer), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
 
             Runtime.Expect(seller.IsUser, "seller must be user address");
@@ -565,7 +565,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void SwapToken(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, byte[] signature)
         {
-            Runtime.Expect(IsWitness(buyer), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(buyer), "invalid witness");
             Runtime.Expect(seller != buyer, "invalid seller");
 
             Runtime.Expect(seller.IsUser, "seller must be user address");

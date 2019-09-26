@@ -26,7 +26,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void Initialize(Address from)
         {
             Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis address");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.CallContext(Nexus.RankingContractName, "CreateLeaderboard", this.Address, SESLeaderboardName, 100, 0);
             Runtime.CallContext(Nexus.RankingContractName, "CreateLeaderboard", this.Address, BPLeaderboardName, 10, 0);
         }

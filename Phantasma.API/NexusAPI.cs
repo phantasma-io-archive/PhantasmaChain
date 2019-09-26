@@ -325,7 +325,7 @@ namespace Phantasma.API
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             var currentSupply = Nexus.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
-            var metadata = (Metadata[])Nexus.RootChain.InvokeContract(Nexus.TokenContractName, nameof(TokenContract.GetMetadataList), tokenInfo.Symbol).ToObject();
+            var metadata = (Metadata[]) Nexus.RootChain.InvokeContract(Nexus.RootStorage, Nexus.TokenContractName, nameof(TokenContract.GetMetadataList), tokenInfo.Symbol).ToObject();
             var metadataResults = metadata.Select(x => new MetadataResult
             {
                 key = x.key,
@@ -527,7 +527,7 @@ namespace Phantasma.API
             var result = new AccountResult();
             var address = Address.FromText(addressText);
             result.address = address.Text;
-            result.name = Nexus.LookUpAddressName(address);
+            result.name = Nexus.LookUpAddressName(Nexus.RootStorage, address);
 
             var stake = Nexus.GetStakeFromAddress(address);
             result.stake = stake.ToString();
@@ -567,7 +567,7 @@ namespace Phantasma.API
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
 
-            var interops = (Address[])Nexus.RootChain.InvokeContract("interop", "GetLinks", address).ToObject();
+            var interops = (Address[])Nexus.RootChain.InvokeContract(Nexus.RootStorage, "interop", "GetLinks", address).ToObject();
             if (interops.Length > 0)
             {
                 var interopList = new List<InteropResult>();
@@ -597,7 +597,7 @@ namespace Phantasma.API
                 result.interops = new InteropResult[0];
             }
 
-            var metadata = (Metadata[])Nexus.RootChain.InvokeContract("account", "GetMetadataList", address).ToObject();
+            var metadata = (Metadata[])Nexus.RootChain.InvokeContract(Nexus.RootStorage, "account", "GetMetadataList", address).ToObject();
             var metadataResults = metadata.Select(x => new MetadataResult
             {
                 key = x.key,
@@ -618,7 +618,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid name" };
             }
 
-            var address = Nexus.LookUpName(name);
+            var address = Nexus.LookUpName(Nexus.RootStorage, name);
             if (address.IsNull)
             {
                 return new ErrorResult { error = "name not owned" };
@@ -1125,9 +1125,9 @@ namespace Phantasma.API
             var chain = Nexus.FindChainByAddress(info.CurrentChain);
             bool forSale;
 
-            if (chain != null && chain.HasContract("market"))
+            if (chain != null && chain.IsContractDeployed(chain.Storage, "market"))
             {
-                forSale = chain.InvokeContract("market", "HasAuction", ID).AsBool();
+                forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
             }
             else
             {
@@ -1136,30 +1136,6 @@ namespace Phantasma.API
 
 
             return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
-        }
-
-        [APIInfo(typeof(AppResult[]), "Returns an array of apps deployed in Phantasma.", false, 10)]
-        public IAPIResult GetApps()
-        {
-            var appList = new List<object>();
-
-            var chain = Nexus.RootChain;
-            var apps = (AppInfo[])chain.InvokeContract("apps", "GetApps", new string[] { }).ToObject();
-
-            foreach (var appInfo in apps)
-            {
-                var entry = new AppResult
-                {
-                    description = appInfo.description,
-                    icon = appInfo.icon.ToString(),
-                    id = appInfo.id,
-                    title = appInfo.title,
-                    url = appInfo.url
-                };
-                appList.Add(entry);
-            }
-
-            return new ArrayResult() { values = appList.ToArray() };
         }
 
         [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.", true)]
@@ -1283,12 +1259,12 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Chain not found" };
             }
 
-            if (!chain.HasContract("market"))
+            if (!chain.IsContractDeployed(chain.Storage, "market"))
             {
                 return new ErrorResult { error = "Market not available" };
             }
 
-            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions").ToObject();
+            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract(chain.Storage, "market", "GetAuctions").ToObject();
 
             if (!string.IsNullOrEmpty(symbol))
             {
@@ -1309,7 +1285,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Chain not found" };
             }
 
-            if (!chain.HasContract("market"))
+            if (!chain.IsContractDeployed(chain.Storage, "market"))
             {
                 return new ErrorResult { error = "Market not available" };
             }
@@ -1326,7 +1302,7 @@ namespace Phantasma.API
 
             var paginatedResult = new PaginatedResult();
 
-            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract("market", "GetAuctions").ToObject();
+            IEnumerable<MarketAuction> entries = (MarketAuction[])chain.InvokeContract(chain.Storage, "market", "GetAuctions").ToObject();
 
             if (!string.IsNullOrEmpty(symbol))
             {
@@ -1374,18 +1350,18 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Chain not found" };
             }
 
-            if (!chain.HasContract("market"))
+            if (!chain.IsContractDeployed(chain.Storage, "market"))
             {
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var forSale = chain.InvokeContract("market", "HasAuction", ID).AsBool();
+            var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
             if (!forSale)
             {
                 return new ErrorResult { error = "Token not for sale" };
             }
 
-            var auction = (MarketAuction)chain.InvokeContract("market", "GetAuction", ID).ToObject();
+            var auction = (MarketAuction)chain.InvokeContract(chain.Storage, "market", "GetAuction", ID).ToObject();
 
             return new AuctionResult()
             {
@@ -1477,7 +1453,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Invalid contract name" };
             }
 
-            if (!chain.HasContract(contractName))
+            if (!chain.IsContractDeployed(chain.Storage, contractName))
             {
                 return new ErrorResult { error = "Contract not found" };
             }
@@ -1573,7 +1549,7 @@ namespace Phantasma.API
             }
             else
             {
-                address = Nexus.LookUpName(accountInput);
+                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
                 if (address.IsNull)
                 {
                     return new ErrorResult { error = "name not owned" };
@@ -1614,7 +1590,7 @@ namespace Phantasma.API
             }
             else
             {
-                address = Nexus.LookUpName(accountInput);
+                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
                 if (address.IsNull)
                 {
                     return new ErrorResult { error = "name not owned" };
@@ -1648,7 +1624,7 @@ namespace Phantasma.API
             }
             else
             {
-                address = Nexus.LookUpName(accountInput);
+                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
             }
 
             if (address.IsNull)
@@ -1666,7 +1642,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "cannot be interop address" };
             }
 
-            var target = Nexus.RootChain.InvokeContract("interop", "GetLink", address, platform).AsAddress();
+            var target = Nexus.RootChain.InvokeContract(Nexus.RootStorage, "interop", "GetLink", address, platform).AsAddress();
 
             if (target.IsNull)
             {

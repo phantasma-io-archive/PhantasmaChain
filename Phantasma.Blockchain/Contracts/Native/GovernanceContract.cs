@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void CreateValue(string name, BigInteger initial, BigInteger minimum, BigInteger maximum)
         {
             Runtime.Expect(!HasName(name), "name already exists");
-            Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "genesis must be witness");
+            Runtime.Expect(Runtime.IsWitness(Runtime.Nexus.GenesisAddress), "genesis must be witness");
 
             Runtime.Expect(minimum < maximum, "invalid minimum");
             Runtime.Expect(minimum <= initial, "initial should be equal or greater than minimum");

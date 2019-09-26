@@ -29,7 +29,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(amount > 0, "amount must be greater than zero");
             Runtime.Expect(duration >= 86400, "minimum duration should be one day"); // minimum 1 day
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -51,7 +51,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public void UnlockTokens(Address from, string symbol)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);

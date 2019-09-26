@@ -10,6 +10,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -153,7 +154,7 @@ namespace Phantasma.Blockchain.Contracts
             var contract = this.Nexus.AllocContractByName(contextName);
             if (contract != null)
             {
-                return Chain.GetContractContext(contract);
+                return Chain.GetContractContext(this.ChangeSet, contract);
             }
 
             return null;
@@ -473,7 +474,7 @@ namespace Phantasma.Blockchain.Contracts
         // fetches a chain-governed value
         public BigInteger GetGovernanceValue(string name)
         {
-            var value = Nexus.RootChain.InvokeContract(Nexus.GovernanceContractName, "GetValue", name).AsNumber();
+            var value = Nexus.RootChain.InvokeContract(this.ChangeSet, Nexus.GovernanceContractName, "GetValue", name).AsNumber();
             return value;
         }
 
@@ -586,5 +587,120 @@ namespace Phantasma.Blockchain.Contracts
             return true;
         }
 
+        #region TRIGGERS
+        public bool InvokeTriggerOnAccount(Address address, AccountTrigger trigger, params object[] args)
+        {
+            if (address.IsNull)
+            {
+                return false;
+            }
+
+            if (address.IsUser)
+            {
+                var accountScript = Nexus.LookUpAddressScript(this.ChangeSet, address);
+                return InvokeTrigger(accountScript, trigger.ToString(), args);
+            }
+
+            if (address.IsSystem)
+            {
+                var contract = Nexus.AllocContractByAddress(address);
+                if (contract != null)
+                {
+                    var triggerName = trigger.ToString();
+                    BigInteger gasCost;
+                    if (contract.HasInternalMethod(triggerName, out gasCost))
+                    {
+                        CallContext(contract.Name, triggerName, args);
+                    }
+                }
+
+                return true;
+            }
+
+            return true;
+        }
+
+        public bool InvokeTriggerOnToken(TokenInfo token, TokenTrigger trigger, params object[] args)
+        {
+            return InvokeTrigger(token.Script, trigger.ToString(), args);
+        }
+
+        public bool InvokeTrigger(byte[] script, string triggerName, params object[] args)
+        {
+            if (script == null || script.Length == 0)
+            {
+                return true;
+            }
+
+            var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
+            var runtime = new RuntimeVM(script, this.Chain, this.Time, this.Transaction, this.ChangeSet, this.Oracle, false, true);
+            runtime.ThrowOnFault = true;
+
+            for (int i = args.Length - 1; i >= 0; i--)
+            {
+                var obj = VMObject.FromObject(args[i]);
+                runtime.Stack.Push(obj);
+            }
+            runtime.Stack.Push(VMObject.FromObject(triggerName));
+
+            var state = runtime.Execute();
+            // TODO catch VM exceptions?
+
+            // propagate gas consumption
+            // TODO this should happen not here but in real time during previous execution, to prevent gas attacks
+            this.ConsumeGas(runtime.UsedGas);
+
+            if (state == ExecutionState.Halt)
+            {
+                // propagate events to the other runtime
+                foreach (var evt in runtime.Events)
+                {
+                    this.Notify(evt.Kind, evt.Address, evt.Data);
+                }
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        #endregion
+
+        public bool IsWitness(Address address)
+        {
+            if (address == this.Chain.Address /*|| address == this.Address*/)
+            {
+                return true;
+            }
+
+            if (address == this.EntryAddress)
+            {
+                return true;
+            }
+
+            if (address.IsSystem)
+            {
+                var contextAddress = SmartContract.GetAddressForName(this.CurrentContext.Name);
+                return contextAddress == address;
+            }
+
+            if (address.IsInterop)
+            {
+                return false;
+            }
+
+            if (address.IsUser && this.Nexus.HasScript(ChangeSet, address))
+            {
+                return InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
+            }
+
+            if (this.Transaction == null)
+            {
+                return false;
+            }
+
+            return this.Transaction.IsSignedBy(address);
+        }
     }
 }

@@ -81,7 +81,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public uint PutPrivate(Address from, string symbol)
         {
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
 

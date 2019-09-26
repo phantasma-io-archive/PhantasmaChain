@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(period >= 60 * 30, "period invalid");
             }
 
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(ValidationUtils.ValidateName(name), "invalid name");
 
             var leaderboard = new Leaderboard()
@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
 
             Runtime.Expect(from == leaderboard.owner, "invalid leaderboard owner");
-            Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();

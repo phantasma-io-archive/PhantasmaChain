@@ -33,6 +33,11 @@ namespace Phantasma.Storage.Context
             Delete(new StorageKey(key));
         }
 
+        public byte[] Get(string key)
+        {
+            return Get(Encoding.UTF8.GetBytes(key));
+        }
+
         public bool Has(string key)
         {
             return Has(Encoding.UTF8.GetBytes(key));

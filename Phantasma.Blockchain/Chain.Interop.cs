@@ -22,6 +22,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
+            vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -355,7 +356,7 @@ namespace Phantasma.Blockchain
             if (temp.Type == VMType.String)
             {
                 var name = temp.AsString();
-                return vm.Nexus.LookUpName(name);
+                return vm.Nexus.LookUpName(vm.ChangeSet, name);
             }
             else
             if (temp.Type == VMType.Bytes)
@@ -403,6 +404,56 @@ namespace Phantasma.Blockchain
                 var amount = temp.AsNumber();
 
                 var success = vm.TransferTokens(vm, symbol, source, destination, amount);
+
+                var result = new VMObject();
+                result.SetValue(success);
+                vm.Stack.Push(result);
+            }
+            catch
+            {
+                return ExecutionState.Fault;
+            }
+
+            return ExecutionState.Running;
+        }
+
+
+        private static ExecutionState Runtime_DeployContract(RuntimeVM vm)
+        {
+            try
+            {
+                var tx = vm.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                if (vm.Stack.Count < 1)
+                {
+                    return ExecutionState.Fault;
+                }
+
+                VMObject temp;
+
+                var owner = vm.Nexus.GetChainOwnerByName(vm.Chain.Name);
+                if (!vm.Transaction.IsSignedBy(owner))
+                {
+                    return ExecutionState.Fault;
+                }
+
+                temp = vm.Stack.Pop();
+
+                bool success;
+                switch (temp.Type) 
+                {
+                    case VMType.String:
+                        {
+                            var name = temp.AsString();
+                            success = vm.Chain.DeployNativeContract(vm.ChangeSet, SmartContract.GetAddressForName(name)); 
+                        }
+                        break;
+
+                    default:
+                        success = false;
+                        break;
+                }
 
                 var result = new VMObject();
                 result.SetValue(success);
