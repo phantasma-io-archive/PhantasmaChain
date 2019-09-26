@@ -9,6 +9,7 @@ namespace Phantasma.Blockchain.Contracts.Native
     public enum ValidatorType
     {
         Invalid,
+        Proposed,
         Primary,
         Secondary, // aka StandBy
     }
@@ -164,10 +165,10 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // NOTE - witness not required, as anyone should be able to call this, permission is granted based on consensus
-        public void SetValidator(Address from, BigInteger index, ValidatorType type)
+        public void SetValidator(Address target,  BigInteger index, ValidatorType type)
         {
-            Runtime.Expect(from.IsUser, "must be user address");
-            Runtime.Expect(type != ValidatorType.Invalid, "invalid validator type");
+            Runtime.Expect(target.IsUser, "must be user address");
+            Runtime.Expect(type == ValidatorType.Primary || type == ValidatorType.Secondary, "invalid validator type");
 
             var primaryValidators = GetValidatorCount(ValidatorType.Primary);
             var secondaryValidators = GetValidatorCount(ValidatorType.Secondary);
@@ -177,30 +178,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             var totalValidators = GetMaxTotalValidators();
             Runtime.Expect(index < totalValidators, "invalid index");
 
-            if (primaryValidators > 1)
-            {
-                var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
-                var obtainedRank = Runtime.CallContext("consensus", "GetRank", pollName, from).AsNumber();
-                Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
-                Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
-            }
-            else
-            if (primaryValidators == 1)
-            {
-                var firstValidator = GetValidatorByIndex(0).address;
-                Runtime.Expect(IsWitness(firstValidator), "invalid witness");
-            }
-            else
-            if (primaryValidators == 0)
-            {
-                Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "invalid witness");
-            }
-
             var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
             Runtime.Expect(type == expectedType, "unexpected validator type");
 
-            var requiredStake = Runtime.CallContext(Nexus.StakeContractName, "GetMasterThreshold", from).AsNumber();
-            var stakedAmount = Runtime.CallContext(Nexus.StakeContractName, "GetStake", from).AsNumber();
+            var requiredStake = Runtime.CallContext(Nexus.StakeContractName, "GetMasterThreshold", target).AsNumber();
+            var stakedAmount = Runtime.CallContext(Nexus.StakeContractName, "GetStake", target).AsNumber();
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
 
@@ -208,11 +190,55 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 var isPreviousSet = _validators.ContainsKey<BigInteger>(index - 1);
                 Runtime.Expect(isPreviousSet, "previous validator slot is not set");
+
+                var previousEntry = _validators.Get<BigInteger, ValidatorEntry>(index - 1);
+                Runtime.Expect(previousEntry.type != ValidatorType.Invalid, " previous validator has unexpected status");
+            }
+
+            if (primaryValidators > 0)
+            {
+                var isValidatorProposed = _validators.ContainsKey<BigInteger>(index);
+
+                if (isValidatorProposed)
+                {
+                    var currentEntry = _validators.Get<BigInteger, ValidatorEntry>(index);
+                    if (currentEntry.type != ValidatorType.Proposed)
+                    {
+                        Runtime.Expect(currentEntry.type == ValidatorType.Invalid, "invalid validator state");
+                        isValidatorProposed = false;
+                    }
+                }
+
+                if (isValidatorProposed)
+                {
+                    Runtime.Expect(IsWitness(target), "invalid witness");
+                }
+                else
+                {
+                    if (primaryValidators > 1)
+                    {
+                        var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
+                        var obtainedRank = Runtime.CallContext("consensus", "GetRank", pollName, target).AsNumber();
+                        Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
+                        Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
+                    }
+                    else
+                    {
+                        var firstValidator = GetValidatorByIndex(0).address;
+                        Runtime.Expect(IsWitness(firstValidator), "invalid witness");
+                    }
+
+                    type = ValidatorType.Proposed;
+                }
+            }
+            else
+            {
+                Runtime.Expect(IsWitness(Runtime.Nexus.GenesisAddress), "invalid witness");
             }
 
             var entry = new ValidatorEntry()
             {
-                address = from,
+                address = target,
                 election = Runtime.Time,
                 type = type,
             };
@@ -230,7 +256,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(newValidators > secondaryValidators, "number of secondary validators did not change");
             }
 
-            Runtime.Notify(EventKind.ValidatorAdd, Runtime.Chain.Address, from);
+            Runtime.Notify(type == ValidatorType.Proposed ? EventKind.ValidatorPropose : EventKind.ValidatorElect, Runtime.Chain.Address, target);
         }
 
         /*public void DemoteValidator(Address target)
@@ -270,24 +296,24 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, target);
         }*/
 
-            /*
-        public void Migrate(Address from, Address to)
-        {
-            Runtime.Expect(IsWitness(from), "witness failed");
+        /*
+    public void Migrate(Address from, Address to)
+    {
+        Runtime.Expect(IsWitness(from), "witness failed");
 
-            Runtime.Expect(to.IsUser, "destination must be user address");
+        Runtime.Expect(to.IsUser, "destination must be user address");
 
-            var index = GetIndexOfValidator(from);
-            Runtime.Expect(index >= 0, "not a validator");
+        var index = GetIndexOfValidator(from);
+        Runtime.Expect(index >= 0, "not a validator");
 
-            var transferResult = (bool)Runtime.CallContext(Nexus.StakeContractName, "Migrate", from, to);
-            Runtime.Expect(transferResult, "stake transfer failed");
+        var transferResult = (bool)Runtime.CallContext(Nexus.StakeContractName, "Migrate", from, to);
+        Runtime.Expect(transferResult, "stake transfer failed");
 
-            var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
-            _validatorMap.Remove<Address>(from);
+        var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
+        _validatorMap.Remove<Address>(from);
 
-            entry.address = to;
-            _validatorMap.Set<Address, ValidatorEntry>(to, entry);
-        }*/
+        entry.address = to;
+        _validatorMap.Set<Address, ValidatorEntry>(to, entry);
+    }*/
     }
 }

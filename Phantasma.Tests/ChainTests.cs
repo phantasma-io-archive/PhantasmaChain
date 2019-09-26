@@ -1493,7 +1493,22 @@ namespace Phantasma.Tests
             // verify that we suceed adding a new validator
             var events = block.GetEventsForTransaction(tx.Hash).ToArray();
             Assert.IsTrue(events.Length > 0);
-            Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorAdd));
+            Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorPropose));
+
+            // make the second validator accept his spot
+            simulator.BeginBlock();
+                tx = simulator.GenerateCustomTransaction(secondValidator, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().
+                    AllowGas(secondValidator.Address, Address.Null, 1, 9999).
+                    CallContract(Nexus.ValidatorContractName, "SetValidator", secondValidator.Address, 1, ValidatorType.Primary).
+                    SpendGas(secondValidator.Address).
+                    EndScript());
+            block = simulator.EndBlock().First();
+
+            // verify that we suceed electing a new validator
+            events = block.GetEventsForTransaction(tx.Hash).ToArray();
+            Assert.IsTrue(events.Length > 0);
+            Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorElect));
 
             var testUserA = KeyPair.Generate();
             var testUserB = KeyPair.Generate();

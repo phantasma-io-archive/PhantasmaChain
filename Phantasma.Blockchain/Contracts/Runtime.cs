@@ -279,7 +279,8 @@ namespace Phantasma.Blockchain.Contracts
                     Expect(contract == Nexus.StorageContractName, $"event kind only in {Nexus.StorageContractName } contract");
                     break;
 
-                case EventKind.ValidatorAdd:
+                case EventKind.ValidatorPropose:
+                case EventKind.ValidatorElect:
                 case EventKind.ValidatorRemove:
                     Expect(contract == Nexus.ValidatorContractName, $"event kind only in {Nexus.ValidatorContractName} contract");
                     break;
