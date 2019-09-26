@@ -555,7 +555,7 @@ namespace Phantasma.Blockchain.Contracts
             throw new NotImplementedException();
         }
 
-        public IEvent GetTransactionEvents(ITransaction transaction)
+        public Event GetTransactionEvents(ITransaction transaction)
         {
             throw new NotImplementedException();
         }
@@ -799,7 +799,7 @@ namespace Phantasma.Blockchain.Contracts
             throw new NotImplementedException();
         }
 
-        IEvent[] IRuntime.GetTransactionEvents(ITransaction transaction)
+        Event[] IRuntime.GetTransactionEvents(ITransaction transaction)
         {
             throw new NotImplementedException();
         }
@@ -971,7 +971,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public byte[] ReadOracle(string URL)
         {
-            throw new NotImplementedException();
+            return this.Oracle.Read(URL);
         }
     }
 }

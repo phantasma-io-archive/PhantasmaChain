@@ -28,12 +28,12 @@ namespace Phantasma.Domain
             return token.MaxSupply > 0;
         }
 
-        public static T GetKind<T>(this IEvent evt)
+        public static T GetKind<T>(this Event evt)
         {
             return (T)(object)evt.Kind;
         }
 
-        public static T GetContent<T>(this IEvent evt)
+        public static T GetContent<T>(this Event evt)
         {
             return Serialization.Unserialize<T>(evt.Data);
         }

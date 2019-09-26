@@ -151,8 +151,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var chainHashes = _hashes.Get<string, StorageSet>(platform);
             Runtime.Expect(!chainHashes.Contains<Hash>(hash), "hash already seen");
 
-            var interopBytes = Runtime.Oracle.Read($"interop://{platform}/tx/{hash}");
-            var interopTx = Serialization.Unserialize<InteropTransaction>(interopBytes);
+            var interopTx = Runtime.ReadTransactionFromOracle(platform, DomainSettings.RootChainName, hash);
 
             Runtime.Expect(interopTx.Platform == platform, "unxpected platform name");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");

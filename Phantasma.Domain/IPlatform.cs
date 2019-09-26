@@ -20,6 +20,6 @@ namespace Phantasma.Domain
     {
         public string Platform;
         public Hash Hash;
-        public IEvent[] Events;
+        public Event[] Events;
     }
 }

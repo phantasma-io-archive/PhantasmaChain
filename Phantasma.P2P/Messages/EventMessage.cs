@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
-using Phantasma.Storage.Utils;
+using Phantasma.Domain;
 
 namespace Phantasma.Network.P2P.Messages
 {

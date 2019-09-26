@@ -1,6 +1,8 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.Storage.Utils;
+using System.IO;
 
 namespace Phantasma.Domain
 {
@@ -54,13 +56,6 @@ namespace Phantasma.Domain
         Metadata = 47,
         Custom = 48,
     }
-    public interface IEvent
-    {
-        EventKind Kind { get; }
-        Address Address { get; }
-        string Contract { get; }
-        byte[] Data { get; }
-    }
 
     public struct Metadata
     {
@@ -85,5 +80,44 @@ namespace Phantasma.Domain
     {
         public string type;
         public Metadata metadata;
+    }
+
+    public struct Event
+    {
+        public EventKind Kind { get; private set; }
+        public Address Address { get; private set; }
+        public string Contract { get; private set; }
+        public byte[] Data { get; private set; }
+
+        public Event(EventKind kind, Address address, string contract, byte[] data = null)
+        {
+            this.Kind = kind;
+            this.Address = address;
+            this.Contract = contract;
+            this.Data = data;
+        }
+
+        public override string ToString()
+        {
+            return $"{Kind}/{Contract} @ {Address}: {Base16.Encode(Data)}";
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            var n = (int)(object)this.Kind; // TODO is this the most clean way to do this?
+            writer.Write((byte)n);
+            writer.WriteAddress(this.Address);
+            writer.WriteVarString(this.Contract);
+            writer.WriteByteArray(this.Data);
+        }
+
+        public static Event Unserialize(BinaryReader reader)
+        {
+            var kind = (EventKind)reader.ReadByte();
+            var address = reader.ReadAddress();
+            var contract = reader.ReadVarString();
+            var data = reader.ReadByteArray();
+            return new Event(kind, address, contract, data);
+        }
     }
 }

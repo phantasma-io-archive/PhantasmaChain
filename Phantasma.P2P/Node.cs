@@ -13,6 +13,7 @@ using Phantasma.Network.P2P.Messages;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Domain;
 
 namespace Phantasma.Network.P2P
 {

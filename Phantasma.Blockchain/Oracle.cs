@@ -106,8 +106,8 @@ namespace Phantasma.Blockchain
 
         protected abstract byte[] PullData(string url);
         protected abstract decimal PullPrice(string baseSymbol, string quoteSymbol);
-        protected abstract InteropBlock PullPlatformBlock(string platformName, Hash hash);
-        protected abstract InteropTransaction PullPlatformTransaction(string platformName, Hash hash);
+        protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash);
+        protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
 
         public readonly Nexus Nexus;
 
@@ -131,10 +131,11 @@ namespace Phantasma.Blockchain
                 var args = url.Split('/');
 
                 var platformName = args[0];
+                var chainName = args[1];
                 if (Nexus.PlatformExists(platformName))
                 {
-                    args = args.Skip(1).ToArray();
-                    return ReadChainOracle(platformName, args);
+                    args = args.Skip(2).ToArray();
+                    return ReadChainOracle(platformName, chainName, args);
                 }
                 else
                 { 
@@ -145,15 +146,14 @@ namespace Phantasma.Blockchain
             if (url.StartsWith(priceTag))
             {
                 url = url.Substring(priceTag.Length);
-                var symbols = url.Split('/');
 
-                if (symbols.Length < 1 || symbols.Length > 2)
+                if (url.Contains('/'))
                 {
                     throw new OracleException("invalid oracle price request");
                 }
 
-                var baseSymbol = symbols[0];
-                var quoteSymbol = symbols.Length > 1 ? symbols[1] : DomainSettings.FiatTokenSymbol;
+                var baseSymbol = url;
+                var quoteSymbol = DomainSettings.FiatTokenSymbol;
 
                 if (!Nexus.TokenExists(baseSymbol))
                 {
@@ -182,7 +182,7 @@ namespace Phantasma.Blockchain
             return content;
         }
 
-        public byte[] ReadChainOracle(string platformName, string[] input)
+        public byte[] ReadChainOracle(string platformName, string chainName, string[] input)
         {
             if (input == null || input.Length != 2)
             {
@@ -198,7 +198,7 @@ namespace Phantasma.Blockchain
                         Hash hash;
                         if (Hash.TryParse(input[1], out hash))
                         {
-                            var tx = PullPlatformTransaction(platformName, hash);
+                            var tx = PullPlatformTransaction(platformName, chainName, hash);
                             return Serialization.Serialize(tx);
                         }
                         else
@@ -212,7 +212,7 @@ namespace Phantasma.Blockchain
                         Hash hash;
                         if (Hash.TryParse(input[1], out hash))
                         {
-                            var block = PullPlatformBlock(platformName, hash);
+                            var block = PullPlatformBlock(platformName, chainName, hash);
                             return Serialization.Serialize(block);
                         }
                         else

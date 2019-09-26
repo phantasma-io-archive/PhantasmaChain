@@ -44,15 +44,15 @@ namespace Phantasma.Simulator
             throw new OracleException("invalid oracle url: " + url);
         }
 
-        protected override InteropBlock PullPlatformBlock(string platformName, Hash hash)
+        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash)
         {
-            throw new OracleException($"unknown block for {platformName} : {hash}");
+            throw new OracleException($"unknown block for {platformName}.{chainName} : {hash}");
         }
 
-        protected override InteropTransaction PullPlatformTransaction(string platformName, Hash hash)
+        protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
         {
             foreach (var swap in _swaps)
-            if (swap.platformName == platformName && swap.hash == hash)
+            if (swap.platformName == platformName && chainName == DomainSettings.RootChainName && swap.hash == hash)
             {
                 var info = Nexus.GetPlatformInfo(platformName);
                 var platformAddress = info.Address;
@@ -68,7 +68,7 @@ namespace Phantasma.Simulator
                     {
                         Platform = platformName,
                         Hash = hash,
-                        Events = new IEvent[]
+                        Events = new Event[]
                         {
                             new Event(EventKind.TokenSend, WalletUtils.EncodeAddress(swap.sourceAddress, platformName), "swap", Serialization.Serialize(new TokenEventData(){ chainAddress =platformAddress, symbol = swap.symbol, value = amount } )),
                             new Event(EventKind.TokenReceive, WalletUtils.EncodeAddress(destAddress, platformName), "swap", Serialization.Serialize(new TokenEventData(){ chainAddress =platformAddress, symbol = swap.symbol, value = amount } ))
@@ -76,7 +76,7 @@ namespace Phantasma.Simulator
                     };
             }
 
-            throw new OracleException($"unknown transaction for {platformName} : {hash}");
+            throw new OracleException($"unknown transaction for {platformName}.{chainName} : {hash}");
         }
 
         protected override decimal PullPrice(string baseSymbol, string quoteSymbol)
