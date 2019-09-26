@@ -17,15 +17,6 @@ using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {
-    public enum ChainStorageShard
-    {
-        Data,
-        Transactions,
-        Blocks,
-        Heights,
-        TxBlockMap,
-    }
-
     public class Nexus : INexus
     {
         private static readonly string ChainNameMapKey = "chain.name.";
@@ -146,7 +137,7 @@ namespace Phantasma.Blockchain
             {
                 if (_genesisDate.Value == 0 && HasGenesis)
                 {
-                    var genesisBlock = RootChain.FindBlockByHash(GenesisHash);
+                    var genesisBlock = RootChain.GetBlockByHash(GenesisHash);
                     _genesisDate = genesisBlock.Timestamp;
                 }
 
@@ -337,7 +328,7 @@ namespace Phantasma.Blockchain
             foreach (var chainName in chainNames)
             {
                 var chain = FindChainByName(chainName);
-                if (chain.ContainsBlock(hash))
+                if (chain.ContainsBlockHash(hash))
                 {
                     return chain;
                 }
@@ -359,7 +350,8 @@ namespace Phantasma.Blockchain
                 var chain = FindChainByName(chainName);
                 if (chain.ContainsTransaction(hash))
                 {
-                    return chain.FindTransactionBlock(hash);
+                    var blockHash = chain.GetBlockHashOfTransaction(hash);
+                    return chain.GetBlockByHash(blockHash);
                 }
             }
 
@@ -479,7 +471,7 @@ namespace Phantasma.Blockchain
             foreach (var chainName in chainNames)
             {
                 var chain = FindChainByName(chainName);
-                var tx = chain.FindTransactionByHash(hash);
+                var tx = chain.GetTransactionByHash(hash);
                 if (tx != null)
                 {
                     return tx;
@@ -1517,7 +1509,8 @@ namespace Phantasma.Blockchain
                 var chain = FindChainForBlock(block);
                 if (chain != null)
                 {
-                    var lastBlock = chain.LastBlock;
+                    var lastBlockHash = chain.GetLastBlockHash();
+                    var lastBlock = chain.GetBlockByHash(lastBlockHash);
                     if (lastBlock != null)
                     {
                         return (int)(1 + (lastBlock.Height - block.Height));
@@ -1815,10 +1808,9 @@ namespace Phantasma.Blockchain
             return -1;
         }
 
-        public IKeyValueStoreAdapter GetChainStorage(string name, ChainStorageShard shard)
+        public IKeyValueStoreAdapter GetChainStorage(string name)
         {
-            var shardName = shard.ToString().ToLower();
-            return this.CreateKeyStoreAdapter($"chain.{name}.{shardName}");
+            return this.CreateKeyStoreAdapter($"chain.{name}");
         }
 
         public BigInteger GetGovernanceValue(StorageContext storage, string name)
@@ -1831,6 +1823,6 @@ namespace Phantasma.Blockchain
             return 0;
         } 
 
-        public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName, ChainStorageShard.Data));
+        public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName));
     }
 }

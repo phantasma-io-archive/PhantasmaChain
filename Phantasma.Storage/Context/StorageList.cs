@@ -2,11 +2,16 @@
 using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using System;
+using System.Text;
 
 namespace Phantasma.Storage.Context
 {
     public struct StorageList : IStorageCollection
     {
+        public StorageList(string baseKey, StorageContext context) : this(Encoding.UTF8.GetBytes(baseKey), context)
+        {
+        }
+
         public StorageList(byte[] baseKey, StorageContext context) : this()
         {
             BaseKey = baseKey;

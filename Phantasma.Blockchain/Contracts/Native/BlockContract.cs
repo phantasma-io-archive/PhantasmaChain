@@ -24,7 +24,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (Runtime.Chain.BlockHeight > 0)
             {
-                var lastBlock = Runtime.Chain.LastBlock;
+                var lastBlockHash = Runtime.Chain.GetLastBlockHash();
+                var lastBlock = Runtime.Chain.GetBlockByHash(lastBlockHash);
                 lastValidator = Runtime.Chain.GetValidatorForBlock(lastBlock);
                 validationSlotTime = lastBlock.Timestamp;
             }

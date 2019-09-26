@@ -668,7 +668,7 @@ namespace Phantasma.API
                 foreach (var chainName in Nexus.Chains)
                 {
                     var chain = Nexus.FindChainByName(chainName);
-                    var block = chain.FindBlockByHash(hash);
+                    var block = chain.GetBlockByHash(hash);
                     if (block != null)
                     {
                         return FillBlock(block, chain);
@@ -688,7 +688,7 @@ namespace Phantasma.API
                 foreach (var chainName in Nexus.Chains)
                 {
                     var chain = Nexus.FindChainByName(chainName);
-                    var block = chain.FindBlockByHash(hash);
+                    var block = chain.GetBlockByHash(hash);
                     if (block != null)
                     {
                         return new SingleResult() { value = block.ToByteArray().Encode() };
@@ -711,7 +711,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "chain not found" };
             }
 
-            var block = chain.FindBlockByHeight(height);
+            var blockHash = chain.GetBlockHashAtHeight(height);
+            var block = chain.GetBlockByHash(blockHash);
 
             if (block != null)
             {
@@ -742,7 +743,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "chain not found" };
             }
 
-            var block = chain.FindBlockByHeight(height);
+            var blockHash = chain.GetBlockHashAtHeight(height);
+            var block = chain.GetBlockByHash(blockHash);
 
             if (block != null)
             {

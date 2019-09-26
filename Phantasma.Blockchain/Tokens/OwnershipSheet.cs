@@ -14,8 +14,8 @@ namespace Phantasma.Blockchain.Tokens
 
         public OwnershipSheet(string symbol)
         {
-            this._prefixItems = Encoding.ASCII.GetBytes(symbol + ".ids.");
-            this._prefixOwner = Encoding.ASCII.GetBytes(symbol + ".own.");
+            this._prefixItems = Encoding.ASCII.GetBytes($".ids.{symbol}");
+            this._prefixOwner = Encoding.ASCII.GetBytes($".ownership.{symbol}");
         }
 
         private byte[] GetKeyForList(Address address)

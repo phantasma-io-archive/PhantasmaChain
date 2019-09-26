@@ -500,99 +500,6 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
-        public IBlock GetBlockByHash(IChain chain, Hash hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IBlock GetBlockByHeight(IChain chain, BigInteger height)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ITransaction GetTransaction(IChain chain, Hash hash)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IToken GetToken(string symbol)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IFeed GetFeed(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IPlatform GetPlatform(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IChain GetChainByAddress(Address address)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IChain GetChainByName(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Log(string description)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Throw(string description)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Notify(EventKind kind, Address address, VMObject content)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Event GetTransactionEvents(ITransaction transaction)
-        {
-            throw new NotImplementedException();
-        }
-
-        public BigInteger GetBalance(IChain chain, IToken token, Address address)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal bool TransferTokens(RuntimeVM vm, string symbol, Address source, Address destination, BigInteger amount)
-        {
-            var Runtime = this;
-            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(source != destination, "source and destination must be different");
-            Runtime.Expect(Transaction.IsSignedBy(source), "invalid witness");
-            Runtime.Expect(!Runtime.IsTrigger, "not allowed inside a trigger");
-
-            if (destination.IsInterop)
-            {
-                Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
-                Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
-                return true;
-            }
-
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
-            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
-
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount), "transfer failed");
-
-            Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
-            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
-
-            return true;
-        }
-
         #region TRIGGERS
         public bool InvokeTriggerOnAccount(Address address, AccountTrigger trigger, params object[] args)
         {
@@ -931,7 +838,30 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
-            throw new NotImplementedException();
+            var Runtime = this;
+            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
+            Runtime.Expect(source != destination, "source and destination must be different");
+            Runtime.Expect(Transaction.IsSignedBy(source), "invalid witness");
+            Runtime.Expect(!Runtime.IsTrigger, "not allowed inside a trigger");
+
+            if (destination.IsInterop)
+            {
+                Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
+                Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
+                return true;
+            }
+
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+
+            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount), "transfer failed");
+
+            Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+
+            return true;
         }
 
         public bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)
@@ -972,6 +902,41 @@ namespace Phantasma.Blockchain.Contracts
         public byte[] ReadOracle(string URL)
         {
             return this.Oracle.Read(URL);
+        }
+
+        public IToken GetToken(string symbol)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IFeed GetFeed(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IPlatform GetPlatform(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IChain GetChainByAddress(Address address)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IChain GetChainByName(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Log(string description)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Throw(string description)
+        {
+            throw new NotImplementedException();
         }
     }
 }

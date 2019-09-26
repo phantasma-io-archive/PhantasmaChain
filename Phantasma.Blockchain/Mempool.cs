@@ -264,7 +264,9 @@ namespace Phantasma.Blockchain
                         continue;
                     }
 
-                    var lastBlockTime = chain.LastBlock != null ? chain.LastBlock.Timestamp : new Timestamp(0);
+                    var lastBlockHash = chain.GetLastBlockHash();
+                    var lastBlock = chain.GetBlockByHash(lastBlockHash);
+                    var lastBlockTime = lastBlock != null ? lastBlock.Timestamp : new Timestamp(0);
                     var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
                     if (timeDiff < this.BlockTime)
                     {
@@ -290,13 +292,15 @@ namespace Phantasma.Blockchain
         {
             var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
 
-            var isFirstBlock = chain.LastBlock == null;
+            var lastBlockHash = chain.GetLastBlockHash();
+            var lastBlock = chain.GetBlockByHash(lastBlockHash);
+            var isFirstBlock = lastBlock == null;
 
             var protocol = (uint)Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
 
             while (hashes.Count > 0)
             {
-                var block = new Block(isFirstBlock ? 1 : (chain.LastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : chain.LastBlock.Hash, protocol);
+                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : lastBlock.Hash, protocol);
 
                 try
                 {

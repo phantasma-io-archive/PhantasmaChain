@@ -786,7 +786,10 @@ namespace Phantasma.Tests
 
             //Time skip over 4 years and 8 days
             var startDate = simulator.CurrentTime;
-            simulator.CurrentTime = ((DateTime)nexus.RootChain.FindBlockByHeight(1).Timestamp).AddYears(2);
+            var firstBlockHash = nexus.RootChain.GetBlockHashAtHeight(1);
+            var firstBlock = nexus.RootChain.GetBlockByHash(firstBlockHash);
+
+            simulator.CurrentTime = ((DateTime)firstBlock.Timestamp).AddYears(2);
             simulator.TimeSkipDays(0);
             var firstHalvingDate = simulator.CurrentTime;
             var firstHalvingDayCount = (firstHalvingDate - startDate).Days;

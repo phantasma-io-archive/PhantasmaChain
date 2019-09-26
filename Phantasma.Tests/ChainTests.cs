@@ -751,7 +751,8 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, receiver.Address, targetChain, sideAmount, crossFee);
             simulator.EndBlock();
-            var blockA = nexus.RootChain.LastBlock;
+            var blockAHash = nexus.RootChain.GetLastBlockHash();
+            var blockA = nexus.RootChain.GetBlockByHash(blockAHash);
 
             // finish the chain transfer
             simulator.BeginBlock();
@@ -1160,7 +1161,8 @@ namespace Phantasma.Tests
             var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, nftSymbol, tokenId);
             simulator.EndBlock();
 
-            var blockA = nexus.RootChain.LastBlock;
+            var blockAHash = nexus.RootChain.GetLastBlockHash();
+            var blockA = nexus.RootChain.GetBlockByHash(blockAHash);
 
             // finish the chain transfer
             simulator.BeginBlock();
@@ -1290,7 +1292,8 @@ namespace Phantasma.Tests
 
             try
             {
-                var blockA = nexus.RootChain.LastBlock;
+                var blockAHash = nexus.RootChain.GetLastBlockHash();
+                var blockA = nexus.RootChain.GetBlockByHash(blockAHash);
 
                 // finish the chain transfer
                 simulator.BeginBlock();

@@ -402,7 +402,7 @@ namespace Phantasma.Blockchain
                 }
                 var amount = temp.AsNumber();
 
-                var success = vm.TransferTokens(vm, symbol, source, destination, amount);
+                var success = vm.TransferTokens(symbol, source, destination, amount);
 
                 var result = new VMObject();
                 result.SetValue(success);

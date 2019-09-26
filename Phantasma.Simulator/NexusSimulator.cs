@@ -290,8 +290,10 @@ namespace Phantasma.Simulator
                             txs.Add(txHashMap[hash]);
                         }
 
-                        BigInteger nextHeight = chain.LastBlock != null ? chain.LastBlock.Height + 1 : Chain.InitialHeight;
-                        var prevHash = chain.LastBlock != null ? chain.LastBlock.Hash : Hash.Null;
+                        var lastBlockHash = chain.GetLastBlockHash();
+                        var lastBlock = chain.GetBlockByHash(lastBlockHash);
+                        BigInteger nextHeight = lastBlock != null ? lastBlock.Height + 1 : Chain.InitialHeight;
+                        var prevHash = lastBlock != null ? lastBlock.Hash : Hash.Null;
 
                         var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol);
 
@@ -536,7 +538,7 @@ namespace Phantasma.Simulator
             {
                 sourceChain = sourceChain,
                 destChain = targetChain,
-                hash = null,
+                hash = Hash.Null,
                 tokenSymbol = tokenSymbol
             };
             return tx;

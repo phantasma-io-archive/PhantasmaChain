@@ -2,13 +2,17 @@
 using Phantasma.Core.Utils;
 using System.Text;
 using System;
-using Phantasma.Storage.Utils;
 using Phantasma.Core;
 
 namespace Phantasma.Storage.Context
 {
     public struct StorageMap : IStorageCollection
     {
+        public StorageMap(string baseKey, StorageContext context) : this(Encoding.UTF8.GetBytes(baseKey), context)
+        {
+
+        }
+
         public StorageMap(byte[] baseKey, StorageContext context) : this()
         {
             BaseKey = baseKey;

@@ -289,7 +289,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var sourceChain = this.Runtime.Nexus.FindChainByAddress(sourceChainAddress);
 
-            var block = sourceChain.FindBlockByHash(hash);
+            var block = sourceChain.GetBlockByHash(hash);
             Runtime.Expect(block != null, "invalid block");
 
             int settlements = 0;

@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Phantasma.Cryptography
 {
-    public class Hash : ISerializable, IComparable<Hash>, IEquatable<Hash>
+    public struct Hash : ISerializable, IComparable<Hash>, IEquatable<Hash>
     {
         public const int Length = 32;
 
@@ -64,11 +64,6 @@ namespace Phantasma.Cryptography
 
         public static readonly Hash Zero = new Hash();
 
-        public Hash()
-        {
-            this._data = new byte[Length];
-        }
-
         public Hash(byte[] value)
         {
             Throw.If(value == null, "value cannot be null");
@@ -115,7 +110,7 @@ namespace Phantasma.Cryptography
         {
             if (string.IsNullOrEmpty(s))
             {
-                result = null;
+                result = Hash.Null;
                 return false;
             }
 
@@ -125,7 +120,7 @@ namespace Phantasma.Cryptography
             }
             if (s.Length != 64)
             {
-                result = null;
+                result = Hash.Null;
                 return false;
             }
 
@@ -138,7 +133,7 @@ namespace Phantasma.Cryptography
             }
             catch
             {
-                result = null;
+                result = Hash.Null;
                 return false;
             }
         }

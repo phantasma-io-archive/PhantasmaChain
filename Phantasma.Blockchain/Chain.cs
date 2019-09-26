@@ -21,13 +21,19 @@ namespace Phantasma.Blockchain
 {
     public sealed class Chain 
     {
-        #region PRIVATE
-        private KeyValueStore<Hash, Transaction> _transactions;
-        private KeyValueStore<Hash, Block> _blocks;
-        private KeyValueStore<Hash, Hash> _transactionBlockMap;
-        private KeyValueStore<BigInteger, Hash> _blockHeightMap;
+        private const string TransactionHashMapTag = ".txs";
+        private const string TxBlockHashMapTag = ".txblmp";
+        private const string BlockHashMapTag = ".blocks";
+        private const string BlockHeightListTag = ".height";
 
-        private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
+        #region PRIVATE
+        /*        private KeyValueStore<Hash, Transaction> _transactions;
+                private KeyValueStore<Hash, Block> _blocks;
+                private KeyValueStore<Hash, Hash> _transactionBlockMap;
+                private KeyValueStore<BigInteger, Hash> _blockHeightMap;
+
+                private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
+                */
 
         #endregion
 
@@ -39,15 +45,11 @@ namespace Phantasma.Blockchain
         public string Name { get; private set; }
         public Address Address { get; private set; }
 
-        public BigInteger BlockHeight => _blocks.Count;
-
-        public Block LastBlock => FindBlockByHeight(BlockHeight);
+        public BigInteger BlockHeight => GetBlockHeight();
 
         public readonly Logger Log;
 
         public StorageContext Storage { get; private set; }
-
-        public uint TransactionCount => (uint)_transactions.Count;
 
         public bool IsRoot => this.Name == DomainSettings.RootChainName;
         #endregion
@@ -61,13 +63,7 @@ namespace Phantasma.Blockchain
 
             this.Address = Address.FromHash(this.Name);
 
-            // init stores
-            _transactions = new KeyValueStore<Hash, Transaction>(Nexus.GetChainStorage(this.Name, ChainStorageShard.Transactions));
-            _blocks = new KeyValueStore<Hash, Block>(Nexus.GetChainStorage(this.Name, ChainStorageShard.Blocks));
-            _transactionBlockMap = new KeyValueStore<Hash, Hash>(Nexus.GetChainStorage(this.Name, ChainStorageShard.TxBlockMap));
-            _blockHeightMap = new KeyValueStore<BigInteger, Hash>(Nexus.GetChainStorage(this.Name, ChainStorageShard.Heights));
-
-            this.Storage = new KeyStoreStorage(Nexus.GetChainStorage(this.Name, ChainStorageShard.Data));
+            this.Storage = new KeyStoreStorage(Nexus.GetChainStorage(this.Name));
 
             this.Log = Logger.Init(log);
         }
@@ -89,21 +85,6 @@ namespace Phantasma.Blockchain
         public override string ToString()
         {
             return $"{Name} ({Address})";
-        }
-
-        public bool ContainsBlock(Hash hash)
-        {
-            if (hash == null)
-            {
-                return false;
-            }
-
-            return _blocks.ContainsKey(hash);
-        }
-
-        public IEnumerable<Transaction> GetBlockTransactions(Block block)
-        {
-            return block.TransactionHashes.Select(hash => FindTransactionByHash(hash));
         }
 
         public void BakeBlock(ref Block block, ref List<Transaction> transactions, BigInteger minimumFee, KeyPair validator, Timestamp time)
@@ -144,16 +125,19 @@ namespace Phantasma.Blockchain
                 return false;
             }*/
 
-            if (LastBlock != null)
+            var lastBlockHash = GetLastBlockHash();
+            var lastBlock = GetBlockByHash(lastBlockHash);
+
+            if (lastBlock != null)
             {
-                if (LastBlock.Height != block.Height - 1)
+                if (lastBlock.Height != block.Height - 1)
                 {
-                    throw new BlockGenerationException($"height of block should be {LastBlock.Height + 1}");
+                    throw new BlockGenerationException($"height of block should be {lastBlock.Height + 1}");
                 }
 
-                if (block.PreviousHash != LastBlock.Hash)
+                if (block.PreviousHash != lastBlock.Hash)
                 {
-                    throw new BlockGenerationException($"previous hash should be {LastBlock.PreviousHash}");
+                    throw new BlockGenerationException($"previous hash should be {lastBlock.PreviousHash}");
                 }
             }
 
@@ -223,17 +207,27 @@ namespace Phantasma.Blockchain
 
             block.MergeOracle(oracle);
 
-            // from here on, the block is accepted
-            _blockHeightMap[block.Height] = block.Hash;
-            _blocks[block.Hash] = block;
-            _blockChangeSets[block.Hash] = changeSet;
+            var hashList = new StorageList(BlockHeightListTag, this.Storage);
+            var expectedBlockHeight = hashList.Count() + 1;
+            if (expectedBlockHeight != block.Height)
+            {
+                throw new ChainException("unexpected block height");
+            }
 
+            // from here on, the block is accepted
             changeSet.Execute();
 
+            hashList.Add<Hash>(block.Hash);
+
+            var blockMap = new StorageMap(BlockHashMapTag, this.Storage);
+            blockMap.Set<Hash, Block>(block.Hash, block);
+
+            var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
+            var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
             foreach (Transaction tx in transactions)
             {
-                _transactions[tx.Hash] = tx;
-                _transactionBlockMap[tx.Hash] = block.Hash;
+                txMap.Set<Hash, Transaction>(tx.Hash, tx);
+                txBlockMap.Set<Hash, Hash>(tx.Hash, block.Hash);
             }
 
             var blockValidator = GetValidatorForBlock(block);
@@ -274,48 +268,6 @@ namespace Phantasma.Blockchain
             }
 
             return true;
-        }
-
-        public bool ContainsTransaction(Hash hash)
-        {
-            return _transactions.ContainsKey(hash);
-        }
-
-        public Transaction FindTransactionByHash(Hash hash)
-        {
-            return _transactions.ContainsKey(hash) ? _transactions[hash] : null;
-        }
-
-        public Block FindTransactionBlock(Transaction tx)
-        {
-            return FindTransactionBlock(tx.Hash);
-        }
-
-        public Block FindTransactionBlock(Hash hash)
-        {
-            if (_transactionBlockMap.ContainsKey(hash))
-            {
-                var blockHash = _transactionBlockMap[hash];
-                return FindBlockByHash(blockHash);
-            }
-
-            return null;
-        }
-
-        public Block FindBlockByHash(Hash hash)
-        {
-            return _blocks.ContainsKey(hash) ? _blocks[hash] : null;
-        }
-
-        public Block FindBlockByHeight(BigInteger height)
-        {
-            if (_blockHeightMap.ContainsKey(height))
-            {
-                var hash = _blockHeightMap[height];
-                return FindBlockByHash(hash);
-            }
-
-            return null; // TODO Should thrown an exception?
         }
 
         // NOTE should never be used directly from a contract, instead use Runtime.GetBalance!
@@ -384,6 +336,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Deletes all blocks starting at the specified hash.
         /// </summary>
+        /*
         public void DeleteBlocks(Hash targetHash)
         {
             var targetBlock = FindBlockByHash(targetHash);
@@ -408,7 +361,7 @@ namespace Phantasma.Blockchain
                     break;
                 }
             }
-        }
+        }*/
 
         internal ExecutionContext GetContractContext(StorageContext storage, SmartContract contract)
         {
@@ -510,16 +463,17 @@ namespace Phantasma.Blockchain
             return GetTransactionFee(tx.Hash);
         }
 
-        public BigInteger GetTransactionFee(Hash hash)
+        public BigInteger GetTransactionFee(Hash transactionHash)
         {
-            Throw.IfNull(hash, nameof(hash));
+            Throw.IfNull(transactionHash, nameof(transactionHash));
 
             BigInteger fee = 0;
 
-            var block = FindTransactionBlock(hash);
+            var blockHash = GetBlockHashOfTransaction(transactionHash);
+            var block = GetBlockByHash(blockHash);
             Throw.IfNull(block, nameof(block));
 
-            var events = block.GetEventsForTransaction(hash);
+            var events = block.GetEventsForTransaction(transactionHash);
             foreach (var evt in events)
             {
                 if (evt.Kind == EventKind.GasPayment)
@@ -541,7 +495,7 @@ namespace Phantasma.Blockchain
 
         public Address GetValidatorForBlock(Hash hash)
         {
-            return GetValidatorForBlock(FindBlockByHash(hash));
+            return GetValidatorForBlock(GetBlockByHash(hash));
         }
 
         public Address GetValidatorForBlock(Block block)
@@ -623,5 +577,109 @@ namespace Phantasma.Blockchain
             return true;
         }
         #endregion
+
+        private BigInteger GetBlockHeight()
+        {
+            var hashList = new StorageList(BlockHeightListTag, this.Storage);
+            return hashList.Count();
+        }
+
+        public Hash GetLastBlockHash()
+        {
+            var lastHeight = GetBlockHeight();
+            if (lastHeight <= 0)
+            {
+                return Hash.Null;
+            }
+
+            return GetBlockHashAtHeight(lastHeight);
+        }
+
+        public Hash GetBlockHashAtHeight(BigInteger height)
+        {
+            if (height <= 0)
+            {
+                throw new ChainException("invalid block height");
+            }
+
+            if (height > this.BlockHeight)
+            {
+                return Hash.Null;
+            }
+
+            var hashList = new StorageList(BlockHeightListTag, this.Storage);
+            // NOTE chain heights start at 1, but list index start at 0
+            var hash = hashList.Get<Hash>(height-1); 
+            return hash;
+        }
+
+        public Block GetBlockByHash(Hash hash)
+        {
+            if (hash == Hash.Null)
+            {
+                return null;
+            }
+
+            var blockMap = new StorageMap(BlockHashMapTag, this.Storage);
+
+            if (blockMap.ContainsKey<Hash>(hash))
+            {
+                return blockMap.Get<Hash, Block>(hash);
+            }
+
+            return null;
+        }
+
+        public bool ContainsBlockHash(Hash hash)
+        {
+            if (hash == null)
+            {
+                return false;
+            }
+
+            return GetBlockByHash(hash) != null;
+        }
+
+        public BigInteger GetTransactionCount()
+        {
+            var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
+            return txMap.Count();
+        }
+
+        public bool ContainsTransaction(Hash hash)
+        {
+            var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
+            return txMap.ContainsKey(hash);
+        }
+
+        public Transaction GetTransactionByHash(Hash hash)
+        {
+            var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
+            if (txMap.ContainsKey<Hash>(hash))
+            {
+                return txMap.Get<Hash, Transaction>(hash);
+            }
+
+            return null;
+        }
+
+        public Hash GetBlockHashOfTransaction(Hash transactionHash)
+        {
+            var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
+
+            if (txBlockMap.ContainsKey(transactionHash))
+            {
+                var blockHash = txBlockMap.Get<Hash, Hash>(transactionHash);
+                return blockHash;
+            }
+
+            return Hash.Null;
+        }
+
+        public IEnumerable<Transaction> GetBlockTransactions(Block block)
+        {
+            return block.TransactionHashes.Select(hash => GetTransactionByHash(hash));
+        }
+
     }
 }

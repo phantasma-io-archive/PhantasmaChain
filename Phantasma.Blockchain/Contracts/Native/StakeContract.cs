@@ -135,7 +135,11 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (referenceTime.Value != 0)
                 referenceDate = referenceTime;
             else if (_lastMasterClaim.Value == 0)
-                referenceDate = Runtime.Nexus.RootChain.FindBlockByHeight(1).Timestamp;
+            {
+                var referenceHash = Runtime.Nexus.RootChain.GetBlockHashAtHeight(1);
+                var referenceBlock = Runtime.Nexus.RootChain.GetBlockByHash(referenceHash);
+                referenceDate = referenceBlock.Timestamp;
+            }
             else
                 referenceDate = _lastMasterClaim;
 
@@ -747,7 +751,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (genesisTimestamp == 0)
             {
-                var genesisBlock = Runtime.Nexus.RootChain.FindBlockByHeight(1);
+                var genesisBlockHash = Runtime.Nexus.RootChain.GetBlockHashAtHeight(1);
+                var genesisBlock = Runtime.Nexus.RootChain.GetBlockByHash(genesisBlockHash);
                 if (genesisBlock == null)   //special case for genesis block's creation
                     return StakeToFuel(totalStake);
 
