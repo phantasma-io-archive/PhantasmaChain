@@ -677,7 +677,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             if (address == this.Chain.Address /*|| address == this.Address*/)
             {
-                return true;
+                return false;
             }
 
             if (address == this.EntryAddress)
