@@ -82,7 +82,7 @@ namespace Phantasma.Blockchain.Contracts
                 this.ParentChain = null;
             }
 
-            Chain.RegisterExtCalls(this);
+            ExtCalls.RegisterWithRuntime(this);
         }
 
         public bool IsTrigger => DelayPayment;

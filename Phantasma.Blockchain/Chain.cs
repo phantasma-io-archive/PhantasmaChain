@@ -19,7 +19,7 @@ using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain
 {
-    public partial class Chain 
+    public sealed class Chain 
     {
         #region PRIVATE
         private KeyValueStore<Hash, Transaction> _transactions;

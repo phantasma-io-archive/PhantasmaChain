@@ -11,10 +11,10 @@ using Phantasma.Storage;
 
 namespace Phantasma.Blockchain
 {
-    public partial class Chain
+    public static class ExtCalls
     {
         // naming scheme should be "namespace.methodName" for methods, and "type()" for constructors
-        internal static void RegisterExtCalls(RuntimeVM vm)
+        internal static void RegisterWithRuntime(RuntimeVM vm)
         {
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Event", Runtime_Event);
