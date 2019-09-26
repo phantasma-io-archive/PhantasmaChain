@@ -92,7 +92,7 @@ namespace Phantasma.VM
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
 
         public readonly byte[] entryScript;
-        public Address EntryAddress { get; private set; }
+        public Address EntryAddress { get; protected set; }
 
         public readonly ExecutionContext entryContext;
         public ExecutionContext CurrentContext { get; protected set; }

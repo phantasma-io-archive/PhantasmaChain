@@ -150,7 +150,7 @@ namespace Phantasma.Blockchain.Contracts
                 throw new ChainException($"{contextName} context not available in block operations");
             }
 
-            var contract = this.Nexus.AllocContract(contextName);
+            var contract = this.Nexus.AllocContractByName(contextName);
             if (contract != null)
             {
                 return Chain.GetContractContext(contract);
@@ -162,7 +162,8 @@ namespace Phantasma.Blockchain.Contracts
         public VMObject CallContext(string contextName, string methodName, params object[] args)
         {
             var previousContext = CurrentContext;
-
+            var previousCaller = this.EntryAddress;
+          
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
@@ -174,10 +175,20 @@ namespace Phantasma.Blockchain.Contracts
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
+            BigInteger savedGas = this.UsedGas;
+
+            this.EntryAddress = SmartContract.GetAddressForName(CurrentContext.Name);
             CurrentContext = context;
             var temp = context.Execute(this.CurrentFrame, this.Stack);
             Expect(temp == ExecutionState.Halt, "expected call success");
+
             CurrentContext = previousContext;
+            this.EntryAddress = previousCaller;
+
+            if (contextName == Nexus.BombContractName)
+            {
+                this.UsedGas = savedGas;
+            }
 
             if (this.Stack.Count > 0)
             {

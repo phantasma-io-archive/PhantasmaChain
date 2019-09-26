@@ -45,6 +45,9 @@ namespace Phantasma.Domain
         ChannelCreate = 39,
         ChannelRefill = 40,
         ChannelSettle = 41,
+        LeaderboardCreate = 42,
+        LeaderboardInsert = 43,
+        LeaderboardReset = 44,
         Metadata = 47,
         Custom = 48,
     }

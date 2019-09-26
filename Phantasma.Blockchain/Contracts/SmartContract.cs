@@ -156,10 +156,15 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool IsWitness(Address address)
         {
-            if (address == this.Runtime.Chain.Address || address == this.Address) 
+            if (address == this.Runtime.Chain.Address || address == this.Address)
             {
                 var frame = Runtime.frames.Skip(1).FirstOrDefault();
                 return frame != null && frame.Context.Admin;
+            }
+
+            if (address == this.Runtime.EntryAddress)
+            {
+                return true;
             }
 
             if (address.IsInterop)
@@ -438,6 +443,22 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var accountScript = runtimeVM.Nexus.LookUpAddressScript(address);
                 return InvokeTrigger(runtimeVM, accountScript, trigger.ToString(), args);
+            }
+
+            if (address.IsSystem)
+            {
+                var contract = runtimeVM.Nexus.AllocContractByAddress(address);
+                if (contract != null)
+                {
+                    var triggerName = trigger.ToString();
+                    BigInteger gasCost;
+                    if (contract.HasInternalMethod(triggerName, out gasCost))
+                    {
+                        runtimeVM.CallContext(contract.Name, triggerName, args);
+                    }
+                }
+
+                return true;
             }
 
             return true;

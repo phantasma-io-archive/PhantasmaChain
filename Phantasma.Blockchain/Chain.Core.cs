@@ -513,7 +513,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeContract(string contractName, string methodName, Timestamp time, params object[] args)
         {
-            var contract = Nexus.AllocContract(contractName);
+            var contract = Nexus.AllocContractByName(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();

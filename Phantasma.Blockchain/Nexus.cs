@@ -38,10 +38,10 @@ namespace Phantasma.Blockchain
         public const string ValidatorContractName = "validator";
         public const string InteropContractName = "interop";
         public const string ExchangeContractName = "exchange";
-
         public const string PrivacyContractName = "privacy";
         public const string RelayContractName = "relay";
         public const string BombContractName = "bomb";
+        public const string RankingContractName = "ranking";
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
 
@@ -414,39 +414,63 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CONTRACTS
-        public SmartContract AllocContract(string contractName) 
+        public SmartContract AllocContractByName(string contractName)
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
+            var address = SmartContract.GetAddressForName(contractName);
+            var result = AllocContractByAddress(address);
 
-            SmartContract contract;
-            switch (contractName)
+            if (result == null)
             {
-                case "nexus": contract= new NexusContract(); break;
-                case "validator":  contract = new ValidatorContract(); break;
-                case "governance": contract = new GovernanceContract(); break;
-                case "consensus": contract = new ConsensusContract(); break;
-                case "account":  contract  = new AccountContract(); break;
-                case "friends": contract  = new FriendContract(); break;
-                case "exchange": contract  = new ExchangeContract(); break;
-                case "market":    contract  = new MarketContract(); break;
-                case Nexus.StakeContractName:   contract  = new StakeContract(); break;
-                case "token": contract = new TokenContract(); break;
-                case "swap": contract = new SwapContract(); break;
-                case "gas": contract = new GasContract(); break;
-                case "block": contract = new BlockContract(); break;
-                case "relay": contract = new RelayContract(); break;
-                case "storage": contract  = new StorageContract(); break;
-                case "vault": contract  = new VaultContract(); break;
-                case "apps": contract  = new AppsContract(); break;
-                case "dex": contract = new ExchangeContract(); break;
-                case "sale": contract = new SaleContract(); break;
-                case "interop": contract = new InteropContract(); break;
-                case "nacho": contract = new NachoContract(); break;
-                default:
-                    throw new Exception("Unknown contract: " + contractName);
+                throw new Exception("Unknown contract: " + contractName);
             }
 
-            return contract;
+            return result;
+        }
+
+        private Dictionary<Address, Type> _contractMap = null;
+        private void RegisterContract<T>() where T : SmartContract
+        {
+            var alloc = (SmartContract) Activator.CreateInstance<T>();
+            var addr = alloc.Address;
+            _contractMap[addr] = typeof(T);
+        }
+
+        public SmartContract AllocContractByAddress(Address contractAdress)
+        { 
+            if (_contractMap == null)
+            {
+                _contractMap = new Dictionary<Address, Type>();
+                RegisterContract<NexusContract>();
+                RegisterContract<ValidatorContract>();
+                RegisterContract<GovernanceContract>();
+                RegisterContract<ConsensusContract>();
+                RegisterContract<AccountContract>();
+                RegisterContract<FriendContract>();
+                RegisterContract<ExchangeContract>();
+                RegisterContract<MarketContract>();
+                RegisterContract<StakeContract>();
+                RegisterContract<TokenContract>();
+                RegisterContract<SwapContract>();
+                RegisterContract<GasContract>();
+                RegisterContract<BlockContract>();
+                RegisterContract<RelayContract>();
+                RegisterContract<StorageContract>();
+                RegisterContract<VaultContract>();
+                RegisterContract<AppsContract>();
+                RegisterContract<SaleContract>();
+                RegisterContract<InteropContract>();
+                RegisterContract<NachoContract>();
+                RegisterContract<BombContract>();
+                RegisterContract<RankingContract>();
+            }
+
+            if (_contractMap.ContainsKey(contractAdress)) {
+                var type = _contractMap[contractAdress];
+                return (SmartContract)Activator.CreateInstance(type);
+            }
+
+            return null;
         }
 
         #endregion
@@ -1311,6 +1335,7 @@ namespace Phantasma.Blockchain
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
             sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
             sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
+            sb.CallContract(Nexus.BombContractName, "Initialize", owner.Address);
 
             var script = sb.EndScript();
 
@@ -1409,6 +1434,7 @@ namespace Phantasma.Blockchain
                 StorageContractName,
                 RelayContractName,
                 BombContractName,
+                RankingContractName,
                 PrivacyContractName,
                 "friends", "market",  "vault", "apps"});
 
@@ -1441,15 +1467,7 @@ namespace Phantasma.Blockchain
             var genesisMessage = Encoding.UTF8.GetBytes("A Phantasma was born...");
             var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
 
-            try
-            {
-                rootChain.AddBlock(block, transactions, 1);
-            }
-            catch (Exception e)
-            {
-                _logger?.Error(e.ToString());
-                return false;
-            }
+            rootChain.AddBlock(block, transactions, 1);
 
             GenesisHash = block.Hash;
             this.HasGenesis = true;
