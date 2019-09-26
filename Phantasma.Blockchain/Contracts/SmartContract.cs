@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using Phantasma.Core.Utils;
@@ -7,13 +6,11 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.VM;
-using Phantasma.VM.Contracts;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using System.Text;
 using System.IO;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts
 {

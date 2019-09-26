@@ -5,15 +5,6 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public enum AccountTrigger
-    {
-        OnMint, // address, symbol, amount
-        OnBurn, // address, symbol, amount
-        OnSend, // address, symbol, amount
-        OnReceive, // address, symbol, amount
-        OnWitness, // address
-    }
-
     public sealed class AccountContract : SmartContract
     {
         public override string Name => Nexus.AccountContractName;
@@ -23,7 +14,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         internal StorageMap _scriptMap; //<Address, byte[]> 
         internal StorageMap _metadata;
 
-        public static readonly BigInteger RegistrationCost = UnitConversion.ToBigInteger(0.1m, Nexus.FuelTokenDecimals);
+        public static readonly BigInteger RegistrationCost = UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals);
 
         public AccountContract() : base()
         {
@@ -34,7 +25,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
-            Runtime.Expect(ValidationUtils.ValidateName(name), "invalid name");
+            Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used");

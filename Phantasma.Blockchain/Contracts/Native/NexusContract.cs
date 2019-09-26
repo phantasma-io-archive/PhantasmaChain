@@ -7,31 +7,6 @@ using System;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public struct Metadata
-    {
-        public string key;
-        public string value;
-    }
-
-    public struct TokenEventData
-    {
-        public string symbol;
-        public BigInteger value;
-        public Address chainAddress;
-    }
-
-    public struct RoleEventData
-    {
-        public string role;
-        public Timestamp date;
-    }
-
-    public struct MetadataEventData
-    {
-        public string type;
-        public Metadata metadata;
-    }
-
     public sealed class NexusContract : SmartContract
     {
         public override string Name => Nexus.NexusContractName;
@@ -55,7 +30,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(!Runtime.Nexus.TokenExists(symbol), "token already exists");
 
-            if (symbol == Nexus.FuelTokenSymbol)
+            if (symbol == DomainSettings.FuelTokenSymbol)
             {
                 Runtime.Expect(flags.HasFlag(TokenFlags.Fuel), "token should be native");
             }
@@ -64,12 +39,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(!flags.HasFlag(TokenFlags.Fuel), "token can't be native");
             }
 
-            if (symbol == Nexus.StakingTokenSymbol)
+            if (symbol == DomainSettings.StakingTokenSymbol)
             {
                 Runtime.Expect(flags.HasFlag(TokenFlags.Stakable), "token should be stakable");
             }
 
-            if (symbol == Nexus.FiatTokenSymbol)
+            if (symbol == DomainSettings.FiatTokenSymbol)
             {
                 Runtime.Expect(flags.HasFlag(TokenFlags.Fiat), "token should be fiat");
             }
@@ -79,12 +54,12 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (flags.HasFlag(TokenFlags.External))
             {
                 Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "genesis address only");
-                Runtime.Expect(platform != Nexus.PlatformName, "external token chain required");
+                Runtime.Expect(platform != DomainSettings.PlatformName, "external token chain required");
                 Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "platform not found");
             }
             else
             {
-                Runtime.Expect(platform == Nexus.PlatformName, "chain name is invalid");
+                Runtime.Expect(platform == DomainSettings.PlatformName, "chain name is invalid");
             }
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
@@ -176,7 +151,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             byte[] data;
             target.DecodeInterop(out platformName, out data, 0);
 
-            Runtime.Expect(ValidationUtils.ValidateName(platformName), "invalid platform name");
+            Runtime.Expect(ValidationUtils.IsValidIdentifier(platformName), "invalid platform name");
 
             Runtime.Expect(Runtime.Nexus.CreatePlatform(target, platformName, fuelSymbol), "creation of platform failed");
 

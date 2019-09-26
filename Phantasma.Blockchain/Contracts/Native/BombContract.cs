@@ -1,4 +1,5 @@
 ﻿using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
@@ -38,7 +39,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return;
             }
 
-            Runtime.Expect(symbol == Nexus.FuelTokenSymbol, "cannot accept this token");
+            Runtime.Expect(symbol == DomainSettings.FuelTokenSymbol, "cannot accept this token");
             Runtime.Expect(amount > 0 , "invalid amount");
 
             string leaderboardName = SESLeaderboardName;

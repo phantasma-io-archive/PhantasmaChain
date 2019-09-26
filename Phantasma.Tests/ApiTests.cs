@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Core.Types;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -77,7 +78,7 @@ namespace Phantasma.Tests
             var contractName = "blabla";
             var script = new ScriptBuilder().CallContract(contractName, "bleble", 123).ToScript();
 
-            var chainName = Nexus.RootChainName;
+            var chainName = DomainSettings.RootChainName;
             test.simulator.CurrentTime = Timestamp.Now;
             var tx = new Transaction("simnet", chainName, script, test.simulator.CurrentTime + TimeSpan.FromHours(1));
             tx.Sign(KeyPair.FromWIF(testWIF));
@@ -124,7 +125,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             test.simulator.BeginBlock();
-            test.simulator.GenerateToken(test.owner, nftSymbol, "CoolToken", Nexus.PlatformName, Hash.FromString(nftSymbol), 0, 0, Domain.TokenFlags.None);
+            test.simulator.GenerateToken(test.owner, nftSymbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(nftSymbol), 0, 0, Domain.TokenFlags.None);
             test.simulator.EndBlock();
 
             var token = test.simulator.Nexus.GetTokenInfo(nftSymbol);
@@ -133,7 +134,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken directly on the user
             test.simulator.BeginBlock();
-            test.simulator.MintNonFungibleToken(test.owner, testUser.Address, nftSymbol, tokenData, new byte[0], 0);
+            test.simulator.MintNonFungibleToken(test.owner, testUser.Address, nftSymbol, tokenData, new byte[0]);
             test.simulator.EndBlock();
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);

@@ -108,7 +108,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var validators = Runtime.Nexus.GetValidators();
             Runtime.Expect(validators.Length > 0, "no active validators found");
 
-            var totalAvailable = Runtime.GetBalance(Nexus.FuelTokenSymbol, this.Address);
+            var totalAvailable = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, this.Address);
             var totalValidators = Runtime.Nexus.GetPrimaryValidatorCount();
             var amountPerValidator = totalAvailable / totalValidators;
             Runtime.Expect(amountPerValidator > 0, "not enough fees available");
@@ -124,9 +124,9 @@ namespace Phantasma.Blockchain.Contracts.Native
                     continue;
                 }
 
-                if (Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
+                if (Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
                 {
-                    Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = Nexus.FuelTokenSymbol });
+                    Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = DomainSettings.FuelTokenSymbol });
                     delivered++;
                 }
             }

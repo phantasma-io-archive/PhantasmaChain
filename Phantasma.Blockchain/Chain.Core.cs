@@ -49,7 +49,7 @@ namespace Phantasma.Blockchain
 
         public uint TransactionCount => (uint)_transactions.Count;
 
-        public bool IsRoot => this.Name == Nexus.RootChainName;
+        public bool IsRoot => this.Name == DomainSettings.RootChainName;
         #endregion
 
         public Chain(Nexus nexus, string name, Logger log = null)

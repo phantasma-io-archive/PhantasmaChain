@@ -35,20 +35,6 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public struct InteropBlock
-    {
-        public string Platform;
-        public Hash Hash;
-        public Hash[] Transactions;
-    }
-
-    public struct InteropTransaction
-    {
-        public string Platform;
-        public Hash Hash;
-        public Event[] Events;
-    }
-
     public static class InteropUtils
     {
         public static string Seed = "";

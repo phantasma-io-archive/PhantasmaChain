@@ -1,6 +1,6 @@
-﻿using Phantasma.Numerics;
+﻿using Phantasma.Domain;
+using Phantasma.Numerics;
 using Phantasma.VM;
-using Phantasma.VM.Contracts;
 using System;
 using System.Collections.Generic;
 

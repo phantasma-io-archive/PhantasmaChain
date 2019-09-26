@@ -220,8 +220,8 @@ namespace Phantasma.API
         [APIDescription("ID of token")]
         public string ID;
 
-        [APIDescription("Address where currently is stored")]
-        public string chainAddress;
+        [APIDescription("Chain where currently is stored")]
+        public string chainName;
 
         [APIDescription("Address who currently owns the token")]
         public string ownerAddress;

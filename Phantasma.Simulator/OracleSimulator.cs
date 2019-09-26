@@ -68,7 +68,7 @@ namespace Phantasma.Simulator
                     {
                         Platform = platformName,
                         Hash = hash,
-                        Events = new Event[]
+                        Events = new IEvent[]
                         {
                             new Event(EventKind.TokenSend, WalletUtils.EncodeAddress(swap.sourceAddress, platformName), "swap", Serialization.Serialize(new TokenEventData(){ chainAddress =platformAddress, symbol = swap.symbol, value = amount } )),
                             new Event(EventKind.TokenReceive, WalletUtils.EncodeAddress(destAddress, platformName), "swap", Serialization.Serialize(new TokenEventData(){ chainAddress =platformAddress, symbol = swap.symbol, value = amount } ))

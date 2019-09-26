@@ -13,6 +13,7 @@ using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using Phantasma.Simulator;
 using System.Linq;
+using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -46,7 +47,7 @@ namespace Phantasma.Tests
             var masterKeys = KeyPair.FromWIF(nexusWif);
             //Trace.Message($"Connecting to host: {host} with address {masterKeys.Address.Text}");
 
-            var amount = UnitConversion.ToBigInteger(1000000, Nexus.StakingTokenDecimals);
+            var amount = UnitConversion.ToBigInteger(1000000, DomainSettings.StakingTokenDecimals);
             var hash = SendTransfer(host, masterKeys, currentKey.Value.Address, amount);
             if (hash == Hash.Null)
             {
@@ -60,7 +61,7 @@ namespace Phantasma.Tests
 
             BigInteger currentKeyBalance = GetBalance(currentKey.Value.Address);
 
-            amount = UnitConversion.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
+            amount = UnitConversion.ToBigInteger(1000000, DomainSettings.FuelTokenDecimals);
             SendTransfer(host, masterKeys, currentKey.Value.Address, amount, "KCAL");
 
             //while (currentKeyBalance > 9999)
@@ -71,7 +72,7 @@ namespace Phantasma.Tests
                 var txHash = SendTransfer(host, currentKey.Value, destKey.Value.Address, currentKeyBalance - 9999);
                 if (txHash == Hash.Null)
                 {
-                    amount = UnitConversion.ToBigInteger(1000000, Nexus.FuelTokenDecimals);
+                    amount = UnitConversion.ToBigInteger(1000000, DomainSettings.FuelTokenDecimals);
                     SendTransfer(host, masterKeys, currentKey.Value.Address, amount);
                 }
 
@@ -104,7 +105,7 @@ namespace Phantasma.Tests
             
             var currentKey = KeyPair.Generate();
 
-            var amount = UnitConversion.ToBigInteger(1000000, Nexus.StakingTokenDecimals);
+            var amount = UnitConversion.ToBigInteger(1000000, DomainSettings.StakingTokenDecimals);
             var hash = SendTransfer(host, masterKeys, currentKey.Address, amount);
             if (hash == Hash.Null)
             {
@@ -120,7 +121,7 @@ namespace Phantasma.Tests
 
         private BigInteger GetBalance(Address address)
         {
-            return nexus.RootChain.GetTokenBalance(Nexus.FuelTokenSymbol, address);
+            return nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, address);
         }
 
         private void InitMainNode()

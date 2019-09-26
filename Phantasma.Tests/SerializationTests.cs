@@ -27,7 +27,7 @@ namespace Phantasma.Tests
 
             var script = ScriptUtils.BeginScript().
                 AllowGas(keysA.Address, Address.Null, 1, 9999).
-                TransferTokens(Nexus.FuelTokenSymbol, keysA.Address, keysB.Address, UnitConversion.ToBigInteger(25, Nexus.FuelTokenDecimals)).
+                TransferTokens(DomainSettings.FuelTokenSymbol, keysA.Address, keysB.Address, UnitConversion.ToBigInteger(25, DomainSettings.FuelTokenDecimals)).
                 SpendGas(keysA.Address).
                 EndScript();
 
@@ -55,7 +55,7 @@ namespace Phantasma.Tests
             var keysA = KeyPair.Generate();
 
             var txs = new List<Transaction>();
-            var symbol = Nexus.FuelTokenSymbol;
+            var symbol = DomainSettings.FuelTokenSymbol;
 
             int count = 5;
             var amounts = new BigInteger[count];
@@ -63,7 +63,7 @@ namespace Phantasma.Tests
             for (int i = 0; i<count; i++)
             {
                 var keysB = KeyPair.Generate();
-                amounts[i] = UnitConversion.ToBigInteger(20 + (i+1), Nexus.FuelTokenDecimals);
+                amounts[i] = UnitConversion.ToBigInteger(20 + (i+1), DomainSettings.FuelTokenDecimals);
 
                 var script = ScriptUtils.BeginScript().
                     AllowGas(keysA.Address, Address.Null, 1, 9999).
@@ -108,7 +108,7 @@ namespace Phantasma.Tests
 
             var script = ScriptUtils.BeginScript().
                 AllowGas(keysA.Address, Address.Null, 1, 9999).
-                TransferTokens(Nexus.FuelTokenSymbol, keysA.Address, keysB.Address, UnitConversion.ToBigInteger(25, Nexus.FuelTokenDecimals)).
+                TransferTokens(DomainSettings.FuelTokenSymbol, keysA.Address, keysB.Address, UnitConversion.ToBigInteger(25, DomainSettings.FuelTokenDecimals)).
                 SpendGas(keysA.Address).
                 EndScript();
 

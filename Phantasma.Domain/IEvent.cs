@@ -1,4 +1,6 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
+using Phantasma.Numerics;
 
 namespace Phantasma.Domain
 {
@@ -52,12 +54,36 @@ namespace Phantasma.Domain
         Metadata = 47,
         Custom = 48,
     }
-
     public interface IEvent
     {
         EventKind Kind { get; }
         Address Address { get; }
         string Contract { get; }
         byte[] Data { get; }
+    }
+
+    public struct Metadata
+    {
+        public string key;
+        public string value;
+    }
+
+    public struct TokenEventData
+    {
+        public string symbol;
+        public BigInteger value;
+        public Address chainAddress;
+    }
+
+    public struct RoleEventData
+    {
+        public string role;
+        public Timestamp date;
+    }
+
+    public struct MetadataEventData
+    {
+        public string type;
+        public Metadata metadata;
     }
 }

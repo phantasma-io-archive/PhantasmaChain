@@ -29,12 +29,12 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return false;
             }
 
-            if (symbol == Nexus.StakingTokenSymbol)
+            if (symbol == DomainSettings.StakingTokenSymbol)
             {
                 return true;
             }
 
-            if (symbol == Nexus.FuelTokenSymbol)
+            if (symbol == DomainSettings.FuelTokenSymbol)
             {
                 return true;
             }

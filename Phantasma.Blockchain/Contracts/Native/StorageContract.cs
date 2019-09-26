@@ -29,7 +29,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public static BigInteger CalculateStorageSizeForStake(BigInteger stakeAmount)
         {
             var availableSize = stakeAmount * KilobytesPerStake * 1024;
-            availableSize /= UnitConversion.GetUnitValue(Nexus.StakingTokenDecimals);
+            availableSize /= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
             return availableSize;
         }

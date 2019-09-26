@@ -28,7 +28,6 @@ namespace Phantasma.Blockchain
 
     public class Nexus : INexus
     {
-        public static readonly string RootChainName = "main";
         private static readonly string ChainNameMapKey = "chain.name.";
         private static readonly string ChainAddressMapKey = "chain.addr.";
         private static readonly string ChainOwnerKey = "chain.owner.";
@@ -55,22 +54,7 @@ namespace Phantasma.Blockchain
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
 
-        public const string FuelTokenSymbol = "KCAL";
-        public const string FuelTokenName = "Phantasma Energy";
-        public const int FuelTokenDecimals = 10;
-
-        public const string StakingTokenSymbol = "SOUL";
-        public const string StakingTokenName = "Phantasma Stake";
-        public const int StakingTokenDecimals = 8;
-
-        public const string FiatTokenSymbol = "USD";
-        public const string FiatTokenName = "Dollars";
-        public const int FiatTokenDecimals = 8;
-
-        public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
-        public static readonly string PlatformName = "phantasma";
-
-        public Chain RootChain => FindChainByName(RootChainName);
+        public Chain RootChain => FindChainByName(DomainSettings.RootChainName);
 
         private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
 
@@ -399,7 +383,7 @@ namespace Phantasma.Blockchain
         #region NAME SERVICE
         public Address LookUpName(StorageContext storage, string name)
         {
-            if (!ValidationUtils.ValidateName(name))
+            if (!ValidationUtils.IsValidIdentifier(name))
             {
                 return Address.Null;
             }
@@ -510,7 +494,7 @@ namespace Phantasma.Blockchain
         #region CHAINS
         internal Chain CreateChain(StorageContext storage, Address owner, string name, string parentChainName)
         {
-            if (name != RootChainName)
+            if (name != DomainSettings.RootChainName)
             {
                 if (string.IsNullOrEmpty(parentChainName))
                 {
@@ -603,7 +587,7 @@ namespace Phantasma.Blockchain
 
         public string GetParentChainByName(string chainName)
         {
-            if (chainName == RootChainName)
+            if (chainName == DomainSettings.RootChainName)
             {
                 return null;
             }
@@ -945,7 +929,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Address, target);
+            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Name, target);
             return true;
         }
 
@@ -1185,7 +1169,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Address, destination);
+            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Name, destination);
             return true;
         }
 
@@ -1216,7 +1200,7 @@ namespace Phantasma.Blockchain
             return tokenID;
         }
 
-        internal BigInteger CreateNFT(string tokenSymbol, Address chainAddress, byte[] rom, byte[] ram)
+        internal BigInteger CreateNFT(string tokenSymbol, string chainName, Address targetAddress, byte[] rom, byte[] ram)
         {
             Throw.IfNull(rom, nameof(rom));
             Throw.IfNull(ram, nameof(ram));
@@ -1239,7 +1223,7 @@ namespace Phantasma.Blockchain
 
                 var tokenID = GenerateIDForNFT(tokenSymbol);
 
-                var content = new TokenContent(chainAddress, chainAddress, rom, ram);
+                var content = new TokenContent(chainName, targetAddress, rom, ram);
                 contents[tokenID] = content;
 
                 return tokenID;
@@ -1265,7 +1249,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        private bool EditNFTLocation(string tokenSymbol, BigInteger tokenID, Address chainAddress, Address owner)
+        private bool EditNFTLocation(string tokenSymbol, BigInteger tokenID, string chainName, Address owner)
         {
             lock (_tokenContents)
             {
@@ -1276,7 +1260,7 @@ namespace Phantasma.Blockchain
                     if (contents.ContainsKey(tokenID))
                     {
                         var content = contents[tokenID];
-                        content = new TokenContent(chainAddress, owner, content.ROM, content.RAM);
+                        content = new TokenContent(chainName, owner, content.ROM, content.RAM);
                         contents.Set(tokenID, content);
                         return true;
                     }
@@ -1364,10 +1348,10 @@ namespace Phantasma.Blockchain
 
             sb.CallContract("block", "OpenBlock", owner.Address);
 
-            sb.CallContract(Nexus.TokenContractName, "MintTokens", owner.Address, owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, StakingTokenDecimals));
+            sb.CallContract(Nexus.TokenContractName, "MintTokens", owner.Address, owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, DomainSettings.StakingTokenDecimals));
             // requires staking token to be created previously
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
-            sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, StakingTokenDecimals));
+            sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, DomainSettings.StakingTokenDecimals));
             sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
             sb.CallContract(Nexus.BombContractName, "Initialize", owner.Address);
 
@@ -1376,7 +1360,7 @@ namespace Phantasma.Blockchain
 
             var script = sb.EndScript();
 
-            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
 
             return tx;
@@ -1391,7 +1375,7 @@ namespace Phantasma.Blockchain
                 //SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Mine((int)ProofOfWork.Moderate);
             tx.Sign(owner);
             return tx;
@@ -1406,7 +1390,7 @@ namespace Phantasma.Blockchain
                 //SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
             return tx;
         }
@@ -1417,12 +1401,12 @@ namespace Phantasma.Blockchain
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallContract("validator", "SetValidator", owner.Address, new BigInteger(0), ValidatorType.Primary).
-                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, StakingTokenSymbol, UnitConversion.ToBigInteger(1, StakingTokenDecimals)).
-                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, FuelTokenSymbol, UnitConversion.ToBigInteger(100, FuelTokenDecimals)).
+                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals)).
+                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals)).
                 //SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
             return tx;
         }
@@ -1436,7 +1420,7 @@ namespace Phantasma.Blockchain
                 SpendGas(owner.Address).
                 EndScript();
 
-            var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
             return tx;
         }
@@ -1448,7 +1432,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (!ValidationUtils.ValidateName(name))
+            if (!ValidationUtils.IsValidIdentifier(name))
             {
                 throw new ChainException("invalid nexus name");
             }
@@ -1457,12 +1441,12 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            var rootChain = CreateChain(RootStorage, owner.Address, RootChainName, null);
+            var rootChain = CreateChain(RootStorage, owner.Address, DomainSettings.RootChainName, null);
 
             var tokenScript = new byte[0];
-            CreateToken(StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
-            CreateToken(FuelTokenSymbol, FuelTokenName, PlatformName, Hash.FromString(FuelTokenSymbol), PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
-            CreateToken(FiatTokenSymbol, FiatTokenName, PlatformName, Hash.FromString(FiatTokenSymbol), 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            CreateToken(DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals), DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
+            CreateToken(DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FuelTokenSymbol), DomainSettings.PlatformSupply, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
+            CreateToken(DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FiatTokenSymbol), 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
 
             // create genesis transactions
             var transactions = new List<Transaction>
@@ -1477,8 +1461,8 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
                 ValueCreateTx(owner, ConsensusContract.MaxEntriesPerPollTag, 10, 2, 1000),
                 ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
-                ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, Nexus.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, Nexus.StakingTokenDecimals)),
-                ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, Nexus.StakingTokenDecimals), UnitConversion.ToBigInteger(1, Nexus.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, Nexus.StakingTokenDecimals)),
+                ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)),
+                ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, DomainSettings.StakingTokenDecimals)),
 
                 ChainCreateTx(owner, "sale", "sale"),
 
@@ -1793,7 +1777,7 @@ namespace Phantasma.Blockchain
 
         public bool PlatformExists(string name)
         {
-            if (name == Nexus.PlatformName)
+            if (name == DomainSettings.PlatformName)
             {
                 return true;
             }
@@ -1847,6 +1831,6 @@ namespace Phantasma.Blockchain
             return 0;
         } 
 
-        public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(RootChainName, ChainStorageShard.Data));
+        public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName, ChainStorageShard.Data));
     }
 }

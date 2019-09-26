@@ -7,8 +7,6 @@ namespace Phantasma.Domain
     {
         string Name { get; }
         Address Address { get; }
-        BigInteger BlockHeight { get; }
-        IBlock LastBlock { get; }
-        bool IsRoot { get; }
+        BigInteger Height { get; }
     }
 }

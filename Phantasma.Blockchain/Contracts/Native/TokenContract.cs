@@ -8,15 +8,6 @@ using Phantasma.Domain;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public enum TokenTrigger
-    {
-        OnMint, // address, symbol, amount
-        OnBurn, // address, symbol, amount
-        OnSend, // address, symbol, amount
-        OnReceive, // address, symbol, amount
-        OnMetadata // address, symbol, key, value
-    }
-
     public sealed class TokenContract : SmartContract
     {
         public override string Name => Nexus.TokenContractName;
@@ -147,7 +138,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
 
         // TODO minting a NFT will require a certain amount of KCAL that is released upon burning
-        public BigInteger MintToken(Address from, Address to, string symbol, byte[] rom, byte[] ram, BigInteger value)
+        public BigInteger MintToken(Address from, Address to, string symbol, byte[] rom, byte[] ram)
         {
             Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
             var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
@@ -155,26 +146,15 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
-            Runtime.Expect(Runtime.Chain.Name == Nexus.RootChainName, "can only mint nft in root chain");
+            Runtime.Expect(Runtime.Chain.Name == DomainSettings.RootChainName, "can only mint nft in root chain");
 
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Address, rom, ram);
+            var tokenID = this.Runtime.Nexus.CreateNFT(symbol, Runtime.Chain.Name, to, rom, ram);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             Runtime.Expect(Runtime.Nexus.MintToken(Runtime, symbol, to, tokenID, false), "minting failed");
-
-            if (tokenInfo.IsBurnable())
-            {
-                Runtime.Expect(value > 0, "token must have value");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Nexus.FuelTokenSymbol, from, Runtime.Chain.Address, tokenID), "minting escrow failed");
-                Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = value, chainAddress = Runtime.Chain.Address });
-            }
-            else
-            {
-                Runtime.Expect(value == 0, "non-burnable must have value zero");
-            }
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
             return tokenID;

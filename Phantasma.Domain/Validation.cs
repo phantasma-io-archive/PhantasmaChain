@@ -1,11 +1,29 @@
-﻿namespace Phantasma.Blockchain
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
+
+namespace Phantasma.Domain
 {
+    public enum ValidatorType
+    {
+        Invalid,
+        Proposed,
+        Primary,
+        Secondary, // aka StandBy
+    }
+
+    public struct ValidatorEntry
+    {
+        public Address address;
+        public Timestamp election;
+        public ValidatorType type;
+    }
+
     public static class ValidationUtils
     {
         public static readonly string ANONYMOUS = "anonymous";
         public static readonly string GENESIS = "genesis";
 
-        public static bool ValidateName(string name)
+        public static bool IsValidIdentifier(string name)
         {
             if (name == null)
             {

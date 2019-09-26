@@ -46,7 +46,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(ValidationUtils.ValidateName(name), "invalid name");
+            Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
 
             var leaderboard = new Leaderboard()
             {

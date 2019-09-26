@@ -13,7 +13,6 @@ using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.VM.Contracts;
 using Phantasma.Network.P2P;
 using Phantasma.Core.Types;
 using Phantasma.Pay;
@@ -613,7 +612,7 @@ namespace Phantasma.API
         [APIFailCase("address is invalid", "ABCD123")]
         public IAPIResult LookUpName([APIParameter("Name of account", "blabla")] string name)
         {
-            if (!ValidationUtils.ValidateName(name))
+            if (!ValidationUtils.IsValidIdentifier(name))
             {
                 return new ErrorResult { error = "invalid name" };
             }
@@ -1122,7 +1121,7 @@ namespace Phantasma.API
 
             var info = Nexus.GetNFT(symbol, ID);
 
-            var chain = Nexus.FindChainByAddress(info.CurrentChain);
+            var chain = Nexus.FindChainByName(info.CurrentChain);
             bool forSale;
 
             if (chain != null && chain.IsContractDeployed(chain.Storage, "market"))
@@ -1135,7 +1134,7 @@ namespace Phantasma.API
             }
 
 
-            return new TokenDataResult() { chainAddress = info.CurrentChain.Text, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
+            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
 
         [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.", true)]
@@ -1632,12 +1631,12 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
-            if (!address.IsInterop && platform == Nexus.PlatformName)
+            if (!address.IsInterop && platform == DomainSettings.PlatformName)
             {
                 return new ErrorResult { error = "must be interop address" };
             }
             else
-            if (address.IsInterop && platform != Nexus.PlatformName)
+            if (address.IsInterop && platform != DomainSettings.PlatformName)
             {
                 return new ErrorResult { error = "cannot be interop address" };
             }

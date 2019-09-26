@@ -55,32 +55,5 @@ namespace Phantasma.Blockchain.Contracts
             var data = reader.ReadByteArray();
             return new Event(kind, address, contract, data);
         }
-    }
-
-    public static class EventKindExtensions
-    {
-        public static T DecodeCustomEvent<T>(this EventKind kind)
-        {
-            if (kind < EventKind.Custom)
-            {
-                throw new Exception("Cannot cast system event");
-            }
-
-            var type = typeof(T);
-            if (!type.IsEnum)
-            {
-                throw new Exception("Can only cast event to other enum");
-            }
-
-            var intVal = ((int)kind - (int)EventKind.Custom);
-            var temp = (T)Enum.Parse(type, intVal.ToString());
-            return temp;
-        }
-
-        public static EventKind EncodeCustomEvent(Enum kind)
-        {
-            var temp = (EventKind)((int)Convert.ChangeType(kind, kind.GetTypeCode()) + (int)EventKind.Custom);
-            return temp;
-        }
-    }
+    }    
 }

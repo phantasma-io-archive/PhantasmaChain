@@ -32,7 +32,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -60,7 +60,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -82,7 +82,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -105,7 +105,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -128,7 +128,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -163,7 +163,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -196,7 +196,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -220,7 +220,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -242,7 +242,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -265,7 +265,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -288,7 +288,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -323,7 +323,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -353,7 +353,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -370,7 +370,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -388,7 +388,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -407,7 +407,7 @@ namespace Phantasma.Tests
         {
             InitExchange();
 
-            var baseSymbol = Nexus.StakingTokenSymbol;
+            var baseSymbol = DomainSettings.StakingTokenSymbol;
             var quoteSymbol = maxDivTokenSymbol;
 
             var buyer = new ExchangeUser(baseSymbol, quoteSymbol);
@@ -456,7 +456,7 @@ namespace Phantasma.Tests
                         break;
                 }
 
-                simulator.GenerateToken(simulatorOwner, symbol, $"{symbol}Token", Nexus.PlatformName, Hash.FromString(symbol), supply, decimals, flags);
+                simulator.GenerateToken(simulatorOwner, symbol, $"{symbol}Token", DomainSettings.PlatformName, Hash.FromString(symbol), supply, decimals, flags);
                 simulator.MintTokens(simulatorOwner, simulatorOwner.Address, symbol, supply);
             }
 
@@ -552,12 +552,12 @@ namespace Phantasma.Tests
                 }
 
                 //take into account tx cost in case one of the symbols is the FuelToken
-                if (baseSymbol == Nexus.FuelTokenSymbol)
+                if (baseSymbol == DomainSettings.FuelTokenSymbol)
                 {
                     OpenerBaseTokensDelta -= txCost;
                 }
                 else
-                if (quoteSymbol == Nexus.FuelTokenSymbol)
+                if (quoteSymbol == DomainSettings.FuelTokenSymbol)
                 {
                     OpenerQuoteTokensDelta -= txCost;
                 }
@@ -664,11 +664,11 @@ namespace Phantasma.Tests
                     switch (side)
                     {
                         case Buy:
-                            Assert.IsTrue(Abs(OpenerQuoteTokensDelta) == escrowedUsage - (quoteSymbol == Nexus.FuelTokenSymbol ? txCost : 0));
+                            Assert.IsTrue(Abs(OpenerQuoteTokensDelta) == escrowedUsage - (quoteSymbol == DomainSettings.FuelTokenSymbol ? txCost : 0));
                             break;
 
                         case Sell:
-                            Assert.IsTrue(Abs(OpenerBaseTokensDelta) == escrowedUsage - (baseSymbol == Nexus.FuelTokenSymbol ? txCost : 0));
+                            Assert.IsTrue(Abs(OpenerBaseTokensDelta) == escrowedUsage - (baseSymbol == DomainSettings.FuelTokenSymbol ? txCost : 0));
                             break;
                     }
                 }
@@ -783,12 +783,12 @@ namespace Phantasma.Tests
                 }
 
                 //take into account tx cost in case one of the symbols is the FuelToken
-                if (baseSymbol == Nexus.FuelTokenSymbol)
+                if (baseSymbol == DomainSettings.FuelTokenSymbol)
                 {
                     OpenerBaseTokensDelta -= txCost;
                 }
                 else
-                if (quoteSymbol == Nexus.FuelTokenSymbol)
+                if (quoteSymbol == DomainSettings.FuelTokenSymbol)
                 {
                     OpenerQuoteTokensDelta -= txCost;
                 }
@@ -882,11 +882,11 @@ namespace Phantasma.Tests
                 switch (side)
                 {
                     case Buy:
-                        Assert.IsTrue(Abs(OpenerQuoteTokensDelta) == escrowedUsage - (quoteSymbol == Nexus.FuelTokenSymbol ? txCost : 0));
+                        Assert.IsTrue(Abs(OpenerQuoteTokensDelta) == escrowedUsage - (quoteSymbol == DomainSettings.FuelTokenSymbol ? txCost : 0));
                         break;
 
                     case Sell:
-                        Assert.IsTrue(Abs(OpenerBaseTokensDelta) == escrowedUsage - (baseSymbol == Nexus.FuelTokenSymbol ? txCost : 0));
+                        Assert.IsTrue(Abs(OpenerBaseTokensDelta) == escrowedUsage - (baseSymbol == DomainSettings.FuelTokenSymbol ? txCost : 0));
                         break;
                 }
 
@@ -929,7 +929,7 @@ namespace Phantasma.Tests
                 simulator.GenerateTransfer(simulatorOwner, user.Address, nexus.RootChain, token.Symbol, UnitConversion.ToBigInteger(quantity, token.Decimals));
 
                 if (fundFuel)
-                    simulator.GenerateTransfer(simulatorOwner, user.Address, nexus.RootChain, Nexus.FuelTokenSymbol, 500000);
+                    simulator.GenerateTransfer(simulatorOwner, user.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 500000);
 
                 simulator.EndBlock();
             }

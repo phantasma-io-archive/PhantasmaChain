@@ -1074,8 +1074,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int MINIMUM_SOUL_TRANSFER_AMOUNT = 1;
 
-        public static readonly BigInteger MINIMUM_AUCTION_PRICE = UnitConversion.ToBigInteger(0.01m, Nexus.StakingTokenDecimals);
-        public static readonly BigInteger MAXIMUM_AUCTION_PRICE = UnitConversion.ToBigInteger(100000.0m, Nexus.StakingTokenDecimals);
+        public static readonly BigInteger MINIMUM_AUCTION_PRICE = UnitConversion.ToBigInteger(0.01m, DomainSettings.StakingTokenDecimals);
+        public static readonly BigInteger MAXIMUM_AUCTION_PRICE = UnitConversion.ToBigInteger(100000.0m, DomainSettings.StakingTokenDecimals);
 
         public static readonly int MINIMUM_AUCTION_DURATION = 86400; // in seconds 
         public static readonly int MAXIMUM_AUCTION_DAYS_DURATION = 30;
@@ -2270,7 +2270,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             //    _nachoIAPCurrentMilestone = 1;
             //}
 
-            return GetCurrentTokenCambio((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone) * (int)UnitConversion.ToDecimal(dollarAmount, Nexus.FiatTokenDecimals);
+            return GetCurrentTokenCambio((int)_nachoIAPCurrentStage, (int)_nachoIAPCurrentMilestone) * (int)UnitConversion.ToDecimal(dollarAmount, DomainSettings.FiatTokenDecimals);
         }
 
         public NachoIAPData GetNachoIAP(string symbol, BigInteger dollarPrice)
@@ -2280,7 +2280,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var nachoIAPData = new NachoIAPData()
             {
                 dollarPrice = dollarPrice,
-                coinPrice   = Runtime.GetTokenQuote(Nexus.FiatTokenSymbol, symbol, dollarPrice),
+                coinPrice   = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, symbol, dollarPrice),
                 nachos      = baseNachos,
                 nachosBonus = GetBonusNachos(baseNachos, dollarPrice)
             };
@@ -2298,8 +2298,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(tokenInfo.IsFungible(), "purchase token must be fungible");
             Runtime.Expect(tokenInfo.IsTransferable(), "purchase token must be transferable");
 
-            var dollarAmount = Runtime.GetTokenQuote(tokenSymbol, Nexus.FiatTokenSymbol, tokenAmount);
-            var minimumAmount = UnitConversion.GetUnitValue(Nexus.FiatTokenDecimals) / 2; // fifty cents as minimum
+            var dollarAmount = Runtime.GetTokenQuote(tokenSymbol, DomainSettings.FiatTokenSymbol, tokenAmount);
+            var minimumAmount = UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals) / 2; // fifty cents as minimum
             Runtime.Expect(dollarAmount >= minimumAmount, "unsuficient amount");
 
             var nachoAmount = DollarsToNachos(dollarAmount);
@@ -2572,7 +2572,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return true;
             }
 
-            var tokenSymbol = Nexus.StakingTokenSymbol;
+            var tokenSymbol = DomainSettings.StakingTokenSymbol;
             return Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, address, DevelopersAddress, amount);
         }
 
@@ -2808,7 +2808,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(referral.stakeAmount == 0, "already staked");
             }
 
-            var stakeAmount = UnitConversion.ToBigInteger(Constants.REFERRAL_STAKE_AMOUNT, Nexus.StakingTokenDecimals);
+            var stakeAmount = UnitConversion.ToBigInteger(Constants.REFERRAL_STAKE_AMOUNT, DomainSettings.StakingTokenDecimals);
 
             // update account balance
             if (!SpendFromAccountBalance(from, stakeAmount, referralIndex))
@@ -3247,7 +3247,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenROM = new byte[0]; //itemBytes;
             var tokenRAM = itemBytes;   //new byte[0];
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, this.Address, tokenROM, tokenRAM);
+            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, this.Name, this.Address, tokenROM, tokenRAM);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
@@ -3696,7 +3696,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            if (nft.CurrentOwner == nft.CurrentChain)
+            if (nft.CurrentOwner.IsSystem)
             {
                 wrestler.location = WrestlerLocation.Market;
             }
@@ -6292,7 +6292,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 winners[i] = _pot.entries[i].address;
             }
 
-            var minimumPotSize = UnitConversion.ToBigInteger(Constants.MINIMUM_POT_SIZE, Nexus.StakingTokenDecimals);
+            var minimumPotSize = UnitConversion.ToBigInteger(Constants.MINIMUM_POT_SIZE, DomainSettings.StakingTokenDecimals);
 
             // only close pot if enough winners and minimum amount of SOUL reached, otherwise accumulate to next day
             if (winners.Length > 0 && _pot.currentBalance >= minimumPotSize)

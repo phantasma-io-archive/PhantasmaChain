@@ -6,21 +6,6 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts.Native
 {
-    public enum ValidatorType
-    {
-        Invalid,
-        Proposed,
-        Primary,
-        Secondary, // aka StandBy
-    }
-
-    public struct ValidatorEntry
-    {
-        public Address address;
-        public Timestamp election;
-        public ValidatorType type;
-    }
-
     public sealed class ValidatorContract : SmartContract
     {
         public const string ValidatorCountTag = "validator.count";

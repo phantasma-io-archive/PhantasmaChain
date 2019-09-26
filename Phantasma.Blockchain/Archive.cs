@@ -5,17 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Phantasma.Numerics;
+using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
 {
-    [Flags]
-    public enum ArchiveFlags
-    {
-        None = 0x0,
-        Compressed = 0x1,
-        Encrypted = 0x2,
-    }
-
     // TODO support this
     public struct ArchiveMetadata
     {

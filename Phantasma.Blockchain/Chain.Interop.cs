@@ -4,7 +4,6 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;
-using Phantasma.VM.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.Domain;

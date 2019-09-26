@@ -153,7 +153,7 @@ namespace Phantasma.Blockchain
                 }
 
                 var baseSymbol = symbols[0];
-                var quoteSymbol = symbols.Length > 1 ? symbols[1] : Nexus.FiatTokenSymbol;
+                var quoteSymbol = symbols.Length > 1 ? symbols[1] : DomainSettings.FiatTokenSymbol;
 
                 if (!Nexus.TokenExists(baseSymbol))
                 {
