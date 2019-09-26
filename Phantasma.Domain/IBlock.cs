@@ -17,7 +17,7 @@ namespace Phantasma.Domain
         BigInteger Height { get; }
         Timestamp Timestamp { get; }
         Hash PreviousHash { get; }
-        byte[] Payload { get; }
+        uint Protocol { get; }
         Hash Hash { get; }
         Hash[] TransactionHashes { get; }
         IOracleEntry[] OracleData { get; }

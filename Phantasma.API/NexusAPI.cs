@@ -426,7 +426,7 @@ namespace Phantasma.API
                 timestamp = block.Timestamp.Value,
                 height = (uint)block.Height,
                 chainAddress = chain.Address.ToString(),
-                payload = block.Payload != null ? block.Payload.Encode() : new byte[0].Encode(),
+                protocol = block.Protocol,
                 reward = chain.GetBlockReward(block).ToString(),
                 validatorAddress = chain.GetValidatorForBlock(block).ToString(),
             };

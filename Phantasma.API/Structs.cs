@@ -168,8 +168,8 @@ namespace Phantasma.API
         [APIDescription("Address of chain where the block belongs")]
         public string chainAddress;
 
-        [APIDescription("Custom data choosen by the block miner, in hexadecimal format")]
-        public string payload;
+        [APIDescription("Network protocol version")]
+        public uint protocol;
 
         [APIDescription("List of transactions in block")]
         public TransactionResult[] txs;

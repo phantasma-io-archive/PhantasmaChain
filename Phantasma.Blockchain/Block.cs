@@ -19,7 +19,7 @@ namespace Phantasma.Blockchain
         public BigInteger Height { get; private set; }
         public Timestamp Timestamp { get; private set; }
         public Hash PreviousHash { get; private set; }
-        public byte[] Payload { get; private set; }
+        public uint Protocol { get; private set; }
 
         private bool _dirty;
         private Hash _hash;
@@ -59,11 +59,11 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, byte[] payload = null)
+        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
-            this.Payload = payload != null ? payload : new byte[0];
+            this.Protocol = protocol;
 
             this.Height = height;
             this.PreviousHash = previousHash;
@@ -74,7 +74,6 @@ namespace Phantasma.Blockchain
                 _transactionHashes.Add(hash);
             }
 
-            this.Payload = new byte[0];
             this._dirty = true;
         }
 
@@ -94,13 +93,6 @@ namespace Phantasma.Blockchain
 
             list.Add(evt);
             _dirty = true;
-        }
-
-        // TODO - Optimize this to avoid recalculating the arrays if only the nonce changed
-        internal void UpdateHash(byte[] payload)
-        {
-            this.Payload = payload;
-            UpdateHash();
         }
 
         internal void UpdateHash()
@@ -152,6 +144,7 @@ namespace Phantasma.Blockchain
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
             writer.WriteAddress(ChainAddress);
+            writer.WriteVarInt(Protocol);
 
             writer.Write((ushort)_transactionHashes.Count);
             foreach (var hash in _transactionHashes)
@@ -178,8 +171,6 @@ namespace Phantasma.Blockchain
                 writer.WriteVarString(entry.URL);
                 writer.WriteByteArray(entry.Content);
             }
-
-            writer.WriteByteArray(Payload);
         }
 
         public static Block Unserialize(byte[] bytes)
@@ -218,7 +209,8 @@ namespace Phantasma.Blockchain
             this.Timestamp = new Timestamp(reader.ReadUInt32());
             this.PreviousHash = reader.ReadHash();
             this.ChainAddress = reader.ReadAddress();
-
+            this.Protocol = (uint)reader.ReadVarInt();
+        
             var hashCount = reader.ReadUInt16();
             var hashes = new List<Hash>();
 
@@ -261,8 +253,6 @@ namespace Phantasma.Blockchain
                 _oracleData.Add(new OracleEntry( key, val));
                 oracleCount--;
             }
-
-            this.Payload = reader.ReadByteArray();
 
             _transactionHashes = new List<Hash>();
             foreach (var hash in hashes)

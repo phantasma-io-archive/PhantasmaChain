@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain
             txs.Add(lastTx);
 
             transactions = txs;
-            block = new Block(block.Height, block.ChainAddress, block.Timestamp, hashes, block.PreviousHash, block.Payload);
+            block = new Block(block.Height, block.ChainAddress, block.Timestamp, hashes, block.PreviousHash, block.Protocol);
         }
 
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
@@ -173,6 +173,13 @@ namespace Phantasma.Blockchain
                 {
                     throw new BlockGenerationException($"missing in outputs transaction with hash {tx.Hash}");
                 }
+            }
+
+            // TODO avoid fetching this every time
+            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            if (block.Protocol != expectedProtocol)
+            {
+                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
             }
 
             foreach (var tx in transactions)

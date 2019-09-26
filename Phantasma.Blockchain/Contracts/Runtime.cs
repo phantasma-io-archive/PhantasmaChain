@@ -474,7 +474,7 @@ namespace Phantasma.Blockchain.Contracts
         // fetches a chain-governed value
         public BigInteger GetGovernanceValue(string name)
         {
-            var value = Nexus.RootChain.InvokeContract(this.ChangeSet, Nexus.GovernanceContractName, "GetValue", name).AsNumber();
+            var value = Nexus.GetGovernanceValue(this.Chain.IsRoot ? this.ChangeSet : Nexus.RootStorage, name);
             return value;
         }
 

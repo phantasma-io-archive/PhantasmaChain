@@ -26,12 +26,12 @@ namespace Phantasma.Blockchain
         TxBlockMap,
     }
 
-    public class Nexus: INexus
+    public class Nexus : INexus
     {
         public static readonly string RootChainName = "main";
         private static readonly string ChainNameMapKey = "chain.name.";
         private static readonly string ChainAddressMapKey = "chain.addr.";
-        private static readonly string ChainOwnerKey = "chain.owner.";        
+        private static readonly string ChainOwnerKey = "chain.owner.";
         private static readonly string ChainParentNameKey = "chain.parent.";
         private static readonly string ChainChildrenBlockKey = "chain.children.";
 
@@ -270,7 +270,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory= null, Func<Nexus, OracleReader> oracleFactory = null)
+        public Nexus(Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory = null, Func<Nexus, OracleReader> oracleFactory = null)
         {
             this._adapterFactory = adapterFactory;
             this._oracleFactory = oracleFactory;
@@ -293,7 +293,7 @@ namespace Phantasma.Blockchain
                 HasGenesis = false;
             }
 
-            _archiveEntries= new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
+            _archiveEntries = new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
             _archiveContents = new KeyValueStore<Hash, byte[]>(CreateKeyStoreAdapter("contents"));
 
             _logger = logger;
@@ -398,7 +398,7 @@ namespace Phantasma.Blockchain
 
         #region NAME SERVICE
         public Address LookUpName(StorageContext storage, string name)
-        { 
+        {
             if (!ValidationUtils.ValidateName(name))
             {
                 return Address.Null;
@@ -445,13 +445,13 @@ namespace Phantasma.Blockchain
         private Dictionary<Address, Type> _contractMap = null;
         private void RegisterContract<T>() where T : SmartContract
         {
-            var alloc = (SmartContract) Activator.CreateInstance<T>();
+            var alloc = (SmartContract)Activator.CreateInstance<T>();
             var addr = alloc.Address;
             _contractMap[addr] = typeof(T);
         }
 
         public SmartContract AllocContractByAddress(Address contractAdress)
-        { 
+        {
             if (_contractMap == null)
             {
                 _contractMap = new Dictionary<Address, Type>();
@@ -504,6 +504,7 @@ namespace Phantasma.Blockchain
 
             return null;
         }
+
         #endregion
 
         #region CHAINS
@@ -576,7 +577,7 @@ namespace Phantasma.Blockchain
 
             return null;
         }
-        
+
         public bool ChainExists(StorageContext storage, string chainName)
         {
             if (string.IsNullOrEmpty(chainName))
@@ -650,10 +651,10 @@ namespace Phantasma.Blockchain
 
         public IEnumerable<string> GetChildChainsByName(StorageContext storage, string chainName)
         {
-            var list = GetChildrenListOfChain(storage,  chainName);
+            var list = GetChildrenListOfChain(storage, chainName);
             var count = (int)list.Count();
             var names = new string[count];
-            for (int i=0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 names[i] = list.Get<string>(i);
             }
@@ -770,7 +771,7 @@ namespace Phantasma.Blockchain
         {
             foreach (var c in symbol)
             {
-                Throw.If(c < 'A'  || c > 'Z', "Symbol must only contain capital letters, no other characters are allowed");
+                Throw.If(c < 'A' || c > 'Z', "Symbol must only contain capital letters, no other characters are allowed");
             }
         }
 
@@ -980,13 +981,13 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = runtimeVM.InvokeTriggerOnToken(tokenInfo, isSettlement ? TokenTrigger.OnSend: TokenTrigger.OnBurn, target, symbol, amount);
+            var tokenTriggerResult = runtimeVM.InvokeTriggerOnToken(tokenInfo, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, target, symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = runtimeVM.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend:  AccountTrigger.OnBurn, target, symbol, amount);
+            var accountTriggerResult = runtimeVM.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, target, symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1035,7 +1036,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var accountTriggerResult = runtimeVM.InvokeTriggerOnAccount(target, isSettlement ?  AccountTrigger.OnSend: AccountTrigger.OnBurn, target, symbol, tokenID);
+            var accountTriggerResult = runtimeVM.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, target, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
@@ -1370,6 +1371,9 @@ namespace Phantasma.Blockchain
             sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
             sb.CallContract(Nexus.BombContractName, "Initialize", owner.Address);
 
+            sb.Emit(VM.Opcode.RET);
+            sb.EmitRaw(Encoding.UTF8.GetBytes("A Phantasma was born..."));
+
             var script = sb.EndScript();
 
             var tx = new Transaction(Name, RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
@@ -1456,7 +1460,7 @@ namespace Phantasma.Blockchain
             var rootChain = CreateChain(RootStorage, owner.Address, RootChainName, null);
 
             var tokenScript = new byte[0];
-            CreateToken(StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"),  UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
+            CreateToken(StakingTokenSymbol, StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), UnitConversion.ToBigInteger(91136374, StakingTokenDecimals), StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
             CreateToken(FuelTokenSymbol, FuelTokenName, PlatformName, Hash.FromString(FuelTokenSymbol), PlatformSupply, FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
             CreateToken(FiatTokenSymbol, FiatTokenName, PlatformName, Hash.FromString(FiatTokenSymbol), 0, FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
 
@@ -1481,8 +1485,7 @@ namespace Phantasma.Blockchain
                 ConsensusStakeCreateTx(owner)
             };
 
-            var genesisMessage = Encoding.UTF8.GetBytes("A Phantasma was born...");
-            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, genesisMessage);
+            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0);
 
             rootChain.AddBlock(block, transactions, 1);
 
@@ -1638,7 +1641,7 @@ namespace Phantasma.Blockchain
 
             Throw.If(index < 0, "invalid validator index");
 
-            var result = (ValidatorEntry) RootChain.InvokeContract(this.RootStorage, Nexus.ValidatorContractName, nameof(ValidatorContract.GetValidatorByIndex), (BigInteger)index).ToObject();
+            var result = (ValidatorEntry)RootChain.InvokeContract(this.RootStorage, Nexus.ValidatorContractName, nameof(ValidatorContract.GetValidatorByIndex), (BigInteger)index).ToObject();
             return result;
         }
         #endregion
@@ -1661,7 +1664,7 @@ namespace Phantasma.Blockchain
 
         public bool IsArchiveComplete(Archive archive)
         {
-            for (int i=0; i<archive.BlockCount; i++)
+            for (int i = 0; i < archive.BlockCount; i++)
             {
                 if (!HasArchiveBlock(archive, i))
                 {
@@ -1833,6 +1836,16 @@ namespace Phantasma.Blockchain
             var shardName = shard.ToString().ToLower();
             return this.CreateKeyStoreAdapter($"chain.{name}.{shardName}");
         }
+
+        public BigInteger GetGovernanceValue(StorageContext storage, string name)
+        {
+            if (HasGenesis)
+            {
+                return RootChain.InvokeContract(storage, Nexus.GovernanceContractName, "GetValue", name).AsNumber();
+            }
+
+            return 0;
+        } 
 
         public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(RootChainName, ChainStorageShard.Data));
     }
