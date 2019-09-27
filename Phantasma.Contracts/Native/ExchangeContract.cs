@@ -138,6 +138,28 @@ namespace Phantasma.Contracts.Native
             return false;
         }
 
+        public BigInteger GetTokenPrice(string symbol)
+        {
+            var count = _exchanges.Count();
+            Runtime.Expect(count == 0, "already exchanges but no prices");
+
+            var stakePrice = Runtime.GetTokenPrice(DomainSettings.StakingTokenSymbol);
+
+            if (symbol == DomainSettings.StakingTokenSymbol)
+            {
+                return stakePrice;
+            }
+            else
+            if (symbol == DomainSettings.FuelTokenSymbol)
+            {
+                return stakePrice / 5;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
         public void CreateExchange(Address from, string id, string name)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");

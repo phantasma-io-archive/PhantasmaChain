@@ -391,17 +391,16 @@ namespace Phantasma.Blockchain.Contracts
                 return UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals);
             }
 
-            if (symbol == DomainSettings.FuelTokenSymbol)
+            Core.Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
+            var token = GetToken(symbol);
+
+            if (!token.Flags.HasFlag(TokenFlags.External))
             {
-                var result = GetTokenPrice(DomainSettings.StakingTokenSymbol);
-                result /= 5;
+                var result = CallContext("exchange", "GetTokenPrice", symbol).AsNumber();
                 return result;
             }
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
-
-            Core.Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
-
             var bytes = Oracle.Read("price://" + symbol);
             var value = BigInteger.FromUnsignedArray(bytes, true);
             return value;
