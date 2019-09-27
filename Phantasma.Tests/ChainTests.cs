@@ -295,6 +295,9 @@ namespace Phantasma.Tests
             var supply = nexus.RootChain.GetTokenSupply(rootChain.Storage, symbol);
             Assert.IsTrue(supply > 0);
 
+            var balance = UnitConversion.ToDecimal(nexus.RootChain.GetTokenBalance(rootChain.Storage, symbol, owner.Address), DomainSettings.FuelTokenDecimals);
+            Assert.IsTrue(balance > 0);
+
             Assert.IsTrue(rootChain != null);
             Assert.IsTrue(rootChain.Height > 0);
 

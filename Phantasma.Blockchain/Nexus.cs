@@ -1364,9 +1364,9 @@ namespace Phantasma.Blockchain
             sb.CallContract("block", "OpenBlock", owner.Address);
 
             sb.MintTokens(DomainSettings.StakingTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(8863626, DomainSettings.StakingTokenDecimals));
+            sb.MintTokens(DomainSettings.FuelTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(1000000, DomainSettings.FuelTokenDecimals));
             // requires staking token to be created previously
-            // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
-            sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, DomainSettings.StakingTokenDecimals));
+            sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, StakeContract.DefaultMasterThreshold);
             sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
 
             sb.Emit(VM.Opcode.RET);

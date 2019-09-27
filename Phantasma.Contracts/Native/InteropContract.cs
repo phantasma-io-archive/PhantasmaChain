@@ -41,7 +41,7 @@ namespace Phantasma.Contracts.Native
         private StorageMap _links;
         private StorageMap _reverseMap;
 
-        public static BigInteger InteropFeeRacio => 20;
+        public static BigInteger InteropFeeRacio => 50;
 
         public InteropContract() : base()
         {
@@ -52,7 +52,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "source address must be user address");
             Runtime.Expect(target.IsInterop, "target address must be interop address");
-            Runtime.Expect(!Runtime.IsKnownValidator(from), "source address cant be chain validator");
 
             string platformName;
             byte[] data;
@@ -278,14 +277,14 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var basePrice = UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals) / InteropFeeRacio; // 5cents
+            var basePrice = UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals) / InteropFeeRacio; 
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             Runtime.Expect(Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount), "fee transfer failed");
             Runtime.Expect(Runtime.TransferTokens(symbol, from, platformInfo.Address, amount), "burn failed");
 
-            var collateralAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, basePrice);
+            var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
 
             var withdraw = new InteropWithdraw()
             {

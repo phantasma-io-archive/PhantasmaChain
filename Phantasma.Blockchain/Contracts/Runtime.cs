@@ -898,6 +898,11 @@ namespace Phantasma.Blockchain.Contracts
         {
             var Runtime = this;
 
+            if (source == destination)
+            {
+                return true;
+            }
+
             if (IsPlatformAddress(source))
             {
                 return Nexus.MintTokens(this, symbol, this.EntryAddress, destination, amount, true);
@@ -909,7 +914,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
-            Runtime.Expect(source != destination, "source and destination must be different");
             Runtime.Expect(IsWitness(source), "invalid witness");
             Runtime.Expect(!Runtime.IsTrigger, "not allowed inside a trigger");
 
