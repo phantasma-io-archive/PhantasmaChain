@@ -60,6 +60,11 @@ namespace Phantasma.Contracts
             return Cryptography.Address.FromHash(name);
         }
 
+        private byte[] GetKeyForField(FieldInfo field)
+        {
+            return Encoding.UTF8.GetBytes($".{this.Name}.{field.Name}");
+        }
+
         // here we auto-initialize any fields from storage
         public void LoadRuntimeData(IRuntime runtime)
         {
@@ -75,7 +80,7 @@ namespace Phantasma.Contracts
 
             foreach (var field in fields)
             {
-                var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
+                var baseKey = GetKeyForField(field);
 
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)
@@ -132,7 +137,7 @@ namespace Phantasma.Contracts
 
             foreach (var field in fields)
             {
-                var baseKey = $"_{this.Name}.{field.Name}".AsByteArray();
+                var baseKey = GetKeyForField(field);
 
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)
