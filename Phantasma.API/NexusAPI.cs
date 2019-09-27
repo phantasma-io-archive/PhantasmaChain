@@ -19,6 +19,7 @@ using Phantasma.Pay;
 using Phantasma.Core.Utils;
 using System.Text;
 using Phantasma.Domain;
+using Phantasma.Core.Log;
 
 namespace Phantasma.API
 {
@@ -195,7 +196,9 @@ namespace Phantasma.API
             }
 
             string key = null;
-            IAPIResult result;
+            IAPIResult result = null;
+
+            bool cacheHit = false;
 
             if (_cache !=null)
             {
@@ -208,54 +211,84 @@ namespace Phantasma.API
                 key = sb.ToString();
                 if (_cache.TryGet(key, out result))
                 {
-                    return result;
+                    cacheHit = true;
                 }
             }
 
-            var args = new object[input.Length];
-            for (int i = 0; i < args.Length; i++)
+            if (!cacheHit)
             {
-                if (Parameters[i].Type == typeof(string))
+                var args = new object[input.Length];
+                for (int i = 0; i < args.Length; i++)
                 {
-                    args[i] = input[i] == null ? null : input[i].ToString();
-                    continue;
-                }
-
-                if (Parameters[i].Type == typeof(uint))
-                {
-                    if (uint.TryParse(input[i].ToString(), out uint val))
+                    if (Parameters[i].Type == typeof(string))
                     {
-                        args[i] = val;
+                        args[i] = input[i] == null ? null : input[i].ToString();
                         continue;
                     }
-                }
 
-                if (Parameters[i].Type == typeof(int))
-                {
-                    if (int.TryParse(input[i].ToString(), out int val))
+                    if (Parameters[i].Type == typeof(uint))
                     {
-                        args[i] = val;
-                        continue;
+                        if (uint.TryParse(input[i].ToString(), out uint val))
+                        {
+                            args[i] = val;
+                            continue;
+                        }
                     }
-                }
 
-                if (Parameters[i].Type == typeof(bool))
-                {
-                    if (bool.TryParse(input[i].ToString(), out bool val))
+                    if (Parameters[i].Type == typeof(int))
                     {
-                        args[i] = val;
-                        continue;
+                        if (int.TryParse(input[i].ToString(), out int val))
+                        {
+                            args[i] = val;
+                            continue;
+                        }
                     }
+
+                    if (Parameters[i].Type == typeof(bool))
+                    {
+                        if (bool.TryParse(input[i].ToString(), out bool val))
+                        {
+                            args[i] = val;
+                            continue;
+                        }
+                    }
+
+                    throw new APIException("invalid parameter type: " + Parameters[i].Name);
                 }
 
-                throw new APIException("invalid parameter type: " + Parameters[i].Name);
+                result = (IAPIResult)_info.Invoke(_api, args);
+
+                if (_cache != null)
+                {
+                    _cache.Add(key, result);
+                }
             }
 
-            result = (IAPIResult)_info.Invoke(_api, args);
-
-            if (_cache != null)
+            if (_api.logger != null)
             {
-                _cache.Add(key, result);
+                var sb = new StringBuilder();
+                sb.Append("API request");
+
+                if (cacheHit)
+                {
+                    sb.Append(" [Cached]");
+                }
+
+                sb.Append($": {this.Name}(");
+
+                for (int i=0; i<input.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        sb.Append(',');
+                        sb.Append(' ');
+                    }
+                    sb.Append(input[i].ToString());
+                }
+
+                sb.Append(')');
+
+                _api.logger?.Message(sb.ToString());
             }
 
             return result;
@@ -274,7 +307,9 @@ namespace Phantasma.API
 
         private const int PaginationMaxResults = 50;
 
-        public NexusAPI(Nexus nexus, Mempool mempool = null, Node node = null, bool useCache = false)
+        internal readonly Logger logger;
+
+        public NexusAPI(Nexus nexus, Mempool mempool = null, Node node = null, bool useCache = false, Logger logger = null)
         {
             Throw.IfNull(nexus, nameof(nexus));
 
@@ -282,6 +317,7 @@ namespace Phantasma.API
             Mempool = mempool;
             Node = node;
             UseCache = useCache;
+            this.logger = logger;
 
             var methodInfo = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -303,6 +339,8 @@ namespace Phantasma.API
                     _methods[entry.Name.ToLower()] = temp;
                 }
             }
+
+            logger?.Message($"Phantasma API enabled. {_methods.Count} methods available.");
         }
 
         public IAPIResult Execute(string methodName, object[] args)
