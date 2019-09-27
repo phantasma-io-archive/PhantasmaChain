@@ -50,19 +50,29 @@ namespace Phantasma.Blockchain
 
         public void Serialize(BinaryWriter writer, bool withSignature)
         {
-            writer.WriteVarString(this.NexusName);
-            writer.WriteVarString(this.ChainName);
-            writer.WriteByteArray(this.Script);
-            writer.Write(this.Expiration.Value);
-            writer.WriteByteArray(this.Payload);
-
-            if (withSignature)
+            using (var stream = new MemoryStream())
             {
-                writer.WriteVarInt(Signatures.Length);
-                foreach (var signature in this.Signatures)
+                using (var temp = new BinaryWriter(stream))
                 {
-                    writer.WriteSignature(signature);
+                    temp.WriteVarString(this.NexusName);
+                    temp.WriteVarString(this.ChainName);
+                    temp.WriteByteArray(this.Script);
+                    temp.Write(this.Expiration.Value);
+                    temp.WriteByteArray(this.Payload);
+
+                    if (withSignature)
+                    {
+                        temp.WriteVarInt(Signatures.Length);
+                        foreach (var signature in this.Signatures)
+                        {
+                            temp.WriteSignature(signature);
+                        }
+                    }
                 }
+
+                var bytes = stream.ToArray();
+                var compressed = Compression.CompressGZip(bytes);
+                writer.WriteByteArray(compressed);
             }
         }
 
@@ -175,25 +185,34 @@ namespace Phantasma.Blockchain
 
         public void UnserializeData(BinaryReader reader)
         {
-            this.NexusName = reader.ReadVarString();
-            this.ChainName = reader.ReadVarString();
-            this.Script = reader.ReadByteArray();
-            this.Expiration = reader.ReadUInt32();
-            this.Payload = reader.ReadByteArray();
+            var bytes = reader.ReadByteArray();
+            var decompressed = Compression.DecompressGZip(bytes);
 
-            // check if we have some signatures attached
-            try
+            using (var stream = new MemoryStream(decompressed))
             {
-                var signatureCount = (int)reader.ReadVarInt();
-                this.Signatures = new Signature[signatureCount];
-                for (int i = 0; i < signatureCount; i++)
+                using (var temp = new BinaryReader(stream))
                 {
-                    Signatures[i] = reader.ReadSignature();
+                    this.NexusName = temp.ReadVarString();
+                    this.ChainName = temp.ReadVarString();
+                    this.Script = temp.ReadByteArray();
+                    this.Expiration = temp.ReadUInt32();
+                    this.Payload = temp.ReadByteArray();
+
+                    // check if we have some signatures attached
+                    try
+                    {
+                        var signatureCount = (int)temp.ReadVarInt();
+                        this.Signatures = new Signature[signatureCount];
+                        for (int i = 0; i < signatureCount; i++)
+                        {
+                            Signatures[i] = temp.ReadSignature();
+                        }
+                    }
+                    catch
+                    {
+                        this.Signatures = new Signature[0];
+                    }
                 }
-            }
-            catch
-            {
-                this.Signatures = new Signature[0];
             }
 
             this.UpdateHash();

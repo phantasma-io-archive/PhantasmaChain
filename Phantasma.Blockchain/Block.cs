@@ -140,36 +140,46 @@ namespace Phantasma.Blockchain
 
         internal void Serialize(BinaryWriter writer)
         {
-            writer.WriteBigInteger(Height);
-            writer.Write(Timestamp.Value);
-            writer.WriteHash(PreviousHash);
-            writer.WriteAddress(ChainAddress);
-            writer.WriteVarInt(Protocol);
-
-            writer.Write((ushort)_transactionHashes.Count);
-            foreach (var hash in _transactionHashes)
+            using (var stream = new MemoryStream())
             {
-                writer.WriteHash(hash);
-                var evts = GetEventsForTransaction(hash).ToArray();
-                writer.Write((ushort)evts.Length);
-                foreach (var evt in evts)
+                using (var temp = new BinaryWriter(stream))
                 {
-                    evt.Serialize(writer);
-                }
-                int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length : -1;
-                writer.Write((short)resultLen);
-                if (resultLen > 0)
-                {
-                    var result = _resultMap[hash];
-                    writer.WriteByteArray(result);
-                }
-            }
+                    temp.WriteBigInteger(Height);
+                    temp.Write(Timestamp.Value);
+                    temp.WriteHash(PreviousHash);
+                    temp.WriteAddress(ChainAddress);
+                    temp.WriteVarInt(Protocol);
 
-            writer.Write((ushort)_oracleData.Count);
-            foreach (var entry in _oracleData)
-            {
-                writer.WriteVarString(entry.URL);
-                writer.WriteByteArray(entry.Content);
+                    temp.Write((ushort)_transactionHashes.Count);
+                    foreach (var hash in _transactionHashes)
+                    {
+                        temp.WriteHash(hash);
+                        var evts = GetEventsForTransaction(hash).ToArray();
+                        temp.Write((ushort)evts.Length);
+                        foreach (var evt in evts)
+                        {
+                            evt.Serialize(temp);
+                        }
+                        int resultLen = _resultMap.ContainsKey(hash) ? _resultMap[hash].Length : -1;
+                        temp.Write((short)resultLen);
+                        if (resultLen > 0)
+                        {
+                            var result = _resultMap[hash];
+                            temp.WriteByteArray(result);
+                        }
+                    }
+
+                    temp.Write((ushort)_oracleData.Count);
+                    foreach (var entry in _oracleData)
+                    {
+                        temp.WriteVarString(entry.URL);
+                        temp.WriteByteArray(entry.Content);
+                    }
+                }
+
+                var bytes = stream.ToArray();
+                var compressed = Compression.CompressGZip(bytes);
+                writer.WriteByteArray(compressed);
             }
         }
 
@@ -205,61 +215,69 @@ namespace Phantasma.Blockchain
 
         public void UnserializeData(BinaryReader reader)
         {
-            this.Height = reader.ReadBigInteger();
-            this.Timestamp = new Timestamp(reader.ReadUInt32());
-            this.PreviousHash = reader.ReadHash();
-            this.ChainAddress = reader.ReadAddress();
-            this.Protocol = (uint)reader.ReadVarInt();
-        
-            var hashCount = reader.ReadUInt16();
-            var hashes = new List<Hash>();
+            var bytes = reader.ReadByteArray();
+            var decompressed = Compression.DecompressGZip(bytes);
 
-            _eventMap.Clear();
-            _resultMap.Clear();
-            for (int j = 0; j < hashCount; j++)
+            using (var stream = new MemoryStream(decompressed))
             {
-                var hash = reader.ReadHash();
-                hashes.Add(hash);
-
-                var evtCount = reader.ReadUInt16();
-                var evts = new List<Event>(evtCount);
-                for (int i = 0; i < evtCount; i++)
+                using (var temp = new BinaryReader(stream))
                 {
-                    evts.Add(Event.Unserialize(reader));
-                }
+                    this.Height = temp.ReadBigInteger();
+                    this.Timestamp = new Timestamp(temp.ReadUInt32());
+                    this.PreviousHash = temp.ReadHash();
+                    this.ChainAddress = temp.ReadAddress();
+                    this.Protocol = (uint)temp.ReadVarInt();
 
-                _eventMap[hash] = evts;
+                    var hashCount = temp.ReadUInt16();
+                    var hashes = new List<Hash>();
 
-                var resultLen = reader.ReadInt16();
-                if (resultLen >= 0)
-                {
-                    if (resultLen == 0)
+                    _eventMap.Clear();
+                    _resultMap.Clear();
+                    for (int j = 0; j < hashCount; j++)
                     {
-                        _resultMap[hash] = new byte[0];
+                        var hash = temp.ReadHash();
+                        hashes.Add(hash);
+
+                        var evtCount = temp.ReadUInt16();
+                        var evts = new List<Event>(evtCount);
+                        for (int i = 0; i < evtCount; i++)
+                        {
+                            evts.Add(Event.Unserialize(temp));
+                        }
+
+                        _eventMap[hash] = evts;
+
+                        var resultLen = temp.ReadInt16();
+                        if (resultLen >= 0)
+                        {
+                            if (resultLen == 0)
+                            {
+                                _resultMap[hash] = new byte[0];
+                            }
+                            else
+                            {
+                                _resultMap[hash] = temp.ReadByteArray();
+                            }
+                        }
                     }
-                    else
+
+                    var oracleCount = temp.ReadUInt16();
+                    _oracleData.Clear();
+                    while (oracleCount > 0)
                     {
-                        _resultMap[hash] = reader.ReadByteArray();
+                        var key = temp.ReadVarString();
+                        var val = temp.ReadByteArray();
+                        _oracleData.Add(new OracleEntry(key, val));
+                        oracleCount--;
+                    }
+
+                    _transactionHashes = new List<Hash>();
+                    foreach (var hash in hashes)
+                    {
+                        _transactionHashes.Add(hash);
                     }
                 }
             }
-
-            var oracleCount = reader.ReadUInt16();
-            _oracleData.Clear();
-            while (oracleCount > 0)
-            {
-                var key = reader.ReadVarString();
-                var val = reader.ReadByteArray();
-                _oracleData.Add(new OracleEntry( key, val));
-                oracleCount--;
-            }
-
-            _transactionHashes = new List<Hash>();
-            foreach (var hash in hashes)
-            {
-                _transactionHashes.Add(hash);
-            }
-
             _dirty = true;
         }
 
