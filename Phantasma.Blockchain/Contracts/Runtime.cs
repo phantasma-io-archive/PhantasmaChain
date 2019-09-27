@@ -578,14 +578,14 @@ namespace Phantasma.Blockchain.Contracts
                 return false;
             }
 
-            if (address.IsUser && this.Nexus.HasAddressScript(changeSet, address))
-            {
-                return InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
-            }
-
             if (this.Transaction == null)
             {
                 return false;
+            }
+
+            if (address.IsUser && Nexus.HasGenesis && this.Nexus.HasAddressScript(changeSet, address))
+            {
+                return InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
             }
 
             return this.Transaction.IsSignedBy(address);

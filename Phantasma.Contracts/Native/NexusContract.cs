@@ -60,8 +60,9 @@ namespace Phantasma.Contracts.Native
                 Runtime.Expect(platform == DomainSettings.PlatformName, "chain name is invalid");
             }
 
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(from), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(this.Runtime.CreateToken(symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
             Runtime.Notify(EventKind.TokenCreate, from, symbol);
@@ -75,8 +76,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
 
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
             Runtime.Expect(owner.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
             name = name.ToLowerInvariant();
             Runtime.Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase), "same name as parent");
@@ -93,50 +95,14 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
 
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
             Runtime.Expect(owner.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
             Runtime.Expect(Runtime.CreateFeed(owner, name, mode), "feed creation failed");
 
             Runtime.Notify(EventKind.FeedCreate, owner, name);
         }
-
-        /*
-        public bool IsPlatformSupported(string name)
-        {
-            var count = _platforms.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var entry = _platforms.Get<InteropPlatformInfo>(i);
-                if (entry.Name == name)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public InteropPlatformInfo GetPlatformInfo(string name)
-        {
-            var count = _platforms.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var entry = _platforms.Get<InteropPlatformInfo>(i);
-                if (entry.Name == name)
-                {
-                    return entry;
-                }
-            }
-
-            Runtime.Expect(false, "invalid platform");
-            return new InteropPlatformInfo();
-        }
-
-        public InteropPlatformInfo[] GetAvailablePlatforms()
-        {
-            return _platforms.All<InteropPlatformInfo>();
-        }*/
 
         public void CreatePlatform(Address target, string fuelSymbol)
         {

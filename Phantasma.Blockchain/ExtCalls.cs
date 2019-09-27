@@ -493,52 +493,48 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_DeployContract(RuntimeVM runtime)
+        private static ExecutionState Runtime_DeployContract(RuntimeVM Runtime)
         {
-            try
-            {
-                var tx = runtime.Transaction;
-                Throw.IfNull(tx, nameof(tx));
+            var tx = Runtime.Transaction;
+            Throw.IfNull(tx, nameof(tx));
 
-                if (runtime.Stack.Count < 1)
-                {
-                    return ExecutionState.Fault;
-                }
-
-                VMObject temp;
-
-                var owner = runtime.Nexus.GetChainOwnerByName(runtime.Chain.Name);
-                if (!runtime.Transaction.IsSignedBy(owner))
-                {
-                    return ExecutionState.Fault;
-                }
-
-                temp = runtime.Stack.Pop();
-
-                bool success;
-                switch (temp.Type) 
-                {
-                    case VMType.String:
-                        {
-                            var name = temp.AsString();
-                            success = runtime.Chain.DeployNativeContract(runtime.Storage, SmartContract.GetAddressForName(name)); 
-                        }
-                        break;
-
-                    default:
-                        success = false;
-                        break;
-                }
-
-                var result = new VMObject();
-                result.SetValue(success);
-                runtime.Stack.Push(result);
-            }
-            catch
+            if (Runtime.Stack.Count < 1)
             {
                 return ExecutionState.Fault;
             }
 
+            VMObject temp;
+
+            var owner = Runtime.Nexus.GetChainOwnerByName(Runtime.Chain.Name);
+            Runtime.Expect(owner.IsUser, "address must be user");
+
+            if (Runtime.Nexus.HasGenesis)
+            {
+                Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            }
+
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
+            temp = Runtime.Stack.Pop();
+
+            bool success;
+            switch (temp.Type) 
+            {
+                case VMType.String:
+                    {
+                        var name = temp.AsString();
+                        success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name)); 
+                    }
+                    break;
+
+                default:
+                    success = false;
+                    break;
+            }
+
+            var result = new VMObject();
+            result.SetValue(success);
+            Runtime.Stack.Push(result);
             return ExecutionState.Running;
         }
 
