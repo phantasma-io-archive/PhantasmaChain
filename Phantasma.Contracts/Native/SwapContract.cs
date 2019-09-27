@@ -146,7 +146,15 @@ namespace Phantasma.Contracts.Native
             {
                 amount = 1;
             }
-            SwapTokens(from, fromSymbol, DomainSettings.FuelTokenSymbol, amount);
+
+            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+
+            amount -= balance;
+
+            if (amount > 0)
+            {
+                SwapTokens(from, fromSymbol, DomainSettings.FuelTokenSymbol, amount);
+            }
         }
 
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
