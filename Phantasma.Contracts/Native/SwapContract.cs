@@ -142,6 +142,10 @@ namespace Phantasma.Contracts.Native
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
         {
             var amount = Runtime.GetTokenQuote(DomainSettings.FuelTokenSymbol, fromSymbol, feeAmount);
+            if (amount < 1)
+            {
+                amount = 1;
+            }
             SwapTokens(from, fromSymbol, DomainSettings.FuelTokenSymbol, amount);
         }
 
