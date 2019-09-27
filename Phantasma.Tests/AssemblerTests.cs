@@ -11,8 +11,6 @@ using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Simulator;
 using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
@@ -118,10 +116,10 @@ namespace Phantasma.Tests
                 $"alias r5, $currentTrigger",
                 $"alias r6, $comparisonResult",
 
-                $@"load $triggerSend, ""{TokenContract.TriggerSend}""",
-                $@"load $triggerReceive, ""{TokenContract.TriggerReceive}""",
-                $@"load $triggerBurn, ""{TokenContract.TriggerBurn}""",
-                $@"load $triggerMint, ""{TokenContract.TriggerMint}""",
+                $@"load $triggerSend, ""{TokenTrigger.OnSend}""",
+                $@"load $triggerReceive, ""{TokenTrigger.OnReceive}""",
+                $@"load $triggerBurn, ""{TokenTrigger.OnBurn}""",
+                $@"load $triggerMint, ""{TokenTrigger.OnMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",
@@ -155,7 +153,7 @@ namespace Phantasma.Tests
             //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
 
             Assert.ThrowsException<ChainException>(() =>
@@ -165,7 +163,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
         }
 
@@ -194,10 +192,10 @@ namespace Phantasma.Tests
                 $"alias r5, $currentTrigger",
                 $"alias r6, $comparisonResult",
 
-                $@"load $triggerSend, ""{TokenContract.TriggerSend}""",
-                $@"load $triggerReceive, ""{TokenContract.TriggerReceive}""",
-                $@"load $triggerBurn, ""{TokenContract.TriggerBurn}""",
-                $@"load $triggerMint, ""{TokenContract.TriggerMint}""",
+                $@"load $triggerSend, ""{TokenTrigger.OnSend}""",
+                $@"load $triggerReceive, ""{TokenTrigger.OnReceive}""",
+                $@"load $triggerBurn, ""{TokenTrigger.OnBurn}""",
+                $@"load $triggerMint, ""{TokenTrigger.OnMint}""",
                 $"pop $currentTrigger",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",
@@ -245,7 +243,7 @@ namespace Phantasma.Tests
             //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
 
             var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
@@ -263,7 +261,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
         }
 
@@ -338,7 +336,7 @@ namespace Phantasma.Tests
             var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
             simulator.EndBlock();
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
 
             Assert.ThrowsException<ChainException>(() =>
@@ -348,7 +346,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
             Assert.IsTrue(balance == 1000);
         }
 
@@ -435,7 +433,7 @@ namespace Phantasma.Tests
             var accountScript = simulator.Nexus.LookUpAddressScript(simulator.Nexus.RootStorage, target.Address);
             Assert.IsTrue(accountScript != null && accountScript.Length > 0);
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, target.Address);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, target.Address);
             Assert.IsTrue(balance == 1000);
 
             var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
@@ -453,7 +451,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, target.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, target.Address);
             Assert.IsTrue(balance == 1000);
         }
 

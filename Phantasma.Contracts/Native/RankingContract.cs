@@ -3,7 +3,7 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
     public struct LeaderboardRow
     {
@@ -20,9 +20,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger round;
     }
 
-    public sealed class RankingContract : SmartContract
+    public sealed class RankingContract : NativeContract
     {
-        public override string Name => Nexus.RankingContractName;
+        public override NativeContractKind Kind => NativeContractKind.Ranking;
 
         internal StorageMap _leaderboards; // name, Leaderboard
         internal StorageMap _rows; // name, List<LeaderboardEntry>

@@ -24,47 +24,47 @@ namespace Phantasma.Blockchain.Contracts
 
         public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, BigInteger amount)
         {
-            return sb.CallContract(Nexus.TokenContractName, "MintTokens", tokenSymbol, target, amount);
+            return sb.CallInterop("Runtime.MintTokens", target, tokenSymbol, amount);
         }
 
         public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, string to, BigInteger amount)
         {
-            return sb.CallContract(Nexus.TokenContractName, "TransferTokens", from, to, tokenSymbol, amount);
+            return sb.CallInterop("Runtime.TransferTokens", from, to, tokenSymbol, amount);
         }
 
         public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return sb.CallContract(Nexus.TokenContractName, "TransferTokens", from, to, tokenSymbol, amount);
+            return sb.CallInterop("Runtime.TransferTokens", from, to, tokenSymbol, amount);
         }
 
         public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid
         {
-            return sb.CallContract(Nexus.TokenContractName, "TransferToken", from, to, tokenSymbol, tokenId);
+            return sb.CallInterop("Runtime.TransferToken", from, to, tokenSymbol, tokenId);
         }
 
         public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, string to, BigInteger tokenId)//todo check if this is valid
         {
-            return sb.CallContract(Nexus.TokenContractName, "TransferToken", from, to, tokenSymbol, tokenId);
+            return sb.CallInterop("Runtime.TransferToken", from, to, tokenSymbol, tokenId);
         }
 
         public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
-            return sb.CallContract(Nexus.TokenContractName, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
+            return sb.CallInterop("Runtime.SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
         public static ScriptBuilder CrossTransferToken(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, string to, BigInteger amount)
         {
-            return sb.CallContract(Nexus.TokenContractName, "SendTokens", destinationChain, from, to, tokenSymbol, amount);
+            return sb.CallInterop("Runtime.SendTokens", destinationChain, from, to, tokenSymbol, amount);
         }
 
         public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, Address to, BigInteger tokenId)
         {
-            return sb.CallContract(Nexus.TokenContractName, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
+            return sb.CallInterop("Runtime.SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
 
         public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, string to, BigInteger tokenId)
         {
-            return sb.CallContract(Nexus.TokenContractName, "SendToken", destinationChain, from, to, tokenSymbol, tokenId);
+            return sb.CallInterop("Runtime.SendToken", destinationChain, from, to, tokenSymbol, tokenId);
         }
     }
 }

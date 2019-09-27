@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.API;
-using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Contracts.Extra;
+using Phantasma.Contracts.Native;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Simulator;

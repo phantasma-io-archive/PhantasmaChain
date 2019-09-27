@@ -3,7 +3,7 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
     public struct BombEntry
     {
@@ -11,9 +11,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger round;
     }
 
-    public sealed class BombContract : SmartContract
+    public sealed class BombContract : NativeContract
     {
-        public override string Name => Nexus.BombContractName;
+        public override NativeContractKind Kind => NativeContractKind.Bomb;
 
         public const string SESLeaderboardName = "ses";
         public const string BPLeaderboardName = "sesbp";
@@ -28,8 +28,8 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis address");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.CallContext(Nexus.RankingContractName, "CreateLeaderboard", this.Address, SESLeaderboardName, 100, 0);
-            Runtime.CallContext(Nexus.RankingContractName, "CreateLeaderboard", this.Address, BPLeaderboardName, 10, 0);
+            Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, SESLeaderboardName, 100, 0);
+            Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, BPLeaderboardName, 10, 0);
         }
 
         public void OnReceive(Address from, string symbol, BigInteger amount)
@@ -43,7 +43,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(amount > 0 , "invalid amount");
 
             string leaderboardName = SESLeaderboardName;
-            var leaderboard = (Leaderboard)Runtime.CallContext(Nexus.RankingContractName, "GetLeaderboard", leaderboardName).ToObject();
+            var leaderboard = (Leaderboard)Runtime.CallContext(NativeContractKind.Ranking, "GetLeaderboard", leaderboardName).ToObject();
 
             BombEntry entry;
             if (_entries.ContainsKey<Address>(from))
@@ -71,7 +71,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             entry.amount += amount;
             _entries.Set<Address, BombEntry>(from, entry);
 
-            Runtime.CallContext(Nexus.RankingContractName, "InsertScore", this.Address, from, leaderboardName, entry.amount);
+            Runtime.CallContext(NativeContractKind.Ranking, "InsertScore", this.Address, from, leaderboardName, entry.amount);
         }
     }
 }

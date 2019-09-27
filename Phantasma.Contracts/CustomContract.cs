@@ -1,7 +1,7 @@
 ﻿using Phantasma.Core;
 using Phantasma.Cryptography;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Contracts
 {
     public sealed class CustomContract : SmartContract
     {

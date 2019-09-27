@@ -28,8 +28,9 @@ namespace Phantasma.Domain
         Privacy,
         Relay,
         Bomb,
+        Ranking,
         Market,
-        Friends,
+        Friend,
         Vault,
         Sale
     }

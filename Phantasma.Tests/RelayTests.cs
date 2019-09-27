@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.API;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Contracts.Native;
 using Phantasma.Simulator;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Types;
@@ -12,9 +12,10 @@ using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM.Utils;
-using static Phantasma.Blockchain.Contracts.Native.RelayContract;
+using static Phantasma.Contracts.Native.RelayContract;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
+using Phantasma.Contracts;
 
 namespace Phantasma.Tests
 {
@@ -164,7 +165,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var api = test.api;
 
-            var contractAddress = SmartContract.GetAddressForName("relay");
+            var contractAddress = SmartContract.GetAddressForNative(NativeContractKind.Relay);
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
@@ -220,9 +221,9 @@ namespace Phantasma.Tests
             var lastMessage = messages[messageCount - 1];
             var lastReceipt = RelayReceipt.FromMessage(lastMessage, sender);
 
-            var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, sender.Address);
-            var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, contractAddress);
-            var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, node.Address);
+            var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, sender.Address);
+            var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, contractAddress);
+            var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, node.Address);
 
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
@@ -233,9 +234,9 @@ namespace Phantasma.Tests
 
             var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
 
-            var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, sender.Address);
-            var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, contractAddress);
-            var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, receiver.Address);
+            var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, sender.Address);
+            var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, contractAddress);
+            var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, receiver.Address);
 
             var expectedFee = RelayFeePerMessage * messageCount;
 
@@ -317,9 +318,9 @@ namespace Phantasma.Tests
                 var lastMessage = messages[i];
                 var lastReceipt = RelayReceipt.FromMessage(lastMessage, sender);
 
-                var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, sender.Address);
-                var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, contractAddress);
-                var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, receiver.Address);
+                var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, sender.Address);
+                var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, contractAddress);
+                var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, receiver.Address);
 
                 simulator.BeginBlock();
                 var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
@@ -330,9 +331,9 @@ namespace Phantasma.Tests
 
                 var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
 
-                var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, sender.Address);
-                var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, contractAddress);
-                var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, receiver.Address);
+                var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, sender.Address);
+                var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, contractAddress);
+                var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, receiver.Address);
 
                 var expectedFee = RelayFeePerMessage * receiptStep;
 
@@ -671,7 +672,7 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, autoSender.Address, simulator.Nexus.RootChain, symbol, 30000);
             simulator.EndBlock();
         
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(symbol, receiver.Address);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, receiver.Address);
             Assert.IsTrue(balance == 30000);
 
         }
@@ -747,9 +748,9 @@ namespace Phantasma.Tests
             var lastMessage = messages[messageCount - 1];
             var lastReceipt = RelayReceipt.FromMessage(lastMessage, sender);
 
-            var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, sender.Address);
-            var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, contractAddress);
-            var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, node.Address);
+            var senderInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, sender.Address);
+            var chainInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, contractAddress);
+            var receiverInitialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, node.Address);
 
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(sender, ProofOfWork.None, () =>
@@ -760,9 +761,9 @@ namespace Phantasma.Tests
 
             var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
 
-            var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, sender.Address);
-            var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, contractAddress);
-            var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, receiver.Address);
+            var senderFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, sender.Address);
+            var chainFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, contractAddress);
+            var receiverFinalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, receiver.Address);
 
             var expectedFee = RelayFeePerMessage * (lastReceipt.message.index + 1);
 

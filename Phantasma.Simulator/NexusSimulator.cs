@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Blockchain.Tokens;
+using Phantasma.Contracts.Native;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
@@ -93,13 +92,13 @@ namespace Phantasma.Simulator
                 }
             }
 
-            this.bankChain = Nexus.FindChainByName("bank");
+            this.bankChain = Nexus.GetChainByName("bank");
 
             _rnd = new Random(seed);
             _keys.Add(_owner);
 
             var oneFuel = UnitConversion.ToBigInteger(1, DomainSettings.FuelTokenDecimals);
-            var localBalance = Nexus.RootChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, _owner.Address);
+            var localBalance = Nexus.RootChain.GetTokenBalance(Nexus.RootStorage, DomainSettings.FuelTokenSymbol, _owner.Address);
 
             if (localBalance < oneFuel)
             {
@@ -489,11 +488,17 @@ namespace Phantasma.Simulator
         {
             var chain = Nexus.RootChain;
 
-            var script = ScriptUtils.
+            var sb = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallContract("token", "MintTokens", owner.Address, destination, symbol, amount).
-                SpendGas(owner.Address).
+                MintTokens(symbol, owner.Address, amount);
+
+            if (owner.Address != destination)
+            {
+                sb.TransferTokens(symbol, owner.Address, destination, amount);
+            }
+
+            var script = sb.SpendGas(owner.Address).
                 EndScript();
 
             var tx = MakeTransaction(owner, ProofOfWork.None, chain, script);
@@ -524,11 +529,11 @@ namespace Phantasma.Simulator
 
             if (targetAddress != source.Address)
             {
-                sb.CallContract("token", "SendTokens", targetChain.Address, source.Address, source.Address, DomainSettings.FuelTokenSymbol, fee);
+                sb.CallInterop("Runtime.SendTokens", targetChain.Address, source.Address, source.Address, DomainSettings.FuelTokenSymbol, fee);
             }
 
             var script =
-                sb.CallContract("token", "SendTokens", targetChain.Address, source.Address, targetAddress, tokenSymbol, amount).
+                sb.CallInterop("Runtime.SendTokens", targetChain.Address, source.Address, targetAddress, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
 
@@ -550,7 +555,7 @@ namespace Phantasma.Simulator
 
             var script = ScriptUtils.
                 BeginScript().
-                CallContract("token", "SettleBlock", sourceChain.Address, targetHash).
+                CallInterop("Runtime.SettleBlock", sourceChain.Address, targetHash).
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 SpendGas(source.Address).
                 EndScript();
@@ -606,8 +611,7 @@ namespace Phantasma.Simulator
 
             var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                //CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
-                CallInterop("Runtime.TransferTokens", source.Address, dest, tokenSymbol, amount).
+                TransferTokens(tokenSymbol, source.Address, dest, amount).
                 SpendGas(source.Address).
                 EndScript();
 
@@ -635,7 +639,7 @@ namespace Phantasma.Simulator
             var script = ScriptUtils.BeginScript().
                 LoanGas(source.Address, MinimumFee, 9999).
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallContract("token", "TransferTokens", source.Address, dest, tokenSymbol, amount).
+                CallInterop("Runtime.TransferTokens", source.Address, dest, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
 
@@ -656,7 +660,7 @@ namespace Phantasma.Simulator
 
         public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
             return tx;
         }
@@ -664,14 +668,14 @@ namespace Phantasma.Simulator
         public Transaction GenerateNftSidechainTransfer(KeyPair source, Address destAddress, Chain sourceChain,
             Chain destChain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "SendToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SendToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, sourceChain, script);
             return tx;
         }
 
         public Transaction GenerateNftBurn(KeyPair source, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "BurnToken", source.Address, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.BurnToken", source.Address, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
             return tx;
         }
@@ -690,7 +694,7 @@ namespace Phantasma.Simulator
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallContract("token", "MintToken", source.Address, destAddress, tokenSymbol, rom, ram).
+                CallInterop("Runtime.MintToken", source.Address, destAddress, tokenSymbol, rom, ram).
                 SpendGas(source.Address).
                 EndScript();
 
@@ -701,7 +705,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, string value)
         {
             var chain = Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("token", "SetMetadata", source.Address, tokenSymbol, key, value).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SetMetadata", source.Address, tokenSymbol, key, value).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
 
             return tx;
@@ -752,15 +756,15 @@ namespace Phantasma.Simulator
                     case 1:
                         {
                             var sourceChainList = Nexus.Chains.ToArray();
-                            sourceChain = Nexus.FindChainByName( sourceChainList[_rnd.Next() % sourceChainList.Length]);
+                            sourceChain = Nexus.GetChainByName( sourceChainList[_rnd.Next() % sourceChainList.Length]);
 
-                            var targetChainList = Nexus.Chains.Select(x => Nexus.FindChainByName(x)).Where(x => Nexus.GetParentChainByName(x.Name) == sourceChain.Name || Nexus.GetParentChainByName(sourceChain.Name) == x.Name).ToArray();
+                            var targetChainList = Nexus.Chains.Select(x => Nexus.GetChainByName(x)).Where(x => Nexus.GetParentChainByName(x.Name) == sourceChain.Name || Nexus.GetParentChainByName(sourceChain.Name) == x.Name).ToArray();
                             var targetChain = targetChainList[_rnd.Next() % targetChainList.Length];
 
                             var total = UnitConversion.ToBigInteger(1 + _rnd.Next() % 100, DomainSettings.FuelTokenDecimals);
 
-                            var tokenBalance = sourceChain.GetTokenBalance(tokenSymbol, source.Address);
-                            var fuelBalance = sourceChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, source.Address);
+                            var tokenBalance = sourceChain.GetTokenBalance(sourceChain.Storage, tokenSymbol, source.Address);
+                            var fuelBalance = sourceChain.GetTokenBalance(sourceChain.Storage, DomainSettings.FuelTokenSymbol, source.Address);
 
                             var expectedTotal = total;
                             if (tokenSymbol == DomainSettings.FuelTokenSymbol)
@@ -792,7 +796,7 @@ namespace Phantasma.Simulator
                                 if (mempool == null || Nexus.GetConfirmationsOfHash(pendingBlock.hash) > 0)
                                 {
 
-                                    var balance = pendingBlock.destChain.GetTokenBalance(pendingBlock.tokenSymbol, source.Address);
+                                    var balance = pendingBlock.destChain.GetTokenBalance(pendingBlock.destChain.Storage, pendingBlock.tokenSymbol, source.Address);
                                     if (balance > 0)
                                     {
                                         Logger.Message($"...Settling {pendingBlock.sourceChain.Name}=>{pendingBlock.destChain.Name}: {pendingBlock.hash}");
@@ -850,7 +854,7 @@ namespace Phantasma.Simulator
                             sourceChain = this.Nexus.RootChain;
                             tokenSymbol = DomainSettings.FuelTokenSymbol;
 
-                            var balance = sourceChain.GetTokenBalance(tokenSymbol, source.Address);
+                            var balance = sourceChain.GetTokenBalance(sourceChain.Storage, tokenSymbol, source.Address);
                             if (balance > fee + AccountContract.RegistrationCost && !pendingNames.Contains(source.Address))
                             {
                                 var randomName = accountNames[_rnd.Next() % accountNames.Length];
@@ -909,8 +913,8 @@ namespace Phantasma.Simulator
                             {
                                 var total = UnitConversion.ToBigInteger(1 + _rnd.Next() % 100, DomainSettings.FuelTokenDecimals - 1);
 
-                                var tokenBalance = sourceChain.GetTokenBalance(tokenSymbol, source.Address);
-                                var fuelBalance = sourceChain.GetTokenBalance(DomainSettings.FuelTokenSymbol, source.Address);
+                                var tokenBalance = sourceChain.GetTokenBalance(sourceChain.Storage, tokenSymbol, source.Address);
+                                var fuelBalance = sourceChain.GetTokenBalance(sourceChain.Storage, DomainSettings.FuelTokenSymbol, source.Address);
 
                                 var expectedTotal = total;
                                 if (tokenSymbol == DomainSettings.FuelTokenSymbol)

@@ -103,14 +103,14 @@ namespace Phantasma.Blockchain
             _dirty = false;
         }
 
-        public IEnumerable<Event> GetEventsForTransaction(Hash hash)
+        public Event[] GetEventsForTransaction(Hash hash)
         {
             if (_eventMap.ContainsKey(hash))
             {
-                return _eventMap[hash];
+                return _eventMap[hash].ToArray();
             }
 
-            return Enumerable.Empty<Event>();
+            return new Event[0];
         }
 
         public byte[] GetResultForTransaction(Hash hash)

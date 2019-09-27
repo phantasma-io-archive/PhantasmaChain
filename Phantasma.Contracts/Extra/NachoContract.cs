@@ -7,11 +7,10 @@ using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Numerics;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Core.Types;
 using Phantasma.Domain;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Extra
 {
     #region RULES
     public static class Rules
@@ -2164,7 +2163,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         //public static readonly string ROOM_COUNTER_KEY = "_roomctr_";
         //public static readonly string ROOM_SEQUENCE_KEY = "_roomseq_";
-        public static readonly string MOTD_KEY = "_MOTD_";
+
+        internal string _messageOfTheDay;
 
         public bool SuspendTransfers = false;
 
@@ -2292,9 +2292,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            Runtime.Expect(Runtime.Nexus.TokenExists(tokenSymbol), "invalid token");
+            Runtime.Expect(Runtime.TokenExists(tokenSymbol), "invalid token");
 
-            var tokenInfo = Runtime.Nexus.GetTokenInfo(tokenSymbol);
+            var tokenInfo = Runtime.GetToken(tokenSymbol);
             Runtime.Expect(tokenInfo.IsFungible(), "purchase token must be fungible");
             Runtime.Expect(tokenInfo.IsTransferable(), "purchase token must be transferable");
 
@@ -2307,8 +2307,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             nachoAmount += GetBonusNachos(nachoAmount, dollarAmount);
 
-            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, from, nachoAmount, false), "mint failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
+            Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
+            Runtime.Expect(Runtime.TransferTokens(tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
 
             UpdateNachoTokensSold(nachoAmount);
 
@@ -2573,7 +2573,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
 
             var tokenSymbol = DomainSettings.StakingTokenSymbol;
-            return Runtime.Nexus.TransferTokens(Runtime, tokenSymbol, address, DevelopersAddress, amount);
+            return Runtime.TransferTokens(tokenSymbol, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)
@@ -2890,7 +2890,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             }
             
             //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, this.Address, from, outputAmount), "deposit failed");
+            Runtime.Expect(Runtime.TransferTokens(Constants.SOUL_SYMBOL, this.Address, from, outputAmount), "deposit failed");
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -2918,10 +2918,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //wrestlers.Remove(wrestlerID);
 
-            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
-            ownerships.Remove(this.Storage, from, wrestlerID);
-            //token.Burn(balances, from,)
-            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.WRESTLER_SYMBOL, from, wrestlerID, false), "burn failed");
+            Runtime.Expect(Runtime.BurnToken(Constants.WRESTLER_SYMBOL, from, wrestlerID), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, wrestlerID);
         }
@@ -3026,7 +3023,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // TODO error handling when item not exist
         public NachoItem GetItem(BigInteger ID)
         {
-            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, ID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, ID);
 
             var item = Serialization.Unserialize<NachoItem>(nft.RAM);
 
@@ -3048,13 +3045,13 @@ namespace Phantasma.Blockchain.Contracts.Native
         public void SetItem(BigInteger ID, NachoItem item)
         {
             var bytes = Serialization.Serialize(item);
-            Runtime.Nexus.EditNFTContent(Constants.ITEM_SYMBOL, ID, bytes);
+            Runtime.WriteToken(Constants.ITEM_SYMBOL, ID, bytes);
         }
 
         public bool HasItem(Address address, BigInteger itemID)
         {
-            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
-            return ownerships.GetOwner(this.Storage, itemID) == address;
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
+            return nft.CurrentOwner == address;
         }
 
         public void DeleteItem(Address from, BigInteger itemID)
@@ -3066,13 +3063,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var item = GetItem(itemID);
             Runtime.Expect(item.location != ItemLocation.Market, "in auction");
 
-            item.location = ItemLocation.None;
-            //item.owner = Address.Null;
-
-            var ownerships = new OwnershipSheet(Constants.ITEM_SYMBOL);
-            ownerships.Remove(this.Storage, from, itemID);
-            //token.Burn(balances, from,)
-            Runtime.Expect(Runtime.Nexus.BurnToken(Runtime, Constants.ITEM_SYMBOL, from, itemID, false), "burn failed");
+            Runtime.Expect(Runtime.BurnToken(Constants.ITEM_SYMBOL, from, itemID), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, itemID);
         }
@@ -3095,7 +3086,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.flags.HasFlag(ItemFlags.Wrapped), "unwrapped item");
             item.flags ^= ItemFlags.Wrapped;
 
-            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
             
             SetItem(itemID, item);
@@ -3128,7 +3119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             switch (itemKind)
@@ -3213,7 +3204,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             // Recycle the item and send it back to our account
             //TransferItem(from, DevelopersAddress, itemID);
-            Runtime.Nexus.TransferToken(Runtime, Constants.ITEM_SYMBOL, from, DevelopersAddress, itemID);
+            Runtime.TransferToken(Constants.ITEM_SYMBOL, from, DevelopersAddress, itemID);
         }
 
         //public BigInteger GenerateItem(Address to, BigInteger itemID, ItemKind itemKind, bool wrapped)
@@ -3226,8 +3217,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         private BigInteger CreateItem(Address to, ItemKind itemKind, bool wrapped)
         {
-            var itemToken = Runtime.Nexus.GetTokenInfo(Constants.ITEM_SYMBOL);
-            Runtime.Expect(Runtime.Nexus.TokenExists(Constants.ITEM_SYMBOL), "Can't find the token symbol");
+            var itemToken = Runtime.GetToken(Constants.ITEM_SYMBOL);
+            Runtime.Expect(Runtime.TokenExists(Constants.ITEM_SYMBOL), "Can't find the token symbol");
 
             var item = new NachoItem()
             {
@@ -3247,9 +3238,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             var tokenROM = new byte[0]; //itemBytes;
             var tokenRAM = itemBytes;   //new byte[0];
 
-            var tokenID = this.Runtime.Nexus.CreateNFT(Constants.ITEM_SYMBOL, this.Name, this.Address, tokenROM, tokenRAM);
-            Runtime.Expect(tokenID > 0, "invalid tokenID");
-
             //var temp = Storage.FindMapForContract<BigInteger, bool>(ITEM_MAP);
             //Runtime.Expect(!temp.ContainsKey(itemID), "duplicated ID");
             //var hasItem = _items.Get<BigInteger, bool>(tokenID);
@@ -3260,12 +3248,9 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
             //var playerItems = _accountItems.Get<Address, StorageList>(to);
-            var ownership   = new OwnershipSheet(Constants.ITEM_SYMBOL);
-            var playerItems = ownership.Get(this.Storage, to);
-            //playerItems.Add(tokenID);
-            ownership.Add(this.Storage, to, tokenID);
-            
-            Runtime.Expect(Runtime.Nexus.MintToken(Runtime, Constants.ITEM_SYMBOL, to, tokenID, false), "minting failed");
+
+            var tokenID = Runtime.MintToken(Constants.ITEM_SYMBOL, to, tokenROM, tokenRAM);
+            Runtime.Expect(tokenID > 0, "minting failed");
             //Runtime.Notify(EventKind.ItemReceived, to, itemID);
             Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = this.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
 
@@ -3401,8 +3386,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool HasWrestler(Address address, BigInteger wrestlerID)
         {
-            var ownerships = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
-            return ownerships.GetOwner(this.Storage, wrestlerID) == address;
+            var nft = Runtime.ReadToken(Constants.WRESTLER_SYMBOL, wrestlerID);
+            return nft.CurrentOwner == address;
         }
 
         public BigInteger GenerateWrestler(Address to, byte[] genes, uint experience, bool wrapped)
@@ -3478,9 +3463,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(commentIndex < Constants.LUCHADOR_COMMENT_MAX, "invalid index");
 
             //var team = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            var ownership = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
-            var team = ownership.Get(this.Storage, from);
-            Runtime.Expect(team.Contains(wrestlerID), "invalid wrestler");
+            var nft = Runtime.ReadToken(Constants.WRESTLER_SYMBOL, wrestlerID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             var wrestler = GetWrestler(wrestlerID);
             //Runtime.Expect(wrestler.location == WrestlerLocation.None, "location invalid");
@@ -3679,7 +3663,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return GetBot((int)wrestlerID);
             }
 
-            var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, wrestlerID);
+            var nft = Runtime.ReadToken(Constants.WRESTLER_SYMBOL, wrestlerID);
 
             var wrestler = Serialization.Unserialize<NachoWrestler>(nft.RAM);
             if (wrestler.moveOverrides == null || wrestler.moveOverrides.Length < Constants.MOVE_OVERRIDE_COUNT)
@@ -3759,7 +3743,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         */
 
             var bytes = Serialization.Serialize(wrestler);
-            Runtime.Nexus.EditNFTContent(Constants.WRESTLER_SYMBOL, wrestlerID, bytes);
+            Runtime.WriteToken(Constants.WRESTLER_SYMBOL, wrestlerID, bytes);
         }
 
         #endregion
@@ -4141,7 +4125,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             var wrestler = GetWrestler(wrestlerID);
@@ -4176,7 +4160,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.location == ItemLocation.Wrestler, "invalid location");
             //Runtime.Expect(item.locationID == wrestlerID, "invalid wrestler"); // TODO fix
 
-            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             wrestler.itemID = 0;
@@ -4207,7 +4191,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(item.location == ItemLocation.None, "invalid location");
             Runtime.Expect(!item.flags.HasFlag(ItemFlags.Wrapped), "wrapped item");
 
-            var nft = Runtime.Nexus.GetNFT(Constants.ITEM_SYMBOL, itemID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             item.location = ItemLocation.Room;
@@ -4265,9 +4249,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
             //var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
-            var ownership = new OwnershipSheet(Constants.WRESTLER_SYMBOL);
-            var wrestlers = ownership.Get(this.Storage, from);
-            Runtime.Expect(wrestlers.Contains(wrestlerID), "invalid wrestler");
+            var nft = Runtime.ReadToken(Constants.WRESTLER_SYMBOL, wrestlerID);
+            Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
             var wrestler = GetWrestler(wrestlerID);
             Runtime.Expect(wrestler.location == WrestlerLocation.Room, "location failed");
@@ -4276,7 +4259,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (wrestler.stakeAmount > 0)
             {
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.SOUL_SYMBOL, from, this.Address, wrestler.stakeAmount), "unstake failed");
+                Runtime.Expect(Runtime.TransferTokens(Constants.SOUL_SYMBOL, from, this.Address, wrestler.stakeAmount), "unstake failed");
                 //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
                 Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = this.Address, symbol = Constants.SOUL_SYMBOL, value = wrestler.stakeAmount });
                 wrestler.stakeAmount = 0;
@@ -5136,7 +5119,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(wrestler.location == WrestlerLocation.None, "invalid location");
                 //Runtime.Expect(wrestler.currentMojo > 0, "not enough mojo"); // TODO fix
 
-                var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, ID);
+                var nft = Runtime.ReadToken(Constants.WRESTLER_SYMBOL, ID);
                 Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
                 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
@@ -5444,7 +5427,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
 
                 //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, refundAddress, refundAmount), "refund failed");
+                Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, refundAddress, refundAmount), "refund failed");
             }
             else
             {
@@ -5562,7 +5545,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 if (bet > 0)
                 {
                     //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, from, bet), "refund failed");
+                    Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, from, bet), "refund failed");
                 }
             }
 
@@ -6173,7 +6156,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var base_stamina = Formulas.CalculateBaseStat(genes, StatKind.Stamina);
             var maxStamina = Formulas.CalculateWrestlerStat(level, base_stamina, wrestler.gymBoostStamina);
 
-            var nft = Runtime.Nexus.GetNFT(Constants.WRESTLER_SYMBOL, wrestlerID);
+            var nft = Runtime.ReadToken(Constants.WRESTLER_SYMBOL, wrestlerID);
 
             var info = new WrestlerTurnInfo()
             {
@@ -6237,7 +6220,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         private void InitPot()
         {
             //Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "developer only");
-            Runtime.Expect(!Storage.Has("pot"), "pot already created");
+            Runtime.Expect(_pot.startTime.Value == 0, "pot already created");
 
             //Runtime.Expect(DepositNEP5(DevelopersAddress, amount), "deposit failed");
 
@@ -6383,7 +6366,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
                 //Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
-                Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, Constants.NACHO_SYMBOL, target, amount, false), "mint failed");
+                Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, target, amount), "mint failed");
 
                 //Runtime.Notify(NachoEvent.Deposit, target, amount);
                 Runtime.Notify(EventKind.TokenReceive, target, amount);
@@ -6505,7 +6488,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
                     if (winnerAmount > 0)
                     {
-                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                        Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
 
                         UpdateNachoTokenDistributed(winnerAmount);
                     }
@@ -6513,7 +6496,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
                     if (loserAmount > 0)
                     {
-                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
+                        Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
 
                         UpdateNachoTokenDistributed(loserAmount);
                     }
@@ -6542,7 +6525,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     for (var i = 0; i < 2; i++)
                     {
                         //Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
-                        Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, battle.sides[i].address, refundAmount), "refund failed");
+                        Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[i].address, refundAmount), "refund failed");
 
                         UpdateNachoTokenDistributed(drawAmount);
 
@@ -7006,7 +6989,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var timeDiff = (GetCurrentTime() - battle.time) / 60;
             bool timeOut = timeDiff > Constants.MINIMUM_MINUTES_FOR_IDLE;
 
-            BigInteger seed = Runtime.GetRandomNumber();
+            BigInteger seed = Runtime.GenerateRandomNumber();
 
             int localIndex = -1;
 
@@ -7050,7 +7033,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 var aiWrestler = GetWrestler(aiWrestlerID);
                 var aiMove = Rules.GetMoveFromMoveset(aiWrestler.genes, aiSlot, aiStance);
 
-                seed = Runtime.GetRandomNumber();
+                seed = Runtime.GenerateRandomNumber();
 
                 if (battle.mode == BattleMode.Practice)
                 {
@@ -7064,7 +7047,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     }
 
                     var chance = (int)(seed % 100);
-                    seed = Runtime.GetRandomNumber();
+                    seed = Runtime.GenerateRandomNumber();
 
                     smartness -= chance;
 
@@ -7423,7 +7406,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
                     info[i] = CalculateTurnInfo(battle.sides[i], wrestlers[i], battle.sides[i].wrestlers[0].wrestlerID, battle.sides[i].move, states[i].lastMove, states[i], seed);
 
-                    seed = Runtime.GetRandomNumber();
+                    seed = Runtime.GenerateRandomNumber();
 
                     if (info[i].move == WrestlingMove.Tart_Throw && info[i].item != ItemKind.Cooking_Hat && !Rules.IsSucessful((int)info[i].chance, Constants.TART_THROW_ACCURACY))
                     {
@@ -7540,7 +7523,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                             {
                                 if (ActivateItem(ref states, ref info, i, true, true))
                                 {
-                                    seed = Runtime.GetRandomNumber();
+                                    seed = Runtime.GenerateRandomNumber();
                                     var roll = seed % 6;
 
                                     int target = roll < 4 ? i : 1 - i;
@@ -8051,7 +8034,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     var other = 1 - i;
 
                     var dmg = CalculateMoveResult(info[other], info[i], seed);
-                    seed = Runtime.GetRandomNumber();
+                    seed = Runtime.GenerateRandomNumber();
 
                     if (dmg > 0)
                     {
@@ -9274,22 +9257,19 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public string GetMOTD()
         {
-            //var motd = Storage.Get<string>(MOTD_KEY);
-            //if (motd == null || motd.Length == 0)
-            //{
-            //    return "Welcome to the oficial public release of Nacho Men!";
-            //}
+            if (string.IsNullOrEmpty(_messageOfTheDay))
+            {
+                return "Welcome to the oficial public release of Nacho Men!";
+            }
 
-            var motd = Storage.Has(MOTD_KEY) ? "Welcome to the oficial public release of Nacho Men!" : string.Empty	;
-
-            return motd;
+            return _messageOfTheDay;
         }
 
-        public void SetMOTD(string motd)
+        public void SetMOTD(string msg)
         {
             Runtime.Expect(Runtime.IsWitness(DevelopersAddress), "developrs only");
 
-            Storage.Put(MOTD_KEY, motd);
+            _messageOfTheDay = msg;
         }
 
         /// the result of this should be always MajorVersion * 256 + MinorVersion

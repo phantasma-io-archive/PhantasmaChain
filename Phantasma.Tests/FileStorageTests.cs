@@ -6,8 +6,8 @@ using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using static Phantasma.Blockchain.Contracts.Native.StakeContract;
-using static Phantasma.Blockchain.Contracts.Native.StorageContract;
+using static Phantasma.Contracts.Native.StakeContract;
+using static Phantasma.Contracts.Native.StorageContract;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
 
@@ -41,7 +41,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for minimum staking amount
             var stakeAmount = accountBalance / 2;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -53,7 +53,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
@@ -83,7 +83,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(usedSpace == contentSize + headerSize);
 
             Assert.IsTrue(simulator.Nexus.ArchiveExists(contentMerkle.Root));
-            var archive = simulator.Nexus.FindArchive(contentMerkle.Root);
+            var archive = simulator.Nexus.GetArchive(contentMerkle.Root);
             for (int i=0; i<archive.BlockCount; i++)
             {
                 int ofs = (int)(i * Archive.BlockSize);
@@ -102,7 +102,7 @@ namespace Phantasma.Tests
 
             var testUser = KeyPair.Generate();
 
-            BigInteger accountBalance = (Archive.MaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
+            BigInteger accountBalance = (DomainSettings.ArchiveMaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
             accountBalance *= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
             Transaction tx = null;
@@ -115,7 +115,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call
             var stakeAmount = accountBalance;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -127,14 +127,14 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
             var headerSize = CalculateRequiredSize(filename, 0);
-            var contentSize = (long)(Archive.MaxSize) - (long)headerSize;
+            var contentSize = (long)(DomainSettings.ArchiveMaxSize) - (long)headerSize;
             var content = new byte[contentSize];
             var contentMerkle = new MerkleTree(content);
 
@@ -174,7 +174,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for minimum staking amount
             var stakedAmount = MinimumValidStake * 5;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -248,7 +248,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for minimum staking amount
             var stakedAmount = MinimumValidStake;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -333,7 +333,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call
             var stakeAmount = MinimumValidStake * 2;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -345,7 +345,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
@@ -436,7 +436,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call
             var stakeAmount = MinimumValidStake * 2;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -448,7 +448,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
@@ -527,7 +527,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for userA
             var stakeAmount = MinimumValidStake * 2;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUserA.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
@@ -539,12 +539,12 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUserA.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUserA.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //----------
             //Perform a valid Stake call for userB
-            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUserB.Address);
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
@@ -556,7 +556,7 @@ namespace Phantasma.Tests
             stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUserB.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUserB.Address);
+            finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
@@ -621,7 +621,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for minimum staking amount
             var stakedAmount = MinimumValidStake;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -661,7 +661,7 @@ namespace Phantasma.Tests
             //Try to unstake everything: should fail due to files still existing for this user
             var initialStakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             var stakeReduction = initialStakedAmount - MinimumValidStake;
-            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             Assert.ThrowsException<ChainException>(() =>
             {
@@ -704,7 +704,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for minimum staking amount
             var stakeAmount = MinimumValidStake;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -716,7 +716,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
@@ -766,7 +766,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call for minimum staking amount
             var stakeAmount = MinimumValidStake;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -778,7 +778,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------
@@ -848,7 +848,7 @@ namespace Phantasma.Tests
             //-----------
             //Perform a valid Stake call
             var stakeAmount = MinimumValidStake * 2;
-            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
 
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
@@ -860,7 +860,7 @@ namespace Phantasma.Tests
             BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUser.Address).AsNumber();
             Assert.IsTrue(stakedAmount == stakeAmount);
 
-            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(DomainSettings.StakingTokenSymbol, testUser.Address);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
             //-----------

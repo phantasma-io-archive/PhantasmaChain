@@ -2,8 +2,9 @@
 using Phantasma.Cryptography;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Extra
 {
+    /*
     public struct AddressMessage
     {
         public Address from;
@@ -11,7 +12,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         public byte[] content;
     }
 
-    public sealed class MessagingContract : SmartContract
+    public sealed class MessagingContract : NativeContract
     {
         public override string Name => "messages";
 
@@ -46,6 +47,6 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             return _messages.All<AddressMessage>();
         }
-
     }
+    */
 }

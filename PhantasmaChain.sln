@@ -35,7 +35,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Neo", "Phantasma.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Ethereum", "Phantasma.Ethereum\Phantasma.Ethereum.csproj", "{D31CFFD6-4BDF-47CB-9195-04AAF44D2014}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phantasma.Domain", "Phantasma.Domain\Phantasma.Domain.csproj", "{1E362F68-EF98-4B20-AB36-715B07521926}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Domain", "Phantasma.Domain\Phantasma.Domain.csproj", "{1E362F68-EF98-4B20-AB36-715B07521926}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Phantasma.Contracts", "Phantasma.Contracts\Phantasma.Contracts.csproj", "{524EEB12-1A94-4B2E-BA98-2376C35B7C7C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,6 +113,10 @@ Global
 		{1E362F68-EF98-4B20-AB36-715B07521926}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E362F68-EF98-4B20-AB36-715B07521926}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E362F68-EF98-4B20-AB36-715B07521926}.Release|Any CPU.Build.0 = Release|Any CPU
+		{524EEB12-1A94-4B2E-BA98-2376C35B7C7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{524EEB12-1A94-4B2E-BA98-2376C35B7C7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{524EEB12-1A94-4B2E-BA98-2376C35B7C7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{524EEB12-1A94-4B2E-BA98-2376C35B7C7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

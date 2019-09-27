@@ -57,9 +57,9 @@ namespace Phantasma.Domain
         bool HasAddressScript(Address from);
         byte[] GetAddressScript(Address from);
 
-        Event[] GetTransactionEvents(ITransaction transaction);
+        Event[] GetTransactionEvents(Hash transactionHash);
 
-        Address GetValidatorForBlock(Hash hash);
+        Address GetValidatorForBlock(Hash blockHash);
         ValidatorEntry GetValidatorByIndex(int index);
         ValidatorEntry[] GetValidators();
         bool IsPrimaryValidator(Address address);
@@ -87,7 +87,7 @@ namespace Phantasma.Domain
         BigInteger GetTokenSupply(string symbol);
 
         bool CreateToken(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
-        bool CreateChain(Address owner, string name, string parentChain, string[] contractNames);
+        bool CreateChain(Address owner, string name, string parentChain);
         bool CreateFeed(Address owner, string name, FeedMode mode);
         bool CreatePlatform(Address address, string name, string fuelSymbol);
         bool CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
@@ -95,19 +95,19 @@ namespace Phantasma.Domain
         bool IsAddressOfParentChain(Address address);
         bool IsAddressOfChildChain(Address address);
 
-        bool MintTokens(string symbol, Address target, BigInteger amount, bool isSettlement);
-        bool MintToken(string symbol, Address target, BigInteger tokenID, bool isSettlement);
-        bool BurnTokens(string symbol, Address target, BigInteger amount, bool isSettlement);
-        bool BurnToken(string symbol, Address target, BigInteger tokenID, bool isSettlement);
-        bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount);
-        bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
-        bool SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount);
-        bool SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID);
+        bool IsPlatformAddress(Address address);
 
-        BigInteger CreateNFT(string tokenSymbol, Address chainAddress, byte[] rom, byte[] ram);
-        bool DestroyNFT(string tokenSymbol, BigInteger tokenID);
-        bool EditNFTContent(string tokenSymbol, BigInteger tokenID, byte[] ram);
-        TokenContent GetNFT(string tokenSymbol, BigInteger tokenID);
+        bool MintTokens(string symbol, Address from, BigInteger amount);
+        bool BurnTokens(string symbol, Address from, BigInteger amount);
+        bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount);
+        bool SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount);
+
+        BigInteger MintToken(string symbol, Address target, byte[] rom, byte[] ram);
+        bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
+        bool SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID);
+        bool BurnToken(string symbol, Address from, BigInteger tokenID);
+        bool WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
+        TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
 
         byte[] ReadOracle(string URL);
     }

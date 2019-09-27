@@ -10,7 +10,6 @@ using Phantasma.Blockchain;
 using Phantasma.Core.Types;
 using Phantasma.VM.Utils;
 using Phantasma.Numerics;
-using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Storage;
 using Phantasma.Domain;
 

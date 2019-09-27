@@ -2,13 +2,14 @@
 using Phantasma.Domain;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
-    public sealed class FriendContract : SmartContract
+    public sealed class FriendContract : NativeContract
     {
+        public override NativeContractKind Kind => NativeContractKind.Friend;
+
         public static readonly int FRIEND_LIMIT_PER_ACCOUNT = 100;
 
-        public override string Name => "friends";
         internal StorageMap _friendMap;
 
         #region FRIENDLIST

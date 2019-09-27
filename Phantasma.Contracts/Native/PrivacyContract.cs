@@ -1,12 +1,11 @@
-﻿using Phantasma.Blockchain.Tokens;
-using Phantasma.Core;
+﻿using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
     internal struct PrivacyQueue
     {
@@ -16,10 +15,11 @@ namespace Phantasma.Blockchain.Contracts.Native
         public StorageList signatures; //<RingSignature>
     }
 
-    public sealed class PrivacyContract : SmartContract
+    public sealed class PrivacyContract : NativeContract
     {
-        public override string Name => Nexus.PrivacyContractName;
+        public override NativeContractKind Kind => NativeContractKind.Privacy;
 
+        /*
         public static readonly BigInteger TransferAmount = 10;
 
         internal StorageMap _queues; // = new Dictionary<string, List<PrivacyQueue>>();
@@ -140,6 +140,6 @@ namespace Phantasma.Blockchain.Contracts.Native
             // TODO this is wrong
             var balances = new BalanceSheet(symbol);
             balances.Add(this.Storage, to, TransferAmount);
-        }
+        }*/
     }
 }

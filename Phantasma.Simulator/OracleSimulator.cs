@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
-using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Blockchain;
 using Phantasma.Pay;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
 
 namespace Phantasma.Simulator

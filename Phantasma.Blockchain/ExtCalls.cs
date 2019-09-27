@@ -8,6 +8,7 @@ using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.Domain;
 using Phantasma.Storage;
+using Phantasma.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -21,6 +22,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
+            vm.RegisterMethod("Runtime.MintTokens", Runtime_MintTokens);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
 
             vm.RegisterMethod("Data.Get", Data_Get);
@@ -313,38 +315,50 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Data_Get(RuntimeVM vm)
+        private static ExecutionState Data_Get(RuntimeVM runtime)
         {
-            var key = vm.Stack.Pop();
+            var key = runtime.Stack.Pop();
             var key_bytes = key.AsByteArray();
 
-            var value_bytes = vm.ChangeSet.Get(key_bytes);
+            runtime.Expect(key_bytes.Length > 0, "invalid key");
+
+            var value_bytes = runtime.Storage.Get(key_bytes);
             var val = new VMObject();
             val.SetValue(value_bytes, VMType.Bytes);
-            vm.Stack.Push(val);
+            runtime.Stack.Push(val);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Data_Set(RuntimeVM vm)
+        private static ExecutionState Data_Set(RuntimeVM runtime)
         {
-            var key = vm.Stack.Pop();
+            var key = runtime.Stack.Pop();
             var key_bytes = key.AsByteArray();
 
-            var val = vm.Stack.Pop();
+            var val = runtime.Stack.Pop();
             var val_bytes = val.AsByteArray();
 
-            vm.ChangeSet.Put(key_bytes, val_bytes);
+            runtime.Expect(key_bytes.Length > 0, "invalid key");
+
+            var firstChar = (char)key_bytes[0];
+            runtime.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+
+            runtime.Storage.Put(key_bytes, val_bytes);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Data_Delete(RuntimeVM vm)
+        private static ExecutionState Data_Delete(RuntimeVM runtime)
         {
-            var key = vm.Stack.Pop();
+            var key = runtime.Stack.Pop();
             var key_bytes = key.AsByteArray();
 
-            vm.ChangeSet.Delete(key_bytes);
+            runtime.Expect(key_bytes.Length > 0, "invalid key");
+
+            var firstChar = (char)key_bytes[0];
+            runtime.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+
+            runtime.Storage.Delete(key_bytes);
 
             return ExecutionState.Running;
         }
@@ -355,7 +369,7 @@ namespace Phantasma.Blockchain
             if (temp.Type == VMType.String)
             {
                 var name = temp.AsString();
-                return vm.Nexus.LookUpName(vm.ChangeSet, name);
+                return vm.Nexus.LookUpName(vm.Storage, name);
             }
             else
             if (temp.Type == VMType.Bytes)
@@ -371,42 +385,86 @@ namespace Phantasma.Blockchain
             }
         }
 
-        private static ExecutionState Runtime_TransferTokens(RuntimeVM vm)
+        private static ExecutionState Runtime_TransferTokens(RuntimeVM runtime)
         {
             try
             {
-                var tx = vm.Transaction;
+                var tx = runtime.Transaction;
                 Throw.IfNull(tx, nameof(tx));
 
-                if (vm.Stack.Count < 4)
+                if (runtime.Stack.Count < 4)
                 {
                     return ExecutionState.Fault;
                 }
 
                 VMObject temp;
 
-                var source = PopAddress(vm);
-                var destination = PopAddress(vm);
+                var source = PopAddress(runtime);
+                var destination = PopAddress(runtime);
 
-                temp = vm.Stack.Pop();
+                temp = runtime.Stack.Pop();
                 if (temp.Type != VMType.String)
                 {
                     return ExecutionState.Fault;
                 }
                 var symbol = temp.AsString();
 
-                temp = vm.Stack.Pop();
+                temp = runtime.Stack.Pop();
                 if (temp.Type != VMType.Number)
                 {
                     return ExecutionState.Fault;
                 }
                 var amount = temp.AsNumber();
 
-                var success = vm.TransferTokens(symbol, source, destination, amount);
+                var success = runtime.TransferTokens(symbol, source, destination, amount);
 
                 var result = new VMObject();
                 result.SetValue(success);
-                vm.Stack.Push(result);
+                runtime.Stack.Push(result);
+            }
+            catch
+            {
+                return ExecutionState.Fault;
+            }
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_MintTokens(RuntimeVM runtime)
+        {
+            try
+            {
+                var tx = runtime.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                if (runtime.Stack.Count < 3)
+                {
+                    return ExecutionState.Fault;
+                }
+
+                VMObject temp;
+
+                var destination = PopAddress(runtime);
+
+                temp = runtime.Stack.Pop();
+                if (temp.Type != VMType.String)
+                {
+                    return ExecutionState.Fault;
+                }
+                var symbol = temp.AsString();
+
+                temp = runtime.Stack.Pop();
+                if (temp.Type != VMType.Number)
+                {
+                    return ExecutionState.Fault;
+                }
+                var amount = temp.AsNumber();
+
+                var success = runtime.MintTokens(symbol, destination, amount);
+
+                var result = new VMObject();
+                result.SetValue(success);
+                runtime.Stack.Push(result);
             }
             catch
             {
@@ -417,27 +475,27 @@ namespace Phantasma.Blockchain
         }
 
 
-        private static ExecutionState Runtime_DeployContract(RuntimeVM vm)
+        private static ExecutionState Runtime_DeployContract(RuntimeVM runtime)
         {
             try
             {
-                var tx = vm.Transaction;
+                var tx = runtime.Transaction;
                 Throw.IfNull(tx, nameof(tx));
 
-                if (vm.Stack.Count < 1)
+                if (runtime.Stack.Count < 1)
                 {
                     return ExecutionState.Fault;
                 }
 
                 VMObject temp;
 
-                var owner = vm.Nexus.GetChainOwnerByName(vm.Chain.Name);
-                if (!vm.Transaction.IsSignedBy(owner))
+                var owner = runtime.Nexus.GetChainOwnerByName(runtime.Chain.Name);
+                if (!runtime.Transaction.IsSignedBy(owner))
                 {
                     return ExecutionState.Fault;
                 }
 
-                temp = vm.Stack.Pop();
+                temp = runtime.Stack.Pop();
 
                 bool success;
                 switch (temp.Type) 
@@ -445,7 +503,7 @@ namespace Phantasma.Blockchain
                     case VMType.String:
                         {
                             var name = temp.AsString();
-                            success = vm.Chain.DeployNativeContract(vm.ChangeSet, SmartContract.GetAddressForName(name)); 
+                            success = runtime.Chain.DeployNativeContract(runtime.Storage, SmartContract.GetAddressForName(name)); 
                         }
                         break;
 
@@ -456,7 +514,7 @@ namespace Phantasma.Blockchain
 
                 var result = new VMObject();
                 result.SetValue(success);
-                vm.Stack.Push(result);
+                runtime.Stack.Push(result);
             }
             catch
             {

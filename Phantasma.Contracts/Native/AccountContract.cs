@@ -3,11 +3,11 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
-    public sealed class AccountContract : SmartContract
+    public sealed class AccountContract : NativeContract
     {
-        public override string Name => Nexus.AccountContractName;
+        public override NativeContractKind Kind => NativeContractKind.Account;
 
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 

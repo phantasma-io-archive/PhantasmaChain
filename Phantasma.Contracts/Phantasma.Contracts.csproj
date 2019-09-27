@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Phantasma.Contracts\Phantasma.Contracts.csproj" />
     <ProjectReference Include="..\Phantasma.Core\Phantasma.Core.csproj" />
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />
     <ProjectReference Include="..\Phantasma.Domain\Phantasma.Domain.csproj" />

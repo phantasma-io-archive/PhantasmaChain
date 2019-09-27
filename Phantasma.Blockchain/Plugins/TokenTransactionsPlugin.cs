@@ -1,5 +1,4 @@
-﻿using Phantasma.Blockchain.Contracts.Native;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using System.Collections.Generic;
 using System.Linq;

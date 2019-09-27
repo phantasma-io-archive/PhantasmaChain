@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 
 namespace Phantasma.Blockchain
@@ -103,7 +104,7 @@ namespace Phantasma.Blockchain
                 RejectTransaction(tx, $"should be mined with difficulty of {requiredPoW} or more");
             }
 
-            var chain = Nexus.FindChainByName(tx.ChainName);
+            var chain = Nexus.GetChainByName(tx.ChainName);
             Throw.IfNull(chain, nameof(chain));
 
             if (tx.Signatures == null || tx.Signatures.Length < 1)
@@ -251,7 +252,7 @@ namespace Phantasma.Blockchain
             {
                 foreach (var chainName in _entries.Keys)
                 {
-                    var chain = Nexus.FindChainByName(chainName);
+                    var chain = Nexus.GetChainByName(chainName);
 
                     if (_pendingBlocks.Contains(chain))
                     {

@@ -2,7 +2,7 @@
 using System;
 
 //TODO
-namespace Phantasma.Blockchain
+namespace Phantasma.Domain
 {
     public class ChainException : Exception
     {

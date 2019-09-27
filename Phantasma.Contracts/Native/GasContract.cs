@@ -1,18 +1,10 @@
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
-    public struct GasEventData
-    {
-        public Address address;
-        public BigInteger price;
-        public BigInteger amount;
-    }
-
     public struct GasLoanEntry
     {
         public Hash hash;
@@ -22,9 +14,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger interest;
     }
 
-    public sealed class GasContract : SmartContract
+    public sealed class GasContract : NativeContract
     {
-        public override string Name => Nexus.GasContractName;
+        public override NativeContractKind Kind => NativeContractKind.Gas;
 
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
@@ -36,12 +28,12 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public const int LendReturn = 50;
 
-        internal const string MaxLoanAmountTag = "gas.max.loan"; //9999 * 10000;
-        internal const string MaxLenderCountTag = "gas.lender.count";
+        public const string MaxLoanAmountTag = "gas.max.loan"; //9999 * 10000;
+        public const string MaxLenderCountTag = "gas.lender.count";
 
         public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
         {
-            if (Runtime.readOnlyMode)
+            if (Runtime.IsReadOnlyMode())
             {
                 return;
             }
@@ -64,13 +56,13 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from) >= maxAmount, "not enough gas in address");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount), "gas escrow failed");
+            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount), "gas escrow failed");
             Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = target, price = price, amount = limit });
         }
 
         public void LoanGas(Address from, BigInteger price, BigInteger limit)
         {
-            if (Runtime.readOnlyMode)
+            if (Runtime.IsReadOnlyMode())
             {
                 return;
             }
@@ -78,7 +70,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Moderate, "expected proof of work");
 
-            Runtime.Expect(Runtime.Chain.IsRoot, "must be a root chain");
+            Runtime.Expect(Runtime.IsRootChain(), "must be a root chain");
 
             Runtime.Expect(from.IsUser, "must be a user address");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
@@ -113,13 +105,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             var list = _loanList.Get<Address, StorageList>(lender);
             list.Add<Address>(from);
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, lender, from, loan.amount), "gas lend failed");
+            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, lender, from, loan.amount), "gas lend failed");
             Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lender, price = price, amount = limit });
         }
         
         public void SpendGas(Address from)
         {
-            if (Runtime.readOnlyMode)
+            if (Runtime.IsReadOnlyMode())
             {
                 return;
             }
@@ -150,7 +142,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             // return unused gas to transaction creator
             if (leftoverAmount > 0)
             {
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, this.Address, from, leftoverAmount), "gas leftover return failed");
+                Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, leftoverAmount), "gas leftover return failed");
             }
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
@@ -159,8 +151,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (bombGas > 0)
             {
                 var bombPayment = bombGas * Runtime.GasPrice;
-                var bombAddress = GetAddressForName(Nexus.BombContractName);
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, this.Address, bombAddress, bombPayment), "gas bomb payment failed");
+                var bombAddress = SmartContract.GetAddressForNative(NativeContractKind.Bomb);
+                Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, bombAddress, bombPayment), "gas bomb payment failed");
                 Runtime.Notify(EventKind.GasPayment, bombAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = bombGas});
                 spentGas -= bombGas;
             }
@@ -177,7 +169,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (targetGas > 0)
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment), "gas target payment failed");
+                Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment), "gas target payment failed");
                 Runtime.Notify(EventKind.GasPayment, targetAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = targetGas });
                 spentGas -= targetGas;
             }
@@ -185,8 +177,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             if (spentGas > 0)
             {
                 var validatorPayment = spentGas * Runtime.GasPrice;
-                var validatorAddress = GetAddressForName(Nexus.BlockContractName);
-                Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment), "gas validator payment failed");
+                var validatorAddress = SmartContract.GetAddressForNative(NativeContractKind.Block);
+                Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment), "gas validator payment failed");
                 Runtime.Notify(EventKind.GasPayment, validatorAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
                 spentGas = 0;
             }
@@ -205,7 +197,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(unusedLoanAmount >= 0, "loan amount overflow");
 
                     // here we return the gas to the original pool, not the the payment address, because this is not a payment
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, from, loan.lender, unusedLoanAmount), "unspend loan payment failed");
+                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, loan.lender, unusedLoanAmount), "unspend loan payment failed");
                     Runtime.Notify(EventKind.GasPayment, loan.borrower, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
 
                     loan.amount = requiredAmount;
@@ -217,8 +209,8 @@ namespace Phantasma.Blockchain.Contracts.Native
                     Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
                     var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
 
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, from, loan.lender, loan.amount), "loan payment failed");
-                    Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, DomainSettings.FuelTokenSymbol, from, paymentAddress, loan.interest), "loan interest failed");
+                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, loan.lender, loan.amount), "loan payment failed");
+                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, paymentAddress, loan.interest), "loan interest failed");
                     _loanMap.Remove<Address>(from);
 
                     var list = _loanList.Get<Address, StorageList>(loan.lender);
@@ -275,7 +267,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             var count = _lenderList.Count();
             if (count > 0)
             {
-                var index = Runtime.GetRandomNumber() % count;
+                var index = Runtime.GenerateRandomNumber() % count;
                 return _lenderList.Get<Address>(index);
             }
 

@@ -1,15 +1,13 @@
-using Phantasma.Blockchain.Tokens;
-using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using System;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
-    public sealed class NexusContract : SmartContract
+    public sealed class NexusContract : NativeContract
     {
-        public override string Name => Nexus.NexusContractName;
+        public override NativeContractKind Kind => NativeContractKind.Nexus;
 
         public const int MAX_TOKEN_DECIMALS = 18;
 
@@ -28,7 +26,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(decimals >= 0, "token decimals cant be negative");
             Runtime.Expect(decimals <= MAX_TOKEN_DECIMALS, $"token decimals cant exceed {MAX_TOKEN_DECIMALS}");
 
-            Runtime.Expect(!Runtime.Nexus.TokenExists(symbol), "token already exists");
+            Runtime.Expect(!Runtime.TokenExists(symbol), "token already exists");
 
             if (symbol == DomainSettings.FuelTokenSymbol)
             {
@@ -55,7 +53,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             {
                 Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "genesis address only");
                 Runtime.Expect(platform != DomainSettings.PlatformName, "external token chain required");
-                Runtime.Expect(Runtime.Nexus.PlatformExists(platform), "platform not found");
+                Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
             }
             else
             {
@@ -65,7 +63,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "owner address must be user address");
 
-            Runtime.Expect(this.Runtime.Nexus.CreateToken(symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
+            Runtime.Expect(this.Runtime.CreateToken(symbol, name, platform, hash, maxSupply, (int)decimals, flags, script), "token creation failed");
             Runtime.Notify(EventKind.TokenCreate, from, symbol);
         }
 
@@ -83,10 +81,9 @@ namespace Phantasma.Blockchain.Contracts.Native
             name = name.ToLowerInvariant();
             Runtime.Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase), "same name as parent");
 
-            var chain = this.Runtime.Nexus.CreateChain(this.Storage, owner, name, parentName);
-            Runtime.Expect(chain != null, "chain creation failed");
+            Runtime.Expect(this.Runtime.CreateChain(owner, name, parentName), "chain creation failed");
 
-            Runtime.Notify(EventKind.ChainCreate, owner, chain.Address);
+            Runtime.Notify(EventKind.ChainCreate, owner, name);
         }
 
         public void CreateFeed(Address owner, string name, FeedMode mode)
@@ -99,7 +96,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
             Runtime.Expect(owner.IsUser, "owner address must be user address");
 
-            Runtime.Expect(Runtime.Nexus.CreateFeed(owner, name, mode), "feed creation failed");
+            Runtime.Expect(Runtime.CreateFeed(owner, name, mode), "feed creation failed");
 
             Runtime.Notify(EventKind.FeedCreate, owner, name);
         }
@@ -153,7 +150,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(platformName), "invalid platform name");
 
-            Runtime.Expect(Runtime.Nexus.CreatePlatform(target, platformName, fuelSymbol), "creation of platform failed");
+            Runtime.Expect(Runtime.CreatePlatform(target, platformName, fuelSymbol), "creation of platform failed");
 
             Runtime.Notify(EventKind.AddressRegister, target, platformName);
         }

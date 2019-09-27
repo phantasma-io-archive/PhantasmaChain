@@ -76,6 +76,13 @@ namespace Phantasma.Domain
         public Timestamp date;
     }
 
+    public struct GasEventData
+    {
+        public Address address;
+        public BigInteger price;
+        public BigInteger amount;
+    }
+
     public struct MetadataEventData
     {
         public string type;

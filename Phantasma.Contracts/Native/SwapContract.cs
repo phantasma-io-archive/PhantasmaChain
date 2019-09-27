@@ -1,12 +1,11 @@
-﻿using Phantasma.Blockchain.Tokens;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
     public struct SwapPair
     {
@@ -14,9 +13,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger Value;
     }
 
-    public sealed class SwapContract : SmartContract
+    public sealed class SwapContract : NativeContract
     {
-        public override string Name => Nexus.SwapContractName;
+        public override NativeContractKind Kind => NativeContractKind.Swap;
 
         public SwapContract() : base()
         {
@@ -24,7 +23,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public bool IsSupportedToken(string symbol)
         {
-            if (!Runtime.Nexus.TokenExists(symbol))
+            if (!Runtime.TokenExists(symbol))
             {
                 return false;
             }
@@ -39,7 +38,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 return true;
             }
 
-            var info = Runtime.Nexus.GetTokenInfo(symbol);
+            var info = Runtime.GetToken(symbol);
             return info.IsFungible() && info.Flags.HasFlag(TokenFlags.External);
         }
 
@@ -57,10 +56,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             var toBalance = GetAvailableForSymbol(toSymbol);
             Runtime.Expect(toBalance > 0, toSymbol + " not available in pot");
 
-            var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
+            var fromInfo = Runtime.GetToken(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
 
-            var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
+            var toInfo = Runtime.GetToken(toSymbol);
             Runtime.Expect(toInfo.IsFungible(), "must be fungible");
 
             var rate = Runtime.GetTokenQuote(fromSymbol, toSymbol, amount);
@@ -74,18 +73,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(IsSupportedToken(symbol), "token is unsupported");
 
-            var info = Runtime.Nexus.GetTokenInfo(symbol);
+            var info = Runtime.GetToken(symbol);
             var unitAmount = UnitConversion.GetUnitValue(info.Decimals);
             Runtime.Expect(amount >= unitAmount, "invalid amount");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, from, this.Address, amount), "tokens transfer failed");
+            Runtime.Expect(Runtime.TransferTokens(symbol, from, this.Address, amount), "tokens transfer failed");
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = symbol, value = amount });
         }
 
         private BigInteger GetAvailableForSymbol(string symbol)
         {
-            var balances = new BalanceSheet(symbol);
-            return balances.Get(this.Storage, this.Address);
+            return Runtime.GetBalance(symbol, this.Address);
         }
 
         // TODO optimize this method without using .NET native stuff
@@ -111,7 +109,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         // TODO optimize this method without using .NET native stuff
         public SwapPair[] GetRates(string fromSymbol, BigInteger amount)
         {
-            var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
+            var fromInfo = Runtime.GetToken(fromSymbol);
             Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
 
             var result = new List<SwapPair>();
@@ -150,10 +148,10 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(from.IsUser, "address must be user address");
             Runtime.Expect(amount > 0, "invalid amount");
 
-            var fromInfo = Runtime.Nexus.GetTokenInfo(fromSymbol);
+            var fromInfo = Runtime.GetToken(fromSymbol);
             Runtime.Expect(IsSupportedToken(fromSymbol), "source token is unsupported");
 
-            var toInfo = Runtime.Nexus.GetTokenInfo(toSymbol);
+            var toInfo = Runtime.GetToken(toSymbol);
             Runtime.Expect(IsSupportedToken(toSymbol), "destination token is unsupported");
 
             var toBalance = GetAvailableForSymbol(toSymbol);
@@ -164,8 +162,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(toBalance >= total, "insufficient balance in pot");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, fromSymbol, from, this.Address, amount), "source tokens transfer failed");
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, toSymbol, this.Address, from, total), "target tokens transfer failed");
+            Runtime.Expect(Runtime.TransferTokens(fromSymbol, from, this.Address, amount), "source tokens transfer failed");
+            Runtime.Expect(Runtime.TransferTokens(toSymbol, this.Address, from, total), "target tokens transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });
             Runtime.Notify(EventKind.TokenReceive, this.Address, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });

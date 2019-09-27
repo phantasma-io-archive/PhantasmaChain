@@ -1,16 +1,16 @@
-﻿using Phantasma.Blockchain.Tokens;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Numerics;
 using System.Linq;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
+    /*
     public sealed class TokenContract : SmartContract
     {
-        public override string Name => Nexus.TokenContractName;
+        public override string Name => "token";
 
         public static readonly string TriggerMint = "OnMint";
         public static readonly string TriggerBurn = "OnBurn";
@@ -31,8 +31,8 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             var targetChain = this.Runtime.Nexus.FindChainByAddress(targetChainAddress);
 
-            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(this.Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
 
             if (tokenInfo.IsCapped())
@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 }
             }
 
-            Runtime.Expect(Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount, true), "burn failed");
+            Runtime.Expect(Runtime.BurnTokens(symbol, from, amount, true), "burn failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
             Runtime.Notify(EventKind.TokenEscrow, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = targetChainAddress });
@@ -62,14 +62,14 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
-            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(this.Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
             Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
 
-            Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, to, amount, false), "minting failed");
+            Runtime.Expect(Runtime.MintTokens(symbol, to, amount, false), "minting failed");
 
             Runtime.Notify(EventKind.TokenMint, to, new TokenEventData() { symbol = symbol, value = amount, chainAddress = this.Runtime.Chain.Address });
         }
@@ -79,13 +79,13 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(this.Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(tokenInfo.IsBurnable(), "token must be burnable");
             Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
-            Runtime.Expect(this.Runtime.Nexus.BurnTokens(Runtime, symbol, from, amount, false), "burning failed");
+            Runtime.Expect(this.Runtime.BurnTokens(symbol, from, amount, false), "burning failed");
 
             Runtime.Notify(EventKind.TokenBurn, from, new TokenEventData() { symbol = symbol, value = amount });
         }
@@ -99,17 +99,17 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (destination.IsInterop)
             {
-                Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
+                Runtime.Expect(Runtime.IsRootChain(), "interop transfers only allowed in main chain");
                 Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
                 return;
             }
 
-            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(this.Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount), "transfer failed");
+            Runtime.Expect(Runtime.TransferTokens(symbol, source, destination, amount), "transfer failed");
 
             Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
             Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amount, symbol = symbol });
@@ -117,12 +117,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
         public BigInteger GetBalance(Address address, string symbol)
         {
-            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var token = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(this.Runtime.TokenExists(symbol), "invalid token");
+            var token = this.Runtime.GetToken(symbol);
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            var balances = new BalanceSheet(symbol);
-            return balances.Get(this.Storage, address);
+            return Runtime.GetBalance(symbol, address);
         }
         #endregion
 
@@ -244,7 +243,7 @@ namespace Phantasma.Blockchain.Contracts.Native
             _settledTransactions.Set(hash, true);
         }
 
-        private void DoSettlement(Chain sourceChain, Address targetAddress, TokenEventData data)
+        private void DoSettlement(IChain sourceChain, Address targetAddress, TokenEventData data)
         {
             var symbol = data.symbol;
             var value = data.value;
@@ -252,8 +251,8 @@ namespace Phantasma.Blockchain.Contracts.Native
             Runtime.Expect(value > 0, "value must be greater than zero");
             Runtime.Expect(targetAddress.IsUser, "target must not user address");
 
-            Runtime.Expect(this.Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = this.Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(this.Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = this.Runtime.GetToken(symbol);
 
             if (tokenInfo.IsCapped())
             {
@@ -271,11 +270,11 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
-                Runtime.Expect(Runtime.Nexus.MintTokens(Runtime, symbol, targetAddress, value, true), "mint failed");
+                Runtime.Expect(Runtime.MintTokens(symbol, targetAddress, value, true), "mint failed");
             }
             else
             {
-                Runtime.Expect(Runtime.Nexus.MintToken(Runtime, symbol, targetAddress, value, true), "mint failed");
+                Runtime.Expect(Runtime.MintToken(symbol, targetAddress, value, true), "mint failed");
             }
 
             Runtime.Notify(EventKind.TokenReceive, targetAddress, new TokenEventData() { symbol = symbol, value = value, chainAddress = sourceChain.Address });
@@ -387,4 +386,5 @@ namespace Phantasma.Blockchain.Contracts.Native
         }
         #endregion
     }
+    */
 }

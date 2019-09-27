@@ -22,10 +22,8 @@ namespace Phantasma.Blockchain
         }
     }
 
-    public class Archive: ISerializable
+    public class Archive: IArchive, ISerializable
     {
-        public static readonly int MinSize = 1024; //1kb
-        public static readonly int MaxSize = 104857600; //100mb
         public static readonly uint BlockSize = MerkleTree.ChunkSize;
 
         public Hash Hash => MerkleTree.Root;

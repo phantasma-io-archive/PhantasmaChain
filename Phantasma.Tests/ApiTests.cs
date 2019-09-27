@@ -6,10 +6,9 @@ using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using Phantasma.Simulator;
 using System;
 using System.Linq;
-using Phantasma.Blockchain.Contracts.Native;
+using Phantasma.Contracts.Native;
 using Phantasma.Core.Types;
 using Phantasma.Domain;
 

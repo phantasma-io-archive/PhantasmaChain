@@ -1,4 +1,5 @@
-﻿using Phantasma.Domain;
+﻿using Phantasma.Contracts;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using System;

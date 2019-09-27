@@ -12,14 +12,14 @@ using Phantasma.Core.Types;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Blockchain.Contracts.Native;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
+using Phantasma.Contracts;
 
 namespace Phantasma.Blockchain
 {
-    public sealed class Chain 
+    public sealed class Chain : IChain
     {
         private const string TransactionHashMapTag = ".txs";
         private const string TxBlockHashMapTag = ".txblmp";
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain
         public string Name { get; private set; }
         public Address Address { get; private set; }
 
-        public BigInteger BlockHeight => GetBlockHeight();
+        public BigInteger Height => GetBlockHeight();
 
         public readonly Logger Log;
 
@@ -68,18 +68,11 @@ namespace Phantasma.Blockchain
             this.Log = Logger.Init(log);
         }
 
-        public string[] GetContracts()
+        public IContract[] GetContracts()
         {
-            // TODO improve this
-            return new string[] { Nexus.GasContractName, Nexus.BlockContractName, Nexus.TokenContractName };
-            /*var list = new string[(int)_contracts.Count];
-            int index = 0;
-            _contracts.Visit((contract, _) =>
-            {
-                list[index] = contract;
-                index++;
-            });
-            return list;*/
+            var contractList = new StorageList(GetContractListKey(), this.Storage);
+            var addresses = contractList.All<Address>();
+            return addresses.Select(x => Nexus.GetContractByAddress(x)).ToArray();
         }
 
         public override string ToString()
@@ -271,66 +264,33 @@ namespace Phantasma.Blockchain
         }
 
         // NOTE should never be used directly from a contract, instead use Runtime.GetBalance!
-        public BigInteger GetTokenBalance(string tokenSymbol, Address address)
+        public BigInteger GetTokenBalance(StorageContext storage, string tokenSymbol, Address address)
         {
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
                 var balances = new BalanceSheet(tokenSymbol);
-                return balances.Get(Storage, address);
+                return balances.Get(storage, address);
             }
             else
             {
                 var ownerships = new OwnershipSheet(tokenSymbol);
-                var items = ownerships.Get(this.Storage, address);
+                var items = ownerships.Get(storage, address);
                 return items.Length;
             }
         }
 
-        // NOTE this only works if the token is curently on this chain
-        public Address GetTokenOwner(string tokenSymbol, BigInteger tokenID)
+        public BigInteger GetTokenSupply(StorageContext storage, string symbol)
         {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(tokenInfo.IsFungible, "non fungible required");
-
-            var ownerships = new OwnershipSheet(tokenSymbol);
-            return ownerships.GetOwner(this.Storage, tokenID);
+            var supplies = new SupplySheet(symbol, this, Nexus);
+            return supplies.GetTotal(storage);
         }
 
         // NOTE this lists only nfts owned in this chain
-        public IEnumerable<BigInteger> GetOwnedTokens(string tokenSymbol, Address address)
+        public BigInteger[] GetOwnedTokens(StorageContext storage, string tokenSymbol, Address address)
         {
             var ownership = new OwnershipSheet(tokenSymbol);
-            return ownership.Get(this.Storage, address);
-        }
-
-        // TODO move this along with other name validations to a common file
-        public static bool ValidateName(string name)
-        {
-            if (name == null)
-            {
-                return false;
-            }
-
-            if (name.Length < 3 || name.Length >= 20)
-            {
-                return false;
-            }
-
-            int index = 0;
-            while (index < name.Length)
-            {
-                var c = (int)name[index];
-                index++;
-
-                if (c >= 97 && c <= 122) continue; // lowercase allowed
-                if (c == 95) continue; // underscore allowed
-                if (c >= 48 && c <= 57) continue; // numbers allowed
-
-                return false;
-            }
-
-            return true;
+            return ownership.Get(storage, address).ToArray();
         }
 
         /// <summary>
@@ -377,7 +337,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
         {
-            var contract = Nexus.AllocContractByName(contractName);
+            var contract = Nexus.GetContractByName(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
@@ -602,7 +562,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException("invalid block height");
             }
 
-            if (height > this.BlockHeight)
+            if (height > this.Height)
             {
                 return Hash.Null;
             }

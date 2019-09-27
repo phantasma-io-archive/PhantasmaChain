@@ -6,7 +6,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Blockchain.Contracts.Native
+namespace Phantasma.Contracts.Native
 {
     public enum ConsensusKind
     {
@@ -69,9 +69,9 @@ namespace Phantasma.Blockchain.Contracts.Native
         public BigInteger round;
     }
 
-    public sealed class ConsensusContract : SmartContract
+    public sealed class ConsensusContract : NativeContract
     {
-        public override string Name => Nexus.ConsensusContractName;
+        public override NativeContractKind Kind => NativeContractKind.Consensus;
 
         private StorageMap _pollMap; //<Address> 
         private StorageList _pollList; 
@@ -92,7 +92,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             var poll = _pollMap.Get<string, ConsensusPoll>(subject);
 
-            if (!Runtime.readOnlyMode)
+            if (!Runtime.IsReadOnlyMode())
             {
                 var MaxVotesPerPoll = Runtime.GetGovernanceValue(PollVoteLimitTag);
 
@@ -188,7 +188,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (subject.StartsWith(SystemPoll))
             {
-                Runtime.Expect(Runtime.Nexus.IsPrimaryValidator(from), "must be validator");
+                Runtime.Expect(Runtime.IsPrimaryValidator(from), "must be validator");
 
                 if (subject.StartsWith(SystemPoll + "stake."))
                 {
@@ -198,7 +198,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 Runtime.Expect(mode == ConsensusMode.Majority, "must use majority mode for system governance");
             }
 
-            Runtime.Expect(Runtime.Chain.IsRoot, "not root chain");
+            Runtime.Expect(Runtime.IsRootChain(), "not root chain");
 
             Runtime.Expect(kind == ConsensusKind.Validators, "community polls not yet");
 
@@ -249,7 +249,7 @@ namespace Phantasma.Blockchain.Contracts.Native
                 {
                     Runtime.Expect(choices[i].value.Length == Address.PublicKeyLength, "election choices must be public addresses");
                     var address = new Address(choices[i].value);
-                    Runtime.Expect(Runtime.Nexus.IsKnownValidator(address), "election choice must be active or waiting validator");
+                    Runtime.Expect(Runtime.IsKnownValidator(address), "election choice must be active or waiting validator");
                 }
             }
 
@@ -287,15 +287,14 @@ namespace Phantasma.Blockchain.Contracts.Native
             switch (poll.kind)
             {
                 case ConsensusKind.Validators:
-                    Runtime.Expect(Runtime.Nexus.IsKnownValidator(from), "must be primary or secondary validator");
-                    var primaryValidators = Runtime.Nexus.GetPrimaryValidatorCount();
+                    Runtime.Expect(Runtime.IsKnownValidator(from), "must be primary or secondary validator");
+                    var primaryValidators = Runtime.GetPrimaryValidatorCount();
                     Runtime.Expect(primaryValidators >= 2, "not enough primary validators");
                     break;
 
                 case ConsensusKind.Masters:
-                    Runtime.Expect(Runtime.Nexus.IsStakeMaster(from), "must be stake master");
-                    var masters = Runtime.CallContext(Nexus.StakeContractName, nameof(StakeContract.GetMasterCount), from).AsNumber();
-
+                    Runtime.Expect(Runtime.IsStakeMaster(from), "must be stake master");
+                    var masters = Runtime.CallContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterCount), from).AsNumber();
                     break;
             }
 
@@ -328,7 +327,7 @@ namespace Phantasma.Blockchain.Contracts.Native
 
             if (poll.kind == ConsensusKind.Community)
             {
-                votingPower = Runtime.CallContext(Nexus.StakeContractName, nameof(StakeContract.GetAddressVotingPower), from).AsNumber();
+                votingPower = Runtime.CallContext(NativeContractKind.Stake, nameof(StakeContract.GetAddressVotingPower), from).AsNumber();
             }
             else
             {
@@ -372,7 +371,7 @@ namespace Phantasma.Blockchain.Contracts.Native
         {
             if (subject.StartsWith(SystemPoll))
             {
-                var validatorCount = Runtime.Nexus.GetPrimaryValidatorCount();
+                var validatorCount = Runtime.GetPrimaryValidatorCount();
                 if (validatorCount <= 1)
                 {
                     return Runtime.IsWitness(Runtime.Nexus.GenesisAddress);
