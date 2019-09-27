@@ -1692,6 +1692,7 @@ namespace Phantasma.API
                 entry.platform = platform;
                 entry.interop = info.Address.Text;
                 entry.address = outAddress;
+                entry.fuel = info.Symbol;
                 entry.tokens = Nexus.Tokens.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
                 platformList.Add(entry);
             }
