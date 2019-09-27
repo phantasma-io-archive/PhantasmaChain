@@ -601,8 +601,8 @@ namespace Phantasma.Tests
 
             // 2 - at this point a real NEO transaction would be done to the NEO address obtained from getPlatforms in the API
             // here we just use a random hardcoded hash and a fake oracle to simulate it
-            var swapSymbol = DomainSettings.StakingTokenSymbol;
-            var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", neoKeys.address, swapSymbol, 10);
+            var swapSymbol = "GAS"; 
+            var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", neoKeys.address, swapSymbol, 2);
 
             var tokenInfo = nexus.GetTokenInfo(swapSymbol);
 
