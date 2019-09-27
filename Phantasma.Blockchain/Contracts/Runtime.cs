@@ -914,7 +914,16 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)
         {
-            throw new NotImplementedException();
+            var Runtime = this;
+            Runtime.Expect(IsWitness(source), "invalid witness");
+
+            Runtime.Expect(source != destination, "source and destination must be different");
+
+            Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = Runtime.GetToken(symbol);
+            Runtime.Expect(!tokenInfo.IsFungible(), "token must be non-fungible");
+
+            return Nexus.TransferToken(this, symbol, source, destination, tokenID);
         }
 
         public bool SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount)

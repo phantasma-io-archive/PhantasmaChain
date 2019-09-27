@@ -184,21 +184,6 @@ namespace Phantasma.Simulator
             */
         }
 
-        private void RandomSpreadNFT(string tokenSymbol, int amount)
-        {
-            Throw.If(!Nexus.TokenExists(tokenSymbol), "Token does not exist: "+tokenSymbol);
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
-            Throw.If(tokenInfo.IsFungible, "expected NFT");
-
-            for (int i = 1; i < amount; i++)
-            {
-                var nftKey = KeyPair.Generate();
-                _keys.Add(nftKey);
-                var data = new SimNFTData() { A = (byte)_rnd.Next(), B = (byte)_rnd.Next(), C = (byte)_rnd.Next() };
-                MintNonFungibleToken(_owner, nftKey.Address, tokenSymbol, Serialization.Serialize(data), new byte[0]);
-            }
-        }
-
         private List<Transaction> transactions = new List<Transaction>();
 
         // there are more elegant ways of doing this...
@@ -688,17 +673,17 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction MintNonFungibleToken(KeyPair source, Address destAddress, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction MintNonFungibleToken(KeyPair owner, string tokenSymbol, byte[] rom, byte[] ram)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
-                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.MintToken", source.Address, destAddress, tokenSymbol, rom, ram).
-                SpendGas(source.Address).
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
+                CallInterop("Runtime.MintToken", owner.Address, tokenSymbol, rom, ram).  
+                SpendGas(owner.Address).
                 EndScript();
 
-            var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
+            var tx = MakeTransaction(owner, ProofOfWork.None, chain, script);
             return tx;
         }
 

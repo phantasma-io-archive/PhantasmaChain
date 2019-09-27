@@ -44,30 +44,40 @@ namespace Phantasma.Tests
 
             var chain = nexus.RootChain;
 
-            var nftSymbol = "COOL";
+            var symbol = "COOL";
 
             var testUser = KeyPair.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
-            simulator.GenerateToken(owner, nftSymbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(nftSymbol), 0, 0, Domain.TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, Domain.TokenFlags.Transferable);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(nftSymbol);
-            Assert.IsTrue(nexus.TokenExists(nftSymbol), "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(symbol);
+            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
-            var ownerships = new OwnershipSheet(nftSymbol);
+            var ownerships = new OwnershipSheet(symbol);
             var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the sender already have a CoolToken?");
 
             var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
             var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };
 
-            // Mint a new CoolToken directly on the user
+            // Mint a new CoolToken 
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(owner, testUser.Address, nftSymbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(owner, symbol, tokenROM, tokenRAM);
+            simulator.EndBlock();
+
+            // obtain tokenID
+            ownedTokenList = ownerships.Get(chain.Storage, owner.Address);
+            Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
+            var tokenID = ownedTokenList.First();
+
+            // send it to the user
+            simulator.BeginBlock();
+            simulator.GenerateNftTransfer(owner, testUser.Address, chain, symbol, tokenID);
             simulator.EndBlock();
 
             var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
@@ -76,7 +86,7 @@ namespace Phantasma.Tests
             // verify nft presence on the user post-mint
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
-            var tokenID = ownedTokenList.First();
+            tokenID = ownedTokenList.First();
 
             var price = 1000;
 

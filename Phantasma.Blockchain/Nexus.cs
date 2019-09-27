@@ -1082,7 +1082,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool TransferToken(RuntimeVM runtimeVM, string symbol, Address source, Address destination, BigInteger tokenID)
+        internal bool TransferToken(RuntimeVM runtime, string symbol, Address source, Address destination, BigInteger tokenID)
         {
             if (!TokenExists(symbol))
             {
@@ -1117,41 +1117,43 @@ namespace Phantasma.Blockchain
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Remove(runtimeVM.Storage, source, tokenID))
+            if (!ownerships.Remove(runtime.Storage, source, tokenID))
             {
                 return false;
             }
 
-            if (!ownerships.Add(runtimeVM.Storage, destination, tokenID))
+            if (!ownerships.Add(runtime.Storage, destination, tokenID))
             {
                 return false;
             }
 
-            var tokenTriggerResult = runtimeVM.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnSend, source, symbol, tokenID);
+            var tokenTriggerResult = runtime.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnSend, source, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            tokenTriggerResult = runtimeVM.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnReceive, destination, symbol, tokenID);
+            tokenTriggerResult = runtime.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnReceive, destination, symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = runtimeVM.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, symbol, tokenID);
+            var accountTriggerResult = runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            accountTriggerResult = runtimeVM.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, symbol, tokenID);
+            accountTriggerResult = runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            EditNFTLocation(symbol, tokenID, runtimeVM.Chain.Name, destination);
+            EditNFTLocation(symbol, tokenID, runtime.Chain.Name, destination);
+            runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = runtime.Chain.Address, value = tokenID, symbol = symbol });
+            runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = runtime.Chain.Address, value = tokenID, symbol = symbol });
             return true;
         }
 

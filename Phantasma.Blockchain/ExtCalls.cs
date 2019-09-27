@@ -23,6 +23,8 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
             vm.RegisterMethod("Runtime.MintTokens", Runtime_MintTokens);
+            vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
+            vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
 
             vm.RegisterMethod("Data.Get", Data_Get);
@@ -385,95 +387,109 @@ namespace Phantasma.Blockchain
             }
         }
 
-        private static ExecutionState Runtime_TransferTokens(RuntimeVM runtime)
+        private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
         {
-            try
-            {
-                var tx = runtime.Transaction;
-                Throw.IfNull(tx, nameof(tx));
+            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
 
-                if (runtime.Stack.Count < 4)
-                {
-                    return ExecutionState.Fault;
-                }
+            VMObject temp;
 
-                VMObject temp;
+            var source = PopAddress(Runtime);
+            var destination = PopAddress(Runtime);
 
-                var source = PopAddress(runtime);
-                var destination = PopAddress(runtime);
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
 
-                temp = runtime.Stack.Pop();
-                if (temp.Type != VMType.String)
-                {
-                    return ExecutionState.Fault;
-                }
-                var symbol = temp.AsString();
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var amount = temp.AsNumber();
 
-                temp = runtime.Stack.Pop();
-                if (temp.Type != VMType.Number)
-                {
-                    return ExecutionState.Fault;
-                }
-                var amount = temp.AsNumber();
+            var success = Runtime.TransferTokens(symbol, source, destination, amount);
 
-                var success = runtime.TransferTokens(symbol, source, destination, amount);
-
-                var result = new VMObject();
-                result.SetValue(success);
-                runtime.Stack.Push(result);
-            }
-            catch
-            {
-                return ExecutionState.Fault;
-            }
+            var result = new VMObject();
+            result.SetValue(success);
+            Runtime.Stack.Push(result);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_MintTokens(RuntimeVM runtime)
+        private static ExecutionState Runtime_MintTokens(RuntimeVM Runtime)
         {
-            try
-            {
-                var tx = runtime.Transaction;
-                Throw.IfNull(tx, nameof(tx));
+            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
 
-                if (runtime.Stack.Count < 3)
-                {
-                    return ExecutionState.Fault;
-                }
+            VMObject temp;
 
-                VMObject temp;
+            var destination = PopAddress(Runtime);
 
-                var destination = PopAddress(runtime);
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
 
-                temp = runtime.Stack.Pop();
-                if (temp.Type != VMType.String)
-                {
-                    return ExecutionState.Fault;
-                }
-                var symbol = temp.AsString();
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var amount = temp.AsNumber();
 
-                temp = runtime.Stack.Pop();
-                if (temp.Type != VMType.Number)
-                {
-                    return ExecutionState.Fault;
-                }
-                var amount = temp.AsNumber();
+            var success = Runtime.MintTokens(symbol, destination, amount);
 
-                var success = runtime.MintTokens(symbol, destination, amount);
+            var result = new VMObject();
+            result.SetValue(success);
+            Runtime.Stack.Push(result);
+            return ExecutionState.Running;
+        }
 
-                var result = new VMObject();
-                result.SetValue(success);
-                runtime.Stack.Push(result);
-            }
-            catch
-            {
-                return ExecutionState.Fault;
-            }
+        private static ExecutionState Runtime_TransferToken(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+            var destination = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var tokenID = temp.AsNumber();
+
+            var success = Runtime.TransferToken(symbol, source, destination, tokenID);
+
+            var result = new VMObject();
+            result.SetValue(success);
+            Runtime.Stack.Push(result);
 
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Runtime_MintToken(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var destination = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for rom");
+            var rom = temp.AsByteArray();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
+            var ram = temp.AsByteArray();
+
+            var tokenID = Runtime.MintToken(symbol, destination, rom, ram);
+
+            var result = new VMObject();
+            result.SetValue(tokenID);
+            Runtime.Stack.Push(result);
+            return ExecutionState.Running;
+        }
 
         private static ExecutionState Runtime_DeployContract(RuntimeVM runtime)
         {
