@@ -826,10 +826,12 @@ namespace Phantasma.Blockchain.Contracts
             return Chain.Name == parentName;
         }
 
-        public bool MintTokens(string symbol, Address from, BigInteger amount)
+        public bool MintTokens(string symbol, Address from, Address target, BigInteger amount)
         {
             var Runtime = this;
-            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            // TODO should not be necessary, verified by trigger
+            //Runtime.Expect(IsWitness(from), "invalid witness");
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
@@ -838,17 +840,17 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
-            return Nexus.MintTokens(this, symbol, from, amount, false);
+            return Nexus.MintTokens(this, symbol, from, target, amount, false);
         }
 
-        public BigInteger MintToken(string symbol, Address target, byte[] rom, byte[] ram)
+        public BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
             var tokenInfo = Runtime.GetToken(symbol);
             Runtime.Expect(!tokenInfo.IsFungible(), "token must be non-fungible");
-            // TODO should not be necessary
-            Runtime.Expect(IsWitness(target), "invalid witness");
+            // TODO should not be necessary, verified by trigger
+            //Runtime.Expect(IsWitness(target), "invalid witness");
 
             Runtime.Expect(Runtime.IsRootChain(), "can only mint nft in root chain");
 
@@ -858,7 +860,7 @@ namespace Phantasma.Blockchain.Contracts
             var tokenID = Nexus.CreateNFT(symbol, Runtime.Chain.Name, target, rom, ram);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
-            Runtime.Expect(Nexus.MintToken(this, symbol, target, tokenID, false), "minting failed");
+            Runtime.Expect(Nexus.MintToken(this, symbol, from, target, tokenID, false), "minting failed");
 
             return tokenID;
         }
@@ -879,7 +881,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (IsPlatformAddress(source))
             {
-                return Nexus.MintTokens(this, symbol, destination, amount, true);
+                return Nexus.MintTokens(this, symbol, this.EntryAddress, destination, amount, true);
             }
 
             if (IsPlatformAddress(destination))

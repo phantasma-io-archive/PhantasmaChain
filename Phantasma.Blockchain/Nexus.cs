@@ -437,7 +437,7 @@ namespace Phantasma.Blockchain
                 RegisterContract<GovernanceContract>();
                 RegisterContract<ConsensusContract>();
                 RegisterContract<AccountContract>();
-                RegisterContract<FriendContract>();
+                RegisterContract<FriendsContract>();
                 RegisterContract<ExchangeContract>();
                 RegisterContract<MarketContract>();
                 RegisterContract<StakeContract>();
@@ -452,6 +452,7 @@ namespace Phantasma.Blockchain
                 RegisterContract<NachoContract>();
                 RegisterContract<BombContract>();
                 RegisterContract<RankingContract>();
+                RegisterContract<FriendsContract>();
             }
 
             if (_contractMap.ContainsKey(contractAdress)) {
@@ -824,7 +825,7 @@ namespace Phantasma.Blockchain
             throw new ChainException($"Token does not exist ({symbol})");
         }
 
-        internal bool MintTokens(RuntimeVM runtime, string symbol, Address target, BigInteger amount, bool isSettlement)
+        internal bool MintTokens(RuntimeVM runtime, string symbol, Address from, Address target, BigInteger amount, bool isSettlement)
         {
             if (!TokenExists(symbol))
             {
@@ -872,7 +873,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal bool MintToken(RuntimeVM runtime, string symbol, Address target, BigInteger tokenID, bool isSettlement)
+        internal bool MintToken(RuntimeVM runtime, string symbol, Address source, Address target, BigInteger tokenID, bool isSettlement)
         {
             if (!TokenExists(symbol))
             {
@@ -1324,15 +1325,14 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, RelayContractName);
             sb.CallInterop(deployInterop, BombContractName);
             sb.CallInterop(deployInterop, RankingContractName);
-            sb.CallInterop(deployInterop, PrivacyContractName);
+            //sb.CallInterop(deployInterop, PrivacyContractName);
             sb.CallInterop(deployInterop, "friends");
             sb.CallInterop(deployInterop, "market");
             sb.CallInterop(deployInterop, "vault");
-            sb.CallInterop(deployInterop, "apps");
 
             sb.CallContract("block", "OpenBlock", owner.Address);
 
-            sb.CallInterop("Runtime.MintTokens", owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(8863626, DomainSettings.StakingTokenDecimals));
+            sb.MintTokens(DomainSettings.StakingTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(8863626, DomainSettings.StakingTokenDecimals));
             // requires staking token to be created previously
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
             sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, DomainSettings.StakingTokenDecimals));

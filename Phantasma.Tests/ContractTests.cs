@@ -67,18 +67,13 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken 
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(owner, symbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM);
             simulator.EndBlock();
 
             // obtain tokenID
-            ownedTokenList = ownerships.Get(chain.Storage, owner.Address);
+            ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
             var tokenID = ownedTokenList.First();
-
-            // send it to the user
-            simulator.BeginBlock();
-            simulator.GenerateNftTransfer(owner, testUser.Address, chain, symbol, tokenID);
-            simulator.EndBlock();
 
             var auctions = (MarketAuction[])simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "market", "GetAuctions").ToObject();
             var previousAuctionCount = auctions.Length;

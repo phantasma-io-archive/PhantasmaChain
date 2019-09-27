@@ -2307,7 +2307,7 @@ namespace Phantasma.Contracts.Extra
 
             nachoAmount += GetBonusNachos(nachoAmount, dollarAmount);
 
-            Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, from, nachoAmount), "mint failed");
+            Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, this.Address, from, nachoAmount), "mint failed");
             Runtime.Expect(Runtime.TransferTokens(tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
 
             UpdateNachoTokensSold(nachoAmount);
@@ -3249,7 +3249,7 @@ namespace Phantasma.Contracts.Extra
             //var player_items = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_ITEMS, to);
             //var playerItems = _accountItems.Get<Address, StorageList>(to);
 
-            var tokenID = Runtime.MintToken(Constants.ITEM_SYMBOL, to, tokenROM, tokenRAM);
+            var tokenID = Runtime.MintToken(Constants.ITEM_SYMBOL, this.Address, to, tokenROM, tokenRAM);
             Runtime.Expect(tokenID > 0, "minting failed");
             //Runtime.Notify(EventKind.ItemReceived, to, itemID);
             Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = this.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
@@ -6366,7 +6366,7 @@ namespace Phantasma.Contracts.Extra
 
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
                 //Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
-                Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, target, amount), "mint failed");
+                Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, this.Address, target, amount), "mint failed");
 
                 //Runtime.Notify(NachoEvent.Deposit, target, amount);
                 Runtime.Notify(EventKind.TokenReceive, target, amount);

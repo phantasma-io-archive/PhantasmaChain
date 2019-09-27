@@ -415,10 +415,11 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_MintTokens(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
 
             VMObject temp;
 
+            var source = PopAddress(Runtime);
             var destination = PopAddress(Runtime);
 
             temp = Runtime.Stack.Pop();
@@ -429,7 +430,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
             var amount = temp.AsNumber();
 
-            var success = Runtime.MintTokens(symbol, destination, amount);
+            var success = Runtime.MintTokens(symbol, source, destination, amount);
 
             var result = new VMObject();
             result.SetValue(success);
@@ -469,6 +470,7 @@ namespace Phantasma.Blockchain
 
             VMObject temp;
 
+            var source = PopAddress(Runtime);
             var destination = PopAddress(Runtime);
 
             temp = Runtime.Stack.Pop();
@@ -483,7 +485,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
             var ram = temp.AsByteArray();
 
-            var tokenID = Runtime.MintToken(symbol, destination, rom, ram);
+            var tokenID = Runtime.MintToken(symbol, source, destination, rom, ram);
 
             var result = new VMObject();
             result.SetValue(tokenID);

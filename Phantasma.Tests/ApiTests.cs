@@ -137,19 +137,14 @@ namespace Phantasma.Tests
             // Mint a new CoolToken 
             var simulator = test.simulator;
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(test.owner, symbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(test.owner, testUser.Address, symbol, tokenROM, tokenRAM);
             simulator.EndBlock();
 
             // obtain tokenID
             var ownerships = new OwnershipSheet(symbol);
-            var ownedTokenList = ownerships.Get(chain.Storage, test.owner.Address);
+            var ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
             var tokenID = ownedTokenList.First();
-
-            // send it to the user
-            simulator.BeginBlock();
-            simulator.GenerateNftTransfer(test.owner, testUser.Address, chain, symbol, tokenID);
-            simulator.EndBlock();
 
             var account = (AccountResult)test.api.GetAccount(testUser.Address.Text);
             Assert.IsTrue(account.address == testUser.Address.Text);

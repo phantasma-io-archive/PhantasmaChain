@@ -22,9 +22,9 @@ namespace Phantasma.Blockchain.Contracts
             return sb.CallContract(Nexus.GasContractName, "SpendGas", address);
         }
 
-        public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address target, BigInteger amount)
+        public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address target, BigInteger amount)
         {
-            return sb.CallInterop("Runtime.MintTokens", target, tokenSymbol, amount);
+            return sb.CallInterop("Runtime.MintTokens", from, target, tokenSymbol, amount);
         }
 
         public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, string to, BigInteger amount)

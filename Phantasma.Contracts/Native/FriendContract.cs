@@ -4,9 +4,9 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Contracts.Native
 {
-    public sealed class FriendContract : NativeContract
+    public sealed class FriendsContract : NativeContract
     {
-        public override NativeContractKind Kind => NativeContractKind.Friend;
+        public override NativeContractKind Kind => NativeContractKind.Friends;
 
         public static readonly int FRIEND_LIMIT_PER_ACCOUNT = 100;
 

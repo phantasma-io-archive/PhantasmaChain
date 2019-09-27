@@ -30,7 +30,7 @@ namespace Phantasma.Domain
         Bomb,
         Ranking,
         Market,
-        Friend,
+        Friends,
         Vault,
         Sale
     }

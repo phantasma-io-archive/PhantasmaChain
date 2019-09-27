@@ -518,6 +518,12 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            var contract = Nexus.GetContractByAddress(contractAddress);
+            if (contract == null)
+            {
+                return false;
+            }
+
             storage.Put(key, new byte[] { (byte)Opcode.RET });
             AddContractToDeployedList(storage, contractAddress);
             return true;

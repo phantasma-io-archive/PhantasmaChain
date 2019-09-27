@@ -97,12 +97,12 @@ namespace Phantasma.Domain
 
         bool IsPlatformAddress(Address address);
 
-        bool MintTokens(string symbol, Address from, BigInteger amount);
+        bool MintTokens(string symbol, Address from, Address target, BigInteger amount);
         bool BurnTokens(string symbol, Address from, BigInteger amount);
         bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount);
         bool SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount);
 
-        BigInteger MintToken(string symbol, Address target, byte[] rom, byte[] ram);
+        BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram);
         bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         bool SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID);
         bool BurnToken(string symbol, Address from, BigInteger tokenID);

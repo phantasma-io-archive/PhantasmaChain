@@ -473,17 +473,11 @@ namespace Phantasma.Simulator
         {
             var chain = Nexus.RootChain;
 
-            var sb = ScriptUtils.
+            var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                MintTokens(symbol, owner.Address, amount);
-
-            if (owner.Address != destination)
-            {
-                sb.TransferTokens(symbol, owner.Address, destination, amount);
-            }
-
-            var script = sb.SpendGas(owner.Address).
+                MintTokens(symbol, owner.Address, destination, amount).
+                SpendGas(owner.Address).
                 EndScript();
 
             var tx = MakeTransaction(owner, ProofOfWork.None, chain, script);
@@ -673,13 +667,13 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction MintNonFungibleToken(KeyPair owner, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction MintNonFungibleToken(KeyPair owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.MintToken", owner.Address, tokenSymbol, rom, ram).  
+                CallInterop("Runtime.MintToken", owner.Address, destination, tokenSymbol, rom, ram).  
                 SpendGas(owner.Address).
                 EndScript();
 
