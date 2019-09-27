@@ -90,7 +90,7 @@ namespace Phantasma.Storage.Utils
         {
             var length = (int)reader.ReadVarInt();
             if (length == 0)
-                return null;
+                return new byte[0];
 
             var bytes = reader.ReadBytes(length);
             return bytes;

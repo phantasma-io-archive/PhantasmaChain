@@ -45,30 +45,18 @@ namespace Phantasma.Blockchain
 
         public void Serialize(BinaryWriter writer, bool withSignature)
         {
-            using (var stream = new MemoryStream())
+            writer.WriteVarString(this.NexusName);
+            writer.WriteVarString(this.ChainName);
+            writer.WriteByteArray(this.Script);
+            writer.Write(this.Expiration.Value);
+
+            if (withSignature)
             {
-                using (var temp = new BinaryWriter(stream))
+                writer.WriteVarInt(Signatures.Length);
+                foreach (var signature in this.Signatures)
                 {
-                    temp.WriteVarString(this.NexusName);
-                    temp.WriteVarString(this.ChainName);
-                    temp.WriteByteArray(this.Script);
-                    temp.Write(this.Expiration.Value);
-
-                    if (withSignature)
-                    {
-                        temp.WriteVarInt(Signatures.Length);
-                        foreach (var signature in this.Signatures)
-                        {
-                            temp.WriteSignature(signature);
-                        }
-                    }
+                    writer.WriteSignature(signature);
                 }
-
-                var bytes = stream.ToArray();
-                var compressed = Compression.CompressGZip(bytes);
-                writer.WriteVarInt(bytes.Length);
-                writer.WriteByteArray(compressed);
-                writer.WriteByteArray(this.Payload);
             }
         }
 
@@ -181,42 +169,25 @@ namespace Phantasma.Blockchain
 
         public void UnserializeData(BinaryReader reader)
         {
-            var expectedLen = (int)reader.ReadVarInt();
-            var bytes = reader.ReadByteArray();
-            this.Payload = reader.ReadByteArray();
-            var decompressed = Compression.DecompressGZip(bytes);
+            this.NexusName = reader.ReadVarString();
+            this.ChainName = reader.ReadVarString();
+            this.Script = reader.ReadByteArray();
+            this.Expiration = reader.ReadUInt32();
 
-            if (decompressed.Length > expectedLen)
+            // check if we have some signatures attached
+            try
             {
-                decompressed = decompressed.Take(expectedLen).ToArray();
-            }
-
-            using (var stream = new MemoryStream(decompressed))
-            {
-                using (var temp = new BinaryReader(stream))
+                var signatureCount = (int)reader.ReadVarInt();
+                this.Signatures = new Signature[signatureCount];
+                for (int i = 0; i < signatureCount; i++)
                 {
-                    this.NexusName = temp.ReadVarString();
-                    this.ChainName = temp.ReadVarString();
-                    this.Script = temp.ReadByteArray();
-                    this.Expiration = temp.ReadUInt32();
-
-                    // check if we have some signatures attached
-                    try
-                    {
-                        var signatureCount = (int)temp.ReadVarInt();
-                        this.Signatures = new Signature[signatureCount];
-                        for (int i = 0; i < signatureCount; i++)
-                        {
-                            Signatures[i] = temp.ReadSignature();
-                        }
-                    }
-                    catch
-                    {
-                        this.Signatures = new Signature[0];
-                    }
+                    Signatures[i] = reader.ReadSignature();
                 }
             }
-
+            catch
+            {
+                this.Signatures = new Signature[0];
+            }
             this.UpdateHash();
         }
 
