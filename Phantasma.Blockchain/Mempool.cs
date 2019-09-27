@@ -219,7 +219,27 @@ namespace Phantasma.Blockchain
             }
 
             var currentTime = Timestamp.Now;
-            list.RemoveAll(entry => entry.transaction.Expiration < currentTime);
+            List<Transaction> expiredTransactions = null;
+            for (int i=0; i<list.Count; i++)
+            {
+                var entry = list[i];
+                if (entry.transaction.Expiration < currentTime)
+                {
+                    if (expiredTransactions != null)
+                    {
+                        expiredTransactions = new List<Transaction>(list.Count);
+                    }
+                    expiredTransactions.Add(entry.transaction);
+                }
+            }
+
+            if (expiredTransactions != null)
+            {
+                foreach (var tx in expiredTransactions)
+                {
+                    Discard(tx);
+                }
+            }
 
             var transactions = new List<Transaction>();
 
