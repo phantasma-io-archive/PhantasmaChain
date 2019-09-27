@@ -430,6 +430,11 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
             var amount = temp.AsNumber();
 
+            if (Runtime.Nexus.HasGenesis)
+            {
+                Runtime.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
+            }
+
             var success = Runtime.MintTokens(symbol, source, destination, amount);
 
             var result = new VMObject();
