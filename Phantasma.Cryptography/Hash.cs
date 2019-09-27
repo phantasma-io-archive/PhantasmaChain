@@ -94,9 +94,12 @@ namespace Phantasma.Cryptography
         public static Hash Parse(string s)
         {
             Throw.If(string.IsNullOrEmpty(s), "string cannot be empty");
+            Throw.If(s.Length < 64, "string too short");
 
-            if (s.StartsWith("0x"))
+            var ch = char.ToUpper(s[1]);
+            if (ch == 'X')
             {
+                Throw.If(s[0] != '0', "invalid hexdecimal prefix");
                 return Parse(s.Substring(2));
             }
 
