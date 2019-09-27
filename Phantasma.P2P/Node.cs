@@ -184,7 +184,7 @@ namespace Phantasma.Network.P2P
         {
             ConnectToPeers();
 
-            if (!listening)
+            if (!listening && this.Capabilities.HasFlag(PeerCaps.Sync))
             {
                 listening = true;
                 var accept = listener.BeginAcceptSocket(new AsyncCallback(DoAcceptSocketCallback), listener);
