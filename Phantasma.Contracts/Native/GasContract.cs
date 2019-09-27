@@ -14,6 +14,12 @@ namespace Phantasma.Contracts.Native
         public BigInteger interest;
     }
 
+    public struct GasLender
+    {
+        public BigInteger balance;
+        public Address paymentAddress;
+    }
+
     public sealed class GasContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Gas;
@@ -23,7 +29,7 @@ namespace Phantasma.Contracts.Native
 
         internal StorageMap _loanMap; // Address, GasLendEntry
         internal StorageMap _loanList; // Address, List<Address>
-        internal StorageMap _lenderMap; // Address, Address
+        internal StorageMap _lenderMap; // Address, GasLender
         internal StorageList _lenderList; // Address
 
         public const int LendReturn = 50;
@@ -78,35 +84,38 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
 
-            var lender = FindLender();
-            Runtime.Expect(!lender.IsNull, "no lender available");
+            BigInteger lendedAmount = price * limit;
 
-            BigInteger lendedAmount;
+            var lenderAddress = FindLender(lendedAmount);
+            Runtime.Expect(!lenderAddress.IsNull, "no lender available");
 
-            Runtime.Expect(IsLender(lender), "invalid lender address");
+            Runtime.Expect(IsLender(lenderAddress), "invalid lender address");
 
             Runtime.Expect(GetLoanAmount(from) == 0, "already has an active loan");
 
-            lendedAmount = price * limit;
-
             var maxLoanAmount = Runtime.GetGovernanceValue(MaxLoanAmountTag);
             Runtime.Expect(lendedAmount <= maxLoanAmount, "limit exceeds maximum allowed for lend");
+
+            var lender = _lenderMap.Get<Address, GasLender>(lenderAddress);
+            Runtime.Expect(lender.balance >= lendedAmount, "not enough balance in lender");
+            lender.balance -= lendedAmount;
+            _lenderMap.Set<Address, GasLender>(lenderAddress, lender);
 
             var loan = new GasLoanEntry()
             {
                 amount = lendedAmount,
                 hash = Runtime.Transaction.Hash,
                 borrower = from,
-                lender = lender,
+                lender = lenderAddress,
                 interest = 0
             };
             _loanMap.Set<Address, GasLoanEntry>(from, loan);
 
-            var list = _loanList.Get<Address, StorageList>(lender);
+            var list = _loanList.Get<Address, StorageList>(lenderAddress);
             list.Add<Address>(from);
 
-            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, lender, from, loan.amount), "gas lend failed");
-            Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lender, price = price, amount = limit });
+            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, loan.amount), "gas lend failed");
+            Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lenderAddress, price = price, amount = limit });
         }
         
         public void SpendGas(Address from)
@@ -191,13 +200,20 @@ namespace Phantasma.Contracts.Native
             {
                 var loan = _loanMap.Get<Address, GasLoanEntry>(from);
 
+                Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing lender info");
+                var gasLender = _lenderMap.Get<Address, GasLender>(loan.lender);
+
                 if (loan.hash == Runtime.Transaction.Hash)
                 {
                     var unusedLoanAmount = loan.amount - requiredAmount;
                     Runtime.Expect(unusedLoanAmount >= 0, "loan amount overflow");
 
                     // here we return the gas to the original pool, not the the payment address, because this is not a payment
-                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, loan.lender, unusedLoanAmount), "unspend loan payment failed");
+                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, unusedLoanAmount), "unspend loan payment failed");
+
+                    gasLender.balance += unusedLoanAmount;
+                    _lenderMap.Set<Address, GasLender>(loan.lender, gasLender);
+
                     Runtime.Notify(EventKind.GasPayment, loan.borrower, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
 
                     loan.amount = requiredAmount;
@@ -206,11 +222,8 @@ namespace Phantasma.Contracts.Native
                 }
                 else
                 {
-                    Runtime.Expect(_lenderMap.ContainsKey<Address>(loan.lender), "missing payment address for loan");
-                    var paymentAddress = _lenderMap.Get<Address, Address>(loan.lender);
-
                     Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, loan.lender, loan.amount), "loan payment failed");
-                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, paymentAddress, loan.interest), "loan interest failed");
+                    Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, gasLender.paymentAddress, loan.interest), "loan interest failed");
                     _loanMap.Remove<Address>(from);
 
                     var list = _loanList.Get<Address, StorageList>(loan.lender);
@@ -230,7 +243,7 @@ namespace Phantasma.Contracts.Native
                     list.RemoveAt<Address>(index);
 
                     Runtime.Notify(EventKind.GasPayment, loan.lender, new GasEventData() { address = from, price = 1, amount = loan.amount });
-                    Runtime.Notify(EventKind.GasPayment, paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.interest});
+                    Runtime.Notify(EventKind.GasPayment, gasLender.paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.interest});
                 }
             }
         }
@@ -262,13 +275,33 @@ namespace Phantasma.Contracts.Native
             return 0;
         }
 
-        private Address FindLender()
+        private Address FindLender(BigInteger amount)
         {
             var count = _lenderList.Count();
             if (count > 0)
             {
                 var index = Runtime.GenerateRandomNumber() % count;
-                return _lenderList.Get<Address>(index);
+                var originalIndex = index;
+                do
+                {
+                    var address = _lenderList.Get<Address>(index);
+                    var lender = _lenderMap.Get<Address, GasLender>(address);
+                    if (lender.balance >= amount)
+                    {
+                        return address;
+                    }
+
+                    index++;
+                    if (index == originalIndex)
+                    {
+                        break;
+                    }
+
+                    if (index >= count)
+                    {
+                        index = 0;
+                    }
+                } while (true);
             }
 
             return Address.Null;
@@ -294,10 +327,21 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!IsLender(from), "already lending at source address");
             Runtime.Expect(!IsLender(to), "already lending at destination address");
 
+            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            Runtime.Expect(balance > 0, "not enough gas for lending");
+            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, balance), "gas transfer failed");
+
+            var lender = new GasLender()
+            {
+                paymentAddress = to,
+                balance = balance
+            };
+
             _lenderList.Add<Address>(from);
-            _lenderMap.Set<Address, Address>(from, to);
+            _lenderMap.Set<Address, GasLender>(from, lender);
 
             Runtime.Notify(EventKind.AddressLink, from, Runtime.Chain.Address);
+            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { symbol = DomainSettings.FuelTokenSymbol, value = balance, chainAddress = Runtime.Chain.Address });
         }
 
         public void StopLend(Address from)

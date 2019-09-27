@@ -1388,18 +1388,25 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, user.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
             simulator.GenerateTransfer(owner, user.Address, simulator.Nexus.RootChain, DomainSettings.StakingTokenSymbol, 100000000);
-            simulator.GenerateTransfer(owner, simulator.Nexus.RootChainAddress, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
             simulator.EndBlock();
 
+            var chainAddress = simulator.Nexus.RootChainAddress;
+            simulator.BeginBlock();
+            var tx = simulator.GenerateTransfer(owner, chainAddress, simulator.Nexus.RootChain, symbol, 100000000);
+            var block = simulator.EndBlock().First();
+
+            var evts = block.GetEventsForTransaction(tx.Hash);
+            Assert.IsTrue(evts.Any(x => x.Kind == EventKind.TokenReceive && x.Address == chainAddress));
+
+            var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, chainAddress);
+            Assert.IsTrue(initialBalance > 10000);
 
             string[] scriptString = new string[]
             {
-                $"alias r4, $tokenContract",
                 $"alias r5, $sourceAddress",
                 $"alias r6, $targetAddress",
                 $"alias r7, $amount",
                 $"alias r8, $symbol",
-                $"alias r9, $methodName",
 
                 $"load $amount, 10000",
                 $@"load $symbol, ""{symbol}""",
@@ -1414,24 +1421,14 @@ namespace Phantasma.Tests
                 $@"extcall ""Address()""",
                 $"pop $targetAddress",
 
-                $@"load $methodName, ""TransferTokens""",
-
                 $"push $amount",
                 $"push $symbol",
                 $"push $targetAddress",
                 $"push $sourceAddress",
-                $@"push $methodName",
-                
-                //switch to token contract
-                $@"load r12, ""token""",
-                $"ctx r12, $tokenContract",
-                $"switch $tokenContract",
+                "extcall \"Runtime.TransferTokens\"",
             };
 
             var script = AssemblerUtils.BuildScript(scriptString);
-
-            var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, simulator.Nexus.RootChainAddress);
-            Assert.IsTrue(initialBalance > 10000);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(user, ProofOfWork.None, () =>
