@@ -57,12 +57,6 @@ namespace Phantasma.Domain
         Custom = 48,
     }
 
-    public struct Metadata
-    {
-        public string key;
-        public string value;
-    }
-
     public struct TokenEventData
     {
         public string symbol;
@@ -81,12 +75,6 @@ namespace Phantasma.Domain
         public Address address;
         public BigInteger price;
         public BigInteger amount;
-    }
-
-    public struct MetadataEventData
-    {
-        public string type;
-        public Metadata metadata;
     }
 
     public struct Event

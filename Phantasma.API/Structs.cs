@@ -58,9 +58,6 @@ namespace Phantasma.API
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
 
-        [APIDescription("Metadata associated with the account")]
-        public MetadataResult[] metadata;
-
         [APIDescription("List of interop addresses associated with the account")]
         public InteropResult[] interops;
     }
@@ -181,12 +178,6 @@ namespace Phantasma.API
         public string reward;
     }
 
-    public struct MetadataResult : IAPIResult
-    {
-        public string key;
-        public string value;
-    }
-
     public struct TokenResult : IAPIResult
     {
         [APIDescription("Ticker symbol for the token")]
@@ -208,9 +199,6 @@ namespace Phantasma.API
 
         [APIDescription("Hash of token")]
         public string hash;
-
-        [APIDescription("Metadata associated with the token")]
-        public MetadataResult[] metadata;
 
         public string flags;
     }

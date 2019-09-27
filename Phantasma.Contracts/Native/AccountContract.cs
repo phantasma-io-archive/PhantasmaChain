@@ -64,62 +64,6 @@ namespace Phantasma.Contracts.Native
             return false;
         }
 
-        public void SetMetadata(Address target, string key, string value)
-        {
-            Runtime.Expect(target.IsUser, "must be user address");
-            Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
-
-            var metadataEntries = _metadata.Get<Address, StorageList>(target);
-
-            int index = -1;
-
-            var count = metadataEntries.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var temp = metadataEntries.Get<Metadata>(i);
-                if (temp.key == key)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            var metadata = new Metadata() { key = key, value = value };
-            if (index >= 0)
-            {
-                metadataEntries.Replace<Metadata>(index, metadata);
-            }
-            else
-            {
-                metadataEntries.Add<Metadata>(metadata);
-            }
-
-            Runtime.Notify(EventKind.Metadata, target, new MetadataEventData() { type = "account", metadata = metadata });
-        }
-
-        public string GetMetadata(Address address, string key)
-        {
-            var metadataEntries = _metadata.Get<Address, StorageList>(address);
-
-            var count = metadataEntries.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var temp = metadataEntries.Get<Metadata>(i);
-                if (temp.key == key)
-                {
-                    return temp.value;
-                }
-            }
-
-            return null;
-        }
-
-        public Metadata[] GetMetadataList(Address address)
-        {
-            var metadataEntries = _metadata.Get<Address, StorageList>(address);
-            return metadataEntries.All<Metadata>();
-        }
-
         public string LookUpAddress(Address target)
         {
             if (target == Runtime.Nexus.GenesisAddress)

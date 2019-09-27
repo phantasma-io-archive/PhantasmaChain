@@ -324,15 +324,6 @@ namespace Phantasma.API
             var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
-            var metadata = new Metadata[0]; /*) Nexus.RootChain.InvokeContract(Nexus.RootStorage, Nexus.TokenContractName, nameof(TokenContract.GetMetadataList), tokenInfo.Symbol).ToObject();
-            */
-            var metadataResults = metadata.Select(x => new MetadataResult
-            {
-                key = x.key,
-                value = x.value
-            }
-            );
-
             return new TokenResult
             {
                 symbol = tokenInfo.Symbol,
@@ -343,7 +334,6 @@ namespace Phantasma.API
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 platform = tokenInfo.Platform,
                 hash = tokenInfo.Hash.ToString(),
-                metadata = metadataResults.ToArray()
             };
         }
 
@@ -596,15 +586,6 @@ namespace Phantasma.API
             {
                 result.interops = new InteropResult[0];
             }
-
-            var metadata = (Metadata[])Nexus.RootChain.InvokeContract(Nexus.RootStorage, "account", "GetMetadataList", address).ToObject();
-            var metadataResults = metadata.Select(x => new MetadataResult
-            {
-                key = x.key,
-                value = x.value
-            }
-            );
-            result.metadata = metadataResults.ToArray();
 
             return result;
         }
