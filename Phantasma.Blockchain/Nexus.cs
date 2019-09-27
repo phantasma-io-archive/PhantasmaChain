@@ -1323,8 +1323,8 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, InteropContractName);
             sb.CallInterop(deployInterop, StorageContractName);
             sb.CallInterop(deployInterop, RelayContractName);
-            sb.CallInterop(deployInterop, BombContractName);
             sb.CallInterop(deployInterop, RankingContractName);
+            sb.CallInterop(deployInterop, BombContractName);
             //sb.CallInterop(deployInterop, PrivacyContractName);
             sb.CallInterop(deployInterop, "friends");
             sb.CallInterop(deployInterop, "market");
@@ -1337,7 +1337,6 @@ namespace Phantasma.Blockchain
             // note this is a completly arbitrary number just to be able to generate energy in the genesis, better change it later
             sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, UnitConversion.ToBigInteger(100000, DomainSettings.StakingTokenDecimals));
             sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
-            sb.CallContract(Nexus.BombContractName, "Initialize", owner.Address);
 
             sb.Emit(VM.Opcode.RET);
             sb.EmitRaw(Encoding.UTF8.GetBytes("A Phantasma was born..."));

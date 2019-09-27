@@ -523,7 +523,15 @@ namespace Phantasma.Blockchain
                 case VMType.String:
                     {
                         var name = temp.AsString();
-                        success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name)); 
+                        success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
+
+                        var contract = Runtime.Nexus.GetContractByName(name);
+                        BigInteger gasCost;
+                        var constructor = "Initialize";
+                        if (contract.HasInternalMethod(constructor, out gasCost))
+                        {
+                            Runtime.CallContext(name, constructor, owner);
+                        }
                     }
                     break;
 

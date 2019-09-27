@@ -504,34 +504,8 @@ namespace Phantasma.Blockchain
             return storage.Has(key);
         }
 
-        private void AddContractToDeployedList(StorageContext storage, Address contractAddress)
+        private bool DeployContractScript(StorageContext storage, Address contractAddress, byte[] script)
         {
-            var contractList = new StorageList(GetContractListKey(), storage);
-            contractList.Add<Address>(contractAddress);
-        }
-
-        public bool DeployNativeContract(StorageContext storage, Address contractAddress)
-        {
-            var key = GetContractDeploymentKey(contractAddress);
-            if (storage.Has(key))
-            {
-                return false;
-            }
-
-            var contract = Nexus.GetContractByAddress(contractAddress);
-            if (contract == null)
-            {
-                return false;
-            }
-
-            storage.Put(key, new byte[] { (byte)Opcode.RET });
-            AddContractToDeployedList(storage, contractAddress);
-            return true;
-        }
-
-        public bool DeployContract(StorageContext storage, byte[] script)
-        {
-            var contractAddress = Address.FromScript(script);
             var key = GetContractDeploymentKey(contractAddress);
             if (storage.Has(key))
             {
@@ -539,7 +513,29 @@ namespace Phantasma.Blockchain
             }
 
             storage.Put(key, script);
-            AddContractToDeployedList(storage, contractAddress);
+
+            var contractList = new StorageList(GetContractListKey(), storage);
+            contractList.Add<Address>(contractAddress);                       
+
+            return true;
+        }
+
+        public bool DeployNativeContract(StorageContext storage, Address contractAddress)
+        {
+            var contract = Nexus.GetContractByAddress(contractAddress);
+            if (contract == null)
+            {
+                return false;
+            }
+
+            DeployContractScript(storage, contractAddress, new byte[] { (byte)Opcode.RET });
+            return true;
+        }
+
+        public bool DeployContract(StorageContext storage, byte[] script)
+        {
+            var contractAddress = Address.FromScript(script);
+            DeployContractScript(storage, contractAddress, script);
             return true;
         }
         #endregion
