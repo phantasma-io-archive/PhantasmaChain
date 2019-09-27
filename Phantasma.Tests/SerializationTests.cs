@@ -112,8 +112,12 @@ namespace Phantasma.Tests
                 EndScript();
 
             var tx = new Transaction("simnet", "main", script, Timestamp.Now);
+            var oldHash = tx.Hash;
             var expectedDiff = (int)ProofOfWork.Moderate;
-            tx.Mine(expectedDiff);
+            tx.Mine(expectedDiff);        
+            var newHash = tx.Hash;
+
+            Assert.IsTrue(oldHash != newHash);
 
             var diff = tx.Hash.GetDifficulty();
             Assert.IsTrue(diff >= expectedDiff);

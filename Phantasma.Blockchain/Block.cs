@@ -179,6 +179,7 @@ namespace Phantasma.Blockchain
 
                 var bytes = stream.ToArray();
                 var compressed = Compression.CompressGZip(bytes);
+                writer.WriteVarInt(bytes.Length);
                 writer.WriteByteArray(compressed);
             }
         }
@@ -215,8 +216,14 @@ namespace Phantasma.Blockchain
 
         public void UnserializeData(BinaryReader reader)
         {
+            var expectedLen = (int)reader.ReadVarInt();
             var bytes = reader.ReadByteArray();
             var decompressed = Compression.DecompressGZip(bytes);
+
+            if (decompressed.Length > expectedLen)
+            {
+                decompressed = decompressed.Take(expectedLen).ToArray();
+            }
 
             using (var stream = new MemoryStream(decompressed))
             {
