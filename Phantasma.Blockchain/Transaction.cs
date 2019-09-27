@@ -1,16 +1,11 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
 using Phantasma.Cryptography;
 using Phantasma.Core;
-using Phantasma.VM;
-using Phantasma.Numerics;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Storage.Utils;
-using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 
@@ -58,7 +53,6 @@ namespace Phantasma.Blockchain
                     temp.WriteVarString(this.ChainName);
                     temp.WriteByteArray(this.Script);
                     temp.Write(this.Expiration.Value);
-                    temp.WriteByteArray(this.Payload);
 
                     if (withSignature)
                     {
@@ -73,6 +67,7 @@ namespace Phantasma.Blockchain
                 var bytes = stream.ToArray();
                 var compressed = Compression.CompressGZip(bytes);
                 writer.WriteByteArray(compressed);
+                writer.WriteByteArray(this.Payload);
             }
         }
 
@@ -186,6 +181,7 @@ namespace Phantasma.Blockchain
         public void UnserializeData(BinaryReader reader)
         {
             var bytes = reader.ReadByteArray();
+            this.Payload = reader.ReadByteArray();
             var decompressed = Compression.DecompressGZip(bytes);
 
             using (var stream = new MemoryStream(decompressed))
@@ -196,7 +192,6 @@ namespace Phantasma.Blockchain
                     this.ChainName = temp.ReadVarString();
                     this.Script = temp.ReadByteArray();
                     this.Expiration = temp.ReadUInt32();
-                    this.Payload = temp.ReadByteArray();
 
                     // check if we have some signatures attached
                     try
