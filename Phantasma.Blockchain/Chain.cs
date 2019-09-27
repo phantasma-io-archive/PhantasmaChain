@@ -22,9 +22,10 @@ namespace Phantasma.Blockchain
     public sealed class Chain : IChain
     {
         private const string TransactionHashMapTag = ".txs";
-        private const string TxBlockHashMapTag = ".txblmp";
         private const string BlockHashMapTag = ".blocks";
         private const string BlockHeightListTag = ".height";
+        private const string TxBlockHashMapTag = ".txblmp";
+        private const string AddressBlockHashMapTag = ".adblmp";
 
         #region PUBLIC
         public static readonly uint InitialHeight = 1;
@@ -220,6 +221,34 @@ namespace Phantasma.Blockchain
             if (blockValidator.IsNull)
             {
                 throw new BlockGenerationException("no validator for this block");
+            }
+
+            foreach (var transaction in transactions)
+            {
+                var addresses = new HashSet<Address>();
+                var events = block.GetEventsForTransaction(transaction.Hash);
+
+                foreach (var evt in events)
+                {
+                    if (evt.Kind == EventKind.BlockCreate || evt.Kind == EventKind.BlockClose)
+                    {
+                        continue;
+                    }
+
+                    if (evt.Address.IsSystem)
+                    {
+                        continue;
+                    }
+
+                    addresses.Add(evt.Address);
+                }
+
+                var addressTxMap = new StorageMap(AddressBlockHashMapTag, this.Storage);
+                foreach (var address in addresses)
+                {
+                    var addressList = addressTxMap.Get<Address, StorageList>(address);
+                    addressList.Add<Hash>(transaction.Hash);
+                }
             }
 
             Nexus.PluginTriggerBlock(this, block);
@@ -654,5 +683,11 @@ namespace Phantasma.Blockchain
             return block.TransactionHashes.Select(hash => GetTransactionByHash(hash));
         }
 
+        public Hash[] GetTransactionHashesForAddress(Address address)
+        {
+            var addressTxMap = new StorageMap(AddressBlockHashMapTag, this.Storage);
+            var addressList = addressTxMap.Get<Address, StorageList>(address);
+            return addressList.All<Hash>();
+        }
     }
 }

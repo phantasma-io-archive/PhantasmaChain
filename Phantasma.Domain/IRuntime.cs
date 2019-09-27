@@ -58,6 +58,7 @@ namespace Phantasma.Domain
         byte[] GetAddressScript(Address from);
 
         Event[] GetTransactionEvents(Hash transactionHash);
+        Hash[] GetTransactionHashesForAddress(Address address);
 
         Address GetValidatorForBlock(Hash blockHash);
         ValidatorEntry GetValidatorByIndex(int index);

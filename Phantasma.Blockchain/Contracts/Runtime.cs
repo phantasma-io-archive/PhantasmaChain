@@ -695,6 +695,11 @@ namespace Phantasma.Blockchain.Contracts
             return block.GetEventsForTransaction(transactionHash);
         }
 
+        public Hash[] GetTransactionHashesForAddress(Address address)
+        {
+            return Chain.GetTransactionHashesForAddress(address);
+        }
+
         public Address GetValidatorForBlock(Hash blockHash)
         {
             return Chain.GetValidatorForBlock(blockHash);

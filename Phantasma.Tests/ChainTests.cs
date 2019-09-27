@@ -516,14 +516,20 @@ namespace Phantasma.Tests
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
-            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            var txA = simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
+            var txB = simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
             simulator.EndBlock();
 
             // Send from user A to user B
             simulator.BeginBlock();
-            simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            var txC = simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
             simulator.EndBlock();
+
+            var hashes = simulator.Nexus.RootChain.GetTransactionHashesForAddress(testUserA.Address);
+            Assert.IsTrue(hashes.Length == 3);
+            Assert.IsTrue(hashes.Any(x => x == txA.Hash));
+            Assert.IsTrue(hashes.Any(x => x == txB.Hash));
+            Assert.IsTrue(hashes.Any(x => x == txC.Hash));
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(finalBalance == transferAmount);
