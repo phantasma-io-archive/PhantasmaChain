@@ -612,7 +612,7 @@ namespace Phantasma.Tests
             {
                 return new ScriptBuilder()
                 .CallContract("interop", "SettleTransaction", testUser.Address, Pay.Chains.NeoWallet.NeoPlatform, neoTxHash)
-                .CallContract("swap", "SwapTokens", testUser.Address, swapSymbol, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(0.1m, tokenInfo.Decimals))
+                .CallContract("swap", "SwapFee", testUser.Address, swapSymbol, UnitConversion.ToBigInteger(0.1m, tokenInfo.Decimals))
                 .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, 9999)
                 .SpendGas(testUser.Address).EndScript();
             });

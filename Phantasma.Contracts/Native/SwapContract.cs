@@ -50,9 +50,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(IsSupportedToken(fromSymbol), "unsupported from symbol");
             Runtime.Expect(IsSupportedToken(toSymbol), "unsupported to symbol");
 
-            var fromBalance = GetAvailableForSymbol(fromSymbol);
-            Runtime.Expect(fromBalance > 0, fromSymbol + " not available in pot");
-
             var toBalance = GetAvailableForSymbol(toSymbol);
             Runtime.Expect(toBalance > 0, toSymbol + " not available in pot");
 
@@ -142,6 +139,12 @@ namespace Phantasma.Contracts.Native
             return result.ToArray();
         }
 
+        public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
+        {
+            var amount = Runtime.GetTokenQuote(DomainSettings.FuelTokenSymbol, fromSymbol, feeAmount);
+            SwapTokens(from, fromSymbol, DomainSettings.FuelTokenSymbol, amount);
+        }
+
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
@@ -151,12 +154,15 @@ namespace Phantasma.Contracts.Native
             var fromInfo = Runtime.GetToken(fromSymbol);
             Runtime.Expect(IsSupportedToken(fromSymbol), "source token is unsupported");
 
+            var fromBalance = Runtime.GetBalance(fromSymbol, from);
+            Runtime.Expect(fromBalance > 0, $"not enough {fromSymbol} balance");
+
             var toInfo = Runtime.GetToken(toSymbol);
             Runtime.Expect(IsSupportedToken(toSymbol), "destination token is unsupported");
 
             var toBalance = GetAvailableForSymbol(toSymbol);
 
-            Runtime.Expect(toBalance > 0, toSymbol + " not available in pot");
+            Runtime.Expect(toBalance > 0, $"not enough balance o f {toSymbol} available in the pot");
 
             var total = GetRate(fromSymbol, toSymbol, amount);
 

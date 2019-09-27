@@ -173,6 +173,7 @@ namespace Phantasma.Contracts.Native
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
                     Address destination = Address.Null;
+                    bool found = false; 
                     foreach (var otherEvt in interopTx.Events)
                     {
                         if (otherEvt.Kind == EventKind.TokenSend)
@@ -181,20 +182,21 @@ namespace Phantasma.Contracts.Native
                             if (otherTransfer.chainAddress == transfer.chainAddress && otherTransfer.symbol == transfer.symbol)
                             {
                                 destination = otherEvt.Address;
+                                found = true;
                                 break;
                             }
                         }
                     }
 
+                    Runtime.Expect(found, "destination address not found in transaction events");
+
                     if (destination.IsInterop)
                     {
                         destination = GetLink(destination, DomainSettings.PlatformName);
                     }
-                    else
-                    {
-                        Runtime.Expect(destination.IsUser, "invalid destination address");
-                    }
 
+                    Runtime.Expect(destination.IsUser, "invalid destination address");
+                    
                     Runtime.Expect(Runtime.TransferTokens(transfer.symbol, platformInfo.Address, destination, transfer.value), "mint failed");
                     Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = transfer.value, symbol = transfer.symbol });
 
