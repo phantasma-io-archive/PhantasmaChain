@@ -26,17 +26,6 @@ namespace Phantasma.Blockchain
         private const string BlockHashMapTag = ".blocks";
         private const string BlockHeightListTag = ".height";
 
-        #region PRIVATE
-        /*        private KeyValueStore<Hash, Transaction> _transactions;
-                private KeyValueStore<Hash, Block> _blocks;
-                private KeyValueStore<Hash, Hash> _transactionBlockMap;
-                private KeyValueStore<BigInteger, Hash> _blockHeightMap;
-
-                private Dictionary<Hash, StorageChangeSetContext> _blockChangeSets = new Dictionary<Hash, StorageChangeSetContext>();
-                */
-
-        #endregion
-
         #region PUBLIC
         public static readonly uint InitialHeight = 1;
 
@@ -213,13 +202,17 @@ namespace Phantasma.Blockchain
             hashList.Add<Hash>(block.Hash);
 
             var blockMap = new StorageMap(BlockHashMapTag, this.Storage);
-            blockMap.Set<Hash, Block>(block.Hash, block);
+            var blockBytes = block.ToByteArray();
+            blockBytes = CompressionUtils.Compress(blockBytes);
+            blockMap.Set<Hash, byte[]>(block.Hash, blockBytes);
 
             var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
             var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
             foreach (Transaction tx in transactions)
             {
-                txMap.Set<Hash, Transaction>(tx.Hash, tx);
+                var txBytes = tx.ToByteArray(true);
+                txBytes = CompressionUtils.Compress(txBytes);
+                txMap.Set<Hash, byte[]>(tx.Hash, txBytes);
                 txBlockMap.Set<Hash, Hash>(tx.Hash, block.Hash);
             }
 
@@ -586,7 +579,16 @@ namespace Phantasma.Blockchain
 
             if (blockMap.ContainsKey<Hash>(hash))
             {
-                return blockMap.Get<Hash, Block>(hash);
+                var bytes = blockMap.Get<Hash, byte[]>(hash);
+                bytes = CompressionUtils.Decompress(bytes);
+                var block = Block.Unserialize(bytes);
+
+                if (block.Hash != hash)
+                {
+                    throw new ChainException("data corruption on block: " + hash);
+                }
+
+                return block;
             }
 
             return null;
@@ -619,7 +621,16 @@ namespace Phantasma.Blockchain
             var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
             if (txMap.ContainsKey<Hash>(hash))
             {
-                return txMap.Get<Hash, Transaction>(hash);
+                var bytes =txMap.Get<Hash, byte[]>(hash);
+                bytes = CompressionUtils.Decompress(bytes);
+                var tx = Transaction.Unserialize(bytes);
+
+                if (tx.Hash != hash)
+                {
+                    throw new ChainException("data corruption on transaction: " + hash);
+                }
+
+                return tx;
             }
 
             return null;
