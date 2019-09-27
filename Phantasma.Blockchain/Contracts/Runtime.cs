@@ -866,12 +866,32 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool BurnTokens(string symbol, Address target, BigInteger amount)
         {
-            throw new NotImplementedException();
+            var Runtime = this;
+            Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
+            Runtime.Expect(IsWitness(target), "invalid witness");
+
+            Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = Runtime.GetToken(symbol);
+            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(tokenInfo.IsBurnable(), "token must be burnable");
+            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
+
+            return Nexus.BurnTokens(this, symbol, target, amount, false);
         }
 
         public bool BurnToken(string symbol, Address target, BigInteger tokenID)
         {
-            throw new NotImplementedException();
+            var Runtime = this;
+            Runtime.Expect(IsWitness(target), "invalid witness");
+
+            Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
+            var tokenInfo = Runtime.GetToken(symbol);
+            Runtime.Expect(!tokenInfo.IsFungible(), "token must be non-fungible");
+            Runtime.Expect(tokenInfo.IsBurnable(), "token must be burnable");
+
+            var nft = Runtime.ReadToken(symbol, tokenID);
+
+            return Nexus.BurnToken(this, symbol, target, tokenID, false);
         }
 
         public bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
@@ -905,12 +925,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
-            Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount), "transfer failed");
-
-            Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
-            Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
-
-            return true;
+            return Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount);
         }
 
         public bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)

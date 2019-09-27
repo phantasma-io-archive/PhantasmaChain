@@ -341,7 +341,6 @@ namespace Phantasma.Contracts.Native
             _lenderMap.Set<Address, GasLender>(from, lender);
 
             Runtime.Notify(EventKind.AddressLink, from, Runtime.Chain.Address);
-            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { symbol = DomainSettings.FuelTokenSymbol, value = balance, chainAddress = Runtime.Chain.Address });
         }
 
         public void StopLend(Address from)

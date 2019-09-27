@@ -239,7 +239,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(balance >= 0, "invalid balance");
             _balances.Set<Address, BigInteger>(from, balance);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = DomainSettings.FuelTokenSymbol });
             Runtime.Notify(EventKind.ChannelRefill, from, count);
         }
 
@@ -273,11 +272,9 @@ namespace Phantasma.Contracts.Native
 
             // send half to the chain
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, this.Address, payout);
-            Runtime.Notify(EventKind.TokenReceive, this.Address, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = DomainSettings.FuelTokenSymbol });
 
             // send half to the receiver
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, receipt.message.receiver, payout);
-            Runtime.Notify(EventKind.TokenReceive, receipt.message.receiver, new TokenEventData() { chainAddress = this.Address, value = payout, symbol = DomainSettings.FuelTokenSymbol });
 
             Runtime.Notify(EventKind.ChannelSettle, receipt.message.sender, receiptCount);
         }

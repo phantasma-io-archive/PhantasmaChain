@@ -75,7 +75,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(amount >= unitAmount, "invalid amount");
 
             Runtime.Expect(Runtime.TransferTokens(symbol, from, this.Address, amount), "tokens transfer failed");
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = symbol, value = amount });
         }
 
         private BigInteger GetAvailableForSymbol(string symbol)
@@ -182,11 +181,6 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(Runtime.TransferTokens(fromSymbol, from, this.Address, amount), "source tokens transfer failed");
             Runtime.Expect(Runtime.TransferTokens(toSymbol, this.Address, from, total), "target tokens transfer failed");
-
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });
-            Runtime.Notify(EventKind.TokenReceive, this.Address, new TokenEventData() { chainAddress = this.Address, symbol = fromSymbol, value = amount });
-            Runtime.Notify(EventKind.TokenSend, this.Address, new TokenEventData() { chainAddress = this.Address, symbol = toSymbol, value = total });
-            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Address, symbol = toSymbol, value = total });
         }
     }
 }

@@ -41,7 +41,7 @@ namespace Phantasma.Contracts.Native
         private StorageMap _links;
         private StorageMap _reverseMap;
 
-        public static BigInteger InteropFeeRacio => 2;
+        public static BigInteger InteropFeeRacio => 20;
 
         public InteropContract() : base()
         {
@@ -198,16 +198,14 @@ namespace Phantasma.Contracts.Native
                     Runtime.Expect(destination.IsUser, "invalid destination address");
                     
                     Runtime.Expect(Runtime.TransferTokens(transfer.symbol, platformInfo.Address, destination, transfer.value), "mint failed");
-                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = transfer.value, symbol = transfer.symbol });
 
                     swapCount++;
                     break;
                 }
 
-                if (evt.Kind == EventKind.TokenClaim)
+                if (evt.Kind == EventKind.TokenSend && evt.Address.IsInterop)
                 {
                     var destination = evt.Address;
-                    Runtime.Expect(!destination.IsNull, "invalid destination");
 
                     var transfer = evt.GetContent<TokenEventData>();
                     Runtime.Expect(transfer.value > 0, "amount must be positive and greater than zero");
@@ -230,20 +228,18 @@ namespace Phantasma.Contracts.Native
                         }
                     }
 
-                    Runtime.Expect(index >= 0, "invalid withdraw, possible leak found");
+                    if (index >= 0)
+                    {
+                        var withdraw = _withdraws.Get<InteropWithdraw>(index);
+                        Runtime.Expect(withdraw.broker == from, "invalid broker");
 
-                    var withdraw = _withdraws.Get<InteropWithdraw>(index);
-                    Runtime.Expect(withdraw.broker == from, "invalid broker");
+                        _withdraws.RemoveAt<InteropWithdraw>(index);
 
-                    _withdraws.RemoveAt<InteropWithdraw>(index);
+                        Runtime.Expect(Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount), "fee payment failed");
 
-                    Runtime.Expect(Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount), "fee payment failed");
-
-                    Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
-                    Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = platformInfo.Address, value = withdraw.transferAmount, symbol = withdraw.transferSymbol});
-
-                    swapCount++;
-                    break;
+                        swapCount++;
+                        break;
+                    }
                 }
             }
 
@@ -282,12 +278,11 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var basePrice = UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals) / InteropFeeRacio; // 50cents
+            var basePrice = UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals) / InteropFeeRacio; // 5cents
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             Runtime.Expect(Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount), "fee transfer failed");
-
             Runtime.Expect(Runtime.TransferTokens(symbol, from, platformInfo.Address, amount), "burn failed");
 
             var collateralAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, basePrice);
@@ -306,8 +301,6 @@ namespace Phantasma.Contracts.Native
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
 
-            Runtime.Notify(EventKind.TokenSend, from, new TokenEventData() { chainAddress = this.Address, value = amount, symbol = symbol });
-            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Address, value = feeAmount, symbol = symbol });
             Runtime.Notify(EventKind.BrokerRequest, from, to);
         }
 
@@ -334,7 +327,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(withdraw.broker.IsNull, "broker already set");
 
             Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, withdraw.collateralAmount), "collateral payment failed");
-            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.feeAmount, symbol = withdraw.feeSymbol });
 
             withdraw.broker = from;
             withdraw.timestamp = Runtime.Time;
@@ -379,7 +371,6 @@ namespace Phantasma.Contracts.Native
             withdraw.timestamp = Runtime.Time;
             _withdraws.Replace<InteropWithdraw>(index, withdraw);
 
-            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = withdraw.collateralAmount, symbol = withdraw.feeSymbol });
             Runtime.Notify(EventKind.RoleDemote, brokerAddress, new RoleEventData() { role = "broker", date = Runtime.Time});
         }
 

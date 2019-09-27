@@ -333,9 +333,6 @@ namespace Phantasma.Contracts.Native
                     Runtime.TransferTokens(takerEscrowSymbol, this.Address, makerOrder.Creator, takerEscrowUsage);
                     Runtime.TransferTokens(makerEscrowSymbol, this.Address, takerOrder.Creator, makerEscrowUsage);
 
-                    Runtime.Notify(EventKind.TokenReceive, makerOrder.Creator, new TokenEventData() { chainAddress = this.Address, symbol = takerEscrowSymbol, value = takerEscrowUsage });
-                    Runtime.Notify(EventKind.TokenReceive, takerOrder.Creator, new TokenEventData() { chainAddress = this.Address, symbol = makerEscrowSymbol, value = makerEscrowUsage });
-
                     orderEscrowUsage += takerEscrowUsage;
 
                     Runtime.Notify(EventKind.OrderFilled, takerOrder.Creator, takerOrder.Uid);
@@ -371,7 +368,6 @@ namespace Phantasma.Contracts.Native
                 if (leftoverEscrow > 0)
                 {
                     Runtime.TransferTokens(orderEscrowSymbol, this.Address, thisOrder.Creator, leftoverEscrow);
-                    Runtime.Notify(EventKind.TokenReceive, thisOrder.Creator, new TokenEventData() { chainAddress = this.Address, symbol = orderEscrowSymbol, value = leftoverEscrow });
                     Runtime.Notify(EventKind.OrderCancelled, thisOrder.Creator, thisOrder.Uid);
                 }
                 else
@@ -573,12 +569,6 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(Runtime.TransferTokens(quoteSymbol, buyer, seller, price), "payment failed");
             Runtime.Expect(Runtime.TransferTokens(baseSymbol, seller, buyer, amount), "transfer failed");
-
-            Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = this.Address, symbol = baseSymbol, value = amount });
-            Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = this.Address, symbol = quoteSymbol, value = price });
-
-            Runtime.Notify(EventKind.TokenReceive, seller, new TokenEventData() { chainAddress = this.Address, symbol = quoteSymbol, value = price });
-            Runtime.Notify(EventKind.TokenReceive, buyer, new TokenEventData() { chainAddress = this.Address, symbol = baseSymbol, value = amount });
         }
 
         public void SwapToken(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, byte[] signature)
@@ -620,12 +610,6 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(Runtime.TransferTokens(quoteSymbol, buyer, owner, price), "payment failed");
             Runtime.Expect(Runtime.TransferToken(baseSymbol, owner, buyer, tokenID), "transfer failed");
-
-            Runtime.Notify(EventKind.TokenSend, seller, new TokenEventData() { chainAddress = this.Address, symbol = baseSymbol, value = tokenID });
-            Runtime.Notify(EventKind.TokenSend, buyer, new TokenEventData() { chainAddress = this.Address, symbol = quoteSymbol, value = price });
-
-            Runtime.Notify(EventKind.TokenReceive, seller, new TokenEventData() { chainAddress = this.Address, symbol = quoteSymbol, value = price });
-            Runtime.Notify(EventKind.TokenReceive, buyer, new TokenEventData() { chainAddress = this.Address, symbol = baseSymbol, value = tokenID });
         }
         #endregion
     }

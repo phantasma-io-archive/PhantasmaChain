@@ -25,6 +25,7 @@ namespace Phantasma.Contracts.Native
 
         public void LockTokens(Address from, string symbol, BigInteger amount, uint duration)
         {
+            throw new NotImplementedException();
             Runtime.Expect(amount > 0, "amount must be greater than zero");
             Runtime.Expect(duration >= 86400, "minimum duration should be one day"); // minimum 1 day
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
@@ -43,12 +44,11 @@ namespace Phantasma.Contracts.Native
                 unlockTime = Runtime.Time + TimeSpan.FromSeconds(duration),
             };
             list.Add(entry);
-
-            Runtime.Notify(EventKind.TokenEscrow, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
         }
 
         public void UnlockTokens(Address from, string symbol)
         {
+            throw new NotImplementedException();
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
@@ -80,8 +80,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(amount > 0, "available amount must be greater than zero");
 
             Runtime.Expect(Runtime.TransferTokens(symbol, this.Address, from, amount), "transfer failed");
-
-            Runtime.Notify(EventKind.TokenReceive, from, new TokenEventData() { symbol = symbol, value = amount, chainAddress = Runtime.Chain.Address });
         }
     }
 }

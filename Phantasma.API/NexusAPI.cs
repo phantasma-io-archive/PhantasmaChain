@@ -939,7 +939,9 @@ namespace Phantasma.API
             }
             catch (MempoolSubmissionException e)
             {
-                return new ErrorResult { error = "Mempool submission rejected: " + e.Message };
+                var errorMessage = "Mempool submission rejected: " + e.Message;
+                logger?.Warning(errorMessage);
+                return new ErrorResult { error = errorMessage };
             }
             catch (Exception)
             {

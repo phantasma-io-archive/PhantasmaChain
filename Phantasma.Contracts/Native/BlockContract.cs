@@ -124,11 +124,8 @@ namespace Phantasma.Contracts.Native
                     continue;
                 }
 
-                if (Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validator.address, amountPerValidator))
-                {
-                    Runtime.Notify(EventKind.TokenReceive, validator.address, new TokenEventData() { chainAddress = this.Runtime.Chain.Address, value = amountPerValidator, symbol = DomainSettings.FuelTokenSymbol });
-                    delivered++;
-                }
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validator.address, amountPerValidator);
+                delivered++;
             }
 
             Runtime.Expect(delivered > 0, "failed to claim fees");

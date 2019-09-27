@@ -3251,9 +3251,6 @@ namespace Phantasma.Contracts.Extra
 
             var tokenID = Runtime.MintToken(Constants.ITEM_SYMBOL, this.Address, to, tokenROM, tokenRAM);
             Runtime.Expect(tokenID > 0, "minting failed");
-            //Runtime.Notify(EventKind.ItemReceived, to, itemID);
-            Runtime.Notify(EventKind.TokenReceive, to, new TokenEventData() { chainAddress = this.Address, value = tokenID, symbol = Constants.ITEM_SYMBOL });
-
             return tokenID;
         }
 

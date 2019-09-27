@@ -559,9 +559,6 @@ namespace Phantasma.Contracts.Native
             };
 
             _claims.Set<Address, EnergyAction>(stakeAddress, action);
-
-            Runtime.Notify(EventKind.TokenClaim, from, new TokenEventData() { chainAddress = this.Address, symbol = DomainSettings.StakingTokenSymbol, value = unclaimedAmount });
-            Runtime.Notify(EventKind.TokenMint, stakeAddress, new TokenEventData() { chainAddress = this.Address, symbol = DomainSettings.FuelTokenSymbol, value = fuelAmount });
         }
 
         public BigInteger GetStake(Address address)
