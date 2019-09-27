@@ -139,7 +139,7 @@ namespace Phantasma.Blockchain
         }
 
         internal void Serialize(BinaryWriter writer)
-        { 
+        {
             writer.WriteBigInteger(Height);
             writer.Write(Timestamp.Value);
             writer.WriteHash(PreviousHash);
@@ -210,7 +210,7 @@ namespace Phantasma.Blockchain
             this.PreviousHash = reader.ReadHash();
             this.ChainAddress = reader.ReadAddress();
             this.Protocol = (uint)reader.ReadVarInt();
-
+        
             var hashCount = reader.ReadUInt16();
             var hashes = new List<Hash>();
 
@@ -250,7 +250,7 @@ namespace Phantasma.Blockchain
             {
                 var key = reader.ReadVarString();
                 var val = reader.ReadByteArray();
-                _oracleData.Add(new OracleEntry(key, val));
+                _oracleData.Add(new OracleEntry( key, val));
                 oracleCount--;
             }
 

@@ -49,6 +49,7 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(this.ChainName);
             writer.WriteByteArray(this.Script);
             writer.Write(this.Expiration.Value);
+            writer.WriteByteArray(this.Payload);
 
             if (withSignature)
             {
@@ -173,6 +174,7 @@ namespace Phantasma.Blockchain
             this.ChainName = reader.ReadVarString();
             this.Script = reader.ReadByteArray();
             this.Expiration = reader.ReadUInt32();
+            this.Payload = reader.ReadByteArray();
 
             // check if we have some signatures attached
             try
@@ -188,6 +190,7 @@ namespace Phantasma.Blockchain
             {
                 this.Signatures = new Signature[0];
             }
+
             this.UpdateHash();
         }
 
