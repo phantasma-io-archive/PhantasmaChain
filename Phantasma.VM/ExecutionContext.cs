@@ -13,7 +13,6 @@ namespace Phantasma.VM
     public abstract class ExecutionContext
     {
         public abstract string Name { get; }
-        public abstract bool Admin { get; }
 
         public abstract ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack);
 
