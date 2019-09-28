@@ -20,6 +20,11 @@ namespace Phantasma.VM
             return $"*********{s}*********";
         }
 
+        protected virtual string GetDumpPath()
+        {
+            return Directory.GetCurrentDirectory() + "\\" + "vm_dump.txt";
+        }
+
         public VMDebugException(VirtualMachine vm, string msg) : base(msg)
         {
             this.vm = vm;
@@ -75,7 +80,7 @@ namespace Phantasma.VM
             lines.AddRange(disasm);
             lines.Add("");
 
-            var path = Directory.GetCurrentDirectory() + "\\" + "vm_dump.txt";
+            var path = GetDumpPath();
             System.Diagnostics.Debug.WriteLine("Dumped VM data: " + path);
             File.WriteAllLines(path, lines.ToArray());
         }

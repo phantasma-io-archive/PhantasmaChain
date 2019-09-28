@@ -12,6 +12,28 @@ using System.Diagnostics;
 
 namespace Phantasma.Blockchain.Contracts
 {
+#if DEBUG
+    public class RuntimeException : VMDebugException
+    {
+        public RuntimeException(VirtualMachine vm, string msg) : base(vm, msg)
+        {
+        }
+
+        protected override string GetDumpPath()
+        {
+            var path = base.GetDumpPath();
+            var runtime = vm as RuntimeVM;
+
+            if (runtime != null && runtime.Transaction != null)
+            {
+                path.Replace("dump", runtime.Transaction.Hash.ToString());
+            }
+
+            return path;
+        }
+    }
+#endif
+
     public class RuntimeVM : VirtualMachine, IRuntime
     {
         public Timestamp Time { get; private set; }
