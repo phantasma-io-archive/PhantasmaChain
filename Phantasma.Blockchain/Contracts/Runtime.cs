@@ -187,7 +187,7 @@ namespace Phantasma.Blockchain.Contracts
 
             BigInteger savedGas = this.UsedGas;
 
-            this.EntryAddress = SmartContract.GetAddressForName(CurrentContext.Name);
+            this.EntryAddress = CurrentContext.Address;
             CurrentContext = context;
             var temp = context.Execute(this.CurrentFrame, this.Stack);
             Expect(temp == ExecutionState.Halt, "expected call success");
@@ -568,8 +568,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (address.IsSystem)
             {
-                var contextAddress = SmartContract.GetAddressForName(this.CurrentContext.Name);
-                return contextAddress == address;
+                return address == CurrentContext.Address;
             }
 
             if (address.IsInterop)

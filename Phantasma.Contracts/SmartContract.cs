@@ -57,7 +57,7 @@ namespace Phantasma.Contracts
 
         public static Address GetAddressForName(string name)
         {
-            return Cryptography.Address.FromHash(name);
+            return Address.FromHash(name);
         }
 
         private byte[] GetKeyForField(FieldInfo field)
