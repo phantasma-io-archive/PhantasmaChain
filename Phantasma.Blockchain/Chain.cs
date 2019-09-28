@@ -175,7 +175,7 @@ namespace Phantasma.Blockchain
                     }
                     else
                     {
-                        throw new InvalidTransactionException(tx.Hash, $"execution failed");
+                        throw new InvalidTransactionException(tx.Hash, "script execution failed");
                     }
                 }
                 catch (Exception e)

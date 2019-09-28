@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts
 #if DEBUG
                 throw new VMDebugException(frame.VM, $"VM nativecall failed: method name not present in the VM stack");
 #else
-                                return ExecutionState.Fault;
+                return ExecutionState.Fault;
 #endif
             }
 
