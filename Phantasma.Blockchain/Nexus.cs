@@ -825,51 +825,24 @@ namespace Phantasma.Blockchain
             throw new ChainException($"Token does not exist ({symbol})");
         }
 
-        internal bool MintTokens(RuntimeVM runtime, string symbol, Address from, Address target, BigInteger amount, bool isSettlement)
+        internal void MintTokens(RuntimeVM Runtime, IToken token, Address from, Address target, BigInteger amount, bool isSettlement)
         {
-            if (!TokenExists(symbol))
-            {
-                return false;
-            }
+            Runtime.Expect(token.IsFungible(), "must be fungible");
+            Runtime.Expect(amount > 0, "invalid amount");
 
-            var tokenInfo = GetTokenInfo(symbol);
+            var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
+            Runtime.Expect(supply.Mint(Runtime.Storage, amount, token.MaxSupply), "mint supply failed");
 
-            if (!tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
-            {
-                return false;
-            }
+            var balances = new BalanceSheet(token.Symbol);
+            Runtime.Expect(balances.Add(Runtime.Storage, target, amount), "balance add failed");
 
-            if (amount <= 0)
-            {
-                return false;
-            }
+            var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, target, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
-            var supply = new SupplySheet(symbol, runtime.Chain, this);
-            if (!supply.Mint(runtime.Storage, amount, tokenInfo.MaxSupply))
-            {
-                return false;
-            }
+            var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
-            var balances = new BalanceSheet(symbol);
-            if (!balances.Add(runtime.Storage, target, amount))
-            {
-                return false;
-            }
-
-            var tokenTriggerResult = runtime.InvokeTriggerOnToken(tokenInfo, isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint, target, symbol, amount);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
-
-            var accountTriggerResult = runtime.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint, target, symbol, amount);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
-
-            runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = symbol, value = amount, chainAddress = runtime.Chain.Address });
-            return true;
+            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData() { symbol = token.Symbol, value = amount, chainAddress = Runtime.Chain.Address });
         }
 
         // NFT version
@@ -916,16 +889,9 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        internal bool BurnTokens(RuntimeVM runtime, string symbol, Address target, BigInteger amount, bool isSettlement)
+        internal bool BurnTokens(RuntimeVM runtime, IToken token, Address target, BigInteger amount, bool isSettlement)
         {
-            if (!TokenExists(symbol))
-            {
-                return false;
-            }
-
-            var tokenInfo = GetTokenInfo(symbol);
-
-            if (!tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            if (!token.Flags.HasFlag(TokenFlags.Fungible))
             {
                 return false;
             }
@@ -935,32 +901,32 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var supply = new SupplySheet(symbol, runtime.Chain, this);
+            var supply = new SupplySheet(token.Symbol, runtime.Chain, this);
 
-            if (tokenInfo.IsCapped() && !supply.Burn(runtime.Storage, amount))
+            if (token.IsCapped() && !supply.Burn(runtime.Storage, amount))
             {
                 return false;
             }
 
-            var balances = new BalanceSheet(symbol);
+            var balances = new BalanceSheet(token.Symbol);
             if (!balances.Subtract(runtime.Storage, target, amount))
             {
                 return false;
             }
 
-            var tokenTriggerResult = runtime.InvokeTriggerOnToken(tokenInfo, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, target, symbol, amount);
+            var tokenTriggerResult = runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, target, token.Symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = runtime.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, target, symbol, amount);
+            var accountTriggerResult = runtime.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, target, token.Symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { symbol = symbol, value = amount, chainAddress = runtime.Chain.Address });
+            runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { symbol = token.Symbol, value = amount, chainAddress = runtime.Chain.Address });
             return true;
         }
 
@@ -1003,107 +969,60 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
         }
 
-        internal bool TransferTokens(RuntimeVM Runtime, string symbol, Address source, Address destination, BigInteger amount)
+        internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount)
         {
-            if (!TokenExists(symbol))
+            if (source == destination)
             {
-                return false;
+                return;
             }
 
-            var tokenInfo = GetTokenInfo(symbol);
-
-            if (!tokenInfo.Flags.HasFlag(TokenFlags.Transferable))
+            if (!token.Flags.HasFlag(TokenFlags.Transferable))
             {
                 throw new Exception("Not transferable");
             }
 
-            if (!tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            if (!token.Flags.HasFlag(TokenFlags.Fungible))
             {
                 throw new Exception("Should be fungible");
             }
 
-            if (amount <= 0)
-            {
-                return false;
-            }
+            Runtime.Expect(amount > 0, "invalid amount");
+            Runtime.Expect(!destination.IsNull, "invalid destination");
 
-            if (source == destination)
-            {
-                return true;
-            }
+            var balances = new BalanceSheet(token.Symbol);
+            Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), "balance subtract failed");
+            Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
 
-            if (destination.IsNull)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, token.Symbol, amount), "token onSend trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, destination, token.Symbol, amount), "token onReceive trigger failed");
 
-            var balances = new BalanceSheet(symbol);
-            if (!balances.Subtract(Runtime.Storage, source, amount))
-            {
-                return false;
-            }
-
-            if (!balances.Add(Runtime.Storage, destination, amount))
-            {
-                return false;
-            }
-
-            var tokenTriggerResult = Runtime.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnSend, source, symbol, amount);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
-
-            tokenTriggerResult = Runtime.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnReceive, destination, symbol, amount);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
-
-            var accountTriggerResult = Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, symbol, amount);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
-
-            accountTriggerResult = Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, symbol, amount);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, token.Symbol, amount), "account onSend trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, token.Symbol, amount), "account onReceive trigger failed");
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = token.Symbol });
             }
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenClaim, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+                Runtime.Notify(EventKind.TokenClaim, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = token.Symbol });
             }
             else
             {
-                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
-                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = symbol });
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = token.Symbol });
+                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = amount, symbol = token.Symbol });
             }
-            return true;
         }
 
-        internal bool TransferToken(RuntimeVM Runtime, string symbol, Address source, Address destination, BigInteger tokenID)
+        internal bool TransferToken(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger tokenID)
         {
-            if (!TokenExists(symbol))
-            {
-                return false;
-            }
-
-            var tokenInfo = GetTokenInfo(symbol);
-
-            if (!tokenInfo.Flags.HasFlag(TokenFlags.Transferable))
+            if (!token.Flags.HasFlag(TokenFlags.Transferable))
             {
                 throw new Exception("Not transferable");
             }
 
-            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
                 throw new Exception("Should be non-fungible");
             }
@@ -1123,7 +1042,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var ownerships = new OwnershipSheet(symbol);
+            var ownerships = new OwnershipSheet(token.Symbol);
             if (!ownerships.Remove(Runtime.Storage, source, tokenID))
             {
                 return false;
@@ -1134,45 +1053,45 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var tokenTriggerResult = Runtime.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnSend, source, symbol, tokenID);
+            var tokenTriggerResult = Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, token.Symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            tokenTriggerResult = Runtime.InvokeTriggerOnToken(tokenInfo, TokenTrigger.OnReceive, destination, symbol, tokenID);
+            tokenTriggerResult = Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, destination, token.Symbol, tokenID);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, symbol, tokenID);
+            var accountTriggerResult = Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, token.Symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            accountTriggerResult = Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, symbol, tokenID);
+            accountTriggerResult = Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, token.Symbol, tokenID);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            EditNFTLocation(symbol, tokenID, Runtime.Chain.Name, destination);
+            EditNFTLocation(token.Symbol, tokenID, Runtime.Chain.Name, destination);
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = symbol });
+                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = token.Symbol});
             }
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = symbol });
+                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = token.Symbol });
             }
             else
             {
-                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = symbol });
-                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = symbol });
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = token.Symbol });
+                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData() { chainAddress = Runtime.Chain.Address, value = tokenID, symbol = token.Symbol });
             }
 
             return true;

@@ -227,7 +227,7 @@ namespace Phantasma.Contracts.Native
             var balance = Runtime.GetBalance(orderEscrowSymbol, from);
             Runtime.Expect(balance >= orderEscrowAmount, "not enough balance");
 
-            Runtime.Expect(Runtime.TransferTokens(orderEscrowSymbol, from, this.Address, orderEscrowAmount), "transfer failed");
+            Runtime.TransferTokens(orderEscrowSymbol, from, this.Address, orderEscrowAmount);
             //------------
 
             var thisOrder = new ExchangeOrder();
@@ -567,8 +567,8 @@ namespace Phantasma.Contracts.Native
             var quoteBalance = Runtime.GetBalance(quoteSymbol, buyer);
             Runtime.Expect(quoteBalance >= price, "invalid balance");
 
-            Runtime.Expect(Runtime.TransferTokens(quoteSymbol, buyer, seller, price), "payment failed");
-            Runtime.Expect(Runtime.TransferTokens(baseSymbol, seller, buyer, amount), "transfer failed");
+            Runtime.TransferTokens(quoteSymbol, buyer, seller, price);
+            Runtime.TransferTokens(baseSymbol, seller, buyer, amount);
         }
 
         public void SwapToken(Address buyer, Address seller, string baseSymbol, string quoteSymbol, BigInteger tokenID, BigInteger price, byte[] signature)
@@ -608,8 +608,8 @@ namespace Phantasma.Contracts.Native
             var balance = Runtime.GetBalance(quoteSymbol, buyer);
             Runtime.Expect(balance >= price, "invalid balance");
 
-            Runtime.Expect(Runtime.TransferTokens(quoteSymbol, buyer, owner, price), "payment failed");
-            Runtime.Expect(Runtime.TransferToken(baseSymbol, owner, buyer, tokenID), "transfer failed");
+            Runtime.TransferTokens(quoteSymbol, buyer, owner, price);
+            Runtime.TransferToken(baseSymbol, owner, buyer, tokenID);
         }
         #endregion
     }

@@ -829,7 +829,7 @@ namespace Phantasma.Blockchain.Contracts
             return Chain.Name == parentName;
         }
 
-        public bool MintTokens(string symbol, Address from, Address target, BigInteger amount)
+        public void MintTokens(string symbol, Address from, Address target, BigInteger amount)
         {
             var Runtime = this;
 
@@ -839,11 +839,11 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
-            var tokenInfo = Runtime.GetToken(symbol);
-            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
+            var token = Runtime.GetToken(symbol);
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
-            return Nexus.MintTokens(this, symbol, from, target, amount, false);
+            Nexus.MintTokens(this, token, from, target, amount, false);
         }
 
         public BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram)
@@ -868,19 +868,19 @@ namespace Phantasma.Blockchain.Contracts
             return tokenID;
         }
 
-        public bool BurnTokens(string symbol, Address target, BigInteger amount)
+        public void BurnTokens(string symbol, Address target, BigInteger amount)
         {
             var Runtime = this;
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(IsWitness(target), "invalid witness");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
-            var tokenInfo = Runtime.GetToken(symbol);
-            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(tokenInfo.IsBurnable(), "token must be burnable");
-            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
+            var token = Runtime.GetToken(symbol);
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(token.IsBurnable(), "token must be burnable");
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
-            return Nexus.BurnTokens(this, symbol, target, amount, false);
+            Nexus.BurnTokens(this, token, target, amount, false);
         }
 
         public void BurnToken(string symbol, Address target, BigInteger tokenID)
@@ -896,23 +896,28 @@ namespace Phantasma.Blockchain.Contracts
             Nexus.BurnToken(this, symbol, target, tokenID, false);
         }
 
-        public bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
+        public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             var Runtime = this;
 
             if (source == destination)
             {
-                return true;
+                return;
             }
+
+            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
+            var token = Runtime.Nexus.GetTokenInfo(symbol);
 
             if (IsPlatformAddress(source))
             {
-                return Nexus.MintTokens(this, symbol, this.EntryAddress, destination, amount, true);
+                Nexus.MintTokens(this, token, this.EntryAddress, destination, amount, true);
+                return;
             }
 
             if (IsPlatformAddress(destination))
             {
-                return Nexus.BurnTokens(this, symbol, source, amount, true);
+                Nexus.BurnTokens(this, token, source, amount, true);
+                return;
             }
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
@@ -923,18 +928,16 @@ namespace Phantasma.Blockchain.Contracts
             {
                 Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
                 Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
-                return true;
+                return;
             }
 
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var tokenInfo = Runtime.Nexus.GetTokenInfo(symbol);
-            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-            Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
-            return Runtime.Nexus.TransferTokens(Runtime, symbol, source, destination, amount);
+            Runtime.Nexus.TransferTokens(Runtime, token, source, destination, amount);
         }
 
-        public bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)
+        public void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)
         {
             var Runtime = this;
             Runtime.Expect(IsWitness(source), "invalid witness");
@@ -942,18 +945,18 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(source != destination, "source and destination must be different");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
-            var tokenInfo = Runtime.GetToken(symbol);
-            Runtime.Expect(!tokenInfo.IsFungible(), "token must be non-fungible");
+            var token = Runtime.GetToken(symbol);
+            Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
 
-            return Nexus.TransferToken(this, symbol, source, destination, tokenID);
+            Nexus.TransferToken(this, token, source, destination, tokenID);
         }
 
-        public bool SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount)
+        public void SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount)
         {
             throw new NotImplementedException();
         }
 
-        public bool SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID)
+        public void SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID)
         {
             throw new NotImplementedException();
         }

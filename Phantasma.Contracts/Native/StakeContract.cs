@@ -234,7 +234,7 @@ namespace Phantasma.Contracts.Native
             var token = Runtime.GetToken(symbol);
 
             var totalAmount = MasterClaimGlobalAmount;
-            Runtime.Expect(Runtime.MintTokens(token.Symbol, this.Address, this.Address, totalAmount), "mint failed");
+            Runtime.MintTokens(token.Symbol, this.Address, this.Address, totalAmount);
 
             var listSize = _mastersList.Count();
 
@@ -256,7 +256,7 @@ namespace Phantasma.Contracts.Native
                     transferAmount += leftovers;
                 }
 
-                Runtime.Expect(Runtime.TransferTokens(token.Symbol, this.Address, targetMaster.address, transferAmount), "transfer failed");
+                Runtime.TransferTokens(token.Symbol, this.Address, targetMaster.address, transferAmount);
 
                 totalAmount -= transferAmount;
 
@@ -285,7 +285,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
-            Runtime.Expect(Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, from, this.Address, stakeAmount), "stake transfer failed");
+            Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, from, this.Address, stakeAmount);
 
             var entry = new EnergyAction()
             {
@@ -353,7 +353,7 @@ namespace Phantasma.Contracts.Native
             if (availableStake - unstakeAmount > 0)
                 Runtime.Expect(availableStake - unstakeAmount >= MinimumValidStake, "leftover stake would be below minimum staking amount");
 
-            Runtime.Expect(Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, this.Address, from, unstakeAmount), "stake transfer failed");
+            Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, this.Address, from, unstakeAmount);
 
             stake.totalAmount -= unstakeAmount;
 
@@ -537,13 +537,13 @@ namespace Phantasma.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.Expect(Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount), "proxy fuel minting failed");
+                    Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount);
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.Expect(Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount), "fuel minting failed");
+            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);

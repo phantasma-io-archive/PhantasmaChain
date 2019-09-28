@@ -196,7 +196,7 @@ namespace Phantasma.Contracts.Native
 
                     Runtime.Expect(destination.IsUser, "invalid destination address");
                     
-                    Runtime.Expect(Runtime.TransferTokens(transfer.symbol, platformInfo.Address, destination, transfer.value), "mint failed");
+                    Runtime.TransferTokens(transfer.symbol, platformInfo.Address, destination, transfer.value);
 
                     swapCount++;
                     break;
@@ -234,7 +234,7 @@ namespace Phantasma.Contracts.Native
 
                         _withdraws.RemoveAt<InteropWithdraw>(index);
 
-                        Runtime.Expect(Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount), "fee payment failed");
+                        Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount);
 
                         swapCount++;
                         break;
@@ -281,8 +281,8 @@ namespace Phantasma.Contracts.Native
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
-            Runtime.Expect(Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount), "fee transfer failed");
-            Runtime.Expect(Runtime.TransferTokens(symbol, from, platformInfo.Address, amount), "burn failed");
+            Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
+            Runtime.TransferTokens(symbol, from, platformInfo.Address, amount);
 
             var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
 
@@ -325,7 +325,7 @@ namespace Phantasma.Contracts.Native
             var withdraw = _withdraws.Get<InteropWithdraw>(index);
             Runtime.Expect(withdraw.broker.IsNull, "broker already set");
 
-            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, withdraw.collateralAmount), "collateral payment failed");
+            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, withdraw.collateralAmount);
 
             withdraw.broker = from;
             withdraw.timestamp = Runtime.Time;
@@ -364,7 +364,7 @@ namespace Phantasma.Contracts.Native
             var days = diff / 86400; // convert seconds to days
             Runtime.Expect(days >= 1, "still waiting for broker");
 
-            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, withdraw.collateralAmount), "fee payment failed");
+            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, withdraw.collateralAmount);
 
             withdraw.broker = Address.Null;
             withdraw.timestamp = Runtime.Time;

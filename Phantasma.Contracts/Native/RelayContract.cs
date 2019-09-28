@@ -234,7 +234,7 @@ namespace Phantasma.Contracts.Native
 
             BigInteger balance = _balances.ContainsKey(from) ? _balances.Get<Address, BigInteger>(from) : 0;
 
-            Runtime.Expect(Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, amount), "insuficient balance");
+            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, amount);
             balance += amount;
             Runtime.Expect(balance >= 0, "invalid balance");
             _balances.Set<Address, BigInteger>(from, balance);

@@ -68,7 +68,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "token not currently in this chain");
             Runtime.Expect(nft.CurrentOwner == from, "invalid owner");
 
-            Runtime.Expect(Runtime.TransferToken(baseToken.Symbol, from, this.Address, tokenID), "transfer failed");
+            Runtime.TransferToken(baseToken.Symbol, from, this.Address, tokenID);
 
             var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
@@ -104,10 +104,10 @@ namespace Phantasma.Contracts.Native
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
                 Runtime.Expect(balance >= auction.Price, "not enough balance");
 
-                Runtime.Expect(Runtime.TransferTokens(quoteToken.Symbol, from, auction.Creator, auction.Price), "payment failed");
+                Runtime.TransferTokens(quoteToken.Symbol, from, auction.Creator, auction.Price);
             }
 
-            Runtime.Expect(Runtime.TransferToken(baseToken.Symbol, this.Address, from, auction.TokenID), "transfer failed");
+            Runtime.TransferToken(baseToken.Symbol, this.Address, from, auction.TokenID);
 
             _auctionMap.Remove<string>(auctionID);
             _auctionIDs.Remove(auctionID);

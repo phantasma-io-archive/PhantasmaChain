@@ -34,7 +34,7 @@ namespace Phantasma.Contracts.Native
             var tokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
 
-            Runtime.Expect(Runtime.TransferTokens(symbol, from, this.Address, amount), "transfer failed");
+            Runtime.TransferTokens(symbol, from, this.Address, amount);
 
             var list = _entries.Get<Address, StorageList>(from);
 
@@ -79,7 +79,7 @@ namespace Phantasma.Contracts.Native
             }
             Runtime.Expect(amount > 0, "available amount must be greater than zero");
 
-            Runtime.Expect(Runtime.TransferTokens(symbol, this.Address, from, amount), "transfer failed");
+            Runtime.TransferTokens(symbol, this.Address, from, amount);
         }
     }
 }

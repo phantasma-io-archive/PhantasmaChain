@@ -2307,8 +2307,8 @@ namespace Phantasma.Contracts.Extra
 
             nachoAmount += GetBonusNachos(nachoAmount, dollarAmount);
 
-            Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, this.Address, from, nachoAmount), "mint failed");
-            Runtime.Expect(Runtime.TransferTokens(tokenSymbol, from, this.Address, tokenAmount), "transfer failed");
+            Runtime.MintTokens(Constants.NACHO_SYMBOL, this.Address, from, nachoAmount);
+            Runtime.TransferTokens(tokenSymbol, from, this.Address, tokenAmount);
 
             UpdateNachoTokensSold(nachoAmount);
 
@@ -2558,22 +2558,22 @@ namespace Phantasma.Contracts.Extra
             //Runtime.Notify(EventKind.TokenReceive, to, itemID);
         }
 
-        private bool SpendFromAccountBalance<T>(Address address, BigInteger amount)
+        private void SpendFromAccountBalance<T>(Address address, BigInteger amount)
         {
-            return SpendFromAccountBalance<byte[]>(address, amount, null);
+            SpendFromAccountBalance<byte[]>(address, amount, null);
         }
 
-        private bool SpendFromAccountBalance<T>(Address address, BigInteger amount, T reference)
+        private void SpendFromAccountBalance<T>(Address address, BigInteger amount, T reference)
         {
             Runtime.Expect(amount >= 0, "invalid amount");
 
             if (amount == 0)
             {
-                return true;
+                return;
             }
 
             var tokenSymbol = DomainSettings.StakingTokenSymbol;
-            return Runtime.TransferTokens(tokenSymbol, address, DevelopersAddress, amount);
+            Runtime.TransferTokens(tokenSymbol, address, DevelopersAddress, amount);
         }
 
         public NachoAccount GetAccount(Address address)
@@ -2811,10 +2811,7 @@ namespace Phantasma.Contracts.Extra
             var stakeAmount = UnitConversion.ToBigInteger(Constants.REFERRAL_STAKE_AMOUNT, DomainSettings.StakingTokenDecimals);
 
             // update account balance
-            if (!SpendFromAccountBalance(from, stakeAmount, referralIndex))
-            {
-                throw new ContractException("balance failed");
-            }
+            SpendFromAccountBalance(from, stakeAmount, referralIndex);
 
             int currentReferralPercent;
             // TODO update this values
@@ -2889,8 +2886,7 @@ namespace Phantasma.Contracts.Extra
                 Runtime.Expect(diff >= Constants.REFERRAL_MINIMUM_DAYS, "too soon");
             }
             
-            //Runtime.Expect(UpdateAccountBalance(from, outputAmount), "deposit failed");
-            Runtime.Expect(Runtime.TransferTokens(Constants.SOUL_SYMBOL, this.Address, from, outputAmount), "deposit failed");
+            Runtime.TransferTokens(Constants.SOUL_SYMBOL, this.Address, from, outputAmount);
 
             referral.stakeAmount = 0;
             referral.bonusAmount = 0;
@@ -4210,7 +4206,7 @@ namespace Phantasma.Contracts.Extra
 
             if (stakeAmount > 0)
             {
-                Runtime.Expect(SpendFromAccountBalance(from, stakeAmount, wrestlerID), "not enough funds");
+                SpendFromAccountBalance(from, stakeAmount, wrestlerID);
             }
 
             Timestamp last_time = wrestler.roomTime;
@@ -4256,7 +4252,7 @@ namespace Phantasma.Contracts.Extra
             if (wrestler.stakeAmount > 0)
             {
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
-                Runtime.Expect(Runtime.TransferTokens(Constants.SOUL_SYMBOL, from, this.Address, wrestler.stakeAmount), "unstake failed");
+                Runtime.TransferTokens(Constants.SOUL_SYMBOL, from, this.Address, wrestler.stakeAmount);
                 //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
                 Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData() { chainAddress = this.Address, symbol = Constants.SOUL_SYMBOL, value = wrestler.stakeAmount });
                 wrestler.stakeAmount = 0;
@@ -4828,7 +4824,7 @@ namespace Phantasma.Contracts.Extra
                 //Runtime.Expect(SpendFromAccountBalance(from, split, 0), "balance failed for bet");
                 //Runtime.Expect(SpendFromAccountBalance(from, fee, 0), "balance failed for fee");
 
-                Runtime.Expect(SpendFromAccountBalance(from, bet, 0), "balance failed for bet");
+                SpendFromAccountBalance(from, bet, 0);
             }
             else
             {
@@ -4840,7 +4836,7 @@ namespace Phantasma.Contracts.Extra
                     bet = account.queueBet;
                 }
 
-                Runtime.Expect(SpendFromAccountBalance(from, bet, 0), "balance failed");
+                SpendFromAccountBalance(from, bet, 0);
             }
         }
 
@@ -5424,7 +5420,7 @@ namespace Phantasma.Contracts.Extra
                 }
 
                 //Runtime.Expect(UpdateAccountBalance(refundAddress, refundAmount), "refund failed");
-                Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, refundAddress, refundAmount), "refund failed");
+                Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, refundAddress, refundAmount);
             }
             else
             {
@@ -5542,7 +5538,7 @@ namespace Phantasma.Contracts.Extra
                 if (bet > 0)
                 {
                     //Runtime.Expect(UpdateAccountBalance(from, bet), "refund failed");
-                    Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, from, bet), "refund failed");
+                    Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, from, bet);
                 }
             }
 
@@ -6363,7 +6359,7 @@ namespace Phantasma.Contracts.Extra
 
                 //Runtime.Expect(UpdateAccountBalance(target, amount), "deposit failed");
                 //Runtime.Expect(Runtime.Nexus.TransferTokens(Runtime, Constants.NACHO_SYMBOL, this.Address, target, amount), "deposit failed");
-                Runtime.Expect(Runtime.MintTokens(Constants.NACHO_SYMBOL, this.Address, target, amount), "mint failed");
+                Runtime.MintTokens(Constants.NACHO_SYMBOL, this.Address, target, amount);
 
                 //Runtime.Notify(NachoEvent.Deposit, target, amount);
                 Runtime.Notify(EventKind.TokenReceive, target, amount);
@@ -6485,7 +6481,7 @@ namespace Phantasma.Contracts.Extra
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[winnerSide].address, winnerAmount), "refund failed");
                     if (winnerAmount > 0)
                     {
-                        Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount), "refund failed");
+                        Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[winnerSide].address, winnerAmount);
 
                         UpdateNachoTokenDistributed(winnerAmount);
                     }
@@ -6493,7 +6489,7 @@ namespace Phantasma.Contracts.Extra
                     //Runtime.Expect(UpdateAccountBalance(battle.sides[loserSide].address, loserAmount), "refund failed");
                     if (loserAmount > 0)
                     {
-                        Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount), "refund failed");
+                        Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[loserSide].address, loserAmount);
 
                         UpdateNachoTokenDistributed(loserAmount);
                     }
@@ -6522,7 +6518,7 @@ namespace Phantasma.Contracts.Extra
                     for (var i = 0; i < 2; i++)
                     {
                         //Runtime.Expect(UpdateAccountBalance(battle.sides[i].address, refundAmount), "refund failed");
-                        Runtime.Expect(Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[i].address, refundAmount), "refund failed");
+                        Runtime.TransferTokens(Constants.NACHO_SYMBOL, this.Address, battle.sides[i].address, refundAmount);
 
                         UpdateNachoTokenDistributed(drawAmount);
 

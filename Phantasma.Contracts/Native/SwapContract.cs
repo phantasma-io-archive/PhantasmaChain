@@ -74,7 +74,7 @@ namespace Phantasma.Contracts.Native
             var unitAmount = UnitConversion.GetUnitValue(info.Decimals);
             Runtime.Expect(amount >= unitAmount, "invalid amount");
 
-            Runtime.Expect(Runtime.TransferTokens(symbol, from, this.Address, amount), "tokens transfer failed");
+            Runtime.TransferTokens(symbol, from, this.Address, amount);
         }
 
         private BigInteger GetAvailableForSymbol(string symbol)
@@ -179,8 +179,8 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(toBalance >= total, "insufficient balance in pot");
 
-            Runtime.Expect(Runtime.TransferTokens(fromSymbol, from, this.Address, amount), "source tokens transfer failed");
-            Runtime.Expect(Runtime.TransferTokens(toSymbol, this.Address, from, total), "target tokens transfer failed");
+            Runtime.TransferTokens(fromSymbol, from, this.Address, amount);
+            Runtime.TransferTokens(toSymbol, this.Address, from, total);
         }
     }
 }

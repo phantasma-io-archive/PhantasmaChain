@@ -406,11 +406,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
             var amount = temp.AsNumber();
 
-            var success = Runtime.TransferTokens(symbol, source, destination, amount);
-
-            var result = new VMObject();
-            result.SetValue(success);
-            Runtime.Stack.Push(result);
+            Runtime.TransferTokens(symbol, source, destination, amount);
 
             return ExecutionState.Running;
         }
@@ -437,11 +433,8 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
             }
 
-            var success = Runtime.MintTokens(symbol, source, destination, amount);
+            Runtime.MintTokens(symbol, source, destination, amount);
 
-            var result = new VMObject();
-            result.SetValue(success);
-            Runtime.Stack.Push(result);
             return ExecutionState.Running;
         }
 
@@ -467,11 +460,8 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
             }
 
-            var success = Runtime.BurnTokens(symbol, source, amount);
+            Runtime.BurnTokens(symbol, source, amount);
 
-            var result = new VMObject();
-            result.SetValue(success);
-            Runtime.Stack.Push(result);
             return ExecutionState.Running;
         }
 
@@ -492,11 +482,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
             var tokenID = temp.AsNumber();
 
-            var success = Runtime.TransferToken(symbol, source, destination, tokenID);
-
-            var result = new VMObject();
-            result.SetValue(success);
-            Runtime.Stack.Push(result);
+            Runtime.TransferToken(symbol, source, destination, tokenID);
 
             return ExecutionState.Running;
         }
@@ -527,6 +513,7 @@ namespace Phantasma.Blockchain
             var result = new VMObject();
             result.SetValue(tokenID);
             Runtime.Stack.Push(result);
+
             return ExecutionState.Running;
         }
 
