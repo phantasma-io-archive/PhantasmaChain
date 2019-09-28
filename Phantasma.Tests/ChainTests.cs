@@ -301,8 +301,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(rootChain != null);
             Assert.IsTrue(rootChain.Height > 0);
 
-            var children = nexus.GetChildChainsByName(nexus.RootStorage, rootChain.Name);
-            Assert.IsTrue(children.Any());
+            /*var children = nexus.GetChildChainsByName(nexus.RootStorage, rootChain.Name);
+            Assert.IsTrue(children.Any());*/
 
             Assert.IsTrue(nexus.IsPrimaryValidator(owner.Address));
 

@@ -437,7 +437,7 @@ namespace Phantasma.Tests
                 switch (symbol)
                 {
                     case maxDivTokenSymbol:
-                        decimals = NexusContract.MAX_TOKEN_DECIMALS;
+                        decimals = DomainSettings.MAX_TOKEN_DECIMALS;
                         supply = UnitConversion.ToBigInteger(100000000, decimals);
                         flags = TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible;
                         break;

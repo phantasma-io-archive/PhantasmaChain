@@ -52,7 +52,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(availableSize >= requiredSize, "account does not have available space");
 
             var hashes = MerkleTree.FromBytes(contentMerkle);
-            Runtime.Expect(Runtime.CreateArchive(hashes, contentSize, flags, key), "archive creation failed");
+            Runtime.CreateArchive(from, hashes, contentSize, flags, key);
 
             var newEntry = new StorageEntry()
             {

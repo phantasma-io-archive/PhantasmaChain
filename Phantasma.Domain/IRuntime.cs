@@ -87,11 +87,11 @@ namespace Phantasma.Domain
         BigInteger[] GetOwnerships(string symbol, Address address);
         BigInteger GetTokenSupply(string symbol);
 
-        bool CreateToken(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
-        bool CreateChain(Address owner, string name, string parentChain);
-        bool CreateFeed(Address owner, string name, FeedMode mode);
-        bool CreatePlatform(Address address, string name, string fuelSymbol);
-        bool CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
+        void CreateToken(Address from, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
+        void CreateChain(Address owner, string name, string parentChain);
+        void CreateFeed(Address owner, string name, FeedMode mode);
+        void CreatePlatform(Address from, Address target, string fuelSymbol);
+        void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
 
         bool IsAddressOfParentChain(Address address);
         bool IsAddressOfChildChain(Address address);

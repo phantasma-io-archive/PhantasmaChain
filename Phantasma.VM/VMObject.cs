@@ -113,7 +113,7 @@ namespace Phantasma.VM
             if (this.Type == VMType.Number)
                 Data = (int)((BigInteger) Data);
 
-            return (T)Data;
+            return (T)Enum.Parse(typeof(T), Data.ToString());
         }
 
         public string AsString()

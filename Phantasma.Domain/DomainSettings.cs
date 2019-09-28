@@ -23,6 +23,8 @@ namespace Phantasma.Domain
 
     public static class DomainSettings
     {
+        public const int MAX_TOKEN_DECIMALS = 18;
+
         public const string FuelTokenSymbol = "KCAL";
         public const string FuelTokenName = "Phantasma Energy";
         public const int FuelTokenDecimals = 10;

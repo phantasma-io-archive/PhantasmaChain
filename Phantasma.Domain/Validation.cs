@@ -55,5 +55,32 @@ namespace Phantasma.Domain
 
             return true;
         }
+
+        public static bool IsValidTicker(string name)
+        {
+            if (name == null)
+            {
+                return false;
+            }
+
+            if (name.Length < 2 || name.Length > 5)
+            {
+                return false;
+            }
+
+
+            int index = 0;
+            while (index < name.Length)
+            {
+                var c = name[index];
+                index++;
+
+                if (c >= 65 && c <= 90) continue; // lowercase allowed
+
+                return false;
+            }
+
+            return true;
+        }
     }
 }

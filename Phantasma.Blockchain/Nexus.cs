@@ -29,7 +29,6 @@ namespace Phantasma.Blockchain
 
         public const string GasContractName = "gas";
         public const string BlockContractName = "block";
-        public const string NexusContractName = "nexus";
         public const string StakeContractName = "stake";
         public const string SwapContractName = "swap";
         public const string AccountContractName = "account";
@@ -432,7 +431,6 @@ namespace Phantasma.Blockchain
             if (_contractMap == null)
             {
                 _contractMap = new Dictionary<Address, Type>();
-                RegisterContract<NexusContract>();
                 RegisterContract<ValidatorContract>();
                 RegisterContract<GovernanceContract>();
                 RegisterContract<ConsensusContract>();
@@ -743,47 +741,8 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        private void ValidateSymbol(string symbol)
+        internal void CreateToken(StorageContext storage, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
-            foreach (var c in symbol)
-            {
-                Throw.If(c < 'A' || c > 'Z', "Symbol must only contain capital letters, no other characters are allowed");
-            }
-        }
-
-        internal bool CreateToken(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
-        {
-            if (symbol == null || name == null || maxSupply < 0)
-            {
-                return false;
-            }
-
-            ValidateSymbol(symbol);
-
-            // check if already exists something with that name
-            if (TokenExists(symbol))
-            {
-                return false;
-            }
-
-            Throw.If(maxSupply < 0, "negative supply");
-            Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
-            Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
-
-            if (!flags.HasFlag(TokenFlags.Fungible))
-            {
-                Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
-            }
-
-            if (flags.HasFlag(TokenFlags.Divisible))
-            {
-                Throw.If(decimals <= 0, "divisible token must have decimals");
-            }
-            else
-            {
-                Throw.If(decimals > 0, "indivisible token can't have decimals");
-            }
-
             var tokenInfo = new TokenInfo(symbol, name, platform, hash, maxSupply, decimals, flags, script);
             EditToken(symbol, tokenInfo);
 
@@ -791,8 +750,6 @@ namespace Phantasma.Blockchain
             var tokenList = this.Tokens.ToList();
             tokenList.Add(symbol);
             this.Tokens = tokenList.ToArray();
-
-            return true;
         }
 
         private string GetTokenInfoKey(string symbol)
@@ -1250,7 +1207,6 @@ namespace Phantasma.Blockchain
             var sb = ScriptUtils.BeginScript();
 
             var deployInterop = "Runtime.DeployContract";
-            sb.CallInterop(deployInterop, NexusContractName);
             sb.CallInterop(deployInterop, ValidatorContractName);
             sb.CallInterop(deployInterop, GovernanceContractName);
             sb.CallInterop(deployInterop, ConsensusContractName);
@@ -1290,12 +1246,18 @@ namespace Phantasma.Blockchain
 
         private Transaction ChainCreateTx(KeyPair owner, string name, params string[] contracts)
         {
-            var script = ScriptUtils.
+            var sb = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract(Nexus.NexusContractName, "CreateChain", owner.Address, name, RootChain.Name, contracts).
-                //SpendGas(owner.Address).
-                EndScript();
+                CallInterop("Runtime.CreateChain", owner.Address, name, RootChain.Name);
+
+                foreach (var contractName in contracts)
+                {
+                    sb.CallInterop("Runtime.DeployContract", contractName);
+                }
+
+                var script = //SpendGas(owner.Address).
+                    sb.EndScript();
 
             var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Mine((int)ProofOfWork.Moderate);
@@ -1333,20 +1295,6 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction TokenMetadataTx(KeyPair owner, string symbol, string field, string val)
-        {
-            var script = ScriptUtils.
-                BeginScript().
-                AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("nexus", "SetTokenMetadata", symbol, field, val).
-                SpendGas(owner.Address).
-                EndScript();
-
-            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
-            tx.Sign(owner);
-            return tx;
-        }
-
         public bool CreateGenesisBlock(string name, KeyPair owner, Timestamp timestamp)
         {
             if (HasGenesis)
@@ -1363,16 +1311,17 @@ namespace Phantasma.Blockchain
 
             this.GenesisAddress = owner.Address;
 
-            if (!CreateChain(RootStorage, owner.Address, DomainSettings.RootChainName, null))
+            var storage = RootStorage;
+            if (!CreateChain(storage, owner.Address, DomainSettings.RootChainName, null))
             {
                 throw new ChainException("failed to create root chain");
             }
             var rootChain = GetChainByName(DomainSettings.RootChainName);
 
             var tokenScript = new byte[0];
-            CreateToken(DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals), DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
-            CreateToken(DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FuelTokenSymbol), DomainSettings.PlatformSupply, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
-            CreateToken(DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FiatTokenSymbol), 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals), DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
+            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FuelTokenSymbol), DomainSettings.PlatformSupply, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.Fuel, tokenScript);
+            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FiatTokenSymbol), 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
 
             // create genesis transactions
             var transactions = new List<Transaction>
@@ -1390,7 +1339,7 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)),
                 ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, DomainSettings.StakingTokenDecimals)),
 
-                ChainCreateTx(owner, "sale", "sale"),
+                //ChainCreateTx(owner, "sale", "sale"),
 
                 EndNexusCreateTx(owner)
             };

@@ -8,7 +8,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
-using Phantasma.Contracts;
 using System.Diagnostics;
 
 namespace Phantasma.Blockchain.Contracts
@@ -270,7 +269,7 @@ namespace Phantasma.Blockchain.Contracts
                 case EventKind.ChainCreate:
                 case EventKind.TokenCreate:
                 case EventKind.FeedCreate:
-                    Expect(contract == Nexus.NexusContractName, $"event kind only in {Nexus.NexusContractName} contract");
+                    Expect(this.IsRootChain(), $"event kind only in root chain");
                     break;
 
                 case EventKind.FileCreate:
@@ -793,29 +792,144 @@ namespace Phantasma.Blockchain.Contracts
             return Chain.GetTokenSupply(this.Storage, symbol);
         }
 
-        public bool CreateToken(string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        public void CreateToken(Address from, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
-            return Nexus.CreateToken(symbol, name, platform, hash, maxSupply, decimals, flags, script);
+            var Runtime = this;
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            var pow = Runtime.Transaction.Hash.GetDifficulty();
+            Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
+
+            Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
+            Runtime.Expect(!string.IsNullOrEmpty(name), "token name required");
+
+            Runtime.Expect(ValidationUtils.IsValidTicker(symbol), "invalid symbol");
+            Runtime.Expect(!Runtime.TokenExists(symbol), "token already exists");
+
+            Runtime.Expect(maxSupply >= 0, "token supply cant be negative");
+            Runtime.Expect(decimals >= 0, "token decimals cant be negative");
+            Runtime.Expect(decimals <= DomainSettings.MAX_TOKEN_DECIMALS, $"token decimals cant exceed {DomainSettings.MAX_TOKEN_DECIMALS}");
+
+            if (symbol == DomainSettings.FuelTokenSymbol)
+            {
+                Runtime.Expect(flags.HasFlag(TokenFlags.Fuel), "token should be native");
+            }
+            else
+            {
+                Runtime.Expect(!flags.HasFlag(TokenFlags.Fuel), "token can't be native");
+            }
+
+            if (symbol == DomainSettings.StakingTokenSymbol)
+            {
+                Runtime.Expect(flags.HasFlag(TokenFlags.Stakable), "token should be stakable");
+            }
+
+            if (symbol == DomainSettings.FiatTokenSymbol)
+            {
+                Runtime.Expect(flags.HasFlag(TokenFlags.Fiat), "token should be fiat");
+            }
+
+            if (!flags.HasFlag(TokenFlags.Fungible))
+            {
+                Runtime.Expect(!flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
+            }
+
+            if (flags.HasFlag(TokenFlags.Divisible))
+            {
+                Runtime.Expect(decimals > 0, "divisible token must have decimals");
+            }
+            else
+            {
+                Runtime.Expect(decimals == 0, "indivisible token can't have decimals");
+            }
+
+            Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
+
+            if (flags.HasFlag(TokenFlags.External))
+            {
+                Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "genesis address only");
+                Runtime.Expect(platform != DomainSettings.PlatformName, "external token chain required");
+                Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
+            }
+            else
+            {
+                Runtime.Expect(platform == DomainSettings.PlatformName, "chain name is invalid");
+            }
+
+            Runtime.Expect(from.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(from), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Nexus.CreateToken(RootStorage, symbol, name, platform, hash, maxSupply, decimals, flags, script);
+            Runtime.Notify(EventKind.TokenCreate, from, symbol);
         }
 
-        public bool CreateChain(Address owner, string name, string parentChain)
+        public void CreateChain(Address owner, string name, string parentName)
         {
-            return Nexus.CreateChain(this.RootStorage, owner, name, parentChain);
+            var Runtime = this;
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            var pow = Runtime.Transaction.Hash.GetDifficulty();
+            Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
+
+            Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
+            Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
+
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
+            name = name.ToLowerInvariant();
+            Runtime.Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase), "same name as parent");
+
+            Nexus.CreateChain(RootStorage, owner, name, parentName);
+            Runtime.Notify(EventKind.ChainCreate, owner, name);
         }
 
-        public bool CreateFeed(Address owner, string name, FeedMode mode)
+        public void CreateFeed(Address owner, string name, FeedMode mode)
         {
-            return Nexus.CreateFeed(this.RootStorage, owner, name, mode);
+            var Runtime = this;
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            var pow = Runtime.Transaction.Hash.GetDifficulty();
+            Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
+
+            Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
+
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+
+            Runtime.Expect(Nexus.CreateFeed(RootStorage, owner, name, mode), "feed creation failed");
+
+            Runtime.Notify(EventKind.FeedCreate, owner, name);
         }
 
-        public bool CreatePlatform(Address address, string name, string fuelSymbol)
+        public void CreatePlatform(Address from, Address target, string fuelSymbol)
         {
-            return Nexus.CreatePlatform(this.RootStorage, address, name, fuelSymbol);
+            var Runtime = this;
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Runtime.Expect(target.IsInterop, "external address must be interop");
+
+            string platformName;
+            byte[] data;
+            target.DecodeInterop(out platformName, out data, 0);
+
+            Runtime.Expect(ValidationUtils.IsValidIdentifier(platformName), "invalid platform name");
+
+            Runtime.Expect(Nexus.CreatePlatform(RootStorage, target, platformName, fuelSymbol), "creation of platform failed");
+
+            Runtime.Notify(EventKind.AddressRegister, target, platformName);
         }
 
-        public bool CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
-            return Nexus.CreateArchive(this.RootStorage, merkleTree, size, flags, key);
+            // TODO validation
+            Nexus.CreateArchive(this.RootStorage, merkleTree, size, flags, key);
         }
 
         public bool IsAddressOfParentChain(Address address)

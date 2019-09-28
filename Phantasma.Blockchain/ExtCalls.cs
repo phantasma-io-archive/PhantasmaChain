@@ -28,6 +28,9 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
+            vm.RegisterMethod("Runtime.CreateToken", Runtime_CreateToken);
+            vm.RegisterMethod("Runtime.CreateChain", Runtime_CreateChain);
+            vm.RegisterMethod("Runtime.CreatePlatform", Runtime_CreatePlatform);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -591,25 +594,88 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        /*private static ExecutionState Contract_Deploy(RuntimeVM vm)
+        private static ExecutionState Runtime_CreateToken(RuntimeVM Runtime)
         {
-            var script = vm.currentFrame.GetRegister(0).AsByteArray();
-            var abi = vm.currentFrame.GetRegister(1).AsByteArray();
+            Runtime.Expect(Runtime.Stack.Count >= 9, "not enough arguments in stack");
 
-            var runtime = (RuntimeVM)vm;
-            var tx = runtime.Transaction;
+            VMObject temp;
 
-            var contract = new CustomContract(script, abi);
+            var source = PopAddress(Runtime);
 
-            //Log.Message($"Deploying contract: Address??");
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
 
-            var obj = new VMObject();
-            obj.SetValue(contract);
-            vm.Stack.Push(obj);
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            var name = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for platform");
+            var platform = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
+            var hash = Serialization.Unserialize<Hash>(temp.AsByteArray());
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for maxSupply");
+            var maxSupply = temp.AsNumber();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for decimals");
+            var decimals = (int)temp.AsNumber();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Enum, "expected enum for flags");
+            var flags = temp.AsEnum<TokenFlags>();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
+            var script = temp.AsByteArray();
+
+            Runtime.CreateToken(source, symbol, name, platform, hash, maxSupply, decimals, flags, script);
 
             return ExecutionState.Running;
         }
-        */
 
+        private static ExecutionState Runtime_CreateChain(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            var name = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for parent");
+            var parentName = temp.AsString();
+
+            Runtime.CreateChain(source, name, parentName);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_CreatePlatform(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+            var target = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            Runtime.CreatePlatform(source, target, symbol);
+
+            return ExecutionState.Running;
+        }
     }
 }
