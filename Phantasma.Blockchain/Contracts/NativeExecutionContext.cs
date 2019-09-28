@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain.Contracts
             if (this.Contract.ABI == null)
             {
 #if DEBUG
-                throw new RuntimeException(frame.VM, $"VM nativecall failed: ABI is missing for contract '{this.Contract.Name}'");
+                throw new VMDebugException(frame.VM, $"VM nativecall failed: ABI is missing for contract '{this.Contract.Name}'");
 #else                            
                 return ExecutionState.Fault;
 #endif
@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts
             if (stack.Count <= 0)
             {
 #if DEBUG
-                throw new RuntimeException(frame.VM, $"VM nativecall failed: method name not present in the VM stack");
+                throw new VMDebugException(frame.VM, $"VM nativecall failed: method name not present in the VM stack");
 #else
                 return ExecutionState.Fault;
 #endif
@@ -45,7 +45,7 @@ namespace Phantasma.Blockchain.Contracts
             if (method == null)
             {
 #if DEBUG
-                throw new RuntimeException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
+                throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' does not have method '{methodName}' in its ABI");
 #else
                 return ExecutionState.Fault;
 #endif
@@ -54,7 +54,7 @@ namespace Phantasma.Blockchain.Contracts
             if (stack.Count < method.parameters.Length)
             {
 #if DEBUG
-                throw new RuntimeException(frame.VM, $"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
+                throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
 #else
                 return ExecutionState.Fault;
 #endif
@@ -79,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts
                 catch (ArgumentException ex)
                 {
 #if DEBUG
-                    throw new RuntimeException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
+                    throw new VMDebugException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
 #else
                     result = ExecutionState.Fault;
 #endif
@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain.Contracts
             if (!(this.Contract is CustomContract customContract))
             {
 #if DEBUG
-                throw new RuntimeException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
+                throw new VMDebugException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
 #else
                 return ExecutionState.Fault;
 #endif

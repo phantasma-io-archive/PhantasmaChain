@@ -584,12 +584,14 @@ namespace Phantasma.Tests
             var testUser = KeyPair.Generate();
             var neoKeys = Neo.Core.NeoKey.Generate();
 
+            var limit = 400;
+
             // 0 - create a lender, this is not part of the swaps, it is a one-time thing
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
             {
                 return new ScriptBuilder()
-                .AllowGas(owner.Address, Address.Null, simulator.MinimumFee, 9999)
+                .AllowGas(owner.Address, Address.Null, simulator.MinimumFee, limit)
                 .CallContract("gas", "StartLend", owner.Address, owner.Address)
                 .SpendGas(owner.Address).EndScript();
             });
@@ -601,8 +603,8 @@ namespace Phantasma.Tests
             simulator.GenerateCustomTransaction(testUser, ProofOfWork.Moderate, () =>
             {
                 return new ScriptBuilder()
-                .LoanGas(testUser.Address, simulator.MinimumFee, 9999)
-                .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, 9999)
+                .LoanGas(testUser.Address, simulator.MinimumFee, limit)
+                .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, limit)
                 .CallContract("interop", "RegisterLink", testUser.Address, interopAddress)
                 .SpendGas(testUser.Address).EndScript();
             });
@@ -622,7 +624,7 @@ namespace Phantasma.Tests
                 return new ScriptBuilder()
                 .CallContract("interop", "SettleTransaction", testUser.Address, Pay.Chains.NeoWallet.NeoPlatform, neoTxHash)
                 .CallContract("swap", "SwapFee", testUser.Address, swapSymbol, UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals))
-                .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, 9999)
+                .AllowGas(testUser.Address, Address.Null, simulator.MinimumFee, limit)
                 .SpendGas(testUser.Address).EndScript();
             });
             simulator.EndBlock();

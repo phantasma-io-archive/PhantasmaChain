@@ -12,28 +12,6 @@ using System.Diagnostics;
 
 namespace Phantasma.Blockchain.Contracts
 {
-#if DEBUG
-    public class RuntimeException : VMDebugException
-    {
-        public RuntimeException(VirtualMachine vm, string msg) : base(vm, msg)
-        {
-        }
-
-        protected override string GetDumpPath()
-        {
-            var path = base.GetDumpPath();
-            var runtime = vm as RuntimeVM;
-
-            if (runtime != null && runtime.Transaction != null)
-            {
-                path.Replace("dump", runtime.Transaction.Hash.ToString());
-            }
-
-            return path;
-        }
-    }
-#endif
-
     public class RuntimeVM : VirtualMachine, IRuntime
     {
         public Timestamp Time { get; private set; }
@@ -373,7 +351,7 @@ namespace Phantasma.Blockchain.Contracts
             if (UsedGas > MaxGas && !DelayPayment)
             {
 #if DEBUG
-                throw new VMDebugException(this, "VM gas limit exceeded");
+                throw new VMDebugException(this, $"VM gas limit exceeded ({MaxGas})");
 #else
                                 return ExecutionState.Fault;
 #endif
@@ -1162,5 +1140,34 @@ namespace Phantasma.Blockchain.Contracts
             throw new ChainException(description);
 #endif
         }
+
+#if DEBUG
+        public override string GetDumpPath()
+        {
+            var path = base.GetDumpPath();
+         
+            if (this.Transaction != null)
+            {
+                path.Replace("dump", this.Transaction.Hash.ToString());
+            }
+
+            return path;
+        }
+
+        public override void DumpData(List<string> lines)
+        {
+            lines.Add(VMDebugException.Header("RUNTIME"));
+            lines.Add("Time: " + Time.Value);
+            lines.Add("Nexus: " + Nexus.Name);
+            lines.Add("Chain: " + Chain.Name);
+            lines.Add("TxHash: " + (Transaction != null ? Transaction.Hash.ToString() : "None"));
+            if (Transaction != null)
+            {
+                var bytes = Transaction.ToByteArray(true);
+                lines.Add(VMDebugException.Header("RAWTX"));
+                lines.Add(Base16.Encode(bytes));
+            }
+        }
+#endif
     }
 }

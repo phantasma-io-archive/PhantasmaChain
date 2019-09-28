@@ -15,14 +15,9 @@ namespace Phantasma.VM
     {
         public VirtualMachine vm;
 
-        private string Header(string s)
+        public static string Header(string s)
         {
             return $"*********{s}*********";
-        }
-
-        protected virtual string GetDumpPath()
-        {
-            return Directory.GetCurrentDirectory() + "\\" + "vm_dump.txt";
         }
 
         public VMDebugException(VirtualMachine vm, string msg) : base(msg)
@@ -80,8 +75,12 @@ namespace Phantasma.VM
             lines.AddRange(disasm);
             lines.Add("");
 
-            var path = GetDumpPath();
-            System.Diagnostics.Debug.WriteLine("Dumped VM data: " + path);
+            vm.DumpData(lines);
+
+            var path = vm.GetDumpPath();
+            var dirName = Path.GetDirectoryName(path);
+            Directory.CreateDirectory(dirName);
+            /*System.Diagnostics.Debug*/Console.WriteLine("Dumped VM data: " + path);
             File.WriteAllLines(path, lines.ToArray());
         }
     }
@@ -202,6 +201,13 @@ namespace Phantasma.VM
         {
             throw ex;
         }
+
+        public virtual string GetDumpPath()
+        {
+            return Directory.GetCurrentDirectory() + "/Dumps/vm.txt";
+        }
+
+        public abstract void DumpData(List<string> lines);
 #endif
     }
 }

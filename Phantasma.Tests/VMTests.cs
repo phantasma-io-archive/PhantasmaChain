@@ -233,7 +233,12 @@ namespace Phantasma.Tests
                 frame.VM.Stack.Push(VMObject.FromObject(dbStruct));
                 return ExecutionState.Running;
             });
-        } 
+        }
+
+        public override void DumpData(List<string> lines)
+        {
+            // do nothing
+        }
     }
 
     [TestClass]
