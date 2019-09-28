@@ -9,6 +9,7 @@ using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
 using Phantasma.Contracts;
+using System.Diagnostics;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -299,14 +300,20 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Expect(bool condition, string description)
         {
-#if DEBUG
-            if (!condition)
+            if (condition)
             {
-                throw new VMDebugException(this, description);
+                return;
             }
-#endif
 
-            Core.Throw.If(!condition, $"contract assertion failed: {description}");
+            var callingFrame = new StackFrame(1);
+            var method = callingFrame.GetMethod();
+
+            description = $"{description} @ {method.Name}";
+#if DEBUG
+            throw new VMDebugException(this, description);
+#else
+            throw new ChainException($"contract assertion failed: {description}");
+#endif
         }
 
         #region GAS
