@@ -21,11 +21,13 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Event", Runtime_Event);
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
+            vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
             vm.RegisterMethod("Runtime.MintTokens", Runtime_MintTokens);
-            vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
+            vm.RegisterMethod("Runtime.BurnTokens", Runtime_BurnTokens);
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
-            vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
+            vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
+            vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -443,6 +445,36 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+
+        private static ExecutionState Runtime_BurnTokens(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var amount = temp.AsNumber();
+
+            if (Runtime.Nexus.HasGenesis)
+            {
+                Runtime.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
+            }
+
+            var success = Runtime.BurnTokens(symbol, source, amount);
+
+            var result = new VMObject();
+            result.SetValue(success);
+            Runtime.Stack.Push(result);
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Runtime_TransferToken(RuntimeVM Runtime)
         {
             Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
@@ -495,6 +527,27 @@ namespace Phantasma.Blockchain
             var result = new VMObject();
             result.SetValue(tokenID);
             Runtime.Stack.Push(result);
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_BurnToken(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var tokenID = temp.AsNumber();
+
+            Runtime.BurnToken(symbol, source, tokenID);
+
             return ExecutionState.Running;
         }
 

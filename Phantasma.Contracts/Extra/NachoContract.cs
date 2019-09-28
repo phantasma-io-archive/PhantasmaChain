@@ -2918,7 +2918,7 @@ namespace Phantasma.Contracts.Extra
 
             //wrestlers.Remove(wrestlerID);
 
-            Runtime.Expect(Runtime.BurnToken(Constants.WRESTLER_SYMBOL, from, wrestlerID), "burn failed");
+            Runtime.BurnToken(Constants.WRESTLER_SYMBOL, from, wrestlerID);
 
             Runtime.Notify(EventKind.TokenBurn, from, wrestlerID);
         }
@@ -3063,7 +3063,7 @@ namespace Phantasma.Contracts.Extra
             var item = GetItem(itemID);
             Runtime.Expect(item.location != ItemLocation.Market, "in auction");
 
-            Runtime.Expect(Runtime.BurnToken(Constants.ITEM_SYMBOL, from, itemID), "burn failed");
+            Runtime.BurnToken(Constants.ITEM_SYMBOL, from, itemID);
 
             Runtime.Notify(EventKind.TokenBurn, from, itemID);
         }

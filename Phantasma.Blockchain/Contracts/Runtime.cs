@@ -884,7 +884,7 @@ namespace Phantasma.Blockchain.Contracts
             return Nexus.BurnTokens(this, symbol, target, amount, false);
         }
 
-        public bool BurnToken(string symbol, Address target, BigInteger tokenID)
+        public void BurnToken(string symbol, Address target, BigInteger tokenID)
         {
             var Runtime = this;
             Runtime.Expect(IsWitness(target), "invalid witness");
@@ -894,9 +894,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(!tokenInfo.IsFungible(), "token must be non-fungible");
             Runtime.Expect(tokenInfo.IsBurnable(), "token must be burnable");
 
-            var nft = Runtime.ReadToken(symbol, tokenID);
-
-            return Nexus.BurnToken(this, symbol, target, tokenID, false);
+            Nexus.BurnToken(this, symbol, target, tokenID, false);
         }
 
         public bool TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
@@ -961,14 +959,14 @@ namespace Phantasma.Blockchain.Contracts
             throw new NotImplementedException();
         }
 
-        public bool WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
+        public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
-            throw new NotImplementedException();
+            Nexus.EditNFTContent(tokenSymbol, tokenID, ram);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)
         {
-            throw new NotImplementedException();
+            return Nexus.GetNFT(tokenSymbol, tokenID);
         }
 
         public bool IsPlatformAddress(Address address)

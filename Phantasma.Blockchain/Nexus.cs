@@ -965,53 +965,42 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal bool BurnToken(RuntimeVM runtime, string symbol, Address target, BigInteger tokenID, bool isSettlement)
+        internal void BurnToken(RuntimeVM Runtime, string symbol, Address target, BigInteger tokenID, bool isSettlement)
         {
-            if (!TokenExists(symbol))
-            {
-                return false;
-            }
+            Runtime.Expect(TokenExists(symbol), "invalid token");    
 
             var tokenInfo = GetTokenInfo(symbol);
 
-            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "can't be fungible");
+
+            if (!isSettlement)
             {
-                return false;
+                Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
             }
+
+            var nft = Runtime.ReadToken(symbol, tokenID);
+            Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
 
             var chain = RootChain;
             var supply = new SupplySheet(symbol, chain, this);
 
-            if (!supply.Burn(runtime.Storage, 1))
-            {
-                return false;
-            }
+            Runtime.Expect(supply.Burn(Runtime.Storage, 1), "supply burning failed");
 
-            if (!DestroyNFT(symbol, tokenID))
+            if (!isSettlement)
             {
-                return false;
+                Runtime.Expect(DestroyNFT(symbol, tokenID), "destruction of nft failed");
             }
 
             var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Remove(runtime.Storage, target, tokenID))
-            {
-                return false;
-            }
+            Runtime.Expect(ownerships.Remove(Runtime.Storage, target, tokenID), "ownership removal failed");
 
-            var tokenTriggerResult = runtime.InvokeTriggerOnToken(tokenInfo, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, target, symbol, tokenID);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
+            var tokenTrigger = isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn;
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(tokenInfo, tokenTrigger, target, symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
 
-            var accountTriggerResult = runtime.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, target, symbol, tokenID);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
+            var accountTrigger = isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn;
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
 
-            runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = runtime.Chain.Address });
-            return true;
+            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData() { symbol = symbol, value = tokenID, chainAddress = Runtime.Chain.Address });
         }
 
         internal bool TransferTokens(RuntimeVM runtime, string symbol, Address source, Address destination, BigInteger amount)

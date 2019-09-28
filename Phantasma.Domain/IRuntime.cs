@@ -106,8 +106,8 @@ namespace Phantasma.Domain
         BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram);
         bool TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         bool SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID);
-        bool BurnToken(string symbol, Address from, BigInteger tokenID);
-        bool WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
+        void BurnToken(string symbol, Address from, BigInteger tokenID);
+        void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
 
         byte[] ReadOracle(string URL);
