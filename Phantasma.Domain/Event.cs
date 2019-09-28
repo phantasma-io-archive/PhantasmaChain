@@ -59,9 +59,16 @@ namespace Phantasma.Domain
 
     public struct TokenEventData
     {
-        public string symbol;
-        public BigInteger value;
-        public Address chainAddress;
+        public readonly string symbol;
+        public readonly BigInteger value;
+        public readonly Address chainAddress;
+
+        public TokenEventData(string symbol, BigInteger value, Address chainAddress)
+        {
+            this.symbol = symbol;
+            this.value = value;
+            this.chainAddress = chainAddress;
+        }
     }
 
     public struct RoleEventData
