@@ -202,9 +202,11 @@ namespace Phantasma.Tests
         {
             var rawTx = Base16.Decode("80000001AA2F638AE527480F6976CBFC268E06048040F77328F78A8F269F9DAB660715C70000029B7CFFDAA674BEAE0F930EBE6085AF9093E5FE56B34A5C220CCDCF6EFC336FC500E1F50500000000D9020CC50B04E75027E19A5D5A9E377A042A0BB59B7CFFDAA674BEAE0F930EBE6085AF9093E5FE56B34A5C220CCDCF6EFC336FC500C2EB0B000000005B1258432BE2AB39C5CD1CAAFBD2B7AAA4B0F034014140A24433C702A47174B9DC1CC6DA90611AA8895B09A5BAD82406CCEF77D594A7343F79084D42BBF8D7C818C4540B38A2E168A7B932D2C0999059A0B3A3B43F6D31232102FC1D6F42B05D00E6AEDA82DF286EB6E2578042F6CAEBE72144342466113BD81EAC");
             var tx = Neo.Core.Transaction.Unserialize(rawTx);
-            
+
             var wif = "KwVG94yjfVg1YKFyRxAGtug93wdRbmLnqqrFV6Yd2CiA9KZDAp4H";
             var neoKeys = Phantasma.Neo.Core.NeoKeys.FromWIF(wif);
+
+            Assert.IsTrue(neoKeys.IsValidSwapKey());
 
             Assert.IsTrue(tx.witnesses.Any());
             var wit = tx.witnesses.First();
@@ -229,7 +231,19 @@ namespace Phantasma.Tests
             Assert.IsFalse(validatePhantasmaSig);
         }
 
+        //https://github.com/neo-project/proposals/blob/master/nep-2.mediawiki
+        [TestMethod]
+        public void DecryptNEP2()
+        {
+            var passphrase = "Satoshi";
+            var encrypted = "6PYN6mjwYfjPUuYT3Exajvx25UddFVLpCw4bMsmtLdnKwZ9t1Mi3CfKe8S";
 
+            var keys = NeoKeys.FromNEP2(encrypted, passphrase);
+            var wif = keys.WIF;
+
+            var expectedWIF = "KwYgW8gcxj1JWJXhPSu4Fqwzfhp5Yfi42mdYmMa4XqK7NJxXUSK7";
+            Assert.IsTrue(expectedWIF == wif);
+        }
     }
 
 }
