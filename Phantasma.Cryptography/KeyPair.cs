@@ -10,9 +10,11 @@ namespace Phantasma.Cryptography
     {
         byte[] PrivateKey { get; }
         byte[] PublicKey { get; }
+
+        Signature Sign(byte[] msg);
     }
 
-    public sealed class KeyPair : IKeyPair
+    public sealed class PhantasmaKeys : IKeyPair
     {
         public byte[] PrivateKey { get; private set; }
         public byte[] PublicKey => Address.PublicKey;
@@ -21,7 +23,7 @@ namespace Phantasma.Cryptography
 
         public const int PrivateKeyLength = 32;
 
-        public KeyPair(byte[] privateKey)
+        public PhantasmaKeys(byte[] privateKey)
         {
             Throw.If(privateKey.Length != PrivateKeyLength, $"privateKey should have length {PrivateKeyLength}");
 
@@ -38,12 +40,12 @@ namespace Phantasma.Cryptography
             return Address.Text;
         }
 
-        public static KeyPair Generate()
+        public static PhantasmaKeys Generate()
         {
             do
             {
                 var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
-                var pair = new KeyPair(privateKey);
+                var pair = new PhantasmaKeys(privateKey);
                 if (pair.Address.IsUser)
                 {
                     return pair;
@@ -51,7 +53,7 @@ namespace Phantasma.Cryptography
             } while (true);
         }
 
-        public static KeyPair FromWIF(string wif)
+        public static PhantasmaKeys FromWIF(string wif)
         {
             Throw.If(wif == null, "WIF required");
 
@@ -61,7 +63,7 @@ namespace Phantasma.Cryptography
             byte[] privateKey = new byte[32];
             ByteArrayUtils.CopyBytes(data, 1, privateKey, 0, privateKey.Length); 
             Array.Clear(data, 0, data.Length);
-            return new KeyPair(privateKey);
+            return new PhantasmaKeys(privateKey);
         }
 
         public string ToWIF()
@@ -81,10 +83,9 @@ namespace Phantasma.Cryptography
             return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
         }
 
-        public Signature Sign(byte[] message)
+        public Signature Sign(byte[] msg)
         {
-            var sign = Ed25519.Sign(message, Ed25519.ExpandedPrivateKeyFromSeed(this.PrivateKey));
-            return new Ed25519Signature(sign);
+            return Ed25519Signature.Generate(this, msg);
         }
     }
 }

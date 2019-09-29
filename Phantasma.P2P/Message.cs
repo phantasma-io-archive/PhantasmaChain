@@ -5,6 +5,7 @@ using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Network.P2P.Messages;
+using Phantasma.Cryptography.EdDSA;
 
 namespace Phantasma.Network.P2P
 {
@@ -24,13 +25,13 @@ namespace Phantasma.Network.P2P
             this.Address = address;
         }
 
-        public void Sign(KeyPair keyPair)
+        public void Sign(PhantasmaKeys keyPair)
         {
             Throw.If(keyPair.Address != this.Address, "unexpected keypair");
 
             var msg = this.ToByteArray(false);
 
-            this.Signature = keyPair.Sign(msg);
+            this.Signature = Ed25519Signature.Generate(keyPair, msg);
         }
 
         public static Message Unserialize(BinaryReader reader)

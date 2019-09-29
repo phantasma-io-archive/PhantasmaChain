@@ -1203,7 +1203,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region GENESIS
-        private Transaction BeginNexusCreateTx(KeyPair owner)
+        private Transaction BeginNexusCreateTx(PhantasmaKeys owner)
         {
             var sb = ScriptUtils.BeginScript();
 
@@ -1245,7 +1245,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction ChainCreateTx(KeyPair owner, string name, params string[] contracts)
+        private Transaction ChainCreateTx(PhantasmaKeys owner, string name, params string[] contracts)
         {
             var sb = ScriptUtils.
                 BeginScript().
@@ -1266,7 +1266,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction ValueCreateTx(KeyPair owner, string name, BigInteger initial, BigInteger min, BigInteger max)
+        private Transaction ValueCreateTx(PhantasmaKeys owner, string name, BigInteger initial, BigInteger min, BigInteger max)
         {
             var script = ScriptUtils.
                 BeginScript().
@@ -1280,7 +1280,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction EndNexusCreateTx(KeyPair owner)
+        private Transaction EndNexusCreateTx(PhantasmaKeys owner)
         {
             var script = ScriptUtils.
                 BeginScript().
@@ -1296,7 +1296,7 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public bool CreateGenesisBlock(string name, KeyPair owner, Timestamp timestamp)
+        public bool CreateGenesisBlock(string name, PhantasmaKeys owner, Timestamp timestamp)
         {
             if (HasGenesis)
             {

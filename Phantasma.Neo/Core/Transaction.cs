@@ -353,7 +353,7 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public void Sign(NeoKey key, IEnumerable<Witness> witnesses = null)
+        public void Sign(NeoKeys key, IEnumerable<Witness> witnesses = null)
         {
             var txdata = this.Serialize(false);
 

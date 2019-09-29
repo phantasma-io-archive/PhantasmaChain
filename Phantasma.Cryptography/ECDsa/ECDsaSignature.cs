@@ -1,11 +1,11 @@
-﻿using Phantasma.Core.Utils;
-using Phantasma.Cryptography.ECC;
+﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Phantasma.Cryptography
+namespace Phantasma.Cryptography.ECC
 {
     public enum ECDsaCurve
     {
@@ -33,6 +33,11 @@ namespace Phantasma.Cryptography
 
         public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
+            if (Curve != ECDsaCurve.Secp256r1)
+            {
+                throw new System.Exception($"Support for verifying ECDsa with curve {Curve} not implemented!");
+            }
+
             foreach (var address in addresses)
             {
                 if (!address.IsUser)
@@ -63,13 +68,15 @@ namespace Phantasma.Cryptography
             this.Bytes = reader.ReadByteArray();
         }
 
-        public static ECDsaSignature Generate(IKeyPair keypair, byte[] message)
+        public static ECDsaSignature Generate(IKeyPair keypair, byte[] message, ECDsaCurve curve)
         {
+            Throw.If(curve != ECDsaCurve.Secp256r1, "curve support not implemented for " + curve);
+
             var pubKeyBytes = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, keypair.PublicKey);
             var point = ECPoint.DecodePoint(pubKeyBytes, ECCurve.Secp256r1);
             var pubKey = point.EncodePoint(false).Skip(1).ToArray();
             var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, pubKey);
-            return new ECDsaSignature(signature, ECDsaCurve.Secp256r1);
+            return new ECDsaSignature(signature, curve);
         }
     }
 }

@@ -32,11 +32,11 @@ namespace Phantasma.Tests
             InitMainNode();
 
             int addressCount = 20;
-            LinkedList<KeyPair> addressList = new LinkedList<KeyPair>();
+            LinkedList<PhantasmaKeys> addressList = new LinkedList<PhantasmaKeys>();
 
             for (int i = 0; i < addressCount; i++)
             {
-                var key = KeyPair.Generate();
+                var key = PhantasmaKeys.Generate();
 
                 if (addressList.Contains(key) == false)
                     addressList.AddLast(key);
@@ -44,7 +44,7 @@ namespace Phantasma.Tests
 
             var currentKey = addressList.First;
 
-            var masterKeys = KeyPair.FromWIF(nexusWif);
+            var masterKeys = PhantasmaKeys.FromWIF(nexusWif);
             //Trace.Message($"Connecting to host: {host} with address {masterKeys.Address.Text}");
 
             var amount = UnitConversion.ToBigInteger(1000000, DomainSettings.StakingTokenDecimals);
@@ -101,9 +101,9 @@ namespace Phantasma.Tests
         {
             InitMainNode();
 
-            var masterKeys = KeyPair.FromWIF(nexusWif);
+            var masterKeys = PhantasmaKeys.FromWIF(nexusWif);
             
-            var currentKey = KeyPair.Generate();
+            var currentKey = PhantasmaKeys.Generate();
 
             var amount = UnitConversion.ToBigInteger(1000000, DomainSettings.StakingTokenDecimals);
             var hash = SendTransfer(host, masterKeys, currentKey.Address, amount);
@@ -132,7 +132,7 @@ namespace Phantasma.Tests
 
             int port = 7077;
 
-            var node_keys = KeyPair.FromWIF(wif);
+            var node_keys = PhantasmaKeys.FromWIF(wif);
 
             var simulator = new NexusSimulator(node_keys, 1234);
             nexus = simulator.Nexus;
@@ -153,13 +153,13 @@ namespace Phantasma.Tests
             node.Stop();
         }
 
-        private Hash SendTransfer(string host, KeyPair from, Address to, BigInteger amount, string tokenSymbol = "SOUL")
+        private Hash SendTransfer(string host, PhantasmaKeys from, Address to, BigInteger amount, string tokenSymbol = "SOUL")
         {
             var script = ScriptUtils.BeginScript().AllowGas(from.Address, Address.Null, 1, 9999).TransferTokens(tokenSymbol, from.Address, to, amount).SpendGas(from.Address).EndScript();
             return SendTransaction(host, from, script);
         }
 
-        private Hash SendTransaction(string host, KeyPair from, byte[] script)
+        private Hash SendTransaction(string host, PhantasmaKeys from, byte[] script)
         { 
             var tx = new Transaction("simnet", "main", script, Timestamp.Now + TimeSpan.FromMinutes(30));
             tx.Sign(from);

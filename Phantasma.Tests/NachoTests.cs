@@ -17,7 +17,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestGetBotWrestler()
         {
-            var owner       = KeyPair.Generate();
+            var owner       = PhantasmaKeys.Generate();
             var simulator   = new NexusSimulator(owner, 1234);
             var nexus       = simulator.Nexus;
             var api         = new NexusAPI(nexus);

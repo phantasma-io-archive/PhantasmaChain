@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Phantasma.Neo.Core
 {
-    public class NeoKey: IKeyPair 
+    public class NeoKeys: IKeyPair 
     {
         public byte[] PrivateKey { get; private set; }
         public byte[] PublicKey { get; private set; }
@@ -19,7 +19,7 @@ namespace Phantasma.Neo.Core
         public readonly UInt160 signatureHash;
         public readonly byte[] signatureScript;
 
-        public NeoKey(byte[] privateKey)
+        public NeoKeys(byte[] privateKey)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
                 throw new ArgumentException();
@@ -51,7 +51,7 @@ namespace Phantasma.Neo.Core
             this.WIF = GetWIF();
         }
 
-        public static NeoKey FromWIF(string wif)
+        public static NeoKeys FromWIF(string wif)
         {
             if (wif == null) throw new ArgumentNullException();
             byte[] data = wif.Base58CheckDecode();
@@ -60,19 +60,19 @@ namespace Phantasma.Neo.Core
             byte[] privateKey = new byte[32];
             Buffer.BlockCopy(data, 1, privateKey, 0, privateKey.Length);
             Array.Clear(data, 0, data.Length);
-            return new NeoKey(privateKey);
+            return new NeoKeys(privateKey);
         }
 
         private static System.Security.Cryptography.RandomNumberGenerator rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
 
-        public static NeoKey Generate()
+        public static NeoKeys Generate()
         {
             var bytes = new byte[32];
             lock (rnd)
             {
                 rnd.GetBytes(bytes);
             }
-            return new NeoKey(bytes);
+            return new NeoKeys(bytes);
         }
 
         public static byte[] CreateSignatureScript(byte[] bytes)
@@ -113,6 +113,11 @@ namespace Phantasma.Neo.Core
         public override string ToString()
         {
             return this.address;
+        }
+
+        public Signature Sign(byte[] msg)
+        {
+            return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256r1);
         }
     }
 }

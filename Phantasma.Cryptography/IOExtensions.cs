@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography.EdDSA;
+﻿using Phantasma.Cryptography.ECC;
+using Phantasma.Cryptography.EdDSA;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Storage.Utils;
 using System;

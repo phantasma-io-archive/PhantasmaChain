@@ -47,8 +47,8 @@ namespace Phantasma.Simulator
         public DateTime CurrentTime;
 
         private Random _rnd;
-        private List<KeyPair> _keys = new List<KeyPair>();
-        private KeyPair _owner;
+        private List<PhantasmaKeys> _keys = new List<PhantasmaKeys>();
+        private PhantasmaKeys _owner;
 
         private Chain bankChain;
 
@@ -70,12 +70,12 @@ namespace Phantasma.Simulator
         public TimeSpan blockTimeSkip = TimeSpan.FromMinutes(45);
         public BigInteger MinimumFee = 1;
 
-        public NexusSimulator(KeyPair ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
+        public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
         {
 
         }
        
-        public NexusSimulator(Nexus nexus, KeyPair ownerKey, int seed, Logger logger = null)
+        public NexusSimulator(Nexus nexus, PhantasmaKeys ownerKey, int seed, Logger logger = null)
         {
             this.Logger = logger != null ? logger : new DummyLogger();
 
@@ -107,7 +107,7 @@ namespace Phantasma.Simulator
 
             var neoPlatform = Pay.Chains.NeoWallet.NeoPlatform;
             var neoKeys = InteropUtils.GenerateInteropKeys(_owner, neoPlatform);
-            var neoText = Phantasma.Neo.Core.NeoKey.FromWIF(neoKeys.ToWIF()).address;
+            var neoText = Phantasma.Neo.Core.NeoKeys.FromWIF(neoKeys.ToWIF()).address;
             var neoAddress = Phantasma.Pay.Chains.NeoWallet.EncodeAddress(neoText);
 
             var ethPlatform = Pay.Chains.EthereumWallet.EthereumPlatform;
@@ -193,14 +193,14 @@ namespace Phantasma.Simulator
         private HashSet<Address> pendingNames = new HashSet<Address>();
 
         private bool blockOpen = false;
-        private KeyPair blockValidator;
+        private PhantasmaKeys blockValidator;
 
         public void BeginBlock()
         {
             BeginBlock(_owner);
         }
 
-        public void BeginBlock(KeyPair validator)
+        public void BeginBlock(PhantasmaKeys validator)
         {
             if (blockOpen)
             {
@@ -359,7 +359,7 @@ namespace Phantasma.Simulator
             return Enumerable.Empty<Block>();
         }
 
-        private Transaction MakeTransaction(IEnumerable<KeyPair> signees, ProofOfWork pow, Chain chain, byte[] script)
+        private Transaction MakeTransaction(IEnumerable<PhantasmaKeys> signees, ProofOfWork pow, Chain chain, byte[] script)
         {
             if (!blockOpen)
             {
@@ -377,7 +377,7 @@ namespace Phantasma.Simulator
 
             tx.Mine((int)pow);
 
-            foreach (KeyPair kp in signees)
+            foreach (PhantasmaKeys kp in signees)
             {
                 tx.Sign(kp);
             }
@@ -394,17 +394,17 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        private Transaction MakeTransaction(KeyPair source, ProofOfWork pow, Chain chain, byte[] script)
+        private Transaction MakeTransaction(PhantasmaKeys source, ProofOfWork pow, Chain chain, byte[] script)
         {
-            return MakeTransaction(new KeyPair[] { source }, pow, chain, script);
+            return MakeTransaction(new PhantasmaKeys[] { source }, pow, chain, script);
         }
 
-        public Transaction GenerateCustomTransaction(KeyPair owner, ProofOfWork pow, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(PhantasmaKeys owner, ProofOfWork pow, Func<byte[]> scriptGenerator)
         {
             return GenerateCustomTransaction(owner, pow, Nexus.RootChain, scriptGenerator);
         }
 
-        public Transaction GenerateCustomTransaction(KeyPair owner, ProofOfWork pow, Chain chain, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(PhantasmaKeys owner, ProofOfWork pow, Chain chain, Func<byte[]> scriptGenerator)
         {
             var script = scriptGenerator();
 
@@ -412,19 +412,19 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateCustomTransaction(IEnumerable<KeyPair> owners, ProofOfWork pow, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(IEnumerable<PhantasmaKeys> owners, ProofOfWork pow, Func<byte[]> scriptGenerator)
         {
             return GenerateCustomTransaction(owners, pow, Nexus.RootChain, scriptGenerator);
         }
 
-        public Transaction GenerateCustomTransaction(IEnumerable<KeyPair> owners, ProofOfWork pow, Chain chain, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(IEnumerable<PhantasmaKeys> owners, ProofOfWork pow, Chain chain, Func<byte[]> scriptGenerator)
         {
             var script = scriptGenerator();
             var tx = MakeTransaction(owners, pow, chain, script);
             return tx;
         }
 
-        public Transaction GenerateToken(KeyPair owner, string symbol, string name, string platform, Hash hash, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
+        public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, string platform, Hash hash, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
         {
             if (tokenScript == null)
             {
@@ -469,7 +469,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction MintTokens(KeyPair owner, Address destination, string symbol, BigInteger amount)
+        public Transaction MintTokens(PhantasmaKeys owner, Address destination, string symbol, BigInteger amount)
         {
             var chain = Nexus.RootChain;
 
@@ -485,7 +485,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateSideChainSend(KeyPair source, string tokenSymbol, Chain sourceChain, Address targetAddress, Chain targetChain, BigInteger amount, BigInteger fee)
+        public Transaction GenerateSideChainSend(PhantasmaKeys source, string tokenSymbol, Chain sourceChain, Address targetAddress, Chain targetChain, BigInteger amount, BigInteger fee)
         {
             Throw.IfNull(source, nameof(source));
             Throw.If(!Nexus.TokenExists(tokenSymbol), "Token does not exist: "+ tokenSymbol);
@@ -528,7 +528,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateSideChainSettlement(KeyPair source, Chain sourceChain, Chain destChain, Hash targetHash)
+        public Transaction GenerateSideChainSettlement(PhantasmaKeys source, Chain sourceChain, Chain destChain, Hash targetHash)
         {
             _pendingBlocks.RemoveAll(x => x.hash == targetHash);
 
@@ -542,7 +542,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateAccountRegistration(KeyPair source, string name)
+        public Transaction GenerateAccountRegistration(PhantasmaKeys source, string name)
         {
             var sourceChain = this.Nexus.RootChain;
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("account", "RegisterName", source.Address, name).SpendGas(source.Address).EndScript();
@@ -552,7 +552,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateChain(KeyPair source, Chain parentchain, string name, params string[] contracts)
+        public Transaction GenerateChain(PhantasmaKeys source, Chain parentchain, string name, params string[] contracts)
         {
             Throw.IfNull(parentchain, nameof(parentchain));
 
@@ -571,9 +571,9 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<KeyPair> signees = null)
+        public Transaction GenerateTransfer(PhantasmaKeys source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<PhantasmaKeys> signees = null)
         {
-            signees = signees ?? new List<KeyPair>();
+            signees = signees ?? new List<PhantasmaKeys>();
             var found = false;
             foreach (var signer in signees)
             {
@@ -598,9 +598,9 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateLoanTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<KeyPair> signees = null)
+        public Transaction GenerateLoanTransfer(PhantasmaKeys source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<PhantasmaKeys> signees = null)
         {
-            signees = signees ?? new List<KeyPair>();
+            signees = signees ?? new List<PhantasmaKeys>();
             var found = false;
             foreach (var signer in signees)
             {
@@ -626,7 +626,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateSwap(KeyPair source, Chain chain, string fromSymbol, string toSymbol, BigInteger amount)
+        public Transaction GenerateSwap(PhantasmaKeys source, Chain chain, string fromSymbol, string toSymbol, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().
                 CallContract("swap", "SwapTokens", source.Address, fromSymbol, toSymbol, amount).
@@ -637,14 +637,14 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateNftTransfer(KeyPair source, Address dest, Chain chain, string tokenSymbol, BigInteger tokenId)
+        public Transaction GenerateNftTransfer(PhantasmaKeys source, Address dest, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
             return tx;
         }
 
-        public Transaction GenerateNftSidechainTransfer(KeyPair source, Address destAddress, Chain sourceChain,
+        public Transaction GenerateNftSidechainTransfer(PhantasmaKeys source, Address destAddress, Chain sourceChain,
             Chain destChain, string tokenSymbol, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SendToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
@@ -652,14 +652,14 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateNftBurn(KeyPair source, Chain chain, string tokenSymbol, BigInteger tokenId)
+        public Transaction GenerateNftBurn(PhantasmaKeys source, Chain chain, string tokenSymbol, BigInteger tokenId)
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.BurnToken", source.Address, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
             return tx;
         }
 
-        public Transaction GenerateNftSale(KeyPair source, Chain chain, string tokenSymbol, BigInteger tokenId, BigInteger price)
+        public Transaction GenerateNftSale(PhantasmaKeys source, Chain chain, string tokenSymbol, BigInteger tokenId, BigInteger price)
         {
             Timestamp endDate = this.CurrentTime + TimeSpan.FromDays(5);
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("market", "SellToken", source.Address, tokenSymbol, DomainSettings.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
@@ -667,7 +667,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction MintNonFungibleToken(KeyPair owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction MintNonFungibleToken(PhantasmaKeys owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
@@ -681,7 +681,7 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateSetTokenMetadata(KeyPair source, string tokenSymbol, string key, string value)
+        public Transaction GenerateSetTokenMetadata(PhantasmaKeys source, string tokenSymbol, string key, string value)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SetMetadata", source.Address, tokenSymbol, key, value).SpendGas(source.Address).EndScript();
@@ -879,7 +879,7 @@ namespace Phantasma.Simulator
 
                             if ((_keys.Count < 2 || temp == 0) && _keys.Count < 2000)
                             {
-                                var key = KeyPair.Generate();
+                                var key = PhantasmaKeys.Generate();
                                 _keys.Add(key);
                                 targetAddress = key.Address;
                             }

@@ -454,7 +454,7 @@ namespace Phantasma.Neo.Core
 
         private Dictionary<string, Transaction> lastTransactions = new Dictionary<string, Transaction>();
 
-        public void GenerateInputsOutputs(NeoKey key, string symbol, IEnumerable<Transaction.Output> targets, out List<Transaction.Input> inputs, out List<Transaction.Output> outputs, decimal system_fee = 0)
+        public void GenerateInputsOutputs(NeoKeys key, string symbol, IEnumerable<Transaction.Output> targets, out List<Transaction.Input> inputs, out List<Transaction.Output> outputs, decimal system_fee = 0)
         {
             var from_script_hash = new UInt160(key.signatureHash.ToArray());
             var info = GetAssetsInfo();
@@ -479,7 +479,7 @@ namespace Phantasma.Neo.Core
             GenerateInputsOutputs(key, targets, out inputs, out outputs, system_fee);
         }
 
-        public void GenerateInputsOutputs(NeoKey key, IEnumerable<Transaction.Output> targets, out List<Transaction.Input> inputs, out List<Transaction.Output> outputs, decimal system_fee = 0)
+        public void GenerateInputsOutputs(NeoKeys key, IEnumerable<Transaction.Output> targets, out List<Transaction.Input> inputs, out List<Transaction.Output> outputs, decimal system_fee = 0)
         {
             var from_script_hash = new UInt160(key.signatureHash.ToArray());
             GenerateInputsOutputs(from_script_hash, targets, out inputs, out outputs, system_fee);
@@ -656,18 +656,18 @@ namespace Phantasma.Neo.Core
 
         }
 
-        public Transaction CallContract(NeoKey key, UInt160 scriptHash, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
         {
             var bytes = GenerateScript(scriptHash, args);
             return CallContract(key, scriptHash, bytes, attachSymbol, attachTargets);
         }
 
-        public Transaction CallContract(NeoKey key, UInt160 scriptHash, string operation, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, string operation, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
         {
             return CallContract(key, scriptHash, new object[] { operation, args }, attachSymbol, attachTargets);
         }
 
-        public Transaction CallContract(NeoKey key, UInt160 scriptHash, byte[] bytes, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, byte[] bytes, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
         {
             List<Transaction.Input> inputs = null;
             List<Transaction.Output> outputs = null;
@@ -710,7 +710,7 @@ namespace Phantasma.Neo.Core
 
         protected abstract bool SendTransaction(Transaction tx);
 
-        public bool SendTransaction(NeoKey keys, Transaction tx)
+        public bool SendTransaction(NeoKeys keys, Transaction tx)
         {
             return SendTransaction(tx);
         }
@@ -725,7 +725,7 @@ namespace Phantasma.Neo.Core
             return GetTransaction(val);
         }
 
-        public Transaction SendAsset(NeoKey fromKey, string toAddress, string symbol, decimal amount)
+        public Transaction SendAsset(NeoKeys fromKey, string toAddress, string symbol, decimal amount)
         {
             if (String.Equals(fromKey.address, toAddress, StringComparison.OrdinalIgnoreCase))
             {
@@ -738,7 +738,7 @@ namespace Phantasma.Neo.Core
             return SendAsset(fromKey, symbol, targets);
         }
 
-        public Transaction SendAsset(NeoKey fromKey, string symbol, IEnumerable<Transaction.Output> targets)
+        public Transaction SendAsset(NeoKeys fromKey, string symbol, IEnumerable<Transaction.Output> targets)
         {
             List<Transaction.Input> inputs;
             List<Transaction.Output> outputs;
@@ -761,7 +761,7 @@ namespace Phantasma.Neo.Core
             return ok ? tx : null;
         }
 
-        public Transaction WithdrawAsset(NeoKey toKey, string fromAddress, string symbol, decimal amount, byte[] verificationScript)
+        public Transaction WithdrawAsset(NeoKeys toKey, string fromAddress, string symbol, decimal amount, byte[] verificationScript)
         {
             var fromScriptHash = new UInt160(fromAddress.GetScriptHashFromAddress());
             var target = new Transaction.Output() { scriptHash = new UInt160(toKey.address.GetScriptHashFromAddress()), value = amount };
@@ -769,7 +769,7 @@ namespace Phantasma.Neo.Core
             return WithdrawAsset(toKey, fromScriptHash, symbol, targets, verificationScript);
         }
 
-        public Transaction WithdrawAsset(NeoKey toKey, UInt160 fromScripthash, string symbol, IEnumerable<Transaction.Output> targets, byte[] verificationScript)
+        public Transaction WithdrawAsset(NeoKeys toKey, UInt160 fromScripthash, string symbol, IEnumerable<Transaction.Output> targets, byte[] verificationScript)
         {
 
             var check = verificationScript.ToScriptHash();
@@ -814,7 +814,7 @@ namespace Phantasma.Neo.Core
             return ok ? tx : null;
         }
 
-        public Transaction ClaimGas(NeoKey ownerKey)
+        public Transaction ClaimGas(NeoKeys ownerKey)
         {
             var targetScriptHash = new UInt160(ownerKey.address.AddressToScriptHash());
 
@@ -861,14 +861,14 @@ namespace Phantasma.Neo.Core
             return ok ? tx : null;
         }
 
-        public Transaction ClaimGas(NeoKey ownerKey, string fromAddress, byte[] verificationScript)
+        public Transaction ClaimGas(NeoKeys ownerKey, string fromAddress, byte[] verificationScript)
         {
             var fromScriptHash = new UInt160(fromAddress.GetScriptHashFromAddress());
             return ClaimGas(ownerKey, fromScriptHash, verificationScript);
         }
 
         // claim from contract, without having private key
-        public Transaction ClaimGas(NeoKey ownerKey, UInt160 fromScripthash, byte[] verificationScript)
+        public Transaction ClaimGas(NeoKeys ownerKey, UInt160 fromScripthash, byte[] verificationScript)
         {
 
             var check = verificationScript.ToScriptHash();
@@ -921,7 +921,7 @@ namespace Phantasma.Neo.Core
             return ok ? tx : null;
         }
 
-        public Dictionary<string, decimal> GetBalancesOf(NeoKey key)
+        public Dictionary<string, decimal> GetBalancesOf(NeoKeys key)
         {
             return GetBalancesOf(key.address);
         }
@@ -946,7 +946,7 @@ namespace Phantasma.Neo.Core
             return result;
         }
 
-        public Dictionary<string, decimal> GetTokenBalancesOf(NeoKey key)
+        public Dictionary<string, decimal> GetTokenBalancesOf(NeoKeys key)
         {
             return GetTokenBalancesOf(key.address);
         }
@@ -975,7 +975,7 @@ namespace Phantasma.Neo.Core
 
         public abstract Dictionary<string, decimal> GetAssetBalancesOf(UInt160 hash);
 
-        public Dictionary<string, decimal> GetAssetBalancesOf(NeoKey key)
+        public Dictionary<string, decimal> GetAssetBalancesOf(NeoKeys key)
         {
             return GetAssetBalancesOf(key.address);
         }
@@ -1033,7 +1033,7 @@ namespace Phantasma.Neo.Core
 
         #endregion
 
-        public Transaction DeployContract(NeoKey keys, byte[] script, byte[] parameter_list, byte return_type, ContractProperties properties, string name, string version, string author, string email, string description)
+        public Transaction DeployContract(NeoKeys keys, byte[] script, byte[] parameter_list, byte return_type, ContractProperties properties, string name, string version, string author, string email, string description)
         {
             if (script.Length > 1024 * 1024) return null;
 
@@ -1142,7 +1142,7 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public void WaitForTransaction(BlockIterator iterator, NeoKey keys, Transaction tx, int maxBlocksToWait = 9999)
+        public void WaitForTransaction(BlockIterator iterator, NeoKeys keys, Transaction tx, int maxBlocksToWait = 9999)
         {
             if (tx == null)
             {

@@ -9,7 +9,7 @@ namespace Phantasma.Pay.Chains
     {
         private string rpcURL;
 
-        public PhantasmaWallet(KeyPair keys, string rpcURL) : base(keys)
+        public PhantasmaWallet(PhantasmaKeys keys, string rpcURL) : base(keys)
         {
             if (!rpcURL.EndsWith("/"))
             {
@@ -61,7 +61,7 @@ namespace Phantasma.Pay.Chains
             callback(false);
         }
 
-        protected override string DeriveAddress(KeyPair keys)
+        protected override string DeriveAddress(PhantasmaKeys keys)
         {
             return keys.Address.Text; 
         }

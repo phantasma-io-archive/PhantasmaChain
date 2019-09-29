@@ -113,7 +113,7 @@ namespace Phantasma.Cryptography.Ring
             return new RingSignature(y0, s, c);
         }
 
-        public static RingKeyPair GenerateKeyPair(KeyPair keyPair)
+        public static RingKeyPair GenerateKeyPair(PhantasmaKeys keyPair)
         {
             var mod = new Modular(GroupParameters.Prime);
             var privateKey = BigInteger.FromUnsignedArray(keyPair.PrivateKey, true);

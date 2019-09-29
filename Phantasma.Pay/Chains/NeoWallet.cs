@@ -13,7 +13,7 @@ namespace Phantasma.Pay.Chains
 
         private string neoscanURL;
 
-        public NeoWallet(KeyPair keys, string neoscanURL) : base(keys)
+        public NeoWallet(PhantasmaKeys keys, string neoscanURL) : base(keys)
         {
             if (!neoscanURL.EndsWith("/"))
             {
@@ -92,7 +92,7 @@ namespace Phantasma.Pay.Chains
             return data.Base58CheckEncode();
         }
 
-        protected override string DeriveAddress(KeyPair keys)
+        protected override string DeriveAddress(PhantasmaKeys keys)
         {
             ECPoint pKey = ECCurve.Secp256r1.G * keys.PrivateKey;
 

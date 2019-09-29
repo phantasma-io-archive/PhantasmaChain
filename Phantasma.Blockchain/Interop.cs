@@ -39,11 +39,11 @@ namespace Phantasma.Blockchain
     {
         public static string Seed = "";
 
-        public static KeyPair GenerateInteropKeys(KeyPair genesisKeys, string platformName)
+        public static PhantasmaKeys GenerateInteropKeys(PhantasmaKeys genesisKeys, string platformName)
         {
             var temp = $"{platformName.ToUpper()}!{genesisKeys.ToWIF()}{Seed}";
             var privateKey = CryptoExtensions.Sha256(temp);
-            var key = new KeyPair(privateKey);
+            var key = new PhantasmaKeys(privateKey);
             return key;
         }
     }

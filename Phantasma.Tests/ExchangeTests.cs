@@ -19,7 +19,7 @@ namespace Phantasma.Tests
     [TestClass]
     public class ExchangeTests
     {
-        private static KeyPair simulatorOwner = KeyPair.Generate();
+        private static PhantasmaKeys simulatorOwner = PhantasmaKeys.Generate();
         private static NexusSimulator simulator = new NexusSimulator(simulatorOwner, 1234);
 
         private const string maxDivTokenSymbol = "MADT";        //divisible token with maximum decimal count
@@ -464,14 +464,14 @@ namespace Phantasma.Tests
 
         private void InitExchange()
         {
-            simulatorOwner = KeyPair.Generate();
+            simulatorOwner = PhantasmaKeys.Generate();
             simulator = new NexusSimulator(simulatorOwner, 1234);
             CreateTokens();
         }
 
         class ExchangeUser
         {
-            private readonly KeyPair user;
+            private readonly PhantasmaKeys user;
             public TokenInfo baseToken;
             public TokenInfo quoteToken;
 
@@ -479,7 +479,7 @@ namespace Phantasma.Tests
 
             public ExchangeUser(string baseSymbol, string quoteSymbol)
             {
-                user = KeyPair.Generate();
+                user = PhantasmaKeys.Generate();
                 baseToken = simulator.Nexus.GetTokenInfo(baseSymbol);
                 quoteToken = simulator.Nexus.GetTokenInfo(quoteSymbol);
             }

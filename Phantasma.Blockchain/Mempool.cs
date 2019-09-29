@@ -46,7 +46,7 @@ namespace Phantasma.Blockchain
         // TODO this dictionary should not accumulate stuff forever, we need to have it cleaned once in a while
         private Dictionary<Hash, string> _rejections = new Dictionary<Hash, string>();
 
-        private KeyPair _validatorKeys;
+        private PhantasmaKeys _validatorKeys;
 
         public Nexus Nexus { get; private set; }
         public Address ValidatorAddress => _validatorKeys.Address;
@@ -68,7 +68,7 @@ namespace Phantasma.Blockchain
         public readonly int BlockTime; // in seconds
         private uint defaultPoW;
 
-        public Mempool(KeyPair validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, uint defaultPoW = 0)
+        public Mempool(PhantasmaKeys validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, uint defaultPoW = 0)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 

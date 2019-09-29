@@ -9,6 +9,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Cryptography.ECC;
+using Phantasma.Neo.Core;
 
 namespace Phantasma.Tests
 {
@@ -51,21 +52,23 @@ namespace Phantasma.Tests
         [TestMethod]
         public void EdDSA()
         {
-            var keys = KeyPair.Generate();
-            Assert.IsTrue(keys.PrivateKey.Length == KeyPair.PrivateKeyLength);
-            Assert.IsTrue(keys.Address.PublicKey.Length == Address.PublicKeyLength);
+            var keys = NeoKeys.Generate();
+            Assert.IsTrue(keys.PrivateKey.Length == PhantasmaKeys.PrivateKeyLength);
+            Assert.IsTrue(keys.PublicKey.Length == Address.PublicKeyLength);
 
             var msg = "Hello phantasma";
 
             var msgBytes = Encoding.ASCII.GetBytes(msg);
             var signature = keys.Sign(msgBytes);
 
-            var verified = signature.Verify(msgBytes, keys.Address);
+            var targetAddress = new Address(keys.PublicKey);
+
+            var verified = signature.Verify(msgBytes, targetAddress);
             Assert.IsTrue(verified);
 
             // make sure that Verify fails for other addresses
-            var otherKeys = KeyPair.Generate();
-            Assert.IsFalse(otherKeys.Address == keys.Address);
+            var otherKeys = PhantasmaKeys.Generate();
+            Assert.IsFalse(otherKeys.Address == targetAddress);
             verified = signature.Verify(msgBytes, otherKeys.Address);
             Assert.IsFalse(verified);
         }
@@ -109,7 +112,7 @@ namespace Phantasma.Tests
 
             int participants = 5;
             var messages = new[] { "hello", "phantasma chain", "welcome to the future" }.Select(Encoding.UTF8.GetBytes).ToArray();
-            var keys = Enumerable.Range(0, participants).Select(i => RingSignature.GenerateKeyPair(KeyPair.Generate())).ToArray();
+            var keys = Enumerable.Range(0, participants).Select(i => RingSignature.GenerateKeyPair(PhantasmaKeys.Generate())).ToArray();
             foreach (var key in keys)
             {
                 Assert.IsTrue(BigInteger.ModPow(RingSignature.GroupParameters.Generator, key.PrivateKey, RingSignature.GroupParameters.Prime) == key.PublicKey);
@@ -166,7 +169,7 @@ namespace Phantasma.Tests
             var keys = SeedPhraseGenerator.Generate(passphrase, out seedPhrase);
 
             Assert.IsTrue(keys != null);
-            Assert.IsTrue(keys.PrivateKey.Length == KeyPair.PrivateKeyLength);
+            Assert.IsTrue(keys.PrivateKey.Length == PhantasmaKeys.PrivateKeyLength);
             Assert.IsTrue(keys.Address.PublicKey.Length == Address.PublicKeyLength);
 
             var otherKeys = SeedPhraseGenerator.FromSeedPhrase(passphrase, seedPhrase);
@@ -177,8 +180,8 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SharedSecret()
         {
-            var keyA = KeyPair.Generate();
-            var keyB = KeyPair.Generate();
+            var keyA = PhantasmaKeys.Generate();
+            var keyB = PhantasmaKeys.Generate();
             var secret = "Hello Phantasma!";
 
             var pubA = EncryptionUtils.Curve.G * keyA.PrivateKey;
@@ -201,7 +204,7 @@ namespace Phantasma.Tests
             var tx = Neo.Core.Transaction.Unserialize(rawTx);
             
             var wif = "KwVG94yjfVg1YKFyRxAGtug93wdRbmLnqqrFV6Yd2CiA9KZDAp4H";
-            var neoKeys = Phantasma.Neo.Core.NeoKey.FromWIF(wif);
+            var neoKeys = Phantasma.Neo.Core.NeoKeys.FromWIF(wif);
 
             Assert.IsTrue(tx.witnesses.Any());
             var wit = tx.witnesses.First();
@@ -215,15 +218,15 @@ namespace Phantasma.Tests
 
             var msg = "Hello Phantasma!";
             var payload = Encoding.UTF8.GetBytes(msg);
-            var neoSig = ECDsaSignature.Generate(neoKeys, payload);
+            var neoSig = ECDsaSignature.Generate(neoKeys, payload, ECDsaCurve.Secp256r1);
 
             var validateNeoSig = neoSig.Verify(payload, transposedAddress);
             Assert.IsTrue(validateNeoSig);
 
-            var phantasmaKeys = KeyPair.FromWIF(wif);
-            var phantasmaSig = ECDsaSignature.Generate(phantasmaKeys, payload);
+            var phantasmaKeys = PhantasmaKeys.FromWIF(wif);
+            var phantasmaSig = ECDsaSignature.Generate(phantasmaKeys, payload, ECDsaCurve.Secp256r1);
             var validatePhantasmaSig = phantasmaSig.Verify(payload, phantasmaKeys.Address);
-            Assert.IsTrue(validatePhantasmaSig);
+            Assert.IsFalse(validatePhantasmaSig);
         }
 
 

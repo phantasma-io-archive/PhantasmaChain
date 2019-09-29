@@ -37,7 +37,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestMarketContract()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -46,7 +46,7 @@ namespace Phantasma.Tests
 
             var symbol = "COOL";
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
@@ -127,12 +127,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestEnergyRatioDecimals()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var stakeAmount = MinimumValidStake;
             double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -DomainSettings.StakingTokenDecimals);
             double realExpectedUnclaimedAmount = ((double)(StakeToFuel(stakeAmount))) * Math.Pow(10, -DomainSettings.FuelTokenDecimals);
@@ -161,12 +161,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestGetUnclaimed()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var stakeAmount = MinimumValidStake;
             var expectedUnclaimedAmount = StakeToFuel(stakeAmount);
 
@@ -194,12 +194,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestUnstake()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -346,12 +346,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestFreshAddressStakeClaim()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -413,12 +413,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestClaim()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -751,12 +751,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestHalving()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -837,12 +837,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestProxies()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -889,7 +889,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Add 0% proxy: should fail
-            var proxyA = KeyPair.Generate();
+            var proxyA = PhantasmaKeys.Generate();
             var proxyAPercentage = 25;
 
             simulator.BeginBlock();
@@ -1006,7 +1006,7 @@ namespace Phantasma.Tests
 
             //-----------
             //Add an 80% proxy: should fail
-            var proxyB = KeyPair.Generate();
+            var proxyB = PhantasmaKeys.Generate();
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, proxyB.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
@@ -1329,12 +1329,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestVotingPower()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -1466,12 +1466,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestStaking()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -1568,13 +1568,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestSoulMaster()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             //Let A be an address
-            var testUserA = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
             var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUserA.Address).AsNumber();
             Assert.IsTrue(unclaimedAmount == 0);
 
@@ -1784,8 +1784,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(finalBalance == expectedBalance);
 
             //Let B and C be other addresses
-            var testUserB = KeyPair.Generate();
-            var testUserC = KeyPair.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+            var testUserC = PhantasmaKeys.Generate();
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserB.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
@@ -1897,12 +1897,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestSwaping()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
@@ -1931,12 +1931,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestFriendsContract()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var stakeAmount = MinimumValidStake;
             double realStakeAmount = ((double)stakeAmount) * Math.Pow(10, -DomainSettings.StakingTokenDecimals);
             double realExpectedUnclaimedAmount = ((double)(StakeToFuel(stakeAmount))) * Math.Pow(10, -DomainSettings.FuelTokenDecimals);
@@ -1973,7 +1973,7 @@ namespace Phantasma.Tests
 
         private byte[] GetScriptForFriends(Address target)
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -1982,9 +1982,9 @@ namespace Phantasma.Tests
             var stakingToken = DomainSettings.StakingTokenSymbol;
 
             //Let A be an address
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
-            var testUserC = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+            var testUserC = PhantasmaKeys.Generate();
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, fuelToken, 100000000);
@@ -2073,7 +2073,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestFriendArray()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -2082,9 +2082,9 @@ namespace Phantasma.Tests
             var stakingToken = DomainSettings.StakingTokenSymbol;
 
             //Let A be an address
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
-            var testUserC = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
+            var testUserC = PhantasmaKeys.Generate();
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, fuelToken, 100000000);
@@ -2145,7 +2145,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestInfiniteTokenTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             simulator.BeginBlock();
@@ -2154,7 +2154,7 @@ namespace Phantasma.Tests
             TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible);
             simulator.EndBlock();
 
-            var user = KeyPair.Generate();
+            var user = PhantasmaKeys.Generate();
             var nexus = simulator.Nexus;
 
             var infiToken = nexus.GetTokenInfo("INFI");

@@ -37,13 +37,13 @@ namespace Phantasma.Blockchain.Swaps
         public abstract string LocalAddress { get; }
         public abstract string PrivateKey { get; }
 
-        protected KeyPair Keys { get; private set; }
+        protected PhantasmaKeys Keys { get; private set; }
 
         public Address ExternalAddress { get; private set; }
 
         public BigInteger currentHeight { get; protected set; }
 
-        public ChainInterop(TokenSwapService swapper, KeyPair keys, BigInteger currentBlock)
+        public ChainInterop(TokenSwapService swapper, PhantasmaKeys keys, BigInteger currentBlock)
         {
             this.Swapper = swapper;
             this.Keys = InteropUtils.GenerateInteropKeys(keys, this.Name);

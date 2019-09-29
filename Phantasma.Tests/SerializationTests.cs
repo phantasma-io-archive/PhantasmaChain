@@ -21,8 +21,8 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TransactionSerialization()
         {
-            var keysA = KeyPair.Generate();
-            var keysB = KeyPair.Generate();
+            var keysA = PhantasmaKeys.Generate();
+            var keysB = PhantasmaKeys.Generate();
 
             var script = ScriptUtils.BeginScript().
                 AllowGas(keysA.Address, Address.Null, 1, 9999).
@@ -51,7 +51,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void BlockSerialization()
         {
-            var keysA = KeyPair.Generate();
+            var keysA = PhantasmaKeys.Generate();
 
             var txs = new List<Transaction>();
             var symbol = DomainSettings.FuelTokenSymbol;
@@ -61,7 +61,7 @@ namespace Phantasma.Tests
 
             for (int i = 0; i<count; i++)
             {
-                var keysB = KeyPair.Generate();
+                var keysB = PhantasmaKeys.Generate();
                 amounts[i] = UnitConversion.ToBigInteger(20 + (i+1), DomainSettings.FuelTokenDecimals);
 
                 var script = ScriptUtils.BeginScript().
@@ -75,7 +75,7 @@ namespace Phantasma.Tests
                 txs.Add(tx);
             }
 
-            var chainKeys = KeyPair.Generate();
+            var chainKeys = PhantasmaKeys.Generate();
             var hashes = txs.Select(x => x.Hash);
             uint protocol = 42;
             var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null, protocol);
@@ -102,8 +102,8 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TransactionMining()
         {
-            var keysA = KeyPair.Generate();
-            var keysB = KeyPair.Generate();
+            var keysA = PhantasmaKeys.Generate();
+            var keysB = PhantasmaKeys.Generate();
 
             var script = ScriptUtils.BeginScript().
                 AllowGas(keysA.Address, Address.Null, 1, 9999).

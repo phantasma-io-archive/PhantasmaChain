@@ -22,7 +22,7 @@ namespace Phantasma.Pay.Chains
             public string script;
         }
 
-        public BitcoinWallet(KeyPair keys) : base(keys)
+        public BitcoinWallet(PhantasmaKeys keys) : base(keys)
         {
         }
 
@@ -116,7 +116,7 @@ namespace Phantasma.Pay.Chains
             });            
         }
 
-        protected override string DeriveAddress(KeyPair keys)
+        protected override string DeriveAddress(PhantasmaKeys keys)
         {
             ECPoint pKey = ECCurve.Secp256k1.G * keys.PrivateKey;
 

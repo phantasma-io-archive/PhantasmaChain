@@ -11,7 +11,7 @@ namespace Phantasma.Pay.Chains
 {
     public class EOSWallet: CryptoWallet
     {
-        public EOSWallet(KeyPair keys) : base(keys)
+        public EOSWallet(PhantasmaKeys keys) : base(keys)
         {
         }
 
@@ -28,7 +28,7 @@ namespace Phantasma.Pay.Chains
             callback(false);
         }
 
-        protected override string DeriveAddress(KeyPair keys)
+        protected override string DeriveAddress(PhantasmaKeys keys)
         {
             ECPoint pKey = ECCurve.Secp256k1.G * keys.PrivateKey;
 

@@ -56,7 +56,7 @@ namespace Phantasma.Pay
         protected List<WalletBalance> _balances = new List<WalletBalance>();
         public IEnumerable<WalletBalance> Balances => _balances;
 
-        public CryptoWallet(KeyPair keys)
+        public CryptoWallet(PhantasmaKeys keys)
         {
             this.Address = DeriveAddress(keys);
             this.Name = Address;
@@ -79,7 +79,7 @@ namespace Phantasma.Pay
             }
         }
 
-        protected abstract string DeriveAddress(KeyPair keys);
+        protected abstract string DeriveAddress(PhantasmaKeys keys);
 
         public abstract void SyncBalances(Action<bool> callback);
         public abstract void MakePayment(string symbol, decimal amount, string targetAddress, Action<bool> callback);

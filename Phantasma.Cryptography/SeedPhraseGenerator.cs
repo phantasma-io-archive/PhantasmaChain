@@ -465,23 +465,23 @@ namespace Phantasma.Cryptography
             //literally this is the bulk of the decoupled seed generation code, easy.
             byte[] salt = ByteArrayUtils.ConcatBytes(UTF8Encoding.UTF8.GetBytes(SaltHeader), _passphraseBytes);
             var temp = new PBKDF2(UTF8Encoding.UTF8.GetBytes(NormaliseString(SeedPhrase)), salt);
-            return temp.GetBytes(KeyPair.PrivateKeyLength);
+            return temp.GetBytes(PhantasmaKeys.PrivateKeyLength);
         }
 
-        public static KeyPair Generate(string passphrase, out string seedPhrase, SeedLanguage language = SeedLanguage.English, int entropyBytes = MinimumEntropyBits)
+        public static PhantasmaKeys Generate(string passphrase, out string seedPhrase, SeedLanguage language = SeedLanguage.English, int entropyBytes = MinimumEntropyBits)
         {
             var bytes = Entropy.GetRandomBytes(entropyBytes);
             var generator = new SeedPhraseGenerator(bytes, passphrase, language);
             var privateKey = generator.CalculateSeedBytes();
             seedPhrase = generator.SeedPhrase;
-            return new KeyPair(privateKey);
+            return new PhantasmaKeys(privateKey);
         }
 
-        public static KeyPair FromSeedPhrase(string passphrase, string seedPhrase)
+        public static PhantasmaKeys FromSeedPhrase(string passphrase, string seedPhrase)
         {
             var generator = new SeedPhraseGenerator(seedPhrase, passphrase);
             var privateKey = generator.CalculateSeedBytes();
-            return new KeyPair(privateKey);
+            return new PhantasmaKeys(privateKey);
         }
 
     }

@@ -20,7 +20,7 @@ namespace Phantasma.Tests
     {
         public class TestData
         {
-            public KeyPair owner;
+            public PhantasmaKeys owner;
             public Nexus nexus;
             public NexusSimulator simulator;
             public NexusAPI api;
@@ -31,7 +31,7 @@ namespace Phantasma.Tests
 
         private TestData CreateAPI(bool useMempool = false)
         {
-            var owner = KeyPair.FromWIF(testWIF);
+            var owner = PhantasmaKeys.FromWIF(testWIF);
             var sim = new NexusSimulator(owner, 1234);
             var mempool = useMempool? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var api = new NexusAPI(sim.Nexus);
@@ -82,7 +82,7 @@ namespace Phantasma.Tests
             var chainName = DomainSettings.RootChainName;
             test.simulator.CurrentTime = Timestamp.Now;
             var tx = new Transaction("simnet", chainName, script, test.simulator.CurrentTime + TimeSpan.FromHours(1));
-            tx.Sign(KeyPair.FromWIF(testWIF));
+            tx.Sign(PhantasmaKeys.FromWIF(testWIF));
             var txBytes = tx.ToByteArray(true);
             var temp = test.api.SendRawTransaction(Base16.Encode(txBytes));
             var result = (SingleResult)temp;
@@ -122,7 +122,7 @@ namespace Phantasma.Tests
 
             var symbol = "COOL";
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             // Create the token CoolToken as an NFT
             test.simulator.BeginBlock();

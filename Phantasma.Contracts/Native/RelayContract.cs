@@ -5,6 +5,7 @@ using System.Text;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
+using Phantasma.Cryptography.EdDSA;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
@@ -85,13 +86,13 @@ namespace Phantasma.Contracts.Native
             }
         }
 
-        public static RelayReceipt FromMessage(RelayMessage msg, KeyPair keys)
+        public static RelayReceipt FromMessage(RelayMessage msg, PhantasmaKeys keys)
         {
             if(msg.script == null || msg.script.SequenceEqual(new byte[0]))
                 throw new Exception("RelayMessage script cannot be empty or null");
 
             var bytes = msg.ToByteArray();
-            var signature = keys.Sign(bytes);
+            var signature = Ed25519Signature.Generate(keys, bytes);
             return new RelayReceipt()
             {
                 message = msg,

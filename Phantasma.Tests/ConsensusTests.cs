@@ -22,12 +22,12 @@ namespace Phantasma.Tests
     [TestClass]
     public class ConsensusTests
     {
-        static KeyPair owner = KeyPair.Generate();
+        static PhantasmaKeys owner = PhantasmaKeys.Generate();
         static NexusSimulator simulator = new NexusSimulator(owner, 1234);
         static Nexus nexus = simulator.Nexus;
 
-        private static KeyPair[] validatorKeyPairs =
-            {owner, KeyPair.Generate(), KeyPair.Generate(), KeyPair.Generate(), KeyPair.Generate()};
+        private static PhantasmaKeys[] validatorKeyPairs =
+            {owner, PhantasmaKeys.Generate(), PhantasmaKeys.Generate(), PhantasmaKeys.Generate(), PhantasmaKeys.Generate()};
 
         private void CreateValidators()
         {
@@ -97,7 +97,7 @@ namespace Phantasma.Tests
             
         }
 
-        private void AddNewValidator(KeyPair newValidator)
+        private void AddNewValidator(PhantasmaKeys newValidator)
         {
             Timestamp startTime = simulator.CurrentTime;
             Timestamp endTime = simulator.CurrentTime.AddDays(1);

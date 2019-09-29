@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
-        public void BakeBlock(ref Block block, ref List<Transaction> transactions, BigInteger minimumFee, KeyPair validator, Timestamp time)
+        public void BakeBlock(ref Block block, ref List<Transaction> transactions, BigInteger minimumFee, PhantasmaKeys validator, Timestamp time)
         {
             if (transactions.Count <= 0)
             {

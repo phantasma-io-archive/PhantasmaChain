@@ -12,19 +12,19 @@ namespace Phantasma.Cryptography
         private const int keysize = 256;
         public static readonly ECC.ECCurve Curve = ECC.ECCurve.Secp256r1;
 
-        public static byte[] GetSharedSecret(KeyPair local, ECC.ECPoint remote)
+        public static byte[] GetSharedSecret(PhantasmaKeys local, ECC.ECPoint remote)
         {
             var secret = (remote * local.PrivateKey).EncodePoint(true);
             return secret.Sha256();
         }
 
-        public static byte[] Encrypt<T>(T message, KeyPair local, ECC.ECPoint remote)
+        public static byte[] Encrypt<T>(T message, PhantasmaKeys local, ECC.ECPoint remote)
         {
             var secret = GetSharedSecret(local, remote);
             return Encrypt(message, secret);
         }
 
-        public static T Decrypt<T>(byte[] input, KeyPair local, ECC.ECPoint remote)
+        public static T Decrypt<T>(byte[] input, PhantasmaKeys local, ECC.ECPoint remote)
         {
             var secret = GetSharedSecret(local, remote);
             return Decrypt<T>(input, secret);

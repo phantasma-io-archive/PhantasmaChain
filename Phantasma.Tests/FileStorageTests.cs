@@ -22,12 +22,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SingleUploadSuccess()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 5;
 
@@ -95,12 +95,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SingleUploadSuccessMaxFileSize()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             BigInteger accountBalance = (DomainSettings.ArchiveMaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
             accountBalance *= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
@@ -155,12 +155,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void ReduceAvailableSpace()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -229,12 +229,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void UnstakeAfterUsedSpaceRelease()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -314,12 +314,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void CumulativeUploadSuccess()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -417,12 +417,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void ReuploadSuccessAfterDelete()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -505,13 +505,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void UploadDuplicateFileDifferentOwner()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -602,12 +602,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void UnstakeWithStoredFilesFailure()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -685,12 +685,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void UploadBeyondAvailableSpace()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -747,12 +747,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void CumulativeUploadMoreThanAvailable()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 
@@ -829,12 +829,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void UploadDuplicateFilename()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var accountBalance = MinimumValidStake * 100;
 

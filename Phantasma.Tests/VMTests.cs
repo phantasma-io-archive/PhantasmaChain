@@ -247,7 +247,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void Interop()
         {
-            var source = KeyPair.Generate();
+            var source = PhantasmaKeys.Generate();
             var script = ScriptUtils.BeginScript().CallInterop("Upper", "hello").EndScript();
 
             var vm = new TestVM(script);

@@ -1,5 +1,4 @@
-﻿using Phantasma.Storage;
-using Phantasma.Storage.Utils;
+﻿using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
 
@@ -47,6 +46,12 @@ namespace Phantasma.Cryptography.EdDSA
         public override void UnserializeData(BinaryReader reader)
         {
             this.Bytes = reader.ReadByteArray();
+        }
+
+        public static Ed25519Signature Generate(IKeyPair keypair, byte[] message)
+        {
+            var sign = Ed25519.Sign(message, Ed25519.ExpandedPrivateKeyFromSeed(keypair.PrivateKey));
+            return new Ed25519Signature(sign);
         }
     }
 }

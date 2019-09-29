@@ -35,13 +35,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void LendGas()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var lender = KeyPair.Generate();
-            var userA = KeyPair.Generate();
-            var userB = KeyPair.Generate();
+            var lender = PhantasmaKeys.Generate();
+            var userA = PhantasmaKeys.Generate();
+            var userB = PhantasmaKeys.Generate();
 
             var soulAmount = UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
@@ -77,11 +77,11 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SelfLoanGas()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var lender = KeyPair.Generate();
+            var lender = PhantasmaKeys.Generate();
 
             var soulAmount = UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
@@ -112,13 +112,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestNoRepaymentSecondLoan()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var lender = KeyPair.Generate();
-            var userA = KeyPair.Generate();
-            var userB = KeyPair.Generate();
+            var lender = PhantasmaKeys.Generate();
+            var userA = PhantasmaKeys.Generate();
+            var userB = PhantasmaKeys.Generate();
 
             var soulAmount = UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
@@ -171,13 +171,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestLoanRepayment()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
-            var lender = KeyPair.Generate();
-            var userA = KeyPair.Generate();
-            var userB = KeyPair.Generate();
+            var lender = PhantasmaKeys.Generate();
+            var userA = PhantasmaKeys.Generate();
+            var userB = PhantasmaKeys.Generate();
 
             var soulAmount = UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
@@ -227,7 +227,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(outstandingDebt == 0);
         }
 
-        private void SetupLender(NexusSimulator simulator, KeyPair lender)
+        private void SetupLender(NexusSimulator simulator, PhantasmaKeys lender)
         {
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(lender, ProofOfWork.None, () =>
@@ -276,7 +276,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void GenesisBlock()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var nexus = new Nexus(null, null, (n) => new OracleSimulator(n));
 
             Assert.IsTrue(nexus.CreateGenesisBlock("simnet", owner, DateTime.Now));
@@ -307,7 +307,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(nexus.IsPrimaryValidator(owner.Address));
 
-            var randomKey = KeyPair.Generate();
+            var randomKey = PhantasmaKeys.Generate();
             Assert.IsFalse(nexus.IsPrimaryValidator(randomKey.Address));
 
             /*var txCount = nexus.GetTotalTransactionCount();
@@ -317,7 +317,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void FuelTokenTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
@@ -325,8 +325,8 @@ namespace Phantasma.Tests
             var symbol = DomainSettings.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);
 
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
@@ -359,7 +359,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void CreateToken()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
@@ -374,7 +374,7 @@ namespace Phantasma.Tests
 
             var token = nexus.GetTokenInfo(symbol);
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
@@ -399,7 +399,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void CreateNonDivisibleToken()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
@@ -414,7 +414,7 @@ namespace Phantasma.Tests
 
             var token = nexus.GetTokenInfo(symbol);
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
@@ -439,13 +439,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void AccountRegister()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var symbol = DomainSettings.FuelTokenSymbol;
 
-            Func<KeyPair, string, bool> registerName = (keypair, name) =>
+            Func<PhantasmaKeys, string, bool> registerName = (keypair, name) =>
             {
                 bool result = true;
 
@@ -471,7 +471,7 @@ namespace Phantasma.Tests
                 return result;
             };
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             var token = nexus.GetTokenInfo(symbol);
             var amount = UnitConversion.ToBigInteger(10, token.Decimals);
@@ -505,13 +505,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SimpleTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
 
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
@@ -539,12 +539,12 @@ namespace Phantasma.Tests
         [TestMethod]
         public void CosmicSwapSimple()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
 
-            var testUserA = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
@@ -577,13 +577,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void ChainSwapSimple()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
 
-            var testUser = KeyPair.Generate();
-            var neoKeys = Neo.Core.NeoKey.Generate();
+            var testUser = PhantasmaKeys.Generate();
+            var neoKeys = Neo.Core.NeoKeys.Generate();
 
             var limit = 400;
 
@@ -637,7 +637,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void QuoteConversions()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
@@ -660,7 +660,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void GetRatesForSwap()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
@@ -688,13 +688,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TransferToAccountName()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
             var symbol = DomainSettings.FuelTokenSymbol;
 
-            Func<KeyPair, string, bool> registerName = (keypair, name) =>
+            Func<PhantasmaKeys, string, bool> registerName = (keypair, name) =>
             {
                 bool result = true;
 
@@ -721,7 +721,7 @@ namespace Phantasma.Tests
             };
 
             var targetName = "hello";
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var token = nexus.GetTokenInfo(symbol);
             var amount = UnitConversion.ToBigInteger(10, token.Decimals);
 
@@ -751,7 +751,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SideChainTransferDifferentAccounts()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -761,8 +761,8 @@ namespace Phantasma.Tests
 
             var symbol = DomainSettings.FuelTokenSymbol;
 
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
 
             var token = nexus.GetTokenInfo(symbol);
             var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
@@ -808,7 +808,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SideChainTransferSameAccount()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -818,7 +818,7 @@ namespace Phantasma.Tests
 
             var symbol = DomainSettings.FuelTokenSymbol;
 
-            var sender = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
 
             var token = nexus.GetTokenInfo(symbol);
             var originalAmount = UnitConversion.ToBigInteger(1, token.Decimals);
@@ -872,7 +872,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SideChainTransferMultipleSteps()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -884,8 +884,8 @@ namespace Phantasma.Tests
             var symbol = DomainSettings.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);
 
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
 
             var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
@@ -950,7 +950,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void NftMint()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -959,7 +959,7 @@ namespace Phantasma.Tests
 
             var symbol = "COOL";
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
@@ -1005,7 +1005,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void NftBurn()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -1014,7 +1014,7 @@ namespace Phantasma.Tests
 
             var symbol = "COOL";
 
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
@@ -1073,19 +1073,19 @@ namespace Phantasma.Tests
         [TestMethod]
         public void NftTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
             var chain = nexus.RootChain;
 
-            var nftKey = KeyPair.Generate();
+            var nftKey = PhantasmaKeys.Generate();
             var symbol = "COOL";
             var nftName = "CoolToken";
 
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
 
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
@@ -1151,7 +1151,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void SidechainNftTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -1161,8 +1161,8 @@ namespace Phantasma.Tests
 
             var symbol = "COOL";
 
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
 
             var fullAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var smallAmount = fullAmount / 2;
@@ -1247,7 +1247,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestNoGasSameChainTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var nexus = simulator.Nexus;
@@ -1256,8 +1256,8 @@ namespace Phantasma.Tests
             var symbol = DomainSettings.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);
 
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
 
             var amount = UnitConversion.ToBigInteger(1, token.Decimals);
 
@@ -1285,7 +1285,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
 
             // create a new receiver
-            receiver = KeyPair.Generate();
+            receiver = PhantasmaKeys.Generate();
 
             //Try to send the entire balance without affording fees from sender to receiver
             try
@@ -1307,7 +1307,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void NoGasTestSideChainTransfer()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
@@ -1318,8 +1318,8 @@ namespace Phantasma.Tests
             var symbol = DomainSettings.FuelTokenSymbol;
             var token = nexus.GetTokenInfo(symbol);
 
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
 
             var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
@@ -1375,7 +1375,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestAddressComparison()
         {
-            var owner = KeyPair.FromWIF("KxWUCAD2wECLfA7diT7sV7V3jcxAf9GSKqZy3cvAt79gQLHQ2Qo8");
+            var owner = PhantasmaKeys.FromWIF("KxWUCAD2wECLfA7diT7sV7V3jcxAf9GSKqZy3cvAt79gQLHQ2Qo8");
             var address = Address.FromText("PWx9mn1hEtQCNxBEhKPj32L3yjJZFiEcLEGVJtY7xg8Ss");
 
             var simulator = new NexusSimulator(owner, 1234);
@@ -1389,10 +1389,10 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestChainTransferExploit()
         {
-            var owner = KeyPair.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
+            var owner = PhantasmaKeys.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
             var simulator = new NexusSimulator(owner, 1234);
 
-            var user = KeyPair.Generate();
+            var user = PhantasmaKeys.Generate();
 
             var symbol = DomainSettings.StakingTokenSymbol;
 
@@ -1468,14 +1468,14 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TransactionFees()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
             simulator.MinimumFee = 100000;
 
             var nexus = simulator.Nexus;
 
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
@@ -1506,13 +1506,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void ValidatorSwitch()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
             simulator.blockTimeSkip = TimeSpan.FromSeconds(10);
 
             var nexus = simulator.Nexus;
 
-            var secondValidator = KeyPair.Generate();
+            var secondValidator = PhantasmaKeys.Generate();
 
             var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var stakeAmount = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
@@ -1569,8 +1569,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(events.Length > 0);
             Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorElect));
 
-            var testUserA = KeyPair.Generate();
-            var testUserB = KeyPair.Generate();
+            var testUserA = PhantasmaKeys.Generate();
+            var testUserB = PhantasmaKeys.Generate();
 
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
 

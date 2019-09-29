@@ -214,7 +214,7 @@ namespace Phantasma.Cryptography
 
         public static Address FromWIF(string WIF)
         {
-            var keyPair = KeyPair.FromWIF(WIF);
+            var keyPair = PhantasmaKeys.FromWIF(WIF);
             return keyPair.Address;
         }
 

@@ -28,7 +28,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestNachoPurchase()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var tokenSupply = ToBigInteger(69931640.63m, NACHO_TOKEN_DECIMALS);
@@ -38,8 +38,8 @@ namespace Phantasma.Tests
             simulator.MintTokens(owner, owner.Address, NACHO_SYMBOL, tokenSupply);
             simulator.EndBlock();
 
-            var buyer = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var buyer = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
             var nexus = simulator.Nexus;
 
             simulator.BeginBlock();
@@ -99,7 +99,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestNachoPurchaseBonus()
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
 
             var tokenSupply = ToBigInteger(69931640.63m, NACHO_TOKEN_DECIMALS);
@@ -109,8 +109,8 @@ namespace Phantasma.Tests
             simulator.MintTokens(owner, owner.Address, NACHO_SYMBOL, tokenSupply);
             simulator.EndBlock();
 
-            var buyer = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
+            var buyer = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
             var nexus = simulator.Nexus;
 
             simulator.BeginBlock();

@@ -50,7 +50,7 @@ namespace Phantasma.Tests
         {
             string[] scriptString;
 
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var addressStr = Base16.Encode(owner.Address.PublicKey);
 
             var simulator = new NexusSimulator(owner, 1234);
@@ -98,8 +98,8 @@ namespace Phantasma.Tests
             //TestVM vm;
 
 
-            var owner = KeyPair.Generate();
-            var target = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
+            var target = PhantasmaKeys.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new NexusSimulator(owner, 1234);
@@ -174,8 +174,8 @@ namespace Phantasma.Tests
             //TestVM vm;
 
 
-            var owner = KeyPair.Generate();
-            var target = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
+            var target = PhantasmaKeys.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new NexusSimulator(owner, 1234);
@@ -270,8 +270,8 @@ namespace Phantasma.Tests
         {
             string[] scriptString;
 
-            var owner = KeyPair.Generate();
-            var target = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
+            var target = PhantasmaKeys.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new NexusSimulator(owner, 1234);
@@ -355,8 +355,8 @@ namespace Phantasma.Tests
         {
             string[] scriptString;
 
-            var owner = KeyPair.Generate();
-            var target = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
+            var target = PhantasmaKeys.Generate();
             var symbol = "DEBUGNFT";
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
             var simulator = new NexusSimulator(owner, 1234);
@@ -2235,7 +2235,7 @@ namespace Phantasma.Tests
             string[] scriptString;
             TestVM vm;
 
-            var randomKey = KeyPair.Generate();
+            var randomKey = PhantasmaKeys.Generate();
 
             var demoValue = new TestInteropStruct()
             {
@@ -2628,7 +2628,7 @@ namespace Phantasma.Tests
         #region AuxFunctions
         private TestVM ExecuteScriptWithNexus(IEnumerable<string> scriptString, Action<TestVM> beforeExecute = null)
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var script = AssemblerUtils.BuildScript(scriptString);
 
             var nexus = new Nexus(new ConsoleLogger());
@@ -2661,10 +2661,10 @@ namespace Phantasma.Tests
 
         private TestVM ExecuteScriptIsolated(IEnumerable<string> scriptString, out Transaction tx, Action<TestVM> beforeExecute = null)
         {
-            var owner = KeyPair.Generate();
+            var owner = PhantasmaKeys.Generate();
             var script = AssemblerUtils.BuildScript(scriptString);
 
-            var keys = KeyPair.Generate();
+            var keys = PhantasmaKeys.Generate();
             var nexus = new Nexus(new ConsoleLogger());
             nexus.CreateGenesisBlock("asmnet", owner, Timestamp.Now);
             tx = new Transaction(nexus.Name, nexus.RootChain.Name, script, 0);

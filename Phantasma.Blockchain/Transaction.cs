@@ -8,6 +8,8 @@ using Phantasma.Core.Types;
 using Phantasma.Storage.Utils;
 using Phantasma.Storage;
 using Phantasma.Domain;
+using Phantasma.Cryptography.EdDSA;
+using Phantasma.Cryptography.ECC;
 
 namespace Phantasma.Blockchain
 {
@@ -103,17 +105,13 @@ namespace Phantasma.Blockchain
 
         public bool HasSignatures => Signatures != null && Signatures.Length > 0;
 
-        public void Sign(Signature signature)
+        public void Sign(IKeyPair keypair)
         {
-            this.Signatures = this.Signatures.Union(new Signature[] { signature }).ToArray();
-        }
-
-        public void Sign(KeyPair owner)
-        {
-            Throw.If(owner == null, "invalid keypair");
+            Throw.If(keypair == null, "invalid keypair");
 
             var msg = this.ToByteArray(false);
-            var sig = owner.Sign(msg);
+
+            Signature sig = keypair.Sign(msg);
 
             var sigs = new List<Signature>();
 

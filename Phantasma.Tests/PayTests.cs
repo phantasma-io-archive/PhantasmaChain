@@ -15,7 +15,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestEthereumWallet()
         {
-            var keys = new KeyPair(Base16.Decode("a95bd75a7b3b1c0a2a14595e8065a95cb06417f6aaedcc3bc45fda52900ab9e8"));
+            var keys = new PhantasmaKeys(Base16.Decode("a95bd75a7b3b1c0a2a14595e8065a95cb06417f6aaedcc3bc45fda52900ab9e8"));
             var wallet = new EthereumWallet(keys);
             var address = wallet.Address;
             Assert.IsTrue(address.Equals("0xe57a6c074d1db5ed7c98228df71ce5fa35b6bc72", StringComparison.OrdinalIgnoreCase));
@@ -30,7 +30,7 @@ namespace Phantasma.Tests
             byte[] privateKey = new byte[32];
             ByteArrayUtils.CopyBytes(data, 1, privateKey, 0, privateKey.Length);
 
-            var keys = new KeyPair(privateKey);
+            var keys = new PhantasmaKeys(privateKey);
             var wallet = new EOSWallet(keys);
             var address = wallet.Address;
             Assert.IsTrue(address.Equals("EOS8dBKtG9fbhC1wi1SscL32iFRsSi4PsZDT2EHJcYXwV5dAMiBcK", StringComparison.OrdinalIgnoreCase));
@@ -39,7 +39,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestNeoWallet()
         {
-            var keys = KeyPair.FromWIF("L1nuBmNJ2HvLat5xyvpqmHpmXNe6rGGdAzGJgLjDLECaTCVgqjdx");
+            var keys = PhantasmaKeys.FromWIF("L1nuBmNJ2HvLat5xyvpqmHpmXNe6rGGdAzGJgLjDLECaTCVgqjdx");
             var wallet = new NeoWallet(keys, "https://api.neoscan.io");
             var address = wallet.Address;
 
@@ -56,7 +56,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestBitcoinWallet()
         {
-            var keys = new KeyPair(Base16.Decode("60cf347dbc59d31c1358c8e5cf5e45b822ab85b79cb32a9f3d98184779a9efc2"));
+            var keys = new PhantasmaKeys(Base16.Decode("60cf347dbc59d31c1358c8e5cf5e45b822ab85b79cb32a9f3d98184779a9efc2"));
             var wallet = new BitcoinWallet(keys);
             var address = wallet.Address;
             Assert.IsTrue(address.Equals("17JsmEygbbEUEpvt4PFtYaTeSqfb9ki1F1", StringComparison.OrdinalIgnoreCase));

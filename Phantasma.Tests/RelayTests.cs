@@ -27,7 +27,7 @@ namespace Phantasma.Tests
 
         private ApiTests.TestData CreateAPI(bool useMempool = true)
         {
-            var owner = KeyPair.FromWIF(testWIF);
+            var owner = PhantasmaKeys.FromWIF(testWIF);
             var sim = new NexusSimulator(owner, 1234);
             var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var node = useMempool ? new Node(sim.Nexus, mempool, owner, 7073, PeerCaps.None, new List<string>() { "192.168.0.1:7073" }, null) : null;
@@ -52,7 +52,7 @@ namespace Phantasma.Tests
             return data;
         }
 
-        private void TopUpChannel(NexusSimulator simulator, KeyPair from, BigInteger amount)
+        private void TopUpChannel(NexusSimulator simulator, PhantasmaKeys from, BigInteger amount)
         {
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(from, ProofOfWork.None, () =>
@@ -69,7 +69,7 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var testUser = KeyPair.Generate();
+            var testUser = PhantasmaKeys.Generate();
             var nexus = simulator.Nexus;
             var api = test.api;
 
@@ -93,9 +93,9 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
 
@@ -165,9 +165,9 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
 
@@ -259,9 +259,9 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
 
@@ -356,8 +356,8 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
             var random = new Random();
@@ -405,8 +405,8 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
             var random = new Random();
@@ -426,7 +426,7 @@ namespace Phantasma.Tests
                 index = 0,
                 receiver = node.Address,
                 script = script,
-                sender = KeyPair.Generate().Address,
+                sender = PhantasmaKeys.Generate().Address,
                 timestamp = Timestamp.Now
             };
 
@@ -454,8 +454,8 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
             var random = new Random();
@@ -503,8 +503,8 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
             var random = new Random();
@@ -603,10 +603,10 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var testUser = KeyPair.Generate();
-            var autoSender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var testUser = PhantasmaKeys.Generate();
+            var autoSender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
 
@@ -691,9 +691,9 @@ namespace Phantasma.Tests
 
             var simulator = test.simulator;
             var owner = test.owner;
-            var sender = KeyPair.Generate();
-            var receiver = KeyPair.Generate();
-            var node = KeyPair.FromWIF(nodeWIF);
+            var sender = PhantasmaKeys.Generate();
+            var receiver = PhantasmaKeys.Generate();
+            var node = PhantasmaKeys.FromWIF(nodeWIF);
             var nexus = simulator.Nexus;
             var api = test.api;
 

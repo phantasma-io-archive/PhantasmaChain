@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain.Swaps
         private const string SwapHashMapTag = ".swhash";
         private const string SwapAddrListMapTag = ".swadr";
 
-        public readonly KeyPair Keys;
+        public readonly PhantasmaKeys Keys;
         public readonly Nexus Nexus;
         public readonly Logger Logger;
         public readonly BigInteger MinimumFee;
@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Swaps
 
         private StorageContext Storage;
 
-        public TokenSwapService(KeyPair swapKey, Nexus nexus, BigInteger minFee, Logger logger)
+        public TokenSwapService(PhantasmaKeys swapKey, Nexus nexus, BigInteger minFee, Logger logger)
         {
             this.Keys = swapKey;
             this.Nexus = nexus;

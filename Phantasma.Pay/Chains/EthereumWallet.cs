@@ -13,7 +13,7 @@ namespace Phantasma.Pay.Chains
     {
         public const string EthereumPlatform = "ethereum";
 
-        public EthereumWallet(KeyPair keys) : base(keys)
+        public EthereumWallet(PhantasmaKeys keys) : base(keys)
         {
         }
 
@@ -45,7 +45,7 @@ namespace Phantasma.Pay.Chains
             });
         }
 
-        protected override string DeriveAddress(KeyPair keys)
+        protected override string DeriveAddress(PhantasmaKeys keys)
         {
             ECPoint pKey = ECCurve.Secp256k1.G * keys.PrivateKey;
 
