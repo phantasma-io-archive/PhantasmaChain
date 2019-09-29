@@ -417,7 +417,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TransferBalance(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
 
             VMObject temp;
 
