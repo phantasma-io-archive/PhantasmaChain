@@ -74,7 +74,7 @@ namespace Phantasma.Cryptography
                         default: prefix = 'S'; break;
 
                     }
-                    _text =  prefix + Base58.Encode(_bytes.Skip(1).ToArray());
+                    _text =  prefix + Base58.Encode(_bytes);
                 }
 
                 return _text;
@@ -231,14 +231,33 @@ namespace Phantasma.Cryptography
 
         public static Address FromText(string text)
         {
-            Throw.If(text.Length != 46, "Invalid address length");
+            Throw.If(text.Length != 47, "Invalid address length");
 
-            var bytes = Base58.Decode(text);
-            var kind = (AddressKind) bytes[0];
+            var prefix = text[0];
+           
+            var bytes = Base58.Decode(text.Substring(1));
 
-            Throw.If(kind > AddressKind.Interop, "Invalid address opcode");
+            var kind = (AddressKind)(bytes[0]);
 
-            return new Address(bytes.Skip(1).ToArray());
+            switch (prefix)
+            {
+                case 'P':
+                    Throw.If(kind != AddressKind.User, "address should be user");
+                    break;
+
+                case 'S':
+                    Throw.If(kind != AddressKind.System, "address should be system");
+                    break;
+
+                case 'X':
+                    Throw.If(kind >= AddressKind.Interop, "address should be interop");
+                    break;
+
+                default:
+                    throw new Exception("invalid address prefix: " + prefix);
+            }
+
+            return new Address(bytes);
         }
 
         public int GetSize()
