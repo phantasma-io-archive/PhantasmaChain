@@ -53,6 +53,7 @@ namespace Phantasma.Domain
         LeaderboardCreate = 43,
         LeaderboardInsert = 44,
         LeaderboardReset = 45,
+        PlatformCreate = 46,
         Metadata = 47,
         Custom = 48,
     }

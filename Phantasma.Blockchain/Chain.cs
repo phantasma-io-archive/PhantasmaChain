@@ -511,7 +511,7 @@ namespace Phantasma.Blockchain
         private byte[] GetContractDeploymentKey(Address contractAddress)
         {
             var bytes = Encoding.ASCII.GetBytes("deploy.");
-            var key = ByteArrayUtils.ConcatBytes(bytes, contractAddress.PublicKey);
+            var key = ByteArrayUtils.ConcatBytes(bytes, contractAddress.ToByteArray());
             return key;
         }
 
@@ -556,7 +556,7 @@ namespace Phantasma.Blockchain
 
         public bool DeployContract(StorageContext storage, byte[] script)
         {
-            var contractAddress = Address.FromScript(script);
+            var contractAddress = Address.FromHash(script);
             DeployContractScript(storage, contractAddress, script);
             return true;
         }

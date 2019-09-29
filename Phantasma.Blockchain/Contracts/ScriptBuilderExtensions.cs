@@ -7,11 +7,6 @@ namespace Phantasma.Blockchain.Contracts
 {
     public static class ScriptBuilderExtensions
     {
-        public static ScriptBuilder LoanGas(this ScriptBuilder sb, Address from, BigInteger gasPrice, BigInteger gasLimit)
-        {
-            return sb.CallContract(Nexus.GasContractName, "LoanGas", from, gasPrice, gasLimit);
-        }
-
         public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address from, Address to, BigInteger gasPrice, BigInteger gasLimit)
         {
             return sb.CallContract(Nexus.GasContractName, "AllowGas", from, to, gasPrice, gasLimit);
@@ -35,6 +30,11 @@ namespace Phantasma.Blockchain.Contracts
         public static ScriptBuilder TransferTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger amount)
         {
             return sb.CallInterop("Runtime.TransferTokens", from, to, tokenSymbol, amount);
+        }
+
+        public static ScriptBuilder TransferBalance(this ScriptBuilder sb, string tokenSymbol, Address from, Address to)
+        {
+            return sb.CallInterop("Runtime.TransferBalance", from, to, tokenSymbol);
         }
 
         public static ScriptBuilder TransferNFT(this ScriptBuilder sb, string tokenSymbol, Address from, Address to, BigInteger tokenId)//todo check if this is valid

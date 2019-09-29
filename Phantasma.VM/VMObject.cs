@@ -177,12 +177,12 @@ namespace Phantasma.VM
                     {
                         var temp = (byte[])Data;
 
-                        if (temp.Length != Address.PublicKeyLength)
+                        if (temp.Length != Address.LengthInBytes)
                         {
                             throw new Exception("Invalid address size");
                         }
 
-                        return new Address(temp);
+                        return Address.Unserialize(temp);
                     }
 
                 case VMType.Object:

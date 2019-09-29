@@ -26,8 +26,10 @@ namespace Phantasma.Domain
 
         IToken GetToken(string symbol);
         IFeed GetFeed(string name);
-        IPlatform GetPlatform(string name);
         IContract GetContract(string name);
+
+        IPlatform GetPlatformByName(string name);
+        IPlatform GetPlatformByIndex(int index);
 
         bool TokenExists(string symbol);
         bool FeedExists(string name);
@@ -89,8 +91,9 @@ namespace Phantasma.Domain
         void CreateToken(Address from, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
         void CreateChain(Address owner, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
-        void CreatePlatform(Address from, Address target, string fuelSymbol);
         void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
+
+        BigInteger CreatePlatform(Address from, string name, string externalAddress, Address interopAddress, string fuelSymbol);
 
         bool IsAddressOfParentChain(Address address);
         bool IsAddressOfChildChain(Address address);

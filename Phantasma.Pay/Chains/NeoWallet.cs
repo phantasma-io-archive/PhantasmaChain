@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using System;
@@ -10,6 +11,7 @@ namespace Phantasma.Pay.Chains
     public class NeoWallet : CryptoWallet
     {
         public const string NeoPlatform = "neo";
+        public const byte NeoID = 1;
 
         private string neoscanURL;
 
@@ -64,11 +66,15 @@ namespace Phantasma.Pay.Chains
         public static Address EncodeAddress(string addressText)
         {
             Throw.If(!IsValidAddress(addressText), "invalid neo address");
-            var bytes = addressText.Base58CheckDecode();
-            return Cryptography.Address.EncodeInterop(NeoPlatform, bytes);
+            var scriptHash = addressText.Base58CheckDecode();
+
+            var pubKey = new byte[33];
+            ByteArrayUtils.CopyBytes(scriptHash, 0, pubKey, 0, scriptHash.Length);
+
+            return Cryptography.Address.FromInterop(NeoID, pubKey);
         }
 
-        public static string DecodeAddress(Address address)
+/*        public static string DecodeAddress(Address address)
         {
             if (!address.IsInterop)
             {
@@ -90,7 +96,7 @@ namespace Phantasma.Pay.Chains
             }
 
             return data.Base58CheckEncode();
-        }
+        }*/
 
         protected override string DeriveAddress(PhantasmaKeys keys)
         {

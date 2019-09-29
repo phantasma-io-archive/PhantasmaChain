@@ -52,16 +52,15 @@ namespace Phantasma.Tests
         [TestMethod]
         public void EdDSA()
         {
-            var keys = NeoKeys.Generate();
+            var keys = PhantasmaKeys.Generate();
             Assert.IsTrue(keys.PrivateKey.Length == PhantasmaKeys.PrivateKeyLength);
-            Assert.IsTrue(keys.PublicKey.Length == Address.PublicKeyLength);
 
             var msg = "Hello phantasma";
 
             var msgBytes = Encoding.ASCII.GetBytes(msg);
             var signature = keys.Sign(msgBytes);
 
-            var targetAddress = new Address(keys.PublicKey);
+            var targetAddress = Address.FromKey(keys);
 
             var verified = signature.Verify(msgBytes, targetAddress);
             Assert.IsTrue(verified);
@@ -170,7 +169,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(keys != null);
             Assert.IsTrue(keys.PrivateKey.Length == PhantasmaKeys.PrivateKeyLength);
-            Assert.IsTrue(keys.Address.PublicKey.Length == Address.PublicKeyLength);
+            Assert.IsTrue(keys.Address.ToByteArray().Length == Address.LengthInBytes);
 
             var otherKeys = SeedPhraseGenerator.FromSeedPhrase(passphrase, seedPhrase);
             Assert.IsTrue(otherKeys != null);
@@ -206,14 +205,11 @@ namespace Phantasma.Tests
             var wif = "KwVG94yjfVg1YKFyRxAGtug93wdRbmLnqqrFV6Yd2CiA9KZDAp4H";
             var neoKeys = Phantasma.Neo.Core.NeoKeys.FromWIF(wif);
 
-            Assert.IsTrue(neoKeys.IsValidSwapKey());
-
             Assert.IsTrue(tx.witnesses.Any());
             var wit = tx.witnesses.First();
-            var witAddress = new Address(wit.ExtractPublicKey());
+            var witAddress = wit.ExtractAddress();
 
-            Assert.IsTrue(neoKeys.PublicKey.Length == Address.PublicKeyLength);
-            var transposedAddress = new Address(neoKeys.PublicKey);
+            var transposedAddress = Address.FromKey(neoKeys);
 
             Assert.IsTrue(transposedAddress.IsUser);
             Assert.IsTrue(transposedAddress == witAddress);
@@ -224,11 +220,6 @@ namespace Phantasma.Tests
 
             var validateNeoSig = neoSig.Verify(payload, transposedAddress);
             Assert.IsTrue(validateNeoSig);
-
-            var phantasmaKeys = PhantasmaKeys.FromWIF(wif);
-            var phantasmaSig = ECDsaSignature.Generate(phantasmaKeys, payload, ECDsaCurve.Secp256r1);
-            var validatePhantasmaSig = phantasmaSig.Verify(payload, phantasmaKeys.Address);
-            Assert.IsFalse(validatePhantasmaSig);
         }
 
         //https://github.com/neo-project/proposals/blob/master/nep-2.mediawiki

@@ -284,7 +284,7 @@ namespace Phantasma.Contracts
 
                     if (receivedType == typeof(Address))
                     {
-                        return ((Address)arg).PublicKey;
+                        return ((Address)arg).ToByteArray();
                     }
 
                     throw new Exception("cannot cast this object to a byte array");

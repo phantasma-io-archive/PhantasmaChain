@@ -9,6 +9,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Contracts.Native;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain.Swaps
 {
@@ -130,11 +131,11 @@ namespace Phantasma.Blockchain.Swaps
                             var list = addressMap.Get<Address, StorageList>(swap.sourceAddress);
                             list.Add<Hash>(swap.sourceHash);
 
-                            if (!swap.destinationAddress.IsNull)
-                            {
-                                list = addressMap.Get<Address, StorageList>(swap.destinationAddress);
-                                list.Add<Hash>(swap.sourceHash);
-                            }
+                            Throw.If(swap.destinationAddress.IsNull, "swap destination address can't be null");
+
+                            // also add it to the destination list
+                            list = addressMap.Get<Address, StorageList>(swap.destinationAddress);
+                            list.Add<Hash>(swap.sourceHash);
                         }
 
                         if (prevStatus != swap.status)
@@ -243,24 +244,6 @@ namespace Phantasma.Blockchain.Swaps
 
             switch (swap.status)
             {
-                case ChainSwapStatus.Link:
-                    swap.destinationAddress = LookUpAddress(swap.sourceAddress, DomainSettings.PlatformName);
-
-                    if (swap.destinationAddress.IsNull)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        // we did not add it before because was unknown, so we add now
-                        var addressMap = new StorageMap(SwapAddrListMapTag, this.Storage);
-                        var list = addressMap.Get<Address, StorageList>(swap.destinationAddress);
-                        list.Add<Hash>(swap.sourceHash);
-
-                        swap.status = ChainSwapStatus.Resettle;
-                    }
-                    break;
-
                 case ChainSwapStatus.Broker:
                     {
                         Hash brokerHash;
@@ -284,12 +267,6 @@ namespace Phantasma.Blockchain.Swaps
 
                 case ChainSwapStatus.Pending:
                     {
-                        if (swap.destinationAddress.IsNull)
-                        {
-                            swap.status = ChainSwapStatus.Link;
-                            return;
-                        }
-
                         var tokenInfo = Nexus.GetTokenInfo(swap.symbol);
                         Logger.Message($"Detected {swap.sourcePlatform} swap: {swap.sourceAddress} sent {UnitConversion.ToDecimal(swap.amount, tokenInfo.Decimals)} {swap.symbol}");
 
@@ -344,7 +321,7 @@ namespace Phantasma.Blockchain.Swaps
                         var settleHash = destinationInterop.SettleTransaction(swap.sourceHash, swap.sourcePlatform);
                         if (settleHash == Hash.Null)
                         {
-                            throw new InteropException("Failed settle transaction for swap with hash " + swap.sourceHash, ChainSwapStatus.Link);
+                            throw new InteropException("Failed settle transaction for swap with hash " + swap.sourceHash, ChainSwapStatus.Resettle);
                         }
 
                         swap.status = ChainSwapStatus.Finished;
@@ -353,11 +330,6 @@ namespace Phantasma.Blockchain.Swaps
             }
 
             ProcessSwap(map, ref swap);
-        }
-
-        public Address LookUpAddress(Address sourceAddress, string sourcePlatform)
-        {
-            return Nexus.RootChain.InvokeContract(Nexus.RootStorage, Nexus.InteropContractName, nameof(InteropContract.GetLink), sourceAddress, sourcePlatform).AsAddress();
         }
     }
 }

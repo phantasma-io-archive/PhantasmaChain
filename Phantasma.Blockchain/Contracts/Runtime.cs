@@ -879,7 +879,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Notify(EventKind.FeedCreate, owner, name);
         }
 
-        public void CreatePlatform(Address from, Address target, string fuelSymbol)
+        public BigInteger CreatePlatform(Address from, string name, string externalAddress, Address interopAddress, string fuelSymbol)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
@@ -887,17 +887,13 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            Runtime.Expect(target.IsInterop, "external address must be interop");
+            Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid platform name");
 
-            string platformName;
-            byte[] data;
-            target.DecodeInterop(out platformName, out data, 0);
+            var platformID = Nexus.CreatePlatform(RootStorage, externalAddress, interopAddress, name, fuelSymbol);
+            Runtime.Expect(platformID > 0, "creation of platform failed");
 
-            Runtime.Expect(ValidationUtils.IsValidIdentifier(platformName), "invalid platform name");
-
-            Runtime.Expect(Nexus.CreatePlatform(RootStorage, target, platformName, fuelSymbol), "creation of platform failed");
-
-            Runtime.Notify(EventKind.AddressRegister, target, platformName);
+            Runtime.Notify(EventKind.PlatformCreate, interopAddress, name);
+            return platformID;
         }
 
         public void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
@@ -1086,9 +1082,14 @@ namespace Phantasma.Blockchain.Contracts
             return Nexus.GetFeedInfo(name);
         }
 
-        public IPlatform GetPlatform(string name)
+        public IPlatform GetPlatformByName(string name)
         {
             return Nexus.GetPlatformInfo(name);
+        }
+
+        public IPlatform GetPlatformByIndex(int index)
+        {
+            throw new NotImplementedException();
         }
 
         public IChain GetChainByAddress(Address address)

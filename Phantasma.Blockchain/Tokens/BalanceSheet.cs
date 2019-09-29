@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Tokens
 
         private byte[] GetKeyForAddress(Address address)
         {
-            return ByteArrayUtils.ConcatBytes(_prefix, address.PublicKey);
+            return ByteArrayUtils.ConcatBytes(_prefix, address.ToByteArray());
         }
 
         public BigInteger Get(StorageContext storage, Address address)

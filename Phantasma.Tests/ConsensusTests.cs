@@ -113,10 +113,10 @@ namespace Phantasma.Tests
 
             for (int i = 0; i < activeValidatorCount; i++)
             {
-                choices[i] = new PollChoice() {value = validators[i].address.PublicKey};
+                choices[i] = new PollChoice() {value = validators[i].address.ToByteArray() };
             }
 
-            choices[activeValidatorCount] = new PollChoice() {value = newValidator.Address.PublicKey};
+            choices[activeValidatorCount] = new PollChoice() {value = newValidator.Address.ToByteArray() };
 
             var serializedChoices = choices.Serialize();
 

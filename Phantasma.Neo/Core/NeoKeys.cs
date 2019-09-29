@@ -1,11 +1,12 @@
-﻿using Phantasma.Core;
+﻿using System;
+using System.Linq;
+using System.Text;
+
+using Phantasma.Core;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
-using System;
-using System.Linq;
-using System.Text;
 
 namespace Phantasma.Neo.Core
 {
@@ -13,6 +14,7 @@ namespace Phantasma.Neo.Core
     {
         public byte[] PrivateKey { get; private set; }
         public byte[] PublicKey { get; private set; }
+
         public readonly byte[] UncompressedPublicKey;
         public readonly UInt160 PublicKeyHash;
         public readonly string address;
@@ -25,6 +27,7 @@ namespace Phantasma.Neo.Core
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
                 throw new ArgumentException();
+
             this.PrivateKey = new byte[32];
             Buffer.BlockCopy(privateKey, privateKey.Length - 32, PrivateKey, 0, 32);
 
@@ -39,18 +42,23 @@ namespace Phantasma.Neo.Core
                 pubKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
             }
 
-            var bytes = pubKey.EncodePoint(true).ToArray();
-            this.PublicKey = bytes.Skip(1).ToArray();
+            this.PublicKey = pubKey.EncodePoint(true).ToArray();
+            this.PublicKeyHash = CryptoUtils.ToScriptHash(PublicKey);
 
-            this.PublicKeyHash = CryptoUtils.ToScriptHash(bytes);
-
-            this.signatureScript = CreateSignatureScript(bytes);
-            signatureHash = CryptoUtils.ToScriptHash(signatureScript);
+            this.signatureScript = CreateSignatureScript(PublicKey);
 
             this.UncompressedPublicKey = pubKey.EncodePoint(false).Skip(1).ToArray();
 
+            var signatureHash = CryptoUtils.ToScriptHash(signatureScript);
             this.address = CryptoUtils.ToAddress(signatureHash);
             this.WIF = GetWIF();
+        }
+
+        public static string PublicKeyToAddress(byte[] publicKey)
+        {
+            var signatureScript = CreateSignatureScript(publicKey);
+            var signatureHash = CryptoUtils.ToScriptHash(signatureScript);
+            return CryptoUtils.ToAddress(signatureHash);
         }
 
         public static NeoKeys FromWIF(string wif)
@@ -158,23 +166,5 @@ namespace Phantasma.Neo.Core
         {
             return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256r1);
         }
-
-        public bool IsValidSwapKey()
-        {
-            var transposedAddress = new Address(this.PublicKey);
-
-            if (!transposedAddress.IsUser)
-            {
-                return false;
-            }
-
-            var msg = "Checking swaps!";
-            var payload = Encoding.UTF8.GetBytes(msg);
-            var neoSig = ECDsaSignature.Generate(this, payload, ECDsaCurve.Secp256r1);
-
-            var validateNeoSig = neoSig.Verify(payload, transposedAddress);
-            return validateNeoSig;
-        }
-
     }
 }

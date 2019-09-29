@@ -45,9 +45,13 @@ namespace Phantasma.Cryptography.ECC
                     continue;
                 }
 
-                var pubKeyBytes = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, address.PublicKey);
-                //var pubKey = ECC.ECPoint.DecodePoint(pubKeyBytes, Curve);
-                if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKeyBytes))
+                var pubKey = address.ToByteArray().Skip(1).ToArray();
+                if (pubKey[0] != 2 && pubKey[0] != 3)
+                {
+                    throw new System.Exception("invalid ECDsa public key");
+                }
+
+                if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKey))
                 {
                     return true;
                 }
@@ -72,10 +76,12 @@ namespace Phantasma.Cryptography.ECC
         {
             Throw.If(curve != ECDsaCurve.Secp256r1, "curve support not implemented for " + curve);
 
-            var pubKeyBytes = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, keypair.PublicKey);
-            var point = ECPoint.DecodePoint(pubKeyBytes, ECCurve.Secp256r1);
-            var pubKey = point.EncodePoint(false).Skip(1).ToArray();
-            var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, pubKey);
+            if (keypair.PublicKey.Length != 33)
+            {
+                throw new System.Exception("public key must be 33 bytes");
+            }
+
+            var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey);
             return new ECDsaSignature(signature, curve);
         }
     }

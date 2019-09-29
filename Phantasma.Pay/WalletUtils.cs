@@ -6,7 +6,8 @@ namespace Phantasma.Pay
 {
     public static class WalletUtils
     {
-        public static void DecodePlatformAndAddress(Address source, out string platform, out string address)
+        /*
+        public static void DecodePlatformAndAddress(Address source, out byte platformID, out string address)
         {
             byte[] bytes;
 
@@ -21,24 +22,35 @@ namespace Phantasma.Pay
                 case EthereumWallet.EthereumPlatform:
                     address = EthereumWallet.DecodeAddress(source);
                     break;
-
+                    
                 default:
                     throw new NotImplementedException($"cannot decode addresses for {platform} chain");
             }
-        }
+        }*/
 
-        public static Address EncodeAddress(string source, string chainName)
+        /* public static Address EncodeAddress(string source, string chainName)
+         {
+             switch (chainName)
+             {
+                 case NeoWallet.NeoPlatform:
+                     return NeoWallet.EncodeAddress(source);
+
+                 case EthereumWallet.EthereumPlatform:
+                     return NeoWallet.EncodeAddress(source);
+
+                 default:
+                     throw new NotImplementedException($"cannot encode addresses for {chainName} chain");
+             }
+         }*/
+
+        public static string GetPlatformByID(byte platformID)
         {
-            switch (chainName)
+            switch (platformID)
             {
-                case NeoWallet.NeoPlatform:
-                    return NeoWallet.EncodeAddress(source);
-
-                case EthereumWallet.EthereumPlatform:
-                    return NeoWallet.EncodeAddress(source);
-
-                default:
-                    throw new NotImplementedException($"cannot encode addresses for {chainName} chain");
+                case 0: return PhantasmaWallet.PhantasmaPlatform;
+                case 1: return NeoWallet.NeoPlatform;
+                case 2: return EthereumWallet.EthereumPlatform;
+                default:  throw new NotImplementedException();
             }
         }
     }

@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Phantasma.Pay.Chains
 {
-    public class EthereumWallet: CryptoWallet
+    public class EthereumWallet : CryptoWallet
     {
         public const string EthereumPlatform = "ethereum";
 
@@ -55,19 +55,20 @@ namespace Phantasma.Pay.Chains
             return "0x" + Base16.Encode(kak.Skip(12).ToArray());
         }
 
-        public static Address EncodeAddress(string addressText)
-        {
-            Throw.If(!IsValidAddress(addressText), "invalid ethereum address");
-            var input = addressText.Substring(2);
-            var bytes = Base16.Decode(input);
-            return Cryptography.Address.EncodeInterop(EthereumPlatform, bytes);
-        }
+        /* public static Address EncodeAddress(string addressText)
+         {
+             Throw.If(!IsValidAddress(addressText), "invalid ethereum address");
+             var input = addressText.Substring(2);
+             var bytes = Base16.Decode(input);
+             return Cryptography.Address.EncodeInterop(EthereumPlatform, bytes);
+         }*/
 
         private static bool IsValidAddress(string addressText)
         {
             return addressText.StartsWith("0x") && addressText.Length == 42;
         }
 
+        /*
         public static string DecodeAddress(Address address)
         {
             if (!address.IsInterop)
@@ -85,7 +86,7 @@ namespace Phantasma.Pay.Chains
             }
 
             return $"0x{Base16.Encode(data)}";
-        }
+        }*/
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {

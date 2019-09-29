@@ -31,15 +31,6 @@ namespace Phantasma.Simulator
         public byte C;
     }
 
-    public struct SimulatorChainSwap
-    {
-        public Hash hash;
-        public string platformName;
-        public string sourceAddress;
-        public string symbol;
-        public decimal amount;
-    }
-
     // TODO this should be moved to a better place, refactored or even just deleted if no longer useful
     public class NexusSimulator
     {
@@ -110,22 +101,24 @@ namespace Phantasma.Simulator
             var neoText = Phantasma.Neo.Core.NeoKeys.FromWIF(neoKeys.ToWIF()).address;
             var neoAddress = Phantasma.Pay.Chains.NeoWallet.EncodeAddress(neoText);
 
+            /*
             var ethPlatform = Pay.Chains.EthereumWallet.EthereumPlatform;
             var ethKeys = InteropUtils.GenerateInteropKeys(_owner, ethPlatform);
             var ethText = Phantasma.Ethereum.EthereumKey.FromWIF(ethKeys.ToWIF()).address;
             var ethAddress = Phantasma.Pay.Chains.EthereumWallet.EncodeAddress(ethText);
+            */
 
             BeginBlock();
             
             GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.CreatePlatform", _owner.Address, neoAddress, "GAS").
-                CallInterop("Runtime.CreatePlatform", _owner.Address, ethAddress, "ETH").
+                CallInterop("Runtime.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
+                //CallInterop("Runtime.CreatePlatform", _owner.Address, ethKeys.PublicKey, ethPlatform, "ETH").
             SpendGas(_owner.Address).EndScript());
 
             GenerateToken(_owner, "NEO", "NEO", neoPlatform, Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
             GenerateToken(_owner, "GAS", "GAS", neoPlatform, Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.External);
-            GenerateToken(_owner, "ETH", "Ethereum", ethPlatform, Hash.FromString("ETH"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
-            GenerateToken(_owner, "DAI", "Dai Stablecoin", ethPlatform, Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
+            //GenerateToken(_owner, "ETH", "Ethereum", ethPlatform, Hash.FromString("ETH"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
+            //GenerateToken(_owner, "DAI", "Dai Stablecoin", ethPlatform, Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
             EndBlock();
@@ -359,7 +352,7 @@ namespace Phantasma.Simulator
             return Enumerable.Empty<Block>();
         }
 
-        private Transaction MakeTransaction(IEnumerable<PhantasmaKeys> signees, ProofOfWork pow, Chain chain, byte[] script)
+        private Transaction MakeTransaction(IEnumerable<IKeyPair> signees, ProofOfWork pow, Chain chain, byte[] script)
         {
             if (!blockOpen)
             {
@@ -377,7 +370,7 @@ namespace Phantasma.Simulator
 
             tx.Mine((int)pow);
 
-            foreach (PhantasmaKeys kp in signees)
+            foreach (var kp in signees)
             {
                 tx.Sign(kp);
             }
@@ -388,23 +381,23 @@ namespace Phantasma.Simulator
 
             foreach (var signer in signees)
             {
-                usedAddresses.Add(signer.Address);
+                usedAddresses.Add(Address.FromKey(signer));
             }
 
             return tx;
         }
 
-        private Transaction MakeTransaction(PhantasmaKeys source, ProofOfWork pow, Chain chain, byte[] script)
+        private Transaction MakeTransaction(IKeyPair source, ProofOfWork pow, Chain chain, byte[] script)
         {
-            return MakeTransaction(new PhantasmaKeys[] { source }, pow, chain, script);
+            return MakeTransaction(new IKeyPair[] { source }, pow, chain, script);
         }
 
-        public Transaction GenerateCustomTransaction(PhantasmaKeys owner, ProofOfWork pow, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(IKeyPair owner, ProofOfWork pow, Func<byte[]> scriptGenerator)
         {
             return GenerateCustomTransaction(owner, pow, Nexus.RootChain, scriptGenerator);
         }
 
-        public Transaction GenerateCustomTransaction(PhantasmaKeys owner, ProofOfWork pow, Chain chain, Func<byte[]> scriptGenerator)
+        public Transaction GenerateCustomTransaction(IKeyPair owner, ProofOfWork pow, Chain chain, Func<byte[]> scriptGenerator)
         {
             var script = scriptGenerator();
 
@@ -429,7 +422,7 @@ namespace Phantasma.Simulator
             if (tokenScript == null)
             {
                 // small script that restricts minting of tokens to transactions where the owner is a witness
-                var addressStr = Base16.Encode(owner.Address.PublicKey);
+                var addressStr = Base16.Encode(owner.Address.ToByteArray());
                 var scriptString = new string[] {
                 $"alias r1, $triggerMint",
                 $"alias r2, $currentTrigger",
@@ -595,34 +588,6 @@ namespace Phantasma.Simulator
                 EndScript();
 
             var tx = MakeTransaction(signees, ProofOfWork.None, chain, script);
-            return tx;
-        }
-
-        public Transaction GenerateLoanTransfer(PhantasmaKeys source, Address dest, Chain chain, string tokenSymbol, BigInteger amount, List<PhantasmaKeys> signees = null)
-        {
-            signees = signees ?? new List<PhantasmaKeys>();
-            var found = false;
-            foreach (var signer in signees)
-            {
-                if (signer.Address == source.Address)
-                {
-                    found = true;
-                }
-            }
-
-            if (!found)
-            {
-                signees.Add(source);
-            }
-
-            var script = ScriptUtils.BeginScript().
-                LoanGas(source.Address, MinimumFee, 9999).
-                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.TransferTokens", source.Address, dest, tokenSymbol, amount).
-                SpendGas(source.Address).
-                EndScript();
-
-            var tx = MakeTransaction(signees, ProofOfWork.Moderate, chain, script);
             return tx;
         }
 

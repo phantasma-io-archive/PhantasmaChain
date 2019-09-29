@@ -6,7 +6,8 @@ namespace Phantasma.Domain
     {
         string Name { get; }
         string Symbol { get; } // for fuel
-        Address Address { get; }
+        Address InteropAddress { get; }
+        string ExternalAddress { get; }
     }
 
     public struct InteropBlock

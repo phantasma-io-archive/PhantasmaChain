@@ -117,11 +117,12 @@ namespace Phantasma.Neo.Core
             return new Witness() { invocationScript = invocationScript, verificationScript = verificationScript };
         }
 
-        public byte[] ExtractPublicKey()
+        public Phantasma.Cryptography.Address ExtractAddress()
         {
-            var bytes = new byte[32];
-            Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 2, bytes, 0, bytes.Length);
-            return bytes;
+            var bytes = new byte[34];
+            bytes[0] = (byte)Phantasma.Cryptography.AddressKind.User;
+            Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 1, bytes, 1, 33);
+            return Phantasma.Cryptography.Address.Unserialize(bytes);
         }
     }
 

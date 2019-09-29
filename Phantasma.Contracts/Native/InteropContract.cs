@@ -47,100 +47,11 @@ namespace Phantasma.Contracts.Native
         {
         }
 
-        public void RegisterLink(Address from, Address target)
-        {
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(from.IsUser, "source address must be user address");
-            Runtime.Expect(target.IsInterop, "target address must be interop address");
-
-            string platformName;
-            byte[] data;
-            target.DecodeInterop(out platformName, out data, 0);
-            Runtime.Expect(Runtime.PlatformExists(platformName), "unsupported chain");
-
-            var list = _links.Get<Address, StorageList>(from);
-
-            var count = list.Count();
-            int index = -1;
-
-            for (int i = 0; i < count; i++)
-            {
-                var address = list.Get<Address>(i);
-
-                string otherChainName;
-                address.DecodeInterop(out otherChainName, out data, 0);
-
-                if (otherChainName ==  platformName)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            if (index >= 0)
-            {
-                var previous = list.Get<Address>(index);
-                _reverseMap.Remove<Address>(previous);
-                list.Replace<Address>(index, target);
-            }
-            else
-            {
-                list.Add(target);
-            }
-
-            _reverseMap.Set<Address, Address>(target, from);
-
-            Runtime.Notify(EventKind.AddressLink, from, target);
-        }
-
-        public Address[] GetLinks(Address from)
-        {
-            var list = _links.Get<Address, StorageList>(from);
-
-            return list.All<Address>();
-        }
-
-        public Address GetLink(Address from, string platformName)
-        {
-            if (DomainSettings.PlatformName.Equals(platformName, StringComparison.OrdinalIgnoreCase))
-            {
-                Runtime.Expect(from.IsInterop, "must be interop address");
-                if (_reverseMap.ContainsKey<Address>(from))
-                {
-                    return _reverseMap.Get<Address, Address>(from);
-                }
-
-                return Address.Null;
-            }
-
-            Runtime.Expect(from.IsUser, "must be user address");
-            Runtime.Expect(Runtime.PlatformExists(platformName), "unsupported chain");
-
-            var list = _links.Get<Address, StorageList>(from);
-            var count = list.Count();
-
-            for (int i = 0; i < count; i++)
-            {
-                var address = list.Get<Address>(i);
-
-                string otherPlatform;
-                byte[] data;
-                address.DecodeInterop(out otherPlatform, out data, 0);
-
-                if (otherPlatform == platformName)
-                {
-                    return address;
-                }
-            }
-
-            return Address.Null;
-        }
-
         public void SettleTransaction(Address from, string platform, Hash hash)
         {
             Runtime.Expect(platform != DomainSettings.PlatformName, "must be external platform");
             Runtime.Expect(Runtime.PlatformExists(platform), "unsupported platform");
-            var platformInfo = Runtime.GetPlatform(platform);
+            var platformInfo = Runtime.GetPlatformByName(platform);
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "must be user address");
@@ -157,7 +68,7 @@ namespace Phantasma.Contracts.Native
 
             foreach (var evt in interopTx.Events)
             {
-                if (evt.Kind == EventKind.TokenReceive && evt.Address == platformInfo.Address)
+                if (evt.Kind == EventKind.TokenReceive && evt.Address == platformInfo.InteropAddress)
                 {
                     Runtime.Expect(!evt.Address.IsNull, "invalid source address");
 
@@ -188,15 +99,9 @@ namespace Phantasma.Contracts.Native
                     }
 
                     Runtime.Expect(found, "destination address not found in transaction events");
-
-                    if (destination.IsInterop)
-                    {
-                        destination = GetLink(destination, DomainSettings.PlatformName);
-                    }
-
                     Runtime.Expect(destination.IsUser, "invalid destination address");
                     
-                    Runtime.TransferTokens(transfer.symbol, platformInfo.Address, destination, transfer.value);
+                    Runtime.TransferTokens(transfer.symbol, platformInfo.InteropAddress, destination, transfer.value);
 
                     swapCount++;
                     break;
@@ -262,15 +167,15 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.External), "transfer token must be external");
             Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "transfer token must be fungible");
 
-            string platform;
+            byte platformID;
             byte[] dummy;
-            to.DecodeInterop(out platform, out dummy, 0);
-            Runtime.Expect(platform != DomainSettings.PlatformName, "must be external platform");
-            Runtime.Expect(Runtime.PlatformExists(platform), "invalid platform");
-            var platformInfo = Runtime.GetPlatform(platform);
-            Runtime.Expect(to != platformInfo.Address, "invalid target address");
+            to.DecodeInterop(out platformID, out dummy);
+            Runtime.Expect(platformID > 0, "invalid platform ID");
+            var platform = Runtime.GetPlatformByIndex(platformID);
+            Runtime.Expect(platform != null, "invalid platform");
+            Runtime.Expect(to != platform.InteropAddress, "invalid target address");
 
-            var feeSymbol = platformInfo.Symbol;
+            var feeSymbol = platform.Symbol;
             Runtime.Expect(Runtime.TokenExists(feeSymbol), "invalid fee token");
 
             var feeTokenInfo = this.Runtime.GetToken(feeSymbol);
@@ -282,7 +187,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
-            Runtime.TransferTokens(symbol, from, platformInfo.Address, amount);
+            Runtime.TransferTokens(symbol, from, platform.InteropAddress, amount);
 
             var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
 

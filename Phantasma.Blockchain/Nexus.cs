@@ -521,9 +521,9 @@ namespace Phantasma.Blockchain
             this.Chains = chainList.ToArray();
 
             // add address and name mapping 
-            storage.Put(ChainNameMapKey + chain.Name, chain.Address.PublicKey);
+            storage.Put(ChainNameMapKey + chain.Name, chain.Address.ToByteArray());
             storage.Put(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
-            storage.Put(ChainOwnerKey + chain.Name, owner.PublicKey);
+            storage.Put(ChainOwnerKey + chain.Name, owner.ToByteArray());
 
             if (!string.IsNullOrEmpty(parentChainName))
             {
@@ -600,7 +600,7 @@ namespace Phantasma.Blockchain
             if (RootStorage.Has(key))
             {
                 var bytes = RootStorage.Get(key);
-                var owner = new Address(bytes);
+                var owner = Address.Unserialize(bytes);
                 return owner;
             }
 
@@ -1332,8 +1332,6 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, NexusProtocolVersionTag, 1, 1, 1000),
                 ValueCreateTx(owner, ValidatorContract.ValidatorCountTag, 1, 1, 100),
                 ValueCreateTx(owner, ValidatorContract.ValidatorRotationTimeTag, 120, 30, 3600),
-                ValueCreateTx(owner, GasContract.MaxLoanAmountTag, new BigInteger(10000) * 9999, 9999, new BigInteger(10000)*9999),
-                ValueCreateTx(owner, GasContract.MaxLenderCountTag, 10, 1, 100),
                 ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
                 ValueCreateTx(owner, ConsensusContract.MaxEntriesPerPollTag, 10, 2, 1000),
                 ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
@@ -1626,23 +1624,25 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region PLATFORMS
-        internal bool CreatePlatform(StorageContext storage, Address address, string name, string fuelSymbol)
+        internal int CreatePlatform(StorageContext storage, string externalAddress, Address interopAddress, string name, string fuelSymbol)
         {
             // check if already exists something with that name
             if (PlatformExists(name))
             {
-                return false;
+                return -1;
             }
 
-            var entry = new PlatformInfo(name, fuelSymbol, address);
+            var platformList = this.Platforms.ToList();
+            var platformID = (byte)(1 + platformList.Count);
+
+            var entry = new PlatformInfo(name, fuelSymbol, interopAddress, externalAddress);
 
             // add to persistent list of tokens
-            var platformList = this.Platforms.ToList();
             platformList.Add(name);
             this.Platforms = platformList.ToArray();
 
             EditPlatform(name, entry);
-            return true;
+            return platformID;
         }
 
         private string GetPlatformInfoKey(string name)
@@ -1724,7 +1724,7 @@ namespace Phantasma.Blockchain
             foreach (var platform in platforms)
             {
                 var info = GetPlatformInfo(platform);
-                if (info.Address == address)
+                if (info.InteropAddress == address)
                 {
                     return true;
                 }

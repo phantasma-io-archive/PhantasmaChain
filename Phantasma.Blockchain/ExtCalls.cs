@@ -77,8 +77,8 @@ namespace Phantasma.Blockchain
         {
             return Constructor_Object<byte[], Address>(vm, bytes =>
             {
-                Throw.If(bytes == null || bytes.Length != Address.PublicKeyLength, "invalid key");
-                return new Address(bytes);
+                Throw.If(bytes == null || bytes.Length != Address.LengthInBytes, "invalid key");
+                return Address.Unserialize(bytes);
             });
         }
 
@@ -691,13 +691,26 @@ namespace Phantasma.Blockchain
             VMObject temp;
 
             var source = PopAddress(Runtime);
-            var target = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            var name = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for pubaddress");
+            var externalAddress = temp.AsString();
+
+            var interopAddress = PopAddress(Runtime);
 
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            Runtime.CreatePlatform(source, target, symbol);
+            var target = Runtime.CreatePlatform(source, name, externalAddress, interopAddress, symbol);
+
+            var result = new VMObject();
+            result.SetValue(target);
+            Runtime.Stack.Push(result);
 
             return ExecutionState.Running;
         }

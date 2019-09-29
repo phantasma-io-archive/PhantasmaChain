@@ -247,8 +247,8 @@ namespace Phantasma.Contracts.Native
             {
                 for (int i = 0; i < choices.Length; i++)
                 {
-                    Runtime.Expect(choices[i].value.Length == Address.PublicKeyLength, "election choices must be public addresses");
-                    var address = new Address(choices[i].value);
+                    Runtime.Expect(choices[i].value.Length == Address.LengthInBytes, "election choices must be public addresses");
+                    var address = Address.Unserialize(choices[i].value);
                     Runtime.Expect(Runtime.IsKnownValidator(address), "election choice must be active or waiting validator");
                 }
             }

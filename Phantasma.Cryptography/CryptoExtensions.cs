@@ -187,17 +187,54 @@ namespace Phantasma.Cryptography
             return concatSignature;
         }
 
+        private static ECPoint ECPointDecode(byte[] pubKey)
+        {
+            byte[] bytes;
+
+            if (pubKey.Length == 32)
+            {
+                pubKey = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, pubKey.Skip(1).ToArray());
+            }
+
+            if (pubKey.Length == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03))
+            {
+                try
+                {
+                    bytes = ECC.ECPoint.DecodePoint(pubKey, ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                }
+                catch
+                {
+                    throw new ArgumentException();
+                }
+            }
+            else if (pubKey.Length == 65 && pubKey[0] == 0x04)
+            {
+                bytes = pubKey.Skip(1).ToArray();
+            }
+            else 
+            if (pubKey.Length != 64)
+            {
+                throw new ArgumentException();
+            }
+            else
+            {
+                bytes = pubKey;
+            }
+
+            return new ECPoint
+            {
+                X = bytes.Take(32).ToArray(),
+                Y = bytes.Skip(32).ToArray()
+            };
+        }
+
         public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey)
         {
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
                 D = prikey,
-                Q = new ECPoint
-                {
-                    X = pubkey.Take(32).ToArray(),
-                    Y = pubkey.Skip(32).ToArray()
-                }
+                Q = ECPointDecode(pubkey)
             }))
             {
                 return ecdsa.SignData(message, HashAlgorithmName.SHA256);
@@ -206,25 +243,6 @@ namespace Phantasma.Cryptography
 
         public static bool VerifySignatureECDsa(byte[] message, byte[] signature, byte[] pubkey)
         {
-            if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
-            {
-                try
-                {
-                    pubkey = Phantasma.Cryptography.ECC.ECPoint.DecodePoint(pubkey, Phantasma.Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
-                }
-                catch
-                {
-                    return false;
-                }
-            }
-            else if (pubkey.Length == 65 && pubkey[0] == 0x04)
-            {
-                pubkey = pubkey.Skip(1).ToArray();
-            }
-            else if (pubkey.Length != 64)
-            {
-                throw new ArgumentException();
-            }
 #if NET461
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
@@ -237,11 +255,7 @@ namespace Phantasma.Cryptography
             using (var ecdsa = ECDsa.Create(new ECParameters
             {
                 Curve = ECCurve.NamedCurves.nistP256,
-                Q = new ECPoint
-                {
-                    X = pubkey.Take(32).ToArray(),
-                    Y = pubkey.Skip(32).ToArray()
-                }
+                Q = ECPointDecode(pubkey)
             }))
             {
                 return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);

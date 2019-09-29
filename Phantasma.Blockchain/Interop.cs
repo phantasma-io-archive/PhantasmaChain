@@ -11,27 +11,31 @@ namespace Phantasma.Blockchain
     {
         public string Name { get; private set; }
         public string Symbol { get; private set; } // for fuel
-        public Address Address { get; private set; }
+        public Address InteropAddress { get; private set; }
+        public string ExternalAddress { get; private set; }
 
-        public PlatformInfo(string name, string symbol, Address address) : this()
+        public PlatformInfo(string name, string symbol, Address interopAddress, string externalAddres) : this()
         {
             Name = name;
             Symbol = symbol;
-            Address = address;
+            InteropAddress = interopAddress;
+            ExternalAddress = externalAddres;
         }
 
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(Name);
             writer.WriteVarString(Symbol);
-            writer.WriteAddress(Address);
+            writer.WriteAddress(InteropAddress);
+            writer.WriteVarString(ExternalAddress);
         }
 
         public void UnserializeData(BinaryReader reader)
         {
             this.Name = reader.ReadVarString();
             this.Symbol = reader.ReadVarString();
-            this.Address = reader.ReadAddress();
+            this.InteropAddress = reader.ReadAddress();
+            this.ExternalAddress = reader.ReadVarString();
         }
     }
 

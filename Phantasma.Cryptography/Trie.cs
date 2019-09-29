@@ -10,7 +10,7 @@ namespace Phantasma.Cryptography
         private int min;
         private int max;
 
-        private const int MaxLength = Address.PublicKeyLength;
+        private const int MaxLength = Address.LengthInBytes;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int LookUp(char c)

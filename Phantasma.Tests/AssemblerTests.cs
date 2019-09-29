@@ -51,7 +51,7 @@ namespace Phantasma.Tests
             string[] scriptString;
 
             var owner = PhantasmaKeys.Generate();
-            var addressStr = Base16.Encode(owner.Address.PublicKey);
+            var addressStr = Base16.Encode(owner.Address.ToByteArray());
 
             var simulator = new NexusSimulator(owner, 1234);
 
@@ -105,7 +105,7 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
-            var addressStr = Base16.Encode(owner.Address.PublicKey);
+            var addressStr = Base16.Encode(owner.Address.ToByteArray());
 
             scriptString = new string[]
             {
@@ -181,7 +181,7 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
-            var addressStr = Base16.Encode(owner.Address.PublicKey);
+            var addressStr = Base16.Encode(owner.Address.ToByteArray());
 
             scriptString = new string[]
             {
@@ -362,7 +362,7 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(owner, 1234);
 
             string message = "customEvent";
-            var addressStr = Base16.Encode(owner.Address.PublicKey);
+            var addressStr = Base16.Encode(owner.Address.ToByteArray());
 
             scriptString = new string[]
             {
@@ -2244,7 +2244,7 @@ namespace Phantasma.Tests
                 address = randomKey.Address
             };
 
-            var hexStr = Base16.Encode(demoValue.address.PublicKey);
+            var hexStr = Base16.Encode(demoValue.address.ToByteArray());
 
             scriptString = new string[]
             {
@@ -2282,7 +2282,7 @@ namespace Phantasma.Tests
 
                     try
                     {
-                        Address obj = new Address((byte[])input);
+                        var obj = Address.Unserialize((byte[])input);
                         var tempObj = new VMObject();
                         tempObj.SetValue(obj);
                         _vm.Stack.Push(tempObj);

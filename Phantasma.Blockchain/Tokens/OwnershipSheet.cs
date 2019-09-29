@@ -20,7 +20,7 @@ namespace Phantasma.Blockchain.Tokens
 
         private byte[] GetKeyForList(Address address)
         {
-            return ByteArrayUtils.ConcatBytes(_prefixItems, address.PublicKey);
+            return ByteArrayUtils.ConcatBytes(_prefixItems, address.ToByteArray());
         }
 
         private byte[] GetKeyForOwner(BigInteger tokenID)

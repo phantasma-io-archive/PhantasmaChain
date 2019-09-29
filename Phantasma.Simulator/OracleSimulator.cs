@@ -3,11 +3,19 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Blockchain;
-using Phantasma.Pay;
 using Phantasma.Domain;
 
 namespace Phantasma.Simulator
 {
+    public struct SimulatorChainSwap
+    {
+        public Hash hash;
+        public string platformName;
+        public Address sourceAddress;
+        public string symbol;
+        public decimal amount;
+    }
+
     public class OracleSimulator : OracleReader
     {
         private static List<SimulatorChainSwap> _swaps = new List<SimulatorChainSwap>();
@@ -22,14 +30,20 @@ namespace Phantasma.Simulator
             _swaps.Clear();
         }
 
-        public static Hash SimulateExternalTransaction(string platformName, string address, string symbol, decimal amount)
+        public static Hash SimulateExternalTransaction(string platformName, byte platformID, byte[] publicKey, string symbol, decimal amount)
+        {
+            var sourceAddress = Address.FromInterop(platformID, publicKey);
+            return SimulateExternalTransaction(platformName, sourceAddress, symbol, amount);
+        }
+
+        public static Hash SimulateExternalTransaction(string platformName, Address sourceAddress, string symbol, decimal amount)
         {
             var swap = new SimulatorChainSwap()
             {
-                hash = Hash.FromString(platformName + address + symbol + amount),
+                hash = Hash.FromString(platformName + sourceAddress.Text + symbol + amount),
                 symbol = symbol,
                 platformName = platformName,
-                sourceAddress = address,
+                sourceAddress = sourceAddress,
                 amount = amount
             };
 
@@ -53,25 +67,21 @@ namespace Phantasma.Simulator
             if (swap.platformName == platformName && chainName == DomainSettings.RootChainName && swap.hash == hash)
             {
                 var info = Nexus.GetPlatformInfo(platformName);
-                var platformAddress = info.Address;
+                var platformAddress = info.InteropAddress;
 
-                    string destAddress;
-                    string temp;
-                    WalletUtils.DecodePlatformAndAddress(info.Address, out temp, out destAddress);
+                var token = Nexus.GetTokenInfo(swap.symbol);
+                var amount = UnitConversion.ToBigInteger(swap.amount, token.Decimals);
 
-                    var token = Nexus.GetTokenInfo(swap.symbol);
-                    var amount = UnitConversion.ToBigInteger(swap.amount, token.Decimals);
-
-                    return new InteropTransaction()
+                return new InteropTransaction()
+                {
+                    Platform = platformName,
+                    Hash = hash,
+                    Events = new Event[]
                     {
-                        Platform = platformName,
-                        Hash = hash,
-                        Events = new Event[]
-                        {
-                            new Event(EventKind.TokenSend, WalletUtils.EncodeAddress(swap.sourceAddress, platformName), "swap", Serialization.Serialize(new TokenEventData(swap.symbol, amount, platformAddress))),
-                            new Event(EventKind.TokenReceive, WalletUtils.EncodeAddress(destAddress, platformName), "swap", Serialization.Serialize(new TokenEventData(swap.symbol, amount, platformAddress)))
-                        }
-                    };
+                        new Event(EventKind.TokenSend, swap.sourceAddress, "swap", Serialization.Serialize(new TokenEventData(swap.symbol, amount, platformAddress))),
+                        new Event(EventKind.TokenReceive, platformAddress, "swap", Serialization.Serialize(new TokenEventData(swap.symbol, amount, platformAddress)))
+                    }
+                };
             }
 
             throw new OracleException($"unknown transaction for {platformName}.{chainName} : {hash}");

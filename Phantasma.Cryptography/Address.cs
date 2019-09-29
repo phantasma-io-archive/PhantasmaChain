@@ -11,52 +11,45 @@ using System.Text;
 
 namespace Phantasma.Cryptography
 {
+    public enum AddressKind
+    {
+        Null = 0,
+        User = 1,
+        System = 2,
+        Interop = 3,
+    }
+
     public struct Address: ISerializable
     {
         public static readonly Address Null = new Address(NullPublicKey);
 
-        private static byte[] NullPublicKey => new byte[PublicKeyLength];
+        private static byte[] NullPublicKey => new byte[LengthInBytes];
 
-        private byte[] _publicKey;
-        public byte[] PublicKey
-        {
-            get
-            {
-                if (_publicKey == null)
-                {
-                    return NullPublicKey;
-                }
+        private byte[] _bytes;
 
-                return _publicKey;
-            }
-
-            private set
-            {
-                _publicKey = value;
-            }
-        }
-
-        public const int PublicKeyLength = 32;
+        public const int LengthInBytes = 34;
         public const int MaxPlatformNameLength = 10;
 
-        public bool IsSystem => IsNull || (_publicKey != null && _publicKey.Length > 0 && _publicKey[0] == SystemOpcode);
+        public AddressKind Kind => _bytes.Length > 0 ? (AddressKind)_bytes[0] : AddressKind.Null;
 
-        public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == InteropOpcode;
+        public bool IsSystem => Kind == AddressKind.Null || Kind == AddressKind.System;
 
-        public bool IsUser => !IsNull && !IsSystem && !IsInterop;
+        public bool IsInterop => Kind == AddressKind.Interop;
+
+        public bool IsUser => Kind == AddressKind.User;
 
         public bool IsNull
         {
             get
             {
-                if (_publicKey == null)
+                if (_bytes == null)
                 {
                     return true;
                 }
 
-                for (int i = 0; i < _publicKey.Length; i++)
+                for (int i = 0; i < _bytes.Length; i++)
                 {
-                    if (_publicKey[i] != 0)
+                    if (_bytes[i] != 0)
                     {
                         return false;
                     }
@@ -65,10 +58,6 @@ namespace Phantasma.Cryptography
             }
         }
 
-        private const byte UserOpcode = 75;
-        private const byte SystemOpcode = 85;
-        private const byte InteropOpcode = 102;
-
         private string _text;
         public string Text
         {
@@ -76,37 +65,59 @@ namespace Phantasma.Cryptography
             {
                 if (string.IsNullOrEmpty(_text))
                 {
-                    byte opcode;
+                    char prefix;
 
-                    if (IsSystem)
+                    switch (Kind)
                     {
-                        opcode = SystemOpcode;
-                    }
-                    else
-                    if (IsInterop)
-                    {
-                        opcode = InteropOpcode;
-                    }
-                    else
-                    {
-                        opcode = UserOpcode;
-                    }
+                        case AddressKind.User: prefix = 'P'; break;
+                        case AddressKind.Interop: prefix = 'X'; break;
+                        default: prefix = 'S'; break;
 
-                    var bytes = ByteArrayUtils.ConcatBytes(new byte[] { opcode }, PublicKey);
-                    _text = Base58.Encode(bytes);
+                    }
+                    _text =  prefix + Base58.Encode(_bytes.Skip(1).ToArray());
                 }
 
                 return _text;
             }
         }
 
-        public Address(byte[] publicKey)
+        private Address(byte[] publicKey)
         {
             Throw.IfNull(publicKey, "publicKey");
-            Throw.If(publicKey.Length != PublicKeyLength, $"publicKey length must be {PublicKeyLength}");
-            _publicKey = new byte[PublicKeyLength];
-            Array.Copy(publicKey, this._publicKey, PublicKeyLength);
+            if (publicKey.Length != LengthInBytes)
+            {
+                throw new Exception($"publicKey length must be {LengthInBytes}");
+            }
+            _bytes = new byte[LengthInBytes];
+            Array.Copy(publicKey, this._bytes, LengthInBytes);
             this._text = null;
+        }
+
+        public static Address Unserialize(byte[] bytes)
+        {
+            return new Address(bytes);
+        }
+
+        public static Address FromKey(IKeyPair key)
+        {
+            var bytes = new byte[LengthInBytes];
+            bytes[0] = (byte)AddressKind.User;
+
+            if (key.PublicKey.Length == 32)
+            {
+                ByteArrayUtils.CopyBytes(key.PublicKey, 0, bytes, 2, 32);
+            }
+            else
+            if (key.PublicKey.Length == 33)
+            {
+                ByteArrayUtils.CopyBytes(key.PublicKey, 0, bytes, 1, 33);
+            }
+            else
+            {
+                throw new Exception("Invalid public key length");
+            }
+
+            return new Address(bytes);
         }
 
         public static Address FromHash(string str)
@@ -115,28 +126,28 @@ namespace Phantasma.Cryptography
             return FromHash(bytes);
         }
 
-        public static Address FromHash(byte[] bytes)
+        public static Address FromHash(byte[] input)
         {
-            var hash = CryptoExtensions.SHA256(bytes);
-            hash[0] = SystemOpcode;
-            return new Address(hash);
+            var hash = CryptoExtensions.SHA256(input);
+            var bytes = ByteArrayUtils.ConcatBytes(new byte[] { (byte)AddressKind.System, 0 }, hash);
+            return new Address(bytes);
         }
 
         public static bool operator ==(Address A, Address B)
         {
-            if (A._publicKey == null)
+            if (A._bytes == null)
             {
-                return B._publicKey == null;
+                return B._bytes == null;
             }
 
-            if (B._publicKey == null || A._publicKey.Length != B._publicKey.Length)
+            if (B._bytes == null || A._bytes.Length != B._bytes.Length)
             {
                 return false;
             }
 
-            for (int i = 0; i < A._publicKey.Length; i++)
+            for (int i = 0; i < A._bytes.Length; i++)
             {
-                if (A._publicKey[i] != B._publicKey[i])
+                if (A._bytes[i] != B._bytes[i])
                 {
                     return false;
                 }
@@ -146,19 +157,19 @@ namespace Phantasma.Cryptography
 
         public static bool operator !=(Address A, Address B)
         {
-            if (A._publicKey == null)
+            if (A._bytes == null)
             {
-                return B._publicKey != null;
+                return B._bytes != null;
             }
 
-            if (B._publicKey == null || A._publicKey.Length != B._publicKey.Length)
+            if (B._bytes == null || A._bytes.Length != B._bytes.Length)
             {
                 return true;
             }
 
-            for (int i = 0; i < A._publicKey.Length; i++)
+            for (int i = 0; i < A._bytes.Length; i++)
             {
-                if (A._publicKey[i] != B._publicKey[i])
+                if (A._bytes[i] != B._bytes[i])
                 {
                     return true;
                 }
@@ -185,17 +196,17 @@ namespace Phantasma.Cryptography
 
             var otherAddress = (Address)obj;
 
-            var thisKey = this.PublicKey;
-            var otherKey = otherAddress.PublicKey;
+            var thisBytes = this._bytes;
+            var otherBytes = otherAddress._bytes;
 
-            if (thisKey.Length != otherKey.Length) // failsafe, should never happen
+            if (thisBytes.Length != otherBytes.Length) // failsafe, should never happen
             {
                 return false;
             }
 
-            for (int i=0; i<thisKey.Length; i++)
+            for (int i=0; i<thisBytes.Length; i++)
             {
-                if (thisKey[i] != otherKey[i])
+                if (thisBytes[i] != otherBytes[i])
                 {
                     return false;
                 }
@@ -208,7 +219,7 @@ namespace Phantasma.Cryptography
         {
             unchecked
             {
-                return (int)Murmur32.Hash(PublicKey);
+                return (int)Murmur32.Hash(_bytes);
             }
         }
 
@@ -223,22 +234,16 @@ namespace Phantasma.Cryptography
             Throw.If(text.Length != 45, "Invalid address length");
 
             var bytes = Base58.Decode(text);
-            var opcode = bytes[0];
+            var kind = (AddressKind) bytes[0];
 
-            Throw.If(opcode != UserOpcode && opcode != SystemOpcode && opcode != InteropOpcode, "Invalid address opcode");
+            Throw.If(kind > AddressKind.Interop, "Invalid address opcode");
 
             return new Address(bytes.Skip(1).ToArray());
         }
 
-        public static Address FromScript(byte[] script)
-        {
-            var hash = script.SHA256();
-            return new Address(hash);
-        }
-
         public int GetSize()
         {
-            return PublicKeyLength;
+            return LengthInBytes;
         }
 
         public static bool IsValidAddress(string text)
@@ -256,85 +261,46 @@ namespace Phantasma.Cryptography
 
         public void SerializeData(BinaryWriter writer)
         {
-            writer.WriteByteArray(this._publicKey);
+            writer.WriteByteArray(this._bytes);
         }
 
         public void UnserializeData(BinaryReader reader)
         {
-            this._publicKey = reader.ReadByteArray();
+            this._bytes = reader.ReadByteArray();
             this._text = null;
         }
 
-        public void DecodeInterop(out string platformName, out byte[] data, int expectedDataLength)
+        public void DecodeInterop(out byte platformID, out byte[] publicKey)
         {
-            Throw.If(expectedDataLength < 0, "invalid data length");
-            Throw.If(expectedDataLength > 27, "data is too large");
-            Throw.If(!IsInterop, "must be an interop address");
- 
-            var sb = new StringBuilder();
-            int i = 1;
-            while (true)
-            {
-                if (i >= PublicKeyLength)
-                {
-                    throw new Exception("invalid interop address");
-                }
-
-                if (_publicKey[i] == InteropOpcode)
-                {
-                    break;
-                }
-
-                var ch = (char)_publicKey[i];
-                sb.Append(ch);
-                i++;
-            }
-
-            if (sb.Length == 0)
-            {
-                throw new Exception("invalid interop address");
-            }
-
-            i++;
-            platformName = sb.ToString();
-
-            if (expectedDataLength > 0)
-            {
-                data = new byte[expectedDataLength];
-                for (int n = 0; n < expectedDataLength; n++)
-                {
-                    data[n] = _publicKey[i + n];
-                }
-            }
-            else
-            {
-                data = null;
-            }
+            platformID = (byte)(1 + _bytes[0] - AddressKind.Interop);
+            publicKey = new byte[33];
+            ByteArrayUtils.CopyBytes(_bytes, 1, publicKey, 0, publicKey.Length);
         }
 
-        public static Address EncodeInterop(string platformName, byte[] data)
+        public static Address FromInterop(byte platformID, byte[] publicKey)
         {
-            Throw.If(string.IsNullOrEmpty(platformName), "platform name cant be null");
-            Throw.If(platformName.Length > MaxPlatformNameLength, "platform name is too big");
+            Throw.If(publicKey == null || publicKey.Length != 33, "public key is invalid");
+            Throw.If(platformID < 1, "invalid platform id");
 
-            var bytes = new byte[PublicKeyLength];
-            bytes[0] = InteropOpcode;
-            int i = 1;
-            foreach (var ch in platformName)
-            {
-                bytes[i] = (byte)ch;
-                i++;
-            }
-            bytes[i] = InteropOpcode;
-            i++;
-
-            foreach (var ch in data)
-            {
-                bytes[i] = (byte)ch;
-                i++;
-            }
-
+            var bytes = new byte[LengthInBytes];
+            bytes[0] = (byte)(AddressKind.Interop+platformID-1);
+            ByteArrayUtils.CopyBytes(publicKey, 0, bytes, 1, publicKey.Length);
             return new Address(bytes);
+        }
+
+        public byte[] ToByteArray()
+        {
+            var bytes = new byte[LengthInBytes];
+            if (_bytes != null)
+            {
+                if (_bytes.Length != LengthInBytes)
+                {
+                    throw new Exception("invalid address byte length");
+                }
+                ByteArrayUtils.CopyBytes(_bytes, 0, bytes, 0, _bytes.Length);
+            }
+
+            return bytes;
         }
     }
 }

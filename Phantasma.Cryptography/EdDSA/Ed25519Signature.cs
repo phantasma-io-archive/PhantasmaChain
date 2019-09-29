@@ -1,6 +1,7 @@
 ﻿using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Phantasma.Cryptography.EdDSA
 {
@@ -29,7 +30,8 @@ namespace Phantasma.Cryptography.EdDSA
                     continue;
                 }
 
-                if (Ed25519.Verify(this.Bytes, message, address.PublicKey))
+                var pubKey = address.ToByteArray().Skip(2).ToArray();
+                if (Ed25519.Verify(this.Bytes, message, pubKey))
                 {
                     return true;
                 }

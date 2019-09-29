@@ -612,8 +612,8 @@ namespace Phantasma.Tests
 
             var symbol = DomainSettings.StakingTokenSymbol;
 
-            var senderAddressStr = Base16.Encode(autoSender.Address.PublicKey);
-            var receivingAddressStr = Base16.Encode(receiver.Address.PublicKey);
+            var senderAddressStr = Base16.Encode(autoSender.Address.ToByteArray());
+            var receivingAddressStr = Base16.Encode(receiver.Address.ToByteArray());
 
             string[] scriptString = new string[]
             {

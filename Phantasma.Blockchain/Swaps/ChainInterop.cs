@@ -10,7 +10,6 @@ namespace Phantasma.Blockchain.Swaps
         Invalid,
         Pending,
         Sending,
-        Link,
         Settle,
         Resettle,
         Broker,

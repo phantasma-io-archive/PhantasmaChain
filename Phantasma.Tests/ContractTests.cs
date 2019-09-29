@@ -2014,7 +2014,7 @@ namespace Phantasma.Tests
                 "load r0 \"friends\"",
                 "ctx r0 r1",
 
-                $"load r0 0x{Base16.Encode( target.PublicKey)}",
+                $"load r0 0x{Base16.Encode(target.ToByteArray())}",
                 "push r0",
                 "extcall \"Address()\"",
 

@@ -8,6 +8,7 @@ using System;
 using static Phantasma.Contracts.Native.ExchangeOrderSide;
 using static Phantasma.Contracts.Native.ExchangeOrderType;
 using Phantasma.Domain;
+using System.Linq;
 
 namespace Phantasma.Contracts.Native
 {
@@ -531,7 +532,7 @@ namespace Phantasma.Contracts.Native
             };
 
             var msg = Serialization.Serialize(swap);
-            Runtime.Expect(Ed25519.Verify(signature, msg, seller.PublicKey), "invalid signature");
+            Runtime.Expect(Ed25519.Verify(signature, msg, seller.ToByteArray().Skip(2).ToArray()), "invalid signature");
 
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "invalid quote token");
             var quoteToken = Runtime.GetToken(quoteSymbol);
@@ -572,7 +573,7 @@ namespace Phantasma.Contracts.Native
             };
 
             var msg = Serialization.Serialize(swap);
-            Runtime.Expect(Ed25519.Verify(signature, msg, seller.PublicKey), "invalid signature");
+            Runtime.Expect(Ed25519.Verify(signature, msg, seller.ToByteArray().Skip(1).ToArray()), "invalid signature");
 
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "invalid quote token");
             var quoteToken = Runtime.GetToken(quoteSymbol);

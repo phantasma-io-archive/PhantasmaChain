@@ -17,7 +17,7 @@ namespace Phantasma.Cryptography
     public sealed class PhantasmaKeys : IKeyPair
     {
         public byte[] PrivateKey { get; private set; }
-        public byte[] PublicKey => Address.PublicKey;
+        public byte[] PublicKey { get; private set; }
 
         public readonly Address Address;
 
@@ -30,9 +30,8 @@ namespace Phantasma.Cryptography
             this.PrivateKey = new byte[PrivateKeyLength];
             ByteArrayUtils.CopyBytes(privateKey, 0, PrivateKey, 0, PrivateKeyLength); 
 
-            var publicKey = Ed25519.PublicKeyFromSeed(privateKey);
-
-            this.Address = new Address(publicKey);
+            this.PublicKey = Ed25519.PublicKeyFromSeed(privateKey);
+            this.Address = Address.FromKey(this);
         }
 
         public override string ToString()
@@ -42,15 +41,9 @@ namespace Phantasma.Cryptography
 
         public static PhantasmaKeys Generate()
         {
-            do
-            {
-                var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
-                var pair = new PhantasmaKeys(privateKey);
-                if (pair.Address.IsUser)
-                {
-                    return pair;
-                }
-            } while (true);
+            var privateKey = Entropy.GetRandomBytes(PrivateKeyLength);
+            var pair = new PhantasmaKeys(privateKey);
+            return pair;
         }
 
         public static PhantasmaKeys FromWIF(string wif)

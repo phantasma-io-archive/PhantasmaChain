@@ -110,7 +110,7 @@ namespace Phantasma.VM
         {
             Throw.IfNull(script, nameof(script));
 
-            this.EntryAddress = Address.FromScript(script);
+            this.EntryAddress = Address.FromHash(script);
             this.entryContext = new ScriptContext("entry", script);
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 

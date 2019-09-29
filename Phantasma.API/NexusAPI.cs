@@ -595,36 +595,6 @@ namespace Phantasma.API
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
 
-            var interops = (Address[])Nexus.RootChain.InvokeContract(Nexus.RootStorage, "interop", "GetLinks", address).ToObject();
-            if (interops.Length > 0)
-            {
-                var interopList = new List<InteropResult>();
-                foreach (var interopAddress in interops)
-                {
-                    string outChainName;
-                    string outAddress;
-                    try
-                    {
-                        WalletUtils.DecodePlatformAndAddress(interopAddress, out outChainName, out outAddress);
-                        interopList.Add(new InteropResult()
-                        {
-                            platform = outChainName,
-                            interop = interopAddress.Text,
-                            address = outAddress,
-                        });
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-                }
-                result.interops = interopList.ToArray();
-            }
-            else
-            {
-                result.interops = new InteropResult[0];
-            }
-
             return result;
         }
 
@@ -1631,50 +1601,6 @@ namespace Phantasma.API
             return new ArrayResult() { values = eventList.ToArray() };
         }
 
-        [APIInfo(typeof(string), "Obtains a swap address mapping.")]
-        public IAPIResult GetSwapAddress([APIParameter("Address or account name", "helloman")] string accountInput, [APIParameter("Name of platform", "neo")] string platform)
-        {
-            if (!Nexus.PlatformExists(platform))
-            {
-                return new ErrorResult { error = "invalid platform" };
-            }
-
-            Address address;
-
-            if (Address.IsValidAddress(accountInput))
-            {
-                address = Address.FromText(accountInput);
-            }
-            else
-            {
-                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
-            }
-
-            if (address.IsNull)
-            {
-                return new ErrorResult { error = "invalid address" };
-            }
-
-            if (!address.IsInterop && platform == DomainSettings.PlatformName)
-            {
-                return new ErrorResult { error = "must be interop address" };
-            }
-            else
-            if (address.IsInterop && platform != DomainSettings.PlatformName)
-            {
-                return new ErrorResult { error = "cannot be interop address" };
-            }
-
-            var target = Nexus.RootChain.InvokeContract(Nexus.RootStorage, "interop", "GetLink", address, platform).AsAddress();
-
-            if (target.IsNull)
-            {
-                return new ErrorResult { error = "no mapping found for this address and platform" };
-            }
-
-            return new SingleResult { value = target.Text };
-        }
-
         [APIInfo(typeof(PlatformResult[]), "Returns an array of available interop platforms.", false, 300)]
         public IAPIResult GetPlatforms()
         {
@@ -1684,14 +1610,11 @@ namespace Phantasma.API
             {
                 var info = Nexus.GetPlatformInfo(platform);
 
-                string outName;
-                string outAddress;
-                WalletUtils.DecodePlatformAndAddress(info.Address, out outName, out outAddress);
 
                 var entry = new PlatformResult();
                 entry.platform = platform;
-                entry.interop = info.Address.Text;
-                entry.address = outAddress;
+                entry.interop = info.InteropAddress.Text;
+                entry.address = info.ExternalAddress;
                 entry.fuel = info.Symbol;
                 entry.tokens = Nexus.Tokens.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
                 platformList.Add(entry);

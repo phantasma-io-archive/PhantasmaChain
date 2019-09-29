@@ -14,7 +14,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void Base16Tests()
         {
-            var bytes = new byte[Address.PublicKeyLength];
+            var bytes = new byte[Address.LengthInBytes];
             var rnd = new Random();
             rnd.NextBytes(bytes);
 
@@ -30,7 +30,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void Base58Tests()
         {
-            var bytes = new byte[Address.PublicKeyLength];
+            var bytes = new byte[Address.LengthInBytes];
             var rnd = new Random(39545);
             rnd.NextBytes(bytes);
 

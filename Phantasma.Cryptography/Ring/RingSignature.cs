@@ -48,7 +48,7 @@ namespace Phantasma.Cryptography.Ring
 
         public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
-            var publicKeys = addresses.Select(x => BigInteger.FromSignedArray(x.PublicKey)).ToArray();
+            var publicKeys = addresses.Select(x => BigInteger.FromSignedArray(x.ToByteArray().Skip(2).ToArray())).ToArray();
             return this.VerifySignature(message, publicKeys);
         }
 

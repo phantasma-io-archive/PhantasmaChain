@@ -58,9 +58,6 @@ namespace Phantasma.API
 
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
-
-        [APIDescription("List of interop addresses associated with the account")]
-        public InteropResult[] interops;
     }
 
     public struct ChainResult : IAPIResult

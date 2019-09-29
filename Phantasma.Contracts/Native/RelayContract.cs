@@ -145,8 +145,7 @@ namespace Phantasma.Contracts.Native
         public Address GetTopUpAddress(Address from)
         {
             var bytes = Encoding.UTF8.GetBytes(from.Text+".relay");
-            var hash = CryptoExtensions.SHA256(bytes);
-            return new Address(hash);
+            return Address.FromHash(bytes);
         }
 
         /*
