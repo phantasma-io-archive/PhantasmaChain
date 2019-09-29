@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography.ECC;
+﻿using Phantasma.Cryptography;
+using Phantasma.Cryptography.ECC;
 using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
@@ -6,11 +7,11 @@ using System.Linq;
 
 namespace Phantasma.Neo.Core
 {
-    public class NeoKey 
+    public class NeoKey: IKeyPair 
     {
-        public readonly byte[] PrivateKey;
-        public readonly byte[] PublicKey;
-        public readonly byte[] CompressedPublicKey;
+        public byte[] PrivateKey { get; private set; }
+        public byte[] PublicKey { get; private set; }
+        public readonly byte[] UncompressedPublicKey;
         public readonly UInt160 PublicKeyHash;
         public readonly string address;
         public readonly string WIF;
@@ -25,26 +26,26 @@ namespace Phantasma.Neo.Core
             this.PrivateKey = new byte[32];
             Buffer.BlockCopy(privateKey, privateKey.Length - 32, PrivateKey, 0, 32);
 
-            ECPoint pKey;
+            ECPoint pubKey;
 
             if (privateKey.Length == 32)
             {
-                pKey = ECCurve.Secp256r1.G * privateKey;
+                pubKey = ECCurve.Secp256r1.G * privateKey;
             }
             else
             {
-                pKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
+                pubKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
             }
 
-            var bytes = pKey.EncodePoint(true).ToArray();
-            this.CompressedPublicKey = bytes;
+            var bytes = pubKey.EncodePoint(true).ToArray();
+            this.PublicKey = bytes.Skip(1).ToArray();
 
             this.PublicKeyHash = CryptoUtils.ToScriptHash(bytes);
 
             this.signatureScript = CreateSignatureScript(bytes);
             signatureHash = CryptoUtils.ToScriptHash(signatureScript);
 
-            this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
+            this.UncompressedPublicKey = pubKey.EncodePoint(false).Skip(1).ToArray();
 
             this.address = CryptoUtils.ToAddress(signatureHash);
             this.WIF = GetWIF();

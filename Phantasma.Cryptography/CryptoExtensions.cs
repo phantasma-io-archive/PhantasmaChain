@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
@@ -124,7 +125,7 @@ namespace Phantasma.Cryptography
 
         public static byte[] SHA256(this IEnumerable<byte> value)
         {
-            return new SHA256().ComputeHash(value.ToArray());
+            return new Hashing.SHA256().ComputeHash(value.ToArray());
         }
 
         public static byte[] Sha256(this string value)
@@ -135,12 +136,117 @@ namespace Phantasma.Cryptography
 
         public static byte[] Sha256(this byte[] value)
         {
-            return new SHA256().ComputeHash(value, 0, (uint)value.Length);
+            return new Hashing.SHA256().ComputeHash(value, 0, (uint)value.Length);
         }
 
         public static byte[] Sha256(this byte[] value, uint offset, uint count)
         {
-            return new SHA256().ComputeHash(value, offset, count);
+            return new Hashing.SHA256().ComputeHash(value, offset, count);
+        }
+
+        private static byte[] TranscodeSignatureToConcat(byte[] derSignature, int outputLength)
+        {
+            if (derSignature.Length < 8 || derSignature[0] != 48) throw new Exception("Invalid ECDSA signature format");
+
+            int offset;
+            if (derSignature[1] > 0)
+                offset = 2;
+            else if (derSignature[1] == 0x81)
+                offset = 3;
+            else
+                throw new Exception("Invalid ECDSA signature format");
+
+            var rLength = derSignature[offset + 1];
+
+            int i = rLength;
+            while (i > 0
+                   && derSignature[offset + 2 + rLength - i] == 0)
+                i--;
+
+            var sLength = derSignature[offset + 2 + rLength + 1];
+
+            int j = sLength;
+            while (j > 0
+                   && derSignature[offset + 2 + rLength + 2 + sLength - j] == 0)
+                j--;
+
+            var rawLen = Math.Max(i, j);
+            rawLen = Math.Max(rawLen, outputLength / 2);
+
+            if ((derSignature[offset - 1] & 0xff) != derSignature.Length - offset
+                || (derSignature[offset - 1] & 0xff) != 2 + rLength + 2 + sLength
+                || derSignature[offset] != 2
+                || derSignature[offset + 2 + rLength] != 2)
+                throw new Exception("Invalid ECDSA signature format");
+
+            var concatSignature = new byte[2 * rawLen];
+
+            Array.Copy(derSignature, offset + 2 + rLength - i, concatSignature, rawLen - i, i);
+            Array.Copy(derSignature, offset + 2 + rLength + 2 + sLength - j, concatSignature, 2 * rawLen - j, j);
+
+            return concatSignature;
+        }
+
+        public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey)
+        {
+            using (var ecdsa = ECDsa.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                D = prikey,
+                Q = new ECPoint
+                {
+                    X = pubkey.Take(32).ToArray(),
+                    Y = pubkey.Skip(32).ToArray()
+                }
+            }))
+            {
+                return ecdsa.SignData(message, HashAlgorithmName.SHA256);
+            }
+        }
+
+        public static bool VerifySignatureECDsa(byte[] message, byte[] signature, byte[] pubkey)
+        {
+            if (pubkey.Length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03))
+            {
+                try
+                {
+                    pubkey = Phantasma.Cryptography.ECC.ECPoint.DecodePoint(pubkey, Phantasma.Cryptography.ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            else if (pubkey.Length == 65 && pubkey[0] == 0x04)
+            {
+                pubkey = pubkey.Skip(1).ToArray();
+            }
+            else if (pubkey.Length != 64)
+            {
+                throw new ArgumentException();
+            }
+#if NET461
+            const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
+            pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
+            using (CngKey key = CngKey.Import(pubkey, CngKeyBlobFormat.EccPublicBlob))
+            using (ECDsaCng ecdsa = new ECDsaCng(key))
+            {
+                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+            }
+#else
+            using (var ecdsa = ECDsa.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q = new ECPoint
+                {
+                    X = pubkey.Take(32).ToArray(),
+                    Y = pubkey.Skip(32).ToArray()
+                }
+            }))
+            {
+                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+            }
+#endif
         }
 
         public static bool ConstantTimeEquals(byte[] x, byte[] y)

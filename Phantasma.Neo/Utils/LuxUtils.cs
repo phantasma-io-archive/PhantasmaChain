@@ -1,4 +1,5 @@
-﻿using Phantasma.Neo.Cryptography;
+﻿using Phantasma.Cryptography;
+using Phantasma.Neo.Cryptography;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -89,7 +90,7 @@ namespace Phantasma.Neo.Utils
 
             if (buffer.Length < 4) return false;
 
-            byte[] checksum = buffer.Sha256(0, buffer.Length - 4).Sha256();
+            byte[] checksum = buffer.Sha256(0, (uint)(buffer.Length - 4)).Sha256();
             return buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4));
         }
 

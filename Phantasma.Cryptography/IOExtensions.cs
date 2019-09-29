@@ -39,7 +39,7 @@ namespace Phantasma.Cryptography
         public static ECC.ECPoint ReadPublicKey(this BinaryReader reader)
         {
             var bytes = reader.ReadByteArray();
-            var publicKey = ECC.ECPoint.DecodePoint(bytes, ECC.ECDsaSignature.Curve);
+            var publicKey = ECC.ECPoint.DecodePoint(bytes, ECC.ECCurve.Secp256r1);
             return publicKey;
         }
 
@@ -67,7 +67,7 @@ namespace Phantasma.Cryptography
                 case SignatureKind.None: return null;
 
                 case SignatureKind.Ed25519: signature = new Ed25519Signature(); break;
-                case SignatureKind.ECDSA: signature = new ECC.ECDsaSignature(); break;
+                case SignatureKind.ECDSA: signature = new ECDsaSignature(); break;
                 case SignatureKind.Ring: signature = new RingSignature(); break;
 
                 default:

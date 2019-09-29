@@ -32,7 +32,7 @@ namespace Phantasma.Neo.Core
                 if (_hash == null)
                 {
                     var data = this.Serialize();
-                    _hash = new UInt256(CryptoUtils.Hash256(data));
+                    _hash = new UInt256(Phantasma.Cryptography.CryptoExtensions.Hash256(data));
                 }
 
                 return _hash;

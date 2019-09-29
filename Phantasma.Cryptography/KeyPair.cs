@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Linq;
 using Phantasma.Cryptography.EdDSA;
-using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
 
 namespace Phantasma.Cryptography
 {
-    public sealed class KeyPair 
+    public interface IKeyPair
     {
-        public readonly byte[] PrivateKey;
+        byte[] PrivateKey { get; }
+        byte[] PublicKey { get; }
+    }
+
+    public sealed class KeyPair : IKeyPair
+    {
+        public byte[] PrivateKey { get; private set; }
+        public byte[] PublicKey => Address.PublicKey;
+
         public readonly Address Address;
 
         public const int PrivateKeyLength = 32;

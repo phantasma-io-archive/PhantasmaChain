@@ -116,6 +116,13 @@ namespace Phantasma.Neo.Core
             var verificationScript = reader.ReadVarBytes(65536);
             return new Witness() { invocationScript = invocationScript, verificationScript = verificationScript };
         }
+
+        public byte[] ExtractPublicKey()
+        {
+            var bytes = new byte[32];
+            Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 2, bytes, 0, bytes.Length);
+            return bytes;
+        }
     }
 
     public enum TransactionType : byte
@@ -355,8 +362,8 @@ namespace Phantasma.Neo.Core
             if (key != null)
             {
                 var privkey = key.PrivateKey;
-                var pubkey = key.PublicKey;
-                var signature = CryptoUtils.Sign(txdata, privkey, pubkey);
+                var pubkey = key.UncompressedPublicKey;
+                var signature = Phantasma.Cryptography.CryptoExtensions.SignECDsa(txdata, privkey, pubkey);
 
                 var invocationScript = new byte[] { (byte)OpCode.PUSHBYTES64 }.Concat(signature).ToArray();
                 var verificationScript = key.signatureScript;
@@ -384,7 +391,7 @@ namespace Phantasma.Neo.Core
                 {
                     var rawTx = this.Serialize(false);
                     var hex = rawTx.ByteToHex();
-                    _hash = new UInt256(CryptoUtils.Hash256(rawTx));
+                    _hash = new UInt256(Phantasma.Cryptography.CryptoExtensions.Hash256(rawTx));
                 }
 
                 return _hash;

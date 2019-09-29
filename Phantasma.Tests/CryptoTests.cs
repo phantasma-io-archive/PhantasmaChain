@@ -193,5 +193,40 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(decryptedMessage == secret);
         }
+
+        [TestMethod]
+        public void SignatureSwap()
+        {
+            var rawTx = Base16.Decode("80000001AA2F638AE527480F6976CBFC268E06048040F77328F78A8F269F9DAB660715C70000029B7CFFDAA674BEAE0F930EBE6085AF9093E5FE56B34A5C220CCDCF6EFC336FC500E1F50500000000D9020CC50B04E75027E19A5D5A9E377A042A0BB59B7CFFDAA674BEAE0F930EBE6085AF9093E5FE56B34A5C220CCDCF6EFC336FC500C2EB0B000000005B1258432BE2AB39C5CD1CAAFBD2B7AAA4B0F034014140A24433C702A47174B9DC1CC6DA90611AA8895B09A5BAD82406CCEF77D594A7343F79084D42BBF8D7C818C4540B38A2E168A7B932D2C0999059A0B3A3B43F6D31232102FC1D6F42B05D00E6AEDA82DF286EB6E2578042F6CAEBE72144342466113BD81EAC");
+            var tx = Neo.Core.Transaction.Unserialize(rawTx);
+            
+            var wif = "KwVG94yjfVg1YKFyRxAGtug93wdRbmLnqqrFV6Yd2CiA9KZDAp4H";
+            var neoKeys = Phantasma.Neo.Core.NeoKey.FromWIF(wif);
+
+            Assert.IsTrue(tx.witnesses.Any());
+            var wit = tx.witnesses.First();
+            var witAddress = new Address(wit.ExtractPublicKey());
+
+            Assert.IsTrue(neoKeys.PublicKey.Length == Address.PublicKeyLength);
+            var transposedAddress = new Address(neoKeys.PublicKey);
+
+            Assert.IsTrue(transposedAddress.IsUser);
+            Assert.IsTrue(transposedAddress == witAddress);
+
+            var msg = "Hello Phantasma!";
+            var payload = Encoding.UTF8.GetBytes(msg);
+            var neoSig = ECDsaSignature.Generate(neoKeys, payload);
+
+            var validateNeoSig = neoSig.Verify(payload, transposedAddress);
+            Assert.IsTrue(validateNeoSig);
+
+            var phantasmaKeys = KeyPair.FromWIF(wif);
+            var phantasmaSig = ECDsaSignature.Generate(phantasmaKeys, payload);
+            var validatePhantasmaSig = phantasmaSig.Verify(payload, phantasmaKeys.Address);
+            Assert.IsTrue(validatePhantasmaSig);
+        }
+
+
     }
+
 }
