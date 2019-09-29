@@ -39,9 +39,8 @@ namespace Phantasma.Cryptography
         public const int PublicKeyLength = 32;
         public const int MaxPlatformNameLength = 10;
 
-        public bool IsSystem => _publicKey != null && (_publicKey.Length > 0 && _publicKey[0] == SystemOpcode || IsNull);
+        public bool IsSystem => IsNull || (_publicKey != null && _publicKey.Length > 0 && _publicKey[0] == SystemOpcode);
 
-        // NOTE currently we only support interop chain names with 3 chars, but this could be expanded to support up to 10 chars
         public bool IsInterop => _publicKey != null && _publicKey.Length > 0 && _publicKey[0] == InteropOpcode;
 
         public bool IsUser => !IsNull && !IsSystem && !IsInterop;
