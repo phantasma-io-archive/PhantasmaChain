@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain.Plugins
                     case EventKind.TokenSend:
                         {
                             var info = evt.GetContent<TokenEventData>();
-                            if (info.chainAddress != chain.Address)
+                            if (info.ChainName != chain.Name)
                             {
                                 AddUnclaimedTransaction(evt.Address, transaction);
                             }
@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain.Plugins
                     case EventKind.TokenReceive:
                         {
                             var info = evt.GetContent<TokenEventData>();
-                            if (info.chainAddress != chain.Address)
+                            if (info.ChainName != chain.Name)
                             {
                                 RemoveUnclaimedTransaction(evt.Address, transaction);
                             }

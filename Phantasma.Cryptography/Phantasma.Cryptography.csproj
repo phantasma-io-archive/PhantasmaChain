@@ -8,6 +8,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />

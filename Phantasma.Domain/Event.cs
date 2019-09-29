@@ -54,21 +54,21 @@ namespace Phantasma.Domain
         LeaderboardInsert = 44,
         LeaderboardReset = 45,
         PlatformCreate = 46,
-        Metadata = 47,
-        Custom = 48,
+        TransactionSettle = 47,
+        Custom = 64,
     }
 
     public struct TokenEventData
     {
-        public readonly string symbol;
-        public readonly BigInteger value;
-        public readonly Address chainAddress;
+        public readonly string Symbol;
+        public readonly BigInteger Value;
+        public readonly string ChainName;
 
-        public TokenEventData(string symbol, BigInteger value, Address chainAddress)
+        public TokenEventData(string symbol, BigInteger value, string chainName)
         {
-            this.symbol = symbol;
-            this.value = value;
-            this.chainAddress = chainAddress;
+            this.Symbol = symbol;
+            this.Value = value;
+            this.ChainName = chainName;
         }
     }
 
@@ -76,6 +76,18 @@ namespace Phantasma.Domain
     {
         public string role;
         public Timestamp date;
+    }
+
+    public struct TransactionSettleEventData
+    {
+        public readonly Hash Hash;
+        public readonly string Chain;
+
+        public TransactionSettleEventData(Hash hash, string chain)
+        {
+            Hash = hash;
+            Chain = chain;
+        }
     }
 
     public struct GasEventData

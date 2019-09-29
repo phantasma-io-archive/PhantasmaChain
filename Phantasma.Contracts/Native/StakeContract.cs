@@ -260,7 +260,7 @@ namespace Phantasma.Contracts.Native
 
                 totalAmount -= transferAmount;
 
-                Runtime.Notify(EventKind.TokenMint, targetMaster.address, new TokenEventData(token.Symbol, transferAmount, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenMint, targetMaster.address, new TokenEventData(token.Symbol, transferAmount, Runtime.Chain.Name));
 
                 var nextClaim = GetMasterClaimDateFromReference(1, thisClaimDate);
 
@@ -314,7 +314,7 @@ namespace Phantasma.Contracts.Native
                 Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "master", date = nextClaim });
             }
 
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData(DomainSettings.StakingTokenSymbol, stakeAmount, Runtime.Chain.Address));
+            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData(DomainSettings.StakingTokenSymbol, stakeAmount, Runtime.Chain.Name));
         }
 
         public BigInteger Unstake(Address from, BigInteger unstakeAmount)
@@ -403,7 +403,7 @@ namespace Phantasma.Contracts.Native
                 }
             }
 
-            Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData(token.Symbol, unstakeAmount, Runtime.Chain.Address));
+            Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData(token.Symbol, unstakeAmount, Runtime.Chain.Name));
 
             return unstakeAmount;
         }

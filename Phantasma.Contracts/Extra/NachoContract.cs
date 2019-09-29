@@ -4254,7 +4254,7 @@ namespace Phantasma.Contracts.Extra
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
                 Runtime.TransferTokens(Constants.SOUL_SYMBOL, from, this.Address, wrestler.stakeAmount);
                 //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
-                Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData(Constants.SOUL_SYMBOL, wrestler.stakeAmount, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData(Constants.SOUL_SYMBOL, wrestler.stakeAmount, Runtime.Chain.Name));
                 wrestler.stakeAmount = 0;
             }
 
@@ -6497,13 +6497,13 @@ namespace Phantasma.Contracts.Extra
                     var other = 1 - winnerSide;
 
                     //Runtime.Notify(battle.sides[winnerSide].address, NachoEvent.Deposit, winnerAmount);
-                    Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData(Constants.NACHO_SYMBOL, winnerAmount, Runtime.Chain.Address));
-                    Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData(Constants.NACHO_SYMBOL, loserAmount, Runtime.Chain.Address));
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[winnerSide].address, new TokenEventData(Constants.NACHO_SYMBOL, winnerAmount, Runtime.Chain.Name));
+                    Runtime.Notify(EventKind.TokenReceive, battle.sides[other].address, new TokenEventData(Constants.NACHO_SYMBOL, loserAmount, Runtime.Chain.Name));
 
                     // TODO check this: No SpendBet já retiramos os tokens do jogador para entrar no jogo. Aqui estamos a retirar outra vez no fim do jogo... ? Confirmar isto.
                     // Old spend bet
                     //Runtime.Notify(battle.sides[other].address, NachoEvent.Withdraw, battle.bet);
-                    Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData(Constants.NACHO_SYMBOL, battle.bet, Runtime.Chain.Address));
+                    Runtime.Notify(EventKind.TokenSend, battle.sides[other].address, new TokenEventData(Constants.NACHO_SYMBOL, battle.bet, Runtime.Chain.Name));
                 }
                 else
                 {
@@ -6525,7 +6525,7 @@ namespace Phantasma.Contracts.Extra
                         if (potAmount > 0)
                         {
                             //Runtime.Notify(battle.sides[i].address, NachoEvent.Withdraw, potAmount / 2);
-                            Runtime.Notify(EventKind.TokenSend, battle.sides[i].address, new TokenEventData(Constants.NACHO_SYMBOL, potAmount / 2, Runtime.Chain.Address));
+                            Runtime.Notify(EventKind.TokenSend, battle.sides[i].address, new TokenEventData(Constants.NACHO_SYMBOL, potAmount / 2, Runtime.Chain.Name));
                         }
                     }
                 }

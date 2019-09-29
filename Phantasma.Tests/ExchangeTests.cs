@@ -634,22 +634,22 @@ namespace Phantasma.Tests
 
                     if (tokenExchangeEvent.Address == user.Address)
                     {
-                        if(eventData.symbol == baseSymbol)
-                            baseTokensReceived += eventData.value;
+                        if(eventData.Symbol == baseSymbol)
+                            baseTokensReceived += eventData.Value;
                         else
-                        if(eventData.symbol == quoteSymbol)
-                            quoteTokensReceived += eventData.value;
+                        if(eventData.Symbol == quoteSymbol)
+                            quoteTokensReceived += eventData.Value;
                     }
                     else
                     {
                         Assert.IsTrue(OtherAddressesTokensInitial.ContainsKey(tokenExchangeEvent.Address), "Address that was not on this orderbook received tokens");
 
                         if (OtherAddressesTokensDelta.ContainsKey(tokenExchangeEvent.Address))
-                            OtherAddressesTokensDelta[tokenExchangeEvent.Address] += eventData.value;
+                            OtherAddressesTokensDelta[tokenExchangeEvent.Address] += eventData.Value;
                         else
-                            OtherAddressesTokensDelta.Add(tokenExchangeEvent.Address, eventData.value);
+                            OtherAddressesTokensDelta.Add(tokenExchangeEvent.Address, eventData.Value);
 
-                        escrowedUsage += eventData.value;   //the tokens other addresses receive come from the escrowed amount of the order opener
+                        escrowedUsage += eventData.Value;   //the tokens other addresses receive come from the escrowed amount of the order opener
                     }
                 }
 
@@ -854,22 +854,22 @@ namespace Phantasma.Tests
 
                     if (tokenExchangeEvent.Address == user.Address)
                     {
-                        if (eventData.symbol == baseSymbol)
-                            baseTokensReceived += eventData.value;
+                        if (eventData.Symbol == baseSymbol)
+                            baseTokensReceived += eventData.Value;
                         else
-                        if (eventData.symbol == quoteSymbol)
-                            quoteTokensReceived += eventData.value;
+                        if (eventData.Symbol == quoteSymbol)
+                            quoteTokensReceived += eventData.Value;
                     }
                     else
                     {
                         Assert.IsTrue(OtherAddressesTokensInitial.ContainsKey(tokenExchangeEvent.Address), "Address that was not on this orderbook received tokens");
 
                         if (OtherAddressesTokensDelta.ContainsKey(tokenExchangeEvent.Address))
-                            OtherAddressesTokensDelta[tokenExchangeEvent.Address] += eventData.value;
+                            OtherAddressesTokensDelta[tokenExchangeEvent.Address] += eventData.Value;
                         else
-                            OtherAddressesTokensDelta.Add(tokenExchangeEvent.Address, eventData.value);
+                            OtherAddressesTokensDelta.Add(tokenExchangeEvent.Address, eventData.Value);
 
-                        escrowedUsage += eventData.value;   //the tokens other addresses receive come from the escrowed amount of the order opener
+                        escrowedUsage += eventData.Value;   //the tokens other addresses receive come from the escrowed amount of the order opener
                     }
                 }
 

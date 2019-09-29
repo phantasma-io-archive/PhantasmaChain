@@ -800,7 +800,7 @@ namespace Phantasma.Blockchain
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Address));
+            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
         }
 
         // NFT version
@@ -843,7 +843,7 @@ namespace Phantasma.Blockchain
             }
 
             EditNFTLocation(symbol, tokenID, runtime.Chain.Name, target);
-            runtime.Notify(EventKind.TokenMint, target, new TokenEventData(symbol, tokenID, runtime.Chain.Address));
+            runtime.Notify(EventKind.TokenMint, target, new TokenEventData(symbol, tokenID, runtime.Chain.Name));
             return true;
         }
 
@@ -884,7 +884,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            runtime.Notify(EventKind.TokenBurn, target, new TokenEventData(token.Symbol, amount, runtime.Chain.Address));
+            runtime.Notify(EventKind.TokenBurn, target, new TokenEventData(token.Symbol, amount, runtime.Chain.Name));
             return true;
         }
 
@@ -924,7 +924,7 @@ namespace Phantasma.Blockchain
             var accountTrigger = isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn;
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
 
-            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData(symbol, tokenID, Runtime.Chain.Address));
+            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData(symbol, tokenID, Runtime.Chain.Name));
         }
 
         internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount)
@@ -959,17 +959,17 @@ namespace Phantasma.Blockchain
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenClaim, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenClaim, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
             else
             {
-                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Address));
-                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
         }
 
@@ -1039,17 +1039,17 @@ namespace Phantasma.Blockchain
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
             else
             {
-                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Address));
-                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Address));
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
 
             return true;

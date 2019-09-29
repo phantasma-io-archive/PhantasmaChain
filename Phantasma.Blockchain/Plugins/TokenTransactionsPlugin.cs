@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain.Plugins
                 if (evt.Kind == EventKind.TokenReceive || evt.Kind == EventKind.TokenSend)
                 {
                     var info = evt.GetContent<TokenEventData>();
-                    RegisterTransaction(info.symbol, transaction);
+                    RegisterTransaction(info.Symbol, transaction);
                 }
             }
         }

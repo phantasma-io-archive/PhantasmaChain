@@ -405,7 +405,7 @@ namespace Phantasma.Contracts.Native
                         {
                             var escrowSymbol = order.Side == ExchangeOrderSide.Sell ? order.QuoteSymbol : order.BaseSymbol;
                             Runtime.TransferTokens(escrowSymbol, this.Address, order.Creator, leftoverEscrow);
-                            Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData(escrowSymbol, leftoverEscrow, Runtime.Chain.Address));
+                            Runtime.Notify(EventKind.TokenReceive, order.Creator, new TokenEventData(escrowSymbol, leftoverEscrow, Runtime.Chain.Name));
                         }
                     }
 
