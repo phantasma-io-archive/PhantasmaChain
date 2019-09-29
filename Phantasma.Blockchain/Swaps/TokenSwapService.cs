@@ -111,13 +111,16 @@ namespace Phantasma.Blockchain.Swaps
                             prevStatus = ChainSwapStatus.Invalid;
                         }
 
-                        try
+                        if (swap.status != ChainSwapStatus.Finished)
                         {
-                            ProcessSwap(map, ref swap);
-                        }
-                        catch (InteropException e)
-                        {
-                            swap.status = e.SwapStatus;
+                            try
+                            {
+                                ProcessSwap(map, ref swap);
+                            }
+                            catch (InteropException e)
+                            {
+                                swap.status = e.SwapStatus;
+                            }
                         }
 
                         // the first time we see this swap, add it to the address list
@@ -140,7 +143,7 @@ namespace Phantasma.Blockchain.Swaps
 
                             if (swap.status == ChainSwapStatus.Finished)
                             {
-                                Logger.Message($"Swap finished: {swap}");
+                                Logger.Success($"Swap finished: {swap}");
                             }
                             else
                             if (swap.status != ChainSwapStatus.Invalid)
@@ -287,7 +290,8 @@ namespace Phantasma.Blockchain.Swaps
                             return;
                         }
 
-                        Logger.Message($"Executing {swap.sourcePlatform} swap: {swap.sourceAddress} sent {swap.amount} {swap.symbol}");
+                        var tokenInfo = Nexus.GetTokenInfo(swap.symbol);
+                        Logger.Message($"Detected {swap.sourcePlatform} swap: {swap.sourceAddress} sent {UnitConversion.ToDecimal(swap.amount, tokenInfo.Decimals)} {swap.symbol}");
 
                         if (sourceInterop.Name == DomainSettings.PlatformName)
                         {
