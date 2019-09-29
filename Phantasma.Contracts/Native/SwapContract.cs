@@ -141,10 +141,7 @@ namespace Phantasma.Contracts.Native
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
         {
             var amount = Runtime.GetTokenQuote(DomainSettings.FuelTokenSymbol, fromSymbol, feeAmount);
-            if (amount < 1)
-            {
-                amount = 1;
-            }
+            Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} as fee");
 
             var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
 
