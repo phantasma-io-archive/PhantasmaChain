@@ -383,19 +383,28 @@ namespace Phantasma.Tests
             // 2 - transcode the neo address and settle the Neo transaction on Phantasma
             var transcodedAddress = Address.FromKey(neoKeys);
 
+            var testUser = PhantasmaKeys.Generate();
+
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(neoKeys, ProofOfWork.None, () =>
+            var tx = simulator.GenerateCustomTransaction(neoKeys, ProofOfWork.None, () =>
             {
                 return new ScriptBuilder()
                 .CallContract("interop", "SettleTransaction", transcodedAddress, Pay.Chains.NeoWallet.NeoPlatform, neoTxHash)
                 .CallContract("swap", "SwapFee", transcodedAddress, swapSymbol, UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals))
+                .TransferBalance(swapSymbol, transcodedAddress, testUser.Address)
                 .AllowGas(transcodedAddress, Address.Null, simulator.MinimumFee, limit)
                 .SpendGas(transcodedAddress).EndScript();
             });
             simulator.EndBlock();
 
             var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, swapSymbol, transcodedAddress);
+            Assert.IsTrue(balance == 0);
+
+            balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, swapSymbol, testUser.Address);
             Assert.IsTrue(balance > 0);
+
+            var settleHash = (Hash)nexus.RootChain.InvokeContract(nexus.RootStorage, "interop", nameof(InteropContract.GetSettlement), "neo", neoTxHash).ToObject();
+            Assert.IsTrue(settleHash == tx.Hash);
         }
 
         [TestMethod]

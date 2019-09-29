@@ -56,8 +56,8 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "must be user address");
 
-            var chainHashes = _hashes.Get<string, StorageSet>(platform);
-            Runtime.Expect(!chainHashes.Contains<Hash>(hash), "hash already seen");
+            var chainHashes = _hashes.Get<string, StorageMap>(platform);
+            Runtime.Expect(!chainHashes.ContainsKey<Hash>(hash), "hash already seen");
 
             var interopTx = Runtime.ReadTransactionFromOracle(platform, DomainSettings.RootChainName, hash);
 
@@ -125,7 +125,7 @@ namespace Phantasma.Contracts.Native
             }
 
             Runtime.Expect(swapCount > 0, "nothing to settle");
-            chainHashes.Add<Hash>(hash);
+            chainHashes.Set<Hash, Hash>(hash, Runtime.Transaction.Hash);
         }
 
         // send to external chain
@@ -270,10 +270,21 @@ namespace Phantasma.Contracts.Native
             return Address.Null;
         }
 
-        public InteropTransferStatus GetStatus(string chainName, Hash hash)
+        public Hash GetSettlement(string platformName, Hash hash)
         {
-            var chainHashes = _hashes.Get<string, StorageSet>(chainName);
-            if (chainHashes.Contains<Hash>(hash))
+            var chainHashes = _hashes.Get<string, StorageMap>(platformName);
+            if (chainHashes.ContainsKey<Hash>(hash))
+            {
+                return chainHashes.Get<Hash, Hash>(hash);
+            }
+
+            return Hash.Null;
+        }
+
+        public InteropTransferStatus GetStatus(string platformName, Hash hash)
+        {
+            var chainHashes = _hashes.Get<string, StorageMap>(platformName);
+            if (chainHashes.ContainsKey<Hash>(hash))
             {
                 return InteropTransferStatus.Confirmed;
             }

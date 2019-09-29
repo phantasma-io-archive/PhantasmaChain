@@ -284,10 +284,6 @@ namespace Phantasma.Blockchain.Swaps
                 case ChainSwapStatus.Sending:
                     {
                         swap.destinationHash = destinationInterop.ReceiveFunds(swap);
-                        if (swap.destinationHash == Hash.Null)
-                        {
-                            throw new InteropException("Failed destination transaction for swap with hash " + swap.sourceHash, ChainSwapStatus.Receive);
-                        }
 
                         if (sourceInterop.Name == DomainSettings.PlatformName)
                         {
@@ -295,6 +291,11 @@ namespace Phantasma.Blockchain.Swaps
                         }
                         else
                         {
+                            if (swap.destinationHash == Hash.Null)
+                            {
+                                throw new InteropException("Failed destination transaction for swap with hash " + swap.sourceHash, ChainSwapStatus.Receive);
+                            }
+
                             swap.status = ChainSwapStatus.Finished;
                         }
 
