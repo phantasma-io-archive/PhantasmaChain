@@ -61,66 +61,38 @@ namespace Phantasma.Contracts.Native
 
             var interopTx = Runtime.ReadTransactionFromOracle(platform, DomainSettings.RootChainName, hash);
 
-            Runtime.Expect(interopTx.Platform == platform, "unxpected platform name");
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
             int swapCount = 0;
 
-            foreach (var evt in interopTx.Events)
+            foreach (var transfer in interopTx.Transfers)
             {
-                if (evt.Kind == EventKind.TokenReceive && evt.Address == platformInfo.InteropAddress)
+                if (transfer.destinationAddress == platformInfo.InteropAddress)
                 {
-                    Runtime.Expect(!evt.Address.IsNull, "invalid source address");
+                    Runtime.Expect(!transfer.sourceAddress.IsNull, "invalid source address");
 
-                    var transfer = evt.GetContent<TokenEventData>();
-                    Runtime.Expect(transfer.value > 0, "amount must be positive and greater than zero");
+                    Runtime.Expect(transfer.Amount > 0, "amount must be positive and greater than zero");
 
-                    Runtime.Expect(Runtime.TokenExists(transfer.symbol), "invalid token");
-                    var token = this.Runtime.GetToken(transfer.symbol);
+                    Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
+                    var token = this.Runtime.GetToken(transfer.Symbol);
 
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
-                    Address destination = Address.Null;
-                    bool found = false; 
-                    foreach (var otherEvt in interopTx.Events)
-                    {
-                        if (otherEvt.Kind == EventKind.TokenSend)
-                        {
-                            var otherTransfer = otherEvt.GetContent<TokenEventData>();
-                            if (otherTransfer.chainAddress == transfer.chainAddress && otherTransfer.symbol == transfer.symbol)
-                            {
-                                destination = otherEvt.Address;
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
+                    Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
-                    Runtime.Expect(found, "destination address not found in transaction events");
-                    Runtime.Expect(destination.IsInterop, "destination address must come as interop from oracle");
-
-                    // here we transform interop => user, mantaning the same public key
-                    destination = Address.Unserialize(Core.Utils.ByteArrayUtils.ConcatBytes(new byte[] { (byte)AddressKind.User}, destination.ToByteArray().Skip(1).ToArray()));
-
-                    Runtime.Expect(destination.IsUser, "invalid destination address");
-
-                    Runtime.TransferTokens(transfer.symbol, platformInfo.InteropAddress, destination, transfer.value);
+                    Runtime.TransferTokens(transfer.Symbol, platformInfo.InteropAddress, transfer.interopAddress, transfer.Amount);
 
                     swapCount++;
-                    break;
                 }
-
-                if (evt.Kind == EventKind.TokenSend && evt.Address.IsInterop)
+                else
+                if (Runtime.IsPlatformAddress(transfer.sourceAddress))
                 {
-                    var destination = evt.Address;
+                    Runtime.Expect(transfer.Amount > 0, "amount must be positive and greater than zero");
 
-                    var transfer = evt.GetContent<TokenEventData>();
-                    Runtime.Expect(transfer.value > 0, "amount must be positive and greater than zero");
-
-                    Runtime.Expect(Runtime.TokenExists(transfer.symbol), "invalid token");
-                    var token = this.Runtime.GetToken(transfer.symbol);
+                    Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
+                    var token = this.Runtime.GetToken(transfer.Symbol);
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
@@ -130,7 +102,7 @@ namespace Phantasma.Contracts.Native
                     for (int i=0; i<count; i++)
                     {
                         var entry = _withdraws.Get<InteropWithdraw>(i);
-                        if (entry.destination == destination && entry.transferAmount == transfer.value && entry.transferSymbol == transfer.symbol)
+                        if (entry.destination == transfer.destinationAddress && entry.transferAmount == transfer.Amount && entry.transferSymbol == transfer.Symbol)
                         {
                             index = i;
                             break;

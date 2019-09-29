@@ -376,7 +376,7 @@ namespace Phantasma.Tests
             // 1 - at this point a real NEO transaction would be done to the NEO address obtained from getPlatforms in the API
             // here we just use a random hardcoded hash and a fake oracle to simulate it
             var swapSymbol = "GAS"; 
-            var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", Pay.Chains.NeoWallet.NeoID, neoKeys.PublicKey, swapSymbol, 2);
+            var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", Pay.Chains.NeoWallet.NeoID, neoKeys.PublicKey, neoKeys.Address, swapSymbol, 2);
 
             var tokenInfo = nexus.GetTokenInfo(swapSymbol);
 
@@ -1139,8 +1139,13 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestAddressComparison()
         {
-            var owner = PhantasmaKeys.FromWIF("KxWUCAD2wECLfA7diT7sV7V3jcxAf9GSKqZy3cvAt79gQLHQ2Qo8");
-            var address = Address.FromText("PWx9mn1hEtQCNxBEhKPj32L3yjJZFiEcLEGVJtY7xg8Ss");
+            var owner = PhantasmaKeys.FromWIF("Kweyrx8ypkoPfzMsxV4NtgH8vXCWC1s1Dn3c2KJ4WAzC5nkyNt3e");
+            var expectedAddress = owner.Address.Text;
+
+            var input = "P2K9LSag1D7EFPBvxMa1fW1c4oNbmAQX7qj6omvo17Fwrg8";
+            var address = Address.FromText(input);
+
+            Assert.IsTrue(expectedAddress == input);
 
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;

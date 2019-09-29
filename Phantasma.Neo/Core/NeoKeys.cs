@@ -17,7 +17,7 @@ namespace Phantasma.Neo.Core
 
         public readonly byte[] UncompressedPublicKey;
         public readonly UInt160 PublicKeyHash;
-        public readonly string address;
+        public readonly string Address;
         public readonly string WIF;
 
         public readonly UInt160 signatureHash;
@@ -50,7 +50,7 @@ namespace Phantasma.Neo.Core
             this.UncompressedPublicKey = pubKey.EncodePoint(false).Skip(1).ToArray();
 
             var signatureHash = CryptoUtils.ToScriptHash(signatureScript);
-            this.address = CryptoUtils.ToAddress(signatureHash);
+            this.Address = CryptoUtils.ToAddress(signatureHash);
             this.WIF = GetWIF();
         }
 
@@ -102,7 +102,7 @@ namespace Phantasma.Neo.Core
 
             ECPoint pubkey = ECCurve.Secp256r1.G * prikey;
             var keys = new NeoKeys(prikey);
-            var temp = Encoding.ASCII.GetBytes(keys.address).Sha256().Sha256().Take(4).ToArray();
+            var temp = Encoding.ASCII.GetBytes(keys.Address).Sha256().Sha256().Take(4).ToArray();
             if (!temp.SequenceEqual(addressHash))
             {
                 throw new FormatException("invalid passphrase when decrypting NEP2");
@@ -159,7 +159,7 @@ namespace Phantasma.Neo.Core
 
         public override string ToString()
         {
-            return this.address;
+            return this.Address;
         }
 
         public Signature Sign(byte[] msg)

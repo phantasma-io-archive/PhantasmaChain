@@ -98,7 +98,7 @@ namespace Phantasma.Simulator
 
             var neoPlatform = Pay.Chains.NeoWallet.NeoPlatform;
             var neoKeys = InteropUtils.GenerateInteropKeys(_owner, neoPlatform);
-            var neoText = Phantasma.Neo.Core.NeoKeys.FromWIF(neoKeys.ToWIF()).address;
+            var neoText = Phantasma.Neo.Core.NeoKeys.FromWIF(neoKeys.ToWIF()).Address;
             var neoAddress = Phantasma.Pay.Chains.NeoWallet.EncodeAddress(neoText);
 
             /*

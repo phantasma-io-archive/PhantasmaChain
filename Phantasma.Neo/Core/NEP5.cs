@@ -171,7 +171,7 @@ namespace Phantasma.Neo.Core
 
         public decimal BalanceOf(NeoKeys keys)
         {
-            return BalanceOf(keys.address);
+            return BalanceOf(keys.Address);
         }
 
         public decimal BalanceOf(UInt160 hash)
@@ -208,7 +208,7 @@ namespace Phantasma.Neo.Core
         {
             BigInteger amount = ConvertToBigInt(value);
 
-            var sender_address_hash = from_key.address.GetScriptHashFromAddress();
+            var sender_address_hash = from_key.Address.GetScriptHashFromAddress();
             var response = api.CallContract(from_key, ScriptHash, "transfer", new object[] { sender_address_hash, to_address_hash, amount });
             return response;
         }
@@ -243,7 +243,7 @@ namespace Phantasma.Neo.Core
 
             var scripts = new List<byte[]>();
             
-            var sender_address_hash = from_key.address.GetScriptHashFromAddress();
+            var sender_address_hash = from_key.Address.GetScriptHashFromAddress();
 
             int index = 0;
             foreach (var entry in transfers)

@@ -695,7 +695,7 @@ namespace Phantasma.Neo.Core
                 gas = 0,
                 inputs = inputs != null ? inputs.ToArray() : null,
                 outputs = outputs != null ? outputs.ToArray() : null,
-                attributes = inputs == null ? (new TransactionAttribute[] { new TransactionAttribute(TransactionAttributeUsage.Script, key.address.AddressToScriptHash()) } ) : null
+                attributes = inputs == null ? (new TransactionAttribute[] { new TransactionAttribute(TransactionAttributeUsage.Script, key.Address.AddressToScriptHash()) } ) : null
             };
 
             transaction.Sign(key);
@@ -727,7 +727,7 @@ namespace Phantasma.Neo.Core
 
         public Transaction SendAsset(NeoKeys fromKey, string toAddress, string symbol, decimal amount)
         {
-            if (String.Equals(fromKey.address, toAddress, StringComparison.OrdinalIgnoreCase))
+            if (String.Equals(fromKey.Address, toAddress, StringComparison.OrdinalIgnoreCase))
             {
                 throw new NeoException("Source and dest addresses are the same");
             }
@@ -764,7 +764,7 @@ namespace Phantasma.Neo.Core
         public Transaction WithdrawAsset(NeoKeys toKey, string fromAddress, string symbol, decimal amount, byte[] verificationScript)
         {
             var fromScriptHash = new UInt160(fromAddress.GetScriptHashFromAddress());
-            var target = new Transaction.Output() { scriptHash = new UInt160(toKey.address.GetScriptHashFromAddress()), value = amount };
+            var target = new Transaction.Output() { scriptHash = new UInt160(toKey.Address.GetScriptHashFromAddress()), value = amount };
             var targets = new List<Transaction.Output>() { target };
             return WithdrawAsset(toKey, fromScriptHash, symbol, targets, verificationScript);
         }
@@ -807,7 +807,7 @@ namespace Phantasma.Neo.Core
                 outputs = outputs.ToArray()
             };
 
-            var witness = new Witness { invocationScript = ("0014" + toKey.address.AddressToScriptHash().ByteToHex()).HexToBytes(), verificationScript = verificationScript };
+            var witness = new Witness { invocationScript = ("0014" + toKey.Address.AddressToScriptHash().ByteToHex()).HexToBytes(), verificationScript = verificationScript };
             tx.Sign(toKey, new Witness[] { witness });
 
             var ok = SendTransaction(tx);
@@ -816,7 +816,7 @@ namespace Phantasma.Neo.Core
 
         public Transaction ClaimGas(NeoKeys ownerKey)
         {
-            var targetScriptHash = new UInt160(ownerKey.address.AddressToScriptHash());
+            var targetScriptHash = new UInt160(ownerKey.Address.AddressToScriptHash());
 
             decimal amount;
             var claimable = GetClaimable(targetScriptHash, out amount);
@@ -914,7 +914,7 @@ namespace Phantasma.Neo.Core
                 outputs = outputs.ToArray(),
             };
 
-            var witness = new Witness { invocationScript = ("0014" + ownerKey.address.AddressToScriptHash().ByteToHex()).HexToBytes(), verificationScript = verificationScript };
+            var witness = new Witness { invocationScript = ("0014" + ownerKey.Address.AddressToScriptHash().ByteToHex()).HexToBytes(), verificationScript = verificationScript };
             tx.Sign(ownerKey, new Witness[] { witness });
 
             var ok = SendTransaction(tx);
@@ -923,7 +923,7 @@ namespace Phantasma.Neo.Core
 
         public Dictionary<string, decimal> GetBalancesOf(NeoKeys key)
         {
-            return GetBalancesOf(key.address);
+            return GetBalancesOf(key.Address);
         }
 
         public Dictionary<string, decimal> GetBalancesOf(string address)
@@ -948,7 +948,7 @@ namespace Phantasma.Neo.Core
 
         public Dictionary<string, decimal> GetTokenBalancesOf(NeoKeys key)
         {
-            return GetTokenBalancesOf(key.address);
+            return GetTokenBalancesOf(key.Address);
         }
 
         public Dictionary<string, decimal> GetTokenBalancesOf(string address)
@@ -977,7 +977,7 @@ namespace Phantasma.Neo.Core
 
         public Dictionary<string, decimal> GetAssetBalancesOf(NeoKeys key)
         {
-            return GetAssetBalancesOf(key.address);
+            return GetAssetBalancesOf(key.Address);
         }
 
         public Dictionary<string, decimal> GetAssetBalancesOf(string address)
@@ -1150,7 +1150,7 @@ namespace Phantasma.Neo.Core
             }
 
             WaitForTransaction(iterator, x => x.Hash == tx.Hash, maxBlocksToWait);
-            lastTransactions[keys.address] = tx;
+            lastTransactions[keys.Address] = tx;
         }
 
 
