@@ -63,7 +63,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from) >= maxAmount, "not enough gas in address");
 
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
-            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData() { address = target, price = price, amount = limit });
+            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));
         }
 
         public void LoanGas(Address from, BigInteger price, BigInteger limit)
@@ -115,7 +115,7 @@ namespace Phantasma.Contracts.Native
             list.Add<Address>(from);
 
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, loan.amount);
-            Runtime.Notify(EventKind.GasLoan, from, new GasEventData() { address = lenderAddress, price = price, amount = limit });
+            Runtime.Notify(EventKind.GasLoan, from, new GasEventData(lenderAddress, price, limit));
         }
         
         public void SpendGas(Address from)
@@ -147,6 +147,8 @@ namespace Phantasma.Contracts.Native
             var targetAddress = _allowanceTargets.Get<Address, Address>(from);
             BigInteger targetGas;
 
+            Runtime.Notify(EventKind.GasPayment, from, new GasEventData(targetAddress,  Runtime.GasPrice, spentGas));
+
             // return unused gas to transaction creator
             if (leftoverAmount > 0)
             {
@@ -161,7 +163,6 @@ namespace Phantasma.Contracts.Native
                 var bombPayment = bombGas * Runtime.GasPrice;
                 var bombAddress = SmartContract.GetAddressForNative(NativeContractKind.Bomb);
                 Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, bombAddress, bombPayment);
-                Runtime.Notify(EventKind.GasPayment, bombAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = bombGas});
                 spentGas -= bombGas;
             }
 
@@ -178,7 +179,6 @@ namespace Phantasma.Contracts.Native
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
                 Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment);
-                Runtime.Notify(EventKind.GasPayment, targetAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = targetGas });
                 spentGas -= targetGas;
             }
 
@@ -187,7 +187,6 @@ namespace Phantasma.Contracts.Native
                 var validatorPayment = spentGas * Runtime.GasPrice;
                 var validatorAddress = SmartContract.GetAddressForNative(NativeContractKind.Block);
                 Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment);
-                Runtime.Notify(EventKind.GasPayment, validatorAddress, new GasEventData() { address = from, price = Runtime.GasPrice, amount = spentGas });
                 spentGas = 0;
             }
 
@@ -212,8 +211,6 @@ namespace Phantasma.Contracts.Native
 
                     gasLender.balance += unusedLoanAmount;
                     _lenderMap.Set<Address, GasLender>(loan.lender, gasLender);
-
-                    Runtime.Notify(EventKind.GasPayment, loan.borrower, new GasEventData() { address = from, price = 1, amount = unusedLoanAmount});
 
                     loan.amount = requiredAmount;
                     loan.interest = (requiredAmount * LendReturn) / 100;
@@ -240,9 +237,6 @@ namespace Phantasma.Contracts.Native
 
                     Runtime.Expect(index >= 0, "loan missing from list");
                     list.RemoveAt<Address>(index);
-
-                    Runtime.Notify(EventKind.GasPayment, loan.lender, new GasEventData() { address = from, price = 1, amount = loan.amount });
-                    Runtime.Notify(EventKind.GasPayment, gasLender.paymentAddress, new GasEventData() { address = from, price = 1, amount = loan.interest});
                 }
             }
         }

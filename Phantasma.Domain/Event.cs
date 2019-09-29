@@ -79,9 +79,16 @@ namespace Phantasma.Domain
 
     public struct GasEventData
     {
-        public Address address;
-        public BigInteger price;
-        public BigInteger amount;
+        public readonly Address address;
+        public readonly BigInteger price;
+        public readonly BigInteger amount;
+
+        public GasEventData(Address address, BigInteger price, BigInteger amount)
+        {
+            this.address = address;
+            this.price = price;
+            this.amount = amount;
+        }
     }
 
     public struct Event

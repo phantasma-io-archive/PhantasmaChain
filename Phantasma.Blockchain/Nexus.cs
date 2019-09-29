@@ -16,6 +16,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Contracts;
 using Phantasma.Contracts.Extra;
+using System.Diagnostics;
 
 namespace Phantasma.Blockchain
 {
