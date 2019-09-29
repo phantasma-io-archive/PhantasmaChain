@@ -23,6 +23,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
+            vm.RegisterMethod("Runtime.TransferBalance", Runtime_TransferBalance);
             vm.RegisterMethod("Runtime.MintTokens", Runtime_MintTokens);
             vm.RegisterMethod("Runtime.BurnTokens", Runtime_BurnTokens);
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
@@ -408,6 +409,29 @@ namespace Phantasma.Blockchain
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
             var amount = temp.AsNumber();
+
+            Runtime.TransferTokens(symbol, source, destination, amount);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_TransferBalance(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+            var destination = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            var token = Runtime.GetToken(symbol);
+            Runtime.Expect(token.IsFungible(), "must be fungible");
+
+            var amount = Runtime.GetBalance(symbol, source);
 
             Runtime.TransferTokens(symbol, source, destination, amount);
 
