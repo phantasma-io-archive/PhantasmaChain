@@ -144,16 +144,16 @@ namespace Phantasma.Blockchain.Swaps
 
                             if (swap.status == ChainSwapStatus.Finished)
                             {
-                                Logger.Success($"Swap finished: {swap}");
+                                Logger.Success($"Swap finished: {PrintSwap(swap)}");
                             }
                             else
                             if (swap.status != ChainSwapStatus.Invalid)
                             {
-                                Logger.Warning($"Swap is waiting for {swap.status.ToString().ToLower()}: {swap}");
+                                Logger.Warning($"Swap is waiting for {swap.status.ToString().ToLower()}: {PrintSwap(swap)}");
                             }
                             else
                             {
-                                Logger.Error($"Swap failed: {swap}");
+                                Logger.Error($"Swap failed: {PrintSwap(swap)}");
                             }
                         }
                     }
@@ -164,6 +164,12 @@ namespace Phantasma.Blockchain.Swaps
                 Logger.Error("Swapper exception: " + e.Message);
                 Thread.Sleep(5000);
             }            
+        }
+
+        private string PrintSwap(ChainSwap swap)
+        {
+            var tokenInfo = this.Nexus.GetTokenInfo(swap.symbol);
+            return $"{swap.sourceHash}: {swap.sourcePlatform} => {swap.destinationPlatform}: {UnitConversion.ToDecimal(swap.amount, tokenInfo.Decimals)} {swap.symbol}";
         }
 
         // finds which blockchain interop address matches the supplied address
@@ -268,7 +274,7 @@ namespace Phantasma.Blockchain.Swaps
                 case ChainSwapStatus.Pending:
                     {
                         var tokenInfo = Nexus.GetTokenInfo(swap.symbol);
-                        Logger.Message($"Detected {swap.sourcePlatform} swap: {swap.sourceAddress} sent {UnitConversion.ToDecimal(swap.amount, tokenInfo.Decimals)} {swap.symbol}");
+                        Logger.Message($"Detected {swap.sourcePlatform} swap: {PrintSwap(swap)}");
 
                         if (sourceInterop.Name == DomainSettings.PlatformName)
                         {
@@ -306,26 +312,23 @@ namespace Phantasma.Blockchain.Swaps
                     {
                         Logger.Message($"Waiting for {swap.destinationPlatform} transaction confirmation: " + swap.destinationHash);
                         Thread.Sleep(30 * 1000);
-                        
-                        var settleHash = sourceInterop.SettleTransaction(swap.destinationHash, swap.destinationPlatform);
-                        if (settleHash == Hash.Null)
+
+                        Hash settleHash;
+
+                        if (swap.destinationPlatform == DomainSettings.PlatformName)
                         {
-                            throw new InteropException("Failed settle transaction for swap with hash " + swap.sourceHash, ChainSwapStatus.Settle);
+                            settleHash = destinationInterop.SettleTransaction(swap.sourceHash, swap.sourcePlatform);
+                        }
+                        else
+                        {
+                            settleHash = sourceInterop.SettleTransaction(swap.destinationHash, swap.destinationPlatform);
                         }
 
-                        swap.status = ChainSwapStatus.Finished;
-                        break;
-                    }
-
-                case ChainSwapStatus.Resettle:
-                    {
-                        var settleHash = destinationInterop.SettleTransaction(swap.sourceHash, swap.sourcePlatform);
-                        if (settleHash == Hash.Null)
+                        if (settleHash != Hash.Null)
                         {
-                            throw new InteropException("Failed settle transaction for swap with hash " + swap.sourceHash, ChainSwapStatus.Resettle);
+                            swap.status = ChainSwapStatus.Finished;
                         }
 
-                        swap.status = ChainSwapStatus.Finished;
                         break;
                     }
             }

@@ -18,11 +18,6 @@ namespace Phantasma.Blockchain.Swaps
         public BigInteger amount;
         public ChainSwapStatus status;
 
-        public override string ToString()
-        {
-            return $"{sourceHash}: {sourcePlatform} => {destinationPlatform}: {amount} {symbol}";
-        }
-
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteHash(sourceHash);

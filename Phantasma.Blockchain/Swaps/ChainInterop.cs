@@ -11,7 +11,6 @@ namespace Phantasma.Blockchain.Swaps
         Pending,
         Sending,
         Settle,
-        Resettle,
         Broker,
         Receive,
         Platform,
