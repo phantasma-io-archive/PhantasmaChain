@@ -49,7 +49,7 @@ namespace Phantasma.Neo.Core
 
             this.UncompressedPublicKey = pubKey.EncodePoint(false).Skip(1).ToArray();
 
-            var signatureHash = CryptoUtils.ToScriptHash(signatureScript);
+            this.signatureHash = CryptoUtils.ToScriptHash(signatureScript);
             this.Address = CryptoUtils.ToAddress(signatureHash);
             this.WIF = GetWIF();
         }
