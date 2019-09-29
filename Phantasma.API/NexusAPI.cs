@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
@@ -17,9 +18,9 @@ using Phantasma.Network.P2P;
 using Phantasma.Core.Types;
 using Phantasma.Pay;
 using Phantasma.Core.Utils;
-using System.Text;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
+using Phantasma.Blockchain.Swaps;
 
 namespace Phantasma.API
 {
@@ -299,8 +300,9 @@ namespace Phantasma.API
     {
         public readonly bool UseCache;
         public readonly Nexus Nexus;
-        public readonly Mempool Mempool;
-        public readonly Node Node;
+        public Mempool Mempool;
+        public Node Node;
+        public TokenSwapService SwapService;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
@@ -309,13 +311,11 @@ namespace Phantasma.API
 
         internal readonly Logger logger;
 
-        public NexusAPI(Nexus nexus, Mempool mempool = null, Node node = null, bool useCache = false, Logger logger = null)
+        public NexusAPI(Nexus nexus, bool useCache = false, Logger logger = null)
         {
             Throw.IfNull(nexus, nameof(nexus));
 
             Nexus = nexus;
-            Mempool = mempool;
-            Node = node;
             UseCache = useCache;
             this.logger = logger;
 
@@ -1708,6 +1708,49 @@ namespace Phantasma.API
                 Select(x => new ValidatorResult() { address = x.address.ToString(), type = x.type.ToString() });
 
             return new ArrayResult() { values = validators.Select(x => (object)x).ToArray() };
+        }
+
+        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 1)]
+        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string accountInput)
+        {
+            if (SwapService == null)
+            {
+                return new ErrorResult { error = "swap service not available" };
+            }
+
+            Address address;
+
+            if (Address.IsValidAddress(accountInput))
+            {
+                address = Address.FromText(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
+            }
+
+            if (address.IsNull)
+            {
+                return new ErrorResult { error = "invalid address" };
+            }
+
+
+            var swapHashes = SwapService.GetSwapHashesForAddress(address);
+            var swaps = swapHashes.Select(x => SwapService.GetSwapForSourceHash(x));
+            var swapList = swaps.Select(x => new SwapResult() {
+                sourceHash = x.sourceHash.ToString(),
+                sourceAddress = x.sourceAddress.Text,
+                sourcePlatform = x.sourcePlatform,
+                destinationHash = x.destinationHash.ToString(),
+                destinationAddress = x.destinationAddress.Text,
+                destinationPlatform = x.destinationPlatform,
+                amount = x.amount.ToString(),
+                symbol = x.symbol,
+                decimals = (uint)Nexus.GetTokenInfo(x.symbol).Decimals, // TODO cache this
+                status = x.status.ToString(),
+            });
+
+            return new ArrayResult() { values = swapList.Select(x => (object)x).ToArray() };
         }
 
     }

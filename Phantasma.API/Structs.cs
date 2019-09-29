@@ -405,4 +405,18 @@ namespace Phantasma.API
         public string type;
     }
 
+    // TODO document this
+    public struct SwapResult : IAPIResult
+    {
+        public string sourceHash;
+        public string sourcePlatform;
+        public string sourceAddress;
+        public string destinationHash;
+        public string destinationPlatform;
+        public string destinationAddress;
+        public string symbol;
+        public uint decimals;
+        public string amount;
+        public string status;
+    }
 }
