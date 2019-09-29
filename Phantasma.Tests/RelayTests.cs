@@ -31,7 +31,13 @@ namespace Phantasma.Tests
             var sim = new NexusSimulator(owner, 1234);
             var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2, 1) : null;
             var node = useMempool ? new Node(sim.Nexus, mempool, owner, 7073, PeerCaps.None, new List<string>() { "192.168.0.1:7073" }, null) : null;
-            var api = useMempool ? new NexusAPI(sim.Nexus, mempool, node) : null;
+            var api = useMempool ? new NexusAPI(sim.Nexus) : null;
+
+            if (api != null)
+            {
+                api.Mempool = mempool;
+                api.Node = node;
+            }
 
             var data = new ApiTests.TestData()
             {

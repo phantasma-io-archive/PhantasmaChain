@@ -34,7 +34,8 @@ namespace Phantasma.Tests
             var owner = KeyPair.FromWIF(testWIF);
             var sim = new NexusSimulator(owner, 1234);
             var mempool = useMempool? new Mempool(owner, sim.Nexus, 2, 1) : null;
-            var api = new NexusAPI(sim.Nexus, mempool);
+            var api = new NexusAPI(sim.Nexus);
+            api.Mempool = mempool;
 
             var data = new TestData()
             {
