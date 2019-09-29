@@ -138,28 +138,6 @@ namespace Phantasma.Contracts.Native
             return false;
         }
 
-        public BigInteger GetTokenPrice(string symbol)
-        {
-            var count = _exchanges.Count();
-            Runtime.Expect(count == 0, "already exchanges but no prices");
-
-            var stakePrice = Runtime.GetTokenPrice(DomainSettings.StakingTokenSymbol);
-
-            if (symbol == DomainSettings.StakingTokenSymbol)
-            {
-                return stakePrice;
-            }
-            else
-            if (symbol == DomainSettings.FuelTokenSymbol)
-            {
-                return stakePrice / 5;
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
         public void CreateExchange(Address from, string id, string name)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
@@ -307,14 +285,14 @@ namespace Phantasma.Contracts.Native
                     //and then calculate the corresponding fulfilled order size in quote tokens
                     if (takerEscrowSymbol == baseSymbol)
                     {
-                        var makerEscrowBaseEquivalent = ConvertQuoteToBase(makerEscrow, makerOrder.Price, baseToken, quoteToken);
+                        var makerEscrowBaseEquivalent = Runtime.ConvertQuoteToBase(makerEscrow, makerOrder.Price, baseToken, quoteToken);
                         takerEscrowUsage = takerAvailableEscrow < makerEscrowBaseEquivalent ? takerAvailableEscrow : makerEscrowBaseEquivalent;
 
                         makerEscrowUsage = CalculateEscrowAmount(takerEscrowUsage, makerOrder.Price, baseToken, quoteToken, Buy);
                     }
                     else
                     {
-                        var takerEscrowBaseEquivalent = ConvertQuoteToBase(takerAvailableEscrow, makerOrder.Price, baseToken, quoteToken);
+                        var takerEscrowBaseEquivalent = Runtime.ConvertQuoteToBase(takerAvailableEscrow, makerOrder.Price, baseToken, quoteToken);
                         makerEscrowUsage = makerEscrow < takerEscrowBaseEquivalent ? makerEscrow : takerEscrowBaseEquivalent;
 
                         takerEscrowUsage = CalculateEscrowAmount(makerEscrowUsage, makerOrder.Price, baseToken, quoteToken, Buy);
@@ -454,15 +432,10 @@ namespace Phantasma.Contracts.Native
                     return orderSize;
 
                 case Buy:
-                    return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(orderSize, baseToken.Decimals) * UnitConversion.ToDecimal(orderPrice, quoteToken.Decimals), quoteToken.Decimals);
+                    return Runtime.ConvertBaseToQuote(orderSize, orderPrice, baseToken, quoteToken);
 
                 default: throw new ContractException("invalid order side");
             }
-        }
-
-        private BigInteger ConvertQuoteToBase(BigInteger quoteAmount, BigInteger orderPrice, IToken baseToken, IToken quoteToken)
-        {
-            return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(quoteAmount, quoteToken.Decimals) / UnitConversion.ToDecimal(orderPrice, quoteToken.Decimals), baseToken.Decimals);
         }
 
         public string CalculateEscrowSymbol(IToken baseToken, IToken quoteToken, ExchangeOrderSide side) => side == Sell ? baseToken.Symbol : quoteToken.Symbol;

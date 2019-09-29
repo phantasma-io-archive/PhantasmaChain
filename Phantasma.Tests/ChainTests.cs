@@ -14,6 +14,7 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Contracts.Native;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Tests
 {
@@ -634,11 +635,33 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void QuoteConversions()
+        {
+            var owner = KeyPair.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var context = new StorageChangeSetContext(new MemoryStorageContext());
+            var runtime = new RuntimeVM(new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
+
+            var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
+            var price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);
+            Assert.IsTrue(price == 100);
+
+            temp = runtime.GetTokenQuote("KCAL", "NEO", UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals));
+            price = UnitConversion.ToDecimal(temp, 0);
+            Assert.IsTrue(price == 1);
+
+            temp = runtime.GetTokenQuote("SOUL", "KCAL", UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals));
+            price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);
+            Assert.IsTrue(price == 5);
+        }
+
+        [TestMethod]
         public void GetRatesForSwap()
         {
             var owner = KeyPair.Generate();
             var simulator = new NexusSimulator(owner, 1234);
-
             var nexus = simulator.Nexus;
 
             var script = new ScriptBuilder().CallContract("swap", "GetRates", "SOUL", UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals)).EndScript();

@@ -400,39 +400,13 @@ namespace Phantasma.Blockchain.Contracts
             Core.Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
             var token = GetToken(symbol);
 
-            if (!token.Flags.HasFlag(TokenFlags.External))
-            {
-                var result = CallContext("exchange", "GetTokenPrice", symbol).AsNumber();
-                return result;
-            }
-
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
             var bytes = Oracle.Read("price://" + symbol);
             var value = BigInteger.FromUnsignedArray(bytes, true);
+
+            Expect(value > 0, "token price not available for " + symbol);
+
             return value;
-        }
-
-        public BigInteger GetTokenQuote(string baseSymbol, string quoteSymbol, BigInteger amount)
-        {
-            if (baseSymbol == quoteSymbol)
-                return amount;
-
-            var basePrice = GetTokenPrice(baseSymbol);
-            var quotePrice = GetTokenPrice(quoteSymbol);
-
-            BigInteger result;
-
-            var baseToken = Nexus.GetTokenInfo(baseSymbol);
-            var quoteToken = Nexus.GetTokenInfo(quoteSymbol);
-
-            result = basePrice * amount;
-            result = UnitConversion.ConvertDecimals(result, baseToken.Decimals, DomainSettings.FiatTokenDecimals);
-
-            result /= quotePrice;
-
-            result = UnitConversion.ConvertDecimals(result, DomainSettings.FiatTokenDecimals, quoteToken.Decimals);
-
-            return result;
         }
         #endregion
 

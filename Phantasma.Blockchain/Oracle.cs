@@ -105,7 +105,7 @@ namespace Phantasma.Blockchain
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 
         protected abstract byte[] PullData(string url);
-        protected abstract decimal PullPrice(string baseSymbol, string quoteSymbol);
+        protected abstract decimal PullPrice(string symbol);
         protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash);
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
 
@@ -153,22 +153,14 @@ namespace Phantasma.Blockchain
                 }
 
                 var baseSymbol = url;
-                var quoteSymbol = DomainSettings.FiatTokenSymbol;
 
                 if (!Nexus.TokenExists(baseSymbol))
                 {
                     throw new OracleException("unknown token: " + baseSymbol);
                 }
 
-                if (!Nexus.TokenExists(quoteSymbol))
-                {
-                    throw new OracleException("unknown token: " + quoteSymbol);
-                }
-
-                var tokenInfo = Nexus.GetTokenInfo(quoteSymbol);
-
-                var price = PullPrice(baseSymbol, quoteSymbol);
-                var val = UnitConversion.ToBigInteger(price, tokenInfo.Decimals);
+                var price = PullPrice(baseSymbol);
+                var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
                 return val.ToUnsignedByteArray();
             }
             else

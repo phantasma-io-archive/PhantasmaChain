@@ -143,6 +143,41 @@ namespace Phantasma.Domain
             return archive.Size / DomainSettings.ArchiveBlockSize;
         }
 
+        // price is in quote Tokens
+        public static BigInteger ConvertQuoteToBase(this IRuntime runtime, BigInteger quoteAmount, BigInteger price, IToken baseToken, IToken quoteToken)
+        {
+            return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(quoteAmount, quoteToken.Decimals) / UnitConversion.ToDecimal(price, quoteToken.Decimals), baseToken.Decimals);
+        }
+
+        public static BigInteger ConvertBaseToQuote(this IRuntime runtime, BigInteger baseAmount, BigInteger price, IToken baseToken, IToken quoteToken)
+        {
+            return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(baseAmount, baseToken.Decimals) * UnitConversion.ToDecimal(price, quoteToken.Decimals), quoteToken.Decimals);
+        }
+
+        public static BigInteger GetTokenQuote(this IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
+        {
+            if (baseSymbol == quoteSymbol)
+                return amount;
+
+            var basePrice = runtime.GetTokenPrice(baseSymbol);
+
+            var baseToken = runtime.GetToken(baseSymbol);
+            var fiatToken = runtime.GetToken(DomainSettings.FiatTokenSymbol);
+
+            // this gives how many dollars is "amount"
+            BigInteger result = runtime.ConvertBaseToQuote(amount, basePrice, baseToken, fiatToken);
+            if (quoteSymbol == DomainSettings.FiatTokenSymbol)
+            {
+                return result;
+            }
+
+            var quotePrice = runtime.GetTokenPrice(quoteSymbol);
+            var quoteToken = runtime.GetToken(quoteSymbol);
+
+            result = runtime.ConvertQuoteToBase(result, quotePrice, quoteToken, fiatToken);
+            return result;
+        }
+
         #region TRIGGERS
         public static bool InvokeTriggerOnAccount(this IRuntime runtime, Address address, AccountTrigger trigger, params object[] args)
         {

@@ -77,7 +77,7 @@ namespace Phantasma.Simulator
             throw new OracleException($"unknown transaction for {platformName}.{chainName} : {hash}");
         }
 
-        protected override decimal PullPrice(string baseSymbol, string quoteSymbol)
+        protected override decimal PullPrice(string baseSymbol)
         {
             // some dummy values, only really used in the test suite ...
             decimal price;
@@ -92,7 +92,8 @@ namespace Phantasma.Simulator
                 default: throw new OracleException("Unknown token: "+baseSymbol);
             }
 
-            return price / 1000;
+            price /= 1000m;
+            return price;
         }
     }
 

@@ -73,7 +73,6 @@ namespace Phantasma.Domain
         BigInteger GetStake(Address address);
 
         BigInteger GetTokenPrice(string symbol);
-        BigInteger GetTokenQuote(string baseSymbol, string quoteSymbol, BigInteger amount);
         BigInteger GetGovernanceValue(string name);
 
         BigInteger GenerateUID();
