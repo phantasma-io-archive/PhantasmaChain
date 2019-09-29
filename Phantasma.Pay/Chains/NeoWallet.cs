@@ -74,29 +74,31 @@ namespace Phantasma.Pay.Chains
             return Cryptography.Address.FromInterop(NeoID, pubKey);
         }
 
-/*        public static string DecodeAddress(Address address)
+        public static string DecodeAddress(Address address)
         {
             if (!address.IsInterop)
             {
                 throw new Exception("not an interop address");
             }
 
-            string platformName;
-            byte[] data;
-            address.DecodeInterop(out platformName, out data, 21);
+            byte platformID;
+            byte[] scriptHash;
+            address.DecodeInterop(out platformID, out scriptHash);
 
-            if (platformName != NeoPlatform)
+            if (platformID != NeoID)
             {
                 throw new Exception("not a NEO interop address");
             }
 
-            if (data[0] != 23)
+            if (scriptHash[0] != 23)
             {
                 throw new Exception("invalid NEO address");
             }
 
-            return data.Base58CheckEncode();
-        }*/
+            scriptHash = scriptHash.Take(21).ToArray();
+
+            return scriptHash.Base58CheckEncode();
+        }
 
         protected override string DeriveAddress(PhantasmaKeys keys)
         {

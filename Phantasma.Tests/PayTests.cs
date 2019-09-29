@@ -36,7 +36,6 @@ namespace Phantasma.Tests
             Assert.IsTrue(address.Equals("EOS8dBKtG9fbhC1wi1SscL32iFRsSi4PsZDT2EHJcYXwV5dAMiBcK", StringComparison.OrdinalIgnoreCase));
         }
 
-        /*
         [TestMethod]
         public void TestNeoWallet()
         {
@@ -52,7 +51,7 @@ namespace Phantasma.Tests
 
             var newAddress = NeoWallet.DecodeAddress(encodedAddress);
             Assert.IsTrue(newAddress.Equals(expectedAddress, StringComparison.OrdinalIgnoreCase));
-        }*/
+        }
 
         [TestMethod]
         public void TestBitcoinWallet()
