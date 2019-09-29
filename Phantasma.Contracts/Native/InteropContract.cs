@@ -99,8 +99,13 @@ namespace Phantasma.Contracts.Native
                     }
 
                     Runtime.Expect(found, "destination address not found in transaction events");
+                    Runtime.Expect(destination.IsInterop, "destination address must come as interop from oracle");
+
+                    // here we transform interop => user, mantaning the same public key
+                    destination = Address.Unserialize(Core.Utils.ByteArrayUtils.ConcatBytes(new byte[] { (byte)AddressKind.User}, destination.ToByteArray().Skip(1).ToArray()));
+
                     Runtime.Expect(destination.IsUser, "invalid destination address");
-                    
+
                     Runtime.TransferTokens(transfer.symbol, platformInfo.InteropAddress, destination, transfer.value);
 
                     swapCount++;
