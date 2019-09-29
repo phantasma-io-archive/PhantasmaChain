@@ -231,7 +231,7 @@ namespace Phantasma.Cryptography
 
         public static Address FromText(string text)
         {
-            Throw.If(text.Length != 45, "Invalid address length");
+            Throw.If(text.Length != 46, "Invalid address length");
 
             var bytes = Base58.Decode(text);
             var kind = (AddressKind) bytes[0];
