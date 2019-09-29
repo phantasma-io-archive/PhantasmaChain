@@ -1148,7 +1148,7 @@ namespace Phantasma.Blockchain.Contracts
          
             if (this.Transaction != null)
             {
-                path.Replace("dump", this.Transaction.Hash.ToString());
+                path.Replace("vm.txt", this.Transaction.Hash.ToString()+".txt");
             }
 
             return path;
