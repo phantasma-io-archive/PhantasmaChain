@@ -222,9 +222,8 @@ namespace Phantasma.Contracts
             this.ABI = new ContractInterface(methods);
         }
 
-        public bool HasInternalMethod(string methodName, out BigInteger gasCost)
+        public bool HasInternalMethod(string methodName)
         {
-            gasCost = 10; // TODO make this depend on method
             return _methodTable.ContainsKey(methodName);
         }
 

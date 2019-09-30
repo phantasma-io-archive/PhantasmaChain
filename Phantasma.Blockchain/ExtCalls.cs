@@ -599,9 +599,8 @@ namespace Phantasma.Blockchain
                         success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
 
                         var contract = Runtime.Nexus.GetContractByName(name);
-                        BigInteger gasCost;
                         var constructor = "Initialize";
-                        if (contract.HasInternalMethod(constructor, out gasCost))
+                        if (contract.HasInternalMethod(constructor))
                         {
                             Runtime.CallContext(name, constructor, owner);
                         }

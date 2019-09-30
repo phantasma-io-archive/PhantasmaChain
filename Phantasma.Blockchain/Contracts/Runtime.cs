@@ -114,6 +114,35 @@ namespace Phantasma.Blockchain.Contracts
             // TODO review this better
             //Expect(!isBlockOperation, "no interops available in block operations");
 
+            BigInteger gasCost;
+
+            // construtor
+            if (method.EndsWith("()"))
+            {
+                gasCost = 10;
+            }
+            else
+            {
+                int dotPos = method.IndexOf('.');
+                Expect(dotPos > 0, "extcall is missing namespace");
+
+                var methodNamespace = method.Substring(0, dotPos);
+                switch (methodNamespace)
+                {
+                    case "Runtime":
+                        gasCost = 50;
+                        break;
+
+                    case "Nexus":
+                        gasCost = 1000;
+                        break;
+
+                    default:
+                        Expect(false, "invalid extcall namespace: " + methodNamespace);
+                        break;
+                }
+            }
+
             if (handlers.ContainsKey(method))
             {
                 return handlers[method](this);
@@ -474,8 +503,7 @@ namespace Phantasma.Blockchain.Contracts
                 if (contract != null)
                 {
                     var triggerName = trigger.ToString();
-                    BigInteger gasCost;
-                    if (contract.HasInternalMethod(triggerName, out gasCost))
+                    if (contract.HasInternalMethod(triggerName))
                     {
                         CallContext(contract.Name, triggerName, args);
                     }

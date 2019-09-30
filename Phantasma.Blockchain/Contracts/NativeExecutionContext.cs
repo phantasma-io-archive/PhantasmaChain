@@ -62,12 +62,12 @@ namespace Phantasma.Blockchain.Contracts
 
             var runtime = (RuntimeVM)frame.VM;
 
-            BigInteger gasCost;
-            if (this.Contract.HasInternalMethod(methodName, out gasCost))
+            if (this.Contract.HasInternalMethod(methodName))
             {
                 ExecutionState result;
                 try
                 {
+                    BigInteger gasCost = 10;
                     result = runtime.ConsumeGas(gasCost);
                     if (result == ExecutionState.Running)
                     {
