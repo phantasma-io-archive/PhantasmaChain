@@ -105,7 +105,10 @@ namespace Phantasma.Blockchain
             }
 
             var chain = Nexus.GetChainByName(tx.ChainName);
-            Throw.IfNull(chain, nameof(chain));
+            if (chain == null)
+            {
+                RejectTransaction(tx, "invalid chain name");
+            }
 
             if (tx.Signatures == null || tx.Signatures.Length < 1)
             {
