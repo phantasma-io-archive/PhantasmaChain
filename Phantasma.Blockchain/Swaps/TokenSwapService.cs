@@ -331,6 +331,23 @@ namespace Phantasma.Blockchain.Swaps
 
                         break;
                     }
+
+                case ChainSwapStatus.Receive:
+                    {
+                        var hash = destinationInterop.ReceiveFunds(swap);
+
+                        if (hash == Hash.Null)
+                        {
+                            return;
+                        }
+
+                        swap.destinationHash = hash;
+                        swap.status = ChainSwapStatus.Finished;
+                        break;
+                    }
+
+                default:
+                    throw new NotImplementedException("somebody forgot to handle this case: " + swap.status);
             }
 
             ProcessSwap(map, ref swap);
