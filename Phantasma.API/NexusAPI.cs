@@ -796,15 +796,15 @@ namespace Phantasma.API
             {
                 var paginatedResult = new PaginatedResult();
                 var address = Address.FromText(addressText);
-                var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
 
+                var chain = Nexus.RootChain;
                 // pagination
-                uint numberRecords = (uint)plugin.GetAddressTransactions(address).Count();
+                var txHashes = chain.GetTransactionHashesForAddress(address);
+                uint numberRecords = (uint)txHashes.Length;
                 uint totalPages = (uint)Math.Ceiling(numberRecords / (double)pageSize);
                 //
 
-                var txs = plugin.GetAddressTransactions(address)
-                    .Select(hash => Nexus.FindTransactionByHash(hash))
+                var txs = txHashes.Select(x => chain.GetTransactionByHash(x))
                     .OrderByDescending(tx => Nexus.FindBlockByTransaction(tx).Timestamp.Value)
                     .Skip((int)((page - 1) * pageSize))
                     .Take((int)pageSize);
@@ -841,11 +841,6 @@ namespace Phantasma.API
             }
 
             var address = Address.FromText(addressText);
-            var plugin = Nexus.GetPlugin<AddressTransactionsPlugin>();
-            if (plugin == null)
-            {
-                return new ErrorResult() { error = "plugin not enabled" };
-            }
 
             int count = 0;
 
@@ -857,14 +852,16 @@ namespace Phantasma.API
                     return new ErrorResult() { error = "invalid chain" };
                 }
 
-                count = plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockByHash(tx).ChainAddress.Equals(chain.Address));
+                var txHashes = chain.GetTransactionHashesForAddress(address);
+                count = txHashes.Length;
             }
             else
             {
                 foreach (var chainName in Nexus.Chains)
                 {
                     var chain = Nexus.GetChainByName(chainName);
-                    count += plugin.GetAddressTransactions(address).Count(tx => Nexus.FindBlockByHash(tx).ChainAddress.Equals(chain.Address));
+                    var txHashes = chain.GetTransactionHashesForAddress(address);
+                    count += txHashes.Length;
                 }
             }
 
