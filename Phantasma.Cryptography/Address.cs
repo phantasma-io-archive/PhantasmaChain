@@ -236,7 +236,7 @@ namespace Phantasma.Cryptography
             text = text.Substring(1);
             var bytes = Base58.Decode(text);
 
-            if (bytes.Length == LengthInBytes + 1)
+            if (bytes.Length > LengthInBytes)
             {
                 bytes = bytes.Take(LengthInBytes).ToArray();
             }
