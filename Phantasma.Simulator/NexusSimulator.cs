@@ -111,8 +111,8 @@ namespace Phantasma.Simulator
             BeginBlock();
             
             GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
-                //CallInterop("Runtime.CreatePlatform", _owner.Address, ethKeys.PublicKey, ethPlatform, "ETH").
+                CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
+                //CallInterop("Nexus.CreatePlatform", _owner.Address, ethKeys.PublicKey, ethPlatform, "ETH").
             SpendGas(_owner.Address).EndScript());
 
             GenerateToken(_owner, "NEO", "NEO", neoPlatform, Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.External);
@@ -453,7 +453,7 @@ namespace Phantasma.Simulator
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.CreateToken", owner.Address, symbol, name, platform, hash, totalSupply, decimals, flags, tokenScript).
+                CallInterop("Nexus.CreateToken", owner.Address, symbol, name, platform, hash, totalSupply, decimals, flags, tokenScript).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -551,7 +551,7 @@ namespace Phantasma.Simulator
 
             var sb = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.CreateChain", source.Address, name, parentchain.Name);
+                CallInterop("Nexus.CreateChain", source.Address, name, parentchain.Name);
 
             foreach (var contractName in contracts)
             {

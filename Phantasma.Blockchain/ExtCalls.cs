@@ -29,9 +29,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
-            vm.RegisterMethod("Runtime.CreateToken", Runtime_CreateToken);
-            vm.RegisterMethod("Runtime.CreateChain", Runtime_CreateChain);
-            vm.RegisterMethod("Runtime.CreatePlatform", Runtime_CreatePlatform);
+
+            vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
+            vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
+            vm.RegisterMethod("Nexus.CreatePlatform", Runtime_CreatePlatform);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);

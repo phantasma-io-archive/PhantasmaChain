@@ -1250,7 +1250,7 @@ namespace Phantasma.Blockchain
             var sb = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallInterop("Runtime.CreateChain", owner.Address, name, RootChain.Name);
+                CallInterop("Nexus.CreateChain", owner.Address, name, RootChain.Name);
 
                 foreach (var contractName in contracts)
                 {
