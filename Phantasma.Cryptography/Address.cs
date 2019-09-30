@@ -13,7 +13,7 @@ namespace Phantasma.Cryptography
 {
     public enum AddressKind
     {
-        Null = 0,
+        Invalid = 0,
         User = 1,
         System = 2,
         Interop = 3,
@@ -30,9 +30,9 @@ namespace Phantasma.Cryptography
         public const int LengthInBytes = 34;
         public const int MaxPlatformNameLength = 10;
 
-        public AddressKind Kind => _bytes.Length > 0 ? (AddressKind)_bytes[0] : AddressKind.Null;
+        public AddressKind Kind => IsNull ? AddressKind.System: (AddressKind)_bytes[0];
 
-        public bool IsSystem => Kind == AddressKind.Null || Kind == AddressKind.System;
+        public bool IsSystem => Kind == AddressKind.System;
 
         public bool IsInterop => Kind == AddressKind.Interop;
 
@@ -47,7 +47,7 @@ namespace Phantasma.Cryptography
                     return true;
                 }
 
-                for (int i = 0; i < _bytes.Length; i++)
+                for (int i = 1; i < _bytes.Length; i++)
                 {
                     if (_bytes[i] != 0)
                     {
@@ -231,33 +231,39 @@ namespace Phantasma.Cryptography
 
         public static Address FromText(string text)
         {
-            Throw.If(text.Length != 47, "Invalid address length");
-
             var prefix = text[0];
-           
-            var bytes = Base58.Decode(text.Substring(1));
 
-            var kind = (AddressKind)(bytes[0]);
+            text = text.Substring(1);
+            var bytes = Base58.Decode(text);
+
+            if (bytes.Length == LengthInBytes + 1)
+            {
+                bytes = bytes.Take(LengthInBytes).ToArray();
+            }
+
+            Throw.If(bytes.Length != LengthInBytes, "Invalid address length");
+
+            var addr = new Address(bytes);
 
             switch (prefix)
             {
                 case 'P':
-                    Throw.If(kind != AddressKind.User, "address should be user");
+                    Throw.If(addr.Kind != AddressKind.User, "address should be user");
                     break;
 
                 case 'S':
-                    Throw.If(kind != AddressKind.System, "address should be system");
+                    Throw.If(addr.Kind != AddressKind.System, "address should be system");
                     break;
 
                 case 'X':
-                    Throw.If(kind >= AddressKind.Interop, "address should be interop");
+                    Throw.If(addr.Kind >= AddressKind.Interop, "address should be interop");
                     break;
 
                 default:
                     throw new Exception("invalid address prefix: " + prefix);
             }
 
-            return new Address(bytes);
+            return addr;
         }
 
         public int GetSize()

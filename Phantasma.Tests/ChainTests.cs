@@ -29,6 +29,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(addr.IsSystem);
             Assert.IsFalse(addr.IsUser);
             Assert.IsFalse(addr.IsInterop);
+
+            Assert.IsTrue(Address.IsValidAddress(addr.Text));
         }
 
         [TestMethod]
@@ -1018,7 +1020,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestNoGasSameChainTransfer()
+        public void NoGasSameChainTransfer()
         {
             var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
@@ -1146,7 +1148,7 @@ namespace Phantasma.Tests
 
 
         [TestMethod]
-        public void TestAddressComparison()
+        public void AddressComparison()
         {
             var owner = PhantasmaKeys.FromWIF("Kweyrx8ypkoPfzMsxV4NtgH8vXCWC1s1Dn3c2KJ4WAzC5nkyNt3e");
             var expectedAddress = owner.Address.Text;
@@ -1165,7 +1167,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void TestChainTransferExploit()
+        public void ChainTransferExploit()
         {
             var owner = PhantasmaKeys.FromWIF("L2LGgkZAdupN2ee8Rs6hpkc65zaGcLbxhbSDGq8oh6umUxxzeW25");
             var simulator = new NexusSimulator(owner, 1234);

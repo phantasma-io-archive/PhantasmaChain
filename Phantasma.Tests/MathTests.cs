@@ -35,8 +35,14 @@ namespace Phantasma.Tests
             rnd.NextBytes(bytes);
 
             var base58 = Base58.Encode(bytes);
-
             var output = Base58.Decode(base58);
+            Assert.IsTrue(output.Length == bytes.Length);
+            Assert.IsTrue(output.SequenceEqual(bytes));
+
+            bytes = new byte[Address.LengthInBytes];
+            bytes[0] = 1;
+            base58 = Base58.Encode(bytes);
+            output = Base58.Decode(base58);
             Assert.IsTrue(output.Length == bytes.Length);
             Assert.IsTrue(output.SequenceEqual(bytes));
         }
