@@ -1624,7 +1624,7 @@ namespace Phantasma.API
 
                 var entry = new PlatformResult();
                 entry.platform = platform;
-                entry.interop = info.InteropAddress.Text;
+                entry.interop = info.InteropAddresses.Select(x => x.Text).ToArray();
                 entry.address = info.ExternalAddress;
                 entry.chain = info.ChainAddress.Text;
                 entry.fuel = info.Symbol;

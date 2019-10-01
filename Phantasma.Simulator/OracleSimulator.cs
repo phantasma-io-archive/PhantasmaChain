@@ -81,7 +81,7 @@ namespace Phantasma.Simulator
             if (swap.platformName == platformName && chainName == platformName && swap.hash == hash)
             {
                 var info = Nexus.GetPlatformInfo(platformName);
-                var platformAddress = info.InteropAddress;
+                var platformAddress = info.InteropAddresses[0];
 
                 var token = Nexus.GetTokenInfo(swap.Symbol);
                 var amount = UnitConversion.ToBigInteger(swap.Amount, token.Decimals);

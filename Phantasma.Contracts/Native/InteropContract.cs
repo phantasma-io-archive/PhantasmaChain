@@ -67,27 +67,6 @@ namespace Phantasma.Contracts.Native
 
             foreach (var transfer in interopTx.Transfers)
             {
-                if (transfer.destinationAddress == platformInfo.InteropAddress)
-                {
-                    Runtime.Expect(!transfer.sourceAddress.IsNull, "invalid source address");
-
-                    Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
-
-                    Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
-                    var token = this.Runtime.GetToken(transfer.Symbol);
-
-                    Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-                    Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
-                    Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
-
-                    Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
-
-                    // TODO support NFT
-                    Runtime.SwapTokens(platformInfo.Name, platformInfo.ChainAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
-
-                    swapCount++;
-                }
-                else
                 if (Runtime.IsPlatformAddress(transfer.sourceAddress))
                 {
                     Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
@@ -120,7 +99,33 @@ namespace Phantasma.Contracts.Native
                         Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount);
 
                         swapCount++;
-                        break;
+                    }
+                }
+                else
+                {
+                    foreach (var interopAddress in platformInfo.InteropAddresses)
+                    {
+                        if (transfer.destinationAddress == interopAddress)
+                        {
+                            Runtime.Expect(!transfer.sourceAddress.IsNull, "invalid source address");
+
+                            Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
+
+                            Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
+                            var token = this.Runtime.GetToken(transfer.Symbol);
+
+                            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+                            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+                            Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
+
+                            Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
+
+                            // TODO support NFT
+                            Runtime.SwapTokens(platformInfo.Name, platformInfo.ChainAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
+
+                            swapCount++;
+                            break;
+                        }
                     }
                 }
             }
@@ -152,7 +157,18 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(platformID > 0, "invalid platform ID");
             var platform = Runtime.GetPlatformByIndex(platformID);
             Runtime.Expect(platform != null, "invalid platform");
-            Runtime.Expect(to != platform.InteropAddress, "invalid target address");
+
+            int interopIndex = -1;
+            for (int i=0; i<platform.InteropAddresses.Length; i++)
+            {
+                if (platform.InteropAddresses[i] == to)
+                {
+                    interopIndex = i;
+                    break;
+                }
+            }
+
+            Runtime.Expect(interopIndex == -1, "invalid target address");
 
             var feeSymbol = platform.Symbol;
             Runtime.Expect(Runtime.TokenExists(feeSymbol), "invalid fee token");

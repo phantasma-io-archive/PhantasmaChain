@@ -9,9 +9,9 @@ namespace Phantasma.Domain
     {
         string Name { get; }
         string Symbol { get; } // for fuel
-        Address InteropAddress { get; }
         string ExternalAddress { get; }
         Address ChainAddress { get; }
+        Address[] InteropAddresses { get; }
     }
 
     public struct InteropBlock
