@@ -12,7 +12,7 @@ using System.Diagnostics;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public class RuntimeVM : VirtualMachine, IRuntime
+    public class RuntimeVM : GasMachine, IRuntime
     {
         public Timestamp Time { get; private set; }
         public Transaction Transaction { get; private set; }
@@ -26,7 +26,6 @@ namespace Phantasma.Blockchain.Contracts
 
         public Address FeeTargetAddress { get; private set; }
 
-        public BigInteger UsedGas { get; private set; }
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
@@ -56,7 +55,6 @@ namespace Phantasma.Blockchain.Contracts
 
             this.MinimumFee = 1;
             this.GasPrice = 0;
-            this.UsedGas = 0;
             this.PaidGas = 0;
             this.GasTarget = chain.Address;
             this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
@@ -139,8 +137,14 @@ namespace Phantasma.Blockchain.Contracts
 
                     default:
                         Expect(false, "invalid extcall namespace: " + methodNamespace);
+                        gasCost = 0;
                         break;
                 }
+            }
+
+            if (gasCost > 0)
+            {
+                ConsumeGas(gasCost);
             }
 
             if (handlers.ContainsKey(method))
@@ -213,6 +217,9 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             this.Stack.Push(VMObject.FromObject(methodName));
+
+            var gasCost = GetGasCostForOpcode(Opcode.SWITCH);
+            ConsumeGas(gasCost);
 
             BigInteger savedGas = this.UsedGas;
 
@@ -357,7 +364,7 @@ namespace Phantasma.Blockchain.Contracts
             return ConsumeGas(gasCost);
         }
 
-        public ExecutionState ConsumeGas(BigInteger gasCost)
+        public override ExecutionState ConsumeGas(BigInteger gasCost)
         {
             if (gasCost == 0 || isBlockOperation)
             {
@@ -375,7 +382,7 @@ namespace Phantasma.Blockchain.Contracts
                 return ExecutionState.Running;
             }
 
-            UsedGas += gasCost;
+            var result = base.ConsumeGas(gasCost);
 
             if (UsedGas > MaxGas && !DelayPayment)
             {
@@ -386,7 +393,7 @@ namespace Phantasma.Blockchain.Contracts
 #endif
             }
 
-            return ExecutionState.Running;
+            return result;
         }
 
         public static BigInteger GetGasCostForOpcode(Opcode opcode)
@@ -397,16 +404,14 @@ namespace Phantasma.Blockchain.Contracts
                 case Opcode.PUT:
                 case Opcode.CALL:
                 case Opcode.LOAD:
-                    return 2;
-
-                case Opcode.EXTCALL:
-                    return 3;
-
-                case Opcode.CTX:
                     return 5;
 
-                case Opcode.SWITCH:
+                case Opcode.EXTCALL:
+                case Opcode.CTX:
                     return 10;
+
+                case Opcode.SWITCH:
+                    return 100;
 
                 case Opcode.NOP:
                 case Opcode.RET:
