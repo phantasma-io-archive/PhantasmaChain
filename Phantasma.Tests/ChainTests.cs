@@ -373,7 +373,7 @@ namespace Phantasma.Tests
 
             var neoKeys = Neo.Core.NeoKeys.Generate();
 
-            var limit = 400;
+            var limit = 800;
 
             // 1 - at this point a real NEO transaction would be done to the NEO address obtained from getPlatforms in the API
             // here we just use a random hardcoded hash and a fake oracle to simulate it

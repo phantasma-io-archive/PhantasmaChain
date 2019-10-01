@@ -135,8 +135,8 @@ namespace Phantasma.Contracts.Native
         }
 
         #region SETTLEMENTS
-        // NOTE we should later prevent contracts from manipulating those
         internal StorageMap _settledTransactions; //<Hash, Hash>
+        internal StorageMap _swapMap; // <Address, List<Hash>>
 
         public bool IsSettled(Hash hash)
         {

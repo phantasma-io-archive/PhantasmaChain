@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Text;
 using System.Collections.Generic;
 using Phantasma.VM;
 using Phantasma.Cryptography;
@@ -8,7 +10,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
-using System.Diagnostics;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -1061,6 +1063,9 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
             Runtime.Nexus.TransferTokens(Runtime, token, source, destination, amount);
+
+            UpdatePendingSwaps(source);
+            UpdatePendingSwaps(destination);
         }
 
         public void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)
@@ -1076,6 +1081,9 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
 
             Nexus.TransferToken(this, token, source, destination, tokenID);
+
+            UpdatePendingSwaps(source);
+            UpdatePendingSwaps(destination);
         }
 
         public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value, byte[] rom, byte[] ram)
@@ -1099,9 +1107,10 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(ram != null, "nft ram is missing");
             }
 
+            bool registerSwap;
+
             if (PlatformExists(sourceChain))
             {
-                Runtime.Expect(IsNativeContext(), "must be native context");
                 Runtime.Expect(sourceChain != DomainSettings.PlatformName, "invalid platform as source chain");
 
                 if (token.IsFungible())
@@ -1112,13 +1121,15 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
                 }
+
+                registerSwap = false;
             }
             else
             if (PlatformExists(targetChain))
             {
-                Runtime.Expect(IsNativeContext(), "must be native context");
                 Runtime.Expect(targetChain != DomainSettings.PlatformName, "invalid platform as target chain");
                 Nexus.BurnTokens(this, token, from, to, targetChain, value);
+                registerSwap = true;
             }
             else
             if (sourceChain == this.Chain.Name)
@@ -1150,6 +1161,8 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Nexus.BurnToken(this, token, from, to, targetChain, value);
                 }
+
+                registerSwap = true;
             }
             else
             if (targetChain == this.Chain.Name)
@@ -1166,11 +1179,41 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
                 }
+
+                registerSwap = false;
             }
             else
             {
                 throw new ChainException("invalid swap chain source and destinations");
             }
+
+            UpdatePendingSwaps(from);
+            var list = UpdatePendingSwaps(to);
+
+            if (registerSwap && to.IsUser)
+            {
+                var swap = new ChainSwap(Transaction.Hash, Hash.Null);
+                list.Add<ChainSwap>(swap);
+            }
+        }
+
+        private StorageList UpdatePendingSwaps(Address to)
+        {
+            var list = GetSwapListForAddress(this.Storage, to);
+
+            if (to.IsUser)
+            {
+                // TODO
+            }
+
+            return list;
+        }
+
+        public static StorageList GetSwapListForAddress(StorageContext storage, Address address)
+        {
+            var key = ByteArrayUtils.ConcatBytes(Encoding.UTF8.GetBytes(".swaps"), address.ToByteArray());
+            var list = new StorageList(key, storage);
+            return list;
         }
 
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
@@ -1236,11 +1279,6 @@ namespace Phantasma.Blockchain.Contracts
 #else
             throw new ChainException(description);
 #endif
-        }
-
-        private bool IsNativeContext()
-        {
-            return true; // TODO
         }
 
 #if DEBUG

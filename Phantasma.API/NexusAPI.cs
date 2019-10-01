@@ -19,7 +19,6 @@ using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
-using Phantasma.Blockchain.Swaps;
 
 namespace Phantasma.API
 {
@@ -301,7 +300,6 @@ namespace Phantasma.API
         public readonly Nexus Nexus;
         public Mempool Mempool;
         public Node Node;
-        public TokenSwapService SwapService;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
@@ -1649,11 +1647,6 @@ namespace Phantasma.API
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 1)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string accountInput)
         {
-            if (SwapService == null)
-            {
-                return new ErrorResult { error = "swap service not available" };
-            }
-
             Address address;
 
             if (Address.IsValidAddress(accountInput))
@@ -1671,22 +1664,14 @@ namespace Phantasma.API
             }
 
 
-            var swapHashes = SwapService.GetSwapHashesForAddress(address);
-            var swaps = swapHashes.Select(x => SwapService.GetSwapForSourceHash(x));
-            var swapList = swaps.Select(x => new SwapResult() {
+            var list = RuntimeVM.GetSwapListForAddress(Nexus.RootChain.Storage, address);
+            var swaps = list.All<ChainSwap>().Select(x => new SwapResult()
+            {
                 sourceHash = x.sourceHash.ToString(),
-                sourceAddress = x.sourceAddress.Text,
-                sourcePlatform = x.sourcePlatform,
-                destinationHash = x.destinationHash.ToString(),
-                destinationAddress = x.destinationAddress.Text,
-                destinationPlatform = x.destinationPlatform,
-                amount = x.amount.ToString(),
-                symbol = x.symbol,
-                decimals = (uint)Nexus.GetTokenInfo(x.symbol).Decimals, // TODO cache this
-                status = x.status.ToString(),
+                destinationHash = x.destinationHash==Hash.Null ? "pending": x.destinationHash.ToString(),
             });
 
-            return new ArrayResult() { values = swapList.Select(x => (object)x).ToArray() };
+            return new ArrayResult() { values = swaps.Select(x => (object)x).ToArray() };
         }
 
     }
