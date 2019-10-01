@@ -104,6 +104,11 @@ namespace Phantasma.Storage
                 writer.WriteVarString((string)obj);
             }
             else
+            if (type == typeof(decimal))
+            {
+                writer.Write((decimal)obj);
+            }
+            else
             if (type == typeof(BigInteger))
             {
                 writer.WriteBigInteger((BigInteger)obj);
@@ -256,6 +261,11 @@ namespace Phantasma.Storage
             if (type == typeof(string))
             {
                 return reader.ReadVarString();
+            }
+
+            if (type == typeof(decimal))
+            {
+                return reader.ReadDecimal();
             }
 
             if (type == typeof(BigInteger))
