@@ -231,7 +231,6 @@ namespace Phantasma.Cryptography
 
         public static Address FromText(string text)
         {
-
             var prefix = text[0];
 
             text = text.Substring(1);
@@ -252,7 +251,7 @@ namespace Phantasma.Cryptography
                     break;
 
                 case 'X':
-                    Throw.If(addr.Kind >= AddressKind.Interop, "address should be interop");
+                    Throw.If(addr.Kind < AddressKind.Interop, "address should be interop");
                     break;
 
                 default:
