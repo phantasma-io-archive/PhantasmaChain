@@ -48,8 +48,6 @@ namespace Phantasma.Blockchain
 
         public Chain RootChain => GetChainByName(DomainSettings.RootChainName);
 
-        private Dictionary<string, KeyValueStore<BigInteger, TokenContent>> _tokenContents = new Dictionary<string, KeyValueStore<BigInteger, TokenContent>>();
-
         private KeyValueStore<Hash, Archive> _archiveEntries;
         private KeyValueStore<Hash, byte[]> _archiveContents;
 
@@ -816,7 +814,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address target, string sourceChain, BigInteger tokenID)
+        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address target, string sourceChain, BigInteger tokenID, byte[] rom, byte[] ram)
         {
             Runtime.Expect(!token.IsFungible(), "cant be fungible");
 
@@ -834,7 +832,7 @@ namespace Phantasma.Blockchain
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
 
-            EditNFTLocation(token.Symbol, tokenID, Runtime.Chain.Name, target);
+            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, target, rom, ram, !isSettlement);
 
             if (isSettlement)
             {
@@ -917,7 +915,7 @@ namespace Phantasma.Blockchain
             if (!isSettlement)
             {
                 Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-                Runtime.Expect(DestroyNFT(token.Symbol, tokenID), "destruction of nft failed");
+                DestroyNFT(Runtime, token.Symbol, tokenID);
             }
 
             var ownerships = new OwnershipSheet(token.Symbol);
@@ -933,6 +931,7 @@ namespace Phantasma.Blockchain
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
                 Runtime.Notify(EventKind.TokenEscrow, target, new TokenEventData(token.Symbol, tokenID, targetChain));
+                Runtime.Notify(EventKind.PackedNFT, target, new PackedNFTData(token.Symbol, nft.ROM, nft.RAM));
             }
             else
             {
@@ -1048,7 +1047,8 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            EditNFTLocation(token.Symbol, tokenID, Runtime.Chain.Name, destination);
+            var nft = ReadNFT(Runtime, token.Symbol, tokenID);
+            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, true);
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
@@ -1071,147 +1071,75 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region NFT
-        private BigInteger GenerateIDForNFT(string tokenSymbol)
+        internal byte[] GetKeyForNFT(string symbol)
         {
-            var key = "ID:" + tokenSymbol;
-            BigInteger tokenID;
+            var str = $".nft." + symbol;
+            return Encoding.UTF8.GetBytes(str);
+        }
 
-            byte[] bytes;
+        internal BigInteger CreateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram)
+        {
+            Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
+            Runtime.Expect(ram != null, "invalid nft ram");
 
-            if (RootStorage.Has(key))
-            {
-                bytes = RootStorage.Get(key);
-                tokenID = Serialization.Unserialize<BigInteger>(bytes);
-                tokenID++;
-            }
-            else
-            {
-                tokenID = 1;
-            }
+            var key = GetKeyForNFT(symbol);
+            var nftMap = new StorageMap(key, Runtime.Storage);
 
-            bytes = Serialization.Serialize(tokenID);
-            RootStorage.Put(key, bytes);
+            var tokenID = Hash.FromBytes(rom);
+            Runtime.Expect(!nftMap.ContainsKey<Hash>(tokenID), "nft with same hash already exists");
 
+            var content = new TokenContent(chainName, targetAddress, rom, ram);
+            nftMap.Set<Hash, TokenContent>(tokenID, content);
             return tokenID;
         }
 
-        internal BigInteger CreateNFT(string tokenSymbol, string chainName, Address targetAddress, byte[] rom, byte[] ram)
+        internal void DestroyNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
-            Throw.IfNull(rom, nameof(rom));
-            Throw.IfNull(ram, nameof(ram));
+            Runtime.Expect(false, "not supported yet");
 
-            lock (_tokenContents)
+            var key = GetKeyForNFT(symbol);
+            var nftMap = new StorageMap(key, Runtime.Storage);
+
+            Hash tokenHash = tokenID;
+            Runtime.Expect(nftMap.ContainsKey<Hash>(tokenHash), "nft does not exists");
+            nftMap.Remove<Hash>(tokenHash);
+        }
+
+    
+        internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, bool mustExist)
+        {
+            Runtime.Expect(ram != null && ram.Length < TokenContent.MaxRAMSize, "invalid nft ram update");
+
+            var key = GetKeyForNFT(symbol);
+            var nftMap = new StorageMap(key, Runtime.Storage);
+
+            Hash tokenHash = tokenID;
+            if (nftMap.ContainsKey<Hash>(tokenHash))
             {
-                KeyValueStore<BigInteger, TokenContent> contents;
+                var content = nftMap.Get<Hash, TokenContent>(tokenHash);
 
-                if (_tokenContents.ContainsKey(tokenSymbol))
-                {
-                    contents = _tokenContents[tokenSymbol];
-                }
-                else
-                {
-                    // NOTE here we specify the data size as small, meaning the total allowed size of a nft including rom + ram is 255 bytes
-                    var key = "nft_" + tokenSymbol;
-                    contents = new KeyValueStore<BigInteger, TokenContent>(this.CreateKeyStoreAdapter(key));
-                    _tokenContents[tokenSymbol] = contents;
-                }
+                Runtime.Expect(rom.SequenceEqual(content.ROM), "invalid nft rom");
 
-                var tokenID = GenerateIDForNFT(tokenSymbol);
-
-                var content = new TokenContent(chainName, targetAddress, rom, ram);
-                contents[tokenID] = content;
-
-                return tokenID;
+                content = new TokenContent(content.CurrentChain, content.CurrentOwner, content.ROM, ram);
+                nftMap.Set<Hash, TokenContent>(tokenHash, content);
+            }
+            else
+            {
+                Runtime.Expect(!mustExist, "nft does not exist");
+                var genID = CreateNFT(Runtime, symbol, chainName, owner, rom, ram);
+                Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
         }
 
-        internal bool DestroyNFT(string tokenSymbol, BigInteger tokenID)
+        public TokenContent ReadNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
-            lock (_tokenContents)
-            {
-                if (_tokenContents.ContainsKey(tokenSymbol))
-                {
-                    var contents = _tokenContents[tokenSymbol];
+            var key = GetKeyForNFT(symbol);
+            var nftMap = new StorageMap(key, Runtime.Storage);
 
-                    if (contents.ContainsKey(tokenID))
-                    {
-                        contents.Remove(tokenID);
-                        return true;
-                    }
-                }
-            }
+            Hash tokenHash = tokenID;
+            Runtime.Expect(nftMap.ContainsKey<Hash>(tokenHash), "nft does not exists");
 
-            return false;
-        }
-
-        private bool EditNFTLocation(string tokenSymbol, BigInteger tokenID, string chainName, Address owner)
-        {
-            lock (_tokenContents)
-            {
-                if (_tokenContents.ContainsKey(tokenSymbol))
-                {
-                    var contents = _tokenContents[tokenSymbol];
-
-                    if (contents.ContainsKey(tokenID))
-                    {
-                        var content = contents[tokenID];
-                        content = new TokenContent(chainName, owner, content.ROM, content.RAM);
-                        contents.Set(tokenID, content);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        internal bool EditNFTContent(string tokenSymbol, BigInteger tokenID, byte[] ram)
-        {
-            if (ram == null || ram.Length > TokenContent.MaxRAMSize)
-            {
-                return false;
-            }
-
-            lock (_tokenContents)
-            {
-                if (_tokenContents.ContainsKey(tokenSymbol))
-                {
-                    var contents = _tokenContents[tokenSymbol];
-
-                    if (contents.ContainsKey(tokenID))
-                    {
-                        var content = contents[tokenID];
-                        if (ram == null)
-                        {
-                            ram = content.RAM;
-                        }
-                        content = new TokenContent(content.CurrentChain, content.CurrentOwner, content.ROM, ram);
-                        contents.Set(tokenID, content);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        public TokenContent GetNFT(string tokenSymbol, BigInteger tokenID)
-        {
-            lock (_tokenContents)
-            {
-                if (_tokenContents.ContainsKey(tokenSymbol))
-                {
-                    var contents = _tokenContents[tokenSymbol];
-
-                    if (contents.ContainsKey(tokenID))
-                    {
-                        var content = contents[tokenID];
-                        return content;
-                    }
-                }
-            }
-
-            throw new ChainException($"NFT not found ({tokenSymbol}:{tokenID})");
+            return nftMap.Get<Hash, TokenContent>(tokenHash);
         }
         #endregion
 

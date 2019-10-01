@@ -315,6 +315,20 @@ namespace Phantasma.Blockchain
             return ownership.Get(storage, address).ToArray();
         }
 
+        public TokenContent ReadToken(StorageContext storage, string symbol, BigInteger tokenID)
+        {
+            var key = Nexus.GetKeyForNFT(symbol);
+            var nftMap = new StorageMap(key, storage);
+
+            Hash tokenHash = tokenID;
+            if (!nftMap.ContainsKey<Hash>(tokenHash))
+            {
+                throw new ChainException($"nft {tokenID} / {symbol} does not exist");
+            }
+
+            return nftMap.Get<Hash, TokenContent>(tokenHash);
+        }
+
         /// <summary>
         /// Deletes all blocks starting at the specified hash.
         /// </summary>

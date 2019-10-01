@@ -2,6 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
+using Phantasma.Storage;
 using Phantasma.Storage.Context;
 
 namespace Phantasma.Contracts.Native
@@ -147,7 +148,7 @@ namespace Phantasma.Contracts.Native
             _settledTransactions.Set(sourceHash, targetHash);
         }
 
-        private void DoSettlement(IChain sourceChain, Address sourceAddress, Address targetAddress, string symbol, BigInteger value)
+        private void DoSettlement(IChain sourceChain, Address sourceAddress, Address targetAddress, string symbol, BigInteger value, byte[] data)
         {
             Runtime.Expect(value > 0, "value must be greater than zero");
             Runtime.Expect(targetAddress.IsUser, "target must not user address");
@@ -170,7 +171,15 @@ namespace Phantasma.Contracts.Native
             }
             */
 
-            Runtime.SwapTokens(sourceChain.Name, sourceAddress, Runtime.Chain.Name, targetAddress, symbol, value);
+            if (tokenInfo.IsFungible())
+            {
+                Runtime.SwapTokens(sourceChain.Name, sourceAddress, Runtime.Chain.Name, targetAddress, symbol, value, null, null);
+            }
+            else
+            {
+                var nft = Serialization.Unserialize<PackedNFTData>(data);                 
+                Runtime.SwapTokens(sourceChain.Name, sourceAddress, Runtime.Chain.Name, targetAddress, symbol, value, nft.ROM, nft.RAM);
+            }
         }
 
         public void SettleTransaction(Address sourceChainAddress, Hash hash)
@@ -189,7 +198,7 @@ namespace Phantasma.Contracts.Native
             {
                 if (transfer.destinationChain == this.Runtime.Chain.Name)
                 {
-                    DoSettlement(sourceChain, transfer.sourceAddress, transfer.destinationAddress, transfer.Symbol, transfer.Value);
+                    DoSettlement(sourceChain, transfer.sourceAddress, transfer.destinationAddress, transfer.Symbol, transfer.Value, transfer.Data);
                     settlements++;
                 }
             }

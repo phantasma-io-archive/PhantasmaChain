@@ -3,6 +3,7 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -174,21 +175,14 @@ namespace Phantasma.Blockchain
             return content;
         }
 
-        private bool FindMatchingEvent(IEnumerable<Event> events, IEnumerable<EventKind> kinds, string symbol, BigInteger value, out Event output)
+        private bool FindMatchingEvent(IEnumerable<Event> events, out Event output, Func<Event, bool> predicate)
         {
             foreach (var evt in events)
             {
-                foreach (var kind in kinds)
+                if (predicate(evt))
                 {
-                    if (evt.Kind == kind)
-                    {
-                        var data = evt.GetContent<TokenEventData>();
-                        if (data.Symbol == symbol && data.Value == value)
-                        {
-                            output = evt;
-                            return true;
-                        }
-                    }
+                    output = evt;
+                    return true;
                 }
             }
 
@@ -237,10 +231,45 @@ namespace Phantasma.Blockchain
                                             {
                                                 var data = evt.GetContent<TokenEventData>();
                                                 Event other;
-                                                if (FindMatchingEvent(events, new EventKind[] { EventKind.TokenReceive, EventKind.TokenEscrow }, data.Symbol, data.Value, out other))
+                                                if (FindMatchingEvent(events, out other,
+                                                    (x) =>
+                                                    {
+                                                        if (x.Kind != EventKind.TokenReceive && x.Kind != EventKind.TokenEscrow)
+                                                        {
+                                                            return false;
+                                                        }
+
+                                                        var y = x.GetContent<TokenEventData>();
+                                                        return y.Symbol == data.Symbol && y.Value == data.Value;
+                                                    }))
                                                 {
                                                     var otherData = other.GetContent<TokenEventData>();
-                                                    transfers.Add(new InteropTransfer(data.ChainName, evt.Address, otherData.ChainName, other.Address, Address.Null, data.Symbol, data.Value));
+
+                                                    byte[] rawData = null;
+
+                                                    var token = Nexus.GetTokenInfo(data.Symbol);
+                                                    if (!token.IsFungible())
+                                                    {
+                                                        Event nftEvent;
+                                                        if (!FindMatchingEvent(events, out nftEvent,
+                                                            (x) =>
+                                                            {
+                                                                if (x.Kind != EventKind.PackedNFT)
+                                                                {
+                                                                    return false;
+                                                                }
+
+                                                                var y = x.GetContent<PackedNFTData>();
+                                                                return y.Symbol == data.Symbol;
+                                                            }))
+                                                        {
+                                                            throw new OracleException($"invalid nft transfer with hash in chain {chainName} @ {platformName}");
+                                                        }
+
+                                                        rawData = nftEvent.Data;
+                                                    }
+
+                                                    transfers.Add(new InteropTransfer(data.ChainName, evt.Address, otherData.ChainName, other.Address, Address.Null, data.Symbol, data.Value, rawData));
                                                 }
                                                 break;
                                             }

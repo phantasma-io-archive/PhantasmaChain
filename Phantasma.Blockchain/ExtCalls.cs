@@ -459,9 +459,18 @@ namespace Phantasma.Blockchain
 
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
-            var amount = temp.AsNumber();
+            var value = temp.AsNumber();
 
-            Runtime.SwapTokens(Runtime.Chain.Name, source, targetChain, destination, symbol, amount);
+            var token = Runtime.GetToken(symbol);
+            if (token.IsFungible())
+            {
+                Runtime.SwapTokens(Runtime.Chain.Name, source, targetChain, destination, symbol, value, null, null);
+            }
+            else
+            {
+                var nft = Runtime.ReadToken(symbol, value);
+                Runtime.SwapTokens(Runtime.Chain.Name, source, targetChain, destination, symbol, value, nft.ROM, nft.ROM);
+            }
 
             return ExecutionState.Running;
         }

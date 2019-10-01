@@ -55,6 +55,7 @@ namespace Phantasma.Domain
         LeaderboardReset = 45,
         PlatformCreate = 46,
         TransactionSettle = 47,
+        PackedNFT = 48,
         Custom = 64,
     }
 

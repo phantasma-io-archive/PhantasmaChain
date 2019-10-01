@@ -82,7 +82,8 @@ namespace Phantasma.Contracts.Native
 
                     Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
-                    Runtime.SwapTokens(platformInfo.Name, platformInfo.ChainAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value);
+                    // TODO support NFT
+                    Runtime.SwapTokens(platformInfo.Name, platformInfo.ChainAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
 
                     swapCount++;
                 }
@@ -165,7 +166,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
-            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, platform.ChainAddress, symbol, amount);
+
+            // TODO support NFT
+            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, platform.ChainAddress, symbol, amount, null, null);
 
             var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
 

@@ -996,10 +996,10 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
-            var tokenID = Nexus.CreateNFT(symbol, Runtime.Chain.Name, target, rom, ram);
+            var tokenID = Nexus.CreateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
-            Nexus.MintToken(this, token, from, target, Chain.Name, tokenID);
+            Nexus.MintToken(this, token, from, target, Chain.Name, tokenID, rom, ram);
 
             return tokenID;
         }
@@ -1076,7 +1076,7 @@ namespace Phantasma.Blockchain.Contracts
             Nexus.TransferToken(this, token, source, destination, tokenID);
         }
 
-        public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value)
+        public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value, byte[] rom, byte[] ram)
         {
             var Runtime = this;
 
@@ -1086,11 +1086,30 @@ namespace Phantasma.Blockchain.Contracts
             var token = Runtime.GetToken(symbol);
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "must be transferable token");
 
+            if (token.IsFungible())
+            {
+                Runtime.Expect(rom == null, "fungible tokens cant have rom");
+                Runtime.Expect(ram == null, "fungible tokens cant have ram");
+            }
+            else
+            {
+                Runtime.Expect(rom != null & rom.Length > 0, "nft rom is missing");
+                Runtime.Expect(ram != null, "nft ram is missing");
+            }
+
             if (PlatformExists(sourceChain))
             {
                 Runtime.Expect(IsNativeContext(), "must be native context");
                 Runtime.Expect(sourceChain != DomainSettings.PlatformName, "invalid platform as source chain");
-                Nexus.MintTokens(this, token, from, to, sourceChain, value);
+
+                if (token.IsFungible())
+                {
+                    Nexus.MintTokens(this, token, from, to, sourceChain, value);
+                }
+                else
+                {
+                    Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
+                }
             }
             else
             if (PlatformExists(targetChain))
@@ -1143,7 +1162,7 @@ namespace Phantasma.Blockchain.Contracts
                 }
                 else
                 {
-                    Nexus.MintToken(this, token, from, to, sourceChain, value);
+                    Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
                 }
             }
             else
@@ -1154,12 +1173,13 @@ namespace Phantasma.Blockchain.Contracts
 
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
-            Nexus.EditNFTContent(tokenSymbol, tokenID, ram);
+            var nft = ReadToken(tokenSymbol, tokenID);
+            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, true);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)
         {
-            return Nexus.GetNFT(tokenSymbol, tokenID);
+            return Nexus.ReadNFT(this, tokenSymbol, tokenID);
         }
 
         public bool IsPlatformAddress(Address address)
