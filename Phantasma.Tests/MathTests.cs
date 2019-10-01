@@ -46,6 +46,17 @@ namespace Phantasma.Tests
             Assert.IsTrue(output.Length == bytes.Length);
             Assert.IsTrue(output.SequenceEqual(bytes));
         }
+
+        [TestMethod]
+        public void Test35ByteEncodeDecode58()
+        {
+            var input = new byte[35];
+
+            var temp = Base58.Encode(input);
+            var output = Base58.Decode(temp);
+
+            Assert.IsTrue(output.Length == input.Length);
+        }
         #endregion
 
         #region BIG INT
