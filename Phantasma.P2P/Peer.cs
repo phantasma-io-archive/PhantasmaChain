@@ -22,6 +22,7 @@ namespace Phantasma.Network.P2P
     public abstract class Peer
     {
         public Address Address { get; private set; }
+        public string Version { get; private set; }
         public readonly Endpoint Endpoint;
 
         public PeerCaps Capabilities { get; set; }

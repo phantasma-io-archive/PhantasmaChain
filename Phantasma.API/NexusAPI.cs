@@ -16,7 +16,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Network.P2P;
 using Phantasma.Core.Types;
-using Phantasma.Pay;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
@@ -1476,9 +1475,9 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No node available" };
             }
 
-            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
+            var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
 
-            peers.Add(new PeerResult() { url = Node.PublicIP, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
+            peers.Add(new PeerResult() { url = Node.PublicIP, version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
 
             peers.Shuffle();
 

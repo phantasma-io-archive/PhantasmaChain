@@ -387,6 +387,9 @@ namespace Phantasma.API
         [APIDescription("URL of peer")]
         public string url;
 
+        [APIDescription("Software version of peer")]
+        public string version;
+
         [APIDescription("Features supported by peer")]
         public string flags;
 

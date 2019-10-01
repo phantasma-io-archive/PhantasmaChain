@@ -43,6 +43,8 @@ namespace Phantasma.Network.P2P
     {
         public readonly static int MaxActiveConnections = 64;
 
+        public readonly string Version;
+
         public readonly int Port;
         public Address Address => Keys.Address;
 
@@ -73,10 +75,11 @@ namespace Phantasma.Network.P2P
         public readonly string PublicIP;
         public readonly PeerCaps Capabilities;
 
-        public Node(Nexus nexus, Mempool mempool, PhantasmaKeys keys, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
+        public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
 
+            this.Version = version;
             this.Nexus = nexus;
             this.Port = port;
             this.Keys = keys;
