@@ -26,6 +26,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransferBalance", Runtime_TransferBalance);
             vm.RegisterMethod("Runtime.MintTokens", Runtime_MintTokens);
             vm.RegisterMethod("Runtime.BurnTokens", Runtime_BurnTokens);
+            vm.RegisterMethod("Runtime.SwapTokens", Runtime_SwapTokens);
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
@@ -435,6 +436,32 @@ namespace Phantasma.Blockchain
             var amount = Runtime.GetBalance(symbol, source);
 
             Runtime.TransferTokens(symbol, source, destination, amount);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_SwapTokens(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Stack.Count >= 5, "not enough arguments in stack");
+
+            VMObject temp;
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for target chain");
+            var targetChain = temp.AsString();
+
+            var source = PopAddress(Runtime);
+            var destination = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var amount = temp.AsNumber();
+
+            Runtime.SwapTokens(Runtime.Chain.Name, source, targetChain, destination, symbol, amount);
 
             return ExecutionState.Running;
         }

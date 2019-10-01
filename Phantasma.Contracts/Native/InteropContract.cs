@@ -47,7 +47,7 @@ namespace Phantasma.Contracts.Native
         {
         }
 
-        public void SettleTransaction(Address from, string platform, Hash hash)
+        public void SettleTransaction(Address from, string platform, string chain, Hash hash)
         {
             Runtime.Expect(platform != DomainSettings.PlatformName, "must be external platform");
             Runtime.Expect(Runtime.PlatformExists(platform), "unsupported platform");
@@ -59,7 +59,7 @@ namespace Phantasma.Contracts.Native
             var chainHashes = _hashes.Get<string, StorageMap>(platform);
             Runtime.Expect(!chainHashes.ContainsKey<Hash>(hash), "hash already seen");
 
-            var interopTx = Runtime.ReadTransactionFromOracle(platform, DomainSettings.RootChainName, hash);
+            var interopTx = Runtime.ReadTransactionFromOracle(platform, chain, hash);
 
             Runtime.Expect(interopTx.Hash == hash, "unxpected hash");
 
@@ -71,7 +71,7 @@ namespace Phantasma.Contracts.Native
                 {
                     Runtime.Expect(!transfer.sourceAddress.IsNull, "invalid source address");
 
-                    Runtime.Expect(transfer.Amount > 0, "amount must be positive and greater than zero");
+                    Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
 
                     Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
                     var token = this.Runtime.GetToken(transfer.Symbol);
@@ -82,14 +82,14 @@ namespace Phantasma.Contracts.Native
 
                     Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
-                    Runtime.TransferTokens(transfer.Symbol, platformInfo.InteropAddress, transfer.interopAddress, transfer.Amount);
+                    Runtime.SwapTokens(platformInfo.Name, platformInfo.ChainAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value);
 
                     swapCount++;
                 }
                 else
                 if (Runtime.IsPlatformAddress(transfer.sourceAddress))
                 {
-                    Runtime.Expect(transfer.Amount > 0, "amount must be positive and greater than zero");
+                    Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
 
                     Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
                     var token = this.Runtime.GetToken(transfer.Symbol);
@@ -102,7 +102,7 @@ namespace Phantasma.Contracts.Native
                     for (int i=0; i<count; i++)
                     {
                         var entry = _withdraws.Get<InteropWithdraw>(i);
-                        if (entry.destination == transfer.destinationAddress && entry.transferAmount == transfer.Amount && entry.transferSymbol == transfer.Symbol)
+                        if (entry.destination == transfer.destinationAddress && entry.transferAmount == transfer.Value && entry.transferSymbol == transfer.Symbol)
                         {
                             index = i;
                             break;
@@ -165,7 +165,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
-            Runtime.TransferTokens(symbol, from, platform.InteropAddress, amount);
+            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, platform.ChainAddress, symbol, amount);
 
             var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
 

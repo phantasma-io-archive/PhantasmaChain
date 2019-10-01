@@ -103,12 +103,11 @@ namespace Phantasma.Domain
         void MintTokens(string symbol, Address from, Address target, BigInteger amount);
         void BurnTokens(string symbol, Address from, BigInteger amount);
         void TransferTokens(string symbol, Address source, Address destination, BigInteger amount);
-        void SendTokens(Address targetChainAddress, Address from, Address to, string symbol, BigInteger amount);
+        void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger amount);
 
         BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram);
-        void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
-        void SendToken(Address targetChainAddress, Address from, Address to, string symbol, BigInteger tokenID);
         void BurnToken(string symbol, Address from, BigInteger tokenID);
+        void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
 

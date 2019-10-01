@@ -1,5 +1,7 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Domain
 {
@@ -9,6 +11,7 @@ namespace Phantasma.Domain
         string Symbol { get; } // for fuel
         Address InteropAddress { get; }
         string ExternalAddress { get; }
+        Address ChainAddress { get; }
     }
 
     public struct InteropBlock
@@ -32,29 +35,33 @@ namespace Phantasma.Domain
         public readonly Hash Hash;        
         public readonly InteropTransfer[] Transfers;
 
-        public InteropTransaction(Hash hash, InteropTransfer[] transfers)
+        public InteropTransaction(Hash hash, IEnumerable<InteropTransfer> transfers)
         {
             Hash = hash;
-            this.Transfers = transfers;
+            this.Transfers = transfers.ToArray();
         }
     }
 
     public struct InteropTransfer
     {
+        public readonly string sourceChain;
         public readonly Address sourceAddress;
+        public readonly string destinationChain;
         public readonly Address destinationAddress;
         public readonly Address interopAddress;
         public readonly string Symbol;
-        public BigInteger Amount;
+        public BigInteger Value;
         public byte[] Data;
 
-        public InteropTransfer(Address sourceAddress, Address destinationAddress, Address interopAddress, string symbol, BigInteger amount, byte[] data = null)
+        public InteropTransfer(string sourceChain, Address sourceAddress, string destinationChain, Address destinationAddress, Address interopAddress, string symbol, BigInteger value, byte[] data = null)
         {
+            this.sourceChain = sourceChain;
             this.sourceAddress = sourceAddress;
+            this.destinationChain = destinationChain;
             this.destinationAddress = destinationAddress;
             this.interopAddress = interopAddress;
             Symbol = symbol;
-            Amount = amount;
+            Value = value;
             Data = data != null ? data : new byte[0];
         }
     }

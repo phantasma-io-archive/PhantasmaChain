@@ -174,6 +174,28 @@ namespace Phantasma.Blockchain
             return content;
         }
 
+        private bool FindMatchingEvent(IEnumerable<Event> events, IEnumerable<EventKind> kinds, string symbol, BigInteger value, out Event output)
+        {
+            foreach (var evt in events)
+            {
+                foreach (var kind in kinds)
+                {
+                    if (evt.Kind == kind)
+                    {
+                        var data = evt.GetContent<TokenEventData>();
+                        if (data.Symbol == symbol && data.Value == value)
+                        {
+                            output = evt;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            output = new Event();
+            return false;
+        }
+
         public byte[] ReadChainOracle(string platformName, string chainName, string[] input)
         {
             if (input == null || input.Length != 2)
@@ -190,12 +212,53 @@ namespace Phantasma.Blockchain
                         Hash hash;
                         if (Hash.TryParse(input[1], out hash))
                         {
-                            var tx = PullPlatformTransaction(platformName, chainName, hash);
+                            InteropTransaction tx;
+
+                            if (platformName == DomainSettings.PlatformName)
+                            {
+                                var chain = Nexus.GetChainByName(chainName);
+
+                                var blockHash = chain.GetBlockHashOfTransaction(hash);
+                                var block = chain.GetBlockByHash(blockHash);
+
+                                var temp = chain.GetTransactionByHash(hash);
+                                if (block == null || temp == null)
+                                {
+                                    throw new OracleException($"invalid transaction hash for chain {chainName} @ {platformName}");
+                                }
+
+                                var events = block.GetEventsForTransaction(hash);
+                                var transfers = new List<InteropTransfer>();
+                                foreach (var evt in events)
+                                {
+                                    switch (evt.Kind)
+                                    {
+                                        case EventKind.TokenSend:
+                                            {
+                                                var data = evt.GetContent<TokenEventData>();
+                                                Event other;
+                                                if (FindMatchingEvent(events, new EventKind[] { EventKind.TokenReceive, EventKind.TokenEscrow }, data.Symbol, data.Value, out other))
+                                                {
+                                                    var otherData = other.GetContent<TokenEventData>();
+                                                    transfers.Add(new InteropTransfer(data.ChainName, evt.Address, otherData.ChainName, other.Address, Address.Null, data.Symbol, data.Value));
+                                                }
+                                                break;
+                                            }
+                                    }
+                                }
+
+                                tx = new InteropTransaction(hash, transfers);
+                            }
+                            else
+                            {
+                                tx = PullPlatformTransaction(platformName, chainName, hash);
+                            }
+
                             return Serialization.Serialize(tx);
                         }
                         else
                         {
-                            throw new OracleException("invalid transaction hash");
+                            throw new OracleException($"invalid transaction hash for chain {chainName} @ {platformName}");
                         }
                     }
 
@@ -204,12 +267,29 @@ namespace Phantasma.Blockchain
                         Hash hash;
                         if (Hash.TryParse(input[1], out hash))
                         {
-                            var block = PullPlatformBlock(platformName, chainName, hash);
+                            InteropBlock block;
+
+                            if (platformName == DomainSettings.PlatformName)
+                            {
+                                var chain = Nexus.GetChainByName(chainName);
+                                var temp = chain.GetBlockByHash(hash);
+                                if (temp == null)
+                                {
+                                    throw new OracleException($"invalid block hash for chain {chainName} @ {platformName}");
+                                }
+
+                                block = new InteropBlock(platformName, chainName, hash, temp.TransactionHashes);
+                            }
+                            else
+                            {
+                                block = PullPlatformBlock(platformName, chainName, hash);
+                            }
+
                             return Serialization.Serialize(block);
                         }
                         else
                         {
-                            throw new OracleException("invalid block hash");
+                            throw new OracleException($"invalid block hash for chain {chainName} @ {platformName}");
                         }
                     }
 

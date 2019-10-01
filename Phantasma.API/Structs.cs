@@ -34,6 +34,7 @@ namespace Phantasma.API
         public string platform;
         public string address;
         public string interop;
+        public string chain;
         public string fuel;
         public string[] tokens;
     }

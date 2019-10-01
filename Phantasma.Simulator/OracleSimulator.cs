@@ -78,7 +78,7 @@ namespace Phantasma.Simulator
         protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
         {
             foreach (var swap in _swaps)
-            if (swap.platformName == platformName && chainName == DomainSettings.RootChainName && swap.hash == hash)
+            if (swap.platformName == platformName && chainName == platformName && swap.hash == hash)
             {
                 var info = Nexus.GetPlatformInfo(platformName);
                 var platformAddress = info.InteropAddress;
@@ -88,7 +88,7 @@ namespace Phantasma.Simulator
 
                     return new InteropTransaction(hash, new InteropTransfer[]
                     {
-                        new InteropTransfer(swap.sourceAddress, platformAddress, swap.interopAddress, swap.Symbol, amount)
+                        new InteropTransfer(platformName, swap.sourceAddress, platformName, platformAddress, swap.interopAddress, swap.Symbol, amount)
                     });
             }
 

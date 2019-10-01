@@ -28,7 +28,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
 
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
-            Runtime.Expect(!_nameMap.ContainsKey(name), "name already used");
+            Runtime.Expect(!_nameMap.ContainsKey(name), "name already used for other account");
+
+            Runtime.Expect(Runtime.GetChainByName(name) == null, "name already used for a chain");
 
             _addressMap.Set(target, name);
             _nameMap.Set(name, target);

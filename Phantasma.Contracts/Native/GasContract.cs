@@ -94,7 +94,7 @@ namespace Phantasma.Contracts.Native
             }
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
-            var bombGas = spentGas / 2;
+            var bombGas = Runtime.IsRootChain() ? spentGas / 2 : 0;
 
             if (bombGas > 0)
             {

@@ -13,13 +13,15 @@ namespace Phantasma.Blockchain
         public string Symbol { get; private set; } // for fuel
         public Address InteropAddress { get; private set; }
         public string ExternalAddress { get; private set; }
+        public Address ChainAddress { get; private set; }
 
-        public PlatformInfo(string name, string symbol, Address interopAddress, string externalAddres) : this()
+        public PlatformInfo(string name, string symbol, Address interopAddress, string externalAddress, Address chainAddress) : this()
         {
             Name = name;
             Symbol = symbol;
             InteropAddress = interopAddress;
-            ExternalAddress = externalAddres;
+            ExternalAddress = externalAddress;
+            ChainAddress = chainAddress;
         }
 
         public void SerializeData(BinaryWriter writer)
@@ -28,6 +30,7 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(Symbol);
             writer.WriteAddress(InteropAddress);
             writer.WriteVarString(ExternalAddress);
+            writer.WriteAddress(ChainAddress);
         }
 
         public void UnserializeData(BinaryReader reader)
@@ -36,6 +39,7 @@ namespace Phantasma.Blockchain
             this.Symbol = reader.ReadVarString();
             this.InteropAddress = reader.ReadAddress();
             this.ExternalAddress = reader.ReadVarString();
+            this.ChainAddress = reader.ReadAddress();
         }
     }
 

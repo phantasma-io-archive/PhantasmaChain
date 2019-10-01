@@ -522,6 +522,16 @@ namespace Phantasma.Blockchain
 
         public bool IsContractDeployed(StorageContext storage, Address contractAddress)
         {
+            if (contractAddress == SmartContract.GetAddressForName(Nexus.GasContractName))
+            {
+                return true;
+            }
+
+            if (contractAddress == SmartContract.GetAddressForName(Nexus.BlockContractName))
+            {
+                return true;
+            }
+
             var key = GetContractDeploymentKey(contractAddress);
             return storage.Has(key);
         }

@@ -510,10 +510,12 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var chain = new Chain(this, name, _logger);
+            if (PlatformExists(name))
+            {
+                return false;
+            }
 
-            chain.DeployNativeContract(storage, SmartContract.GetAddressForName(GasContractName));
-            chain.DeployNativeContract(storage, SmartContract.GetAddressForName(BlockContractName));
+            var chain = new Chain(this, name, _logger);
 
             // add to persistent list of chains
             var chainList = this.Chains.ToList();
@@ -783,10 +785,12 @@ namespace Phantasma.Blockchain
             throw new ChainException($"Token does not exist ({symbol})");
         }
 
-        internal void MintTokens(RuntimeVM Runtime, IToken token, Address from, Address target, BigInteger amount, bool isSettlement)
+        internal void MintTokens(RuntimeVM Runtime, IToken token, Address source, Address target, string sourceChain, BigInteger amount)
         {
             Runtime.Expect(token.IsFungible(), "must be fungible");
             Runtime.Expect(amount > 0, "invalid amount");
+
+            var isSettlement = sourceChain != Runtime.Chain.Name;
 
             var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
             Runtime.Expect(supply.Mint(Runtime.Storage, amount, token.MaxSupply), "mint supply failed");
@@ -800,54 +804,50 @@ namespace Phantasma.Blockchain
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
-            Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+            if (isSettlement)
+            {
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, sourceChain));
+                Runtime.Notify(EventKind.TokenClaim, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+            }
+            else
+            {
+                Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+            }
         }
 
         // NFT version
-        internal bool MintToken(RuntimeVM runtime, string symbol, Address source, Address target, BigInteger tokenID, bool isSettlement)
+        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address target, string sourceChain, BigInteger tokenID)
         {
-            if (!TokenExists(symbol))
+            Runtime.Expect(!token.IsFungible(), "cant be fungible");
+
+            var isSettlement = sourceChain != Runtime.Chain.Name;
+
+            var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
+            Runtime.Expect(supply.Mint(Runtime.Storage, 1, token.MaxSupply), "supply mint failed");
+
+            var ownerships = new OwnershipSheet(token.Symbol);
+            Runtime.Expect(ownerships.Add(Runtime.Storage, target, tokenID), "ownership add failed");
+
+            var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, target, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
+
+            var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
+
+            EditNFTLocation(token.Symbol, tokenID, Runtime.Chain.Name, target);
+
+            if (isSettlement)
             {
-                return false;
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, sourceChain));
+                Runtime.Notify(EventKind.TokenClaim, target, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
-
-            var tokenInfo = GetTokenInfo(symbol);
-
-            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            else
             {
-                return false;
+                Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
-
-            var supply = new SupplySheet(symbol, runtime.Chain, this);
-            if (!supply.Mint(runtime.Storage, 1, tokenInfo.MaxSupply))
-            {
-                return false;
-            }
-
-            var ownerships = new OwnershipSheet(symbol);
-            if (!ownerships.Add(runtime.Storage, target, tokenID))
-            {
-                return false;
-            }
-
-            var tokenTriggerResult = runtime.InvokeTriggerOnToken(tokenInfo, isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint, target, symbol, tokenID);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
-
-            var accountTriggerResult = runtime.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint, target, symbol, tokenID);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
-
-            EditNFTLocation(symbol, tokenID, runtime.Chain.Name, target);
-            runtime.Notify(EventKind.TokenMint, target, new TokenEventData(symbol, tokenID, runtime.Chain.Name));
-            return true;
         }
 
-        internal bool BurnTokens(RuntimeVM runtime, IToken token, Address target, BigInteger amount, bool isSettlement)
+        internal bool BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address target, string targetChain, BigInteger amount)
         {
             if (!token.Flags.HasFlag(TokenFlags.Fungible))
             {
@@ -859,72 +859,85 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var supply = new SupplySheet(token.Symbol, runtime.Chain, this);
+            var isSettlement = targetChain != Runtime.Chain.Name;
 
-            if (token.IsCapped() && !supply.Burn(runtime.Storage, amount))
+            var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
+
+            if (token.IsCapped() && !supply.Burn(Runtime.Storage, amount))
             {
                 return false;
             }
 
             var balances = new BalanceSheet(token.Symbol);
-            if (!balances.Subtract(runtime.Storage, target, amount))
+            if (!balances.Subtract(Runtime.Storage, source, amount))
             {
                 return false;
             }
 
-            var tokenTriggerResult = runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, target, token.Symbol, amount);
+            var tokenTriggerResult = Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, token.Symbol, amount);
             if (!tokenTriggerResult)
             {
                 return false;
             }
 
-            var accountTriggerResult = runtime.InvokeTriggerOnAccount(target, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, target, token.Symbol, amount);
+            var accountTriggerResult = Runtime.InvokeTriggerOnAccount(source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, token.Symbol, amount);
             if (!accountTriggerResult)
             {
                 return false;
             }
 
-            runtime.Notify(EventKind.TokenBurn, target, new TokenEventData(token.Symbol, amount, runtime.Chain.Name));
+            if (isSettlement)
+            {
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenEscrow, target, new TokenEventData(token.Symbol, amount, targetChain));
+            }
+            else
+            {
+                Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+            }
+
             return true;
         }
 
         // NFT version
-        internal void BurnToken(RuntimeVM Runtime, string symbol, Address target, BigInteger tokenID, bool isSettlement)
+        internal void BurnToken(RuntimeVM Runtime, IToken token, Address source, Address target, string targetChain, BigInteger tokenID)
         {
-            Runtime.Expect(TokenExists(symbol), "invalid token");    
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "can't be fungible");
 
-            var tokenInfo = GetTokenInfo(symbol);
+            var isSettlement = targetChain != Runtime.Chain.Name;
 
-            Runtime.Expect(!tokenInfo.Flags.HasFlag(TokenFlags.Fungible), "can't be fungible");
-
-            if (!isSettlement)
-            {
-                Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-            }
-
-            var nft = Runtime.ReadToken(symbol, tokenID);
+            var nft = Runtime.ReadToken(token.Symbol, tokenID);
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
 
             var chain = RootChain;
-            var supply = new SupplySheet(symbol, chain, this);
+            var supply = new SupplySheet(token.Symbol, chain, this);
 
             Runtime.Expect(supply.Burn(Runtime.Storage, 1), "supply burning failed");
 
             if (!isSettlement)
             {
-                Runtime.Expect(DestroyNFT(symbol, tokenID), "destruction of nft failed");
+                Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+                Runtime.Expect(DestroyNFT(token.Symbol, tokenID), "destruction of nft failed");
             }
 
-            var ownerships = new OwnershipSheet(symbol);
-            Runtime.Expect(ownerships.Remove(Runtime.Storage, target, tokenID), "ownership removal failed");
+            var ownerships = new OwnershipSheet(token.Symbol);
+            Runtime.Expect(ownerships.Remove(Runtime.Storage, source, tokenID), "ownership removal failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(tokenInfo, tokenTrigger, target, symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, accountTrigger, source, token.Symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
 
-            Runtime.Notify(EventKind.TokenBurn, target, new TokenEventData(symbol, tokenID, Runtime.Chain.Name));
+            if (isSettlement)
+            {
+                Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenEscrow, target, new TokenEventData(token.Symbol, tokenID, targetChain));
+            }
+            else
+            {
+                Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
+            }
         }
 
         internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount)
@@ -1641,7 +1654,8 @@ namespace Phantasma.Blockchain
             var platformList = this.Platforms.ToList();
             var platformID = (byte)(1 + platformList.Count);
 
-            var entry = new PlatformInfo(name, fuelSymbol, interopAddress, externalAddress);
+            var chainAddress = Address.FromHash(name);
+            var entry = new PlatformInfo(name, fuelSymbol, interopAddress, externalAddress, chainAddress);
 
             // add to persistent list of tokens
             platformList.Add(name);

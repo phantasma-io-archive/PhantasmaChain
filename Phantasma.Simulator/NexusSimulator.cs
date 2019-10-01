@@ -8,7 +8,6 @@ using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using Phantasma.Storage;
 using Phantasma.Blockchain;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.CodeGen.Assembler;
@@ -52,9 +51,6 @@ namespace Phantasma.Simulator
             "fetish", "fiend", "flash", "fragment", "freak", "fury", "ghoul", "gloom", "gluttony", "grace", "griffin", "grim",
             "whiz", "wolf", "wrath", "zero", "zigzag", "zion"
         };
-
-        private Dictionary<Chain, SideChainPendingBlock> _pendingEntries = new Dictionary<Chain, SideChainPendingBlock>();
-        private List<SideChainPendingBlock> _pendingBlocks = new List<SideChainPendingBlock>();
 
         public readonly Logger Logger;
 
@@ -316,26 +312,6 @@ namespace Phantasma.Simulator
 
                             CurrentTime += blockTimeSkip;
 
-                            // add the finished block hash to each pending side chain tx
-                            if (_pendingEntries.Count > 0)
-                            {
-                                foreach (var entry in _pendingEntries.Values)
-                                {
-                                    if (entry.sourceChain != chain) continue;
-
-                                    var pendingBlock = new SideChainPendingBlock()
-                                    {
-                                        sourceChain = entry.sourceChain,
-                                        destChain = entry.destChain,
-                                        hash = block.Hash,
-                                        tokenSymbol = entry.tokenSymbol
-                                    };
-
-                                    _pendingBlocks.Add(pendingBlock);
-                                    Logger.Debug($"...Sending {entry.sourceChain.Name}=>{entry.destChain.Name}: {block.Hash}");
-                                }
-                            }
-
                             Logger.Message($"End block #{step} @ {chain.Name} chain: {block.Hash}");
                         }
                         else
@@ -345,7 +321,6 @@ namespace Phantasma.Simulator
                     }
                 }
 
-                _pendingEntries.Clear();
                 return blocks;
             }
 
@@ -501,33 +476,24 @@ namespace Phantasma.Simulator
 
             if (targetAddress != source.Address)
             {
-                sb.CallInterop("Runtime.SendTokens", targetChain.Address, source.Address, source.Address, DomainSettings.FuelTokenSymbol, fee);
+                sb.CallInterop("Runtime.SwapTokens", targetChain.Name, source.Address, source.Address, DomainSettings.FuelTokenSymbol, fee);
             }
 
             var script =
-                sb.CallInterop("Runtime.SendTokens", targetChain.Address, source.Address, targetAddress, tokenSymbol, amount).
+                sb.CallInterop("Runtime.SwapTokens", targetChain.Name, source.Address, targetAddress, tokenSymbol, amount).
                 SpendGas(source.Address).
                 EndScript();
 
             var tx = MakeTransaction(source, ProofOfWork.None, sourceChain, script);
 
-            _pendingEntries[sourceChain] = new SideChainPendingBlock()
-            {
-                sourceChain = sourceChain,
-                destChain = targetChain,
-                hash = Hash.Null,
-                tokenSymbol = tokenSymbol
-            };
             return tx;
         }
 
-        public Transaction GenerateSideChainSettlement(PhantasmaKeys source, Chain sourceChain, Chain destChain, Hash targetHash)
+        public Transaction GenerateSideChainSettlement(PhantasmaKeys source, Chain sourceChain, Chain destChain, Transaction transaction)
         {
-            _pendingBlocks.RemoveAll(x => x.hash == targetHash);
-
             var script = ScriptUtils.
                 BeginScript().
-                CallInterop("Runtime.SettleBlock", sourceChain.Address, targetHash).
+                CallContract(Nexus.BlockContractName, "SettleTransaction", sourceChain.Address, transaction.Hash).
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 SpendGas(source.Address).
                 EndScript();
@@ -545,13 +511,13 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateChain(PhantasmaKeys source, Chain parentchain, string name, params string[] contracts)
+        public Transaction GenerateChain(PhantasmaKeys source, string parentchain, string name, params string[] contracts)
         {
             Throw.IfNull(parentchain, nameof(parentchain));
 
             var sb = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreateChain", source.Address, name, parentchain.Name);
+                CallInterop("Nexus.CreateChain", source.Address, name, parentchain);
 
             foreach (var contractName in contracts)
             {
@@ -612,7 +578,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateNftSidechainTransfer(PhantasmaKeys source, Address destAddress, Chain sourceChain,
             Chain destChain, string tokenSymbol, BigInteger tokenId)
         {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SendToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SwapToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, sourceChain, script);
             return tx;
         }
@@ -696,6 +662,7 @@ namespace Phantasma.Simulator
 
                 switch (_rnd.Next() % 7)
                 {
+                    /*
                     // side-chain send
                     case 1:
                         {
@@ -751,7 +718,7 @@ namespace Phantasma.Simulator
 
                             break;
                         }
-
+                        */
                         /*
                     // stable claim
                     case 3:
