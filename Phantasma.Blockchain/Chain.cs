@@ -713,5 +713,46 @@ namespace Phantasma.Blockchain
             var addressList = addressTxMap.Get<Address, StorageList>(address);
             return addressList.All<Hash>();
         }
+
+        #region SWAPS
+        private StorageList GetSwapListForAddress(StorageContext storage, Address address)
+        {
+            var key = ByteArrayUtils.ConcatBytes(Encoding.UTF8.GetBytes(".swapaddr"), address.ToByteArray());
+            return new StorageList(key, storage);
+        }
+
+        private StorageMap GetSwapMap(StorageContext storage)
+        {
+            var key = Encoding.UTF8.GetBytes(".swapmap");
+            return new StorageMap(key, storage);
+        }
+
+        public void RegisterSwap(StorageContext storage, Address from, ChainSwap swap)
+        {
+            var list = GetSwapListForAddress(storage, from);
+            list.Add<Hash>(swap.sourceHash);
+
+            var map = GetSwapMap(storage);
+            map.Set<Hash, ChainSwap>(swap.sourceHash, swap);
+        }
+
+        public ChainSwap GetSwap(StorageContext storage, Hash sourceHash)
+        {
+            var map = GetSwapMap(storage);
+
+            if (map.ContainsKey<Hash>(sourceHash))
+            {
+                return map.Get<Hash, ChainSwap>(sourceHash);
+            }
+
+            throw new ChainException("invalid chain swap hash: " + sourceHash);
+        }
+
+        public Hash[] GetSwapHashesForAddress(StorageContext storage, Address address)
+        {
+            var list = GetSwapListForAddress(storage, address);
+            return list.All<Hash>();
+        }
+        #endregion
     }
 }

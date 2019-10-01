@@ -169,7 +169,7 @@ namespace Phantasma.API
                 Description = attr.Description;
                 IsPaginated = attr.Paginated;
 
-                if (attr.CacheDuration >0 && api.UseCache)
+                if (attr.CacheDuration > 0 && api.UseCache)
                 {
                     _cache = new CacheDictionary<string, IAPIResult>(32, TimeSpan.FromSeconds(attr.CacheDuration));
                 }
@@ -199,7 +199,7 @@ namespace Phantasma.API
 
             bool cacheHit = false;
 
-            if (_cache !=null)
+            if (_cache != null)
             {
                 var sb = new StringBuilder();
                 foreach (var arg in input)
@@ -275,7 +275,7 @@ namespace Phantasma.API
 
                 sb.Append($": {this.Name}(");
 
-                for (int i=0; i<input.Length; i++)
+                for (int i = 0; i < input.Length; i++)
                 {
                     if (i > 0)
                     {
@@ -1645,18 +1645,23 @@ namespace Phantasma.API
             return new ArrayResult() { values = validators.Select(x => (object)x).ToArray() };
         }
 
-        
+
         [APIInfo(typeof(Hash), "Returns platform swaps for a specific address.", false, 1)]
-        public IAPIResult SettleSwap([APIParameter("Name of platform to settle", "phantasma")]string platform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")]string sourcePlatform, [APIParameter("Name of platform to settle", "phantasma")]string destPlatform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
             {
                 return new ErrorResult { error = "token swapper not available" };
             }
 
-            if (!Nexus.PlatformExists(platform))
+            if (!Nexus.PlatformExists(sourcePlatform))
             {
-                return new ErrorResult { error = "Invalid platform" };
+                return new ErrorResult { error = "Invalid source platform" };
+            }
+
+            if (!Nexus.PlatformExists(destPlatform))
+            {
+                return new ErrorResult { error = "Invalid destination platform" };
             }
 
             Hash hash;
@@ -1665,9 +1670,25 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Invalid hash" };
             }
 
+            if (destPlatform == DomainSettings.PlatformName)
+            {
+                try
+                {
+                    var swap = Nexus.RootChain.GetSwap(Nexus.RootStorage, hash);
+                    if (swap.destinationHash != Hash.Null)
+                    {
+                        return new SingleResult() { value = hash };
+                    }
+                }
+                catch
+                {
+                    // do nothing, just continue
+                }
+            }
+
             try
             {
-                var destHash = TokenSwapper.SettleSwap(platform, hash);
+                var destHash = TokenSwapper.SettleSwap(sourcePlatform, destPlatform, hash);
 
                 if (destHash == Hash.Null)
                 {
@@ -1704,12 +1725,18 @@ namespace Phantasma.API
             }
 
 
-            var list = RuntimeVM.GetSwapListForAddress(Nexus.RootChain.Storage, address);
-            var swaps = list.All<ChainSwap>().Select(x => new SwapResult()
-            {
-                sourceHash = x.sourceHash.ToString(),
-                destinationHash = x.destinationHash==Hash.Null ? "pending": x.destinationHash.ToString(),
-            });
+            var hashes = Nexus.RootChain.GetSwapHashesForAddress(Nexus.RootChain.Storage, address);
+            var swaps = hashes.
+                Select(x => Nexus.RootChain.GetSwap(Nexus.RootChain.Storage, x)).
+                Select(x => new SwapResult()
+                {
+                    sourcePlatform = x.sourcePlatform,
+                    sourceChain = x.sourceChain,
+                    sourceHash = x.sourceHash.ToString(),
+                    destinationPlatform = x.destinationPlatform,
+                    destinationChain = x.destinationChain,
+                    destinationHash = x.destinationHash == Hash.Null ? "pending" : x.destinationHash.ToString(),
+                });
 
             return new ArrayResult() { values = swaps.Select(x => (object)x).ToArray() };
         }

@@ -1107,7 +1107,8 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(ram != null, "nft ram is missing");
             }
 
-            bool registerSwap;
+            UpdatePendingSwaps(from);
+            UpdatePendingSwaps(to);
 
             if (PlatformExists(sourceChain))
             {
@@ -1121,21 +1122,21 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
                 }
-
-                registerSwap = false;
             }
             else
             if (PlatformExists(targetChain))
             {
                 Runtime.Expect(targetChain != DomainSettings.PlatformName, "invalid platform as target chain");
                 Nexus.BurnTokens(this, token, from, to, targetChain, value);
-                registerSwap = true;
+
+                var swap = new ChainSwap(DomainSettings.PlatformName, sourceChain, Transaction.Hash, targetChain, targetChain, Hash.Null);
+                this.Chain.RegisterSwap(this.Storage, to, swap);
             }
             else
             if (sourceChain == this.Chain.Name)
             {
                 Runtime.Expect(IsNameOfParentChain(targetChain) || IsNameOfChildChain(targetChain), "target must be parent or child chain");
-                Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
+                Runtime.Expect(to.IsUser, "destination must be user address");
                 Runtime.Expect(IsWitness(from), "invalid witness");
 
                 /*if (tokenInfo.IsCapped())
@@ -1162,7 +1163,8 @@ namespace Phantasma.Blockchain.Contracts
                     Nexus.BurnToken(this, token, from, to, targetChain, value);
                 }
 
-                registerSwap = true;
+                var swap = new ChainSwap(DomainSettings.PlatformName, sourceChain, Transaction.Hash, DomainSettings.PlatformName, targetChain, Hash.Null);
+                this.Chain.RegisterSwap(this.Storage, to, swap);
             }
             else
             if (targetChain == this.Chain.Name)
@@ -1179,41 +1181,16 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
                 }
-
-                registerSwap = false;
             }
             else
             {
                 throw new ChainException("invalid swap chain source and destinations");
             }
-
-            UpdatePendingSwaps(from);
-            var list = UpdatePendingSwaps(to);
-
-            if (registerSwap && to.IsUser)
-            {
-                var swap = new ChainSwap(Transaction.Hash, Hash.Null);
-                list.Add<ChainSwap>(swap);
-            }
         }
 
-        private StorageList UpdatePendingSwaps(Address to)
+        private void UpdatePendingSwaps(Address to)
         {
-            var list = GetSwapListForAddress(this.Storage, to);
-
-            if (to.IsUser)
-            {
-                // TODO
-            }
-
-            return list;
-        }
-
-        public static StorageList GetSwapListForAddress(StorageContext storage, Address address)
-        {
-            var key = ByteArrayUtils.ConcatBytes(Encoding.UTF8.GetBytes(".swaps"), address.ToByteArray());
-            var list = new StorageList(key, storage);
-            return list;
+            // TODO
         }
 
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
