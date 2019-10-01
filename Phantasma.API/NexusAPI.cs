@@ -560,6 +560,16 @@ namespace Phantasma.API
             var stake = Nexus.GetStakeFromAddress(Nexus.RootStorage, address);
             result.stake = stake.ToString();
 
+            if (stake > 0)
+            {
+                var unclaimed = Nexus.GetUnclaimedFuelFromAddress(Nexus.RootStorage, address);
+                result.unclaimed = unclaimed.ToString();
+            }
+            else
+            {
+                result.unclaimed = "0";
+            }
+
             var balanceList = new List<BalanceResult>();
             foreach (var symbol in Nexus.Tokens)
             {
