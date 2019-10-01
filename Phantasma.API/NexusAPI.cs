@@ -298,6 +298,7 @@ namespace Phantasma.API
     {
         public readonly bool UseCache;
         public readonly Nexus Nexus;
+        public ITokenSwapper TokenSwapper;
         public Mempool Mempool;
         public Node Node;
         public IEnumerable<APIEntry> Methods => _methods.Values;
@@ -400,18 +401,18 @@ namespace Phantasma.API
         private TransactionResult FillTransaction(Transaction tx)
         {
             var block = Nexus.FindBlockByTransaction(tx);
-            var chain = block!=null? Nexus.GetChainByAddress(block.ChainAddress) : null;
+            var chain = block != null ? Nexus.GetChainByAddress(block.ChainAddress) : null;
 
             var result = new TransactionResult
             {
                 hash = tx.Hash.ToString(),
-                chainAddress = chain!=null ? chain.Address.Text: Address.Null.Text,
-                timestamp = block != null ? block.Timestamp.Value: 0,
-                blockHeight = block!= null ? (int)block.Height: -1,
-                blockHash = block!=null? block.Hash.ToString() : Hash.Null.ToString(),
+                chainAddress = chain != null ? chain.Address.Text : Address.Null.Text,
+                timestamp = block != null ? block.Timestamp.Value : 0,
+                blockHeight = block != null ? (int)block.Height : -1,
+                blockHash = block != null ? block.Hash.ToString() : Hash.Null.ToString(),
                 confirmations = block != null ? Nexus.GetConfirmationsOfBlock(block) : 0,
                 script = tx.Script.Encode(),
-                fee = chain!=null ? chain.GetTransactionFee(tx.Hash).ToString(): "0"
+                fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0"
             };
 
             if (block != null)
@@ -991,7 +992,7 @@ namespace Phantasma.API
 
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
-            var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) } ).ToArray();
+            var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) }).ToArray();
 
             return new ScriptResult { result = encodedResult, events = evts, oracles = oracleReads };
         }
@@ -1400,7 +1401,7 @@ namespace Phantasma.API
                 size = (uint)archive.Size,
                 flags = archive.Flags.ToString(),
                 key = Base16.Encode(archive.Key),
-                blockCount = (int) archive.BlockCount,
+                blockCount = (int)archive.BlockCount,
                 metadata = new string[0]// archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
             };
         }
@@ -1483,7 +1484,7 @@ namespace Phantasma.API
             {
                 values = peers.Select(x => (object)x).ToArray()
             };
-    }
+        }
 
         [APIInfo(typeof(bool), "Writes a message to the relay network.", false)]
         public IAPIResult RelaySend([APIParameter("Serialized receipt, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string receiptHex)
@@ -1642,6 +1643,45 @@ namespace Phantasma.API
                 Select(x => new ValidatorResult() { address = x.address.ToString(), type = x.type.ToString() });
 
             return new ArrayResult() { values = validators.Select(x => (object)x).ToArray() };
+        }
+
+        
+        [APIInfo(typeof(Hash), "Returns platform swaps for a specific address.", false, 1)]
+        public IAPIResult SettleSwap([APIParameter("Name of platform to settle", "phantasma")]string platform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        {
+            if (TokenSwapper == null)
+            {
+                return new ErrorResult { error = "token swapper not available" };
+            }
+
+            if (!Nexus.PlatformExists(platform))
+            {
+                return new ErrorResult { error = "Invalid platform" };
+            }
+
+            Hash hash;
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult { error = "Invalid hash" };
+            }
+
+            try
+            {
+                var destHash = TokenSwapper.SettleSwap(platform, hash);
+
+                if (destHash == Hash.Null)
+                {
+                    return new ErrorResult { error = "Swap failed" };
+                }
+                else
+                {
+                    return new SingleResult() { value = hash };
+                }
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult { error = e.Message };
+            }
         }
 
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 1)]

@@ -34,4 +34,9 @@ namespace Phantasma.Blockchain
             destinationHash = reader.ReadHash();
         }
     }
+
+    public interface ITokenSwapper
+    {
+        Hash SettleSwap(string platform, Hash sourceHash);
+    }
 }
