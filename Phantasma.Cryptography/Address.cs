@@ -231,17 +231,13 @@ namespace Phantasma.Cryptography
 
         public static Address FromText(string text)
         {
+
             var prefix = text[0];
 
             text = text.Substring(1);
             var bytes = Base58.Decode(text);
 
-            if (bytes.Length > LengthInBytes)
-            {
-                bytes = bytes.Take(LengthInBytes).ToArray();
-            }
-
-            Throw.If(bytes.Length != LengthInBytes, "Invalid address length");
+            Throw.If(bytes.Length != LengthInBytes, "Invalid address data");
 
             var addr = new Address(bytes);
 
