@@ -218,9 +218,6 @@ namespace Phantasma.Blockchain.Contracts
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
-            var gasCost = GetGasCostForOpcode(Opcode.SWITCH);
-            ConsumeGas(gasCost);
-
             BigInteger savedGas = this.UsedGas;
 
             this.EntryAddress = CurrentContext.Address;
