@@ -1076,7 +1076,7 @@ namespace Phantasma.Blockchain.Contracts
             Nexus.TransferToken(this, token, source, destination, tokenID);
         }
 
-        public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger amount)
+        public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value)
         {
             var Runtime = this;
 
@@ -1084,20 +1084,20 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
 
             var token = Runtime.GetToken(symbol);
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "must be transferable token");
 
             if (PlatformExists(sourceChain))
             {
                 Runtime.Expect(IsNativeContext(), "must be native context");
                 Runtime.Expect(sourceChain != DomainSettings.PlatformName, "invalid platform as source chain");
-                Nexus.MintTokens(this, token, from, to, sourceChain, amount);
+                Nexus.MintTokens(this, token, from, to, sourceChain, value);
             }
             else
             if (PlatformExists(targetChain))
             {
                 Runtime.Expect(IsNativeContext(), "must be native context");
                 Runtime.Expect(targetChain != DomainSettings.PlatformName, "invalid platform as target chain");
-                Nexus.BurnTokens(this, token, from, to, targetChain, amount);
+                Nexus.BurnTokens(this, token, from, to, targetChain, value);
             }
             else
             if (sourceChain == this.Chain.Name)
@@ -1121,7 +1121,14 @@ namespace Phantasma.Blockchain.Contracts
                     }
                 }*/
 
-                Nexus.BurnTokens(this, token, from, to, targetChain, amount);
+                if (token.IsFungible())
+                {
+                    Nexus.BurnTokens(this, token, from, to, targetChain, value);
+                }
+                else
+                {
+                    Nexus.BurnToken(this, token, from, to, targetChain, value);
+                }
             }
             else
             if (targetChain == this.Chain.Name)
@@ -1129,7 +1136,15 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(IsNameOfParentChain(sourceChain) || IsNameOfChildChain(sourceChain), "source must be parent or child chain");
                 Runtime.Expect(!to.IsInterop, "destination cannot be interop address");
                 Runtime.Expect(IsWitness(to), "invalid witness");
-                Nexus.MintTokens(this, token, from, to, sourceChain, amount);
+
+                if (token.IsFungible())
+                {
+                    Nexus.MintTokens(this, token, from, to, sourceChain, value);
+                }
+                else
+                {
+                    Nexus.MintToken(this, token, from, to, sourceChain, value);
+                }
             }
             else
             {

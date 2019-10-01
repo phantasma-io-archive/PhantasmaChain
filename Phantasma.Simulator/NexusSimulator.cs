@@ -476,7 +476,7 @@ namespace Phantasma.Simulator
 
             if (targetAddress != source.Address)
             {
-                sb.CallInterop("Runtime.SwapTokens", targetChain.Name, source.Address, source.Address, DomainSettings.FuelTokenSymbol, fee);
+                sb.CallInterop("Runtime.SwapTokens", targetChain.Name, source.Address, targetAddress, DomainSettings.FuelTokenSymbol, fee);
             }
 
             var script =
@@ -572,14 +572,6 @@ namespace Phantasma.Simulator
         {
             var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.TransferToken", source.Address, dest, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
-            return tx;
-        }
-
-        public Transaction GenerateNftSidechainTransfer(PhantasmaKeys source, Address destAddress, Chain sourceChain,
-            Chain destChain, string tokenSymbol, BigInteger tokenId)
-        {
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallInterop("Runtime.SwapToken", destChain.Address, source.Address, destAddress, tokenSymbol, tokenId).SpendGas(source.Address).EndScript();
-            var tx = MakeTransaction(source, ProofOfWork.None, sourceChain, script);
             return tx;
         }
 

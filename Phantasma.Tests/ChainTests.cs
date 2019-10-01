@@ -938,7 +938,6 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var targetChain = nexus.GetChainByName("sale");
 
             var symbol = "COOL";
 
@@ -952,7 +951,10 @@ namespace Phantasma.Tests
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, sourceChain, DomainSettings.FuelTokenSymbol, fullAmount);
+            simulator.GenerateChain(owner, "main", "test");
             simulator.EndBlock();
+
+            var targetChain = nexus.GetChainByName("test");
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
@@ -998,8 +1000,7 @@ namespace Phantasma.Tests
 
             // transfer that nft from sender to receiver
             simulator.BeginBlock();
-            simulator.GenerateSideChainSend(sender, DomainSettings.FuelTokenSymbol, sourceChain, receiver.Address, targetChain, smallAmount, extraFee);
-            var txA = simulator.GenerateNftSidechainTransfer(sender, receiver.Address, sourceChain, targetChain, symbol, tokenId);
+            var txA = simulator.GenerateSideChainSend(sender, symbol, sourceChain, receiver.Address, targetChain, tokenId, extraFee);
             simulator.EndBlock();
 
             var blockAHash = nexus.RootChain.GetLastBlockHash();
