@@ -905,6 +905,7 @@ namespace Phantasma.Blockchain
             var isSettlement = targetChain != Runtime.Chain.Name;
 
             var nft = Runtime.ReadToken(token.Symbol, tokenID);
+            Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
 
             var chain = RootChain;
@@ -1012,6 +1013,9 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
+            var nft = ReadNFT(Runtime, token.Symbol, tokenID);
+            Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
+
             var ownerships = new OwnershipSheet(token.Symbol);
             if (!ownerships.Remove(Runtime.Storage, source, tokenID))
             {
@@ -1047,7 +1051,6 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var nft = ReadNFT(Runtime, token.Symbol, tokenID);
             WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, true);
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
@@ -1095,16 +1098,9 @@ namespace Phantasma.Blockchain
 
         internal void DestroyNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
-            Runtime.Expect(false, "not supported yet");
-
-            var key = GetKeyForNFT(symbol);
-            var nftMap = new StorageMap(key, Runtime.Storage);
-
-            Hash tokenHash = tokenID;
-            Runtime.Expect(nftMap.ContainsKey<Hash>(tokenHash), "nft does not exists");
-            nftMap.Remove<Hash>(tokenHash);
+            var nft = ReadNFT(Runtime, symbol, tokenID);
+            WriteNFT(Runtime, symbol, tokenID, nft.CurrentChain, Address.Null, nft.ROM, nft.RAM, true);
         }
-
     
         internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, bool mustExist)
         {
@@ -1120,7 +1116,7 @@ namespace Phantasma.Blockchain
 
                 Runtime.Expect(rom.SequenceEqual(content.ROM), "invalid nft rom");
 
-                content = new TokenContent(content.CurrentChain, content.CurrentOwner, content.ROM, ram);
+                content = new TokenContent(chainName, owner, content.ROM, ram);
                 nftMap.Set<Hash, TokenContent>(tokenHash, content);
             }
             else

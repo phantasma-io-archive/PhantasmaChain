@@ -832,7 +832,7 @@ namespace Phantasma.Tests
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the user not have one now?");
 
-            var ownerAddress = ownerships.GetOwner(chain.Storage, 1);
+            var ownerAddress = ownerships.GetOwner(chain.Storage, tokenID);
             Assert.IsTrue(ownerAddress == testUser.Address);
 
             //verify that the present nft is the same we actually tried to create
