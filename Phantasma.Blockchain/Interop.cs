@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Storage;
@@ -13,16 +12,12 @@ namespace Phantasma.Blockchain
     {
         public string Name { get; private set; }
         public string Symbol { get; private set; } // for fuel
-        public string ExternalAddress { get; private set; }
-        public Address ChainAddress { get; private set; }
-        public Address[] InteropAddresses { get; private set; }
+        public PlatformSwapAddress[] InteropAddresses { get; private set; }
 
-        public PlatformInfo(string name, string symbol, string externalAddress, Address chainAddress, IEnumerable<Address> interopAddresses) : this()
+        public PlatformInfo(string name, string symbol, IEnumerable<PlatformSwapAddress> interopAddresses) : this()
         {
             Name = name;
             Symbol = symbol;
-            ExternalAddress = externalAddress;
-            ChainAddress = chainAddress;
             InteropAddresses = interopAddresses.ToArray();
         }
 
@@ -30,12 +25,11 @@ namespace Phantasma.Blockchain
         {
             writer.WriteVarString(Name);
             writer.WriteVarString(Symbol);
-            writer.WriteVarString(ExternalAddress);
-            writer.WriteAddress(ChainAddress);
             writer.WriteVarInt(InteropAddresses.Length);
             foreach (var address in InteropAddresses)
             {
-                writer.WriteAddress(address);
+                writer.WriteVarString(address.ExternalAddress);
+                writer.WriteAddress(address.LocalAddress);
             }
         }
 
@@ -43,13 +37,14 @@ namespace Phantasma.Blockchain
         {
             this.Name = reader.ReadVarString();
             this.Symbol = reader.ReadVarString();
-            this.ExternalAddress = reader.ReadVarString();
-            this.ChainAddress = reader.ReadAddress();
             var interopCount = (int)reader.ReadVarInt();
-            this.InteropAddresses = new Address[interopCount];
+            this.InteropAddresses = new PlatformSwapAddress[interopCount];
             for (int i = 0; i < interopCount; i++)
             {
-                InteropAddresses[i] = reader.ReadAddress();
+                var temp = new PlatformSwapAddress();
+                temp.ExternalAddress = reader.ReadVarString();
+                temp.LocalAddress = reader.ReadAddress();
+                InteropAddresses[i] = temp;
             }
         }
     }

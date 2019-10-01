@@ -120,27 +120,6 @@ namespace Phantasma.Neo.Core
 
         public Phantasma.Cryptography.Address ExtractAddress()
         {
-            var expectedLength = this.verificationScript[verificationScript.Length - 1];
-
-            if (expectedLength<verificationScript.Length - 1)
-            {
-                var sb = new StringBuilder();
-                var chars = new char[expectedLength];
-
-                int index = verificationScript.Length - (expectedLength + 2);
-                for (int i = 0; i < expectedLength; i++)
-                {
-                    var ch = (char)verificationScript[index];
-                    sb.Append(ch);
-                }
-
-                var text = sb.ToString();
-                if (Phantasma.Cryptography.Address.IsValidAddress(text))
-                {
-                    return Phantasma.Cryptography.Address.FromText(text);
-                }
-            }
-
             var bytes = new byte[34];
             bytes[0] = (byte)Phantasma.Cryptography.AddressKind.User;
             Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 1, bytes, 1, 33);
@@ -555,6 +534,24 @@ namespace Phantasma.Neo.Core
                     return Unserialize(reader);
                 }
             }
+        }
+
+        public Phantasma.Cryptography.Address ExtractInteropAddress()
+        {
+            foreach (var attr in attributes)
+            {
+                if (attr.Usage == TransactionAttributeUsage.Description)
+                {
+                    var text = Encoding.UTF8.GetString(attr.Data);
+                    if (Phantasma.Cryptography.Address.IsValidAddress(text))
+                    {
+                        return Phantasma.Cryptography.Address.FromText(text);
+                    }
+                }
+            }
+
+            var wit = this.witnesses[0];
+            return wit.ExtractAddress();
         }
     }
 

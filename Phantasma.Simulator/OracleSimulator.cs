@@ -88,7 +88,7 @@ namespace Phantasma.Simulator
 
                     return new InteropTransaction(hash, new InteropTransfer[]
                     {
-                        new InteropTransfer(platformName, swap.sourceAddress, platformName, platformAddress, swap.interopAddress, swap.Symbol, amount)
+                        new InteropTransfer(platformName, swap.sourceAddress, platformName, platformAddress.LocalAddress, swap.interopAddress, swap.Symbol, amount)
                     });
             }
 

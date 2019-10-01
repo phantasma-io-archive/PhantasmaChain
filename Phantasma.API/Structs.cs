@@ -29,21 +29,19 @@ namespace Phantasma.API
         public string[] ids;
     }
 
+    public struct InteropResult: IAPIResult
+    {
+        public string local;
+        public string external;
+    }
+
     public struct PlatformResult : IAPIResult
     {
         public string platform;
-        public string address;
         public string chain;
         public string fuel;
         public string[] tokens;
-        public string[] interop;
-    }
-
-    public struct InteropResult: IAPIResult
-    {
-        public string platform;
-        public string address;
-        public string interop;
+        public InteropResult[] interop;
     }
 
     public struct AccountResult : IAPIResult

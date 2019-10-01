@@ -62,6 +62,11 @@ namespace Phantasma.Domain
             return temp;
         }
 
+        public static Address GetChainAddress(this IPlatform platform)
+        {
+            return Address.FromHash(platform.Name);
+        }
+
         public static IBlock GetLastBlock(this IRuntime runtime)
         {
             if (runtime.Chain.Height < 1)

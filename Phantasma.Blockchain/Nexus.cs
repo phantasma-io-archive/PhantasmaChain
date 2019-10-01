@@ -1578,8 +1578,10 @@ namespace Phantasma.Blockchain
             var platformList = this.Platforms.ToList();
             var platformID = (byte)(1 + platformList.Count);
 
-            var chainAddress = Address.FromHash(name);
-            var entry = new PlatformInfo(name, fuelSymbol, externalAddress, chainAddress, new Address[] { interopAddress });
+            //var chainAddress = Address.FromHash(name);
+            var entry = new PlatformInfo(name, fuelSymbol, new PlatformSwapAddress[] {
+                new PlatformSwapAddress() { LocalAddress = interopAddress, ExternalAddress = externalAddress }
+            });
 
             // add to persistent list of tokens
             platformList.Add(name);
@@ -1669,9 +1671,9 @@ namespace Phantasma.Blockchain
             {
                 var info = GetPlatformInfo(platform);
 
-                foreach (var interopAddress in info.InteropAddresses)
+                foreach (var entry in info.InteropAddresses)
                 {
-                    if (interopAddress == address)
+                    if (entry.LocalAddress == address)
                     {
                         return true;
                     }

@@ -1624,9 +1624,12 @@ namespace Phantasma.API
 
                 var entry = new PlatformResult();
                 entry.platform = platform;
-                entry.interop = info.InteropAddresses.Select(x => x.Text).ToArray();
-                entry.address = info.ExternalAddress;
-                entry.chain = info.ChainAddress.Text;
+                entry.interop = info.InteropAddresses.Select(x => new InteropResult()
+                {
+                    local = x.LocalAddress.Text,
+                    external = x.ExternalAddress
+                }).ToArray();
+                entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
                 entry.tokens = Nexus.Tokens.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
                 platformList.Add(entry);
@@ -1715,8 +1718,13 @@ namespace Phantasma.API
                 address = Address.FromText(accountInput);
             }
             else
+            if (Pay.Chains.NeoWallet.IsValidAddress(accountInput))
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
+                address = Pay.Chains.NeoWallet.EncodeAddress(accountInput);
+            }
+            else
+            {
+                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);                
             }
 
             if (address.IsNull)
@@ -1724,10 +1732,17 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
-
             var hashes = Nexus.RootChain.GetSwapHashesForAddress(Nexus.RootChain.Storage, address);
-            var swaps = hashes.
-                Select(x => Nexus.RootChain.GetSwap(Nexus.RootChain.Storage, x)).
+            var swapList = hashes.
+                Select(x => Nexus.RootChain.GetSwap(Nexus.RootChain.Storage, x)).ToList();
+
+            if (TokenSwapper != null)
+            {
+                var pendingSwaps = TokenSwapper.GetPendingSwaps(address);
+                swapList.AddRange(pendingSwaps);
+            }
+
+            var swaps = swapList.
                 Select(x => new SwapResult()
                 {
                     sourcePlatform = x.sourcePlatform,

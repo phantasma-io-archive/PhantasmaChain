@@ -56,5 +56,6 @@ namespace Phantasma.Blockchain
     public interface ITokenSwapper
     {
         Hash SettleSwap(string sourcePlatform, string destPlatform, Hash sourceHash);
+        ChainSwap[] GetPendingSwaps(Address address);
     }
 }

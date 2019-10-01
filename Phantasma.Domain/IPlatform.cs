@@ -5,13 +5,17 @@ using System.Linq;
 
 namespace Phantasma.Domain
 {
+    public struct PlatformSwapAddress
+    {
+        public string ExternalAddress;
+        public Address LocalAddress;
+    }
+
     public interface IPlatform
     {
         string Name { get; }
         string Symbol { get; } // for fuel
-        string ExternalAddress { get; }
-        Address ChainAddress { get; }
-        Address[] InteropAddresses { get; }
+        PlatformSwapAddress[] InteropAddresses { get; }
     }
 
     public struct InteropBlock

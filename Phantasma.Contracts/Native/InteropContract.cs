@@ -103,9 +103,9 @@ namespace Phantasma.Contracts.Native
                 }
                 else
                 {
-                    foreach (var interopAddress in platformInfo.InteropAddresses)
+                    foreach (var entry in platformInfo.InteropAddresses)
                     {
-                        if (transfer.destinationAddress == interopAddress)
+                        if (transfer.destinationAddress == entry.LocalAddress)
                         {
                             Runtime.Expect(!transfer.sourceAddress.IsNull, "invalid source address");
 
@@ -121,7 +121,7 @@ namespace Phantasma.Contracts.Native
                             Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
                             // TODO support NFT
-                            Runtime.SwapTokens(platformInfo.Name, platformInfo.ChainAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
+                            Runtime.SwapTokens(platformInfo.Name, platformInfo.GetChainAddress(), Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
 
                             swapCount++;
                             break;
@@ -161,7 +161,7 @@ namespace Phantasma.Contracts.Native
             int interopIndex = -1;
             for (int i=0; i<platform.InteropAddresses.Length; i++)
             {
-                if (platform.InteropAddresses[i] == to)
+                if (platform.InteropAddresses[i].LocalAddress == to)
                 {
                     interopIndex = i;
                     break;
@@ -184,7 +184,7 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
 
             // TODO support NFT
-            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, platform.ChainAddress, symbol, amount, null, null);
+            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, platform.GetChainAddress(), symbol, amount, null, null);
 
             var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
 
