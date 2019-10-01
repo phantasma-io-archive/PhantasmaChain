@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Phantasma.Neo.Core
 {
@@ -119,6 +120,27 @@ namespace Phantasma.Neo.Core
 
         public Phantasma.Cryptography.Address ExtractAddress()
         {
+            var expectedLength = this.verificationScript[verificationScript.Length - 1];
+
+            if (expectedLength<verificationScript.Length - 1)
+            {
+                var sb = new StringBuilder();
+                var chars = new char[expectedLength];
+
+                int index = verificationScript.Length - (expectedLength + 2);
+                for (int i = 0; i < expectedLength; i++)
+                {
+                    var ch = (char)verificationScript[index];
+                    sb.Append(ch);
+                }
+
+                var text = sb.ToString();
+                if (Phantasma.Cryptography.Address.IsValidAddress(text))
+                {
+                    return Phantasma.Cryptography.Address.FromText(text);
+                }
+            }
+
             var bytes = new byte[34];
             bytes[0] = (byte)Phantasma.Cryptography.AddressKind.User;
             Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 1, bytes, 1, 33);
