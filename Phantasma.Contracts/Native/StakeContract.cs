@@ -469,8 +469,6 @@ namespace Phantasma.Contracts.Native
 
             var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
 
-
-
             if (lastClaim.timestamp.Value == 0)
                 lastClaim.timestamp = stake.timestamp;
 

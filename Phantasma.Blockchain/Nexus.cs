@@ -1462,6 +1462,12 @@ namespace Phantasma.Blockchain
             var result = RootChain.InvokeContract(storage, Nexus.StakeContractName, nameof(StakeContract.GetStake), address).AsNumber();
             return result;
         }
+        
+        public BigInteger GetUnclaimedFuelFromAddress(StorageContext storage, Address address)
+        {
+            var result = RootChain.InvokeContract(storage, Nexus.StakeContractName, nameof(StakeContract.GetUnclaimed), address).AsNumber();
+            return result;
+        }
 
         public bool IsStakeMaster(StorageContext storage, Address address)
         {

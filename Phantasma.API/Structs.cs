@@ -53,6 +53,9 @@ namespace Phantasma.API
         [APIDescription("Amount of staked SOUL")]
         public string stake;
 
+        [APIDescription("Amount of claimable KCAL")]
+        public string unclaimed;
+
         [APIDescription("Amount of available KCAL for relay channel")]
         public string relay;
 
