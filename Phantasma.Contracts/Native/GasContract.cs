@@ -50,7 +50,8 @@ namespace Phantasma.Contracts.Native
             _allowanceMap.Set(from, allowance);
             _allowanceTargets.Set(from, target);
 
-            Runtime.Expect(Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from) >= maxAmount, "not enough gas in address");
+            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            Runtime.Expect(balance >= maxAmount, "not enough gas in address");
 
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
             Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));

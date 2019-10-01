@@ -494,7 +494,7 @@ namespace Phantasma.Simulator
             var script = ScriptUtils.
                 BeginScript().
                 CallContract(Nexus.BlockContractName, "SettleTransaction", sourceChain.Address, transaction.Hash).
-                AllowGas(source.Address, Address.Null, MinimumFee, 9999).
+                AllowGas(source.Address, Address.Null, MinimumFee, 800).
                 SpendGas(source.Address).
                 EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, destChain, script);
@@ -511,13 +511,25 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateChain(PhantasmaKeys source, string parentchain, string name, params string[] contracts)
+        public Transaction GenerateChain(PhantasmaKeys source, string parentchain, string name)
         {
             Throw.IfNull(parentchain, nameof(parentchain));
 
             var sb = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 CallInterop("Nexus.CreateChain", source.Address, name, parentchain);
+
+            var script = sb.SpendGas(source.Address).
+                EndScript();
+            var tx = MakeTransaction(source, ProofOfWork.Minimal, Nexus.RootChain, script);
+            return tx;
+        }
+
+        public Transaction DeployContracts(PhantasmaKeys source, Chain chain, params string[] contracts)
+        {
+
+            var sb = ScriptUtils.BeginScript().
+                AllowGas(source.Address, Address.Null, MinimumFee, 999);
 
             foreach (var contractName in contracts)
             {
@@ -526,7 +538,8 @@ namespace Phantasma.Simulator
 
             var script = sb.SpendGas(source.Address).
                 EndScript();
-            var tx = MakeTransaction(source, ProofOfWork.Minimal, Nexus.RootChain, script);
+
+            var tx = MakeTransaction(source, ProofOfWork.Minimal, chain, script);
             return tx;
         }
 
