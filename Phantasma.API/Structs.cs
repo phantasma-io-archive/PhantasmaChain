@@ -413,9 +413,14 @@ namespace Phantasma.API
         public string sourcePlatform;
         public string sourceChain;
         public string sourceHash;
+        public string sourceAddress;
 
         public string destinationPlatform;
         public string destinationChain;
         public string destinationHash;
+        public string destinationAddress;
+
+        public string symbol;
+        public string value;
     }
 }

@@ -190,7 +190,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        public byte[] ReadChainOracle(string platformName, string chainName, string[] input)
+        private byte[] ReadChainOracle(string platformName, string chainName, string[] input)
         {
             if (input == null || input.Length != 2)
             {

@@ -1708,7 +1708,14 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 1)]
+        private InteropTransaction GetTransactionFromOracle(OracleReader oracleReader, string platform, string chain, Hash hash)
+        {
+            var bytes = oracleReader.Read($"{OracleReader.interopTag}{platform}/{chain}/tx/{hash}");
+            var tx = Serialization.Unserialize<InteropTransaction>(bytes);
+            return tx;
+        }
+
+        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 5)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string accountInput)
         {
             Address address;
@@ -1742,15 +1749,22 @@ namespace Phantasma.API
                 swapList.AddRange(pendingSwaps);
             }
 
+            var oracleReader = Nexus.CreateOracleReader();
+
             var swaps = swapList.
+                Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, GetTransactionFromOracle(oracleReader, x.sourcePlatform, x.sourceChain, x.sourceHash))).
                 Select(x => new SwapResult()
                 {
-                    sourcePlatform = x.sourcePlatform,
-                    sourceChain = x.sourceChain,
-                    sourceHash = x.sourceHash.ToString(),
-                    destinationPlatform = x.destinationPlatform,
-                    destinationChain = x.destinationChain,
-                    destinationHash = x.destinationHash == Hash.Null ? "pending" : x.destinationHash.ToString(),
+                    sourcePlatform = x.Key.sourcePlatform,
+                    sourceChain = x.Key.sourceChain,
+                    sourceHash = x.Key.sourceHash.ToString(),
+                    destinationPlatform = x.Key.destinationPlatform,
+                    destinationChain = x.Key.destinationChain,
+                    destinationHash = x.Key.destinationHash == Hash.Null ? "pending" : x.Key.destinationHash.ToString(),
+                    sourceAddress = x.Value.Transfers[0].sourceAddress.Text,
+                    destinationAddress = x.Value.Transfers[0].destinationAddress.Text,
+                    symbol = x.Value.Transfers[0].Symbol,
+                    value = x.Value.Transfers[0].Value.ToString(),
                 });
 
             return new ArrayResult() { values = swaps.Select(x => (object)x).ToArray() };
