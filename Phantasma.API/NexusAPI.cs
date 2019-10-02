@@ -1680,7 +1680,7 @@ namespace Phantasma.API
                     var swap = Nexus.RootChain.GetSwap(Nexus.RootStorage, hash);
                     if (swap.destinationHash != Hash.Null)
                     {
-                        return new SingleResult() { value = hash.ToString() };
+                        return new SingleResult() { value = swap.destinationHash.ToString() };
                     }
                 }
                 catch
@@ -1699,7 +1699,7 @@ namespace Phantasma.API
                 }
                 else
                 {
-                    return new SingleResult() { value = hash.ToString() };
+                    return new SingleResult() { value = destHash.ToString() };
                 }
             }
             catch (Exception e)
