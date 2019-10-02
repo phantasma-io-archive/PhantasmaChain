@@ -364,7 +364,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void ChainSwapSimple()
+        public void ChainSwapIn()
         {
             var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
@@ -377,7 +377,7 @@ namespace Phantasma.Tests
 
             // 1 - at this point a real NEO transaction would be done to the NEO address obtained from getPlatforms in the API
             // here we just use a random hardcoded hash and a fake oracle to simulate it
-            var swapSymbol = "GAS"; 
+            var swapSymbol = "GAS";
             var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", Pay.Chains.NeoWallet.NeoID, neoKeys.PublicKey, neoKeys.Address, swapSymbol, 2);
 
             var tokenInfo = nexus.GetTokenInfo(swapSymbol);
@@ -410,6 +410,28 @@ namespace Phantasma.Tests
 
             var settleHash = (Hash)nexus.RootChain.InvokeContract(nexus.RootStorage, "interop", nameof(InteropContract.GetSettlement), "neo", neoTxHash).ToObject();
             Assert.IsTrue(settleHash == tx.Hash);
+        }
+
+        [TestMethod]
+        public void ChainSwapOut()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+
+            var testUser = PhantasmaKeys.Generate();
+
+            var limit = 800;
+
+            // 0 - just send some assets to the 
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals));
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals));
+            simulator.EndBlock();
+
+
+            // TODO
         }
 
         [TestMethod]

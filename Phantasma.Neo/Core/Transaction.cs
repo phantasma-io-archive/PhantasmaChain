@@ -538,14 +538,17 @@ namespace Phantasma.Neo.Core
 
         public Phantasma.Cryptography.Address ExtractInteropAddress()
         {
-            foreach (var attr in attributes)
+            if (attributes != null)
             {
-                if (attr.Usage == TransactionAttributeUsage.Description)
+                foreach (var attr in attributes)
                 {
-                    var text = Encoding.UTF8.GetString(attr.Data);
-                    if (Phantasma.Cryptography.Address.IsValidAddress(text))
+                    if (attr.Usage == TransactionAttributeUsage.Description)
                     {
-                        return Phantasma.Cryptography.Address.FromText(text);
+                        var text = Encoding.UTF8.GetString(attr.Data);
+                        if (Phantasma.Cryptography.Address.IsValidAddress(text))
+                        {
+                            return Phantasma.Cryptography.Address.FromText(text);
+                        }
                     }
                 }
             }

@@ -1063,9 +1063,6 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
             Runtime.Nexus.TransferTokens(Runtime, token, source, destination, amount);
-
-            UpdatePendingSwaps(source);
-            UpdatePendingSwaps(destination);
         }
 
         public void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID)
@@ -1081,9 +1078,6 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
 
             Nexus.TransferToken(this, token, source, destination, tokenID);
-
-            UpdatePendingSwaps(source);
-            UpdatePendingSwaps(destination);
         }
 
         public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value, byte[] rom, byte[] ram)
@@ -1106,9 +1100,6 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(rom != null & rom.Length > 0, "nft rom is missing");
                 Runtime.Expect(ram != null, "nft ram is missing");
             }
-
-            UpdatePendingSwaps(from);
-            UpdatePendingSwaps(to);
 
             if (PlatformExists(sourceChain))
             {
@@ -1186,11 +1177,6 @@ namespace Phantasma.Blockchain.Contracts
             {
                 throw new ChainException("invalid swap chain source and destinations");
             }
-        }
-
-        private void UpdatePendingSwaps(Address to)
-        {
-            // TODO
         }
 
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
