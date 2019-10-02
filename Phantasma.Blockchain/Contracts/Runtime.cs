@@ -359,8 +359,7 @@ namespace Phantasma.Blockchain.Contracts
                 return ExecutionState.Running;
             }
 
-            var gasCost = GetGasCostForOpcode(opcode);
-            return ConsumeGas(gasCost);
+            return base.ValidateOpcode(opcode);
         }
 
         public override ExecutionState ConsumeGas(BigInteger gasCost)
@@ -393,31 +392,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return result;
-        }
-
-        public static BigInteger GetGasCostForOpcode(Opcode opcode)
-        {
-            switch (opcode)
-            {
-                case Opcode.GET:
-                case Opcode.PUT:
-                case Opcode.CALL:
-                case Opcode.LOAD:
-                    return 5;
-
-                case Opcode.EXTCALL:
-                case Opcode.CTX:
-                    return 10;
-
-                case Opcode.SWITCH:
-                    return 100;
-
-                case Opcode.NOP:
-                case Opcode.RET:
-                    return 0;
-
-                default: return 1;
-            }
         }
         #endregion
 

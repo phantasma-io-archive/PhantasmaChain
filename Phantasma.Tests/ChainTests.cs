@@ -1365,12 +1365,12 @@ namespace Phantasma.Tests
 
             // make the second validator accept his spot
             simulator.BeginBlock();
-                tx = simulator.GenerateCustomTransaction(secondValidator, ProofOfWork.None, () =>
-                ScriptUtils.BeginScript().
-                    AllowGas(secondValidator.Address, Address.Null, 1, 9999).
-                    CallContract(Nexus.ValidatorContractName, "SetValidator", secondValidator.Address, 1, ValidatorType.Primary).
-                    SpendGas(secondValidator.Address).
-                    EndScript());
+            tx = simulator.GenerateCustomTransaction(secondValidator, ProofOfWork.None, () =>
+            ScriptUtils.BeginScript().
+                AllowGas(secondValidator.Address, Address.Null, 1, 9999).
+                CallContract(Nexus.ValidatorContractName, "SetValidator", secondValidator.Address, 1, ValidatorType.Primary).
+                SpendGas(secondValidator.Address).
+                EndScript());
             block = simulator.EndBlock().First();
 
             // verify that we suceed electing a new validator
@@ -1404,6 +1404,27 @@ namespace Phantasma.Tests
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(finalBalance == transferAmount);
+        }
+
+        [TestMethod]
+        public void GasFeeCalculation()
+        {
+            var limit = 400;
+            var testUser = PhantasmaKeys.Generate();
+            var transcodedAddress = PhantasmaKeys.Generate().Address;
+            var swapSymbol = "SOUL";
+
+            var script = new ScriptBuilder()
+            .CallContract("interop", "SettleTransaction", transcodedAddress, "neo", "neo", Hash.Null)
+            .CallContract("swap", "SwapFee", transcodedAddress, swapSymbol, UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals))
+            .TransferBalance(swapSymbol, transcodedAddress, testUser.Address)
+            .AllowGas(transcodedAddress, Address.Null, 9999, limit)
+            .SpendGas(transcodedAddress).EndScript();
+
+            var vm = new GasMachine(script);
+            var result = vm.Execute();
+            Assert.IsTrue(result == VM.ExecutionState.Halt);
+            Assert.IsTrue(vm.UsedGas > 0);
         }
     }
 
