@@ -1649,7 +1649,7 @@ namespace Phantasma.API
         }
 
 
-        [APIInfo(typeof(Hash), "Returns platform swaps for a specific address.", false, 1)]
+        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 1)]
         public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")]string sourcePlatform, [APIParameter("Name of platform to settle", "phantasma")]string destPlatform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
@@ -1680,7 +1680,7 @@ namespace Phantasma.API
                     var swap = Nexus.RootChain.GetSwap(Nexus.RootStorage, hash);
                     if (swap.destinationHash != Hash.Null)
                     {
-                        return new SingleResult() { value = hash };
+                        return new SingleResult() { value = hash.ToString() };
                     }
                 }
                 catch
@@ -1699,7 +1699,7 @@ namespace Phantasma.API
                 }
                 else
                 {
-                    return new SingleResult() { value = hash };
+                    return new SingleResult() { value = hash.ToString() };
                 }
             }
             catch (Exception e)
