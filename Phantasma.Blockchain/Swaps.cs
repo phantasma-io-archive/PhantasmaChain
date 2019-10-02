@@ -1,6 +1,7 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Phantasma.Blockchain
@@ -56,6 +57,6 @@ namespace Phantasma.Blockchain
     public interface ITokenSwapper
     {
         Hash SettleSwap(string sourcePlatform, string destPlatform, Hash sourceHash);
-        ChainSwap[] GetPendingSwaps(Address address);
+        IEnumerable<ChainSwap> GetPendingSwaps(Address address);
     }
 }

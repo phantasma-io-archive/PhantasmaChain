@@ -771,7 +771,7 @@ namespace Phantasma.Blockchain
             return RootStorage.Has(key);
         }
 
-        public TokenInfo GetTokenInfo(string symbol)
+        public IToken GetTokenInfo(string symbol)
         {
             var key = GetTokenInfoKey(symbol);
             if (RootStorage.Has(key))
