@@ -472,8 +472,8 @@ namespace Phantasma.Tests
         class ExchangeUser
         {
             private readonly PhantasmaKeys user;
-            public TokenInfo baseToken;
-            public TokenInfo quoteToken;
+            public IToken baseToken;
+            public IToken quoteToken;
 
             public enum TokenType { Base, Quote}
 
