@@ -1191,7 +1191,15 @@ namespace Phantasma.Blockchain.Contracts
 
         public IPlatform GetPlatformByIndex(int index)
         {
-            throw new NotImplementedException();
+            index--;
+            var platforms = Nexus.Platforms;
+            if (index<0 || index >= platforms.Length)
+            {
+                return null;
+            }
+
+            var name = platforms[index];
+            return GetPlatformByName(name);
         }
 
         public IChain GetChainByAddress(Address address)
