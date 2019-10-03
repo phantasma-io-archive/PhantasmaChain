@@ -1668,7 +1668,7 @@ namespace Phantasma.API
             }
 
             Hash hash;
-            if (!Hash.TryParse(hashText, out hash))
+            if (!Hash.TryParse(hashText, out hash) || hash == Hash.Null)
             {
                 return new ErrorResult { error = "Invalid hash" };
             }
@@ -1708,13 +1708,6 @@ namespace Phantasma.API
             }
         }
 
-        private InteropTransaction GetTransactionFromOracle(OracleReader oracleReader, string platform, string chain, Hash hash)
-        {
-            var bytes = oracleReader.Read($"{OracleReader.interopTag}{platform}/{chain}/tx/{hash}");
-            var tx = Serialization.Unserialize<InteropTransaction>(bytes);
-            return tx;
-        }
-
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 5)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string accountInput)
         {
@@ -1752,7 +1745,7 @@ namespace Phantasma.API
             var oracleReader = Nexus.CreateOracleReader();
 
             var swaps = swapList.
-                Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, GetTransactionFromOracle(oracleReader, x.sourcePlatform, x.sourceChain, x.sourceHash))).
+                Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, oracleReader.ReadTransactionFromOracle(x.sourcePlatform, x.sourceChain, x.sourceHash))).
                 Select(x => new SwapResult()
                 {
                     sourcePlatform = x.Key.sourcePlatform,

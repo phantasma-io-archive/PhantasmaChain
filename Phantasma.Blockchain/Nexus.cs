@@ -450,6 +450,8 @@ namespace Phantasma.Blockchain
                 RegisterContract<BombContract>();
                 RegisterContract<RankingContract>();
                 RegisterContract<FriendsContract>();
+                RegisterContract<MailContract>();
+                RegisterContract<PrivacyContract>();
             }
 
             if (_contractMap.ContainsKey(contractAdress)) {
@@ -1158,10 +1160,12 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, RelayContractName);
             sb.CallInterop(deployInterop, RankingContractName);
             sb.CallInterop(deployInterop, BombContractName);
-            //sb.CallInterop(deployInterop, PrivacyContractName);
+            sb.CallInterop(deployInterop, PrivacyContractName);
             sb.CallInterop(deployInterop, "friends");
             sb.CallInterop(deployInterop, "market");
             sb.CallInterop(deployInterop, "vault");
+            sb.CallInterop(deployInterop, "sale");
+            sb.CallInterop(deployInterop, "mail");
 
             sb.CallContract("block", "OpenBlock", owner.Address);
 

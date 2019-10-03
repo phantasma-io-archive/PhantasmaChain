@@ -3,7 +3,6 @@ using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
-using System;
 using System.Linq;
 
 namespace Phantasma.Contracts.Native
@@ -11,7 +10,6 @@ namespace Phantasma.Contracts.Native
     public enum InteropTransferStatus
     {
         Unknown,
-        Queued,
         Pending,
         Confirmed
     }
@@ -24,8 +22,6 @@ namespace Phantasma.Contracts.Native
         public BigInteger transferAmount;
         public string feeSymbol;
         public BigInteger feeAmount;
-        public BigInteger collateralAmount;
-        public Address broker;
         public Timestamp timestamp;
     }
 
@@ -49,9 +45,18 @@ namespace Phantasma.Contracts.Native
 
         public void SettleTransaction(Address from, string platform, string chain, Hash hash)
         {
-            Runtime.Expect(platform != DomainSettings.PlatformName, "must be external platform");
-            Runtime.Expect(Runtime.PlatformExists(platform), "unsupported platform");
-            var platformInfo = Runtime.GetPlatformByName(platform);
+            PlatformSwapAddress[] swapAddresses;
+
+            if (platform != DomainSettings.PlatformName)
+            {
+                Runtime.Expect(Runtime.PlatformExists(platform), "unsupported platform");
+                var platformInfo = Runtime.GetPlatformByName(platform);
+                swapAddresses = platformInfo.InteropAddresses;
+            }
+            else
+            {
+                swapAddresses = null;
+            }
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(from.IsUser, "must be user address");
@@ -92,8 +97,6 @@ namespace Phantasma.Contracts.Native
                     if (index >= 0)
                     {
                         var withdraw = _withdraws.Get<InteropWithdraw>(index);
-                        Runtime.Expect(withdraw.broker == from, "invalid broker");
-
                         _withdraws.RemoveAt<InteropWithdraw>(index);
 
                         Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount);
@@ -102,8 +105,9 @@ namespace Phantasma.Contracts.Native
                     }
                 }
                 else
+                if (swapAddresses != null)
                 {
-                    foreach (var entry in platformInfo.InteropAddresses)
+                    foreach (var entry in swapAddresses)
                     {
                         if (transfer.destinationAddress == entry.LocalAddress)
                         {
@@ -121,7 +125,7 @@ namespace Phantasma.Contracts.Native
                             Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
                             // TODO support NFT
-                            Runtime.SwapTokens(platformInfo.Name, platformInfo.GetChainAddress(), Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
+                            Runtime.SwapTokens(platform, transfer.sourceAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
 
                             swapCount++;
                             break;
@@ -132,7 +136,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(swapCount > 0, "nothing to settle");
             chainHashes.Set<Hash, Hash>(hash, Runtime.Transaction.Hash);
-            Runtime.Notify(EventKind.TransactionSettle, from, new TransactionSettleEventData(hash, platformInfo.Name));
+            Runtime.Notify(EventKind.TransactionSettle, from, new TransactionSettleEventData(hash, platform));
         }
 
         // send to external chain
@@ -184,9 +188,7 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
 
             // TODO support NFT
-            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, platform.GetChainAddress(), symbol, amount, null, null);
-
-            var collateralAmount = Runtime.GetTokenQuote(symbol, DomainSettings.FuelTokenSymbol, feeAmount);
+            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, to, symbol, amount, null, null);
 
             var withdraw = new InteropWithdraw()
             {
@@ -196,98 +198,9 @@ namespace Phantasma.Contracts.Native
                 feeAmount = feeAmount,
                 feeSymbol = feeSymbol,
                 hash = Runtime.Transaction.Hash,
-                broker = Address.Null,
-                collateralAmount = collateralAmount,
                 timestamp = Runtime.Time
             };
             _withdraws.Add<InteropWithdraw>(withdraw);
-
-            Runtime.Notify(EventKind.BrokerRequest, from, to);
-        }
-
-        public void SetBroker(Address from, Hash hash)
-        {
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(Runtime.IsKnownValidator(from), "invalid validator");
-
-            var count = _withdraws.Count();
-            var index = -1;
-            for (int i = 0; i < count; i++)
-            {
-                var entry = _withdraws.Get<InteropWithdraw>(i);
-                if (entry.hash == hash)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            Runtime.Expect(index >= 0, "invalid hash");
-
-            var withdraw = _withdraws.Get<InteropWithdraw>(index);
-            Runtime.Expect(withdraw.broker.IsNull, "broker already set");
-
-            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, withdraw.collateralAmount);
-
-            withdraw.broker = from;
-            withdraw.timestamp = Runtime.Time;
-            _withdraws.Replace<InteropWithdraw>(index, withdraw);
-
-            var expireDate = new Timestamp(Runtime.Time.Value + 86400); // 24 hours from now
-            Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "broker", date = expireDate });
-        }
-
-        // NOTE we dont allow cancelling an withdraw due to being possible to steal tokens that way
-        // we do however allow to cancel a broker if too long has passed
-        public void CancelBroker(Address from, Hash hash)
-        {
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            var count = _withdraws.Count();
-            var index = -1;
-            for (int i = 0; i < count; i++)
-            {
-                var entry = _withdraws.Get<InteropWithdraw>(i);
-                if (entry.hash == hash)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            Runtime.Expect(index >= 0, "invalid hash");
-
-            var withdraw = _withdraws.Get<InteropWithdraw>(index);
-
-            var brokerAddress = withdraw.broker;
-            Runtime.Expect(!brokerAddress.IsNull, "no broker set");
-
-            var diff = Runtime.Time - withdraw.timestamp;
-            var days = diff / 86400; // convert seconds to days
-            Runtime.Expect(days >= 1, "still waiting for broker");
-
-            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, withdraw.collateralAmount);
-
-            withdraw.broker = Address.Null;
-            withdraw.timestamp = Runtime.Time;
-            _withdraws.Replace<InteropWithdraw>(index, withdraw);
-
-            Runtime.Notify(EventKind.RoleDemote, brokerAddress, new RoleEventData() { role = "broker", date = Runtime.Time});
-        }
-
-        public Address GetBroker(string chainName, Hash hash)
-        {
-            var count = _withdraws.Count();
-            for (int i = 0; i < count; i++)
-            {
-                var entry = _withdraws.Get<InteropWithdraw>(i);
-                if (entry.hash == hash)
-                {
-                    return entry.broker;
-                }
-            }
-
-            return Address.Null;
         }
 
         public Hash GetSettlement(string platformName, Hash hash)
@@ -315,12 +228,7 @@ namespace Phantasma.Contracts.Native
                 var entry = _withdraws.Get<InteropWithdraw>(i);
                 if (entry.hash == hash)
                 {
-                    if (!entry.broker.IsNull)
-                    {
-                        return InteropTransferStatus.Pending;
-                    }
-
-                    return InteropTransferStatus.Queued;
+                    return InteropTransferStatus.Pending;
                 }
             }
 

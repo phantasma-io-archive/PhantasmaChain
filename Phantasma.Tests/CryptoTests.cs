@@ -183,15 +183,17 @@ namespace Phantasma.Tests
             var keyB = PhantasmaKeys.Generate();
             var secret = "Hello Phantasma!";
 
-            var pubA = EncryptionUtils.Curve.G * keyA.PrivateKey;
-            var pubB = EncryptionUtils.Curve.G * keyB.PrivateKey;
+            var curve = ECDsaCurve.Secp256k1.GetCurve();
+
+            var pubA = curve.G * keyA.PrivateKey;
+            var pubB = curve.G * keyB.PrivateKey;
 
             var sA = (pubB * keyA.PrivateKey).EncodePoint(false);
             var sB = (pubA * keyB.PrivateKey).EncodePoint(false);
             Assert.IsTrue(sA.SequenceEqual(sB));
 
-            var encryptedMessage = EncryptionUtils.Encrypt(secret, keyA, pubB);
-            var decryptedMessage = EncryptionUtils.Decrypt<string>(encryptedMessage, keyB, pubA);
+            var encryptedMessage = Cryptography.SharedSecret.Encrypt(secret, keyA, pubB);
+            var decryptedMessage = Cryptography.SharedSecret.Decrypt<string>(encryptedMessage, keyB, pubA);
 
             Assert.IsTrue(decryptedMessage == secret);
         }

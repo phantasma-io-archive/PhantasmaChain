@@ -31,6 +31,7 @@ namespace Phantasma.Domain
         Ranking,
         Market,
         Friends,
+        Mail,
         Vault,
         Sale
     }

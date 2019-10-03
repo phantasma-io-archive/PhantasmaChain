@@ -50,12 +50,12 @@ namespace Phantasma.Blockchain
     }
 
     public static class InteropUtils
-    {
-        public static string Seed = "";
-
-        public static PhantasmaKeys GenerateInteropKeys(PhantasmaKeys genesisKeys, string platformName)
+    {        
+        public static PhantasmaKeys GenerateInteropKeys(PhantasmaKeys genesisKeys, Hash genesisHash, string platformName)
         {
-            var temp = $"{platformName.ToUpper()}!{genesisKeys.ToWIF()}{Seed}";
+            var temp = $"{genesisKeys.ToWIF()}{genesisHash.ToString()}{platformName}";
+            temp = temp.ToUpper();
+
             var privateKey = CryptoExtensions.Sha256(temp);
             var key = new PhantasmaKeys(privateKey);
             return key;

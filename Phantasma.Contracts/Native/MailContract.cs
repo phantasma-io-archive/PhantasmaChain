@@ -1,27 +1,33 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Storage.Context;
 
 namespace Phantasma.Contracts.Extra
 {
-    /*
-    public struct AddressMessage
+    public struct Mail
     {
         public Address from;
         public Timestamp timestamp;
         public byte[] content;
     }
 
-    public sealed class MessagingContract : NativeContract
+    public struct Attachment
     {
-        public override string Name => "messages";
+        public string name;
+        public Hash file;
+    }
+
+    public sealed class MailContract : NativeContract
+    {
+        public override NativeContractKind Kind => NativeContractKind.Mail;
 
         public const int MAX_MESSAGE_LENGTH = 1024 * 64;
         public const int MIN_MESSAGE_LENGTH = 16;
 
         internal StorageList _messages;
 
-        public MessagingContract() : base()
+        public MailContract() : base()
         {
         }
 
@@ -33,20 +39,19 @@ namespace Phantasma.Contracts.Extra
             Runtime.Expect(content.Length >= MAX_MESSAGE_LENGTH, "message too small");
             Runtime.Expect(content.Length <= MIN_MESSAGE_LENGTH, "message too large");
 
-            var msg = new AddressMessage()
+            var msg = new Mail()
             {
                 from = from,
                 timestamp = Runtime.Time,
                 content = content
             };
 
-            _messages.Add<AddressMessage>(msg);
+            _messages.Add<Mail>(msg);
         }
 
-        public AddressMessage[] GetMessages(Address target)
+        public Mail[] GetMessages(Address target)
         {
-            return _messages.All<AddressMessage>();
+            return _messages.All<Mail>();
         }
     }
-    */
 }

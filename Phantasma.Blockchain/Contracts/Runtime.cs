@@ -318,10 +318,6 @@ namespace Phantasma.Blockchain.Contracts
                     Expect(contract == Nexus.ValidatorContractName, $"event kind only in {Nexus.ValidatorContractName} contract");
                     break;
 
-                case EventKind.BrokerRequest:
-                    Expect(contract == Nexus.InteropContractName, $"event kind only in {Nexus.InteropContractName} contract");
-                    break;
-
                 case EventKind.ValueCreate:
                 case EventKind.ValueUpdate:
                     Expect(contract == Nexus.GovernanceContractName, $"event kind only in {Nexus.GovernanceContractName} contract");

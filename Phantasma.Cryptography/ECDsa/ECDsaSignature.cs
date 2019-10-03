@@ -7,12 +7,6 @@ using System.Linq;
 
 namespace Phantasma.Cryptography.ECC
 {
-    public enum ECDsaCurve
-    {
-        Secp256r1,
-        Secp256k1,
-    }
-
     public class ECDsaSignature : Signature
     {
         public byte[] Bytes { get; private set; }
@@ -45,11 +39,7 @@ namespace Phantasma.Cryptography.ECC
                     continue;
                 }
 
-                var pubKey = address.ToByteArray().Skip(1).ToArray();
-                if (pubKey[0] != 2 && pubKey[0] != 3)
-                {
-                    throw new System.Exception("invalid ECDsa public key");
-                }
+                var pubKey = ExtractPublicKeyFromAddress(address);
 
                 if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKey))
                 {
@@ -83,6 +73,17 @@ namespace Phantasma.Cryptography.ECC
 
             var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey);
             return new ECDsaSignature(signature, curve);
+        }
+
+        public static byte[] ExtractPublicKeyFromAddress(Address address)
+        {
+            var pubKey = address.ToByteArray().Skip(1).ToArray();
+            if (pubKey[0] != 2 && pubKey[0] != 3)
+            {
+                throw new System.Exception("invalid ECDsa public key");
+            }
+
+            return pubKey;
         }
     }
 }

@@ -3,6 +3,25 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography.ECC
 {
+    public enum ECDsaCurve
+    {
+        Secp256r1,
+        Secp256k1,
+    }
+
+    public static class ECCCurveExtensions
+    {
+        public static ECCurve GetCurve(this ECDsaCurve curve)
+        {
+            switch (curve)
+            {
+                case ECDsaCurve.Secp256k1: return ECCurve.Secp256k1;
+                case ECDsaCurve.Secp256r1: return ECCurve.Secp256r1;
+                default: return null;
+            }
+        }
+    }
+
     public class ECCurve
     {
         internal readonly BigInteger Q;

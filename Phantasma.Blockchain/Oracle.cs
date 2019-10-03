@@ -326,5 +326,12 @@ namespace Phantasma.Blockchain
                     throw new OracleException("unknown platform oracle");
             }
         }
+
+        public InteropTransaction ReadTransactionFromOracle(string platform, string chain, Hash hash)
+        {
+            var bytes = this.Read($"{OracleReader.interopTag}{platform}/{chain}/tx/{hash}");
+            var tx = Serialization.Unserialize<InteropTransaction>(bytes);
+            return tx;
+        }
     }
 }

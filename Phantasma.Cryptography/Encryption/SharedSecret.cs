@@ -1,16 +1,26 @@
 ﻿using Phantasma.Storage;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.IO;
+using Phantasma.Cryptography.ECC;
 
 namespace Phantasma.Cryptography
 {
-    public static class EncryptionUtils
+    public struct SharedSecret : ISerializable
     {
+        public ECDsaCurve Curve { get; private set; }
+        public Address Address { get; private set; }
+        public byte[] Payload { get; private set; }
+
         private const string initVector = "pemgail9uzpgzl88";
         private const int keysize = 256;
-        public static readonly ECC.ECCurve Curve = ECC.ECCurve.Secp256r1;
+
+        public SharedSecret(ECDsaCurve curve, Address address, byte[] payload)
+        {
+            this.Curve = curve;
+            this.Address = address;
+            this.Payload = payload;
+        }
 
         public static byte[] GetSharedSecret(PhantasmaKeys local, ECC.ECPoint remote)
         {
@@ -18,16 +28,20 @@ namespace Phantasma.Cryptography
             return secret.Sha256();
         }
 
-        public static byte[] Encrypt<T>(T message, PhantasmaKeys local, ECC.ECPoint remote)
+        public static SharedSecret Encrypt<T>(T message, PhantasmaKeys privateKey, Address publicAddress, ECDsaCurve curve)
         {
-            var secret = GetSharedSecret(local, remote);
-            return Encrypt(message, secret);
+            var ecdCurve = curve.GetCurve();
+            var pubBytes = ECDsaSignature.ExtractPublicKeyFromAddress(publicAddress);
+            var publicKey = ECC.ECPoint.DecodePoint(pubBytes, ecdCurve);
+            var secret = GetSharedSecret(privateKey, publicKey);
+            var payload = Encrypt(message, secret);
+            return new SharedSecret(curve, publicAddress, payload);
         }
 
-        public static T Decrypt<T>(byte[] input, PhantasmaKeys local, ECC.ECPoint remote)
+        public static byte[] Encrypt<T>(T message, PhantasmaKeys privateKey, ECC.ECPoint publicKey)
         {
-            var secret = GetSharedSecret(local, remote);
-            return Decrypt<T>(input, secret);
+            var secret = GetSharedSecret(privateKey, publicKey);
+            return Encrypt(message, secret);
         }
 
         public static byte[] Encrypt<T>(T message, byte[] key)
@@ -48,25 +62,21 @@ namespace Phantasma.Cryptography
             byte[] cipherTextBytes = memoryStream.ToArray();
             memoryStream.Close();
             cryptoStream.Close();
-            return cipherTextBytes;
-            
-            /*
-            byte[] iv = new byte[16];
-            AesEngine engine = new AesEngine();
-            CbcBlockCipher blockCipher = new CbcBlockCipher(engine); //CBC
-            PaddedBufferedBlockCipher cipher = new PaddedBufferedBlockCipher(blockCipher); //Default scheme is PKCS5/PKCS7
-            KeyParameter keyParam = new KeyParameter(key);
-            ParametersWithIV keyParamWithIV = new ParametersWithIV(keyParam, iv, 0, 16);
+            return cipherTextBytes;            
+        }
 
-            var inputBytes = Serialization.Serialize(message);
+        public T Decrypt<T>(PhantasmaKeys privateKey)
+        {
+            var curve = this.Curve.GetCurve();
+            var pubBytes = ECDsaSignature.ExtractPublicKeyFromAddress(this.Address);
+            var publicKey = ECC.ECPoint.DecodePoint(pubBytes, curve);
+            return Decrypt<T>(this.Payload, privateKey, publicKey);
+        }
 
-            cipher.Init(true, keyParamWithIV);
-            byte[] outputBytes = new byte[cipher.GetOutputSize(inputBytes.Length)];
-            int length = cipher.ProcessBytes(inputBytes, outputBytes, 0);
-            cipher.DoFinal(outputBytes, length); //Do the final block
-            return outputBytes;
-            */
-            throw new System.NotImplementedException();
+        public static T Decrypt<T>(byte[] message, PhantasmaKeys privateKey, ECC.ECPoint publicKey)
+        {
+            var secret = GetSharedSecret(privateKey, publicKey);
+            return Decrypt<T>(message, secret);
         }
 
         public static T Decrypt<T>(byte[] input, byte[] key)
@@ -85,22 +95,17 @@ namespace Phantasma.Cryptography
             cryptoStream.Close();
 
             return Serialization.Unserialize<T>(plainTextBytes);
-            /*
-            byte[] iv = new byte[16];
-            AesEngine engine = new AesEngine();
-            CbcBlockCipher blockCipher = new CbcBlockCipher(engine); //CBC
-            PaddedBufferedBlockCipher cipher = new PaddedBufferedBlockCipher(blockCipher); //Default scheme is PKCS5/PKCS7
-            KeyParameter keyParam = new KeyParameter(key);
-            ParametersWithIV keyParamWithIV = new ParametersWithIV(keyParam, iv, 0, 16);
+        }
 
-            cipher.Init(false, keyParamWithIV);
-            byte[] comparisonBytes = new byte[cipher.GetOutputSize(input.Length)];
-            var length = cipher.ProcessBytes(input, comparisonBytes, 0);
-            cipher.DoFinal(comparisonBytes, length); //Do the final block       
-            */
+        public void SerializeData(BinaryWriter writer)
+        {
             throw new System.NotImplementedException();
         }
 
+        public void UnserializeData(BinaryReader reader)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 }

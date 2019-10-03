@@ -41,7 +41,7 @@ namespace Phantasma.Domain
         ValidatorElect = 31,
         ValidatorRemove = 32,
         ValidatorSwitch = 33,
-        BrokerRequest = 34,
+        PackedNFT = 34,
         ValueCreate = 35,
         ValueUpdate = 36,
         PollCreated = 37,
@@ -55,7 +55,6 @@ namespace Phantasma.Domain
         LeaderboardReset = 45,
         PlatformCreate = 46,
         TransactionSettle = 47,
-        PackedNFT = 48,
         Custom = 64,
     }
 
