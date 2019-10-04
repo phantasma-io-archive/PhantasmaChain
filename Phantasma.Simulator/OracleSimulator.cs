@@ -107,6 +107,7 @@ namespace Phantasma.Simulator
                 case "GAS": price = 500; break;
                 case "ETH": price = 40000; break;
                 case "BTC": price = 800000; break;
+                case "COOL": price = 300; break;
                 default: throw new OracleException("Unknown token: "+baseSymbol);
             }
 

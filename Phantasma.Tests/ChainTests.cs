@@ -326,7 +326,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void CosmicSwapSimple()
+        public void CosmicSwap()
         {
             var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
@@ -337,6 +337,13 @@ namespace Phantasma.Tests
 
             var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
             var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
+
+            var symbol = "COOL";
+
+            simulator.BeginBlock();
+            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible);
+            simulator.MintTokens(owner, testUserA.Address, symbol, 100000);
+            simulator.EndBlock();
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
@@ -361,6 +368,19 @@ namespace Phantasma.Tests
 
             var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, testUserA.Address);
             Assert.IsTrue(finalBalance > originalBalance);
+
+            swapAmount = 10;
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+            {
+               return ScriptUtils.BeginScript().
+                    AllowGas(testUserA.Address, Address.Null, 400, 9999).
+                    //CallContract("swap", "SwapFiat", testUserA.Address, symbol, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(0.1m, DomainSettings.FiatTokenDecimals)).
+                    CallContract("swap", "SwapTokens", testUserA.Address, symbol, DomainSettings.FuelTokenSymbol, new BigInteger(1)).
+                    SpendGas(testUserA.Address).
+                    EndScript();
+            });
+            simulator.EndBlock();
         }
 
         [TestMethod]
