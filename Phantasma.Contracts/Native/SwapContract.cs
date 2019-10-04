@@ -140,17 +140,52 @@ namespace Phantasma.Contracts.Native
 
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
         {
-            var amount = Runtime.GetTokenQuote(DomainSettings.FuelTokenSymbol, fromSymbol, feeAmount);
-            Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} as fee");
+            var toSymbol = DomainSettings.FuelTokenSymbol;
 
-            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            var amount = Runtime.GetTokenQuote(toSymbol, fromSymbol, feeAmount);
+
+            var token = Runtime.GetToken(fromSymbol);
+            if (token.Decimals == 0 && amount < 1)
+            {
+                amount = 1;
+            }
+            else
+            {
+                Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} as a fee");
+            }
+
+            var balance = Runtime.GetBalance(toSymbol, from);
 
             amount -= balance;
 
             if (amount > 0)
             {
-                SwapTokens(from, fromSymbol, DomainSettings.FuelTokenSymbol, amount);
+                SwapTokens(from, fromSymbol, toSymbol, amount);
             }
+        }
+
+        public void SwapReverse(Address from, string fromSymbol, string toSymbol, BigInteger total)
+        {
+            var amount = Runtime.GetTokenQuote(toSymbol, fromSymbol, total);
+            Runtime.Expect(amount > 0, $"cannot reverse swap {fromSymbol}");
+            SwapTokens(from, fromSymbol, toSymbol, amount);
+        }
+
+        public void SwapFiat(Address from, string fromSymbol, string toSymbol, BigInteger worth)
+        {
+            var amount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, fromSymbol, worth);
+
+            var token = Runtime.GetToken(fromSymbol);
+            if (token.Decimals == 0 && amount < 1)
+            {
+                amount = 1;
+            }
+            else
+            {
+                Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} based on fiat quote");
+            }
+
+            SwapTokens(from, fromSymbol, toSymbol, amount);
         }
 
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
