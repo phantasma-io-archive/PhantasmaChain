@@ -117,6 +117,9 @@ namespace Phantasma.Simulator
             //GenerateToken(_owner, "DAI", "Dai Stablecoin", ethPlatform, Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
+            var communitySupply = 100000;
+            GenerateToken(_owner, "MKNI", "Mankini Token", DomainSettings.PlatformName, Hash.FromString("MKNI"), UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
+            MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
             EndBlock();
 
             /*

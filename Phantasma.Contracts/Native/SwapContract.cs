@@ -205,7 +205,7 @@ namespace Phantasma.Contracts.Native
 
             var toBalance = GetAvailableForSymbol(toSymbol);
 
-            Runtime.Expect(toBalance > 0, $"not enough balance o f {toSymbol} available in the pot");
+            Runtime.Expect(toBalance > 0, $"not enough balance of {toSymbol} available in the pot");
 
             var total = GetRate(fromSymbol, toSymbol, amount);
 
