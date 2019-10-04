@@ -44,7 +44,7 @@ namespace Phantasma.Contracts.Native
             var maxAmount = price * limit;
 
             var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
-            //Runtime.Expect(allowance == 0, "unexpected pending allowance");
+            Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
             allowance += maxAmount;
             _allowanceMap.Set(from, allowance);
