@@ -275,7 +275,7 @@ namespace Phantasma.Blockchain
 
         private Dictionary<string, IKeyValueStoreAdapter> _keystoreCache = new Dictionary<string, IKeyValueStoreAdapter>();
 
-        internal IKeyValueStoreAdapter CreateKeyStoreAdapter(string name)
+        public IKeyValueStoreAdapter CreateKeyStoreAdapter(string name)
         {
             if (_keystoreCache.ContainsKey(name))
             {

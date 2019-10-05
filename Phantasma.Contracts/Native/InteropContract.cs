@@ -72,7 +72,19 @@ namespace Phantasma.Contracts.Native
 
             foreach (var transfer in interopTx.Transfers)
             {
-                if (Runtime.IsPlatformAddress(transfer.sourceAddress))
+                var count = _withdraws.Count();
+                var index = -1;
+                for (int i = 0; i < count; i++)
+                {
+                    var entry = _withdraws.Get<InteropWithdraw>(i);
+                    if (entry.destination == transfer.destinationAddress && entry.transferAmount == transfer.Value && entry.transferSymbol == transfer.Symbol)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+                if (index >= 0)
                 {
                     Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
 
@@ -82,27 +94,12 @@ namespace Phantasma.Contracts.Native
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
-                    var count = _withdraws.Count();
-                    var index = -1;
-                    for (int i=0; i<count; i++)
-                    {
-                        var entry = _withdraws.Get<InteropWithdraw>(i);
-                        if (entry.destination == transfer.destinationAddress && entry.transferAmount == transfer.Value && entry.transferSymbol == transfer.Symbol)
-                        {
-                            index = i;
-                            break;
-                        }
-                    }
+                    var withdraw = _withdraws.Get<InteropWithdraw>(index);
+                    _withdraws.RemoveAt<InteropWithdraw>(index);
 
-                    if (index >= 0)
-                    {
-                        var withdraw = _withdraws.Get<InteropWithdraw>(index);
-                        _withdraws.RemoveAt<InteropWithdraw>(index);
+                    Runtime.TransferTokens(withdraw.feeSymbol, this.Address, transfer.sourceAddress, withdraw.feeAmount);
 
-                        Runtime.TransferTokens(withdraw.feeSymbol, this.Address, from, withdraw.feeAmount);
-
-                        swapCount++;
-                    }
+                    swapCount++;
                 }
                 else
                 if (swapAddresses != null)

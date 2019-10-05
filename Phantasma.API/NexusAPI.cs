@@ -1708,9 +1708,14 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 5)]
+        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, -1)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string accountInput)
         {
+            if (TokenSwapper == null)
+            {
+                return new ErrorResult { error = "token swapper not available" };
+            }
+
             Address address;
 
             if (Address.IsValidAddress(accountInput))
@@ -1732,15 +1737,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
-            var hashes = Nexus.RootChain.GetSwapHashesForAddress(Nexus.RootChain.Storage, address);
-            var swapList = hashes.
-                Select(x => Nexus.RootChain.GetSwap(Nexus.RootChain.Storage, x)).ToList();
-
-            if (TokenSwapper != null)
-            {
-                var pendingSwaps = TokenSwapper.GetPendingSwaps(address);
-                swapList.AddRange(pendingSwaps);
-            }
+            var swapList = TokenSwapper.GetPendingSwaps(address);
 
             var oracleReader = Nexus.CreateOracleReader();
 
