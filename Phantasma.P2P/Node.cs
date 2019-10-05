@@ -185,12 +185,15 @@ namespace Phantasma.Network.P2P
 
         protected override bool Run()
         {
-            ConnectToPeers();
-
-            if (!listening && this.Capabilities.HasFlag(PeerCaps.Sync))
+            if (this.Capabilities.HasFlag(PeerCaps.Sync))
             {
-                listening = true;
-                var accept = listener.BeginAcceptSocket(new AsyncCallback(DoAcceptSocketCallback), listener);
+                ConnectToPeers();
+
+                if (!listening)
+                {
+                    listening = true;
+                    var accept = listener.BeginAcceptSocket(new AsyncCallback(DoAcceptSocketCallback), listener);
+                }
             }
 
             return true;
