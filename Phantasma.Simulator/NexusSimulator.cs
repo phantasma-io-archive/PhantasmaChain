@@ -78,6 +78,10 @@ namespace Phantasma.Simulator
                     throw new ChainException("Genesis block failure");
                 }
             }
+            else
+            {
+                CurrentTime = new Timestamp(Nexus.GenesisTime.Value + 1);
+            }
 
             this.bankChain = Nexus.GetChainByName("bank");
 

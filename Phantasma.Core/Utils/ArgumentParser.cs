@@ -69,6 +69,14 @@ namespace Phantasma.Core.Utils
             return defaultVal;
         }
 
+        public uint GetUInt(string key, uint defaultVal = 0)
+        {
+            var temp = GetString(key, defaultVal.ToString());
+            uint result;
+            if (uint.TryParse(temp, out result)) { return result; }
+            return defaultVal;
+        }
+
         public bool GetBool(string key, bool defaultVal = false)
         {
             var temp = GetString(key, defaultVal.ToString());

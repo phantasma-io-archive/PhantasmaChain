@@ -77,19 +77,6 @@ namespace Phantasma.API
         public string[] contracts;
     }
 
-    public struct AppResult : IAPIResult
-    {
-        public string id;
-        public string title;
-        public string url;
-
-        [APIDescription("Description of app")]
-        public string description;
-
-        [APIDescription("Storage hash of the app icon")]
-        public string icon;
-    }
-
     public struct EventResult : IAPIResult
     {
         public string address;

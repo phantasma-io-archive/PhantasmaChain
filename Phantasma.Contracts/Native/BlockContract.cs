@@ -99,7 +99,11 @@ namespace Phantasma.Contracts.Native
 
             if (previousValidator != from)
             {
-                Runtime.Notify(EventKind.ValidatorSwitch, from, previousValidator);
+                if (!previousValidator.IsNull)
+                {
+                    Runtime.Notify(EventKind.ValidatorSwitch, from, previousValidator);
+                }
+
                 previousValidator = from;
             }
 

@@ -122,6 +122,11 @@ namespace Phantasma.Blockchain
                 {
                     throw new BlockGenerationException($"previous hash should be {lastBlock.PreviousHash}");
                 }
+
+                if (block.Timestamp < lastBlock.Timestamp)
+                {
+                    throw new BlockGenerationException($"timestamp of block should greater than {lastBlock.Timestamp}");
+                }
             }
 
             var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
