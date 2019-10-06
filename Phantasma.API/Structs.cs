@@ -93,6 +93,7 @@ namespace Phantasma.API
     public struct EventResult : IAPIResult
     {
         public string address;
+        public string contract;
         public string kind;
 
         [APIDescription("Data in hexadecimal format, content depends on the event kind")]

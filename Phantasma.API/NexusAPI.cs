@@ -444,6 +444,7 @@ namespace Phantasma.API
             return new EventResult
             {
                 address = evt.Address.Text,
+                contract = evt.Contract,
                 data = evt.Data.Encode(),
                 kind = evt.Kind.ToString()
             };
