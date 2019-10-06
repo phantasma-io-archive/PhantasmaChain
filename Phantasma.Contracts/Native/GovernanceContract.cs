@@ -13,12 +13,6 @@ namespace Phantasma.Contracts.Native
         public BigInteger Deviation;
     }
 
-    public struct ChainValueEventData
-    {
-        public string Name;
-        public BigInteger Value;
-    }
-
     public sealed class GovernanceContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Governance;

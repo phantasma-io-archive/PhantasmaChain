@@ -78,14 +78,22 @@ namespace Phantasma.Domain
         public Timestamp date;
     }
 
+    public struct ChainValueEventData
+    {
+        public string Name;
+        public BigInteger Value;
+    }
+
     public struct TransactionSettleEventData
     {
         public readonly Hash Hash;
+        public readonly string Platform;
         public readonly string Chain;
 
-        public TransactionSettleEventData(Hash hash, string chain)
+        public TransactionSettleEventData(Hash hash, string platform, string chain)
         {
             Hash = hash;
+            Platform = platform;
             Chain = chain;
         }
     }

@@ -1279,7 +1279,8 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
                 ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)),
                 ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, DomainSettings.StakingTokenDecimals)),
-                ValueCreateTx(owner, SwapContract.SwapFeePercentTag, 2, 0, 20),
+                ValueCreateTx(owner, SwapContract.SwapMakerFeePercentTag, 2, 0, 20),
+                ValueCreateTx(owner, SwapContract.SwapTakerFeePercentTag, 5, 0, 20),
                 
                 //ChainCreateTx(owner, "sale", "sale"),
 
