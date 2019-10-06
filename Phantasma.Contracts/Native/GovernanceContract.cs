@@ -29,6 +29,7 @@ namespace Phantasma.Contracts.Native
 
         internal StorageMap _valueMap;
         internal StorageMap _constraintMap;
+        internal StorageList _nameList;
 
         public BigInteger FeeMultiplier = 1;
 
@@ -39,6 +40,11 @@ namespace Phantasma.Contracts.Native
         public bool HasName(string name)
         {
             return HasValue(name);
+        }
+
+        public string[] GetNames()
+        {
+            return _nameList.All<string>();
         }
 
         #region VALUES
@@ -116,6 +122,7 @@ namespace Phantasma.Contracts.Native
 
             _valueMap.Set<string, BigInteger>(name, initial);
             _constraintMap.Set<string, ChainConstraint[]>(name, constraints);
+            _nameList.Add<string>(name);
 
             Runtime.Notify(EventKind.ValueCreate, Runtime.Nexus.GenesisAddress, new ChainValueEventData() { Name = name, Value = initial });
         }
