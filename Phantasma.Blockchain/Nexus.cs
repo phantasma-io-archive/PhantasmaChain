@@ -1207,14 +1207,21 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        private Transaction ValueCreateTx(PhantasmaKeys owner, string name, BigInteger initial, BigInteger min, BigInteger max)
+        private Transaction ValueCreateTx(PhantasmaKeys owner, Dictionary<string, KeyValuePair<BigInteger, ChainConstraint[]>> values)
         {
-            var script = ScriptUtils.
-                BeginScript().
-                //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract(Nexus.GovernanceContractName, "CreateValue", name, initial, min, max).
-                //SpendGas(owner.Address).
-                EndScript();
+            var sb = ScriptUtils.
+                BeginScript();
+            //AllowGas(owner.Address, Address.Null, 1, 9999).
+            foreach (var entry in values)
+            {
+                var name = entry.Key;
+                var initial = entry.Value.Key;
+                var constraints = entry.Value.Value;
+                var bytes = Serialization.Serialize(constraints);
+                sb.CallContract(Nexus.GovernanceContractName, "CreateValue", name, initial, bytes);
+            }
+            //SpendGas(owner.Address).
+            var script = sb.EndScript();
 
             var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
@@ -1271,16 +1278,100 @@ namespace Phantasma.Blockchain
             {
                 BeginNexusCreateTx(owner),
 
-                ValueCreateTx(owner, NexusProtocolVersionTag, 1, 1, 1000),
-                ValueCreateTx(owner, ValidatorContract.ValidatorCountTag, 1, 1, 100),
-                ValueCreateTx(owner, ValidatorContract.ValidatorRotationTimeTag, 120, 30, 3600),
-                ValueCreateTx(owner, ConsensusContract.PollVoteLimitTag, 50000, 100, 500000),
-                ValueCreateTx(owner, ConsensusContract.MaxEntriesPerPollTag, 10, 2, 1000),
-                ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
-                ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)),
-                ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, DomainSettings.StakingTokenDecimals)),
-                ValueCreateTx(owner, SwapContract.SwapMakerFeePercentTag, 2, 0, 20),
-                ValueCreateTx(owner, SwapContract.SwapTakerFeePercentTag, 5, 0, 20),
+                ValueCreateTx(owner,
+                 new Dictionary<string, KeyValuePair<BigInteger, ChainConstraint[]>>() {
+                     {
+                         NexusProtocolVersionTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             1, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MustIncrease}
+                         })
+                     },
+
+                     {
+                         ValidatorContract.ValidatorCountTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             1, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MustIncrease}
+                         })
+                     },
+
+                     {
+                         ValidatorContract.ValidatorRotationTimeTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             120, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 30},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 3600},
+                         })
+                     },
+
+                     {
+                         ConsensusContract.PollVoteLimitTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             50000, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 100},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 500000},
+                         })
+                     },
+
+                     {
+                         ConsensusContract.MaxEntriesPerPollTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             10, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 2},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 1000},
+                         })
+                     },
+
+                     {
+                         ConsensusContract.MaximumPollLengthTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             86400 * 90, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 86400 * 2},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 86400 * 120},
+                         })
+                     },
+
+                     {
+                         StakeContract.MasterStakeThresholdTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             StakeContract.DefaultMasterThreshold, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals)},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)},
+                         })
+                     },
+
+                     {
+                         StakeContract.VotingStakeThresholdTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals)},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = UnitConversion.ToBigInteger(10000, DomainSettings.StakingTokenDecimals)},
+                         })
+                     },
+
+
+                     {
+                         SwapContract.SwapMakerFeePercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             2, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 0},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 20},
+                             new ChainConstraint() { Kind = ConstraintKind.LessThanOther, Tag = SwapContract.SwapTakerFeePercentTag},
+                         })
+                     },
+
+
+                     {
+                         SwapContract.SwapTakerFeePercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             5, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 1},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 20},
+                             new ChainConstraint() { Kind = ConstraintKind.GreatThanOther, Tag = SwapContract.SwapMakerFeePercentTag},
+                         })
+                     },
+                 }),
                 
                 //ChainCreateTx(owner, "sale", "sale"),
 

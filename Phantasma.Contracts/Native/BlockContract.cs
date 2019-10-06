@@ -25,32 +25,11 @@ namespace Phantasma.Contracts.Native
             }
 
             Address lastValidator;
-            Timestamp validationSlotTime;
 
             var slotDuration = (int)Runtime.GetGovernanceValue(ValidatorContract.ValidatorRotationTimeTag);
-            var chainCreationTime = Runtime.Nexus.GenesisTime;
-
-            if (Runtime.Chain.Height > 0)
-            {
-                var lastBlock = Runtime.GetLastBlock();
-                lastValidator = Runtime.GetValidatorForBlock(lastBlock.Hash);
-                validationSlotTime = lastBlock.Timestamp;
-            }
-            else
-            {
-                lastValidator = Runtime.GetValidatorByIndex(0).address;
-                validationSlotTime = chainCreationTime;
-            }
-
-            var adjustedSeconds = (uint)((validationSlotTime.Value / slotDuration) * slotDuration);
-            validationSlotTime = new Timestamp(adjustedSeconds);
-
+            Timestamp validationSlotTime = Runtime.Nexus.GenesisTime;
 
             var diff = Runtime.Time - validationSlotTime;
-            if (diff < slotDuration)
-            {
-                return lastValidator;
-            }
 
             int validatorIndex = (int)(diff / slotDuration);
             var validatorCount = Runtime.GetPrimaryValidatorCount();

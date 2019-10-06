@@ -1338,7 +1338,7 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
-            simulator.blockTimeSkip = TimeSpan.FromSeconds(10);
+            simulator.blockTimeSkip = TimeSpan.FromSeconds(5);
 
             var nexus = simulator.Nexus;
 
@@ -1410,7 +1410,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // here we skip to a time where its supposed to be the turn of the second validator
-            simulator.CurrentTime = (DateTime)simulator.Nexus.GenesisTime + TimeSpan.FromSeconds(180);
+            simulator.CurrentTime = (DateTime) simulator.Nexus.GenesisTime + TimeSpan.FromSeconds(120*500+130);
 
             // Send from user A to user B
             // NOTE this block is baked by the second validator
