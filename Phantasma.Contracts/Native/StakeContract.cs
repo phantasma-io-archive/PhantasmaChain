@@ -257,10 +257,7 @@ namespace Phantasma.Contracts.Native
                 }
 
                 Runtime.TransferTokens(token.Symbol, this.Address, targetMaster.address, transferAmount);
-
                 totalAmount -= transferAmount;
-
-                Runtime.Notify(EventKind.TokenMint, targetMaster.address, new TokenEventData(token.Symbol, transferAmount, Runtime.Chain.Name));
 
                 var nextClaim = GetMasterClaimDateFromReference(1, thisClaimDate);
 
@@ -526,6 +523,8 @@ namespace Phantasma.Contracts.Native
             BigInteger sum = 0;
             BigInteger availableAmount = fuelAmount;
 
+            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, this.Address, availableAmount);
+
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
@@ -535,13 +534,13 @@ namespace Phantasma.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount);
+                    Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount);
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
+            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);

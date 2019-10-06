@@ -125,7 +125,7 @@ namespace Phantasma.Blockchain
 
                 if (block.Timestamp < lastBlock.Timestamp)
                 {
-                    throw new BlockGenerationException($"timestamp of block should greater than {lastBlock.Timestamp}");
+                    throw new BlockGenerationException($"timestamp of block should be greater than {lastBlock.Timestamp}");
                 }
             }
 

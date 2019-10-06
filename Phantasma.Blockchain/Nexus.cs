@@ -979,7 +979,7 @@ namespace Phantasma.Blockchain
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenClaim, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
             else
             {

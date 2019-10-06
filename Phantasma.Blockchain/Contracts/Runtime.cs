@@ -11,6 +11,7 @@ using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
+using Phantasma.Contracts.Native;
 
 namespace Phantasma.Blockchain.Contracts
 {
