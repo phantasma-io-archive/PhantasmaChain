@@ -1083,6 +1083,57 @@ namespace Phantasma.API
             return result;
         }
 
+        [APIInfo(typeof(NexusResult), "Returns info about the nexus.", false, 30)]
+        public IAPIResult GetNexus()
+        {
+            var tokenList = new List<TokenResult>();
+
+            foreach (var token in Nexus.Tokens)
+            {
+                var entry = FillToken(token);
+                tokenList.Add(entry);
+            }
+
+            var platformList = new List<PlatformResult>();
+
+            foreach (var platform in Nexus.Platforms)
+            {
+                var info = Nexus.GetPlatformInfo(platform);
+
+
+                var entry = new PlatformResult();
+                entry.platform = platform;
+                entry.interop = info.InteropAddresses.Select(x => new InteropResult()
+                {
+                    local = x.LocalAddress.Text,
+                    external = x.ExternalAddress
+                }).ToArray();
+                entry.chain = DomainExtensions.GetChainAddress(info).Text;
+                entry.fuel = info.Symbol;
+                entry.tokens = Nexus.Tokens.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
+                platformList.Add(entry);
+            }
+
+            var chainList = new List<ChainResult>();
+
+            foreach (var chainName in Nexus.Chains)
+            {
+                var chain = Nexus.GetChainByName(chainName);
+                var single = FillChain(chain);
+                chainList.Add(single);
+            }
+
+            var governance = (GovernancePair[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "governance", nameof(GovernanceContract.GetValues)).ToObject();
+
+            return new NexusResult() {
+                name = Nexus.Name,
+                tokens = tokenList.ToArray(),
+                platforms = platformList.ToArray(),
+                chains  = chainList.ToArray(),
+                governance = governance.Select(x => new GovernanceResult() { name = x.Name, value = x.Value.ToString()}).ToArray()
+            };
+        }
+
         [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 30)]
         public IAPIResult GetTokens()
         {

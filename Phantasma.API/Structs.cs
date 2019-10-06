@@ -44,6 +44,31 @@ namespace Phantasma.API
         public InteropResult[] interop;
     }
 
+    public struct GovernanceResult : IAPIResult
+    {
+        public string name;
+        public string value;
+    }
+
+    public struct NexusResult : IAPIResult
+    {
+        [APIDescription("Name of the nexus")]
+        public string name;
+
+        [APIDescription("List of platforms")]
+        public PlatformResult[] platforms;
+
+        [APIDescription("List of tokens")]
+        public TokenResult[] tokens;
+
+        [APIDescription("List of chains")]
+        public ChainResult[] chains;
+
+        [APIDescription("List of governance values")]
+        public GovernanceResult[] governance;
+    }
+
+
     public struct AccountResult : IAPIResult
     {
         public string address;

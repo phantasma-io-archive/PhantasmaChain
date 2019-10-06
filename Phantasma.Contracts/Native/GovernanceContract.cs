@@ -23,6 +23,12 @@ namespace Phantasma.Contracts.Native
         public string Tag;
     }
 
+    public struct GovernancePair
+    {
+        public string Name;
+        public BigInteger Value;
+    }
+
     public sealed class GovernanceContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Governance;
@@ -45,6 +51,22 @@ namespace Phantasma.Contracts.Native
         public string[] GetNames()
         {
             return _nameList.All<string>();
+        }
+
+        public GovernancePair[] GetValues()
+        {
+            var names = GetNames();
+            var result = new GovernancePair[names.Length];
+            for (int i=0; i<result.Length; i++)
+            {
+                var name = names[i];
+                result[i] = new GovernancePair()
+                {
+                    Name = name,
+                    Value = GetValue(name)
+                };
+            }
+            return result;
         }
 
         #region VALUES
