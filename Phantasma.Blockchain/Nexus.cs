@@ -1230,6 +1230,7 @@ namespace Phantasma.Blockchain
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals)).
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals)).
                 //SpendGas(owner.Address).
+                CallContract("block", "CloseBlock", owner.Address).
                 EndScript();
 
             var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
@@ -1278,7 +1279,8 @@ namespace Phantasma.Blockchain
                 ValueCreateTx(owner, ConsensusContract.MaximumPollLengthTag, 86400 * 90, 86400 * 2, 86400 * 120),
                 ValueCreateTx(owner, StakeContract.MasterStakeThresholdTag, StakeContract.DefaultMasterThreshold, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)),
                 ValueCreateTx(owner, StakeContract.VotingStakeThresholdTag, UnitConversion.ToBigInteger(1000, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals), UnitConversion.ToBigInteger(10000, DomainSettings.StakingTokenDecimals)),
-
+                ValueCreateTx(owner, SwapContract.SwapFeePercentTag, 2, 0, 20),
+                
                 //ChainCreateTx(owner, "sale", "sale"),
 
                 EndNexusCreateTx(owner)

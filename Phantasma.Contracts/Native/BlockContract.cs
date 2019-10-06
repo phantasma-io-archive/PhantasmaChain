@@ -19,6 +19,11 @@ namespace Phantasma.Contracts.Native
 
         public Address GetCurrentValidator()
         {
+            if (!Runtime.Nexus.HasGenesis)
+            {
+                return Runtime.Nexus.GenesisAddress;
+            }
+
             Address lastValidator;
             Timestamp validationSlotTime;
 
@@ -108,30 +113,40 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(from.IsUser, "must be user address");
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
-            var validators = Runtime.GetValidators();
-            Runtime.Expect(validators.Length > 0, "no active validators found");
-
             var totalAvailable = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, this.Address);
-            var totalValidators = Runtime.GetPrimaryValidatorCount();
-            var amountPerValidator = totalAvailable / totalValidators;
-            Runtime.Expect(amountPerValidator > 0, "not enough fees available");
 
-            Runtime.Notify(EventKind.BlockClose, from, Runtime.Chain.Address);
-
-            int delivered = 0;
-            for (int i = 0; i < totalValidators; i++)
+            if (Runtime.Nexus.HasGenesis)
             {
-                var validator = validators[i];
-                if (validator.type != ValidatorType.Primary)
+                var validators = Runtime.GetValidators();
+                Runtime.Expect(validators.Length > 0, "no active validators found");
+
+                var totalValidators = Runtime.GetPrimaryValidatorCount();
+                var amountPerValidator = totalAvailable / totalValidators;
+                Runtime.Expect(amountPerValidator > 0, "not enough fees available");
+
+
+                int delivered = 0;
+                for (int i = 0; i < totalValidators; i++)
                 {
-                    continue;
+                    var validator = validators[i];
+                    if (validator.type != ValidatorType.Primary)
+                    {
+                        continue;
+                    }
+
+                    Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validator.address, amountPerValidator);
+                    delivered++;
                 }
 
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validator.address, amountPerValidator);
-                delivered++;
+                Runtime.Expect(delivered > 0, "failed to claim fees");
+            }
+            else
+            if (totalAvailable > 0)
+            {
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, expectedValidator, totalAvailable);
             }
 
-            Runtime.Expect(delivered > 0, "failed to claim fees");
+            Runtime.Notify(EventKind.BlockClose, from, Runtime.Chain.Address);
         }
 
         #region SETTLEMENTS
