@@ -889,7 +889,7 @@ namespace Phantasma.Blockchain
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
-                Runtime.Notify(EventKind.TokenEscrow, target, new TokenEventData(token.Symbol, amount, targetChain));
+                Runtime.Notify(EventKind.TokenStake, target, new TokenEventData(token.Symbol, amount, targetChain));
             }
             else
             {
@@ -933,7 +933,7 @@ namespace Phantasma.Blockchain
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
-                Runtime.Notify(EventKind.TokenEscrow, target, new TokenEventData(token.Symbol, tokenID, targetChain));
+                Runtime.Notify(EventKind.TokenStake, target, new TokenEventData(token.Symbol, tokenID, targetChain));
                 Runtime.Notify(EventKind.PackedNFT, target, new PackedNFTData(token.Symbol, nft.ROM, nft.RAM));
             }
             else
@@ -974,7 +974,7 @@ namespace Phantasma.Blockchain
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenStake, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
@@ -1057,7 +1057,7 @@ namespace Phantasma.Blockchain
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
-                Runtime.Notify(EventKind.TokenEscrow, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenStake, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
             else
             if (source.IsSystem && source == Runtime.CurrentContext.Address)

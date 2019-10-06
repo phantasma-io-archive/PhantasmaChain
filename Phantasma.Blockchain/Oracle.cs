@@ -234,7 +234,7 @@ namespace Phantasma.Blockchain
                                                 if (FindMatchingEvent(events, out other,
                                                     (x) =>
                                                     {
-                                                        if (x.Kind != EventKind.TokenReceive && x.Kind != EventKind.TokenEscrow)
+                                                        if (x.Kind != EventKind.TokenReceive && x.Kind != EventKind.TokenStake)
                                                         {
                                                             return false;
                                                         }

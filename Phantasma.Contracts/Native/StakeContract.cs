@@ -310,8 +310,6 @@ namespace Phantasma.Contracts.Native
                 _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim });
                 Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "master", date = nextClaim });
             }
-
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData(DomainSettings.StakingTokenSymbol, stakeAmount, Runtime.Chain.Name));
         }
 
         public BigInteger Unstake(Address from, BigInteger unstakeAmount)
