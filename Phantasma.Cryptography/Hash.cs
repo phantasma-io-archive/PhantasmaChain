@@ -19,6 +19,26 @@ namespace Phantasma.Cryptography
     
         public int Size => _data.Length;
 
+        public bool IsNull
+        {
+            get
+            {
+                if (_data == null)
+                {
+                    return true;
+                }
+
+                for (int i=0; i<_data.Length; i++)
+                {
+                    if (_data[i] != 0)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(obj, null))

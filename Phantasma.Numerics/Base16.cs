@@ -8,7 +8,10 @@ namespace Phantasma.Numerics
 
         public static byte[] Decode(this string input)
         {
-            Throw.If(input == null || input.Length == 0, "string cant be empty");
+            if (input == null || input.Length == 0)
+            {
+                return new byte[0];
+            }
 
             if (input.StartsWith("0x"))
             {
