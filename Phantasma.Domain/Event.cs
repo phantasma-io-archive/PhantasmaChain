@@ -17,7 +17,7 @@ namespace Phantasma.Domain
         TokenReceive = 6,
         TokenMint = 7,
         TokenBurn = 8,
-        TokenEscrow = 9,
+        TokenStake = 9,
         TokenStake = 10,
         TokenUnstake = 11,
         TokenClaim = 12,
@@ -55,6 +55,8 @@ namespace Phantasma.Domain
         LeaderboardReset = 45,
         PlatformCreate = 46,
         TransactionSettle = 47,
+        ContractRegister = 48,
+        ContractDeploy = 49,
         Custom = 64,
     }
 

@@ -626,13 +626,14 @@ namespace Phantasma.Blockchain
 
             temp = Runtime.Stack.Pop();
 
-            bool success;
             switch (temp.Type) 
             {
                 case VMType.String:
                     {
                         var name = temp.AsString();
-                        success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
+                        var success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
+
+                        Runtime.Expect(success, name+" contract deploy failed");
 
                         var contract = Runtime.Nexus.GetContractByName(name);
                         var constructor = "Initialize";
@@ -640,17 +641,16 @@ namespace Phantasma.Blockchain
                         {
                             Runtime.CallContext(name, constructor, owner);
                         }
+
+                        Runtime.Notify(EventKind.ContractDeploy, owner, contract.Name);
                     }
                     break;
 
                 default:
-                    success = false;
+                    Runtime.Expect(false, "invalid contract type for deploy");
                     break;
             }
 
-            var result = new VMObject();
-            result.SetValue(success);
-            Runtime.Stack.Push(result);
             return ExecutionState.Running;
         }
 
