@@ -572,7 +572,9 @@ namespace Phantasma.Contracts.Native
         {
             var usedStorageSize = Runtime.CallContext("storage", "GetUsedSpace", address).AsNumber();
             var usedStake = usedStorageSize * UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
-            usedStake = usedStake / (StorageContract.KilobytesPerStake * 1024);
+
+            var kilobytesPerStake = (int)Runtime.GetGovernanceValue(StorageContract.KilobytesPerStakeTag);
+            usedStake = usedStake / (kilobytesPerStake * 1024);
 
             return usedStake;
         }

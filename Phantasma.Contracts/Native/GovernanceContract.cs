@@ -37,8 +37,6 @@ namespace Phantasma.Contracts.Native
         internal StorageMap _constraintMap;
         internal StorageList _nameList;
 
-        public BigInteger FeeMultiplier = 1;
-
         public GovernanceContract() : base()
         {
         }

@@ -20,6 +20,16 @@ namespace Phantasma.Contracts.Native
         {
         }
 
+        private string[] reservedNames = new string[] {
+            "ethereum", "bitcoin", "litecoin", "eos", "ripple", "tether", "tron", "monero",
+            "dash", "tezos", "cosmos", "maker", "ontology", "dogecoin", "zcash", "vechain",
+            "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares", 
+            "siacoin", "komodo", "zilliqa", "steem", "enjin", "aelf", "nash", "stratis",
+            "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax", 
+            "bancor", "ark", "nos", "bluzelle", "satoshi",
+            "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
+            "bithumb", "okex", "hotbit", "bitmart", "bilaxy" };
+
         public void RegisterName(Address target, string name)
         {
             Runtime.Expect(target.IsUser, "must be user address");
@@ -27,10 +37,23 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
 
+            var stake = Runtime.GetStake(target);
+            Runtime.Expect(stake >= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals), "must have something staked");
+
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used for other account");
 
-            Runtime.Expect(Runtime.GetChainByName(name) == null, "name already used for a chain");
+            Runtime.Expect(name != DomainSettings.PlatformName, "name already used for system");
+            Runtime.Expect(name != Runtime.Nexus.Name, "name already used for nexus");
+            Runtime.Expect(!Runtime.ChainExists(name), "name already used for a chain");
+            Runtime.Expect(!Runtime.PlatformExists(name), "name already used for a platform");
+            Runtime.Expect(!Runtime.ContractExists(name), "name already used for a contract");
+            Runtime.Expect(!Runtime.FeedExists(name), "name already used for a feed");
+
+            for (int i=0; i<reservedNames.Length; i++)
+            {
+                Runtime.Expect(name != reservedNames[i], "name reserved");
+            }
 
             _addressMap.Set(target, name);
             _nameMap.Set(name, target);
@@ -43,6 +66,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
+
+            var stake = Runtime.GetStake(target);
+            Runtime.Expect(stake >= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals), "must have something staked");
 
             Runtime.Expect(script.Length < 1024, "invalid script length");
 

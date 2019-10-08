@@ -37,7 +37,7 @@ namespace Phantasma.Contracts.Native
         private StorageMap _links;
         private StorageMap _reverseMap;
 
-        public static BigInteger InteropFeeRacio => 50;
+        public const string InteropFeeTag = "interop.fee";
 
         public InteropContract() : base()
         {
@@ -178,7 +178,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var basePrice = UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals) / InteropFeeRacio; 
+            var basePrice = Runtime.GetGovernanceValue(InteropFeeTag); 
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 

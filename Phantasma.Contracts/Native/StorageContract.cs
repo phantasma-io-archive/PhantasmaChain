@@ -17,7 +17,7 @@ namespace Phantasma.Contracts.Native
     {
         public override NativeContractKind Kind => NativeContractKind.Storage;
 
-        public const int KilobytesPerStake = 40;
+        public const string KilobytesPerStakeTag = "storage.stake.kb";
 
         internal StorageMap _storageMap; //<string, Collection<StorageEntry>>
         internal StorageMap _referenceMap; //<string, int>
@@ -26,9 +26,10 @@ namespace Phantasma.Contracts.Native
         {
         }
 
-        public static BigInteger CalculateStorageSizeForStake(BigInteger stakeAmount)
+        public BigInteger CalculateStorageSizeForStake(BigInteger stakeAmount)
         {
-            var availableSize = stakeAmount * KilobytesPerStake * 1024;
+            var kilobytesPerStake = (int)Runtime.GetGovernanceValue(StorageContract.KilobytesPerStakeTag);
+            var availableSize = stakeAmount * kilobytesPerStake * 1024;
             availableSize /= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
             return availableSize;

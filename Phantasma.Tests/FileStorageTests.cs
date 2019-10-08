@@ -10,6 +10,7 @@ using static Phantasma.Contracts.Native.StakeContract;
 using static Phantasma.Contracts.Native.StorageContract;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
+using Phantasma.Contracts.Native;
 
 namespace Phantasma.Tests
 {
@@ -56,6 +57,8 @@ namespace Phantasma.Tests
             var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
+
             //-----------
             //Upload a file: should succeed
             var filename = "notAVirus.exe";
@@ -101,6 +104,8 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var testUser = PhantasmaKeys.Generate();
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             BigInteger accountBalance = (DomainSettings.ArchiveMaxSize / 1024) / KilobytesPerStake;  //provide enough account balance for max file size available space
             accountBalance *= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
@@ -187,6 +192,8 @@ namespace Phantasma.Tests
             //Upload a file
             var filename = "notAVirus.exe";
 
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
+
             var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024 / 5) - (long)headerSize;
             var content = new byte[contentSize];
@@ -260,6 +267,8 @@ namespace Phantasma.Tests
             //-----------
             //Upload a file
             var filename = "notAVirus.exe";
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             var headerSize = CalculateRequiredSize(filename, 0);
             var contentSize = (long)(stakedAmount / MinimumValidStake * KilobytesPerStake * 1024) - (long)headerSize;
@@ -347,6 +356,8 @@ namespace Phantasma.Tests
 
             var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             //-----------
             //Upload a file: should succeed
@@ -450,6 +461,8 @@ namespace Phantasma.Tests
 
             var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             //-----------
             //Upload a file: should succeed
@@ -559,6 +572,8 @@ namespace Phantasma.Tests
             finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
+
             //-----------
             //User A uploads a file: should succeed
             var filename = "notAVirus.exe";
@@ -629,6 +644,8 @@ namespace Phantasma.Tests
                     .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakedAmount).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             //-----------
             //Upload a file
@@ -719,6 +736,8 @@ namespace Phantasma.Tests
             var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
 
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
+
             //-----------
             //Upload a file: should fail due to exceeding available space
             var filename = "notAVirus.exe";
@@ -780,6 +799,8 @@ namespace Phantasma.Tests
 
             var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             //-----------
             //Upload a file: should succeed
@@ -862,6 +883,8 @@ namespace Phantasma.Tests
 
             var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUser.Address);
             Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
 
             //-----------
             //Upload a file: should succeed
