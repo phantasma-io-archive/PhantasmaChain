@@ -141,6 +141,7 @@ namespace Phantasma.Contracts.Native
                 Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
                 var referenceBlock = Runtime.GetBlockByHeight(1);
                 referenceDate = referenceBlock.Timestamp;
+                referenceDate = referenceDate.AddMonths(-1);
             }
             else
             {
@@ -310,6 +311,8 @@ namespace Phantasma.Contracts.Native
                 _mastersList.Add(new EnergyMaster() { address = from, claimDate = nextClaim });
                 Runtime.Notify(EventKind.RolePromote, from, new RoleEventData() { role = "master", date = nextClaim });
             }
+
+            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData(DomainSettings.StakingTokenSymbol, stakeAmount, Runtime.Chain.Name));
         }
 
         public BigInteger Unstake(Address from, BigInteger unstakeAmount)
@@ -521,8 +524,6 @@ namespace Phantasma.Contracts.Native
             BigInteger sum = 0;
             BigInteger availableAmount = fuelAmount;
 
-            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, this.Address, availableAmount);
-
             for (int i = 0; i < count; i++)
             {
                 var proxy = list.Get<EnergyProxy>(i);
@@ -532,13 +533,13 @@ namespace Phantasma.Contracts.Native
                 if (proxyAmount > 0)
                 {
                     Runtime.Expect(availableAmount >= proxyAmount, "unsuficient amount for proxy distribution");
-                    Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount);
+                    Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, proxy.address, proxyAmount);
                     availableAmount -= proxyAmount;
                 }
             }
 
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
-            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
+            Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
 
             // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
             var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
