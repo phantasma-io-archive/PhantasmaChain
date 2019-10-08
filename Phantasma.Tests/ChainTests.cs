@@ -1402,29 +1402,63 @@ namespace Phantasma.Tests
             var testUserA = PhantasmaKeys.Generate();
             var testUserB = PhantasmaKeys.Generate();
 
-            var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
+            var validatorSwitchAttempts = 100;
+            var transferAmount = UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
+            var accountBalance = transferAmount * validatorSwitchAttempts;
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
-            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, accountBalance);
             simulator.EndBlock();
+            
+            var currentValidatorIndex = 1;
 
-            // here we skip to a time where its supposed to be the turn of the second validator
-            simulator.CurrentTime = (DateTime) simulator.Nexus.GenesisTime + TimeSpan.FromSeconds(120*500+130);
+            for (int i = 0; i < validatorSwitchAttempts; i++)
+            {
+                var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
+
+                // here we skip to a time where its supposed to be the turn of the given validator index
+
+                SkipToValidatorIndex(simulator, currentValidatorIndex);
+                //simulator.CurrentTime = (DateTime)simulator.Nexus.GenesisTime + TimeSpan.FromSeconds(120 * 500 + 130);
+
+                var currentValidator = currentValidatorIndex == 0 ? owner : secondValidator;
+
+                simulator.BeginBlock(currentValidator);
+                simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+                var lastBlock = simulator.EndBlock().First();
+
+                var firstTxHash = lastBlock.TransactionHashes.First();
+                events = lastBlock.GetEventsForTransaction(firstTxHash).ToArray();
+                Assert.IsTrue(events.Length > 0);
+                Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorSwitch));
+
+                var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
+                Assert.IsTrue(finalBalance == initialBalance + transferAmount);
+
+                currentValidatorIndex = currentValidatorIndex == 1 ? 0 : 1; //toggle the current validator index
+            }
 
             // Send from user A to user B
             // NOTE this block is baked by the second validator
-            simulator.BeginBlock(secondValidator);
-            simulator.GenerateTransfer(testUserA, testUserB.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
-            var lastBlock = simulator.EndBlock().First();
+            
+        }
 
-            var firstTxHash = lastBlock.TransactionHashes.First();
-            events = lastBlock.GetEventsForTransaction(firstTxHash).ToArray();
-            Assert.IsTrue(events.Length > 0);
-            Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorSwitch));
+        private void SkipToValidatorIndex(NexusSimulator simulator, int i)
+        {
+            uint skippedSeconds = 0;
+            DateTime genesisTime = simulator.Nexus.GenesisTime;
+            var diff = (simulator.CurrentTime - genesisTime).Seconds;
+            var index = (int)(diff / 120) % 2;
 
-            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
-            Assert.IsTrue(finalBalance == transferAmount);
+            while (index != i)
+            {
+                skippedSeconds++;
+                diff++;
+                index = (int)(diff / 120) % 2;
+            }
+
+            simulator.CurrentTime = simulator.CurrentTime.AddSeconds(skippedSeconds);
         }
 
         [TestMethod]
