@@ -1885,6 +1885,91 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestBigStakes()
+        {
+            var owner = PhantasmaKeys.Generate();
+
+            var simulator = new NexusSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            //Let A be an address
+            var testUserA = PhantasmaKeys.Generate();
+            var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUserA.Address).AsNumber();
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            Transaction tx = null;
+
+            var masterAccountThreshold = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
+            BigInteger accountBalance = 2 * masterAccountThreshold;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, accountBalance);
+            simulator.EndBlock();
+
+            //----------
+            //A stakes twice the master threshold -> verify A is master
+            
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUserA.Address, accountBalance).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var isMaster = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "IsMaster", simulator.CurrentTime, testUserA.Address).AsBool();
+            Assert.IsTrue(isMaster);
+
+            //-----------
+            //Perform a claim call: should pass
+            var startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, testUserA.Address);
+
+            unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUserA.Address).AsNumber();
+            var expectedUnclaimed = StakeToFuel(accountBalance);
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Claim", testUserA.Address, testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, testUserA.Address);
+            var txCost = simulator.Nexus.RootChain.GetTransactionFee(tx);
+
+            Assert.IsTrue(finalFuelBalance == (startingFuelBalance + unclaimedAmount - txCost));
+
+            var stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", simulator.CurrentTime, testUserA.Address).AsNumber();
+            Assert.IsTrue(stakedAmount == accountBalance);
+
+            unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUserA.Address).AsNumber();
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            //-----------
+            //Time skip to the next possible claim date
+            var missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
+            simulator.TimeSkipDays(missingDays, true);
+
+            //-----------
+            //A attempts master claim -> verify success
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
+            var claimMasterCount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetClaimMasterCount", simulator.CurrentTime, (Timestamp)simulator.CurrentTime).AsNumber();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "MasterClaim", testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var expectedSoulBalance = startingSoulBalance + (MasterClaimGlobalAmount / claimMasterCount) + (MasterClaimGlobalAmount % claimMasterCount);
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
+
+            Assert.IsTrue(finalSoulBalance == expectedSoulBalance);
+        }
+
+        [TestMethod]
         public void TestFuelStakeConversion()
         {
             var stake = 100;
