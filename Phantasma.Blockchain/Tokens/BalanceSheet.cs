@@ -12,8 +12,13 @@ namespace Phantasma.Blockchain.Tokens
 
         public BalanceSheet(string symbol)
         {
+            this._prefix = MakePrefix(symbol);
+        }
+
+        public static byte[] MakePrefix(string symbol)
+        {
             var key = $".balances.{symbol}";
-            this._prefix = Encoding.ASCII.GetBytes(key);
+            return Encoding.ASCII.GetBytes(key);
         }
 
         private byte[] GetKeyForAddress(Address address)

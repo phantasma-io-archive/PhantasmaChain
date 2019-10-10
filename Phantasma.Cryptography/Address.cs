@@ -93,7 +93,7 @@ namespace Phantasma.Cryptography
             this._text = null;
         }
 
-        public static Address Unserialize(byte[] bytes)
+        public static Address FromBytes(byte[] bytes)
         {
             return new Address(bytes);
         }

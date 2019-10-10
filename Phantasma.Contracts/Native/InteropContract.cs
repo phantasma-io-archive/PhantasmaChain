@@ -123,6 +123,7 @@ namespace Phantasma.Contracts.Native
 
                             // TODO support NFT
                             Runtime.SwapTokens(platform, transfer.sourceAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
+                            //Runtime.Notify(EventKind.TokenSwap, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
 
                             swapCount++;
                             break;

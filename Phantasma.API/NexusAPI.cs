@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using Phantasma.Blockchain;
-using Phantasma.Blockchain.Plugins;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
@@ -550,15 +549,15 @@ namespace Phantasma.API
 
         [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.", false, 10)]
         [APIFailCase("address is invalid", "ABCD123")]
-        public IAPIResult GetAccount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText)
+        public IAPIResult GetAccount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string account)
         {
-            if (!Address.IsValidAddress(addressText))
+            if (!Address.IsValidAddress(account))
             {
                 return new ErrorResult { error = "invalid address" };
             }
 
             var result = new AccountResult();
-            var address = Address.FromText(addressText);
+            var address = Address.FromText(account);
             result.address = address.Text;
             result.name = Nexus.LookUpAddressName(Nexus.RootStorage, address);
 
@@ -795,7 +794,7 @@ namespace Phantasma.API
         [APIFailCase("address is invalid", "543533")]
         [APIFailCase("page is invalid", "-1")]
         [APIFailCase("pageSize is invalid", "-1")]
-        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Index of page to return", "5")] uint page = 1, [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
+        public IAPIResult GetAddressTransactions([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string account, [APIParameter("Index of page to return", "5")] uint page = 1, [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
         {
             if (page < 1 || pageSize < 1)
             {
@@ -807,10 +806,10 @@ namespace Phantasma.API
                 pageSize = PaginationMaxResults;
             }
 
-            if (Address.IsValidAddress(addressText))
+            if (Address.IsValidAddress(account))
             {
                 var paginatedResult = new PaginatedResult();
-                var address = Address.FromText(addressText);
+                var address = Address.FromText(account);
 
                 var chain = Nexus.RootChain;
                 // pagination
@@ -848,14 +847,14 @@ namespace Phantasma.API
         [APIInfo(typeof(int), "Get number of transactions in a specific address and chain", false, 5)]
         [APIFailCase("address is invalid", "43242342")]
         [APIFailCase("chain is invalid", "-1")]
-        public IAPIResult GetAddressTransactionCount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Name or address of chain, optional", "apps")] string chainInput = "main")
+        public IAPIResult GetAddressTransactionCount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string account, [APIParameter("Name or address of chain, optional", "apps")] string chainInput = "main")
         {
-            if (!Address.IsValidAddress(addressText))
+            if (!Address.IsValidAddress(account))
             {
                 return new ErrorResult() { error = "invalid address" };
             }
 
-            var address = Address.FromText(addressText);
+            var address = Address.FromText(account);
 
             int count = 0;
 
@@ -1194,75 +1193,13 @@ namespace Phantasma.API
             return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
 
-        [APIInfo(typeof(TransactionResult[]), "Returns last X transactions of given token.", true)]
-        [APIFailCase("token symbol is invalid", "43242342")]
-        [APIFailCase("page is invalid", "-1")]
-        [APIFailCase("pageSize is invalid", "-1")]
-        public IAPIResult GetTokenTransfers([APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Index of page to return", "5")] uint page = 1, [APIParameter("Number of items to return per page", "5")] uint pageSize = PaginationMaxResults)
-        {
-            if (page < 1 || pageSize < 1)
-            {
-                return new ErrorResult { error = "invalid page/pageSize" };
-            }
-
-            if (pageSize > PaginationMaxResults)
-            {
-                pageSize = PaginationMaxResults;
-            }
-
-            if (!Nexus.TokenExists(tokenSymbol))
-            {
-                return new ErrorResult { error = "Invalid token" };
-            }
-
-            var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
-
-            // pagination
-            uint numberRecords = (uint)plugin.GetTokenTransactions(tokenSymbol).Count();
-            uint totalPages = (uint)Math.Ceiling(numberRecords / (double)pageSize);
-            //
-
-            var transfers = plugin.GetTokenTransactions(tokenSymbol)
-                .Select(hash => Nexus.FindTransactionByHash(hash))
-                .OrderByDescending(tx => Nexus.FindBlockByTransaction(tx).Timestamp.Value)
-                .Skip((int)((page - 1) * pageSize))
-                .Take((int)pageSize);
-
-            var paginatedResult = new PaginatedResult();
-            var txList = new List<object>();
-
-            foreach (var transaction in transfers)
-            {
-                txList.Add(FillTransaction(transaction));
-            }
-
-            paginatedResult.pageSize = pageSize;
-            paginatedResult.totalPages = totalPages;
-            paginatedResult.total = numberRecords;
-            paginatedResult.page = page;
-
-            paginatedResult.result = new ArrayResult { values = txList.ToArray() };
-
-            return paginatedResult;
-        }
-
-        [APIInfo(typeof(int), "Returns the number of transaction of a given token.", false, 5)]
-        [APIFailCase("token symbol is invalid", "43242342")]
-        public IAPIResult GetTokenTransferCount([APIParameter("Token symbol", "SOUL")] string tokenSymbol)
-        {
-            var plugin = Nexus.GetPlugin<TokenTransactionsPlugin>();
-            var txCount = plugin.GetTokenTransactions(tokenSymbol).Count();
-
-            return new SingleResult() { value = txCount };
-        }
-
         [APIInfo(typeof(BalanceResult), "Returns the balance for a specific token and chain, given an address.", false, 5)]
         [APIFailCase("address is invalid", "43242342")]
         [APIFailCase("token is invalid", "-1")]
         [APIFailCase("chain is invalid", "-1re")]
-        public IAPIResult GetTokenBalance([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string addressText, [APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Address or name of chain", "root")] string chainInput)
+        public IAPIResult GetTokenBalance([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string account, [APIParameter("Token symbol", "SOUL")] string tokenSymbol, [APIParameter("Address or name of chain", "root")] string chainInput)
         {
-            if (!Address.IsValidAddress(addressText))
+            if (!Address.IsValidAddress(account))
             {
                 return new ErrorResult { error = "invalid address" };
             }
@@ -1281,7 +1218,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid chain" };
             }
 
-            var address = Address.FromText(addressText);
+            var address = Address.FromText(account);
             var balance = chain.GetTokenBalance(chain.Storage, tokenSymbol, address);
 
             var result = new BalanceResult()
@@ -1585,7 +1522,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(ReceiptResult[]), "Receives messages from the relay network.", false)]
-        public IAPIResult RelayReceive([APIParameter("Address or account name", "helloman")] string accountInput)
+        public IAPIResult RelayReceive([APIParameter("Address or account name", "helloman")] string account)
         {
             if (Node == null)
             {
@@ -1599,13 +1536,13 @@ namespace Phantasma.API
 
             Address address;
 
-            if (Address.IsValidAddress(accountInput))
+            if (Address.IsValidAddress(account))
             {
-                address = Address.FromText(accountInput);
+                address = Address.FromText(account);
             }
             else
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
+                address = Nexus.LookUpName(Nexus.RootStorage, account);
                 if (address.IsNull)
                 {
                     return new ErrorResult { error = "name not owned" };
@@ -1626,7 +1563,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(EventResult[]), "Reads pending messages from the relay network.", false)]
-        public IAPIResult GetEvents([APIParameter("Address or account name", "helloman")] string accountInput)
+        public IAPIResult GetEvents([APIParameter("Address or account name", "helloman")] string account)
         {
             if (Node == null)
             {
@@ -1640,13 +1577,13 @@ namespace Phantasma.API
 
             Address address;
 
-            if (Address.IsValidAddress(accountInput))
+            if (Address.IsValidAddress(account))
             {
-                address = Address.FromText(accountInput);
+                address = Address.FromText(account);
             }
             else
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);
+                address = Nexus.LookUpName(Nexus.RootStorage, account);
                 if (address.IsNull)
                 {
                     return new ErrorResult { error = "name not owned" };
@@ -1761,7 +1698,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, -1)]
-        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string accountInput)
+        public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account)
         {
             if (TokenSwapper == null)
             {
@@ -1770,18 +1707,18 @@ namespace Phantasma.API
 
             Address address;
 
-            if (Address.IsValidAddress(accountInput))
+            if (Address.IsValidAddress(account))
             {
-                address = Address.FromText(accountInput);
+                address = Address.FromText(account);
             }
             else
-            if (Pay.Chains.NeoWallet.IsValidAddress(accountInput))
+            if (Pay.Chains.NeoWallet.IsValidAddress(account))
             {
-                address = Pay.Chains.NeoWallet.EncodeAddress(accountInput);
+                address = Pay.Chains.NeoWallet.EncodeAddress(account);
             }
             else
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, accountInput);                
+                address = Nexus.LookUpName(Nexus.RootStorage, account);                
             }
 
             if (address.IsNull)
@@ -1793,8 +1730,10 @@ namespace Phantasma.API
 
             var oracleReader = Nexus.CreateOracleReader();
 
-            var swaps = swapList.
-                Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, oracleReader.ReadTransactionFromOracle(x.sourcePlatform, x.sourceChain, x.sourceHash))).
+            var txswaps = swapList.
+                Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, oracleReader.ReadTransactionFromOracle(x.sourcePlatform, x.sourceChain, x.sourceHash))).ToArray();
+
+            var swaps = txswaps.Where(x => x.Value.Transfers.Length > 0).
                 Select(x => new SwapResult()
                 {
                     sourcePlatform = x.Key.sourcePlatform,

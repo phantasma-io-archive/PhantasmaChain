@@ -37,7 +37,7 @@ namespace Phantasma.Simulator
 
             var bytes = interopAddress.ToByteArray();
             bytes[0] = (byte)AddressKind.User;
-            interopAddress = Address.Unserialize(bytes);
+            interopAddress = Address.FromBytes(bytes);
 
             Address sourceAddress;
 

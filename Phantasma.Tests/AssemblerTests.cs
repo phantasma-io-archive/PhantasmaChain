@@ -2282,7 +2282,7 @@ namespace Phantasma.Tests
 
                     try
                     {
-                        var obj = Address.Unserialize((byte[])input);
+                        var obj = Address.FromBytes((byte[])input);
                         var tempObj = new VMObject();
                         tempObj.SetValue(obj);
                         _vm.Stack.Push(tempObj);
