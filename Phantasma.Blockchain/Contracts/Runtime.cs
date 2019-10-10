@@ -665,6 +665,11 @@ namespace Phantasma.Blockchain.Contracts
             return Nexus.LookUpAddressScript(this.RootStorage, from);
         }
 
+        public string GetAddressName(Address from)
+        {
+            return Nexus.LookUpAddressName(this.RootStorage, from);
+        }
+
         public Event[] GetTransactionEvents(Hash transactionHash)
         {
             var blockHash = Chain.GetBlockHashOfTransaction(transactionHash);

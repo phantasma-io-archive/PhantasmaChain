@@ -361,6 +361,12 @@ namespace Phantasma.Contracts.Native
             {
                 _stakes.Remove(from);
                 _voteHistory.Remove(from);
+
+                var name = Runtime.GetAddressName(from);
+                if (name != ValidationUtils.ANONYMOUS)
+                {
+                    Runtime.CallContext("account", "UnregisterName", from);
+                }
             }
             else
             {

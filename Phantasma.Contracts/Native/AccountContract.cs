@@ -26,11 +26,13 @@ namespace Phantasma.Contracts.Native
             "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares", 
             "siacoin", "komodo", "zilliqa", "steem", "enjin", "aelf", "nash", "stratis",
             "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax", 
-            "bancor", "ark", "nos", "bluzelle", "satoshi", "nachomen", "chainchanged",
+            "bancor", "ark", "nos", "bluzelle", "satoshi", "gwei", "nacho", "chainchanged",
             "oracle", "oracles", "dex", "exchange", "ico", "ieo", "wallet", "account", "address",
             "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
-            "bithumb", "okex", "hotbit", "bitmart", "bilaxy" };
+            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto",
+            "22", "goati", "gamecenter", "pixgamecenter", "seal", "crosschain", "blacat",
+            "bitladon", "bitcoinmeester"};
 
         public void RegisterName(Address target, string name)
         {
@@ -50,8 +52,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.PlatformExists(name), "name already used for a platform");
             Runtime.Expect(!Runtime.ContractExists(name), "name already used for a contract");
             Runtime.Expect(!Runtime.FeedExists(name), "name already used for a feed");
+            Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
 
-            for (int i=0; i<reservedNames.Length; i++)
+            for (int i = 0; i < reservedNames.Length; i++)
             {
                 Runtime.Expect(!name.StartsWith(reservedNames[i]), "name reserved by system");
             }
@@ -60,6 +63,21 @@ namespace Phantasma.Contracts.Native
             _nameMap.Set(name, target);
 
             Runtime.Notify(EventKind.AddressRegister, target, name);
+        }
+
+        public void UnregisterName(Address target)
+        {
+            Runtime.Expect(target.IsUser, "must be user address");
+            Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
+            Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
+          
+            Runtime.Expect(_addressMap.ContainsKey(target), "address doest not have a name yet");
+
+            var name = _addressMap.Get<Address, string>(target);
+            _addressMap.Remove(target);
+            _nameMap.Remove(name);
+
+            Runtime.Notify(EventKind.AddressUnregister, target, name);
         }
 
         public void RegisterScript(Address target, byte[] script)

@@ -27,7 +27,7 @@ namespace Phantasma.Domain
         AddressUnlink = 16,
         GasEscrow = 17,
         GasPayment = 18,
-        Unused = 19,
+        AddressUnregister = 19,
         OrderCreated = 20,
         OrderCancelled = 21,
         OrderFilled = 22,

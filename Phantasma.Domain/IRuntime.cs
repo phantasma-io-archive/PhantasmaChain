@@ -58,6 +58,7 @@ namespace Phantasma.Domain
         Address LookUpName(string name);
         bool HasAddressScript(Address from);
         byte[] GetAddressScript(Address from);
+        string GetAddressName(Address from);
 
         Event[] GetTransactionEvents(Hash transactionHash);
         Hash[] GetTransactionHashesForAddress(Address address);
