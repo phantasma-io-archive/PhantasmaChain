@@ -80,7 +80,7 @@ namespace Phantasma.Blockchain
             return Constructor_Object<byte[], Address>(vm, bytes =>
             {
                 Throw.If(bytes == null || bytes.Length != Address.LengthInBytes, "invalid key");
-                return Address.Unserialize(bytes);
+                return Address.FromBytes(bytes);
             });
         }
 

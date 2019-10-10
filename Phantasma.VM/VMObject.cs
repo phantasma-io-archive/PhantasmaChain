@@ -182,7 +182,7 @@ namespace Phantasma.VM
                             throw new Exception("Invalid address size");
                         }
 
-                        return Address.Unserialize(temp);
+                        return Address.FromBytes(temp);
                     }
 
                 case VMType.Object:

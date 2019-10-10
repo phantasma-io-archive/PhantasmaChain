@@ -280,10 +280,6 @@ namespace Phantasma.Blockchain.Contracts
                         break;
                     }
 
-                case EventKind.GasLoan:
-                    Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
-                    break;
-
                 case EventKind.BlockCreate:
                 case EventKind.BlockClose:
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");

@@ -21,12 +21,14 @@ namespace Phantasma.Contracts.Native
         }
 
         private string[] reservedNames = new string[] {
-            "ethereum", "bitcoin", "litecoin", "eos", "ripple", "tether", "tron", "monero",
-            "dash", "tezos", "cosmos", "maker", "ontology", "dogecoin", "zcash", "vechain",
+            "phantasma", "neo", "ethereum", "bitcoin", "litecoin", "eos", "ripple", "tether", "tron",
+            "monero", "dash", "tezos", "cosmos", "maker", "ontology", "dogecoin", "zcash", "vechain",
             "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares", 
             "siacoin", "komodo", "zilliqa", "steem", "enjin", "aelf", "nash", "stratis",
             "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax", 
-            "bancor", "ark", "nos", "bluzelle", "satoshi",
+            "bancor", "ark", "nos", "bluzelle", "satoshi", "nachomen", "chainchanged",
+            "oracle", "oracles", "dex", "exchange", "ico", "ieo", "wallet", "account", "address",
+            "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
             "bithumb", "okex", "hotbit", "bitmart", "bilaxy" };
 
@@ -43,7 +45,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used for other account");
 
-            Runtime.Expect(name != DomainSettings.PlatformName, "name already used for system");
             Runtime.Expect(name != Runtime.Nexus.Name, "name already used for nexus");
             Runtime.Expect(!Runtime.ChainExists(name), "name already used for a chain");
             Runtime.Expect(!Runtime.PlatformExists(name), "name already used for a platform");
@@ -52,7 +53,7 @@ namespace Phantasma.Contracts.Native
 
             for (int i=0; i<reservedNames.Length; i++)
             {
-                Runtime.Expect(name != reservedNames[i], "name reserved");
+                Runtime.Expect(!name.StartsWith(reservedNames[i]), "name reserved by system");
             }
 
             _addressMap.Set(target, name);

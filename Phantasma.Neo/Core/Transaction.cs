@@ -123,7 +123,7 @@ namespace Phantasma.Neo.Core
             var bytes = new byte[34];
             bytes[0] = (byte)Phantasma.Cryptography.AddressKind.User;
             Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 1, bytes, 1, 33);
-            return Phantasma.Cryptography.Address.Unserialize(bytes);
+            return Phantasma.Cryptography.Address.FromBytes(bytes);
         }
     }
 

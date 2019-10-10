@@ -386,6 +386,20 @@ namespace Phantasma.Blockchain
         public string LookUpAddressName(StorageContext storage, Address address)
         {
             var chain = RootChain;
+
+            if (address.IsSystem)
+            {
+                var contract = this.GetContractByAddress(address);
+                if (contract != null)
+                {
+                    return contract.Name;
+                }
+                else
+                {
+                    return ValidationUtils.ANONYMOUS;
+                }
+            }
+
             return chain.InvokeContract(storage, Nexus.AccountContractName, nameof(AccountContract.LookUpAddress), address).AsString();
         }
 
@@ -602,7 +616,7 @@ namespace Phantasma.Blockchain
             if (RootStorage.Has(key))
             {
                 var bytes = RootStorage.Get(key);
-                var owner = Address.Unserialize(bytes);
+                var owner = Address.FromBytes(bytes);
                 return owner;
             }
 
@@ -847,44 +861,27 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal bool BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address target, string targetChain, BigInteger amount)
+        internal void BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address target, string targetChain, BigInteger amount)
         {
-            if (!token.Flags.HasFlag(TokenFlags.Fungible))
-            {
-                return false;
-            }
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
 
-            if (amount <= 0)
-            {
-                return false;
-            }
+            Runtime.Expect(amount > 0, "invalid amount"); 
 
             var isSettlement = targetChain != Runtime.Chain.Name;
 
             var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
 
-            if (token.IsCapped() && !supply.Burn(Runtime.Storage, amount))
+            if (token.IsCapped())
             {
-                return false;
+                Runtime.Expect(supply.Burn(Runtime.Storage, amount), "burn failed");
             }
 
             var balances = new BalanceSheet(token.Symbol);
-            if (!balances.Subtract(Runtime.Storage, source, amount))
-            {
-                return false;
-            }
+            Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), "balance subtract failed");
 
-            var tokenTriggerResult = Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, token.Symbol, amount);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, token.Symbol, amount), "token trigger failed");
 
-            var accountTriggerResult = Runtime.InvokeTriggerOnAccount(source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, token.Symbol, amount);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, token.Symbol, amount), "account trigger failed");
 
             if (isSettlement)
             {
@@ -895,8 +892,6 @@ namespace Phantasma.Blockchain
             {
                 Runtime.Notify(EventKind.TokenBurn, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
-
-            return true;
         }
 
         // NFT version
@@ -944,22 +939,11 @@ namespace Phantasma.Blockchain
 
         internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount)
         {
-            if (source == destination)
-            {
-                return;
-            }
-
-            if (!token.Flags.HasFlag(TokenFlags.Transferable))
-            {
-                throw new Exception("Not transferable");
-            }
-
-            if (!token.Flags.HasFlag(TokenFlags.Fungible))
-            {
-                throw new Exception("Should be fungible");
-            }
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "Not transferable");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
 
             Runtime.Expect(amount > 0, "invalid amount");
+            Runtime.Expect(source != destination, "source and destination must be different");
             Runtime.Expect(!destination.IsNull, "invalid destination");
 
             var balances = new BalanceSheet(token.Symbol);
@@ -988,70 +972,32 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal bool TransferToken(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger tokenID)
+        internal void TransferToken(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger tokenID)
         {
-            if (!token.Flags.HasFlag(TokenFlags.Transferable))
-            {
-                throw new Exception("Not transferable");
-            }
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "Not transferable");
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "Should be non-fungible");
 
-            if (token.Flags.HasFlag(TokenFlags.Fungible))
-            {
-                throw new Exception("Should be non-fungible");
-            }
+            Runtime.Expect(tokenID > 0, "invalid nft id");
 
-            if (tokenID <= 0)
-            {
-                return false;
-            }
+            Runtime.Expect(source != destination, "source and destination must be different");
 
-            if (source == destination)
-            {
-                return true;
-            }
-
-            if (destination.IsNull)
-            {
-                return false;
-            }
+            Runtime.Expect(!destination.IsNull, "destination cant be null");
 
             var nft = ReadNFT(Runtime, token.Symbol, tokenID);
             Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
 
             var ownerships = new OwnershipSheet(token.Symbol);
-            if (!ownerships.Remove(Runtime.Storage, source, tokenID))
-            {
-                return false;
-            }
+            Runtime.Expect(ownerships.Remove(Runtime.Storage, source, tokenID), "ownership remove failed");
 
-            if (!ownerships.Add(Runtime.Storage, destination, tokenID))
-            {
-                return false;
-            }
+            Runtime.Expect(ownerships.Add(Runtime.Storage, destination, tokenID), "ownership add failed");
 
-            var tokenTriggerResult = Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, token.Symbol, tokenID);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, token.Symbol, tokenID), "token send trigger failed");
 
-            tokenTriggerResult = Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, destination, token.Symbol, tokenID);
-            if (!tokenTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, destination, token.Symbol, tokenID), "token receive trigger failed");
 
-            var accountTriggerResult = Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, token.Symbol, tokenID);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, token.Symbol, tokenID), "account send trigger failed");
 
-            accountTriggerResult = Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, token.Symbol, tokenID);
-            if (!accountTriggerResult)
-            {
-                return false;
-            }
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, token.Symbol, tokenID), "account received trigger failed");
 
             WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, true);
 
@@ -1069,8 +1015,6 @@ namespace Phantasma.Blockchain
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
                 Runtime.Notify(EventKind.TokenReceive, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
-
-            return true;
         }
 
         #endregion
