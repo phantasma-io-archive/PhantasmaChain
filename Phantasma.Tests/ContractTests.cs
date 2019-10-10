@@ -1652,29 +1652,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(finalBalance == startingBalance);
 
             //-----------
-            //A attempts master claim during the first valid staking period -> verify failure: rewards are only available at the end of each staking period
+            //A attempts master claim during the first valid staking period -> verify success: rewards should be available at the end of mainnet's release month
             var missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
-            simulator.TimeSkipDays(missingDays, true);
-
-            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
-
-            Assert.ThrowsException<ChainException>(() =>
-            {
-                simulator.BeginBlock();
-                simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
-                    ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                        .CallContract(Nexus.StakeContractName, "MasterClaim", testUserA.Address).SpendGas(testUserA.Address)
-                        .EndScript());
-                simulator.EndBlock();
-            });
-
-            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
-
-            Assert.IsTrue(finalBalance == startingBalance);
-
-            //-----------
-            //A attempts master claim -> verify success
-            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
             simulator.TimeSkipDays(missingDays, true);
 
             startingBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
@@ -1689,6 +1668,27 @@ namespace Phantasma.Tests
 
 
             var expectedBalance = startingBalance + (MasterClaimGlobalAmount / claimMasterCount) + (MasterClaimGlobalAmount % claimMasterCount);
+            finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
+
+            Assert.IsTrue(finalBalance == expectedBalance);
+
+            //-----------
+            //A attempts master claim after another month of staking -> verify success
+            missingDays = (new DateTime(simulator.CurrentTime.Year, simulator.CurrentTime.Month + 1, 1) - simulator.CurrentTime).Days;
+            simulator.TimeSkipDays(missingDays, true);
+
+            startingBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
+            claimMasterCount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetClaimMasterCount", simulator.CurrentTime, (Timestamp)simulator.CurrentTime).AsNumber();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "MasterClaim", testUserA.Address).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+
+            expectedBalance = startingBalance + (MasterClaimGlobalAmount / claimMasterCount) + (MasterClaimGlobalAmount % claimMasterCount);
             finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserA.Address);
 
             Assert.IsTrue(finalBalance == expectedBalance);
