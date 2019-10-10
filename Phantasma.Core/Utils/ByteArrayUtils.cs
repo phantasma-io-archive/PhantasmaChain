@@ -20,6 +20,14 @@ namespace Phantasma.Core.Utils
             return buffer;
         }
 
+        public static byte[] ConcatBytes(byte source1, byte[] source2)
+        {
+            var buffer = new byte[1 + source2.Length];
+            buffer[0] = source1;
+            CopyBytes(source2, 0, buffer, 1, source2.Length);
+            return buffer;
+        }
+
         public static byte[] DupBytes(byte[] src)
         {
             if (src == null)
