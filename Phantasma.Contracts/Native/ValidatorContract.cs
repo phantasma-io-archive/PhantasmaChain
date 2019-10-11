@@ -150,7 +150,7 @@ namespace Phantasma.Contracts.Native
         }
 
         // NOTE - witness not required, as anyone should be able to call this, permission is granted based on consensus
-        public void SetValidator(Address target,  BigInteger index, ValidatorType type)
+        public void SetValidator(Address target, BigInteger index, ValidatorType type)
         {
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(type == ValidatorType.Primary || type == ValidatorType.Secondary, "invalid validator type");
@@ -281,24 +281,26 @@ namespace Phantasma.Contracts.Native
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, target);
         }*/
 
-        /*
-    public void Migrate(Address from, Address to)
-    {
-        Runtime.Expect(Runtime.IsWitness(from), "witness failed");
+        public void Migrate(Address from, Address to)
+        {
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
+            Runtime.Expect(Runtime.IsWitness(to), "second witness failed");
 
-        Runtime.Expect(to.IsUser, "destination must be user address");
+            Runtime.Expect(to.IsUser, "destination must be user address");
 
-        var index = GetIndexOfValidator(from);
-        Runtime.Expect(index >= 0, "not a validator");
+            var index = GetIndexOfValidator(from);
+            Runtime.Expect(index >= 0, "validator index not found");
 
-        var transferResult = (bool)Runtime.CallContext(Nexus.StakeContractName, "Migrate", from, to);
-        Runtime.Expect(transferResult, "stake transfer failed");
+            var entry = _validators.Get<BigInteger, ValidatorEntry>(index);
+            Runtime.Expect(entry.type == ValidatorType.Primary || entry.type == ValidatorType.Secondary, "not active validator");
 
-        var entry = _validatorMap.Get<Address, ValidatorEntry>(from);
-        _validatorMap.Remove<Address>(from);
+            Runtime.CallContext("stake", "Migrate", from, to);
 
-        entry.address = to;
-        _validatorMap.Set<Address, ValidatorEntry>(to, entry);
-    }*/
+            entry.address = to;
+            _validators.Set<BigInteger, ValidatorEntry>(index, entry);
+
+            Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, from);
+            Runtime.Notify(EventKind.ValidatorElect, Runtime.Chain.Address, to);
+        }
     }
 }

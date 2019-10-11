@@ -209,9 +209,11 @@ namespace Phantasma.Contracts.Native
                     }
                 }
 
-                Runtime.Expect(index >= 0, "Expected this address to be a master");
+                if (index >= 0)
+                {
+                    _mastersList.RemoveAt<EnergyMaster>(index);
+                }
 
-                _mastersList.RemoveAt<EnergyMaster>(index);
                 _mastersList.Add(new EnergyMaster() { address = to, claimDate = claimDate });
             }
 
@@ -304,7 +306,7 @@ namespace Phantasma.Contracts.Native
 
             var masterAccountThreshold = GetMasterThreshold();
 
-            if (Runtime.Nexus.GenesisAddress != from && newStake >= masterAccountThreshold && !IsMaster(from))
+            if (Runtime.Nexus.HasGenesis && newStake >= masterAccountThreshold && !IsMaster(from))
             {
                 var nextClaim = GetMasterClaimDate(2);
 
