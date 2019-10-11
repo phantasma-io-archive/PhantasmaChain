@@ -66,6 +66,9 @@ namespace Phantasma.API
 
         [APIDescription("List of governance values")]
         public GovernanceResult[] governance;
+
+        [APIDescription("List of master addresses")]
+        public string[] masters;
     }
 
 

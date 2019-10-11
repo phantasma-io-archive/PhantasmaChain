@@ -1121,11 +1121,14 @@ namespace Phantasma.API
 
             var governance = (GovernancePair[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "governance", nameof(GovernanceContract.GetValues)).ToObject();
 
+            var masters = ((Address[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "stake", nameof(StakeContract.GetMasterAddresses)).ToObject()).Select(x => x.Text).ToArray();
+
             return new NexusResult() {
                 name = Nexus.Name,
                 tokens = tokenList.ToArray(),
                 platforms = platformList.ToArray(),
                 chains  = chainList.ToArray(),
+                masters = masters,
                 governance = governance.Select(x => new GovernanceResult() { name = x.Name, value = x.Value.ToString()}).ToArray()
             };
         }
