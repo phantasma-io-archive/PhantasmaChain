@@ -10,6 +10,7 @@ using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Cryptography.EdDSA;
 using Phantasma.Cryptography.ECC;
+using System.Text;
 
 namespace Phantasma.Blockchain
 {
@@ -65,7 +66,7 @@ namespace Phantasma.Blockchain
 
         public override string ToString()
         {
-            return $"{Hash}";
+            return Hash.ToString();
         }
 
         // required for deserialization
@@ -74,8 +75,12 @@ namespace Phantasma.Blockchain
 
         }
 
+        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, string payload) : this(nexusName, chainName, script, expiration, Encoding.UTF8.GetBytes(payload))
+        {
+        }
+
         // transactions are always created unsigned, call Sign() to generate signatures
-        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration)
+        public Transaction(string nexusName, string chainName, byte[] script, Timestamp expiration, byte[] payload = null)
         {
             Throw.IfNull(script, nameof(script));
 
@@ -83,7 +88,7 @@ namespace Phantasma.Blockchain
             this.ChainName = chainName;
             this.Script = script;
             this.Expiration = expiration;
-            this.Payload = new byte[0];
+            this.Payload = payload != null ? payload :new byte[0];
 
             this.Signatures = new Signature[0];
 
