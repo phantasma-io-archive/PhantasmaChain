@@ -25,7 +25,7 @@ namespace Phantasma.Tests
 
             var callScript      = ScriptUtils.BeginScript().CallContract("nacho", "GetWrestler", new object[] {-1}).EndScript();
             var apiResult       = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(callScript));
-            var bytes           = Base16.Decode(apiResult.result);
+            var bytes           = Base16.Decode(apiResult.results[0]);
             var objResult       = Serialization.Unserialize<VMObject>(bytes);
             var nachoWrestler   = objResult.ToStruct<NachoWrestler>();
 

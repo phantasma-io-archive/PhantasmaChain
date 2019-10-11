@@ -12,6 +12,8 @@ using Phantasma.Contracts.Native;
 using Phantasma.Core.Types;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.Storage;
+using Phantasma.VM;
 
 namespace Phantasma.Tests
 {
@@ -60,6 +62,28 @@ namespace Phantasma.Tests
             Assert.IsTrue(account.address == testAddress);
             Assert.IsTrue(account.name == "genesis");
             Assert.IsTrue(account.balances.Length > 0);
+        }
+
+        [TestMethod]
+        public void TestMultipleCallsOneRequest()
+        {
+            var test = CreateAPI();
+
+            var randomKey = PhantasmaKeys.Generate();
+
+            var script = new ScriptBuilder().
+                CallContract("account", "LookUpAddress", test.owner.Address).
+                CallContract("account", "LookUpAddress", randomKey.Address).
+                EndScript();
+
+            var temp = test.api.InvokeRawScript("main", Base16.Encode(script));
+            var scriptResult = (ScriptResult)temp;
+            Assert.IsTrue(scriptResult.results.Length == 2);
+
+            var names = scriptResult.results.Select(x => Base16.Decode(x)).Select(bytes => Serialization.Unserialize<VMObject>(bytes)).Select(obj => obj.AsString()).ToArray();
+            Assert.IsTrue(names.Length == 2);
+            Assert.IsTrue(names[0] == "genesis");
+            Assert.IsTrue(names[1] == ValidationUtils.ANONYMOUS);
         }
 
         [TestMethod]

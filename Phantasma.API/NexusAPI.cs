@@ -971,13 +971,9 @@ namespace Phantasma.API
                 return new ErrorResult { error = $"Execution failed, state:{state}" };
             }
 
-            string encodedResult;
+            var encodedResult = new Stack<string>();
 
-            if (vm.Stack.Count == 0)
-            {
-                encodedResult = "";
-            }
-            else
+            while (vm.Stack.Count > 0)
             {
                 var result = vm.Stack.Pop();
 
@@ -987,14 +983,14 @@ namespace Phantasma.API
                 }
 
                 var resultBytes = Serialization.Serialize(result);
-                encodedResult = Base16.Encode(resultBytes);
+                encodedResult.Push(Base16.Encode(resultBytes));
             }
 
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
             var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) }).ToArray();
 
-            return new ScriptResult { result = encodedResult, events = evts, oracles = oracleReads };
+            return new ScriptResult { results = encodedResult.ToArray(), events = evts, oracles = oracleReads };
         }
 
         [APIInfo(typeof(TransactionResult), "Returns information about a transaction by hash.", false, -1)]

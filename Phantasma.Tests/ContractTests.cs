@@ -2208,7 +2208,7 @@ namespace Phantasma.Tests
             var apiResult = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(scriptA));
 
             // NOTE objBytes will contain a serialized VMObject
-            var objBytes = Base16.Decode(apiResult.result);
+            var objBytes = Base16.Decode(apiResult.results[0]);
             var resultB = Serialization.Unserialize<VMObject>(objBytes);
 
             // finally as last step, convert it to a C# struct
@@ -2222,7 +2222,7 @@ namespace Phantasma.Tests
             var apiResultB = (ScriptResult)api.InvokeRawScript("main", Base16.Encode(scriptB));
 
             // NOTE objBytes will contain a serialized VMObject
-            var objBytesB = Base16.Decode(apiResultB.result);
+            var objBytesB = Base16.Decode(apiResultB.results[0]);
             var resultEmpty = Serialization.Unserialize<VMObject>(objBytesB);
             Assert.IsTrue(resultEmpty != null);
         }

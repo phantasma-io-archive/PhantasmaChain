@@ -280,8 +280,8 @@ namespace Phantasma.API
         [APIDescription("List of events that triggered in the transaction")]
         public EventResult[] events;
 
-        [APIDescription("Result of the transaction, if any. Serialized, in hexadecimal format")]
-        public string result;
+        [APIDescription("Results of the transaction, if any. Serialized, in hexadecimal format")]
+        public string[] results;
 
         [APIDescription("List of oracle reads that were triggered in the transaction")]
         public OracleResult[] oracles;
