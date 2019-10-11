@@ -257,8 +257,7 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    Chain.BakeBlock(ref block, ref transactions, minFee, Mempool.ValidatorKeys, Timestamp.Now);
-                    Chain.AddBlock(block, transactions, minFee);
+                    Chain.ValidateBlock(block, transactions, minFee);
                 }
                 catch (InvalidTransactionException e)
                 {
@@ -286,6 +285,16 @@ namespace Phantasma.Blockchain
                     Mempool.RegisterRejectionReason(e.Hash, e.Message);
                     Mempool.OnTransactionFailed?.Invoke(e.Hash);
                     continue;
+                }
+
+                try
+                {
+                    Chain.BakeBlock(ref block, ref transactions, minFee, Mempool.ValidatorKeys, Timestamp.Now);
+                    Chain.AddBlock(block, transactions, minFee);
+                }
+                catch (Exception e)
+                {
+                    Mempool.Logger.Error(e.ToString());
                 }
 
                 lock (_pending)
@@ -350,9 +359,9 @@ namespace Phantasma.Blockchain
 
         private Dictionary<string, ChainPool> _chains = new Dictionary<string, ChainPool>();
 
-        internal PhantasmaKeys ValidatorKeys { get; private set; }
-
         public Nexus Nexus { get; private set; }
+
+        internal PhantasmaKeys ValidatorKeys { get; private set; }
         public Address ValidatorAddress => ValidatorKeys.Address;
 
         public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
@@ -381,6 +390,11 @@ namespace Phantasma.Blockchain
             this.Logger = logger;
 
             Logger?.Message($"Starting mempool with block time of {blockTime} seconds.");
+        }
+
+        public void SetKeys(PhantasmaKeys keys)
+        {
+            this.ValidatorKeys = keys;
         }
 
         internal void RejectTransaction(Transaction tx, string reason)
@@ -420,6 +434,12 @@ namespace Phantasma.Blockchain
             if (tx.Signatures == null || tx.Signatures.Length < 1)
             {
                 RejectTransaction(tx, "at least one signature required");
+            }
+
+            if (tx.Payload.Length < 4)
+            {
+                RejectTransaction(tx, "expected payload identifier");
+
             }
 
             var currentTime = Timestamp.Now;

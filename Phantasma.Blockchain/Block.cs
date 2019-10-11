@@ -263,6 +263,15 @@ namespace Phantasma.Blockchain
             _dirty = true;
         }
 
+        internal void ClearOracle()
+        {
+            if (_oracleData.Count > 0)
+            {
+                _oracleData.Clear();
+                _dirty = true;
+            }
+        }
+
         internal void MergeOracle(OracleReader oracle)
         {
             if (oracle.Entries.Any())

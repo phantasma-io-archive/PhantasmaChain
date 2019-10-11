@@ -103,97 +103,7 @@ namespace Phantasma.Blockchain
 
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
         {
-            /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
-            {
-                return false;
-            }*/
-
-            var lastBlockHash = GetLastBlockHash();
-            var lastBlock = GetBlockByHash(lastBlockHash);
-
-            if (lastBlock != null)
-            {
-                if (lastBlock.Height != block.Height - 1)
-                {
-                    throw new BlockGenerationException($"height of block should be {lastBlock.Height + 1}");
-                }
-
-                if (block.PreviousHash != lastBlock.Hash)
-                {
-                    throw new BlockGenerationException($"previous hash should be {lastBlock.PreviousHash}");
-                }
-
-                if (block.Timestamp < lastBlock.Timestamp)
-                {
-                    throw new BlockGenerationException($"timestamp of block should be greater than {lastBlock.Timestamp}");
-                }
-            }
-
-            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
-            foreach (var hash in block.TransactionHashes)
-            {
-                if (!inputHashes.Contains(hash))
-                {
-                    throw new BlockGenerationException($"missing in inputs transaction with hash {hash}");
-                }
-            }
-
-            var outputHashes = new HashSet<Hash>(block.TransactionHashes);
-            foreach (var tx in transactions)
-            {
-                if (!outputHashes.Contains(tx.Hash))
-                {
-                    throw new BlockGenerationException($"missing in outputs transaction with hash {tx.Hash}");
-                }
-            }
-
-            // TODO avoid fetching this every time
-            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-            if (block.Protocol != expectedProtocol)
-            {
-                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
-            }
-
-            foreach (var tx in transactions)
-            {
-                if (!tx.IsValid(this))
-                {
-                    throw new InvalidTransactionException(tx.Hash, $"invalid transaction with hash {tx.Hash}");
-                }
-            }
-
-            var changeSet = new StorageChangeSetContext(this.Storage);
-
-            var oracle = Nexus.CreateOracleReader();
-
-            foreach (var tx in transactions)
-            {
-                byte[] result;
-                try
-                {
-                    if (ExecuteTransaction(tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
-                    {
-                        if (result != null)
-                        {
-                            block.SetResultForHash(tx.Hash, result);
-                        }
-                    }
-                    else
-                    {
-                        throw new InvalidTransactionException(tx.Hash, "script execution failed");
-                    }
-                }
-                catch (Exception e)
-                {
-                    if (e.InnerException != null)
-                    {
-                        e = e.InnerException;
-                    }
-                    throw new InvalidTransactionException(tx.Hash, e.Message);
-                }
-            }
-
-            block.MergeOracle(oracle);
+            var changeSet = ValidateBlock(block, transactions, minimumFee);
 
             var hashList = new StorageList(BlockHeightListTag, this.Storage);
             var expectedBlockHeight = hashList.Count() + 1;
@@ -257,6 +167,105 @@ namespace Phantasma.Blockchain
             }
 
             Nexus.PluginTriggerBlock(this, block);
+        }
+
+        public StorageChangeSetContext ValidateBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
+        {
+            /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
+            {
+                return false;
+            }*/
+
+            var lastBlockHash = GetLastBlockHash();
+            var lastBlock = GetBlockByHash(lastBlockHash);
+
+            if (lastBlock != null)
+            {
+                if (lastBlock.Height != block.Height - 1)
+                {
+                    throw new BlockGenerationException($"height of block should be {lastBlock.Height + 1}");
+                }
+
+                if (block.PreviousHash != lastBlock.Hash)
+                {
+                    throw new BlockGenerationException($"previous hash should be {lastBlock.PreviousHash}");
+                }
+
+                if (block.Timestamp < lastBlock.Timestamp)
+                {
+                    throw new BlockGenerationException($"timestamp of block should be greater than {lastBlock.Timestamp}");
+                }
+            }
+
+            var inputHashes = new HashSet<Hash>(transactions.Select(x => x.Hash));
+            foreach (var hash in block.TransactionHashes)
+            {
+                if (!inputHashes.Contains(hash))
+                {
+                    throw new BlockGenerationException($"missing in inputs transaction with hash {hash}");
+                }
+            }
+
+            var outputHashes = new HashSet<Hash>(block.TransactionHashes);
+            foreach (var tx in transactions)
+            {
+                if (!outputHashes.Contains(tx.Hash))
+                {
+                    throw new BlockGenerationException($"missing in outputs transaction with hash {tx.Hash}");
+                }
+            }
+
+            // TODO avoid fetching this every time
+            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            if (block.Protocol != expectedProtocol)
+            {
+                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
+            }
+
+            foreach (var tx in transactions)
+            {
+                if (!tx.IsValid(this))
+                {
+                    throw new InvalidTransactionException(tx.Hash, $"invalid transaction with hash {tx.Hash}");
+                }
+            }
+
+            var changeSet = new StorageChangeSetContext(this.Storage);
+
+            var oracle = Nexus.CreateOracleReader();
+
+            block.ClearOracle();
+
+            foreach (var tx in transactions)
+            {
+                byte[] result;
+                try
+                {
+                    if (ExecuteTransaction(tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
+                    {
+                        if (result != null)
+                        {
+                            block.SetResultForHash(tx.Hash, result);
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidTransactionException(tx.Hash, "script execution failed");
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (e.InnerException != null)
+                    {
+                        e = e.InnerException;
+                    }
+                    throw new InvalidTransactionException(tx.Hash, e.Message);
+                }
+            }
+
+            block.MergeOracle(oracle);
+
+            return changeSet;
         }
 
         private bool ExecuteTransaction(Transaction transaction, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
