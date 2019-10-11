@@ -79,7 +79,7 @@ namespace Phantasma.Tests
                 do
                 {
                     Thread.Sleep(100);
-                } while (mempool.Size > 0);
+                } while (!mempool.IsEmpty());
 
                 var confirmation = ConfirmTransaction(host, hash);
 

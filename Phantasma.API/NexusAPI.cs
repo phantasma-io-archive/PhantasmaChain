@@ -1052,7 +1052,7 @@ namespace Phantasma.API
             var status = Mempool.GetTransactionStatus(hash, out string reason);
             if (status == MempoolTransactionStatus.Pending)
             {
-                if (Mempool.RejectTransaction(hash))
+                if (Mempool.Discard(hash))
                 {
                     return new SingleResult() { value = hash };
                 }

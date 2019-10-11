@@ -68,7 +68,7 @@ namespace Phantasma.Network.P2P
         public Nexus Nexus { get; private set; }
 
         public BigInteger MinimumFee => _mempool.MinimumFee;
-        public uint MinimumPoW => _mempool.MinimumProofOfWork;
+        public uint MinimumPoW => _mempool.GettMinimumProofOfWork();
 
         private Dictionary<string, uint> _receipts = new Dictionary<string, uint>();
         private Dictionary<Address, Cache<Event>> _events = new Dictionary<Address, Cache<Event>>();
@@ -642,13 +642,23 @@ namespace Phantasma.Network.P2P
                         if (Capabilities.HasFlag(PeerCaps.Mempool))
                         {
                             var memtx = (MempoolAddMessage)msg;
-                            var prevSize = _mempool.Size;
+                            int submissionCount = 0;
                             foreach (var tx in memtx.Transactions)
                             {
-                                _mempool.Submit(tx);
+                                try
+                                {
+                                    if (_mempool.Submit(tx))
+                                    {
+                                        submissionCount++;
+                                    }
+                                }
+                                catch
+                                {
+                                    // ignore
+                                }
                             }
-                            var count = _mempool.Size - prevSize;
-                            Logger.Message($"Added {count} txs to the mempool");
+
+                            Logger.Message($"Added {submissionCount} txs to the mempool");
                         }
                         break;
                     }

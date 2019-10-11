@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Phantasma.Core;
+using Phantasma.Core.Log;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -32,77 +32,384 @@ namespace Phantasma.Blockchain
         Rejected,
     }
 
-    public delegate void MempoolEventHandler(Transaction tx);
+    public delegate void MempoolEventHandler(Hash hash);
 
-    public class Mempool: Runnable
+    public class ChainPool
     {
-        public static readonly int MinimumBlockTime = 2; // in seconds
-        public static readonly int MaxTransactionsPerBlock = 5000;
+        public readonly Mempool Mempool;
+        public readonly Chain Chain;
+        public Nexus Nexus => Mempool.Nexus;
 
-        private Dictionary<Hash, string> _hashMap = new Dictionary<Hash, string>();
-        private HashSet<Hash> _pendingSet = new HashSet<Hash>();
-        private Dictionary<string, List<MempoolEntry>> _entries = new Dictionary<string, List<MempoolEntry>>();
+        public bool Busy => _txMap.Count > 0 || _pending.Count > 0;
 
-        // TODO this dictionary should not accumulate stuff forever, we need to have it cleaned once in a while
-        private Dictionary<Hash, string> _rejections = new Dictionary<Hash, string>();
+        private object _phone = new object();
 
-        private PhantasmaKeys _validatorKeys;
+        private Dictionary<Hash, MempoolEntry> _txMap = new Dictionary<Hash, MempoolEntry>();
+        private HashSet<Hash> _pending = new HashSet<Hash>();
 
-        public Nexus Nexus { get; private set; }
-        public Address ValidatorAddress => _validatorKeys.Address;
-
-        public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
-
-        public event MempoolEventHandler OnTransactionAdded;
-        public event MempoolEventHandler OnTransactionDiscarded;
-        public event MempoolEventHandler OnTransactionFailed;
-        public event MempoolEventHandler OnTransactionCommitted;
-
-        public uint MinimumProofOfWork => (uint)CalculateCurrentPoW() + defaultPoW;
-
-        private int _size = 0;
-        public int Size => _size;
-
-        public BigInteger MinimumFee { get; private set; }
-
-        public readonly int BlockTime; // in seconds
-        private uint defaultPoW;
-
-        public Mempool(PhantasmaKeys validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, uint defaultPoW = 0)
+        public ChainPool(Mempool mempool, Chain chain)
         {
-            Throw.If(blockTime < MinimumBlockTime, "invalid block time");
-
-            this._validatorKeys = validatorKeys;
-            this.Nexus = nexus;
-            this.BlockTime = blockTime;
-            this.MinimumFee = minimumFee;
-            this.defaultPoW = defaultPoW;
+            this.Mempool = mempool;
+            this.Chain = chain;
         }
 
-        private void RejectTransaction(Transaction tx, string reason)
+        public bool IsEnabled()
         {
-            lock (_rejections)
-            {
-                _rejections[tx.Hash] = reason;
-            }
+            // TODO support for calculation of proper validator
+            return true;
+        }
 
-            throw new MempoolSubmissionException(reason);
+        private ProofOfWork CalculateCurrentPoW()
+        {
+            int size  = _txMap.Count;
+
+            if (size > 10000)
+            {
+                return ProofOfWork.Heavy;
+            }
+            else
+            if (size > 5000)
+            {
+                return ProofOfWork.Hard;
+            }
+            else
+            if (size > 1000)
+            {
+                return ProofOfWork.Moderate;
+            }
+            else
+            if (size > 500)
+            {
+                return ProofOfWork.Minimal;
+            }
+            else
+            {
+                return ProofOfWork.None;
+            }
         }
 
         public bool Submit(Transaction tx)
         {
-            if (this.CurrentState != State.Running)
+            lock (_txMap)
+            {
+                var requiredPoW = (uint)CalculateCurrentPoW() + Mempool.DefaultPoW;
+
+                if (requiredPoW > 0 && tx.Hash.GetDifficulty() < requiredPoW)
+                {
+                    Mempool.RejectTransaction(tx, $"should be mined with difficulty of {requiredPoW} or more");
+                }
+
+                if (_txMap.ContainsKey(tx.Hash))
+                {
+                    throw new MempoolSubmissionException("already in mempool");
+                }
+
+                var entry = new MempoolEntry() { transaction = tx, timestamp = Timestamp.Now };
+                _txMap[tx.Hash] = entry;
+            }
+
+            this.Mempool.OnTransactionAdded?.Invoke(tx.Hash);
+
+            var lastBlockHash = Chain.GetLastBlockHash();
+            var lastBlock = Chain.GetBlockByHash(lastBlockHash);
+            var lastBlockTime = lastBlock != null ? lastBlock.Timestamp : new Timestamp(0);
+            var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
+            if (timeDiff >= Mempool.BlockTime / 2)
+            {
+                this.AwakeUp();
+            }
+
+            return true;
+        }
+
+        public bool Discard(Hash hash)
+        {
+            lock (_txMap)
+            {
+                if (_txMap.ContainsKey(hash))
+                {
+                    _txMap.Remove(hash);
+                    this.Mempool.OnTransactionDiscarded?.Invoke(hash);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void AwakeUp()
+        {
+            lock (_phone)
+            {
+                Monitor.Pulse(_phone);
+            }
+        }
+
+        internal void Run()
+        {
+            lock (_phone)
+            {
+                while (Mempool.Running)
+                {
+                    Monitor.Wait(_phone);
+
+                    if (!IsEnabled())
+                    {
+                        continue;
+                    }
+
+                    var nexus = Mempool.Nexus;
+
+                    // we must be a staked validator to do something...
+                    if (!nexus.HasGenesis)
+                    {
+                        continue;
+                    }
+
+                    /*
+                    // we must be the validator of the current epoch to do something with this chain...
+                    if (Chain.GetCurrentValidator(Chain.Storage) != Mempool.ValidatorAddress)
+                    {
+                        return true;
+                    }*/
+
+                    List<Hash> expiredHashes = null;
+                    List<Transaction> readyTransactions = null;
+
+                    var currentTime = Timestamp.Now;
+
+                    lock (_txMap)
+                    {
+                        foreach (var entry in _txMap.Values)
+                        {
+                            if (entry.transaction.Expiration < currentTime)
+                            {
+                                if (expiredHashes == null)
+                                {
+                                    expiredHashes = new List<Hash>();
+                                }
+
+                                expiredHashes.Add(entry.transaction.Hash);
+
+                                continue;
+                            }
+
+                            if (readyTransactions == null)
+                            {
+                                readyTransactions = new List<Transaction>();
+                            }
+
+                            readyTransactions.Add(entry.transaction);
+
+                            if (readyTransactions.Count >= Mempool.MaxTransactionsPerBlock)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+
+                    if (expiredHashes != null)
+                    {
+                        foreach (var hash in expiredHashes)
+                        {
+                            Discard(hash);
+                        }
+                    }
+
+                    if (readyTransactions != null)
+                    {
+
+                        lock (_txMap)
+                        {
+                            lock (_pending)
+                            {
+                                foreach (var tx in readyTransactions)
+                                {
+                                    _txMap.Remove(tx.Hash);
+                                    _pending.Add(tx.Hash);
+                                }
+                            }
+                        }
+
+                        //var readyToMint = timeDiff >= Mempool.BlockTime * 2 || readyTransactions.Count >= 3;
+                        MintBlock(readyTransactions);
+                    }
+                }
+            }
+        }
+
+        private void MintBlock(List<Transaction> transactions)
+        {
+            var lastBlockHash = Chain.GetLastBlockHash();
+            var lastBlock = Chain.GetBlockByHash(lastBlockHash);
+            var isFirstBlock = lastBlock == null;
+
+            var protocol = (uint)Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+
+            var minFee = Mempool.MinimumFee;
+
+            Mempool.Logger.Message($"Minting new block with {transactions.Count} potential transactions");
+
+            while (transactions.Count > 0)
+            {
+                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1), Chain.Address, Timestamp.Now, transactions.Select(x => x.Hash), isFirstBlock ? Hash.Null : lastBlock.Hash, protocol);
+
+                try
+                {
+                    Chain.BakeBlock(ref block, ref transactions, minFee, Mempool.ValidatorKeys, Timestamp.Now);
+                    Chain.AddBlock(block, transactions, minFee);
+                }
+                catch (InvalidTransactionException e)
+                {
+                    int index = -1;
+
+                    for (int i=0; i<transactions.Count; i++)
+                    {
+                        if (transactions[i].Hash == e.Hash)
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if (index >= 0)
+                    {
+                        transactions.RemoveAt(index);
+                    }
+
+                    lock (_pending)
+                    {
+                        _pending.Remove(e.Hash);
+                    }
+
+                    Mempool.RegisterRejectionReason(e.Hash, e.Message);
+                    Mempool.OnTransactionFailed?.Invoke(e.Hash);
+                    continue;
+                }
+
+                lock (_pending)
+                {
+                    _pending.Clear();
+                }
+
+                foreach (var tx in transactions)
+                {
+                    Mempool.OnTransactionCommitted?.Invoke(tx.Hash);
+                }
+
+                return;
+            }
+        }
+
+        public bool ContainsTransaction(Hash hash)
+        {
+            lock (_txMap)
+            {
+                if (_txMap.ContainsKey(hash))
+                {
+                    return true;
+                }
+            }
+
+            lock (_pending)
+            {
+                if (_pending.Contains(hash))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public List<Transaction> GetTransactions()
+        {
+            var transactions = new List<Transaction>();
+            lock (_txMap)
+            {
+                foreach (var entry in _txMap.Values)
+                {
+                    transactions.Add(entry.transaction);
+                }
+            }
+
+            return transactions;
+        }
+    }
+
+    public class Mempool : Runnable
+    {
+        public bool Running => CurrentState == State.Running;
+
+        public static readonly int MinimumBlockTime = 2; // in seconds
+        public static readonly int MaxTransactionsPerBlock = 5000;
+
+        // TODO this dictionary should not accumulate stuff forever, we need to have it cleaned once in a while
+        private Dictionary<Hash, string> _rejections = new Dictionary<Hash, string>();
+
+        private Dictionary<string, ChainPool> _chains = new Dictionary<string, ChainPool>();
+
+        internal PhantasmaKeys ValidatorKeys { get; private set; }
+
+        public Nexus Nexus { get; private set; }
+        public Address ValidatorAddress => ValidatorKeys.Address;
+
+        public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
+
+        public MempoolEventHandler OnTransactionAdded;
+        public MempoolEventHandler OnTransactionDiscarded;
+        public MempoolEventHandler OnTransactionFailed;
+        public MempoolEventHandler OnTransactionCommitted;
+
+        public BigInteger MinimumFee { get; private set; }
+
+        public readonly int BlockTime; // in seconds
+        public readonly uint DefaultPoW;
+
+        public Logger Logger { get; }
+
+        public Mempool(PhantasmaKeys validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, uint defaultPoW = 0, Logger logger = null)
+        {
+            Throw.If(blockTime < MinimumBlockTime, "invalid block time");
+
+            this.ValidatorKeys = validatorKeys;
+            this.Nexus = nexus;
+            this.BlockTime = blockTime;
+            this.MinimumFee = minimumFee;
+            this.DefaultPoW = defaultPoW;
+            this.Logger = logger;
+
+            Logger?.Message($"Starting mempool with block time of {blockTime} seconds.");
+        }
+
+        internal void RejectTransaction(Transaction tx, string reason)
+        {
+            RejectTransaction(tx.Hash, reason);
+        }
+
+        internal void RejectTransaction(Hash hash, string reason)
+        {
+            RegisterRejectionReason(hash, reason);
+            throw new MempoolSubmissionException(reason);
+        }
+
+        internal void RegisterRejectionReason(Hash hash, string reason)
+        {
+            lock (_rejections)
+            {
+                _rejections[hash] = reason;
+            }
+        }
+
+        public bool Submit(Transaction tx)
+        {
+            if (!Running)
             {
                 return false;
             }
 
            Throw.IfNull(tx, nameof(tx));
-
-            var requiredPoW = MinimumProofOfWork;
-            if (requiredPoW > 0 && tx.Hash.GetDifficulty() < requiredPoW)
-            {
-                RejectTransaction(tx, $"should be mined with difficulty of {requiredPoW} or more");
-            }
 
             var chain = Nexus.GetChainByName(tx.ChainName);
             if (chain == null)
@@ -132,242 +439,68 @@ namespace Phantasma.Blockchain
                 RejectTransaction(tx, "invalid nexus name");
             }
 
-            if (_hashMap.ContainsKey(tx.Hash))
-            {
-                throw new MempoolSubmissionException("already in mempool");
-            }
-
-            var entry = new MempoolEntry() { transaction = tx, timestamp = Timestamp.Now };
-
-            List<MempoolEntry> list;
-
-            lock (_entries)
-            {
-                if (_entries.ContainsKey(chain.Name))
-                {
-                    list = _entries[chain.Name];
-                }
-                else
-                {
-                    list = new List<MempoolEntry>();
-                    _entries[chain.Name] = list;
-                }
-
-                list.Add(entry);
-                _hashMap[tx.Hash] = chain.Name;
-            }
-
-            Interlocked.Increment(ref _size);
-            OnTransactionAdded?.Invoke(tx);
+            var chainPool = GetPoolForChain(chain);
+            chainPool.Submit(tx);
             return true;
         }
 
-        public bool Discard(Transaction tx)
+        private ChainPool GetPoolForChain(Chain chain)
         {
-            if (this.CurrentState != State.Running)
+            ChainPool chainPool;
+
+            lock (_chains)
             {
-                return false;
+                if (_chains.ContainsKey(chain.Name))
+                {
+                    chainPool = _chains[chain.Name];
+                }
+                else
+                {
+                    chainPool = new ChainPool(this, chain);
+                    _chains[chain.Name] = chainPool;
+
+                    new Thread(() =>
+                    {
+                        chainPool.Run();
+                    }).Start();
+                }
             }
 
-            if (_hashMap.ContainsKey(tx.Hash))
-            {
-                var chainName = _hashMap[tx.Hash];
-                _hashMap.Remove(tx.Hash);
+            return chainPool;
+        }
 
-                lock (_entries)
+        public bool Discard(Hash hash)
+        {
+            lock (_chains)
+            {
+                foreach (var chain in _chains.Values)
                 {
-                    if (_entries.ContainsKey(chainName))
+                    if (chain.ContainsTransaction(hash))
                     {
-                        var list = _entries[chainName];
-                        list.RemoveAll(x => x.transaction.Hash == tx.Hash);
+                        chain.Discard(hash);
+                        return true;
                     }
                 }
-
-                Interlocked.Decrement(ref _size);
-                OnTransactionDiscarded?.Invoke(tx);
-                return true;
             }
 
             return false;
         }
 
-        public IEnumerable<Transaction> GetTransactionsForChain(Chain chain)
+        public bool Discard(Transaction tx)
         {
-            if (_entries.ContainsKey(chain.Name))
+            if (!Running)
             {
-                return _entries[chain.Name].Select(x => x.transaction);
+                return false;
             }
 
-            return Enumerable.Empty<Transaction>();
-        }
-
-        public IEnumerable<Transaction> GetTransactions()
-        {
-            var result = new List<Transaction>();
-            foreach (var entry in _entries.Values)
+            var chain = Nexus.GetChainByName(tx.ChainName);
+            if (chain == null)
             {
-                result.AddRange( entry.Select(x => x.transaction));
+                return false;
             }
 
-            return result;
-        }
-
-        // NOTE this is called inside a lock(_entries) block
-        private List<Transaction> GetNextTransactions(Chain chain)
-        {
-            var list = _entries[chain.Name];
-            if (list.Count == 0)
-            {
-                return null;
-            }
-
-            var currentTime = Timestamp.Now;
-            List<Transaction> expiredTransactions = null;
-            for (int i=0; i<list.Count; i++)
-            {
-                var entry = list[i];
-                if (entry.transaction.Expiration < currentTime)
-                {
-                    if (expiredTransactions != null)
-                    {
-                        expiredTransactions = new List<Transaction>(list.Count);
-                    }
-                    expiredTransactions.Add(entry.transaction);
-                }
-            }
-
-            if (expiredTransactions != null)
-            {
-                foreach (var tx in expiredTransactions)
-                {
-                    Discard(tx);
-                }
-            }
-
-            var transactions = new List<Transaction>();
-
-            while (transactions.Count < MaxTransactionsPerBlock && list.Count > 0)
-            {
-                var entry = list[0];
-                list.RemoveAt(0);
-                var tx = entry.transaction;
-                transactions.Add(tx);
-                _hashMap.Remove(tx.Hash);
-                _pendingSet.Add(tx.Hash);
-            }
-
-            return transactions;
-        }
-
-        private HashSet<Chain> _pendingBlocks = new HashSet<Chain>();
-
-        protected override bool Run()
-        {
-            Thread.Sleep(BlockTime * 1000);
-
-            // we must be a staked validator to do something...
-            if (!Nexus.HasGenesis || !Nexus.IsPrimaryValidator(this.ValidatorAddress))
-            {
-                return true;
-            }
-            
-            lock (_entries)
-            {
-                foreach (var chainName in _entries.Keys)
-                {
-                    var chain = Nexus.GetChainByName(chainName);
-
-                    if (_pendingBlocks.Contains(chain))
-                    {
-                        continue;
-                    }
-
-                    // we must be the validator of the current epoch to do something with this chain...
-                    if (chain.GetCurrentValidator(chain.Storage) != this.ValidatorAddress)
-                    {
-                        continue;
-                    }
-
-                    var lastBlockHash = chain.GetLastBlockHash();
-                    var lastBlock = chain.GetBlockByHash(lastBlockHash);
-                    var lastBlockTime = lastBlock != null ? lastBlock.Timestamp : new Timestamp(0);
-                    var timeDiff = TimeSpan.FromSeconds(Timestamp.Now - lastBlockTime).TotalSeconds;
-                    if (timeDiff < this.BlockTime)
-                    {
-                        continue;
-                    }
-
-                    var transactions = GetNextTransactions(chain);
-                    if (transactions != null && transactions.Any())
-                    {
-                        lock (_pendingBlocks)
-                        {
-                            _pendingBlocks.Add(chain);
-                        }
-                        Task.Run(() => { MintBlock(transactions, chain); });
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        private void MintBlock(List<Transaction> transactions, Chain chain)
-        {
-            var hashes = new HashSet<Hash>(transactions.Select(tx => tx.Hash));
-
-            var lastBlockHash = chain.GetLastBlockHash();
-            var lastBlock = chain.GetBlockByHash(lastBlockHash);
-            var isFirstBlock = lastBlock == null;
-
-            var protocol = (uint)Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-
-            while (hashes.Count > 0)
-            {
-                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1), chain.Address, Timestamp.Now, hashes, isFirstBlock ? Hash.Null : lastBlock.Hash, protocol);
-
-                try
-                {
-                    chain.BakeBlock(ref block, ref transactions, MinimumFee, _validatorKeys, Timestamp.Now);
-                    chain.AddBlock(block, transactions, MinimumFee);
-                }
-                catch (InvalidTransactionException e)
-                {
-                    var tx = transactions.First(x => x.Hash == e.Hash);
-                    Interlocked.Decrement(ref _size);
-                    hashes.Remove(e.Hash);
-
-                    lock (_rejections)
-                    {
-                        _rejections[e.Hash] = e.Message;
-                    }
-
-                    transactions.Remove(tx);
-                    OnTransactionFailed?.Invoke(tx);
-                    continue;
-                }
-
-                lock (_entries)
-                {
-                    foreach (var tx in transactions)
-                    {
-                        _pendingSet.Remove(tx.Hash);
-                    }
-                }
-
-                foreach (var tx in transactions)
-                {
-                    Interlocked.Decrement(ref _size);
-                    OnTransactionCommitted?.Invoke(tx);
-                }
-
-                break;
-            }
-
-            lock (_pendingBlocks)
-            {
-                _pendingBlocks.Remove(chain);
-            }
+            var chainPool = GetPoolForChain(chain);
+            return chainPool.Discard(tx.Hash);
         }
 
         public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason)
@@ -381,12 +514,15 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            lock (_entries)
+            lock (_chains)
             {
-                if (_hashMap.ContainsKey(hash) || _pendingSet.Contains(hash))
+                foreach (var pool in _chains.Values)
                 {
-                    reason = null;
-                    return MempoolTransactionStatus.Pending;
+                    if (pool.ContainsTransaction(hash))
+                    {
+                        reason = null;
+                        return MempoolTransactionStatus.Pending;
+                    }
                 }
             }
 
@@ -394,47 +530,65 @@ namespace Phantasma.Blockchain
             return MempoolTransactionStatus.Unknown;
         }
 
-        public bool RejectTransaction(Hash hash)
+        protected override bool Run()
         {
-            lock (_entries)
+            Thread.Sleep(BlockTime * 1000);
+
+            lock (_chains)
             {
-                if (_hashMap.ContainsKey(hash))
+                foreach (var pool in _chains.Values)
                 {
-                    var chainName = _hashMap[hash];
-                    var list = _entries[chainName];
-                    return list.RemoveAll(x => x.transaction.Hash == hash) > 0;
+                    pool.AwakeUp();
                 }
             }
 
-            return false;
+            return true;
         }
 
-        private ProofOfWork CalculateCurrentPoW()
+        public List<Transaction> GetTransactions()
         {
-            if (Size > 10000)
+            var transactions = new List<Transaction>();
+
+            lock (_chains)
             {
-                return ProofOfWork.Heavy;
+                foreach (var pool in _chains.Values)
+                {
+                    transactions.AddRange(pool.GetTransactions());
+                }
             }
-            else
-            if (Size > 5000)
-            {
-                return ProofOfWork.Hard;
-            }
-            else
-            if (Size > 1000)
-            {
-                return ProofOfWork.Moderate;
-            }
-            else
-            if (Size > 500)
-            {
-                return ProofOfWork.Minimal;
-            }
-            else
-            {
-                return ProofOfWork.None;
-            }
+
+            return transactions;
         }
 
+        public uint GettMinimumProofOfWork()
+        {
+            uint min = DefaultPoW;
+
+            /*
+            lock (_chains)
+            {
+                foreach (var pool in _chains.Values)
+                {
+                }
+            }*/
+
+            return min;
+        }
+
+        public bool IsEmpty()
+        {
+            lock (_chains)
+            {
+                foreach (var pool in _chains.Values)
+                {
+                    if (pool.Busy)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+       }
     }
 }
