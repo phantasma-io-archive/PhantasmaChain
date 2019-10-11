@@ -13,6 +13,7 @@ using Phantasma.Network.P2P.Messages;
 using Phantasma.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
+using System.Threading;
 
 namespace Phantasma.Network.P2P
 {
@@ -183,16 +184,26 @@ namespace Phantasma.Network.P2P
             return new Endpoint(PeerProtocol.TCP, src, port);
         }
 
+        private DateTime _lastPeerConnect = DateTime.MinValue;
+
         protected override bool Run()
         {
+            Thread.Sleep(1000);
+
             if (this.Capabilities.HasFlag(PeerCaps.Sync))
             {
-                ConnectToPeers();
-
                 if (!listening)
                 {
                     listening = true;
                     var accept = listener.BeginAcceptSocket(new AsyncCallback(DoAcceptSocketCallback), listener);
+                }
+
+                var now = DateTime.UtcNow;
+                var diff = now - _lastPeerConnect;
+                if (diff.TotalSeconds >= 1)
+                {
+                    ConnectToPeers();
+                    _lastPeerConnect = now;
                 }
             }
 
