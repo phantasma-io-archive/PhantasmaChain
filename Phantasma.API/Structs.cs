@@ -280,6 +280,8 @@ namespace Phantasma.API
         [APIDescription("List of events that triggered in the transaction")]
         public EventResult[] events;
 
+        public string result; // deprecated
+
         [APIDescription("Results of the transaction, if any. Serialized, in hexadecimal format")]
         public string[] results;
 
