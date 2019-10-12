@@ -1,17 +1,13 @@
 ﻿using System.Collections.Generic;
-using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Cryptography;
-#if DEBUG
 using System;
 using System.Linq;
 using System.IO;
-#endif
 
 namespace Phantasma.VM
 {
-#if DEBUG
-    public class VMDebugException : Exception
+    public class VMException : Exception
     {
         public VirtualMachine vm;
 
@@ -20,13 +16,24 @@ namespace Phantasma.VM
             return $"*********{s}*********";
         }
 
-        public VMDebugException(VirtualMachine vm, string msg) : base(msg)
+        public VMException(VirtualMachine vm, string msg) : base(msg)
         {
             this.vm = vm;
 
+            var fileName = vm.GetDumpFileName();
+            if (fileName != null)
+            {
+                DumpToFile(fileName);
+            }
+        }
+
+        private void DumpToFile(string fileName)
+        {
             var temp = new Disassembler(vm.entryScript);
 
             var lines = new List<string>();
+
+            lines.Add("Exception: "+this.Message);
 
             if (vm.CurrentContext is ScriptContext sc)
             {
@@ -77,14 +84,14 @@ namespace Phantasma.VM
 
             vm.DumpData(lines);
 
-            var path = vm.GetDumpPath();
-            var dirName = Path.GetDirectoryName(path);
+            var dirName = Directory.GetCurrentDirectory() + "/Dumps/";
             Directory.CreateDirectory(dirName);
-            /*System.Diagnostics.Debug*/Console.WriteLine("Dumped VM data: " + path);
+
+            var path = dirName + fileName;
+            System.Diagnostics.Debug.WriteLine("Dumped VM data: " + path);
             File.WriteAllLines(path, lines.ToArray());
         }
     }
-#endif
 
     public abstract class VirtualMachine
     {
@@ -196,18 +203,11 @@ namespace Phantasma.VM
         }
         #endregion
 
-#if DEBUG
-        public virtual ExecutionState HandleException(VMDebugException ex)
+        public virtual string GetDumpFileName()
         {
-            throw ex;
-        }
-
-        public virtual string GetDumpPath()
-        {
-            return Directory.GetCurrentDirectory() + "/Dumps/vm.txt";
+            return "vm.txt";
         }
 
         public abstract void DumpData(List<string> lines);
-#endif
     }
 }

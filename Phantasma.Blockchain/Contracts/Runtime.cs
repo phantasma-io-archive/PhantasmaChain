@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Text;
 using System.Collections.Generic;
 using Phantasma.VM;
 using Phantasma.Cryptography;
@@ -10,8 +9,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
-using Phantasma.Core.Utils;
-using Phantasma.Contracts.Native;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -168,21 +165,13 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     if (changeSet.Any())
                     {
-#if DEBUG
-                        throw new VMDebugException(this, "VM changeset modified in read-only mode");
-#else
-                        result = ExecutionState.Fault;
-#endif
+                        throw new VMException(this, "VM changeset modified in read-only mode");
                     }
                 }
                 else
                 if (PaidGas < UsedGas && Nexus.HasGenesis && !DelayPayment)
                 {
-#if DEBUG
-                    throw new VMDebugException(this, "VM unpaid gas");
-#else
-                                        result = ExecutionState.Fault;
-#endif
+                    throw new VMException(this, "VM unpaid gas");
                 }
             }
 
@@ -336,11 +325,7 @@ namespace Phantasma.Blockchain.Contracts
             var method = callingFrame.GetMethod();
 
             description = $"{description} @ {method.Name}";
-#if DEBUG
-            throw new VMDebugException(this, description);
-#else
-            throw new ChainException($"contract assertion failed: {description}");
-#endif
+            throw new VMException(this, description);
         }
 
         #region GAS
@@ -377,11 +362,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (UsedGas > MaxGas && !DelayPayment)
             {
-#if DEBUG
-                throw new VMDebugException(this, $"VM gas limit exceeded ({MaxGas})");
-#else
-                                return ExecutionState.Fault;
-#endif
+                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})");
             }
 
             return result;
@@ -1217,40 +1198,33 @@ namespace Phantasma.Blockchain.Contracts
 
         public void Throw(string description)
         {
-#if DEBUG
-            throw new VMDebugException(this, description);
-#else
-            throw new ChainException(description);
-#endif
+            throw new VMException(this, description);
         }
 
-#if DEBUG
-        public override string GetDumpPath()
+        public override string GetDumpFileName()
         {
-            var path = base.GetDumpPath();
-         
             if (this.Transaction != null)
             {
-                path.Replace("vm.txt", this.Transaction.Hash.ToString()+".txt");
+                return this.Transaction.Hash.ToString()+".txt";
             }
 
-            return path;
+            return base.GetDumpFileName();
         }
 
         public override void DumpData(List<string> lines)
         {
-            lines.Add(VMDebugException.Header("RUNTIME"));
+            lines.Add(VMException.Header("RUNTIME"));
             lines.Add("Time: " + Time.Value);
             lines.Add("Nexus: " + Nexus.Name);
             lines.Add("Chain: " + Chain.Name);
             lines.Add("TxHash: " + (Transaction != null ? Transaction.Hash.ToString() : "None"));
             if (Transaction != null)
             {
+                lines.Add("Payload: " + (Transaction.Payload != null && Transaction.Payload.Length > 0 ? Base16.Encode(Transaction.Payload) : "None"));
                 var bytes = Transaction.ToByteArray(true);
-                lines.Add(VMDebugException.Header("RAWTX"));
+                lines.Add(VMException.Header("RAWTX"));
                 lines.Add(Base16.Encode(bytes));
             }
         }
-#endif
     }
 }

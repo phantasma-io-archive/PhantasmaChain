@@ -31,12 +31,10 @@ namespace Phantasma.Domain
 
         public BigInteger UsedGas { get; protected set; }
 
-#if DEBUG
         public override void DumpData(List<string> lines)
         {
             throw new NotImplementedException();
         }
-#endif
 
         public override ExecutionState ExecuteInterop(string method)
         {

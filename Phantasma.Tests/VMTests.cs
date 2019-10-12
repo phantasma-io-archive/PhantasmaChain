@@ -106,13 +106,6 @@ namespace Phantasma.Tests
             return script;
         }
 
-#if DEBUG
-        public override ExecutionState HandleException(VMDebugException ex)
-        {
-            return ExecutionState.Fault;
-        }
-#endif
-
         public void RegisterInterop(string method, Func<ExecutionFrame, ExecutionState> callback)
         {
             _interops[method] = callback;

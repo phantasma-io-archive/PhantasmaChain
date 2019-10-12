@@ -9,6 +9,7 @@ using Phantasma.Numerics;
 using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Contracts;
+using System.Diagnostics;
 
 namespace Phantasma.Blockchain
 {
@@ -67,9 +68,9 @@ namespace Phantasma.Blockchain
                 temp.SetValue(obj);
                 vm.Stack.Push(temp);
             }
-            catch 
+            catch (Exception e)
             {
-                return ExecutionState.Fault;
+                throw new VMException(vm, e.Message);
             }
 
             return ExecutionState.Running;
@@ -139,10 +140,7 @@ namespace Phantasma.Blockchain
         // TODO proper exceptions
         private static ExecutionState Oracle_Read(RuntimeVM vm)
         {
-            if (vm.Stack.Count < 1)
-            {
-                return ExecutionState.Fault;
-            }
+            ExpectStackSize(vm, 1);
 
             var temp = vm.Stack.Pop();
             if (temp.Type != VMType.String)
@@ -168,12 +166,20 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static void ExpectStackSize(RuntimeVM vm, int minSize)
+        {
+            if (vm.Stack.Count < minSize)
+            {
+                var callingFrame = new StackFrame(1);
+                var method = callingFrame.GetMethod();
+
+                throw new VMException(vm, $"not enough arguments in stack, expected {minSize} @ {method}");
+            }
+        }
+
         private static ExecutionState Oracle_Price(RuntimeVM vm)
         {
-            if (vm.Stack.Count < 1)
-            {
-                return ExecutionState.Fault;
-            }
+            ExpectStackSize(vm, 1);
 
             VMObject temp;
 
@@ -194,10 +200,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Oracle_Quote(RuntimeVM vm)
         {
-            if (vm.Stack.Count < 3)
-            {
-                return ExecutionState.Fault;
-            }
+            ExpectStackSize(vm, 3);
 
             VMObject temp;
 
@@ -235,10 +238,7 @@ namespace Phantasma.Blockchain
         /*
         private static ExecutionState Oracle_Register(RuntimeVM vm)
         {
-            if (vm.Stack.Count < 2)
-            {
-                return ExecutionState.Fault;
-            }
+            ExpectStackSize(vm, 2);
 
             VMObject temp;
 
@@ -276,29 +276,18 @@ namespace Phantasma.Blockchain
                 var tx = vm.Transaction;
                 Throw.IfNull(tx, nameof(tx));
 
-                if (vm.Stack.Count < 1)
-                {
-                    return ExecutionState.Fault;
-                }
+                ExpectStackSize(vm, 1);
 
-                var temp = vm.Stack.Pop();
-
-                if (temp.Type != VMType.Object)
-                {
-                    return ExecutionState.Fault;
-                }
-
-                var address = temp.AsInterop<Address>();
-
+                var address = PopAddress(vm);
                 var success = tx.IsSignedBy(address);
 
                 var result = new VMObject();
                 result.SetValue(success);
                 vm.Stack.Push(result);
             }
-            catch
+            catch (Exception e)
             {
-                return ExecutionState.Fault;
+                throw new VMException(vm, e.Message);
             }
 
             return ExecutionState.Running;
@@ -317,9 +306,9 @@ namespace Phantasma.Blockchain
                 result.SetValue(success);
                 vm.Stack.Push(result);
             }
-            catch
+            catch (Exception e)
             {
-                return ExecutionState.Fault;
+                throw new VMException(vm, e.Message);
             }
 
             return ExecutionState.Running;
@@ -397,7 +386,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 4);
 
             VMObject temp;
 
@@ -419,7 +408,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TransferBalance(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 3);
 
             VMObject temp;
 
@@ -442,7 +431,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_SwapTokens(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 5, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 5);
 
             VMObject temp;
 
@@ -477,7 +466,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_MintTokens(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 4);
 
             VMObject temp;
 
@@ -505,7 +494,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_BurnTokens(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 3);
 
             VMObject temp;
 
@@ -531,8 +520,8 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TransferToken(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
-
+            ExpectStackSize(Runtime, 4);
+            
             VMObject temp;
 
             var source = PopAddress(Runtime);
@@ -553,7 +542,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_MintToken(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 4, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 4);
 
             VMObject temp;
 
@@ -583,7 +572,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_BurnToken(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 3);
 
             VMObject temp;
 
@@ -607,10 +596,7 @@ namespace Phantasma.Blockchain
             var tx = Runtime.Transaction;
             Throw.IfNull(tx, nameof(tx));
 
-            if (Runtime.Stack.Count < 1)
-            {
-                return ExecutionState.Fault;
-            }
+            ExpectStackSize(Runtime, 1);
 
             VMObject temp;
 
@@ -656,7 +642,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreateToken(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 9, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 9);
 
             VMObject temp;
 
@@ -701,7 +687,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreateChain(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 3);
 
             VMObject temp;
 
@@ -722,7 +708,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreatePlatform(RuntimeVM Runtime)
         {
-            Runtime.Expect(Runtime.Stack.Count >= 3, "not enough arguments in stack");
+            ExpectStackSize(Runtime, 3);
 
             VMObject temp;
 

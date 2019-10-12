@@ -574,6 +574,8 @@ namespace Phantasma.API
                 result.unclaimed = "0";
             }
 
+            var validator = Nexus.GetValidatorType(address);
+
             var balanceList = new List<BalanceResult>();
             foreach (var symbol in Nexus.Tokens)
             {
@@ -606,8 +608,10 @@ namespace Phantasma.API
                     }
                 }
             }
+
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
+            result.validator = validator.ToString();
 
             return result;
         }

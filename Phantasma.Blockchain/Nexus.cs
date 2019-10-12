@@ -16,7 +16,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Contracts;
 using Phantasma.Contracts.Extra;
-using System.Diagnostics;
 
 namespace Phantasma.Blockchain
 {
@@ -396,6 +395,12 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
+                    var tempChain = this.GetChainByAddress(address);
+                    if (tempChain != null)
+                    {
+                        return tempChain.Name;
+                    }
+
                     return ValidationUtils.ANONYMOUS;
                 }
             }

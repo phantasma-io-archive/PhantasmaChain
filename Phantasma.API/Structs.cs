@@ -86,6 +86,9 @@ namespace Phantasma.API
         [APIDescription("Amount of available KCAL for relay channel")]
         public string relay;
 
+        [APIDescription("Validator role")]
+        public string validator;
+
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
     }

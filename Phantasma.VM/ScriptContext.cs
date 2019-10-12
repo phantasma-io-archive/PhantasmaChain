@@ -261,11 +261,7 @@ namespace Phantasma.VM
                             var state = frame.VM.ExecuteInterop(method);
                             if (state != ExecutionState.Running)
                             {
-#if DEBUG
-                                throw new VMDebugException(frame.VM, "VM extcall failed: " + method);
-#else                            
-                                return;
-#endif
+                                throw new VMException(frame.VM, "VM extcall failed: " + method);
                             }
 
                             break;
@@ -313,6 +309,7 @@ namespace Phantasma.VM
                     case Opcode.THROW:
                         {
                             var len = (int)ReadVar(1024);
+
                             if (len > 0)
                             {
                                 var bytes = ReadBytes(len);
@@ -774,12 +771,7 @@ namespace Phantasma.VM
 
                             if (context == null)
                             {
-#if DEBUG
-                                throw new VMDebugException(frame.VM, $"VM ctx instruction failed: could not find context with name '{contextName}'");
-#else
-                                SetState(ExecutionState.Fault);
-                                return;
-#endif
+                                throw new VMException(frame.VM, $"VM ctx instruction failed: could not find context with name '{contextName}'");
                             }
 
                             frame.Registers[dst].SetValue(context);
@@ -804,12 +796,7 @@ namespace Phantasma.VM
                             }
                             else
                             {
-#if DEBUG
-                                throw new VMDebugException(frame.VM, $"VM switch instruction failed: execution state did not halt");
-#else
-                                SetState(ExecutionState.Fault);
-                                return;
-#endif
+                                throw new VMException(frame.VM, $"VM switch instruction failed: execution state did not halt");
                             }
 
                             break;
@@ -817,17 +804,10 @@ namespace Phantasma.VM
 
                     default:
                         {
-                            SetState(ExecutionState.Fault);
-                            return;
+                            throw new VMException(frame.VM, $"Unknown VM opcode: {(int)opcode}");
                         }
                 }
             }
-#if DEBUG
-            catch (VMDebugException ex)
-            {
-                SetState(frame.VM.HandleException(ex));
-            }
-#endif
             catch (Exception ex)
             {
                 if (ex is TargetInvocationException)
@@ -837,12 +817,16 @@ namespace Phantasma.VM
 
                 Trace.WriteLine(ex.ToString());
                 SetState(ExecutionState.Fault);
-#if DEBUG
+
+                if (!(ex is VMException))
+                {
+                    ex = new VMException(frame.VM, ex.Message);
+                }
+
                 if (frame.VM.ThrowOnFault) // enable this when debugging difficult stuff in the VM, should not be activated for production code
                 {
-                    throw; 
+                    throw ex; 
                 }                
-#endif
             }
         }
 
