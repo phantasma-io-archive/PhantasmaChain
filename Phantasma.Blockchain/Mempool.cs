@@ -226,8 +226,8 @@ namespace Phantasma.Blockchain
                             {
                                 foreach (var tx in readyTransactions)
                                 {
-                                    _txMap.Remove(tx.Hash);
                                     _pending.Add(tx.Hash);
+                                    _txMap.Remove(tx.Hash);
                                 }
                             }
                         }
@@ -313,17 +313,17 @@ namespace Phantasma.Blockchain
 
         public bool ContainsTransaction(Hash hash)
         {
-            lock (_txMap)
+            lock (_pending)
             {
-                if (_txMap.ContainsKey(hash))
+                if (_pending.Contains(hash))
                 {
                     return true;
                 }
             }
 
-            lock (_pending)
+            lock (_txMap)
             {
-                if (_pending.Contains(hash))
+                if (_txMap.ContainsKey(hash))
                 {
                     return true;
                 }
