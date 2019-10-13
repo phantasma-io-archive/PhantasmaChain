@@ -11,10 +11,5 @@ namespace Phantasma.Domain
         Hash GenesisHash { get; }
         Timestamp GenesisTime { get; }
         Address RootChainAddress { get; }
-        string[] Tokens { get; }
-        string[] Contracts { get; }
-        string[] Chains { get; }
-        string[] Platforms { get; }
-        string[] Feeds { get; }
     }
 }

@@ -5,21 +5,6 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Contracts.Native
 {
-    public struct LeaderboardRow
-    {
-        public Address address;
-        public BigInteger score;
-    }
-
-    public struct Leaderboard
-    {
-        public string name;
-        public Address owner;
-        public BigInteger size;
-        public BigInteger period;
-        public BigInteger round;
-    }
-
     public sealed class RankingContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Ranking;
@@ -67,6 +52,15 @@ namespace Phantasma.Contracts.Native
             return _leaderboards.Get<string, Leaderboard>(name);
         }
 
+        public LeaderboardRow[] GetRows(string name)
+        {
+            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+            var rows = _rows.Get<string, StorageList>(name);
+
+            return rows.All<LeaderboardRow>();
+        }
+
         public void InsertScore(Address from, Address target, string name, BigInteger score)
         {
             Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
@@ -83,6 +77,27 @@ namespace Phantasma.Contracts.Native
                 address = target,
                 score = score
             };
+
+            int oldIndex = -1;
+            for (int i = 0; i < count; i++)
+            {
+                var entry = rows.Get<LeaderboardRow>(i);
+                if (entry.address == target)
+                {
+                    if (entry.score > score)
+                    {
+                        return;
+                    }
+                    oldIndex = i;
+                    break;
+                }
+            }
+
+            if (oldIndex >= 0)
+            {
+                rows.RemoveAt<LeaderboardRow>(oldIndex);
+                count--;
+            }
 
             int bestIndex = 0;
 
@@ -118,7 +133,7 @@ namespace Phantasma.Contracts.Native
                 rows.Add<LeaderboardRow>(newRow);
             }
 
-            Runtime.Notify(EventKind.LeaderboardInsert, from, newRow);
+            Runtime.Notify(EventKind.LeaderboardInsert, target, newRow);
         }
     }
 }

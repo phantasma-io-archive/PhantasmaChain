@@ -134,7 +134,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(swapCount > 0, "nothing to settle");
             chainHashes.Set<Hash, Hash>(hash, Runtime.Transaction.Hash);
-            Runtime.Notify(EventKind.TransactionSettle, from, new TransactionSettleEventData(hash, platform, chain));
+            Runtime.Notify(EventKind.ChainSwap, from, new TransactionSettleEventData(hash, platform, chain));
         }
 
         // send to external chain

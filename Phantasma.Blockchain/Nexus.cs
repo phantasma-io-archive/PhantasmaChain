@@ -21,11 +21,12 @@ namespace Phantasma.Blockchain
 {
     public class Nexus : INexus
     {
-        private static readonly string ChainNameMapKey = "chain.name.";
-        private static readonly string ChainAddressMapKey = "chain.addr.";
-        private static readonly string ChainOwnerKey = "chain.owner.";
-        private static readonly string ChainParentNameKey = "chain.parent.";
-        private static readonly string ChainChildrenBlockKey = "chain.children.";
+        public string Prefix = ".";
+        private string ChainNameMapKey => Prefix + "chain.name.";
+        private string ChainAddressMapKey => Prefix + "chain.addr.";
+        private string ChainOwnerKey => Prefix + "chain.owner.";
+        private string ChainParentNameKey => Prefix + "chain.parent.";
+        private string ChainChildrenBlockKey => Prefix + "chain.children.";
 
         public const string GasContractName = "gas";
         public const string BlockContractName = "block";
@@ -143,96 +144,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public string[] Tokens
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(Tokens)))
-                {
-                    return Serialization.Unserialize<string[]>(RootStorage.Get(nameof(Tokens)));
-                }
-
-                return new string[0];
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(Tokens), Serialization.Serialize(value));
-            }
-        }
-
-        public string[] Contracts
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(Contracts)))
-                {
-                    return Serialization.Unserialize<string[]>(RootStorage.Get(nameof(Contracts)));
-                }
-
-                return new string[0];
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(Contracts), Serialization.Serialize(value));
-            }
-        }
-
-        public string[] Chains
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(Chains)))
-                {
-                    return Serialization.Unserialize<string[]>(RootStorage.Get(nameof(Chains)));
-                }
-
-                return new string[0];
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(Chains), Serialization.Serialize(value));
-            }
-        }
-
-        public string[] Platforms
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(Platforms)))
-                {
-                    return Serialization.Unserialize<string[]>(RootStorage.Get(nameof(Platforms)));
-                }
-
-                return new string[0];
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(Platforms), Serialization.Serialize(value));
-            }
-        }
-
-        public string[] Feeds
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(Feeds)))
-                {
-                    return Serialization.Unserialize<string[]>(RootStorage.Get(nameof(Feeds)));
-                }
-
-                return new string[0];
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(Feeds), Serialization.Serialize(value));
-            }
-        }
-
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
         private readonly Logger _logger;
@@ -254,7 +165,7 @@ namespace Phantasma.Blockchain
 
                 if (HasGenesis)
                 {
-                    var chainList = this.Chains;
+                    var chainList = this.GetChains(this.RootStorage);
                     foreach (var chainName in chainList)
                     {
                         GetChainByName(chainName);
@@ -315,26 +226,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Chain FindChainForBlock(Block block)
-        {
-            return FindChainForBlock(block.Hash);
-        }
-
-        public Chain FindChainForBlock(Hash hash)
-        {
-            var chainNames = this.Chains;
-            foreach (var chainName in chainNames)
-            {
-                var chain = GetChainByName(chainName);
-                if (chain.ContainsBlockHash(hash))
-                {
-                    return chain;
-                }
-            }
-
-            return null;
-        }
-
         public Block FindBlockByTransaction(Transaction tx)
         {
             return FindBlockByHash(tx.Hash);
@@ -342,7 +233,7 @@ namespace Phantasma.Blockchain
 
         public Block FindBlockByHash(Hash hash)
         {
-            var chainNames = this.Chains;
+            var chainNames = this.GetChains(RootStorage);
             foreach (var chainName in chainNames)
             {
                 var chain = GetChainByName(chainName);
@@ -399,6 +290,12 @@ namespace Phantasma.Blockchain
                     if (tempChain != null)
                     {
                         return tempChain.Name;
+                    }
+
+                    var org = this.GetOrganizationByAddress(storage, address);
+                    if (org != null)
+                    {
+                        return org.ID;
                     }
 
                     return ValidationUtils.ANONYMOUS;
@@ -462,8 +359,6 @@ namespace Phantasma.Blockchain
                 RegisterContract<BlockContract>();
                 RegisterContract<RelayContract>();
                 RegisterContract<StorageContract>();
-                RegisterContract<VaultContract>();
-                RegisterContract<SaleContract>();
                 RegisterContract<InteropContract>();
                 RegisterContract<NachoContract>();
                 RegisterContract<BombContract>();
@@ -486,7 +381,7 @@ namespace Phantasma.Blockchain
         #region TRANSACTIONS
         public Transaction FindTransactionByHash(Hash hash)
         {
-            var chainNames = this.Chains;
+            var chainNames = this.GetChains(RootStorage);
             foreach (var chainName in chainNames)
             {
                 var chain = GetChainByName(chainName);
@@ -537,9 +432,8 @@ namespace Phantasma.Blockchain
             var chain = new Chain(this, name, _logger);
 
             // add to persistent list of chains
-            var chainList = this.Chains.ToList();
+            var chainList = this.GetSystemList(ChainTag, storage);
             chainList.Add(name);
-            this.Chains = chainList.ToArray();
 
             // add address and name mapping 
             storage.Put(ChainNameMapKey + chain.Name, chain.Address.ToByteArray());
@@ -724,9 +618,8 @@ namespace Phantasma.Blockchain
             EditFeed(name, feedInfo);
 
             // add to persistent list of feeds
-            var feedList = this.Feeds.ToList();
+            var feedList = this.GetSystemList(FeedTag, storage);
             feedList.Add(name);
-            this.Feeds = feedList.ToArray();
 
             return true;
         }
@@ -769,9 +662,8 @@ namespace Phantasma.Blockchain
             EditToken(symbol, tokenInfo);
 
             // add to persistent list of tokens
-            var tokenList = this.Tokens.ToList();
+            var tokenList = this.GetSystemList(TokenTag, storage);
             tokenList.Add(symbol);
-            this.Tokens = tokenList.ToArray();
         }
 
         private string GetTokenInfoKey(string symbol)
@@ -804,7 +696,7 @@ namespace Phantasma.Blockchain
             throw new ChainException($"Token does not exist ({symbol})");
         }
 
-        internal void MintTokens(RuntimeVM Runtime, IToken token, Address source, Address target, string sourceChain, BigInteger amount)
+        internal void MintTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, string sourceChain, BigInteger amount)
         {
             Runtime.Expect(token.IsFungible(), "must be fungible");
             Runtime.Expect(amount > 0, "invalid amount");
@@ -815,27 +707,27 @@ namespace Phantasma.Blockchain
             Runtime.Expect(supply.Mint(Runtime.Storage, amount, token.MaxSupply), "mint supply failed");
 
             var balances = new BalanceSheet(token.Symbol);
-            Runtime.Expect(balances.Add(Runtime.Storage, target, amount), "balance add failed");
+            Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, target, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, destination, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, accountTrigger, source, destination, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, sourceChain));
-                Runtime.Notify(EventKind.TokenClaim, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
             else
             {
-                Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenMint, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
         }
 
         // NFT version
-        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address target, string sourceChain, BigInteger tokenID, byte[] rom, byte[] ram)
+        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address destination, string sourceChain, BigInteger tokenID, byte[] rom, byte[] ram)
         {
             Runtime.Expect(!token.IsFungible(), "cant be fungible");
 
@@ -845,28 +737,28 @@ namespace Phantasma.Blockchain
             Runtime.Expect(supply.Mint(Runtime.Storage, 1, token.MaxSupply), "supply mint failed");
 
             var ownerships = new OwnershipSheet(token.Symbol);
-            Runtime.Expect(ownerships.Add(Runtime.Storage, target, tokenID), "ownership add failed");
+            Runtime.Expect(ownerships.Add(Runtime.Storage, destination, tokenID), "ownership add failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, target, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(target, accountTrigger, target, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, accountTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
 
-            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, target, rom, ram, !isSettlement);
+            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, !isSettlement);
 
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, sourceChain));
-                Runtime.Notify(EventKind.TokenClaim, target, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
             else
             {
-                Runtime.Notify(EventKind.TokenMint, target, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
+                Runtime.Notify(EventKind.TokenMint, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
         }
 
-        internal void BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address target, string targetChain, BigInteger amount)
+        internal void BurnTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, string targetChain, BigInteger amount)
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
 
@@ -884,14 +776,14 @@ namespace Phantasma.Blockchain
             var balances = new BalanceSheet(token.Symbol);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), "balance subtract failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, token.Symbol, amount), "token trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, destination, token.Symbol, amount), "token trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, token.Symbol, amount), "account trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, destination, token.Symbol, amount), "account trigger failed");
 
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
-                Runtime.Notify(EventKind.TokenStake, target, new TokenEventData(token.Symbol, amount, targetChain));
+                Runtime.Notify(EventKind.TokenStake, destination, new TokenEventData(token.Symbol, amount, targetChain));
             }
             else
             {
@@ -900,7 +792,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal void BurnToken(RuntimeVM Runtime, IToken token, Address source, Address target, string targetChain, BigInteger tokenID)
+        internal void BurnToken(RuntimeVM Runtime, IToken token, Address source, Address destination, string targetChain, BigInteger tokenID)
         {
             Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "can't be fungible");
 
@@ -925,16 +817,16 @@ namespace Phantasma.Blockchain
             Runtime.Expect(ownerships.Remove(Runtime.Storage, source, tokenID), "ownership removal failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, accountTrigger, source, token.Symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, accountTrigger, source, destination, token.Symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
 
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
-                Runtime.Notify(EventKind.TokenStake, target, new TokenEventData(token.Symbol, tokenID, targetChain));
-                Runtime.Notify(EventKind.PackedNFT, target, new PackedNFTData(token.Symbol, nft.ROM, nft.RAM));
+                Runtime.Notify(EventKind.TokenStake, destination, new TokenEventData(token.Symbol, tokenID, targetChain));
+                Runtime.Notify(EventKind.PackedNFT, destination, new PackedNFTData(token.Symbol, nft.ROM, nft.RAM));
             }
             else
             {
@@ -955,11 +847,11 @@ namespace Phantasma.Blockchain
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), "balance subtract failed");
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, token.Symbol, amount), "token onSend trigger failed");
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, destination, token.Symbol, amount), "token onReceive trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, destination, token.Symbol, amount), "token onSend trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, source, destination, token.Symbol, amount), "token onReceive trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, token.Symbol, amount), "account onSend trigger failed");
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, token.Symbol, amount), "account onReceive trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, destination, token.Symbol, amount), "account onSend trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, source, destination, token.Symbol, amount), "account onReceive trigger failed");
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
@@ -996,13 +888,13 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(ownerships.Add(Runtime.Storage, destination, tokenID), "ownership add failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, token.Symbol, tokenID), "token send trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, destination, token.Symbol, tokenID), "token send trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, destination, token.Symbol, tokenID), "token receive trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, source, destination, token.Symbol, tokenID), "token receive trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, token.Symbol, tokenID), "account send trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, destination, token.Symbol, tokenID), "account send trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, destination, token.Symbol, tokenID), "account received trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, source, destination, token.Symbol, tokenID), "account received trigger failed");
 
             WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, true);
 
@@ -1112,9 +1004,13 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, PrivacyContractName);
             sb.CallInterop(deployInterop, "friends");
             sb.CallInterop(deployInterop, "market");
-            sb.CallInterop(deployInterop, "vault");
-            sb.CallInterop(deployInterop, "sale");
             sb.CallInterop(deployInterop, "mail");
+
+            var orgInterop = "Nexus.CreateOrganization";
+            var orgScript = new byte[0];
+            sb.CallInterop(orgInterop, owner.Address, DomainSettings.ValidatorsOrganizationName, "Block Producers", orgScript);
+            sb.CallInterop(orgInterop, owner.Address, DomainSettings.MastersOrganizationName, "Soul Masters", orgScript);
+            sb.CallInterop(orgInterop, owner.Address, DomainSettings.StakersOrganizationName, "Soul Stakers", orgScript);
 
             sb.CallContract("block", "OpenBlock", owner.Address);
 
@@ -1125,7 +1021,6 @@ namespace Phantasma.Blockchain
             sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
 
             sb.Emit(VM.Opcode.RET);
-            sb.EmitRaw(Encoding.UTF8.GetBytes("A Phantasma was born..."));
 
             var script = sb.EndScript();
 
@@ -1345,7 +1240,8 @@ namespace Phantasma.Blockchain
                 EndNexusCreateTx(owner)
             };
 
-            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0);
+            var payload = Encoding.UTF8.GetBytes("A Phantasma was born...");
+            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, payload);
 
             rootChain.AddBlock(block, transactions, 1);
 
@@ -1354,56 +1250,6 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public int GetConfirmationsOfHash(Hash hash)
-        {
-            var block = FindBlockByHash(hash);
-            if (block != null)
-            {
-                return GetConfirmationsOfBlock(block);
-            }
-
-            var tx = FindTransactionByHash(hash);
-            if (tx != null)
-            {
-                return GetConfirmationsOfTransaction(tx);
-            }
-
-            return 0;
-        }
-
-        public int GetConfirmationsOfTransaction(Transaction transaction)
-        {
-            Throw.IfNull(transaction, nameof(transaction));
-
-            var block = FindBlockByTransaction(transaction);
-            if (block == null)
-            {
-                return 0;
-            }
-
-            return GetConfirmationsOfBlock(block);
-        }
-
-        public int GetConfirmationsOfBlock(Block block)
-        {
-            Throw.IfNull(block, nameof(block));
-
-            if (block != null)
-            {
-                var chain = FindChainForBlock(block);
-                if (chain != null)
-                {
-                    var lastBlockHash = chain.GetLastBlockHash();
-                    var lastBlock = chain.GetBlockByHash(lastBlockHash);
-                    if (lastBlock != null)
-                    {
-                        return (int)(1 + (lastBlock.Height - block.Height));
-                    }
-                }
-            }
-
-            return 0;
-        }
         #endregion
 
         #region VALIDATORS
@@ -1468,6 +1314,12 @@ namespace Phantasma.Blockchain
         public BigInteger GetUnclaimedFuelFromAddress(StorageContext storage, Address address)
         {
             var result = RootChain.InvokeContract(storage, Nexus.StakeContractName, nameof(StakeContract.GetUnclaimed), address).AsNumber();
+            return result;
+        }
+
+        public Timestamp GetStakeTimestampOfAddress(StorageContext storage, Address address)
+        {
+            var result = RootChain.InvokeContract(storage, Nexus.StakeContractName, nameof(StakeContract.GetStakeTimestamp), address).AsTimestamp();
             return result;
         }
 
@@ -1640,8 +1492,8 @@ namespace Phantasma.Blockchain
                 return -1;
             }
 
-            var platformList = this.Platforms.ToList();
-            var platformID = (byte)(1 + platformList.Count);
+            var platformList = this.GetSystemList(PlatformTag, storage);
+            var platformID = (byte)(1 + platformList.Count());
 
             //var chainAddress = Address.FromHash(name);
             var entry = new PlatformInfo(name, fuelSymbol, new PlatformSwapAddress[] {
@@ -1650,7 +1502,6 @@ namespace Phantasma.Blockchain
 
             // add to persistent list of tokens
             platformList.Add(name);
-            this.Platforms = platformList.ToArray();
 
             EditPlatform(name, entry);
             return platformID;
@@ -1692,9 +1543,49 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
+        #region ORGANIZATIONS
+        internal void CreateOrganization(StorageContext storage, string ID, string name, byte[] script)
+        {
+            var organizationList = GetSystemList(OrganizationTag, storage);
+
+            var organization = new Organization(ID, storage);
+            organization.Init(name, script);
+
+            // add to persistent list of tokens
+            organizationList.Add(ID);
+
+            var organizationMap = GetSystemMap(OrganizationTag, storage);
+            organizationMap.Set<Address, string>(organization.Address, ID);
+        }
+
+        public bool OrganizationExists(StorageContext storage, string name)
+        {
+            var orgs = GetOrganizations(storage);
+            return orgs.Contains(name);
+        }
+
+        public Organization GetOrganizationByName(StorageContext storage, string name)
+        {
+            var org = new Organization(name, storage);
+            return org;
+        }
+
+        public Organization GetOrganizationByAddress(StorageContext storage, Address address)
+        {
+            var organizationMap = GetSystemMap(OrganizationTag, storage);
+            if (organizationMap.ContainsKey<Address>(address))
+            {
+                var name = organizationMap.Get<Address, string>(address);
+                return GetOrganizationByName(storage, name);
+            }
+
+            return null;
+        }
+        #endregion
+
         public int GetIndexOfChain(string name)
         {
-            var chains = this.Chains;
+            var chains = this.GetChains(RootStorage);
             int index = 0;
             foreach (var chain in chains)
             {
@@ -1731,7 +1622,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            var platforms = this.Platforms;
+            var platforms = this.GetPlatforms(RootStorage);
             foreach (var platform in platforms)
             {
                 var info = GetPlatformInfo(platform);
@@ -1749,5 +1640,61 @@ namespace Phantasma.Blockchain
         }
 
         public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName));
+
+        private StorageList GetSystemList(string name, StorageContext storage)
+        {
+            var key = System.Text.Encoding.UTF8.GetBytes($".{name}.list");
+            return new StorageList(key, storage);
+        }
+
+        private StorageMap GetSystemMap(string name, StorageContext storage)
+        {
+            var key = System.Text.Encoding.UTF8.GetBytes($".{name}.map");
+            return new StorageMap(key, storage);
+        }
+
+        private const string TokenTag = "tokens";
+        private const string ContractTag = "contracts";
+        private const string ChainTag = "chains";
+        private const string PlatformTag = "platforms";
+        private const string FeedTag = "feeds";
+        private const string OrganizationTag = "orgs";
+
+        public string[] GetTokens(StorageContext storage)
+        {
+            var list = GetSystemList(TokenTag, storage);
+            return list.All<string>();
+        }
+
+        public string[] GetContracts(StorageContext storage)
+        {
+            var list = GetSystemList(ContractTag, storage);
+            return list.All<string>();
+        }
+
+        public string[] GetChains(StorageContext storage)
+        {
+            var list = GetSystemList(ChainTag, storage);
+            return list.All<string>();
+        }
+
+        public string[] GetPlatforms(StorageContext storage)
+        {
+            var list = GetSystemList(PlatformTag, storage);
+            return list.All<string>();
+        }
+
+        public string[] GetFeeds(StorageContext storage)
+        {
+            var list = GetSystemList(FeedTag, storage);
+            return list.All<string>();
+        }
+
+        public string[] GetOrganizations(StorageContext storage)
+        {
+            var list = GetSystemList(OrganizationTag, storage);
+            return list.All<string>();
+        }
+
     }
 }

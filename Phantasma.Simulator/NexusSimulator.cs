@@ -121,6 +121,22 @@ namespace Phantasma.Simulator
             //GenerateToken(_owner, "DAI", "Dai Stablecoin", ethPlatform, Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.External);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
+            var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
+            var orgScript = new byte[0];
+            var orgID = "phantom_force";
+            var orgAddress = Address.FromHash(orgID);
+            GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+            {
+                return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
+                CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
+                TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
+                CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 50000).
+                CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
+                SpendGas(_owner.Address).
+                EndScript();
+            });
+                       
             var communitySupply = 100000;
             GenerateToken(_owner, "MKNI", "Mankini Token", DomainSettings.PlatformName, Hash.FromString("MKNI"), UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
             MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
@@ -275,7 +291,7 @@ namespace Phantasma.Simulator
                         BigInteger nextHeight = lastBlock != null ? lastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = lastBlock != null ? lastBlock.Hash : Hash.Null;
 
-                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol);
+                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, System.Text.Encoding.UTF8.GetBytes("SIM"));
 
                         bool submitted;
 

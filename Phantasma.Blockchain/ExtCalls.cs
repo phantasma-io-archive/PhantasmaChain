@@ -35,6 +35,9 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
             vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
             vm.RegisterMethod("Nexus.CreatePlatform", Runtime_CreatePlatform);
+            vm.RegisterMethod("Nexus.CreateOrganization", Runtime_CreateOrganization);
+
+            vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -138,11 +141,11 @@ namespace Phantasma.Blockchain
 
         #region ORACLES
         // TODO proper exceptions
-        private static ExecutionState Oracle_Read(RuntimeVM vm)
+        private static ExecutionState Oracle_Read(RuntimeVM Runtime)
         {
-            ExpectStackSize(vm, 1);
+            ExpectStackSize(Runtime, 1);
 
-            var temp = vm.Stack.Pop();
+            var temp = Runtime.Stack.Pop();
             if (temp.Type != VMType.String)
             {
                 return ExecutionState.Fault;
@@ -150,7 +153,7 @@ namespace Phantasma.Blockchain
 
             var url = temp.AsString();
 
-            if (vm.Oracle == null)
+            if (Runtime.Oracle == null)
             {
                 return ExecutionState.Fault;
             }
@@ -161,7 +164,7 @@ namespace Phantasma.Blockchain
                 return ExecutionState.Fault;
             }
 
-            var result = vm.Oracle.Read(/*vm.Transaction.Hash, */url);
+            var result = Runtime.Oracle.Read(Runtime.Time,/*vm.Transaction.Hash, */url);
 
             return ExecutionState.Running;
         }
@@ -733,6 +736,50 @@ namespace Phantasma.Blockchain
             var result = new VMObject();
             result.SetValue(target);
             Runtime.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_CreateOrganization(RuntimeVM Runtime)
+        {
+            ExpectStackSize(Runtime, 4);
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for ID");
+            var ID = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            var name = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
+            var script = temp.AsByteArray();
+
+            Runtime.CreateOrganization(source, ID, name, script);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Organization_AddMember(RuntimeVM Runtime)
+        {
+            ExpectStackSize(Runtime, 3);
+
+            VMObject temp;
+
+            var source = PopAddress(Runtime);
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            var name = temp.AsString();
+
+            var target = PopAddress(Runtime);
+
+            Runtime.AddMember(name, source, target);
 
             return ExecutionState.Running;
         }

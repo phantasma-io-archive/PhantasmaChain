@@ -4,6 +4,7 @@ using Phantasma.Numerics;
 using Phantasma.Blockchain;
 using Phantasma.Domain;
 using Phantasma.Pay.Chains;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Simulator
 {
@@ -65,17 +66,17 @@ namespace Phantasma.Simulator
             return swap.hash;
         }
 
-        protected override byte[] PullData(string url)
+        public override byte[] PullData(Timestamp time, string url)
         {
             throw new OracleException("invalid oracle url: " + url);
         }
 
-        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash)
+        public override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash)
         {
             throw new OracleException($"unknown block for {platformName}.{chainName} : {hash}");
         }
 
-        protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
+        public override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
         {
             foreach (var swap in _swaps)
             if (swap.platformName == platformName && chainName == platformName && swap.hash == hash)
@@ -95,7 +96,7 @@ namespace Phantasma.Simulator
             throw new OracleException($"unknown transaction for {platformName}.{chainName} : {hash}");
         }
 
-        protected override decimal PullPrice(string baseSymbol)
+        public override decimal PullPrice(Timestamp time, string baseSymbol)
         {
             // some dummy values, only really used in the test suite ...
             decimal price;

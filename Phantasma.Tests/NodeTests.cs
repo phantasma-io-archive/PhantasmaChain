@@ -138,7 +138,7 @@ namespace Phantasma.Tests
             nexus = simulator.Nexus;
 
             // mempool setup
-            mempool = new Mempool(node_keys, nexus, Mempool.MinimumBlockTime, 1);
+            mempool = new Mempool(node_keys, nexus, Mempool.MinimumBlockTime, 1, System.Text.Encoding.UTF8.GetBytes("TEST"));
             mempool.Start();
 
             // node setup
@@ -178,10 +178,11 @@ namespace Phantasma.Tests
 
         bool ConfirmTransaction(string host, Hash hash, int maxTries = 99999)
         {
+            throw new NotImplementedException();
             int tryCount = 0;
             do
             {
-                var confirmations = nexus.GetConfirmationsOfHash(hash);
+                var confirmations = 0; // nexus.GetConfirmationsOfHash(hash);
                 if (confirmations > 0)
                 {
                     return true;

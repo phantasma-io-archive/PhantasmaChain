@@ -98,7 +98,7 @@ namespace Phantasma.Blockchain
             txs.Add(lastTx);
 
             transactions = txs;
-            block = new Block(block.Height, block.ChainAddress, block.Timestamp, hashes, block.PreviousHash, block.Protocol);
+            block = new Block(block.Height, block.ChainAddress, block.Timestamp, hashes, block.PreviousHash, block.Protocol, block.Payload);
         }
 
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
@@ -263,7 +263,10 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            block.MergeOracle(oracle);
+            if (oracle.Entries.Any())
+            {
+                block.MergeOracle(oracle);
+            }
 
             return changeSet;
         }
@@ -447,20 +450,19 @@ namespace Phantasma.Blockchain
             return lastID;
         }
 
-        #region FEES 
+        #region FEES
         public BigInteger GetBlockReward(Block block)
         {
+            var lastTxHash = block.TransactionHashes[block.TransactionHashes.Length - 1];
+            var evts = block.GetEventsForTransaction(lastTxHash);
+
             BigInteger total = 0;
-            foreach (var hash in block.TransactionHashes)
+            foreach (var evt in evts)
             {
-                var events = block.GetEventsForTransaction(hash);
-                foreach (var evt in events)
+                if (evt.Kind == EventKind.TokenClaim && evt.Contract == "block")
                 {
-                    if (evt.Kind == EventKind.GasPayment)
-                    {
-                        var gasInfo = evt.GetContent<GasEventData>();
-                        total += gasInfo.price * gasInfo.amount;
-                    }
+                    var data = evt.GetContent<TokenEventData>();
+                    total += data.Value;
                 }
             }
 
@@ -486,10 +488,13 @@ namespace Phantasma.Blockchain
             var events = block.GetEventsForTransaction(transactionHash);
             foreach (var evt in events)
             {
-                if (evt.Kind == EventKind.GasPayment)
+                if (evt.Kind == EventKind.TokenReceive && evt.Contract == "gas")
                 {
-                    var info = evt.GetContent<GasEventData>();
-                    fee += info.amount * info.price;
+                    var info = evt.GetContent<TokenEventData>();
+                    if (info.Symbol == DomainSettings.FuelTokenSymbol)
+                    {
+                        fee += info.Value;
+                    }
                 }
             }
 

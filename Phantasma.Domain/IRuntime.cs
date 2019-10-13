@@ -24,6 +24,13 @@ namespace Phantasma.Domain
 
         ITransaction GetTransaction(Hash hash);
 
+        string[] GetTokens();
+        string[] GetContracts();
+        string[] GetChains();
+        string[] GetPlatforms();
+        string[] GetFeeds();
+        string[] GetOrganizations();
+
         IToken GetToken(string symbol);
         IFeed GetFeed(string name);
         IContract GetContract(string name);
@@ -34,6 +41,13 @@ namespace Phantasma.Domain
         bool TokenExists(string symbol);
         bool FeedExists(string name);
         bool PlatformExists(string name);
+
+        bool OrganizationExists(string name);
+        IOrganization GetOrganization(string name);
+
+        bool AddMember(string organization, Address admin, Address target);
+        bool RemoveMember(string organization, Address admin, Address target);
+        void MigrateMember(string organization, Address admin, Address source, Address destination);
 
         bool ContractExists(string name);
         bool ContractDeployed(string name);

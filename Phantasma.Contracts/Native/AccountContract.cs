@@ -52,6 +52,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.PlatformExists(name), "name already used for a platform");
             Runtime.Expect(!Runtime.ContractExists(name), "name already used for a contract");
             Runtime.Expect(!Runtime.FeedExists(name), "name already used for a feed");
+            Runtime.Expect(!Runtime.OrganizationExists(name), "name already used for a organization");
             Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
 
             for (int i = 0; i < reservedNames.Length; i++)

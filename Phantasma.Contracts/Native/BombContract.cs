@@ -32,7 +32,7 @@ namespace Phantasma.Contracts.Native
             Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, BPLeaderboardName, 10, 0);
         }
 
-        public void OnReceive(Address from, string symbol, BigInteger amount)
+        public void OnReceive(Address source, Address destination, string symbol, BigInteger amount)
         {
             if (!Runtime.Nexus.HasGenesis)
             {
@@ -42,13 +42,15 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(symbol == DomainSettings.FuelTokenSymbol, "cannot accept this token");
             Runtime.Expect(amount > 0 , "invalid amount");
 
+            Runtime.Expect(source.IsUser, "can only accept fuel from user addresses");
+
             string leaderboardName = SESLeaderboardName;
             var leaderboard = (Leaderboard)Runtime.CallContext(NativeContractKind.Ranking, "GetLeaderboard", leaderboardName).ToObject();
 
             BombEntry entry;
-            if (_entries.ContainsKey<Address>(from))
+            if (_entries.ContainsKey<Address>(source))
             {
-                entry = _entries.Get<Address, BombEntry>(from);
+                entry = _entries.Get<Address, BombEntry>(source);
                 if (entry.round > leaderboard.round)
                 {
                     entry.amount = 0;
@@ -69,9 +71,9 @@ namespace Phantasma.Contracts.Native
             }
 
             entry.amount += amount;
-            _entries.Set<Address, BombEntry>(from, entry);
+            _entries.Set<Address, BombEntry>(source, entry);
 
-            Runtime.CallContext(NativeContractKind.Ranking, "InsertScore", this.Address, from, leaderboardName, entry.amount);
+            Runtime.CallContext(NativeContractKind.Ranking, "InsertScore", this.Address, source, leaderboardName, entry.amount);
         }
     }
 }

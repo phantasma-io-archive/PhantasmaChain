@@ -4,11 +4,11 @@ namespace Phantasma.Storage.Context
 {
     public class KeyStoreStorage : StorageContext
     {
-        private IKeyValueStoreAdapter _adapter;
+        public readonly IKeyValueStoreAdapter Adapter;
 
         public KeyStoreStorage(IKeyValueStoreAdapter adapter)
         {
-            this._adapter = adapter;
+            this.Adapter = adapter;
         }
 
         public override void Clear()
@@ -18,22 +18,22 @@ namespace Phantasma.Storage.Context
 
         public override void Delete(StorageKey key)
         {
-            _adapter.Remove(key.keyData);
+            Adapter.Remove(key.keyData);
         }
 
         public override byte[] Get(StorageKey key)
         {
-            return _adapter.GetValue(key.keyData);
+            return Adapter.GetValue(key.keyData);
         }
 
         public override bool Has(StorageKey key)
         {
-            return _adapter.ContainsKey(key.keyData);
+            return Adapter.ContainsKey(key.keyData);
         }
 
         public override void Put(StorageKey key, byte[] value)
         {
-            _adapter.SetValue(key.keyData, value);
+            Adapter.SetValue(key.keyData, value);
         }
     }
 }

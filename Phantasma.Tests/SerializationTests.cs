@@ -78,7 +78,7 @@ namespace Phantasma.Tests
             var chainKeys = PhantasmaKeys.Generate();
             var hashes = txs.Select(x => x.Hash);
             uint protocol = 42;
-            var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null, protocol);
+            var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null, protocol, System.Text.Encoding.UTF8.GetBytes("TEST"));
 
             int index = 0;
             foreach (var hash in hashes)

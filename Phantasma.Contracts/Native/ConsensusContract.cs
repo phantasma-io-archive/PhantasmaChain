@@ -8,13 +8,6 @@ using Phantasma.Storage.Context;
 
 namespace Phantasma.Contracts.Native
 {
-    public enum ConsensusKind
-    {
-        Validators,
-        Masters,
-        Community
-    }
-
     public enum ConsensusMode
     {
         Unanimity,
@@ -52,7 +45,7 @@ namespace Phantasma.Contracts.Native
     public struct ConsensusPoll
     {
         public string subject;
-        public ConsensusKind kind;
+        public string organization;
         public ConsensusMode mode;
         public PollState state;
         public PollValue[] entries;
@@ -181,8 +174,10 @@ namespace Phantasma.Contracts.Native
             return poll;
         }
 
-        public void InitPoll(Address from, string subject, ConsensusKind kind, ConsensusMode mode, Timestamp startTime, Timestamp endTime, byte[] serializedChoices, BigInteger votesPerUser)
+        public void InitPoll(Address from, string subject, string organization, ConsensusMode mode, Timestamp startTime, Timestamp endTime, byte[] serializedChoices, BigInteger votesPerUser)
         {
+            Runtime.Expect(Runtime.OrganizationExists(organization), "invalid organization");
+
             // TODO support for passing structs as args
             var choices = Serialization.Unserialize<PollChoice[]>(serializedChoices);
 
@@ -192,7 +187,7 @@ namespace Phantasma.Contracts.Native
 
                 if (subject.StartsWith(SystemPoll + "stake."))
                 {
-                    Runtime.Expect(kind >= ConsensusKind.Masters, "must require votes from masters or community");
+                    Runtime.Expect(organization == DomainSettings.MastersOrganizationName, "must require votes from masters");
                 }
 
                 Runtime.Expect(mode == ConsensusMode.Majority, "must use majority mode for system governance");
@@ -200,7 +195,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(Runtime.IsRootChain(), "not root chain");
 
-            Runtime.Expect(kind == ConsensusKind.Validators, "community polls not yet");
+            Runtime.Expect(organization == DomainSettings.ValidatorsOrganizationName, "community polls not yet");
 
             var maxEntriesPerPoll = Runtime.GetGovernanceValue(MaxEntriesPerPollTag);
             Runtime.Expect(choices.Length > 1, "invalid amount of entries");
@@ -236,7 +231,7 @@ namespace Phantasma.Contracts.Native
 
             poll.startTime = startTime;
             poll.endTime = endTime;
-            poll.kind = kind;
+            poll.organization = organization;
             poll.mode = mode;
             poll.state = PollState.Inactive;
             poll.choicesPerUser = votesPerUser;
@@ -284,19 +279,8 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(poll.state == PollState.Active, "poll not active");
 
-            switch (poll.kind)
-            {
-                case ConsensusKind.Validators:
-                    Runtime.Expect(Runtime.IsKnownValidator(from), "must be primary or secondary validator");
-                    var primaryValidators = Runtime.GetPrimaryValidatorCount();
-                    Runtime.Expect(primaryValidators >= 2, "not enough primary validators");
-                    break;
-
-                case ConsensusKind.Masters:
-                    Runtime.Expect(Runtime.IsStakeMaster(from), "must be stake master");
-                    var masters = Runtime.CallContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterCount), from).AsNumber();
-                    break;
-            }
+            var organization = Runtime.GetOrganization(poll.organization);
+            Runtime.Expect(organization.IsMember(from), "must be member of organization: "+poll.organization);
 
             Runtime.Expect(choices.Length <= poll.choicesPerUser, "too many choices");
 
@@ -325,7 +309,7 @@ namespace Phantasma.Contracts.Native
 
             BigInteger votingPower;
 
-            if (poll.kind == ConsensusKind.Community)
+            if (poll.organization == DomainSettings.StakersOrganizationName)
             {
                 votingPower = Runtime.CallContext(NativeContractKind.Stake, nameof(StakeContract.GetAddressVotingPower), from).AsNumber();
             }

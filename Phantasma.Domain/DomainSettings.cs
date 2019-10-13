@@ -21,6 +21,12 @@ namespace Phantasma.Domain
         OnMetadata // address, symbol, key, value
     }
 
+    public enum OrganizationTrigger
+    {
+        OnAdd, // address
+        OnRemove, // address
+    }
+
     public static class DomainSettings
     {
         public const int MAX_TOKEN_DECIMALS = 18;
@@ -38,6 +44,10 @@ namespace Phantasma.Domain
         public const int FiatTokenDecimals = 8;
 
         public const string RootChainName = "main";
+
+        public const string ValidatorsOrganizationName = "validators";
+        public const string MastersOrganizationName = "masters";
+        public const string StakersOrganizationName = "stakers";
 
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
         public static readonly string PlatformName = "phantasma";

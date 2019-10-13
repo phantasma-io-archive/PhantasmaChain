@@ -85,6 +85,8 @@ namespace Phantasma.Storage
 
         private string fileName;
 
+        public bool AutoFlush = true;
+
         public BasicDiskStore(string fileName)
         {
             this.fileName = fileName.Replace("\\", "/");
@@ -140,7 +142,10 @@ namespace Phantasma.Storage
                 lock (_cache)
                 {
                     _cache[key] = value;
-                    UpdateToDisk();
+                    if (AutoFlush)
+                    {
+                        UpdateToDisk();
+                    }
                 }
             }
         }
@@ -174,13 +179,24 @@ namespace Phantasma.Storage
                 lock (_cache)
                 {
                     _cache.Remove(key);
-                    UpdateToDisk();
+                    if (AutoFlush)
+                    {
+                        UpdateToDisk();
+                    }
                 }
                 return true;
             }
             else
             {
                 return false;
+            }
+        }
+
+        public void Flush()
+        {
+            if (!AutoFlush)
+            {
+                UpdateToDisk();
             }
         }
     }

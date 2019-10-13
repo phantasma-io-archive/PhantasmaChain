@@ -241,6 +241,11 @@ namespace Phantasma.Contracts.Native
                 Runtime.Expect(newValidators > secondaryValidators, "number of secondary validators did not change");
             }
 
+            if (type != ValidatorType.Proposed)
+            {
+                Runtime.AddMember(DomainSettings.ValidatorsOrganizationName, this.Address, target);
+            }
+
             Runtime.Notify(type == ValidatorType.Proposed ? EventKind.ValidatorPropose : EventKind.ValidatorElect, Runtime.Chain.Address, target);
         }
 
@@ -279,6 +284,7 @@ namespace Phantasma.Contracts.Native
             _validatorList.Remove(target);
 
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, target);
+            Runtime.RemoveMember(DomainSettings.ValidatorsOrganizationName, this.Address, from, to);
         }*/
 
         public void Migrate(Address from, Address to)
@@ -299,8 +305,11 @@ namespace Phantasma.Contracts.Native
             entry.address = to;
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);
 
+            Runtime.MigrateMember(DomainSettings.ValidatorsOrganizationName, this.Address, from, to);
+
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, from);
             Runtime.Notify(EventKind.ValidatorElect, Runtime.Chain.Address, to);
+            Runtime.Notify(EventKind.Migration, to, from);
         }
     }
 }

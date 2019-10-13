@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Storage;
 using Phantasma.Core;
 using Phantasma.Storage.Utils;
@@ -50,6 +49,8 @@ namespace Phantasma.Blockchain
         private List<OracleEntry> _oracleData = new List<OracleEntry>();
         public IOracleEntry[] OracleData => _oracleData.Select(x => (IOracleEntry)x).ToArray();
 
+        public byte[] Payload { get; private set; }
+
         // required for unserialization
         public Block()
         {
@@ -59,7 +60,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol)
+        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol, byte[] payload)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
@@ -73,6 +74,8 @@ namespace Phantasma.Blockchain
             {
                 _transactionHashes.Add(hash);
             }
+
+            this.Payload = payload;
 
             this._dirty = true;
         }
@@ -171,6 +174,11 @@ namespace Phantasma.Blockchain
                 writer.WriteVarString(entry.URL);
                 writer.WriteByteArray(entry.Content);
             }
+
+            if (Payload != null)
+            {
+                writer.WriteByteArray(this.Payload);
+            }
         }
 
         public static Block Unserialize(byte[] bytes)
@@ -252,6 +260,16 @@ namespace Phantasma.Blockchain
                 var val = reader.ReadByteArray();
                 _oracleData.Add(new OracleEntry( key, val));
                 oracleCount--;
+            }
+
+
+            try
+            {
+                Payload = reader.ReadByteArray();
+            }
+            catch
+            {
+                Payload = null;
             }
 
             _transactionHashes = new List<Hash>();

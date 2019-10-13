@@ -126,7 +126,7 @@ namespace Phantasma.Tests
                 ScriptUtils.BeginScript().
                     AllowGas(owner.Address, Address.Null, 1, 9999).
                     CallContract(ConsensusContractName, nameof(ConsensusContract.InitPoll),
-                        owner.Address, pollName, ConsensusKind.Validators, ConsensusMode.Majority, startTime, endTime, serializedChoices, 1).
+                        owner.Address, pollName, DomainSettings.ValidatorsOrganizationName, ConsensusMode.Majority, startTime, endTime, serializedChoices, 1).
                     SpendGas(owner.Address).
                     EndScript());
             simulator.EndBlock();

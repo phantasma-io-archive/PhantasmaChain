@@ -5,6 +5,7 @@ using Phantasma.Storage.Context;
 using System;
 using System.Linq;
 
+/*
 namespace Phantasma.Contracts.Native
 {
     internal struct VaultEntry
@@ -83,3 +84,4 @@ namespace Phantasma.Contracts.Native
         }
     }
 }
+*/

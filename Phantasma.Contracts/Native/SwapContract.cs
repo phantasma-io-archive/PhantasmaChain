@@ -100,7 +100,7 @@ namespace Phantasma.Contracts.Native
         // TODO optimize this method without using .NET native stuff
         public SwapPair[] GetAvailable()
         {
-            var symbols = Runtime.Nexus.Tokens.Where(x => GetAvailableForSymbol(x) > 0);
+            var symbols = Runtime.GetTokens().Where(x => GetAvailableForSymbol(x) > 0);
 
             var result = new List<SwapPair>();
 
@@ -124,7 +124,8 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
 
             var result = new List<SwapPair>();
-            foreach (var toSymbol in Runtime.Nexus.Tokens)
+            var symbols = Runtime.GetTokens();
+            foreach (var toSymbol in symbols)
             {
                 if (toSymbol == fromSymbol)
                 {
@@ -205,7 +206,6 @@ namespace Phantasma.Contracts.Native
         public void SwapTokens(Address from, string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(from.IsUser, "address must be user address");
             Runtime.Expect(amount > 0, "invalid amount");
 
             var fromInfo = Runtime.GetToken(fromSymbol);
@@ -222,8 +222,11 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(toBalance > 0, $"not enough balance of {toSymbol} available in the pot");
 
             var total = GetRate(fromSymbol, toSymbol, amount);
-
+            Runtime.Expect(total > 0, "amount to swap needs to be larger than zero");
             Runtime.Expect(toBalance >= total, "insufficient balance in pot");
+
+            var half = toBalance / 2;
+            Runtime.Expect(total < half, $"taking too much {toSymbol} from pot at once");
 
             Runtime.TransferTokens(fromSymbol, from, this.Address, amount);
             Runtime.TransferTokens(toSymbol, this.Address, from, total);

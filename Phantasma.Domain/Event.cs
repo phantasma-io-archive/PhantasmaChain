@@ -18,13 +18,13 @@ namespace Phantasma.Domain
         TokenMint = 7,
         TokenBurn = 8,
         TokenStake = 9,
-        TokenUnstake = 10,
-        TokenClaim = 11,
-        RoleDemote = 12,
-        RolePromote = 13,
-        AddressRegister = 14,
-        AddressLink = 15,
-        AddressUnlink = 16,
+        TokenClaim = 10,
+        AddressRegister = 11,
+        AddressLink = 12,
+        AddressUnlink = 13,
+        OrganizationCreate = 14,
+        OrganizationAdd = 15,
+        OrganizationRemove = 16,
         GasEscrow = 17,
         GasPayment = 18,
         AddressUnregister = 19,
@@ -49,13 +49,15 @@ namespace Phantasma.Domain
         ChannelCreate = 38,
         ChannelRefill = 39,
         ChannelSettle = 40,
-        LeaderboardCreate = 40,
-        LeaderboardInsert = 41,
-        LeaderboardReset = 42,
-        PlatformCreate = 43,
-        TransactionSettle = 44,
-        ContractRegister = 45,
-        ContractDeploy = 46,
+        LeaderboardCreate = 41,
+        LeaderboardInsert = 42,
+        LeaderboardReset = 43,
+        PlatformCreate = 44,
+        ChainSwap = 45,
+        ContractRegister = 46,
+        ContractDeploy = 47,
+        Migration = 48,
+        Log = 49,
         Custom = 64,
     }
 
@@ -71,12 +73,6 @@ namespace Phantasma.Domain
             this.Value = value;
             this.ChainName = chainName;
         }
-    }
-
-    public struct RoleEventData
-    {
-        public string role;
-        public Timestamp date;
     }
 
     public struct ChainValueEventData

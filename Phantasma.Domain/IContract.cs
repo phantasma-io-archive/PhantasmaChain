@@ -32,8 +32,6 @@ namespace Phantasma.Domain
         Market,
         Friends,
         Mail,
-        Vault,
-        Sale
     }
 
     public sealed class ContractInterface

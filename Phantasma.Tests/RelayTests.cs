@@ -29,7 +29,7 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.FromWIF(testWIF);
             var sim = new NexusSimulator(owner, 1234);
-            var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2, 1) : null;
+            var mempool = useMempool ? new Mempool(owner, sim.Nexus, 2, 1, System.Text.Encoding.UTF8.GetBytes("TEST")) : null;
             var node = useMempool ? new Node("relay node", sim.Nexus, mempool, owner, 7073, PeerCaps.None, new List<string>() { "192.168.0.1:7073" }, null) : null;
             var api = useMempool ? new NexusAPI(sim.Nexus) : null;
 

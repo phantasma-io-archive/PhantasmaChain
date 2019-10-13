@@ -50,6 +50,13 @@ namespace Phantasma.API
         public string value;
     }
 
+    public struct OrganizationResult : IAPIResult
+    {
+        public string id;
+        public string name;
+        public string[] members;
+    }
+
     public struct NexusResult : IAPIResult
     {
         [APIDescription("Name of the nexus")]
@@ -67,21 +74,34 @@ namespace Phantasma.API
         [APIDescription("List of governance values")]
         public GovernanceResult[] governance;
 
-        [APIDescription("List of master addresses")]
-        public string[] masters;
+        [APIDescription("List of organizations")]
+        public string[] organizations;
+
+        [APIDescription("SES leaderboard")]
+        public LeaderboardResult[] ses;
     }
 
+    public struct StakeResult: IAPIResult
+    {
+        [APIDescription("Amount of staked SOUL")]
+        public string amount;
+
+        [APIDescription("Time of last stake")]
+        public uint time;
+
+        [APIDescription("Amount of claimable KCAL")]
+        public string unclaimed;
+    }
 
     public struct AccountResult : IAPIResult
     {
         public string address;
         public string name;
 
-        [APIDescription("Amount of staked SOUL")]
-        public string stake;
+        [APIDescription("Info about staking if available")]
+        public StakeResult staked;
 
-        [APIDescription("Amount of claimable KCAL")]
-        public string unclaimed;
+        public string stake; //Deprecated
 
         [APIDescription("Amount of available KCAL for relay channel")]
         public string relay;
@@ -91,6 +111,12 @@ namespace Phantasma.API
 
         [APIDescription("List of token balances")]
         public BalanceResult[] balances;
+    }
+
+    public struct LeaderboardResult : IAPIResult
+    {
+        public string address;
+        public string value;
     }
 
     public struct ChainResult : IAPIResult
@@ -128,9 +154,6 @@ namespace Phantasma.API
 
         [APIDescription("Block time")]
         public uint timestamp;
-
-        [APIDescription("Number of confirmations for the transaction")]
-        public int confirmations;
 
         [APIDescription("Block height at which the transaction was accepted")]
         public int blockHeight;

@@ -2892,8 +2892,6 @@ namespace Phantasma.Contracts.Extra
             referrals.Replace(referralIndex, referral);
 
             AddTrophy(from, TrophyFlag.Referral);
-
-            Runtime.Notify(EventKind.TokenUnstake, from, outputAmount);
         }
         
         public void DeleteWrestler(Address from, BigInteger wrestlerID)
@@ -4450,7 +4448,6 @@ namespace Phantasma.Contracts.Extra
                 //Runtime.Expect(UpdateAccountBalance(from, wrestler.stakeAmount), "unstake failed");
                 Runtime.TransferTokens(Constants.SOUL_SYMBOL, from, this.Address, nachoWrestler.stakeAmount);
                 //Runtime.Notify(from, NachoEvent.Withdraw, wrestler.stakeAmount);
-                Runtime.Notify(EventKind.TokenUnstake, from, new TokenEventData(Constants.SOUL_SYMBOL, nachoWrestler.stakeAmount, Runtime.Chain.Name));
                 nachoWrestler.stakeAmount = 0;
             }
 

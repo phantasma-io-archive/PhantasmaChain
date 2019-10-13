@@ -88,11 +88,8 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Notify(EventKind.GasPayment, from, new GasEventData(targetAddress,  Runtime.GasPrice, spentGas));
 
-            // return unused gas to transaction creator
-            if (leftoverAmount > 0)
-            {
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, leftoverAmount);
-            }
+            // return escrowed gas to transaction creator
+            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, availableAmount);
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
             var bombGas = Runtime.IsRootChain() ? spentGas / 2 : 0;
@@ -101,7 +98,7 @@ namespace Phantasma.Contracts.Native
             {
                 var bombPayment = bombGas * Runtime.GasPrice;
                 var bombAddress = SmartContract.GetAddressForNative(NativeContractKind.Bomb);
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, bombAddress, bombPayment);
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, bombAddress, bombPayment);
                 spentGas -= bombGas;
             }
 
@@ -117,7 +114,7 @@ namespace Phantasma.Contracts.Native
             if (targetGas > 0)
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment);
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, targetAddress, targetPayment);
                 spentGas -= targetGas;
             }
 
@@ -125,7 +122,7 @@ namespace Phantasma.Contracts.Native
             {
                 var validatorPayment = spentGas * Runtime.GasPrice;
                 var validatorAddress = SmartContract.GetAddressForNative(NativeContractKind.Block);
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment);
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, validatorAddress, validatorPayment);
                 spentGas = 0;
             }
 

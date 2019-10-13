@@ -61,62 +61,14 @@ namespace Phantasma.Storage.Context
 
         public void Put(byte[] key, BigInteger value) { Put(key, value.ToSignedByteArray()); }
 
-        public void Put<T>(byte[] key, T obj) where T : struct
+        public void Put<T>(byte[] key, T obj)
         {
             var bytes = Serialization.Serialize(obj);
             Put(key, bytes);
         }
 
-        public void Put(byte[] key, string value) { Put(key, Encoding.UTF8.GetBytes(value)); }
-
         public void Put(string key, byte[] value) { Put(Encoding.UTF8.GetBytes(key), value); }
 
-        public void Put(string key, BigInteger value) { Put(Encoding.UTF8.GetBytes(key), value.ToSignedByteArray()); }
-
-        public void Put(string key, string value) { Put(Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(value)); }
-
         public void Delete(string key) { Delete(Encoding.UTF8.GetBytes(key)); }
-
-        /*
-        public StorageList FindCollectionForAddress(string name, Address address)
-        {
-            return FindCollectionForAddress(Encoding.UTF8.GetBytes(name), address);
-        }
-
-        public StorageList FindCollectionForContract(string name, SmartContract contract)
-        {
-            return FindCollectionForContract(Encoding.UTF8.GetBytes(name), contract);
-        }
-
-        public StorageList FindCollectionForAddress(byte[] name, Address address)
-        {
-            return new StorageList(this, name, address.PublicKey);
-        }
-
-        public StorageList FindCollectionForContract(byte[] name, SmartContract contract)
-        {
-            return new StorageList(this, name, MakeContractPrefix(contract));
-        }
-
-        public StorageMap FindMapForAddress(string name, Address address)
-        {
-            return FindMapForAddress<K, V>(Encoding.UTF8.GetBytes(name), address);
-
-        }
-
-        public StorageMap<K, V> FindMapForContract<K, V>(string name, SmartContract contract)
-        {
-            return FindMapForContract<K, V>(Encoding.UTF8.GetBytes(name), contract);
-        }
-
-        public StorageMap<K, V> FindMapForAddress<K, V>(byte[] name, Address address)
-        {
-            return new StorageMap<K, V>(this, name, address.PublicKey);
-        }
-
-        public StorageMap<K, V> FindMapForContract<K, V>(byte[] name, SmartContract contract)
-        {
-            return new StorageMap<K, V>(this, name, MakeContractPrefix(contract));
-        }*/
     }
 }
