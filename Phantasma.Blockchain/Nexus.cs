@@ -1012,8 +1012,6 @@ namespace Phantasma.Blockchain
             sb.CallInterop(orgInterop, owner.Address, DomainSettings.MastersOrganizationName, "Soul Masters", orgScript);
             sb.CallInterop(orgInterop, owner.Address, DomainSettings.StakersOrganizationName, "Soul Stakers", orgScript);
 
-            sb.CallContract("block", "OpenBlock", owner.Address);
-
             sb.MintTokens(DomainSettings.StakingTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(8863626, DomainSettings.StakingTokenDecimals));
             sb.MintTokens(DomainSettings.FuelTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(1000000, DomainSettings.FuelTokenDecimals));
             // requires staking token to be created previously
@@ -1081,7 +1079,6 @@ namespace Phantasma.Blockchain
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals)).
                 CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals)).
                 //SpendGas(owner.Address).
-                CallContract("block", "CloseBlock", owner.Address).
                 EndScript();
 
             var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
@@ -1241,8 +1238,9 @@ namespace Phantasma.Blockchain
             };
 
             var payload = Encoding.UTF8.GetBytes("A Phantasma was born...");
-            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, payload);
+            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
 
+            block.Sign(owner);
             rootChain.AddBlock(block, transactions, 1);
 
             GenesisHash = block.Hash;

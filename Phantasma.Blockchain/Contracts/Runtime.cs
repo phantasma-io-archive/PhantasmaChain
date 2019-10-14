@@ -33,8 +33,6 @@ namespace Phantasma.Blockchain.Contracts
         public bool DelayPayment { get; private set; }
         public readonly bool readOnlyMode;
 
-        private bool isBlockOperation;
-
         private bool randomized;
         private BigInteger seed;
 
@@ -67,7 +65,6 @@ namespace Phantasma.Blockchain.Contracts
             this.changeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
 
-            this.isBlockOperation = false;
             this.randomized = false;
 
             this.FeeTargetAddress = Address.Null;
@@ -109,9 +106,6 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionState ExecuteInterop(string method)
         {
-            // TODO review this better
-            //Expect(!isBlockOperation, "no interops available in block operations");
-
             BigInteger gasCost;
 
             // construtor
@@ -184,11 +178,6 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(string contextName)
         {
-            if (isBlockOperation && Nexus.HasGenesis)
-            {
-                throw new ChainException($"{contextName} context not available in block operations");
-            }
-
             var contract = this.Nexus.GetContractByName(contextName);
             if (contract != null)
             {
@@ -273,14 +262,6 @@ namespace Phantasma.Blockchain.Contracts
                         break;
                     }
 
-                case EventKind.BlockCreate:
-                case EventKind.BlockClose:
-                    Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
-
-                    isBlockOperation = true;
-                    UsedGas = 0;
-                    break;
-
                 case EventKind.ValidatorSwitch:
                     Expect(contract == Nexus.BlockContractName, $"event kind only in {Nexus.BlockContractName} contract");
                     break;
@@ -346,7 +327,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionState ConsumeGas(BigInteger gasCost)
         {
-            if (gasCost == 0 || isBlockOperation)
+            if (gasCost == 0)
             {
                 return ExecutionState.Running;
             }
@@ -741,11 +722,6 @@ namespace Phantasma.Blockchain.Contracts
         public Hash[] GetTransactionHashesForAddress(Address address)
         {
             return Chain.GetTransactionHashesForAddress(address);
-        }
-
-        public Address GetValidatorForBlock(Hash blockHash)
-        {
-            return Chain.GetValidatorForBlock(blockHash);
         }
 
         public ValidatorEntry GetValidatorByIndex(int index)
@@ -1385,5 +1361,11 @@ namespace Phantasma.Blockchain.Contracts
             var org = Nexus.GetOrganizationByName(RootStorage, organization);
             org.Migrate(this, admin, source, destination);
         }
+
+        public Address GetValidator(Timestamp time)
+        {
+            return this.Chain.GetValidator(this.RootStorage, time);
+        }
+
     }
 }

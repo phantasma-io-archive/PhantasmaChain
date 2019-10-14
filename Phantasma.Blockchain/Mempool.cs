@@ -253,7 +253,7 @@ namespace Phantasma.Blockchain
 
             while (transactions.Count > 0)
             {
-                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1), Chain.Address, Timestamp.Now, transactions.Select(x => x.Hash), isFirstBlock ? Hash.Null : lastBlock.Hash, protocol, Mempool.Payload);
+                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1), Chain.Address, Timestamp.Now, transactions.Select(x => x.Hash), isFirstBlock ? Hash.Null : lastBlock.Hash, protocol, Mempool.ValidatorAddress, Mempool.Payload);
 
                 try
                 {
@@ -289,7 +289,7 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    Chain.BakeBlock(ref block, ref transactions, minFee, Mempool.ValidatorKeys, Timestamp.Now);
+                    block.Sign(Mempool.ValidatorKeys);
                     Chain.AddBlock(block, transactions, minFee);
                 }
                 catch (Exception e)

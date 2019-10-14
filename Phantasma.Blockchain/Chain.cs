@@ -16,6 +16,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
 using Phantasma.Contracts;
+using Phantasma.Contracts.Native;
 
 namespace Phantasma.Blockchain
 {
@@ -70,40 +71,15 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
-        public void BakeBlock(ref Block block, ref List<Transaction> transactions, BigInteger minimumFee, PhantasmaKeys validator, Timestamp time)
-        {
-            if (transactions.Count <= 0)
-            {
-                throw new ChainException("not enough transactions in block");
-            }
-
-            byte[] script;
-
-            script = ScriptUtils.BeginScript().CallContract("block", "OpenBlock", validator.Address).EndScript();
-            var firstTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
-            firstTx.Sign(validator);
-
-            script = ScriptUtils.BeginScript().CallContract("block", "CloseBlock", validator.Address).EndScript();
-            var lastTx = new Transaction(Nexus.Name, this.Name, script, new Timestamp(time.Value + 100));
-            lastTx.Sign(validator);
-
-            var hashes = new List<Hash>();
-            hashes.Add(firstTx.Hash);
-            hashes.AddRange(block.TransactionHashes);
-            hashes.Add(lastTx.Hash);
-
-            var txs = new List<Transaction>();
-            txs.Add(firstTx);
-            txs.AddRange(transactions);
-            txs.Add(lastTx);
-
-            transactions = txs;
-            block = new Block(block.Height, block.ChainAddress, block.Timestamp, hashes, block.PreviousHash, block.Protocol, block.Payload);
-        }
-
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
         {
             var changeSet = ValidateBlock(block, transactions, minimumFee);
+
+            var unsignedBytes = block.ToByteArray(false);
+            if (block.Signature.Verify(unsignedBytes, block.Validator))
+            {
+                throw new BlockGenerationException($"block signature does not match validator");
+            }
 
             var hashList = new StorageList(BlockHeightListTag, this.Storage);
             var expectedBlockHeight = hashList.Count() + 1;
@@ -118,7 +94,7 @@ namespace Phantasma.Blockchain
             hashList.Add<Hash>(block.Hash);
 
             var blockMap = new StorageMap(BlockHashMapTag, this.Storage);
-            var blockBytes = block.ToByteArray();
+            var blockBytes = block.ToByteArray(true);
             blockBytes = CompressionUtils.Compress(blockBytes);
             blockMap.Set<Hash, byte[]>(block.Hash, blockBytes);
 
@@ -132,12 +108,6 @@ namespace Phantasma.Blockchain
                 txBlockMap.Set<Hash, Hash>(tx.Hash, block.Hash);
             }
 
-            var blockValidator = GetValidatorForBlock(block);
-            if (blockValidator.IsNull)
-            {
-                throw new BlockGenerationException("no validator for this block");
-            }
-
             foreach (var transaction in transactions)
             {
                 var addresses = new HashSet<Address>();
@@ -145,11 +115,6 @@ namespace Phantasma.Blockchain
 
                 foreach (var evt in events)
                 {
-                    if (evt.Kind == EventKind.BlockCreate || evt.Kind == EventKind.BlockClose)
-                    {
-                        continue;
-                    }
-
                     if (evt.Address.IsSystem)
                     {
                         continue;
@@ -171,10 +136,15 @@ namespace Phantasma.Blockchain
 
         public StorageChangeSetContext ValidateBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
         {
-            /*if (CurrentEpoch != null && CurrentEpoch.IsSlashed(Timestamp.Now))
+            if (!block.IsSigned)
             {
-                return false;
-            }*/
+                throw new BlockGenerationException($"block must be signed");
+            }
+
+            if (!block.Validator.IsUser)
+            {
+                throw new BlockGenerationException($"block validator must be user address");
+            }
 
             var lastBlockHash = GetLastBlockHash();
             var lastBlock = GetBlockByHash(lastBlockHash);
@@ -236,6 +206,12 @@ namespace Phantasma.Blockchain
 
             block.ClearOracle();
 
+            var expectedValidator = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GenesisAddress;
+            if (block.Validator != expectedValidator)
+            {
+                throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
+            }
+
             foreach (var tx in transactions)
             {
                 byte[] result;
@@ -262,6 +238,8 @@ namespace Phantasma.Blockchain
                     throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
             }
+
+            CloseBlock(block, changeSet);
 
             if (oracle.Entries.Any())
             {
@@ -502,39 +480,6 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-        #region validators
-        public Address GetCurrentValidator(StorageContext storage)
-        {
-            return InvokeContract(storage, Nexus.BlockContractName, "GetCurrentValidator").AsAddress();
-        }
-
-        public Address GetValidatorForBlock(Hash hash)
-        {
-            return GetValidatorForBlock(GetBlockByHash(hash));
-        }
-
-        public Address GetValidatorForBlock(Block block)
-        {
-            if (block.TransactionCount == 0)
-            {
-                return Address.Null;
-            }
-
-            var firstTxHash = block.TransactionHashes.First();
-            var events = block.GetEventsForTransaction(firstTxHash);
-
-            foreach (var evt in events)
-            {
-                if (evt.Kind == EventKind.BlockCreate && evt.Contract == Nexus.BlockContractName)
-                {
-                    return evt.Address;
-                }
-            }
-
-            return Address.Null;
-        }
-        #endregion
-
         #region Contracts
         private byte[] GetContractListKey()
         {
@@ -771,6 +716,125 @@ namespace Phantasma.Blockchain
         {
             var list = GetSwapListForAddress(storage, address);
             return list.All<Hash>();
+        }
+        #endregion
+
+        #region block validation
+        public Address GetValidator(StorageContext storage, Timestamp targetTime)
+        {
+            if (!Nexus.HasGenesis)
+            {
+                return Nexus.GenesisAddress;
+            }
+
+            var slotDuration = (int)Nexus.GetGovernanceValue(storage, ValidatorContract.ValidatorRotationTimeTag);
+            Timestamp validationSlotTime = Nexus.GenesisTime;
+
+            var diff = targetTime - validationSlotTime;
+
+            int validatorIndex = (int)(diff / slotDuration);
+            var validatorCount = Nexus.GetPrimaryValidatorCount();
+            var chainIndex = Nexus.GetIndexOfChain(this.Name);
+
+            if (chainIndex < 0)
+            {
+                return Address.Null;
+            }
+
+            validatorIndex += chainIndex;
+            validatorIndex = validatorIndex % validatorCount;
+
+            var currentIndex = validatorIndex;
+
+            do
+            {
+                var validator = Nexus.GetValidatorByIndex(validatorIndex);
+                if (validator.type == ValidatorType.Primary && !validator.address.IsNull)
+                {
+                    return validator.address;
+                }
+
+                validatorIndex++;
+                if (validatorIndex >= validatorCount)
+                {
+                    validatorIndex = 0;
+                }
+            } while (currentIndex != validatorIndex);
+
+            // should never reached here, failsafe
+            return Nexus.GenesisAddress;
+        }
+
+        public void CloseBlock(Block block, StorageContext storage)
+        {
+            if (block.Height > 1)
+            {
+                var prevBlock = GetBlockByHash(block.PreviousHash);
+
+                if (prevBlock.Validator != block.Validator)
+                {
+                    block.Notify(new Event(EventKind.ValidatorSwitch, block.Validator, "block", Serialization.Serialize(prevBlock)));
+                } 
+            }
+
+            var balance = new BalanceSheet(DomainSettings.FuelTokenSymbol);
+            var blockAddress = Address.FromHash("block");
+            var totalAvailable = balance.Get(storage, blockAddress);
+
+            var targets = new List<Address>();
+
+            if (Nexus.HasGenesis)
+            {
+                var validators = Nexus.GetValidators();
+
+                var totalValidators = Nexus.GetPrimaryValidatorCount();
+
+                for (int i = 0; i < totalValidators; i++)
+                {
+                    var validator = validators[i];
+                    if (validator.type != ValidatorType.Primary)
+                    {
+                        continue;
+                    }
+
+                    targets.Add(validator.address);
+                }
+            }
+            else
+            if (totalAvailable > 0)
+            {
+                targets.Add(Nexus.GenesisAddress);
+            }
+
+            if (targets.Count > 0)
+            {
+                if (!balance.Subtract(storage, blockAddress, totalAvailable))
+                {
+                    throw new BlockGenerationException("could not subtract balance from block address");
+                }
+
+                var amountPerValidator = totalAvailable / targets.Count;
+                var leftOvers = totalAvailable - (amountPerValidator * targets.Count);
+
+                foreach (var address in targets)
+                {
+                    BigInteger amount = amountPerValidator;
+
+                    if (address == block.Validator)
+                    {
+                        amount += leftOvers;
+                    }
+
+                    // TODO this should use triggers when available...
+                    if (!balance.Add(storage, address, amount))
+                    {
+                        throw new BlockGenerationException($"could not add balance to {address}");
+                    }
+
+                    var eventData = Serialization.Serialize(new TokenEventData(DomainSettings.FuelTokenSymbol, amount, this.Name));
+                    block.Notify(new Event(EventKind.TokenClaim, address, "block", eventData));
+                }
+            }
         }
         #endregion
     }

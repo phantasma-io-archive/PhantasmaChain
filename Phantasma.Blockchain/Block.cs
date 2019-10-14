@@ -49,7 +49,14 @@ namespace Phantasma.Blockchain
         private List<OracleEntry> _oracleData = new List<OracleEntry>();
         public IOracleEntry[] OracleData => _oracleData.Select(x => (IOracleEntry)x).ToArray();
 
+        public Address Validator { get; private set; }
+        public Signature Signature { get; private set; }
         public byte[] Payload { get; private set; }
+
+        public bool IsSigned => Signature != null;
+
+        private List<Event> _events = new List<Event>();
+        public IEnumerable<Event> Events => _events;
 
         // required for unserialization
         public Block()
@@ -60,7 +67,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol, byte[] payload)
+        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol, Address validator, byte[] payload)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
@@ -76,8 +83,21 @@ namespace Phantasma.Blockchain
             }
 
             this.Payload = payload;
+            this.Validator = validator;
+            this.Signature = null;
 
             this._dirty = true;
+        }
+
+        public void Sign(IKeyPair keys)
+        {
+            var msg = this.ToByteArray(false);
+            this.Signature = keys.Sign(msg);
+        }
+
+        public void Notify(Event evt)
+        {
+            this._events.Add(evt);
         }
 
         public void Notify(Hash hash, Event evt)
@@ -100,7 +120,7 @@ namespace Phantasma.Blockchain
 
         internal void UpdateHash()
         {
-            var data = ToByteArray();
+            var data = ToByteArray(false);
             var hashBytes = CryptoExtensions.SHA256(data);
             _hash = new Hash(hashBytes);
             _dirty = false;
@@ -128,20 +148,20 @@ namespace Phantasma.Blockchain
 
         #region SERIALIZATION
 
-        public byte[] ToByteArray()
+        public byte[] ToByteArray(bool withSignatures)
         {
             using (var stream = new MemoryStream())
             {
                 using (var writer = new BinaryWriter(stream))
                 {
-                    Serialize(writer);
+                    Serialize(writer, withSignatures);
                 }
 
                 return stream.ToArray();
             }
         }
 
-        internal void Serialize(BinaryWriter writer)
+        internal void Serialize(BinaryWriter writer, bool withSignatures)
         {
             writer.WriteBigInteger(Height);
             writer.Write(Timestamp.Value);
@@ -177,7 +197,20 @@ namespace Phantasma.Blockchain
 
             if (Payload != null)
             {
+                writer.WriteVarInt(_events.Count);
+                foreach (var evt in _events)
+                {
+                    evt.Serialize(writer);
+                }
+
+                writer.WriteAddress(this.Validator);
                 writer.WriteByteArray(this.Payload);
+                writer.Write((byte)0);
+
+                if (withSignatures)
+                {
+                    writer.WriteSignature(this.Signature);
+                }
             }
         }
 
@@ -208,7 +241,7 @@ namespace Phantasma.Blockchain
 
         public void SerializeData(BinaryWriter writer)
         {
-            Serialize(writer);
+            Serialize(writer, true);
         }
 
         public void UnserializeData(BinaryReader reader)
@@ -265,11 +298,22 @@ namespace Phantasma.Blockchain
 
             try
             {
+                var evtCount = (int)reader.ReadVarInt();
+                _events = new List<Event>(evtCount);
+                for (int i = 0; i < evtCount; i++)
+                {
+                    _events.Add(Event.Unserialize(reader));
+                }
+
+                Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
+                Signature = reader.ReadSignature();
             }
             catch
             {
                 Payload = null;
+                Validator = Address.Null;
+                Signature = null;
             }
 
             _transactionHashes = new List<Hash>();

@@ -22,6 +22,8 @@ namespace Phantasma.Domain
         IBlock GetBlockByHash(Hash hash);
         IBlock GetBlockByHeight(BigInteger height);
 
+        Address GetValidator(Timestamp time);
+
         ITransaction GetTransaction(Hash hash);
 
         string[] GetTokens();
@@ -77,7 +79,6 @@ namespace Phantasma.Domain
         Event[] GetTransactionEvents(Hash transactionHash);
         Hash[] GetTransactionHashesForAddress(Address address);
 
-        Address GetValidatorForBlock(Hash blockHash);
         ValidatorEntry GetValidatorByIndex(int index);
         ValidatorEntry[] GetValidators();
         bool IsPrimaryValidator(Address address);

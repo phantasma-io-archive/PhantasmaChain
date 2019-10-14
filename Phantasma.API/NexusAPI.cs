@@ -459,7 +459,8 @@ namespace Phantasma.API
                 chainAddress = chain.Address.ToString(),
                 protocol = block.Protocol,
                 reward = chain.GetBlockReward(block).ToString(),
-                validatorAddress = chain.GetValidatorForBlock(block).ToString(),
+                validatorAddress = block.Validator.ToString(),
+                events = block.Events.Select(x => FillEvent(x)).ToArray(),
             };
 
             var txs = new List<TransactionResult>();
@@ -704,7 +705,7 @@ namespace Phantasma.API
                     var block = chain.GetBlockByHash(hash);
                     if (block != null)
                     {
-                        return new SingleResult() { value = block.ToByteArray().Encode() };
+                        return new SingleResult() { value = block.ToByteArray(true).Encode() };
                     }
                 }
             }
@@ -761,7 +762,7 @@ namespace Phantasma.API
 
             if (block != null)
             {
-                return new SingleResult { value = block.ToByteArray().Encode() };
+                return new SingleResult { value = block.ToByteArray(true).Encode() };
             }
 
             return new ErrorResult { error = "block not found" };

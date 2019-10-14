@@ -291,7 +291,8 @@ namespace Phantasma.Simulator
                         BigInteger nextHeight = lastBlock != null ? lastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = lastBlock != null ? lastBlock.Hash : Hash.Null;
 
-                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, System.Text.Encoding.UTF8.GetBytes("SIM"));
+                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, _owner.Address, System.Text.Encoding.UTF8.GetBytes("SIM"));
+                        block.Sign(this._owner);
 
                         bool submitted;
 
@@ -318,7 +319,6 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                chain.BakeBlock(ref block, ref txs, MinimumFee, blockValidator, CurrentTime);
                                 chain.AddBlock(block, txs, MinimumFee);
                                 submitted = true;
                             }

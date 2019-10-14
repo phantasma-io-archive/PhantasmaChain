@@ -499,7 +499,7 @@ namespace Phantasma.Network.P2P
                                 {
                                     var blockHash = chain.GetBlockHashAtHeight(currentBlock);
                                     var block = chain.GetBlockByHash(blockHash);
-                                    var bytes = block.ToByteArray();
+                                    var bytes = block.ToByteArray(true);
                                     var str = Base16.Encode(bytes);
 
                                     foreach (var tx in chain.GetBlockTransactions(block))

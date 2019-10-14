@@ -218,6 +218,9 @@ namespace Phantasma.API
 
         [APIDescription("Amount of KCAL rewarded by this fees in this block")]
         public string reward;
+
+        [APIDescription("Block events")]
+        public EventResult[] events;
     }
 
     public struct TokenResult : IAPIResult
