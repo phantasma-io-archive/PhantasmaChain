@@ -749,6 +749,69 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestUnclaimedAccumulation()
+        {
+            var owner = PhantasmaKeys.Generate();
+
+            var simulator = new NexusSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = PhantasmaKeys.Generate();
+            var unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
+            Assert.IsTrue(unclaimedAmount == 0);
+
+            var accountBalance = MinimumValidStake * 100;
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, accountBalance);
+            simulator.EndBlock();
+
+            simulator.TimeSkipToDate(DateTime.UtcNow);
+
+            var stakeUnit = MinimumValidStake;
+            var rewardPerStakeUnit = StakeToFuel(stakeUnit);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeUnit).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", simulator.CurrentTime, testUser.Address).AsNumber();
+            Assert.IsTrue(stakedAmount == stakeUnit);
+
+            unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
+            Assert.IsTrue(unclaimedAmount == rewardPerStakeUnit);
+
+            //-----------
+            //Time skip 4 days: make sure appropriate stake reward accumulation 
+            var days = 4;
+            simulator.TimeSkipDays(days);
+
+            unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
+            stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", simulator.CurrentTime, testUser.Address).AsNumber();
+            var expectedUnclaimed = rewardPerStakeUnit * (days + 1);
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
+
+            //Perform another stake call
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeUnit).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
+            stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", simulator.CurrentTime, testUser.Address).AsNumber();
+            expectedUnclaimed = rewardPerStakeUnit * (days + 2);
+            Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
+        }
+
+        [TestMethod]
         public void TestHalving()
         {
             var owner = PhantasmaKeys.Generate();
