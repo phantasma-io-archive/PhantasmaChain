@@ -72,6 +72,11 @@ namespace Phantasma.Contracts.Native
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
 
+            if (target.Text== "P2KCierGgEw5N4zFiRox5XFkXPUEqRkfyiNek9EBgPPx7ZQ")
+            {
+                score += 0;
+            }
+
             var newRow = new LeaderboardRow()
             {
                 address = target,
@@ -95,8 +100,15 @@ namespace Phantasma.Contracts.Native
 
             if (oldIndex >= 0)
             {
-                rows.RemoveAt<LeaderboardRow>(oldIndex);
                 count--;
+
+                for (int i = oldIndex; i < count - 1; i++)
+                {
+                    var entry = rows.Get<LeaderboardRow>(i + 1);
+                    rows.Replace<LeaderboardRow>(i, entry);
+                }
+
+                rows.RemoveAt<LeaderboardRow>(count);
             }
 
             int bestIndex = 0;
@@ -131,6 +143,14 @@ namespace Phantasma.Contracts.Native
             {
                 Runtime.Expect(bestIndex == count, "invalid insertion index");
                 rows.Add<LeaderboardRow>(newRow);
+            }
+
+            rows = _rows.Get<string, StorageList>(name);
+            count = rows.Count();
+            for (int i=0; i<bestIndex; i++)
+            {
+                var entry = rows.Get<LeaderboardRow>(i);
+                Runtime.Expect(entry.score >= score, "leaderboard bug");
             }
 
             Runtime.Notify(EventKind.LeaderboardInsert, target, newRow);
