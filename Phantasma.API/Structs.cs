@@ -102,6 +102,7 @@ namespace Phantasma.API
         public StakeResult stakes;
 
         public string stake; //Deprecated
+        public string unclaimed;//Deprecated
 
         [APIDescription("Amount of available KCAL for relay channel")]
         public string relay;

@@ -574,7 +574,9 @@ namespace Phantasma.API
                 result.stakes = new StakeResult() { amount = "0", time = 0, unclaimed = "0" };
             }
 
+            // deprecated
             result.stake = result.stakes.amount;
+            result.unclaimed = result.stakes.unclaimed;
 
             var validator = Nexus.GetValidatorType(address);
 

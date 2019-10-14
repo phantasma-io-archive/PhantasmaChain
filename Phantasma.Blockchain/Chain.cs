@@ -73,6 +73,11 @@ namespace Phantasma.Blockchain
 
         public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
         {
+            if (!block.IsSigned)
+            {
+                throw new BlockGenerationException($"block must be signed");
+            }
+
             var changeSet = ValidateBlock(block, transactions, minimumFee);
 
             var unsignedBytes = block.ToByteArray(false);
@@ -136,11 +141,6 @@ namespace Phantasma.Blockchain
 
         public StorageChangeSetContext ValidateBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
         {
-            if (!block.IsSigned)
-            {
-                throw new BlockGenerationException($"block must be signed");
-            }
-
             if (!block.Validator.IsUser)
             {
                 throw new BlockGenerationException($"block validator must be user address");
