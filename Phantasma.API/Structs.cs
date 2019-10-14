@@ -99,7 +99,7 @@ namespace Phantasma.API
         public string name;
 
         [APIDescription("Info about staking if available")]
-        public StakeResult staked;
+        public StakeResult stakes;
 
         public string stake; //Deprecated
 

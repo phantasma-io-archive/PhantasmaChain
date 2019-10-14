@@ -566,14 +566,14 @@ namespace Phantasma.API
             {
                 var unclaimed = Nexus.GetUnclaimedFuelFromAddress(Nexus.RootStorage, address);
                 var time = Nexus.GetStakeTimestampOfAddress(Nexus.RootStorage, address);
-                result.staked = new StakeResult() { amount = stake.ToString(), time = time.Value, unclaimed = unclaimed.ToString() };
+                result.stakes = new StakeResult() { amount = stake.ToString(), time = time.Value, unclaimed = unclaimed.ToString() };
             }
             else
             {
-                result.staked = new StakeResult() { amount = "0", time = 0, unclaimed = "0" };
+                result.stakes = new StakeResult() { amount = "0", time = 0, unclaimed = "0" };
             }
 
-            result.stake = result.staked.amount;
+            result.stake = result.stakes.amount;
 
             var validator = Nexus.GetValidatorType(address);
 

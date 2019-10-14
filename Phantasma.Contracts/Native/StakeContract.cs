@@ -8,11 +8,17 @@ using Phantasma.Domain;
 
 namespace Phantasma.Contracts.Native
 {
-    public struct EnergyAction
+    public struct EnergyStake
     {
-        public BigInteger unclaimedPartials;
-        public BigInteger totalAmount;
-        public Timestamp timestamp;
+        public BigInteger stakeAmount;
+        public Timestamp stakeTime;
+    }
+
+    public struct EnergyClaim
+    {
+        public BigInteger stakeAmount;
+        public Timestamp claimDate;
+        public bool isNew;
     }
 
     public struct VotingLogEntry
@@ -31,16 +37,18 @@ namespace Phantasma.Contracts.Native
     {
         public override NativeContractKind Kind => NativeContractKind.Stake;
 
-        private StorageMap _stakes; // <Address, EnergyAction>
+        private StorageMap _stakeMap; // <Address, EnergyStake>
+        private StorageMap _claimMap; // <Address, List<EnergyClaim>>
+        private StorageMap _leftoverMap; // <Address, BigInteger>
+
         private StorageMap _proxyStakersMap; // <Address, List<EnergyProxy>>
         private StorageMap _proxyReceiversMap; // <Address, List<Address>>
-        private StorageMap _claims; // <Address, EnergyAction>
-        private StorageMap _masterClaims; // <Address, Timestamp>
 
+        private StorageMap _masterClaims; // <Address, Timestamp>
         private Timestamp _lastMasterClaim;
-        private StorageMap _masterMemory; // <Address, Timestamp>
+        private BigInteger _masterClaimCount;
+
         private StorageMap _voteHistory; // <Address, List<StakeLog>>
-        private uint _masterClaimCount;
 
         private Timestamp genesisTimestamp = 0;
 
@@ -178,14 +186,16 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(to.IsUser, "destination must be user address");
 
-            var targetStake = _stakes.Get<Address, EnergyAction>(to);
-            Runtime.Expect(targetStake.totalAmount == 0, "Tried to migrate to an account that's already staking");
+            var targetStake = GetStake(to);
+            Runtime.Expect(targetStake == 0, "Tried to migrate to an account that's already staking");
+
+            var unclaimed = GetUnclaimed(from);
+            Runtime.Expect(unclaimed == 0, "claim before migrating");
 
             //migrate stake
-            var sourceStake = _stakes.Get<Address, EnergyAction>(from);
-
-            _stakes.Set(to, sourceStake);
-            _stakes.Remove(from);
+            var sourceStake = _stakeMap.Get<Address, EnergyStake>(from);
+            _stakeMap.Set(to, sourceStake);
+            _stakeMap.Remove(from);
 
             //migrate master claim
             var claimDate = _masterClaims.Get<Address, Timestamp>(from);
@@ -225,14 +235,18 @@ namespace Phantasma.Contracts.Native
             var individualAmount = totalAmount / validMasterCount;
             var leftovers = totalAmount % validMasterCount;
 
+            var nextClaim = GetMasterClaimDateFromReference(1, thisClaimDate);
+
             var addresses = masters.GetMembers();
             for (int i = 0; i < addresses.Length; i++)
             {
                 var addr = addresses[i];
                 var claimDate = _masterClaims.Get<Address, Timestamp>(addr);
 
-                if (claimDate != thisClaimDate)
+                if (claimDate > thisClaimDate)
+                {
                     continue;
+                }
 
                 var transferAmount = individualAmount;
                 if (addr == from)
@@ -243,7 +257,6 @@ namespace Phantasma.Contracts.Native
                 Runtime.TransferTokens(token.Symbol, this.Address, addr, transferAmount);
                 totalAmount -= transferAmount;
 
-                var nextClaim = GetMasterClaimDateFromReference(1, thisClaimDate);
                 _masterClaims.Set<Address, Timestamp>(addr, nextClaim);
             }
 
@@ -259,91 +272,99 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var balance = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, from);
-
-            var currentStake = _stakes.Get<Address, EnergyAction>(from);
-
-            var newStake = stakeAmount + currentStake.totalAmount;
-
             Runtime.Expect(balance >= stakeAmount, "not enough balance");
 
             Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, from, this.Address, stakeAmount);
 
-            var entry = new EnergyAction()
+            EnergyStake stake;
+
+            if (_stakeMap.ContainsKey<Address>(from))
             {
-                unclaimedPartials = stakeAmount + GetLastAction(from).unclaimedPartials,
-                totalAmount = newStake,
-                timestamp = this.Runtime.Time,
+                stake = _stakeMap.Get<Address, EnergyStake>(from);
+            }
+            else
+            {
+                stake = new EnergyStake()
+                {
+                    stakeTime = new Timestamp(0),
+                    stakeAmount = 0,
+                };
+            }
+
+            stake.stakeTime = Runtime.Time;
+            stake.stakeAmount += stakeAmount;
+            _stakeMap.Set<Address, EnergyStake>(from, stake);
+
+            Runtime.AddMember(DomainSettings.StakersOrganizationName, this.Address, from);
+
+            var claimList = _claimMap.Get<Address, StorageList>(from);
+            var claimEntry = new EnergyClaim()
+            {
+                stakeAmount = stakeAmount,
+                claimDate = this.Runtime.Time,
+                isNew = true,
             };
-            _stakes.Set(from, entry);
+            claimList.Add(claimEntry);
 
             var logEntry = new VotingLogEntry()
             {
                 timestamp = this.Runtime.Time,
                 amount = stakeAmount
             };
-
             var votingLogbook = _voteHistory.Get<Address, StorageList>(from);
             votingLogbook.Add(logEntry);
 
-            Runtime.AddMember(DomainSettings.StakersOrganizationName, this.Address, from);
-
+            // masters membership
             var masterAccountThreshold = GetMasterThreshold();
-            if (newStake >= masterAccountThreshold && !IsMaster(from))
+            if (stake.stakeAmount >= masterAccountThreshold && !IsMaster(from))
             {
                 var nextClaim = GetMasterClaimDate(2);
 
                 Runtime.AddMember(DomainSettings.MastersOrganizationName, this.Address, from);
                 _masterClaims.Set<Address, Timestamp>(from, nextClaim);
             }
-
-            Runtime.Notify(EventKind.TokenStake, from, new TokenEventData(DomainSettings.StakingTokenSymbol, stakeAmount, Runtime.Chain.Name));
         }
 
-        public BigInteger Unstake(Address from, BigInteger unstakeAmount)
+        public void Unstake(Address from, BigInteger unstakeAmount)
         {
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
             Runtime.Expect(unstakeAmount >= MinimumValidStake, "invalid amount");
 
-            if (!_stakes.ContainsKey<Address>(from))
-            {
-                return 0;
-            }
+            Runtime.Expect(_stakeMap.ContainsKey<Address>(from), "nothing to unstake");
 
-            var stake = _stakes.Get<Address, EnergyAction>(from);
+            var stake = _stakeMap.Get<Address, EnergyStake>(from);
+            Runtime.Expect(stake.stakeAmount > 0, "nothing to unstake");
 
-            if (stake.timestamp.Value == 0) // failsafe, should never happen
-            {
-                return 0;
-            }
+            Runtime.Expect(stake.stakeTime.Value > 0, "something weird happened in unstake"); // failsafe, should never happen
 
-            Runtime.Expect(Runtime.Time >= stake.timestamp, "Negative time diff");
+            Runtime.Expect(Runtime.Time >= stake.stakeTime, "Negative time diff");
 
-            var diff = Runtime.Time - stake.timestamp;
-            var days = diff / 86400; // convert seconds to days
+            var stakedDiff = Runtime.Time - stake.stakeTime;
+            var stakedDays = stakedDiff / SecondsInDay; // convert seconds to days
 
-            Runtime.Expect(days >= 1, "waiting period required");
+            Runtime.Expect(stakedDays >= 1, "waiting period required");
 
             var token = Runtime.GetToken(DomainSettings.StakingTokenSymbol);
             var balance = Runtime.GetBalance(token.Symbol, this.Address);
             Runtime.Expect(balance >= unstakeAmount, "not enough balance");
 
-            var availableStake = stake.totalAmount;
+            var availableStake = stake.stakeAmount;
             availableStake -= GetStorageStake(from);
             Runtime.Expect(availableStake >= unstakeAmount, "tried to unstake more than what was staked");
 
             //if this is a partial unstake
             if (availableStake - unstakeAmount > 0)
+            {
                 Runtime.Expect(availableStake - unstakeAmount >= MinimumValidStake, "leftover stake would be below minimum staking amount");
+            }
 
             Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, this.Address, from, unstakeAmount);
 
-            stake.totalAmount -= unstakeAmount;
+            stake.stakeAmount -= unstakeAmount;
 
-            var unclaimedPartials = GetLastAction(from).unclaimedPartials;
-
-            if (stake.totalAmount == 0 && unclaimedPartials == 0)
+            if (stake.stakeAmount == 0)
             {
-                _stakes.Remove(from);
+                _stakeMap.Remove(from);
                 _voteHistory.Remove(from);
 
                 Runtime.RemoveMember(DomainSettings.StakersOrganizationName, this.Address, from);
@@ -356,21 +377,14 @@ namespace Phantasma.Contracts.Native
             }
             else
             {
-                var entry = new EnergyAction()
-                {
-                    unclaimedPartials = unclaimedPartials,
-                    totalAmount = stake.totalAmount,
-                    timestamp = this.Runtime.Time,
-                };
-
-                _stakes.Set(from, entry);
+                _stakeMap.Set<Address, EnergyStake>(from, stake);
 
                 RemoveVotingPower(from, unstakeAmount);
             }
 
             var masterAccountThreshold = GetMasterThreshold();
 
-            if (stake.totalAmount < masterAccountThreshold)
+            if (stake.stakeAmount < masterAccountThreshold)
             {
                 Runtime.RemoveMember(DomainSettings.MastersOrganizationName, this.Address, from);
 
@@ -380,29 +394,98 @@ namespace Phantasma.Contracts.Native
                 }
             }
 
-            return unstakeAmount;
+            var claimList = _claimMap.Get<Address, StorageList>(from);
+            var count = claimList.Count();
+
+            BigInteger leftovers = 0;
+
+            while (unstakeAmount > 0)
+            {
+                int bestIndex = -1;
+                var bestTime = new Timestamp(0);
+
+                // find the oldest stake
+                for (int i = 0; i < count; i++)
+                {
+                    var temp = claimList.Get<EnergyClaim>(i);
+                    if (bestIndex == -1 || temp.claimDate < bestTime)
+                    {
+                        bestTime = temp.claimDate;
+                        bestIndex = i;
+                    }
+                }
+
+                Runtime.Expect(bestIndex >= 0, "something went wrong with unstake");
+
+                var entry = claimList.Get<EnergyClaim>(bestIndex);
+
+                BigInteger subtractedAmount;
+
+                if (entry.stakeAmount > unstakeAmount)
+                {
+                    subtractedAmount = unstakeAmount;
+                    entry.stakeAmount -= subtractedAmount;
+                    claimList.Replace<EnergyClaim>(bestIndex, entry);
+                }
+                else
+                {
+                    subtractedAmount = entry.stakeAmount;
+                    claimList.RemoveAt<EnergyClaim>(bestIndex);
+                    count--;
+                }
+
+
+                if (Runtime.Time >= entry.claimDate)
+                {
+                    var claimDiff = Runtime.Time - entry.claimDate;
+                    var claimDays = (claimDiff / SecondsInDay);
+                    if (!entry.isNew && claimDays > 0)
+                    {
+                        claimDays--;  // unless new (meaning was never claimed) we subtract the initial day due to instant claim
+                    }
+
+                    if (claimDays >= 1)
+                    {
+                        var amount = StakeToFuel(subtractedAmount);
+                        amount *= claimDays;
+                        leftovers += amount;
+                    }
+                }
+
+                unstakeAmount -= subtractedAmount;
+            }
+
+            if (leftovers > 0)
+            {
+                if (_leftoverMap.ContainsKey<Address>(from))
+                {
+                    leftovers += _leftoverMap.Get<Address, BigInteger>(from);
+                }
+
+                _leftoverMap.Set<Address, BigInteger>(from, leftovers);
+            }
         }
 
         public BigInteger GetTimeBeforeUnstake(Address from)
         {
-            if (!_stakes.ContainsKey<Address>(from))
+            if (!_stakeMap.ContainsKey<Address>(from))
             {
                 return 0;
             }
 
-            var stake = _stakes.Get<Address, EnergyAction>(from);
-            return 86400 - (Runtime.Time - stake.timestamp);
+            var stake = _stakeMap.Get<Address, EnergyStake>(from);
+            return SecondsInDay - (Runtime.Time - stake.stakeTime);
         }
 
         public Timestamp GetStakeTimestamp(Address from)
         {
-            if (!_stakes.ContainsKey(from))
+            if (!_stakeMap.ContainsKey(from))
             {
                 return 0;
             }
 
-            var stake = _stakes.Get<Address, EnergyAction>(from);
-            return stake.timestamp;
+            var stake = _stakeMap.Get<Address, EnergyStake>(from);
+            return stake.stakeTime;
         }
 
         private void RemoveVotingPower(Address from, BigInteger amount)
@@ -430,41 +513,42 @@ namespace Phantasma.Contracts.Native
             }
         }
 
-        public BigInteger GetUnclaimed(Address stakeAddress)
+        public BigInteger GetUnclaimed(Address from)
         {
-            if (!_stakes.ContainsKey<Address>(stakeAddress))
+            BigInteger total = 0;
+
+            var claimList = _claimMap.Get<Address, StorageList>(from);
+
+            var count = claimList.Count();
+            for (int i = 0; i < count; i++)
             {
-                return 0;
+                var entry = claimList.Get<EnergyClaim>(i);
+
+                if (Runtime.Time >= entry.claimDate)
+                {
+                    var claimDiff = Runtime.Time - entry.claimDate;
+                    var clamDays = (claimDiff / SecondsInDay);
+                    if (entry.isNew)
+                    {
+                        clamDays++;
+                    }
+
+                    if (clamDays >= 1)
+                    {
+                        var amount = StakeToFuel(entry.stakeAmount);
+                        amount *= clamDays;
+                        total += amount;
+                    }
+                }
             }
 
-            var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
-
-            var currentStake = stake.totalAmount;
-
-            var lastClaim = _claims.Get<Address, EnergyAction>(stakeAddress);
-
-            if (lastClaim.timestamp.Value == 0)
-                lastClaim.timestamp = stake.timestamp;
-
-            Runtime.Expect(Runtime.Time >= stake.timestamp, "Negative time diff");
-
-            var diff = Runtime.Time - lastClaim.timestamp;
-
-            var days = diff / 86400; // convert seconds to days
-
-            // if not enough time has passed, deduct the last claim from the available amount
-            if (days <= 0)
+            if (_leftoverMap.ContainsKey<Address>(from))
             {
-                currentStake -= lastClaim.totalAmount;
+                var leftover = _leftoverMap.Get<Address, BigInteger>(from);
+                total += leftover;
             }
 
-            // clamp to avoid negative values
-            if (currentStake < 0)
-            {
-                currentStake = 0;
-            }
-
-            return CalculateRewardsWithHalving(currentStake, GetLastAction(stakeAddress).unclaimedPartials, lastClaim.timestamp, Runtime.Time);
+            return total;
         }
 
         public void Claim(Address from, Address stakeAddress)
@@ -478,8 +562,8 @@ namespace Phantasma.Contracts.Native
             var fuelAmount = unclaimedAmount;
 
             // distribute to proxy list
-            var list = _proxyStakersMap.Get<Address, StorageList>(stakeAddress);
-            var count = list.Count();
+            var proxyList = _proxyStakersMap.Get<Address, StorageList>(stakeAddress);
+            var count = proxyList.Count();
 
             // if the transaction comes from someone other than the stake owner, must be registred in proxy list
             if (from != stakeAddress)
@@ -487,7 +571,7 @@ namespace Phantasma.Contracts.Native
                 bool found = false;
                 for (int i = 0; i < count; i++)
                 {
-                    var proxy = list.Get<EnergyProxy>(i);
+                    var proxy = proxyList.Get<EnergyProxy>(i);
                     if (proxy.address == from)
                     {
                         found = true;
@@ -502,7 +586,7 @@ namespace Phantasma.Contracts.Native
 
             for (int i = 0; i < count; i++)
             {
-                var proxy = list.Get<EnergyProxy>(i);
+                var proxy = proxyList.Get<EnergyProxy>(i);
                 sum += proxy.percentage;
 
                 var proxyAmount = (fuelAmount * proxy.percentage) / 100;
@@ -517,29 +601,46 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(availableAmount >= 0, "unsuficient leftovers");
             Runtime.MintTokens(DomainSettings.FuelTokenSymbol, this.Address, stakeAddress, availableAmount);
 
-            // NOTE here we set the full staked amount instead of claimed amount, to avoid infinite claims loophole
-            var stake = _stakes.Get<Address, EnergyAction>(stakeAddress);
+            var claimList = _claimMap.Get<Address, StorageList>(stakeAddress);
+            count = claimList.Count();
 
-            if (stake.totalAmount == 0 && GetLastAction(stakeAddress).unclaimedPartials == 0)
-                _stakes.Remove(from);
-
-            var action = new EnergyAction()
+            // update the date of everything that was claimed
+            for (int i=0; i<count; i++)
             {
-                unclaimedPartials = 0,
-                totalAmount = stake.totalAmount,
-                timestamp = Runtime.Time
-            };
+                var entry = claimList.Get<EnergyClaim>(i);
 
-            _claims.Set<Address, EnergyAction>(stakeAddress, action);
+                if (Runtime.Time >= entry.claimDate)
+                {
+                    var claimDiff = Runtime.Time - entry.claimDate;
+                    var clamDays = (claimDiff / SecondsInDay);
+                    if (entry.isNew)
+                    {
+                        clamDays++;
+                    }
+
+                    if (clamDays >= 1)
+                    {
+                        entry.claimDate = Runtime.Time;
+                        entry.isNew = false;
+                        claimList.Replace<EnergyClaim>(i, entry);
+                    }
+                }
+            }
+
+            // remove any leftovers
+            if (_leftoverMap.ContainsKey<Address>(stakeAddress))
+            {
+                _leftoverMap.Remove<Address>(stakeAddress);
+            }
         }
 
         public BigInteger GetStake(Address address)
         {
             BigInteger stake = 0;
 
-            if (_stakes.ContainsKey(address))
+            if (_stakeMap.ContainsKey(address))
             {
-                stake = _stakes.Get<Address, EnergyAction>(address).totalAmount;
+                stake = _stakeMap.Get<Address, EnergyStake>(address).stakeAmount;
             }
 
             return stake;
@@ -775,14 +876,6 @@ namespace Phantasma.Contracts.Native
             }
 
             return reward;
-        }
-
-        private EnergyAction GetLastAction(Address address)
-        {
-            var lastClaim = _claims.Get<Address, EnergyAction>(address);
-            var lastStake = _stakes.Get<Address, EnergyAction>(address);
-
-            return lastClaim.timestamp >= lastStake.timestamp ? lastClaim : lastStake;
         }
     }
 }

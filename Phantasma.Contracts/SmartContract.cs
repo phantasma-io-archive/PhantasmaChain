@@ -16,6 +16,8 @@ namespace Phantasma.Contracts
 {
     public abstract class SmartContract : IContract
     {
+        public const int SecondsInDay = 86400;
+
         public ContractInterface ABI { get; private set; }
         public abstract string Name { get; }
 
