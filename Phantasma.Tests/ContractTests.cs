@@ -724,9 +724,9 @@ namespace Phantasma.Tests
             var finalStake = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", simulator.CurrentTime, testUser.Address).AsNumber();
             Assert.IsTrue(finalStake == 0);
 
-            //Claim -> should get StakeToFuel(X)
+            //Claim -> should get StakeToFuel(X) for same day reward and StakeToFuel(X + previous stake) due to full 1 day staking reward before unstake
             unclaimedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetUnclaimed", simulator.CurrentTime, testUser.Address).AsNumber();
-            expectedUnclaimed = StakeToFuel(addedStake);
+            expectedUnclaimed = StakeToFuel(addedStake * 2 + previousStake);
             Assert.IsTrue(unclaimedAmount == expectedUnclaimed);
 
             startingFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, testUser.Address);

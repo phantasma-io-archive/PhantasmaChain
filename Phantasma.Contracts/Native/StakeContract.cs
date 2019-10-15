@@ -39,23 +39,7 @@ namespace Phantasma.Contracts.Native
         private StorageMap _voteHistory; // <Address, List<StakeLog>>
         private BigInteger _masterClaimCount;
         private StorageMap _masterClaims; // <Address, Timestamp>
-
-        private Timestamp _genesisTimestamp = 0;
-        private Timestamp GenesisTimestamp
-        {
-            get
-            {
-                if (_genesisTimestamp == 0)
-                {
-                    Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-                    var genesisBlock = Runtime.GetBlockByHeight(1);
-                    if (genesisBlock != null)   //special case for genesis block's creation
-                        _genesisTimestamp = genesisBlock.Timestamp;
-                }
-                return _genesisTimestamp;
-            }
-        }
-
+        
         public static readonly BigInteger DefaultMasterThreshold = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, DomainSettings.StakingTokenDecimals);
 
@@ -130,6 +114,20 @@ namespace Phantasma.Contracts.Native
             return GetMasterClaimDateFromReference(claimDistance, default(Timestamp));
         }
 
+        private Timestamp GetGenesisTimestamp()
+        {
+            if (Runtime.Nexus.HasGenesis)
+            {
+                Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+                var referenceBlock = Runtime.GetBlockByHeight(1);
+                return referenceBlock.Timestamp;
+            }
+            else
+            {
+                return Runtime.Time;
+            }
+        }
+
         public Timestamp GetMasterClaimDateFromReference(BigInteger claimDistance, Timestamp referenceTime)
         {
             DateTime referenceDate;
@@ -140,16 +138,7 @@ namespace Phantasma.Contracts.Native
             else
             if (_lastMasterClaim.Value == 0)
             {
-                if (Runtime.Nexus.HasGenesis)
-                {
-                    Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-                    var referenceBlock = Runtime.GetBlockByHeight(1);
-                    referenceDate = referenceBlock.Timestamp;
-                }
-                else
-                {
-                    referenceDate = Runtime.Time;
-                }
+                referenceDate = GetGenesisTimestamp();
                 referenceDate = referenceDate.AddMonths(-1);
             }
             else
@@ -730,13 +719,19 @@ namespace Phantasma.Contracts.Native
 
         private BigInteger CalculateRewardsWithHalving(BigInteger totalStake, Timestamp startTime, Timestamp endTime)
         {
-            if (GenesisTimestamp == 0)
+            var genesisTime = GetGenesisTimestamp();
+
+            if (genesisTime == 0)
+            {
                 return StakeToFuel(totalStake);
+            }
 
             if (StakeToFuel(totalStake) <= 0)
+            {
                 return 0;
+            }
 
-            DateTime genesisDate = GenesisTimestamp;
+            DateTime genesisDate = genesisTime;
             DateTime startDate = startTime;
             DateTime endDate = endTime;
 
@@ -790,7 +785,7 @@ namespace Phantasma.Contracts.Native
 
         public BigInteger GetCurrentHalvingAmount()
         {
-            DateTime genesisDate = GenesisTimestamp;
+            DateTime genesisDate = GetGenesisTimestamp();
             DateTime currentTime = Runtime.Time;
 
             var nextHalvingDate = genesisDate.AddYears(2);
