@@ -81,7 +81,7 @@ namespace Phantasma.Blockchain
             var changeSet = ValidateBlock(block, transactions, minimumFee);
 
             var unsignedBytes = block.ToByteArray(false);
-            if (block.Signature.Verify(unsignedBytes, block.Validator))
+            if (!block.Signature.Verify(unsignedBytes, block.Validator))
             {
                 throw new BlockGenerationException($"block signature does not match validator");
             }
