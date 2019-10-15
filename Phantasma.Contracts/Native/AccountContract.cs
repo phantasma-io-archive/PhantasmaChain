@@ -23,11 +23,12 @@ namespace Phantasma.Contracts.Native
         private string[] reservedNames = new string[] {
             "phantasma", "neo", "ethereum", "bitcoin", "litecoin", "eos", "ripple", "tether", "tron",
             "monero", "dash", "tezos", "cosmos", "maker", "ontology", "dogecoin", "zcash", "vechain",
-            "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares", 
+            "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares",
             "siacoin", "komodo", "zilliqa", "steem", "enjin", "aelf", "nash", "stratis",
-            "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax", 
+            "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax",
             "bancor", "ark", "nos", "bluzelle", "satoshi", "gwei", "nacho", "chainchanged",
             "oracle", "oracles", "dex", "exchange", "ico", "ieo", "wallet", "account", "address",
+            "airdrop", "giveaway", "casino", "free", "mail", "dapp", "donation", "charity",
             "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
             "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto", "sergio",
@@ -38,6 +39,7 @@ namespace Phantasma.Contracts.Native
             "22", "goati", "gamecenter", "pixgamecenter", "seal", "crosschain", "blacat",
             "bitladon", "bitcoinmeester"};
 
+    
         public void RegisterName(Address target, string name)
         {
             Runtime.Expect(target.IsUser, "must be user address");
@@ -67,6 +69,11 @@ namespace Phantasma.Contracts.Native
                     isReserved = true;
                     break;
                 }
+            }
+
+            if (isReserved && Runtime.IsWitness(Runtime.Nexus.GenesisAddress))
+            {
+                isReserved = false;
             }
 
             Runtime.Expect(!isReserved, "name reserved by system");
