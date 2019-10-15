@@ -204,7 +204,7 @@ namespace Phantasma.Blockchain
 
             var oracle = Nexus.CreateOracleReader();
 
-            block.ClearOracle();
+            block.CleanUp();
 
             var expectedValidator = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GenesisAddress;
             if (block.Validator != expectedValidator)

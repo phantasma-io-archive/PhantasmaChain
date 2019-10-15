@@ -66,17 +66,17 @@ namespace Phantasma.Simulator
             return swap.hash;
         }
 
-        public override byte[] PullData(Timestamp time, string url)
+        protected override byte[] PullData(Timestamp time, string url)
         {
             throw new OracleException("invalid oracle url: " + url);
         }
 
-        public override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash)
+        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash)
         {
             throw new OracleException($"unknown block for {platformName}.{chainName} : {hash}");
         }
 
-        public override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
+        protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
         {
             foreach (var swap in _swaps)
             if (swap.platformName == platformName && chainName == platformName && swap.hash == hash)
@@ -96,7 +96,7 @@ namespace Phantasma.Simulator
             throw new OracleException($"unknown transaction for {platformName}.{chainName} : {hash}");
         }
 
-        public override decimal PullPrice(Timestamp time, string baseSymbol)
+        protected override decimal PullPrice(Timestamp time, string baseSymbol)
         {
             // some dummy values, only really used in the test suite ...
             decimal price;

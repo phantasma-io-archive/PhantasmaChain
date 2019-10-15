@@ -138,9 +138,15 @@ namespace Phantasma.Domain
 
         public static InteropTransaction ReadTransactionFromOracle(this IRuntime runtime, string platform, string chain, Hash hash)
         {
-            var bytes = runtime.ReadOracle($"interop://{platform}/{chain}/tx/{hash}");
+            var url = GetOracleTransactionURL(platform, chain, hash);
+            var bytes = runtime.ReadOracle(url);
             var tx = Serialization.Unserialize<InteropTransaction>(bytes);
             return tx;
+        }
+
+        public static string GetOracleTransactionURL(string platform, string chain, Hash hash)
+        {
+            return $"interop://{platform}/{chain}/tx/{hash}";
         }
 
         public static BigInteger GetBlockCount(this IArchive archive)

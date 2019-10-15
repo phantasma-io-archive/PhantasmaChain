@@ -106,10 +106,10 @@ namespace Phantasma.Blockchain
 
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 
-        public abstract byte[] PullData(Timestamp time, string url);
-        public abstract decimal PullPrice(Timestamp time, string symbol);
-        public abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash);
-        public abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
+        protected abstract byte[] PullData(Timestamp time, string url);
+        protected abstract decimal PullPrice(Timestamp time, string symbol);
+        protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash);
+        protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
 
         public readonly Nexus Nexus;
 
@@ -326,6 +326,13 @@ namespace Phantasma.Blockchain
                 default:
                     throw new OracleException("unknown platform oracle");
             }
+        }
+
+        public InteropTransaction ReadTransaction(string platform, string chain, Hash hash)
+        {
+            var url = DomainExtensions.GetOracleTransactionURL(platform, chain, hash);
+            var bytes = this.Read(Timestamp.Now, url);
+            return Serialization.Unserialize<InteropTransaction>(bytes);
         }
     }
 }
