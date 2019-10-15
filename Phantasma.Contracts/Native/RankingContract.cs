@@ -72,12 +72,6 @@ namespace Phantasma.Contracts.Native
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
 
-            var newRow = new LeaderboardRow()
-            {
-                address = target,
-                score = score
-            };
-
             int oldIndex = -1;
             for (int i = 0; i < count; i++)
             {
@@ -129,6 +123,12 @@ namespace Phantasma.Contracts.Native
                 var entry = rows.Get<LeaderboardRow>(i - 1);
                 rows.Replace<LeaderboardRow>(i, entry);
             }
+
+            var newRow = new LeaderboardRow()
+            {
+                address = target,
+                score = score
+            };
 
             if (bestIndex < count)
             {
