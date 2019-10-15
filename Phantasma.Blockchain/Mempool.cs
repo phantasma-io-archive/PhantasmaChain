@@ -550,6 +550,12 @@ namespace Phantasma.Blockchain
             }
 
             reason = null;
+
+            if (Nexus.FindTransactionByHash(hash) != null)
+            {
+                return MempoolTransactionStatus.Pending;
+            }
+
             return MempoolTransactionStatus.Unknown;
         }
 
