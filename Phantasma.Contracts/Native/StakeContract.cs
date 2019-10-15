@@ -268,6 +268,12 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, from, this.Address, stakeAmount);
 
             var stake = _stakes.Get<Address, EnergyAction>(from);
+
+            if (stake.totalAmount == 0)
+            {
+                Runtime.AddMember(DomainSettings.StakersOrganizationName, this.Address, from);
+            }
+
             stake.totalAmount += stakeAmount;
 
             var oldUnclaimedEnergy = GetUnclaimed(from);

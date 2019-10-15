@@ -30,7 +30,7 @@ namespace Phantasma.Contracts.Native
             "oracle", "oracles", "dex", "exchange", "ico", "ieo", "wallet", "account", "address",
             "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
-            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto",
+            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto", "sergio",
             "windows", "osx", "ios","android", "google", "yahoo", "facebook", "alibaba", "ebay",
             "apple", "amazon", "microsoft", "samsung", "verizon", "walmart", "ibm", "disney",
             "netflix", "alibaba", "tencent", "baidu", "visa", "mastercard", "instagram", "paypal",
