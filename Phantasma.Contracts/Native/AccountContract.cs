@@ -31,6 +31,10 @@ namespace Phantasma.Contracts.Native
             "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
             "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto",
+            "windows", "osx", "ios","android", "google", "yahoo", "facebook", "alibaba", "ebay",
+            "apple", "amazon", "microsoft", "samsung", "verizon", "walmart", "ibm", "disney",
+            "netflix", "alibaba", "tencent", "baidu", "visa", "mastercard", "instagram", "paypal",
+            "adobe", "huawei", "vodafone", "dell", "uber", "youtube", "whatsapp", "snapchat", "pinterest",
             "22", "goati", "gamecenter", "pixgamecenter", "seal", "crosschain", "blacat",
             "bitladon", "bitcoinmeester"};
 
@@ -55,10 +59,17 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.OrganizationExists(name), "name already used for a organization");
             Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
 
+            bool isReserved = false;
             for (int i = 0; i < reservedNames.Length; i++)
             {
-                Runtime.Expect(!name.StartsWith(reservedNames[i]), "name reserved by system");
+                if (name.StartsWith(reservedNames[i]))
+                {
+                    isReserved = true;
+                    break;
+                }
             }
+
+            Runtime.Expect(!isReserved, "name reserved by system");
 
             _addressMap.Set(target, name);
             _nameMap.Set(name, target);

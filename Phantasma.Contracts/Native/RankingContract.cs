@@ -72,11 +72,6 @@ namespace Phantasma.Contracts.Native
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
 
-            if (target.Text== "P2KCierGgEw5N4zFiRox5XFkXPUEqRkfyiNek9EBgPPx7ZQ")
-            {
-                score += 0;
-            }
-
             var newRow = new LeaderboardRow()
             {
                 address = target,
