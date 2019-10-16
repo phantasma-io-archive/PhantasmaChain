@@ -54,8 +54,8 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, Domain.TokenFlags.Transferable);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(symbol);
-            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
             var ownerships = new OwnershipSheet(symbol);
@@ -2306,7 +2306,7 @@ namespace Phantasma.Tests
             var user = PhantasmaKeys.Generate();
             var nexus = simulator.Nexus;
 
-            var infiToken = nexus.GetTokenInfo("INFI");
+            var infiToken = nexus.GetTokenInfo(nexus.RootStorage, "INFI");
 
             var infiAmount = 1000 * GetUnitValue(infiToken.Decimals);
 

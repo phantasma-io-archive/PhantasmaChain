@@ -356,7 +356,7 @@ namespace Phantasma.API
         #region UTILS
         private TokenResult FillToken(string tokenSymbol)
         {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
             return new TokenResult
@@ -372,15 +372,14 @@ namespace Phantasma.API
             };
         }
 
-        private TokenContent ReadNFT(string symbol, BigInteger tokenID, Address chainAddress)
+        private TokenContent ReadNFT(string symbol, BigInteger tokenID, Chain chain)
         {
-            var chain = Nexus.GetChainByAddress(chainAddress);
             return chain.ReadToken(chain.Storage, symbol, tokenID);
         }
 
-        private AuctionResult FillAuction(MarketAuction auction, Address chainAddress)
+        private AuctionResult FillAuction(MarketAuction auction, Chain chain)
         {
-            var nft = ReadNFT(auction.BaseSymbol, auction.TokenID, chainAddress);
+            var nft = ReadNFT(auction.BaseSymbol, auction.TokenID, chain);
 
             return new AuctionResult
             {
@@ -388,7 +387,7 @@ namespace Phantasma.API
                 quoteSymbol = auction.QuoteSymbol,
                 tokenId = auction.TokenID.ToString(),
                 creatorAddress = auction.Creator.Text,
-                chainAddress = chainAddress.Text,
+                chainAddress = chain.Address.Text,
                 price = auction.Price.ToString(),
                 startDate = auction.StartDate.Value,
                 endDate = auction.EndDate.Value,
@@ -591,7 +590,7 @@ namespace Phantasma.API
                     var balance = chain.GetTokenBalance(chain.Storage, symbol, address);
                     if (balance > 0)
                     {
-                        var token = Nexus.GetTokenInfo(symbol);
+                        var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
                         var balanceEntry = new BalanceResult
                         {
                             chain = chain.Name,
@@ -1110,8 +1109,7 @@ namespace Phantasma.API
             var platforms = Nexus.GetPlatforms(Nexus.RootStorage);
             foreach (var platform in platforms)
             {
-                var info = Nexus.GetPlatformInfo(platform);
-
+                var info = Nexus.GetPlatformInfo(Nexus.RootStorage, platform);
 
                 var entry = new PlatformResult();
                 entry.platform = platform;
@@ -1122,7 +1120,7 @@ namespace Phantasma.API
                 }).ToArray();
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
-                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
+                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(Nexus.RootStorage, x).Platform == platform).ToArray();
                 platformList.Add(entry);
             }
 
@@ -1144,7 +1142,7 @@ namespace Phantasma.API
 
             return new NexusResult()
             {
-                name = Nexus.Name,
+                name = Nexus.GetName(Nexus.RootStorage),
                 tokens = tokenList.ToArray(),
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
@@ -1191,12 +1189,12 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 30)]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol)
         {
-            if (!Nexus.TokenExists(symbol))
+            if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
             }
 
-            var token = Nexus.GetTokenInfo(symbol);
+            var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
             var result = FillToken(symbol);
 
             return result;
@@ -1205,7 +1203,7 @@ namespace Phantasma.API
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 5)]
         public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
         {
-            if (!Nexus.TokenExists(symbol))
+            if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
             }
@@ -1216,7 +1214,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            var info = ReadNFT(symbol, ID, Nexus.RootChainAddress); // TODO support other chains
+            var info = ReadNFT(symbol, ID, Nexus.RootChain); // TODO support other chains
 
             var chain = Nexus.GetChainByName(info.CurrentChain);
             bool forSale;
@@ -1245,12 +1243,12 @@ namespace Phantasma.API
                 return new ErrorResult { error = "invalid address" };
             }
 
-            if (!Nexus.TokenExists(tokenSymbol))
+            if (!Nexus.TokenExists(Nexus.RootStorage, tokenSymbol))
             {
                 return new ErrorResult { error = "invalid token" };
             }
 
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
 
             var chain = FindChainByInput(chainInput);
 
@@ -1357,7 +1355,7 @@ namespace Phantasma.API
             paginatedResult.total = numberRecords;
             paginatedResult.page = page;
 
-            paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x, chain.Address)).ToArray() };
+            paginatedResult.result = new ArrayResult { values = entries.Select(x => (object)FillAuction(x, chain)).ToArray() };
 
             return paginatedResult;
         }
@@ -1365,7 +1363,7 @@ namespace Phantasma.API
         [APIInfo(typeof(AuctionResult), "Returns the auction for a specific token.", false, 30)]
         public IAPIResult GetAuction([APIParameter("Chain address or name where the market is located", "NACHO")] string chainAddressOrName, [APIParameter("Token symbol", "NACHO")] string symbol, [APIParameter("Token ID", "1")]string IDtext)
         {
-            if (!Nexus.TokenExists(symbol))
+            if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
                 return new ErrorResult() { error = "invalid token" };
             }
@@ -1387,7 +1385,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var info = ReadNFT(symbol, ID, chain.Address);
+            var info = ReadNFT(symbol, ID, chain);
 
             var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
             if (!forSale)
@@ -1652,7 +1650,7 @@ namespace Phantasma.API
 
             foreach (var platform in platforms)
             {
-                var info = Nexus.GetPlatformInfo(platform);
+                var info = Nexus.GetPlatformInfo(Nexus.RootStorage, platform);
 
 
                 var entry = new PlatformResult();
@@ -1664,7 +1662,7 @@ namespace Phantasma.API
                 }).ToArray();
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
-                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(x).Platform == platform).ToArray();
+                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(Nexus.RootStorage, x).Platform == platform).ToArray();
                 platformList.Add(entry);
             }
 
@@ -1690,12 +1688,12 @@ namespace Phantasma.API
                 return new ErrorResult { error = "token swapper not available" };
             }
 
-            if (!Nexus.PlatformExists(sourcePlatform))
+            if (!Nexus.PlatformExists(Nexus.RootStorage, sourcePlatform))
             {
                 return new ErrorResult { error = "Invalid source platform" };
             }
 
-            if (!Nexus.PlatformExists(destPlatform))
+            if (!Nexus.PlatformExists(Nexus.RootStorage, destPlatform))
             {
                 return new ErrorResult { error = "Invalid destination platform" };
             }

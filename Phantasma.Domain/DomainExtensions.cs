@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM;
@@ -104,7 +105,7 @@ namespace Phantasma.Domain
 
         public static IChain GetRootChain(this IRuntime runtime)
         {
-            return runtime.GetChainByAddress(runtime.Nexus.RootChainAddress);
+            return runtime.GetChainByName(DomainSettings.RootChainName);
         }
 
         public static void Notify<T>(this IRuntime runtime, Enum kind, Address address, T content)
@@ -126,7 +127,8 @@ namespace Phantasma.Domain
 
         public static bool IsRootChain(this IRuntime runtime)
         {
-            return runtime.Chain.Address == runtime.Nexus.RootChainAddress;
+            var rootChain = runtime.GetRootChain();
+            return runtime.Chain.Address == rootChain.Address;
         }
 
         public static InteropBlock ReadBlockFromOracle(this IRuntime runtime, string platform, string chain, Hash hash)

@@ -26,7 +26,7 @@ namespace Phantasma.Contracts.Native
 
         public void Initialize(Address from)
         {
-            Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis address");
+            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis address");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, SESLeaderboardName, 100, 0);
             Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, BPLeaderboardName, 10, 0);
@@ -34,7 +34,7 @@ namespace Phantasma.Contracts.Native
 
         public void OnReceive(Address source, Address destination, string symbol, BigInteger amount)
         {
-            if (!Runtime.Nexus.HasGenesis)
+            if (!Runtime.HasGenesis)
             {
                 return;
             }

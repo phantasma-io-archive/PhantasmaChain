@@ -246,7 +246,7 @@ namespace Phantasma.Contracts.Native
         {
             var channelIndex = GetIndex(receipt.message.sender, receipt.message.receiver);
             // check for possible replay attack
-            Runtime.Expect(receipt.message.nexus == Runtime.Nexus.Name, "invalid nexus name");
+            Runtime.Expect(receipt.message.nexus == Runtime.NexusName, "invalid nexus name");
 
             // here we count how many receipts we are implicitly accepting
             // this means that we don't need to accept every receipt, allowing skipping several

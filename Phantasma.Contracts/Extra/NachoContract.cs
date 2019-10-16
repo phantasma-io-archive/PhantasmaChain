@@ -2178,7 +2178,7 @@ namespace Phantasma.Contracts.Extra
         //internal StorageMap _globalVersusChallengesList;
 
         // temporary hack
-        public Address DevelopersAddress => Runtime.Nexus.GenesisAddress;
+        public Address DevelopersAddress => Runtime.GenesisAddress;
 
         // storage
         private StorageMap _referrals;  // <Address, StorageList<NachoReferal>>

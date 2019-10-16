@@ -153,8 +153,8 @@ namespace Phantasma.Tests
             test.simulator.GenerateToken(test.owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, Domain.TokenFlags.None);
             test.simulator.EndBlock();
 
-            var token = test.simulator.Nexus.GetTokenInfo(symbol);
-            Assert.IsTrue(test.simulator.Nexus.TokenExists(symbol), "Can't find the token symbol");
+            var token = test.simulator.Nexus.GetTokenInfo(test.simulator.Nexus.RootStorage, symbol);
+            Assert.IsTrue(test.simulator.Nexus.TokenExists(test.simulator.Nexus.RootStorage, symbol), "Can't find the token symbol");
 
             var tokenROM = new byte[] { 0x1, 0x3, 0x3, 0x7 };
             var tokenRAM = new byte[] { 0x1, 0x4, 0x4, 0x6 };

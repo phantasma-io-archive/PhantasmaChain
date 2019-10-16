@@ -92,7 +92,7 @@ namespace Phantasma.Storage
             this.fileName = fileName.Replace("\\", "/");
 
             var path = Path.GetDirectoryName(fileName);
-            if (!Directory.Exists(path))
+            if (!string.IsNullOrEmpty(path) && !Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }

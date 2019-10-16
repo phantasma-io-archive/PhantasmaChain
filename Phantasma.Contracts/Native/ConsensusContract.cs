@@ -358,7 +358,7 @@ namespace Phantasma.Contracts.Native
                 var validatorCount = Runtime.GetPrimaryValidatorCount();
                 if (validatorCount <= 1)
                 {
-                    return Runtime.IsWitness(Runtime.Nexus.GenesisAddress);
+                    return Runtime.IsWitness(Runtime.GenesisAddress);
                 }
             }
 

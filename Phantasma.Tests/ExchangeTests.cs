@@ -480,8 +480,8 @@ namespace Phantasma.Tests
             public ExchangeUser(string baseSymbol, string quoteSymbol)
             {
                 user = PhantasmaKeys.Generate();
-                baseToken = simulator.Nexus.GetTokenInfo(baseSymbol);
-                quoteToken = simulator.Nexus.GetTokenInfo(quoteSymbol);
+                baseToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, baseSymbol);
+                quoteToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, quoteSymbol);
             }
 
             public decimal OpenLimitOrder(BigInteger orderSize, BigInteger orderPrice, ExchangeOrderSide side, bool IoC = false)

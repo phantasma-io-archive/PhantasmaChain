@@ -8,7 +8,6 @@ namespace Phantasma.Domain
 {
     public interface IRuntime
     {
-        INexus Nexus { get; }
         IChain Chain { get; }
         ITransaction Transaction { get; }
         Timestamp Time { get; }
@@ -23,6 +22,12 @@ namespace Phantasma.Domain
         IBlock GetBlockByHeight(BigInteger height);
 
         Address GetValidator(Timestamp time);
+
+        bool HasGenesis { get; }
+        string NexusName { get; }
+        Address GenesisAddress { get; }
+        Hash GenesisHash { get; }
+        Timestamp GetGenesisTime();
 
         ITransaction GetTransaction(Hash hash);
 

@@ -27,8 +27,8 @@ namespace Phantasma.Contracts.Native
             "siacoin", "komodo", "zilliqa", "steem", "enjin", "aelf", "nash", "stratis",
             "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax",
             "bancor", "ark", "nos", "bluzelle", "satoshi", "gwei", "nacho", "chainchanged",
-            "oracle", "oracles", "dex", "exchange", "ico", "ieo", "wallet", "account", "address",
-            "airdrop", "giveaway", "casino", "free", "mail", "dapp", "donation", "charity",
+            "oracle", "oracles", "dex", "exchange", "ico", "ieo", "sto", "kyc", "wallet", "account", 
+            "airdrop", "giveaway", "free", "mail", "dapp", "charity", "libra","address", "system",
             "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
             "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto", "sergio",
@@ -43,7 +43,7 @@ namespace Phantasma.Contracts.Native
         public void RegisterName(Address target, string name)
         {
             Runtime.Expect(target.IsUser, "must be user address");
-            Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
+            Runtime.Expect(target != Runtime.GenesisAddress, "address must not be genesis");
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
 
@@ -53,7 +53,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
             Runtime.Expect(!_nameMap.ContainsKey(name), "name already used for other account");
 
-            Runtime.Expect(name != Runtime.Nexus.Name, "name already used for nexus");
+            Runtime.Expect(name != Runtime.NexusName, "name already used for nexus");
             Runtime.Expect(!Runtime.ChainExists(name), "name already used for a chain");
             Runtime.Expect(!Runtime.PlatformExists(name), "name already used for a platform");
             Runtime.Expect(!Runtime.ContractExists(name), "name already used for a contract");
@@ -71,12 +71,12 @@ namespace Phantasma.Contracts.Native
                 }
             }
 
-            if (isReserved && Runtime.IsWitness(Runtime.Nexus.GenesisAddress))
+            if (isReserved && Runtime.IsWitness(Runtime.GenesisAddress))
             {
                 isReserved = false;
             }
 
-            Runtime.Expect(!isReserved, "name reserved by system");
+            Runtime.Expect(!isReserved, $"name '{name}' reserved by system");
 
             _addressMap.Set(target, name);
             _nameMap.Set(name, target);
@@ -87,7 +87,7 @@ namespace Phantasma.Contracts.Native
         public void UnregisterName(Address target)
         {
             Runtime.Expect(target.IsUser, "must be user address");
-            Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
+            Runtime.Expect(target != Runtime.GenesisAddress, "address must not be genesis");
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
           
             Runtime.Expect(_addressMap.ContainsKey(target), "address doest not have a name yet");
@@ -102,7 +102,7 @@ namespace Phantasma.Contracts.Native
         public void RegisterScript(Address target, byte[] script)
         {
             Runtime.Expect(target.IsUser, "must be user address");
-            Runtime.Expect(target != Runtime.Nexus.GenesisAddress, "address must not be genesis");
+            Runtime.Expect(target != Runtime.GenesisAddress, "address must not be genesis");
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
 
             var stake = Runtime.GetStake(target);
@@ -132,7 +132,7 @@ namespace Phantasma.Contracts.Native
 
         public string LookUpAddress(Address target)
         {
-            if (target == Runtime.Nexus.GenesisAddress)
+            if (target == Runtime.GenesisAddress)
             {
                 return ValidationUtils.GENESIS;
             }
@@ -164,7 +164,7 @@ namespace Phantasma.Contracts.Native
 
             if (name == ValidationUtils.GENESIS)
             {
-                return Runtime.Nexus.GenesisAddress;
+                return Runtime.GenesisAddress;
             }
 
             if (_nameMap.ContainsKey(name))

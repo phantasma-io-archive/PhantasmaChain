@@ -19,14 +19,13 @@ using Phantasma.Contracts.Extra;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus : INexus
+    public class Nexus 
     {
-        public string Prefix = ".";
-        private string ChainNameMapKey => Prefix + "chain.name.";
-        private string ChainAddressMapKey => Prefix + "chain.addr.";
-        private string ChainOwnerKey => Prefix + "chain.owner.";
-        private string ChainParentNameKey => Prefix + "chain.parent.";
-        private string ChainChildrenBlockKey => Prefix + "chain.children.";
+        private string ChainNameMapKey => ".chain.name.";
+        private string ChainAddressMapKey => ".chain.addr.";
+        private string ChainOwnerKey => ".chain.owner.";
+        private string ChainParentNameKey => ".chain.parent.";
+        private string ChainChildrenBlockKey => ".chain.children.";
 
         public const string GasContractName = "gas";
         public const string BlockContractName = "block";
@@ -53,97 +52,6 @@ namespace Phantasma.Blockchain
 
         public bool HasGenesis { get; private set; }
 
-        public string Name
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(Name)))
-                {
-                    var bytes = RootStorage.Get(nameof(Name));
-                    var result = Serialization.Unserialize<string>(bytes);
-                    return result;
-                }
-
-                return null;
-            }
-
-            private set
-            {
-                var bytes = Serialization.Serialize(value);
-                RootStorage.Put(nameof(Name), bytes);
-            }
-        }
-
-        public Address RootChainAddress
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(RootChainAddress)))
-                {
-                    return Serialization.Unserialize<Address>(RootStorage.Get(nameof(RootChainAddress)));
-                }
-
-                return Address.Null;
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(RootChainAddress), Serialization.Serialize(value));
-            }
-        }
-
-        public Address GenesisAddress
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(GenesisAddress)))
-                {
-                    return Serialization.Unserialize<Address>(RootStorage.Get(nameof(GenesisAddress)));
-                }
-
-                return Address.Null;
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(GenesisAddress), Serialization.Serialize(value));
-            }
-        }
-
-        public Hash GenesisHash
-        {
-            get
-            {
-                if (RootStorage.Has(nameof(GenesisHash)))
-                {
-                    var result = Serialization.Unserialize<Hash>(RootStorage.Get(nameof(GenesisHash)));
-                    return result;
-                }
-
-                return Hash.Null;
-            }
-
-            private set
-            {
-                RootStorage.Put(nameof(GenesisHash), Serialization.Serialize(value));
-            }
-        }
-
-        private Timestamp _genesisDate;
-        public Timestamp GenesisTime
-        {
-            get
-            {
-                if (_genesisDate.Value == 0 && HasGenesis)
-                {
-                    var genesisBlock = RootChain.GetBlockByHash(GenesisHash);
-                    _genesisDate = genesisBlock.Timestamp;
-                }
-
-                return _genesisDate;
-            }
-        }
-
         private readonly List<IChainPlugin> _plugins = new List<IChainPlugin>();
 
         private readonly Logger _logger;
@@ -158,29 +66,30 @@ namespace Phantasma.Blockchain
         {
             this._adapterFactory = adapterFactory;
             this._oracleFactory = oracleFactory;
-            try
-            {
-                var temp = this.Name;
-                HasGenesis = !string.IsNullOrEmpty(temp);
 
-                if (HasGenesis)
-                {
-                    var chainList = this.GetChains(this.RootStorage);
-                    foreach (var chainName in chainList)
-                    {
-                        GetChainByName(chainName);
-                    }
-                }
-            }
-            catch
+            var key = GetNexusKey("hash");
+            var storage = RootStorage;
+            HasGenesis = storage.Has(key);
+
+            if (HasGenesis)
             {
-                HasGenesis = false;
+                LoadNexus(storage);
             }
 
             _archiveEntries = new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
             _archiveContents = new KeyValueStore<Hash, byte[]>(CreateKeyStoreAdapter("contents"));
 
             _logger = logger;
+        }
+
+        public void LoadNexus(StorageContext storage)
+        {
+            this.Name = GetName(storage);
+            var chainList = this.GetChains(storage);
+            foreach (var chainName in chainList)
+            {
+                GetChainByName(chainName);
+            }
         }
 
         private Dictionary<string, IKeyValueStoreAdapter> _keystoreCache = new Dictionary<string, IKeyValueStoreAdapter>();
@@ -424,7 +333,7 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (PlatformExists(name))
+            if (PlatformExists(storage, name))
             {
                 return false;
             }
@@ -445,10 +354,6 @@ namespace Phantasma.Blockchain
                 storage.Put(ChainParentNameKey + chain.Name, Encoding.UTF8.GetBytes(parentChainName));
                 var childrenList = GetChildrenListOfChain(storage, parentChainName);
                 childrenList.Add<string>(chain.Name);
-            }
-            else
-            {
-                this.RootChainAddress = chain.Address;
             }
 
             _chainCache[chain.Name] = chain;
@@ -519,7 +424,7 @@ namespace Phantasma.Blockchain
                 return owner;
             }
 
-            return GenesisAddress;
+            return GetGenesisAddress(RootStorage);
         }
 
         public IEnumerable<string> GetChildChainsByAddress(StorageContext storage, Address chainAddress)
@@ -609,13 +514,13 @@ namespace Phantasma.Blockchain
             }
 
             // check if already exists something with that name
-            if (FeedExists(name))
+            if (FeedExists(storage, name))
             {
                 return false;
             }
 
             var feedInfo = new OracleFeed(name, owner, mode);
-            EditFeed(name, feedInfo);
+            EditFeed(storage, name, feedInfo);
 
             // add to persistent list of feeds
             var feedList = this.GetSystemList(FeedTag, storage);
@@ -626,28 +531,28 @@ namespace Phantasma.Blockchain
 
         private string GetFeedInfoKey(string name)
         {
-            return "feed:" + name.ToUpper();
+            return ".feed:" + name.ToUpper();
         }
 
-        private void EditFeed(string name, OracleFeed feed)
+        private void EditFeed(StorageContext storage, string name, OracleFeed feed)
         {
             var key = GetFeedInfoKey(name);
             var bytes = Serialization.Serialize(feed);
-            RootStorage.Put(key, bytes);
+            storage.Put(key, bytes);
         }
 
-        public bool FeedExists(string name)
+        public bool FeedExists(StorageContext storage, string name)
         {
             var key = GetFeedInfoKey(name);
-            return RootStorage.Has(key);
+            return storage.Has(key);
         }
 
-        public OracleFeed GetFeedInfo(string name)
+        public OracleFeed GetFeedInfo(StorageContext storage, string name)
         {
             var key = GetFeedInfoKey(name);
-            if (RootStorage.Has(key))
+            if (storage.Has(key))
             {
-                var bytes = RootStorage.Get(key);
+                var bytes = storage.Get(key);
                 return Serialization.Unserialize<OracleFeed>(bytes);
             }
 
@@ -659,7 +564,7 @@ namespace Phantasma.Blockchain
         internal void CreateToken(StorageContext storage, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             var tokenInfo = new TokenInfo(symbol, name, platform, hash, maxSupply, decimals, flags, script);
-            EditToken(symbol, tokenInfo);
+            EditToken(storage, symbol, tokenInfo);
 
             // add to persistent list of tokens
             var tokenList = this.GetSystemList(TokenTag, storage);
@@ -668,28 +573,28 @@ namespace Phantasma.Blockchain
 
         private string GetTokenInfoKey(string symbol)
         {
-            return "info:" + symbol;
+            return ".token:" + symbol;
         }
 
-        private void EditToken(string symbol, TokenInfo tokenInfo)
+        private void EditToken(StorageContext storage, string symbol, TokenInfo tokenInfo)
         {
             var key = GetTokenInfoKey(symbol);
             var bytes = Serialization.Serialize(tokenInfo);
-            RootStorage.Put(key, bytes);
+            storage.Put(key, bytes);
         }
 
-        public bool TokenExists(string symbol)
+        public bool TokenExists(StorageContext storage, string symbol)
         {
             var key = GetTokenInfoKey(symbol);
-            return RootStorage.Has(key);
+            return storage.Has(key);
         }
 
-        public IToken GetTokenInfo(string symbol)
+        public IToken GetTokenInfo(StorageContext storage, string symbol)
         {
             var key = GetTokenInfoKey(symbol);
-            if (RootStorage.Has(key))
+            if (storage.Has(key))
             {
-                var bytes = RootStorage.Get(key);
+                var bytes = storage.Get(key);
                 return Serialization.Unserialize<TokenInfo>(bytes);
             }
 
@@ -762,7 +667,7 @@ namespace Phantasma.Blockchain
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
 
-            Runtime.Expect(amount > 0, "invalid amount"); 
+            Runtime.Expect(amount > 0, "invalid amount");
 
             var isSettlement = targetChain != Runtime.Chain.Name;
 
@@ -944,7 +849,7 @@ namespace Phantasma.Blockchain
             var nft = ReadNFT(Runtime, symbol, tokenID);
             WriteNFT(Runtime, symbol, tokenID, nft.CurrentChain, Address.Null, nft.ROM, nft.RAM, true);
         }
-    
+
         internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, bool mustExist)
         {
             Runtime.Expect(ram != null && ram.Length < TokenContent.MaxRAMSize, "invalid nft ram update");
@@ -1022,7 +927,7 @@ namespace Phantasma.Blockchain
 
             var script = sb.EndScript();
 
-            var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            var tx = new Transaction(this.Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Sign(owner);
 
             return tx;
@@ -1035,13 +940,13 @@ namespace Phantasma.Blockchain
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
                 CallInterop("Nexus.CreateChain", owner.Address, name, RootChain.Name);
 
-                foreach (var contractName in contracts)
-                {
-                    sb.CallInterop("Runtime.DeployContract", contractName);
-                }
+            foreach (var contractName in contracts)
+            {
+                sb.CallInterop("Runtime.DeployContract", contractName);
+            }
 
-                var script = //SpendGas(owner.Address).
-                    sb.EndScript();
+            var script = //SpendGas(owner.Address).
+                sb.EndScript();
 
             var tx = new Transaction(Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
             tx.Mine((int)ProofOfWork.Moderate);
@@ -1098,11 +1003,12 @@ namespace Phantasma.Blockchain
                 throw new ChainException("invalid nexus name");
             }
 
+            var storage = RootStorage;
             this.Name = name;
 
-            this.GenesisAddress = owner.Address;
+            storage.Put(GetNexusKey("name"), name);
+            storage.Put(GetNexusKey("owner"), owner.Address);
 
-            var storage = RootStorage;
             if (!CreateChain(storage, owner.Address, DomainSettings.RootChainName, null))
             {
                 throw new ChainException("failed to create root chain");
@@ -1238,12 +1144,13 @@ namespace Phantasma.Blockchain
             };
 
             var payload = Encoding.UTF8.GetBytes("A Phantasma was born...");
-            var block = new Block(Chain.InitialHeight, RootChainAddress, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
+            var block = new Block(Chain.InitialHeight, rootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
 
+            rootChain.ValidateBlock(block, transactions, 1);
             block.Sign(owner);
             rootChain.AddBlock(block, transactions, 1);
 
-            GenesisHash = block.Hash;
+            storage.Put(GetNexusKey("hash"), block.Hash);
             this.HasGenesis = true;
             return true;
         }
@@ -1308,7 +1215,7 @@ namespace Phantasma.Blockchain
             var result = RootChain.InvokeContract(storage, Nexus.StakeContractName, nameof(StakeContract.GetStake), address).AsNumber();
             return result;
         }
-        
+
         public BigInteger GetUnclaimedFuelFromAddress(StorageContext storage, Address address)
         {
             var result = RootChain.InvokeContract(storage, Nexus.StakeContractName, nameof(StakeContract.GetUnclaimed), address).AsNumber();
@@ -1485,7 +1392,7 @@ namespace Phantasma.Blockchain
         internal int CreatePlatform(StorageContext storage, string externalAddress, Address interopAddress, string name, string fuelSymbol)
         {
             // check if already exists something with that name
-            if (PlatformExists(name))
+            if (PlatformExists(storage, name))
             {
                 return -1;
             }
@@ -1501,23 +1408,23 @@ namespace Phantasma.Blockchain
             // add to persistent list of tokens
             platformList.Add(name);
 
-            EditPlatform(name, entry);
+            EditPlatform(storage, name, entry);
             return platformID;
         }
 
-        private string GetPlatformInfoKey(string name)
+        private byte[] GetPlatformInfoKey(string name)
         {
-            return "platform:" + name;
+            return GetNexusKey($"platform.{name}");
         }
 
-        private void EditPlatform(string name, PlatformInfo platformInfo)
+        private void EditPlatform(StorageContext storage, string name, PlatformInfo platformInfo)
         {
             var key = GetPlatformInfoKey(name);
             var bytes = Serialization.Serialize(platformInfo);
-            RootStorage.Put(key, bytes);
+            storage.Put(key, bytes);
         }
 
-        public bool PlatformExists(string name)
+        public bool PlatformExists(StorageContext storage, string name)
         {
             if (name == DomainSettings.PlatformName)
             {
@@ -1525,20 +1432,70 @@ namespace Phantasma.Blockchain
             }
 
             var key = GetPlatformInfoKey(name);
-            return RootStorage.Has(key);
+            return storage.Has(key);
         }
 
-        public PlatformInfo GetPlatformInfo(string name)
+        public PlatformInfo GetPlatformInfo(StorageContext storage, string name)
         {
             var key = GetPlatformInfoKey(name);
-            if (RootStorage.Has(key))
+            if (storage.Has(key))
             {
-                var bytes = RootStorage.Get(key);
+                var bytes = storage.Get(key);
                 return Serialization.Unserialize<PlatformInfo>(bytes);
             }
 
             throw new ChainException($"Platform does not exist ({name})");
         }
+        #endregion
+
+        #region Contracts
+        internal void CreateContract(StorageContext storage, string name, byte[] script)
+        {
+            var contractList = this.GetSystemList(ContractTag, storage);
+            
+            /*
+            var entry = new PlatformInfo(name, fuelSymbol, new PlatformSwapAddress[] {
+                new PlatformSwapAddress() { LocalAddress = interopAddress, ExternalAddress = externalAddress }
+            });
+
+            // add to persistent list of tokens
+            contractList.Add(name);
+
+            EditPlatform(storage, name, entry);
+            return platformID;*/
+        }
+
+        private byte[] GetContractInfoKey(string name)
+        {
+            return GetNexusKey($"contract.{name}");
+        }
+
+        /*
+        private void EditContract(StorageContext storage, string name, PlatformInfo platformInfo)
+        {
+            var key = GetPlatformInfoKey(name);
+            var bytes = Serialization.Serialize(platformInfo);
+            storage.Put(key, bytes);
+        }*/
+
+        public bool ContractExists(StorageContext storage, string name)
+        {
+            var key = GetContractInfoKey(name);
+            return storage.Has(key);
+        }
+
+        /*
+        public PlatformInfo GetPlatformInfo(StorageContext storage, string name)
+        {
+            var key = GetPlatformInfoKey(name);
+            if (storage.Has(key))
+            {
+                var bytes = storage.Get(key);
+                return Serialization.Unserialize<PlatformInfo>(bytes);
+            }
+
+            throw new ChainException($"Platform does not exist ({name})");
+        }*/
         #endregion
 
         #region ORGANIZATIONS
@@ -1613,17 +1570,17 @@ namespace Phantasma.Blockchain
         }
 
         // TODO optimize this
-        public bool IsPlatformAddress(Address address)
+        public bool IsPlatformAddress(StorageContext storage, Address address)
         {
             if (!address.IsInterop)
             {
                 return false;
             }
 
-            var platforms = this.GetPlatforms(RootStorage);
+            var platforms = this.GetPlatforms(storage);
             foreach (var platform in platforms)
             {
-                var info = GetPlatformInfo(platform);
+                var info = GetPlatformInfo(storage, platform);
 
                 foreach (var entry in info.InteropAddresses)
                 {
@@ -1694,5 +1651,56 @@ namespace Phantasma.Blockchain
             return list.All<string>();
         }
 
+        private byte[] GetNexusKey(string key)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes($".nexus.{key}");
+            return bytes;
+        }
+
+        public string GetName(StorageContext storage)
+        {
+            var key = GetNexusKey("name");
+            if (storage.Has(key))
+            {
+                return storage.Get<string>(key);
+            }
+
+            return null;
+        }
+
+        public Address GetGenesisAddress(StorageContext storage)
+        {
+            var key = GetNexusKey("owner");
+            if (storage.Has(key))
+            {
+                return storage.Get<Address>(key);
+            }
+
+            return Address.Null;
+        }
+
+        public Hash GetGenesisHash(StorageContext storage)
+        {
+            var key = GetNexusKey("hash");
+            if (storage.Has(key))
+            {
+                return storage.Get<Hash>(key);
+            }
+
+            return Hash.Null;
+        }
+
+        public Block GetGenesisBlock()
+        {
+            if (HasGenesis)
+            {
+                var genesisHash = GetGenesisHash(RootStorage);
+                return RootChain.GetBlockByHash(genesisHash);
+            }
+
+            return null;
+        }
+
+        public string Name { get; private set; }
     }
 }

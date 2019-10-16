@@ -37,7 +37,7 @@ namespace Phantasma.Ethereum
     {
         public readonly byte[] PrivateKey;
         public readonly byte[] PublicKey;
-        public readonly string address;
+        public readonly string Address;
 
         public EthereumKey(byte[] privateKey)
         {
@@ -54,7 +54,7 @@ namespace Phantasma.Ethereum
 
             var temp = Base16.Encode(PublicKey);
             var kak = Sha3Keccack.CalculateHash(PublicKey);
-            this.address = "0x"+Base16.Encode( kak.Skip(12).ToArray());
+            this.Address = "0x"+Base16.Encode( kak.Skip(12).ToArray());
         }
 
         public static EthereumKey FromWIF(string wif)
@@ -100,7 +100,7 @@ namespace Phantasma.Ethereum
 
         public override string ToString()
         {
-            return this.address;
+            return this.Address;
         }
     }
 }

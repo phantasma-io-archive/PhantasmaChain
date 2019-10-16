@@ -134,7 +134,7 @@ namespace Phantasma.Blockchain
 
                 var platformName = args[0];
                 var chainName = args[1];
-                if (Nexus.PlatformExists(platformName))
+                if (Nexus.PlatformExists(Nexus.RootStorage, platformName))
                 {
                     args = args.Skip(2).ToArray();
                     content = ReadChainOracle(platformName, chainName, args);
@@ -156,7 +156,7 @@ namespace Phantasma.Blockchain
 
                 var baseSymbol = url;
 
-                if (!Nexus.TokenExists(baseSymbol))
+                if (!Nexus.TokenExists(Nexus.RootStorage, baseSymbol))
                 {
                     throw new OracleException("unknown token: " + baseSymbol);
                 }
@@ -248,7 +248,7 @@ namespace Phantasma.Blockchain
 
                                                     byte[] rawData = null;
 
-                                                    var token = Nexus.GetTokenInfo(data.Symbol);
+                                                    var token = Nexus.GetTokenInfo(Nexus.RootStorage, data.Symbol);
                                                     if (!token.IsFungible())
                                                     {
                                                         Event nftEvent;

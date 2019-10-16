@@ -71,7 +71,7 @@ namespace Phantasma.Contracts.Native
 
         public int GetMaxTotalValidators()
         {
-            if (Runtime.Nexus.HasGenesis)
+            if (Runtime.HasGenesis)
             {
                 return (int)Runtime.GetGovernanceValue(ValidatorCountTag);
             }
@@ -122,7 +122,7 @@ namespace Phantasma.Contracts.Native
 
         public BigInteger GetMaxPrimaryValidators()
         {
-            if (Runtime.Nexus.HasGenesis)
+            if (Runtime.HasGenesis)
             {
                 var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
                 var result = (totalValidators * 10) / 25;
@@ -140,7 +140,7 @@ namespace Phantasma.Contracts.Native
 
         public BigInteger GetMaxSecondaryValidators()
         {
-            if (Runtime.Nexus.HasGenesis)
+            if (Runtime.HasGenesis)
             {
                 var totalValidators = Runtime.GetGovernanceValue(ValidatorCountTag);
                 return totalValidators - GetMaxPrimaryValidators();
@@ -218,7 +218,7 @@ namespace Phantasma.Contracts.Native
             }
             else
             {
-                Runtime.Expect(Runtime.IsWitness(Runtime.Nexus.GenesisAddress), "invalid witness");
+                Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "invalid witness");
             }
 
             var entry = new ValidatorEntry()
@@ -309,7 +309,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Notify(EventKind.ValidatorRemove, Runtime.Chain.Address, from);
             Runtime.Notify(EventKind.ValidatorElect, Runtime.Chain.Address, to);
-            Runtime.Notify(EventKind.Migration, to, from);
+            Runtime.Notify(EventKind.AddressMigration, to, from);
         }
     }
 }

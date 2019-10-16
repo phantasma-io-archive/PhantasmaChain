@@ -1,5 +1,4 @@
-﻿using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage.Utils;
 using System.IO;
@@ -54,8 +53,9 @@ namespace Phantasma.Domain
         ChainSwap = 43,
         ContractRegister = 44,
         ContractDeploy = 45,
-        Migration = 46,
-        Log = 47,
+        AddressMigration = 46,
+        ContractUpgrade = 47,
+        Log = 48,
         Custom = 64,
     }
 

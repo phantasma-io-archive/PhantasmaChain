@@ -130,7 +130,7 @@ namespace Phantasma.Contracts.Native
         public void CreateValue(string name, BigInteger initial, byte[] serializedConstraints)
         {
             Runtime.Expect(!HasName(name), "name already exists");
-            Runtime.Expect(Runtime.IsWitness(Runtime.Nexus.GenesisAddress), "genesis must be witness");
+            Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "genesis must be witness");
 
             var constraints = Serialization.Unserialize<ChainConstraint[]>(serializedConstraints);
             ValidateConstraints(name, 0, initial, constraints, false);
@@ -144,7 +144,7 @@ namespace Phantasma.Contracts.Native
             _constraintMap.Set<string, ChainConstraint[]>(name, constraints);
             _nameList.Add<string>(name);
 
-            Runtime.Notify(EventKind.ValueCreate, Runtime.Nexus.GenesisAddress, new ChainValueEventData() { Name = name, Value = initial });
+            Runtime.Notify(EventKind.ValueCreate, Runtime.GenesisAddress, new ChainValueEventData() { Name = name, Value = initial });
         }
 
         public BigInteger GetValue(string name)
@@ -168,7 +168,7 @@ namespace Phantasma.Contracts.Native
 
             _valueMap.Set<string, BigInteger>(name, value);
 
-            Runtime.Notify(EventKind.ValueUpdate, Runtime.Nexus.GenesisAddress, new ChainValueEventData() { Name = name, Value = value});
+            Runtime.Notify(EventKind.ValueUpdate, Runtime.GenesisAddress, new ChainValueEventData() { Name = name, Value = value});
         }
         #endregion
     }

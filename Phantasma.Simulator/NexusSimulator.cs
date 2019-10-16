@@ -80,10 +80,9 @@ namespace Phantasma.Simulator
             }
             else
             {
-                CurrentTime = new Timestamp(Nexus.GenesisTime.Value + 1);
+                var genesisBlock = Nexus.GetGenesisBlock();
+                CurrentTime = new Timestamp(genesisBlock.Timestamp.Value + 1);
             }
-
-            this.bankChain = Nexus.GetChainByName("bank");
 
             _rnd = new Random(seed);
             _keys.Add(_owner);
@@ -97,7 +96,7 @@ namespace Phantasma.Simulator
             }
 
             var neoPlatform = Pay.Chains.NeoWallet.NeoPlatform;
-            var neoKeys = InteropUtils.GenerateInteropKeys(_owner, Nexus.GenesisHash, neoPlatform);
+            var neoKeys = InteropUtils.GenerateInteropKeys(_owner, Nexus.GetGenesisHash(Nexus.RootStorage), neoPlatform);
             var neoText = Phantasma.Neo.Core.NeoKeys.FromWIF(neoKeys.ToWIF()).Address;
             var neoAddress = Phantasma.Pay.Chains.NeoWallet.EncodeAddress(neoText);
 
@@ -292,7 +291,6 @@ namespace Phantasma.Simulator
                         var prevHash = lastBlock != null ? lastBlock.Hash : Hash.Null;
 
                         var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, _owner.Address, System.Text.Encoding.UTF8.GetBytes("SIM"));
-                        block.Sign(this._owner);
 
                         bool submitted;
 
@@ -319,6 +317,8 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
+                                chain.ValidateBlock(block, transactions, MinimumFee);
+                                block.Sign(this._owner);
                                 chain.AddBlock(block, txs, MinimumFee);
                                 submitted = true;
                             }
@@ -357,14 +357,15 @@ namespace Phantasma.Simulator
                 throw new Exception("Call BeginBlock first");
             }
 
-            var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
+            var name = Nexus.GetName(Nexus.RootStorage);
+            var tx = new Transaction(name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             Throw.If(!signees.Any(), "at least one signer required");
 
             Signature[] existing = tx.Signatures;
             var msg = tx.ToByteArray(false);
 
-            tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
+            tx = new Transaction(name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             tx.Mine((int)pow);
 
@@ -479,7 +480,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateSideChainSend(PhantasmaKeys source, string tokenSymbol, Chain sourceChain, Address targetAddress, Chain targetChain, BigInteger amount, BigInteger fee)
         {
             Throw.IfNull(source, nameof(source));
-            Throw.If(!Nexus.TokenExists(tokenSymbol), "Token does not exist: "+ tokenSymbol);
+            Throw.If(!Nexus.TokenExists(Nexus.RootStorage, tokenSymbol), "Token does not exist: "+ tokenSymbol);
             Throw.IfNull(sourceChain, nameof(sourceChain));
             Throw.IfNull(targetChain, nameof(targetChain));
             Throw.If(amount <= 0, "positive amount required");

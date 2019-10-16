@@ -70,7 +70,8 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(nexus.CreateGenesisBlock("simnet", owner, DateTime.Now));
 
-            Assert.IsTrue(nexus.GenesisHash != Hash.Null);
+            var genesisHash = nexus.GetGenesisHash(nexus.RootStorage);
+            Assert.IsTrue(genesisHash != Hash.Null);
 
             var rootChain = nexus.RootChain;
 
@@ -78,8 +79,8 @@ namespace Phantasma.Tests
             Assert.IsFalse(rootChain.Address.IsNull);
 
             var symbol = DomainSettings.FuelTokenSymbol;
-            Assert.IsTrue(nexus.TokenExists(symbol));
-            var token = nexus.GetTokenInfo(symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol));
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
             Assert.IsTrue(token.MaxSupply > 0);
 
             var supply = nexus.RootChain.GetTokenSupply(rootChain.Storage, symbol);
@@ -112,7 +113,7 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
             var accountChain = nexus.GetChainByName("account");
             var symbol = DomainSettings.FuelTokenSymbol;
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
 
             var testUserA = PhantasmaKeys.Generate();
             var testUserB = PhantasmaKeys.Generate();
@@ -161,7 +162,7 @@ namespace Phantasma.Tests
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -201,7 +202,7 @@ namespace Phantasma.Tests
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -262,7 +263,7 @@ namespace Phantasma.Tests
 
             var testUser = PhantasmaKeys.Generate();
 
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
             var amount = UnitConversion.ToBigInteger(10, token.Decimals);
 
             var stakeAmount = UnitConversion.ToBigInteger(3, DomainSettings.StakingTokenDecimals);
@@ -414,7 +415,7 @@ namespace Phantasma.Tests
             var swapSymbol = "GAS";
             var neoTxHash = OracleSimulator.SimulateExternalTransaction("neo", Pay.Chains.NeoWallet.NeoID, neoKeys.PublicKey, neoKeys.Address, swapSymbol, 2);
 
-            var tokenInfo = nexus.GetTokenInfo(swapSymbol);
+            var tokenInfo = nexus.GetTokenInfo(nexus.RootStorage, swapSymbol);
 
             // 2 - transcode the neo address and settle the Neo transaction on Phantasma
             var transcodedAddress = Address.FromKey(neoKeys);
@@ -475,7 +476,10 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            var context = new StorageChangeSetContext(new MemoryStorageContext());
+            Assert.IsTrue(nexus.PlatformExists(nexus.RootStorage, "neo"));
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, "NEO"));
+
+            var context = new StorageChangeSetContext(nexus.RootStorage);
             var runtime = new RuntimeVM(new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
 
             var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
@@ -556,7 +560,7 @@ namespace Phantasma.Tests
 
             var targetName = "hello";
             var testUser = PhantasmaKeys.Generate();
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
             var amount = UnitConversion.ToBigInteger(10, token.Decimals);
 
             simulator.BeginBlock();
@@ -598,7 +602,7 @@ namespace Phantasma.Tests
             var sender = PhantasmaKeys.Generate();
             var receiver = PhantasmaKeys.Generate();
 
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
             var originalAmount = UnitConversion.ToBigInteger(10, token.Decimals);
             var sideAmount = originalAmount / 2;
 
@@ -654,7 +658,7 @@ namespace Phantasma.Tests
 
             var sender = PhantasmaKeys.Generate();
 
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
             var originalAmount = UnitConversion.ToBigInteger(1, token.Decimals);
             var sideAmount = originalAmount / 2;
 
@@ -719,7 +723,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(sideChain != null);
 
             var symbol = DomainSettings.FuelTokenSymbol;
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
 
             var sender = PhantasmaKeys.Generate();
             var receiver = PhantasmaKeys.Generate();
@@ -803,8 +807,8 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(symbol);
-            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
             var ownerships = new OwnershipSheet(symbol);
@@ -863,8 +867,8 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUser.Address, chain, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.FuelTokenDecimals));
             simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(symbol);
-            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
 
             // verify nft presence on the user pre-mint
             var ownerships = new OwnershipSheet(symbol);
@@ -934,8 +938,8 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, nftName, DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(symbol);
-            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
 
             // verify nft presence on the sender pre-mint
             var ownerships = new OwnershipSheet(symbol);
@@ -1017,8 +1021,8 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(symbol);
-            Assert.IsTrue(nexus.TokenExists(symbol), "Can't find the token symbol");
+            var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
+            Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol), "Can't find the token symbol");
 
             // verify nft presence on the sender pre-mint
             var ownerships = new OwnershipSheet(symbol);
@@ -1092,7 +1096,7 @@ namespace Phantasma.Tests
             var accountChain = nexus.GetChainByName("account");
 
             var symbol = DomainSettings.FuelTokenSymbol;
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
 
             var sender = PhantasmaKeys.Generate();
             var receiver = PhantasmaKeys.Generate();
@@ -1154,7 +1158,7 @@ namespace Phantasma.Tests
             var targetChain = nexus.GetChainByName("sale");
 
             var symbol = DomainSettings.FuelTokenSymbol;
-            var token = nexus.GetTokenInfo(symbol);
+            var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
 
             var sender = PhantasmaKeys.Generate();
             var receiver = PhantasmaKeys.Generate();
@@ -1224,9 +1228,10 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(owner, 1234);
             var nexus = simulator.Nexus;
 
-            Assert.IsTrue(address.Text == nexus.GenesisAddress.Text);
-            Assert.IsTrue(address.ToByteArray().SequenceEqual(nexus.GenesisAddress.ToByteArray()));
-            Assert.IsTrue(address == nexus.GenesisAddress);
+            var genesisAddress = nexus.GetGenesisAddress(nexus.RootStorage);
+            Assert.IsTrue(address == genesisAddress);
+            Assert.IsTrue(address.Text == genesisAddress.Text);
+            Assert.IsTrue(address.ToByteArray().SequenceEqual(genesisAddress.ToByteArray()));
         }
 
         [TestMethod]
@@ -1239,7 +1244,7 @@ namespace Phantasma.Tests
 
             var symbol = DomainSettings.StakingTokenSymbol;
 
-            var chainAddressStr = Base16.Encode(simulator.Nexus.RootChainAddress.ToByteArray());
+            var chainAddressStr = Base16.Encode(simulator.Nexus.RootChain.Address.ToByteArray());
             var userAddressStr = Base16.Encode(user.Address.ToByteArray());
 
             simulator.BeginBlock();
@@ -1247,7 +1252,7 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, user.Address, simulator.Nexus.RootChain, DomainSettings.StakingTokenSymbol, 100000000);
             simulator.EndBlock();
 
-            var chainAddress = simulator.Nexus.RootChainAddress;
+            var chainAddress = simulator.Nexus.RootChain.Address;
             simulator.BeginBlock();
             var tx = simulator.GenerateTransfer(owner, chainAddress, simulator.Nexus.RootChain, symbol, 100000000);
             var block = simulator.EndBlock().First();
@@ -1304,7 +1309,7 @@ namespace Phantasma.Tests
                 Assert.IsTrue(e is ChainException);
             }
 
-            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, simulator.Nexus.RootChainAddress);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, simulator.Nexus.RootChain.Address);
             Assert.IsTrue(initialBalance == finalBalance);
         }
 
@@ -1460,7 +1465,8 @@ namespace Phantasma.Tests
         private void SkipToValidatorIndex(NexusSimulator simulator, int i)
         {
             uint skippedSeconds = 0;
-            DateTime genesisTime = simulator.Nexus.GenesisTime;
+            var genesisBlock = simulator.Nexus.GetGenesisBlock();
+            DateTime genesisTime = genesisBlock.Timestamp;
             var diff = (simulator.CurrentTime - genesisTime).Seconds;
             var index = (int)(diff / 120) % 2;
 

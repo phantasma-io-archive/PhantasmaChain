@@ -58,7 +58,7 @@ namespace Phantasma.Contracts.Native
 
         public BigInteger GetMasterThreshold()
         {
-            if (Runtime.Nexus.HasGenesis)
+            if (Runtime.HasGenesis)
             {
                 var amount = Runtime.GetGovernanceValue(MasterStakeThresholdTag);
                 return amount;
@@ -114,20 +114,6 @@ namespace Phantasma.Contracts.Native
             return GetMasterClaimDateFromReference(claimDistance, default(Timestamp));
         }
 
-        private Timestamp GetGenesisTimestamp()
-        {
-            if (Runtime.Nexus.HasGenesis)
-            {
-                Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-                var referenceBlock = Runtime.GetBlockByHeight(1);
-                return referenceBlock.Timestamp;
-            }
-            else
-            {
-                return Runtime.Time;
-            }
-        }
-
         public Timestamp GetMasterClaimDateFromReference(BigInteger claimDistance, Timestamp referenceTime)
         {
             DateTime referenceDate;
@@ -138,7 +124,7 @@ namespace Phantasma.Contracts.Native
             else
             if (_lastMasterClaim.Value == 0)
             {
-                referenceDate = GetGenesisTimestamp();
+                referenceDate = Runtime.GetGenesisTime();
                 referenceDate = referenceDate.AddMonths(-1);
             }
             else
@@ -200,7 +186,7 @@ namespace Phantasma.Contracts.Native
             votingLogbook.Add(to);
             votingLogbook.Remove(from);
 
-            Runtime.Notify(EventKind.Migration, to, from);
+            Runtime.Notify(EventKind.AddressMigration, to, from);
         }
 
         public void MasterClaim(Address from)
@@ -725,7 +711,7 @@ namespace Phantasma.Contracts.Native
 
         private BigInteger CalculateRewardsWithHalving(BigInteger totalStake, Timestamp startTime, Timestamp endTime)
         {
-            var genesisTime = GetGenesisTimestamp();
+            var genesisTime = Runtime.GetGenesisTime();
 
             if (genesisTime == 0)
             {
@@ -791,7 +777,7 @@ namespace Phantasma.Contracts.Native
 
         public BigInteger GetCurrentHalvingAmount()
         {
-            DateTime genesisDate = GetGenesisTimestamp();
+            DateTime genesisDate = Runtime.GetGenesisTime();
             DateTime currentTime = Runtime.Time;
 
             var nextHalvingDate = genesisDate.AddYears(2);

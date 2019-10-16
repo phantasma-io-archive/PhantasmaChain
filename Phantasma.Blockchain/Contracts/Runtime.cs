@@ -84,8 +84,6 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool IsTrigger => DelayPayment;
 
-        INexus IRuntime.Nexus => this.Nexus;
-
         IChain IRuntime.Chain => this.Chain;
 
         ITransaction IRuntime.Transaction => this.Transaction;
@@ -363,7 +361,7 @@ namespace Phantasma.Blockchain.Contracts
                 return UnitConversion.GetUnitValue(DomainSettings.FiatTokenDecimals);
             }
 
-            Core.Throw.If(!Nexus.TokenExists(symbol), "cannot read price for invalid token");
+            Core.Throw.If(!Nexus.TokenExists(RootStorage, symbol), "cannot read price for invalid token");
             var token = GetToken(symbol);
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
@@ -533,50 +531,14 @@ namespace Phantasma.Blockchain.Contracts
                 var org = Nexus.GetOrganizationByAddress(RootStorage, address);
                 if (org != null)
                 {
-                    var size = org.Size;
-                    if (size < 1)
-                    {
-                        return false;
-                    }
+                    this.ConsumeGas(10000);                
+                    var result = org.IsWitness(Transaction);
 
-                    var majorityCount = (size / 2) + 1;
-                    if (Transaction == null || Transaction.Signatures.Length < majorityCount)
-                    {
-                        return false;
-                    }
-
-                    int witnessCount = 0;
-
-                    this.ConsumeGas(10000);
-
-                    var members = new List<Address>(org.GetMembers());
-                    var msg = Transaction.ToByteArray(false);
-
-                    foreach (var sig in Transaction.Signatures)
-                    {
-                        if (witnessCount >= majorityCount)
-                        {
-                            break; // dont waste time if we already reached a majority
-                        }
-
-                        this.Expect(sig.Kind != SignatureKind.Ring, "ring signature not supported yet here");
-
-                        foreach (var addr in members)
-                        {
-                            if (sig.Verify(msg, addr))
-                            {
-                                witnessCount++;
-                                members.Remove(addr);
-                                break;
-                            }
-                        }
-                    }
-
-                    var result =  witnessCount >= majorityCount;
                     if (result)
                     {
                         validatedWitnesses.Add(address);
                     }
+
                     return result;
                 }
                 else
@@ -632,22 +594,22 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool TokenExists(string symbol)
         {
-            return Nexus.TokenExists(symbol);
+            return Nexus.TokenExists(RootStorage, symbol);
         }
 
         public bool FeedExists(string name)
         {
-            return Nexus.FeedExists(name);
+            return Nexus.FeedExists(RootStorage, name);
         }
 
         public bool PlatformExists(string name)
         {
-            return Nexus.PlatformExists(name);
+            return Nexus.PlatformExists(RootStorage, name);
         }
 
         public bool ContractExists(string name)
         {
-            return Nexus.PlatformExists(name);
+            return Nexus.ContractExists(RootStorage, name);
         }
 
         public bool ContractDeployed(string name)
@@ -790,19 +752,19 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetBalance(string symbol, Address address)
         {
-            Expect(Nexus.TokenExists(symbol), $"Token does not exist ({symbol})");
+            Expect(TokenExists(symbol), $"Token does not exist ({symbol})");
             return Chain.GetTokenBalance(this.Storage, symbol, address);
         }
 
         public BigInteger[] GetOwnerships(string symbol, Address address)
         {
-            Expect(Nexus.TokenExists(symbol), $"Token does not exist ({symbol})");
+            Expect(TokenExists(symbol), $"Token does not exist ({symbol})");
             return Chain.GetOwnedTokens(this.Storage, symbol, address);
         }
 
         public BigInteger GetTokenSupply(string symbol)
         {
-            Expect(Nexus.TokenExists(symbol), $"Token does not exist ({symbol})");
+            Expect(TokenExists(symbol), $"Token does not exist ({symbol})");
             return Chain.GetTokenSupply(this.Storage, symbol);
         }
 
@@ -861,7 +823,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (flags.HasFlag(TokenFlags.External))
             {
-                Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "genesis address only");
+                Runtime.Expect(from == Runtime.GenesisAddress, "genesis address only");
                 Runtime.Expect(platform != DomainSettings.PlatformName, "external token chain required");
                 Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
             }
@@ -924,7 +886,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis");
+            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid platform name");
@@ -941,7 +903,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            Runtime.Expect(from == Runtime.Nexus.GenesisAddress, "must be genesis");
+            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(ID), "invalid organization name");
@@ -1070,8 +1032,8 @@ namespace Phantasma.Blockchain.Contracts
                 return;
             }
 
-            Runtime.Expect(Runtime.Nexus.TokenExists(symbol), "invalid token");
-            var token = Runtime.Nexus.GetTokenInfo(symbol);
+            Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
+            var token = Runtime.GetToken(symbol);
 
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
             Runtime.Expect(IsWitness(source), "invalid witness");
@@ -1217,7 +1179,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool IsPlatformAddress(Address address)
         {
-            return Nexus.IsPlatformAddress(address);
+            return Nexus.IsPlatformAddress(RootStorage, address);
         }
 
         public byte[] ReadOracle(string URL)
@@ -1227,17 +1189,17 @@ namespace Phantasma.Blockchain.Contracts
 
         public IToken GetToken(string symbol)
         {
-            return Nexus.GetTokenInfo(symbol);
+            return Nexus.GetTokenInfo(RootStorage, symbol);
         }
 
         public IFeed GetFeed(string name)
         {
-            return Nexus.GetFeedInfo(name);
+            return Nexus.GetFeedInfo(RootStorage, name);
         }
 
         public IPlatform GetPlatformByName(string name)
         {
-            return Nexus.GetPlatformInfo(name);
+            return Nexus.GetPlatformInfo(RootStorage, name);
         }
 
         public IPlatform GetPlatformByIndex(int index)
@@ -1296,7 +1258,7 @@ namespace Phantasma.Blockchain.Contracts
         public void Log(string description)
         {
             var Runtime = this;
-            Runtime.Expect(Nexus.Name != "mainnet", "logs not allowed on this nexus");
+            Runtime.Expect(NexusName != "mainnet", "logs not allowed on this nexus");
             Runtime.Expect(!string.IsNullOrEmpty(description), "invalid log string");
             Runtime.Expect(description.Length <= 256, "log string too large");
             Runtime.ConsumeGas(1000);
@@ -1322,7 +1284,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             lines.Add(VMException.Header("RUNTIME"));
             lines.Add("Time: " + Time.Value);
-            lines.Add("Nexus: " + Nexus.Name);
+            lines.Add("Nexus: " + NexusName);
             lines.Add("Chain: " + Chain.Name);
             lines.Add("TxHash: " + (Transaction != null ? Transaction.Hash.ToString() : "None"));
             if (Transaction != null)
@@ -1367,5 +1329,21 @@ namespace Phantasma.Blockchain.Contracts
             return this.Chain.GetValidator(this.RootStorage, time);
         }
 
+
+        public Timestamp GetGenesisTime()
+        {
+            if (HasGenesis)
+            {
+                var genesisBlock = Nexus.RootChain.GetBlockByHash(GenesisHash);
+                return genesisBlock.Timestamp;
+            }
+
+            return this.Time;
+        }
+
+        public bool HasGenesis => Nexus.HasGenesis;
+        public string NexusName => Nexus.GetName(RootStorage);
+        public Address GenesisAddress => Nexus.GetGenesisAddress(RootStorage);
+        public Hash GenesisHash => Nexus.GetGenesisHash(RootStorage);
     }
 }

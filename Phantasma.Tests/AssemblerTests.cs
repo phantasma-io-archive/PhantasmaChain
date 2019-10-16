@@ -330,7 +330,7 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, $"{symbol}Token", DomainSettings.PlatformName, Hash.FromString(symbol), 1000000000, 3, flags);
             simulator.EndBlock();
 
-            Assert.IsTrue(simulator.Nexus.TokenExists(symbol));
+            Assert.IsTrue(simulator.Nexus.TokenExists(simulator.Nexus.RootStorage, symbol));
 
             simulator.BeginBlock();
             var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);

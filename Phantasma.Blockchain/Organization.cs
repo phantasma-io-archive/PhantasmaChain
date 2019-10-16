@@ -1,4 +1,6 @@
-﻿using Phantasma.Blockchain.Contracts;
+﻿using System;
+using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
@@ -162,6 +164,52 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(RemoveMember(Runtime, admin, from), "remove failed");
             Runtime.Expect(AddMember(Runtime, admin, to), "add failed");
+        }
+
+        public bool IsWitness(Transaction transaction)
+        {
+            var size = this.Size;
+            if (size < 1)
+            {
+                return false;
+            }
+
+            var majorityCount = (size / 2) + 1;
+            if (transaction == null || transaction.Signatures.Length < majorityCount)
+            {
+                return false;
+            }
+
+            int witnessCount = 0;
+
+            var members = new List<Address>(this.GetMembers());
+            var msg = transaction.ToByteArray(false);
+
+            foreach (var sig in transaction.Signatures)
+            {
+                if (witnessCount >= majorityCount)
+                {
+                    break; // dont waste time if we already reached a majority
+                }
+
+                //ring signature not supported yet here
+                if (sig.Kind == SignatureKind.Ring)
+                {
+                    continue;
+                }
+
+                foreach (var addr in members)
+                {
+                    if (sig.Verify(msg, addr))
+                    {
+                        witnessCount++;
+                        members.Remove(addr);
+                        break;
+                    }
+                }
+            }
+
+            return witnessCount >= majorityCount;
         }
     }
 }

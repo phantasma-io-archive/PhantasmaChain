@@ -206,7 +206,7 @@ namespace Phantasma.Blockchain
 
             block.CleanUp();
 
-            var expectedValidator = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GenesisAddress;
+            var expectedValidator = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
             if (block.Validator != expectedValidator)
             {
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
@@ -283,7 +283,7 @@ namespace Phantasma.Blockchain
         // NOTE should never be used directly from a contract, instead use Runtime.GetBalance!
         public BigInteger GetTokenBalance(StorageContext storage, string tokenSymbol, Address address)
         {
-            var tokenInfo = Nexus.GetTokenInfo(tokenSymbol);
+            var tokenInfo = Nexus.GetTokenInfo(storage, tokenSymbol);
             if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
             {
                 var balances = new BalanceSheet(tokenSymbol);
@@ -722,13 +722,19 @@ namespace Phantasma.Blockchain
         #region block validation
         public Address GetValidator(StorageContext storage, Timestamp targetTime)
         {
+            var rootStorage = this.IsRoot ? storage : Nexus.RootStorage;
+
             if (!Nexus.HasGenesis)
             {
-                return Nexus.GenesisAddress;
+                return Nexus.GetGenesisAddress(rootStorage);
             }
 
-            var slotDuration = (int)Nexus.GetGovernanceValue(storage, ValidatorContract.ValidatorRotationTimeTag);
-            Timestamp validationSlotTime = Nexus.GenesisTime;
+            var slotDuration = (int)Nexus.GetGovernanceValue(rootStorage, ValidatorContract.ValidatorRotationTimeTag);
+
+            var genesisHash = Nexus.GetGenesisHash(rootStorage);
+            var genesisBlock = Nexus.RootChain.GetBlockByHash(genesisHash);
+
+            Timestamp validationSlotTime = genesisBlock.Timestamp;
 
             var diff = targetTime - validationSlotTime;
 
@@ -762,11 +768,13 @@ namespace Phantasma.Blockchain
             } while (currentIndex != validatorIndex);
 
             // should never reached here, failsafe
-            return Nexus.GenesisAddress;
+            return Nexus.GetGenesisAddress(rootStorage);
         }
 
         public void CloseBlock(Block block, StorageContext storage)
         {
+            var rootStorage = this.IsRoot ? storage : Nexus.RootStorage;
+
             if (block.Height > 1)
             {
                 var prevBlock = GetBlockByHash(block.PreviousHash);
@@ -803,7 +811,7 @@ namespace Phantasma.Blockchain
             else
             if (totalAvailable > 0)
             {
-                targets.Add(Nexus.GenesisAddress);
+                targets.Add(Nexus.GetGenesisAddress(rootStorage));
             }
 
             if (targets.Count > 0)
