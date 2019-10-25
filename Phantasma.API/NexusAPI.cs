@@ -447,6 +447,15 @@ namespace Phantasma.API
             };
         }
 
+        private OracleResult FillOracle(IOracleEntry oracle)
+        {
+            return new OracleResult
+            {
+                url = oracle.URL,
+                content = Base16.Encode(oracle.Content)
+            };
+        }
+
         private BlockResult FillBlock(Block block, Chain chain)
         {
             var result = new BlockResult
@@ -460,6 +469,7 @@ namespace Phantasma.API
                 reward = chain.GetBlockReward(block).ToString(),
                 validatorAddress = block.Validator.ToString(),
                 events = block.Events.Select(x => FillEvent(x)).ToArray(),
+                oracles = block.OracleData.Select(x => FillOracle(x)).ToArray(),
             };
 
             var txs = new List<TransactionResult>();
@@ -491,7 +501,7 @@ namespace Phantasma.API
                 address = chain.Address.Text,
                 height = (uint)chain.Height,
                 parentAddress = parentChain != null ? parentChain.Address.ToString() : "",
-                contracts = chain.GetContracts().Select(x => x.Name).ToArray()
+                contracts = chain.GetContracts(chain.Storage).Select(x => x.Name).ToArray()
             };
 
             return result;
@@ -617,6 +627,8 @@ namespace Phantasma.API
             result.relay = Nexus.GetRelayBalance(address).ToString();
             result.balances = balanceList.ToArray();
             result.validator = validator.ToString();
+
+            result.txs = Nexus.RootChain.GetTransactionHashesForAddress(address).Select(x => x.ToString()).ToArray();
 
             return result;
         }
@@ -1490,7 +1502,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Contract not found" };
             }
 
-            var contract = this.Nexus.GetContractByName(contractName);
+            var contract = this.Nexus.GetContractByName(Nexus.RootStorage, contractName);
             return FillABI(contractName, contract.ABI);
         }
 

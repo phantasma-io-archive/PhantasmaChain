@@ -45,7 +45,18 @@ namespace Phantasma.Blockchain
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
 
-        public Chain RootChain => GetChainByName(DomainSettings.RootChainName);
+        private Chain _rootChain = null;
+        public Chain RootChain
+        {
+            get
+            {
+                if (_rootChain == null)
+                {
+                    _rootChain = GetChainByName(DomainSettings.RootChainName);
+                }
+                return _rootChain;
+            }
+        }
 
         private KeyValueStore<Hash, Archive> _archiveEntries;
         private KeyValueStore<Hash, byte[]> _archiveContents;
@@ -178,6 +189,18 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
+            var contract = this.GetContractByName(storage, name);
+            if (contract != null)
+            {
+                return contract.Address;
+            }
+
+            var dao = this.GetOrganizationByName(storage, name);
+            if (dao != null)
+            {
+                return dao.Address;
+            }
+
             var chain = RootChain;
             return chain.InvokeContract(storage, Nexus.AccountContractName, nameof(AccountContract.LookUpName), name).AsAddress();
         }
@@ -188,7 +211,7 @@ namespace Phantasma.Blockchain
 
             if (address.IsSystem)
             {
-                var contract = this.GetContractByAddress(address);
+                var contract = this.GetContractByAddress(storage, address);
                 if (contract != null)
                 {
                     return contract.Name;
@@ -228,11 +251,11 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CONTRACTS
-        public SmartContract GetContractByName(string contractName)
+        public SmartContract GetContractByName(StorageContext storage, string contractName)
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
             var address = SmartContract.GetAddressForName(contractName);
-            var result = GetContractByAddress(address);
+            var result = GetContractByAddress(storage, address);
 
             if (result == null)
             {
@@ -250,7 +273,7 @@ namespace Phantasma.Blockchain
             _contractMap[addr] = typeof(T);
         }
 
-        public SmartContract GetContractByAddress(Address contractAdress)
+        public SmartContract GetContractByAddress(StorageContext storage, Address contractAdress)
         {
             if (_contractMap == null)
             {
@@ -1594,7 +1617,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        public StorageContext RootStorage => new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName));
+        public StorageContext RootStorage => _rootChain != null ? _rootChain.Storage : new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName));
 
         private StorageList GetSystemList(string name, StorageContext storage)
         {

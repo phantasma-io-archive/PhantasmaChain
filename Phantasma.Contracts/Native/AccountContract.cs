@@ -20,26 +20,31 @@ namespace Phantasma.Contracts.Native
         {
         }
 
+        private string[] prefixNames = new string[] {
+            "phantasma", "neo", "ethereum", "bitcoin", "litecoin", "eos", 
+            "decentraland", "elastos", "loopring", "grin", "nuls", 
+            "bancor", "ark", "nos", "bluzelle", "satoshi", "gwei", "nacho", 
+            "oracle", "oracles", "dex", "exchange", "wallet", "account",
+            "airdrop", "giveaway", "free", "mail", "dapp", "charity","address", "system",
+            "coin", "token", "nexus", "deposit", "phantom", "cityofzion", "coz",
+            "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
+            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto", "sergio",
+            "22", "goati",
+            };
+
         private string[] reservedNames = new string[] {
-            "phantasma", "neo", "ethereum", "bitcoin", "litecoin", "eos", "ripple", "tether", "tron",
+            "ripple", "tether", "tron", "chainchanged", "libra","loom", "enigma", "wax",
             "monero", "dash", "tezos", "cosmos", "maker", "ontology", "dogecoin", "zcash", "vechain",
             "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares",
             "siacoin", "komodo", "zilliqa", "steem", "enjin", "aelf", "nash", "stratis",
-            "decentraland", "elastos", "loopring", "grin", "nuls", "loom", "enigma", "wax",
-            "bancor", "ark", "nos", "bluzelle", "satoshi", "gwei", "nacho", "chainchanged",
-            "oracle", "oracles", "dex", "exchange", "ico", "ieo", "sto", "kyc", "wallet", "account", 
-            "airdrop", "giveaway", "free", "mail", "dapp", "charity", "libra","address", "system",
-            "coin", "token", "nexus", "deposit", "phantom", "phantomforce", "cityofzion", "coz",
-            "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
-            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto", "sergio",
             "windows", "osx", "ios","android", "google", "yahoo", "facebook", "alibaba", "ebay",
             "apple", "amazon", "microsoft", "samsung", "verizon", "walmart", "ibm", "disney",
             "netflix", "alibaba", "tencent", "baidu", "visa", "mastercard", "instagram", "paypal",
             "adobe", "huawei", "vodafone", "dell", "uber", "youtube", "whatsapp", "snapchat", "pinterest",
-            "22", "goati", "gamecenter", "pixgamecenter", "seal", "crosschain", "blacat",
-            "bitladon", "bitcoinmeester"};
+            "gamecenter", "pixgamecenter", "seal", "crosschain", "blacat",
+            "bitladon", "bitcoinmeester" , "ico", "ieo", "sto", "kyc", };
 
-    
+
         public void RegisterName(Address target, string name)
         {
             Runtime.Expect(target.IsUser, "must be user address");
@@ -62,9 +67,18 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
 
             bool isReserved = false;
+            for (int i = 0; i < prefixNames.Length; i++)
+            {
+                if (name.StartsWith(prefixNames[i]))
+                {
+                    isReserved = true;
+                    break;
+                }
+            }
+
             for (int i = 0; i < reservedNames.Length; i++)
             {
-                if (name.StartsWith(reservedNames[i]))
+                if (name == reservedNames[i])
                 {
                     isReserved = true;
                     break;

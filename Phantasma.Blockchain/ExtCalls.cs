@@ -624,7 +624,7 @@ namespace Phantasma.Blockchain
 
                         Runtime.Expect(success, name+" contract deploy failed");
 
-                        var contract = Runtime.Nexus.GetContractByName(name);
+                        var contract = Runtime.Nexus.GetContractByName(Runtime.RootStorage, name);
                         var constructor = "Initialize";
                         if (contract.HasInternalMethod(constructor))
                         {

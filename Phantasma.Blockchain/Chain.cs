@@ -59,11 +59,11 @@ namespace Phantasma.Blockchain
             this.Log = Logger.Init(log);
         }
 
-        public IContract[] GetContracts()
+        public IContract[] GetContracts(StorageContext storage)
         {
-            var contractList = new StorageList(GetContractListKey(), this.Storage);
+            var contractList = new StorageList(GetContractListKey(), storage);
             var addresses = contractList.All<Address>();
-            return addresses.Select(x => Nexus.GetContractByAddress(x)).ToArray();
+            return addresses.Select(x => Nexus.GetContractByAddress(Nexus.RootStorage, x)).ToArray();
         }
 
         public override string ToString()
@@ -235,6 +235,12 @@ namespace Phantasma.Blockchain
                     {
                         e = e.InnerException;
                     }
+
+                    if (tx == null)
+                    {
+                        throw new BlockGenerationException(e.Message);
+                    }
+
                     throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
             }
@@ -368,7 +374,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
         {
-            var contract = Nexus.GetContractByName(contractName);
+            var contract = Nexus.GetContractByName(storage, contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
@@ -532,7 +538,7 @@ namespace Phantasma.Blockchain
 
         public bool DeployNativeContract(StorageContext storage, Address contractAddress)
         {
-            var contract = Nexus.GetContractByAddress(contractAddress);
+            var contract = Nexus.GetContractByAddress(storage, contractAddress);
             if (contract == null)
             {
                 return false;

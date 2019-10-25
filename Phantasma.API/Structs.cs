@@ -110,8 +110,9 @@ namespace Phantasma.API
         [APIDescription("Validator role")]
         public string validator;
 
-        [APIDescription("List of token balances")]
         public BalanceResult[] balances;
+
+        public string[] txs;
     }
 
     public struct LeaderboardResult : IAPIResult
@@ -143,6 +144,15 @@ namespace Phantasma.API
 
         [APIDescription("Data in hexadecimal format, content depends on the event kind")]
         public string data;
+    }
+
+    public struct OracleResult : IAPIResult
+    {
+        [APIDescription("URL that was read by the oracle")]
+        public string url;
+
+        [APIDescription("Byte array content read by the oracle, encoded as hex string")]
+        public string content;
     }
 
     public struct TransactionResult : IAPIResult
@@ -222,6 +232,9 @@ namespace Phantasma.API
 
         [APIDescription("Block events")]
         public EventResult[] events;
+
+        [APIDescription("Block oracles")]
+        public OracleResult[] oracles;
     }
 
     public struct TokenResult : IAPIResult
@@ -297,15 +310,6 @@ namespace Phantasma.API
 
         public string rom;
         public string ram;
-    }
-
-    public struct OracleResult : IAPIResult
-    {
-        [APIDescription("URL that was read by the oracle")]
-        public string url;
-
-        [APIDescription("Byte array content read by the oracle, encoded as hex string")]
-        public string content;
     }
 
     public struct ScriptResult : IAPIResult

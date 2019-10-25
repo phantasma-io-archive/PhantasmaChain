@@ -176,7 +176,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionContext LoadContext(string contextName)
         {
-            var contract = this.Nexus.GetContractByName(contextName);
+            var contract = this.Nexus.GetContractByName(RootStorage, contextName);
             if (contract != null)
             {
                 return Chain.GetContractContext(this.changeSet, contract);
@@ -434,7 +434,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (address.IsSystem)
             {
-                var contract = Nexus.GetContractByAddress(address);
+                var contract = Nexus.GetContractByAddress(RootStorage, address);
                 if (contract != null)
                 {
                     var triggerName = trigger.ToString();
