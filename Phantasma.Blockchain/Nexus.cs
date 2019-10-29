@@ -257,11 +257,6 @@ namespace Phantasma.Blockchain
             var address = SmartContract.GetAddressForName(contractName);
             var result = GetContractByAddress(storage, address);
 
-            if (result == null)
-            {
-                throw new Exception("Unknown contract: " + contractName);
-            }
-
             return result;
         }
 
@@ -1544,8 +1539,13 @@ namespace Phantasma.Blockchain
 
         public Organization GetOrganizationByName(StorageContext storage, string name)
         {
-            var org = new Organization(name, storage);
-            return org;
+            if (OrganizationExists(storage, name))
+            {
+                var org = new Organization(name, storage);
+                return org;
+            }
+
+            return null;
         }
 
         public Organization GetOrganizationByAddress(StorageContext storage, Address address)
