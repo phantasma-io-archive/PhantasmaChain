@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using LunarLabs.Parser;
 
 namespace Phantasma.Core.Utils
 {
@@ -8,10 +11,15 @@ namespace Phantasma.Core.Utils
         private Dictionary<string, string> entries = new Dictionary<string, string>();
         private string defaultArgument;
 
-        public Arguments(string[] args, string prefix= "-")
+        public Arguments(string[] args, string prefix = "-")
+        {
+            LoadValues(args, prefix);
+        }
+
+        private void LoadValues(string[] args, string prefix)
         {
             var lastIndex = args.Length - 1;
-            for (int index =0; index<= lastIndex; index++)
+            for (int index = 0; index <= lastIndex; index++)
             {
                 var arg = args[index];
 
@@ -32,7 +40,35 @@ namespace Phantasma.Core.Utils
                 var key = temp[0];
                 var val = temp.Length > 1 ? temp[1] : null;
 
-                entries[key] = val;
+                if (key == "config")
+                {
+                    if (File.Exists(val))
+                    {
+                        var root = DataFormats.LoadFromFile(val);
+                        if (root != null)
+                        {
+                            if (root.Name == "config")
+                            {
+                                root = root["config"];
+                            }
+
+                            var strings = root.Children.Select(x => $"{prefix}{x.Name}={x.Value} ").ToArray();
+                            LoadValues(strings, prefix);
+                        }
+                        else
+                        {
+                            throw new Exception($"Error loading config file: {val}");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"Could not find config file: {val}");
+                    }
+                }
+                else
+                {
+                    entries[key] = val;
+                }
             }
         }
 
