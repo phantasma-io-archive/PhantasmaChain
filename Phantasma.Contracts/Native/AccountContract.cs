@@ -20,7 +20,7 @@ namespace Phantasma.Contracts.Native
         {
         }
 
-        private string[] prefixNames = new string[] {
+        public static string[] prefixNames = new string[] {
             "phantasma", "neo", "ethereum", "bitcoin", "litecoin", "eos", 
             "decentraland", "elastos", "loopring", "grin", "nuls", 
             "bancor", "ark", "nos", "bluzelle", "satoshi", "gwei", "nacho", 
@@ -28,11 +28,10 @@ namespace Phantasma.Contracts.Native
             "airdrop", "giveaway", "free", "mail", "dapp", "charity","address", "system",
             "coin", "token", "nexus", "deposit", "phantom", "cityofzion", "coz",
             "huobi", "binance", "kraken", "kucoin", "coinbase", "switcheo", "bittrex","bitstamp",
-            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto", "sergio",
-            "22", "goati",
+            "bithumb", "okex", "hotbit", "bitmart", "bilaxy", "vitalik", "nakamoto",
             };
 
-        private string[] reservedNames = new string[] {
+        public static string[] reservedNames = new string[] {
             "ripple", "tether", "tron", "chainchanged", "libra","loom", "enigma", "wax",
             "monero", "dash", "tezos", "cosmos", "maker", "ontology", "dogecoin", "zcash", "vechain",
             "qtum", "omise",  "holo", "nano", "augur", "waves", "icon" , "dai", "bitshares",
@@ -66,11 +65,13 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.OrganizationExists(name), "name already used for a organization");
             Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
 
+            System.Console.WriteLine("Trying to register: " + name);
             bool isReserved = false;
             for (int i = 0; i < prefixNames.Length; i++)
             {
                 if (name.StartsWith(prefixNames[i]))
                 {
+                    System.Console.WriteLine("Starts with : " + prefixNames[i]+ " at index " +i);
                     isReserved = true;
                     break;
                 }
@@ -80,6 +81,7 @@ namespace Phantasma.Contracts.Native
             {
                 if (name == reservedNames[i])
                 {
+                    System.Console.WriteLine("Reserved with : " + reservedNames[i]);
                     isReserved = true;
                     break;
                 }
