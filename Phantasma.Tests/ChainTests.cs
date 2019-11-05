@@ -1500,6 +1500,56 @@ namespace Phantasma.Tests
             Assert.IsTrue(result == VM.ExecutionState.Halt);
             Assert.IsTrue(vm.UsedGas > 0);
         }
+
+        [TestMethod]
+        public void ChainStressTest()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+            simulator.blockTimeSkip = TimeSpan.FromSeconds(5);
+
+            var nexus = simulator.Nexus;
+
+            var secondValidator = PhantasmaKeys.Generate();
+
+            var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
+            var stakeAmount = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
+
+            // make first validator allocate 5 more validator spots       
+            simulator.BeginBlock();
+            for (int i = 0; i < 1000; i++)
+            {
+                var target = PhantasmaKeys.Generate();
+                simulator.GenerateTransfer(owner, target.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
+            }
+            simulator.EndBlock();
+
+            var x = 0;
+
+            for (int i = 0; i < 1000; i++)
+            {
+                var target = PhantasmaKeys.Generate();
+                simulator.BeginBlock();
+                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
+                simulator.EndBlock();
+            }
+
+            x = 0;
+        }
+
+        [TestMethod]
+        public void DuplicateTransferTest()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+
+            var target = PhantasmaKeys.Generate();
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 1);
+            simulator.EndBlock();
+        }
     }
 
 }
