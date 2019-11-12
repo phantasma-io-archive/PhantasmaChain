@@ -1538,6 +1538,104 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void UnpaidGasExceptionTest()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+            simulator.blockTimeSkip = TimeSpan.FromSeconds(5);
+
+            var nexus = simulator.Nexus;
+
+            var testUser = PhantasmaKeys.Generate();
+
+            var fuelAmount = UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals);
+            var stakeAmount = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            string[] scriptString;
+
+            var symbol = "DEBUGNFT";
+            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+
+            string message = "customEvent";
+            var addressStr = Base16.Encode(owner.Address.ToByteArray());
+
+            scriptString = new string[]
+            {
+                $"alias r1, $triggerSend",
+                $"alias r2, $triggerReceive",
+                $"alias r3, $triggerBurn",
+                $"alias r4, $triggerMint",
+                $"alias r5, $currentTrigger",
+                $"alias r6, $comparisonResult",
+                $"alias r7, $triggerWitness",
+
+                $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
+                $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
+                $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
+                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
+                $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
+                $"pop $currentTrigger",
+
+                $"equal $triggerSend, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @sendHandler",
+
+                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @receiveHandler",
+
+                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @burnHandler",
+
+                $"equal $triggerMint, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @mintHandler",
+
+                $"jmp @end",
+
+                $"@sendHandler: jmp @end",
+
+                $"@receiveHandler: jmp @end",
+
+                $"@burnHandler: jmp @end",
+
+                $"@mintHandler: load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop r11",
+
+                $"load r10, {(int)EventKind.Custom}",
+                $@"load r12, ""{message}""",
+
+                $"push r10",
+                $"push r11",
+                $"push r12",
+                $@"extcall ""Runtime.Event""",
+
+                $"@end: ret"
+            };
+
+            var script = AssemblerUtils.BuildScript(scriptString);
+            
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None,
+                () => ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract("account", "RegisterScript", testUser.Address, script)
+                    .SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+        }
+
+        [TestMethod]
         public void DuplicateTransferTest()
         {
             var owner = PhantasmaKeys.Generate();
