@@ -128,6 +128,8 @@ namespace Phantasma.Contracts.Native
 
             _allowanceMap.Remove(from);
             _allowanceTargets.Remove(from);
+
+            Runtime.Notify(EventKind.GasPayment, Address.Null, new GasEventData(targetAddress, Runtime.GasPrice, spentGas));
         }
     }
 }

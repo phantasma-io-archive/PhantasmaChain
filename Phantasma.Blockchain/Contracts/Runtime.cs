@@ -29,6 +29,9 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
+
+        private bool gasPaymentInProgress = false;
+
         public Address GasTarget { get; private set; }
         public bool DelayPayment { get; private set; }
         public readonly bool readOnlyMode;
@@ -249,14 +252,25 @@ namespace Phantasma.Blockchain.Contracts
                     {
                         Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
 
-                        var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
-                        this.PaidGas += gasInfo.amount;
-
-                        if (address != this.Chain.Address)
+                        if (address.IsNull)
                         {
-                            this.FeeTargetAddress = address;
+                            Expect(gasPaymentInProgress, $"gas payment not in progress");
+                            this.gasPaymentInProgress = false;
+                            return; // this event should be ignored, it is mostly an hack
                         }
+                        else
+                        {
+                            Expect(!gasPaymentInProgress, $"gas payment already in progress");
+                            this.gasPaymentInProgress = true;
 
+                            var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
+                            this.PaidGas += gasInfo.amount;
+
+                            if (address != this.Chain.Address)
+                            {
+                                this.FeeTargetAddress = address;
+                            }
+                        }
                         break;
                     }
 
@@ -325,7 +339,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public override ExecutionState ConsumeGas(BigInteger gasCost)
         {
-            if (gasCost == 0)
+            if (gasCost == 0 || gasPaymentInProgress)
             {
                 return ExecutionState.Running;
             }
