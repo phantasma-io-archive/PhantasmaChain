@@ -71,6 +71,7 @@ namespace Phantasma.Contracts.Native
 
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
+            var oldCount = count;
 
             int oldIndex = -1;
             for (int i = 0; i < count; i++)
@@ -91,7 +92,7 @@ namespace Phantasma.Contracts.Native
             {
                 count--;
 
-                for (int i = oldIndex; i < count - 1; i++)
+                for (int i = oldIndex; i <= count - 1; i++)
                 {
                     var entry = rows.Get<LeaderboardRow>(i + 1);
                     rows.Replace<LeaderboardRow>(i, entry);
@@ -115,14 +116,22 @@ namespace Phantasma.Contracts.Native
 
             if (bestIndex >= leaderboard.size)
             {
+                rows = _rows.Get<string, StorageList>(name);
+                count = rows.Count();
+                for (int i = 0; i < count; i++)
+                {
+                    var entry = rows.Get<LeaderboardRow>(i);
+                    Runtime.Expect(entry.score >= score, "leaderboard bug");
+                }
+
                 return;
             }
 
-            for (int i = lastIndex; i > bestIndex; i--)
+            /*for (int i = lastIndex; i > bestIndex; i--)
             {
                 var entry = rows.Get<LeaderboardRow>(i - 1);
                 rows.Replace<LeaderboardRow>(i, entry);
-            }
+            }*/
 
             var newRow = new LeaderboardRow()
             {
@@ -132,6 +141,16 @@ namespace Phantasma.Contracts.Native
 
             if (bestIndex < count)
             {
+                if (count < leaderboard.size)
+                {
+                    rows.Add<LeaderboardRow>(newRow);
+                    for (int i = (int)count; i > bestIndex; i--)
+                    {
+                        var entry = rows.Get<LeaderboardRow>(i - 1);
+                        rows.Replace<LeaderboardRow>(i, entry);
+                    }
+                }
+
                 rows.Replace(bestIndex, newRow);
             }
             else
@@ -142,11 +161,13 @@ namespace Phantasma.Contracts.Native
 
             rows = _rows.Get<string, StorageList>(name);
             count = rows.Count();
-            for (int i=0; i<bestIndex; i++)
+            for (int i = 0; i < bestIndex; i++)
             {
                 var entry = rows.Get<LeaderboardRow>(i);
                 Runtime.Expect(entry.score >= score, "leaderboard bug");
             }
+
+            Runtime.Expect(count >= oldCount, "leaderboard bug");
 
             Runtime.Notify(EventKind.LeaderboardInsert, target, newRow);
         }
