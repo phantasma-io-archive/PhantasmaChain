@@ -1569,7 +1569,7 @@ namespace Phantasma.Tests
             var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
 
             string message = "customEvent";
-            var addressStr = Base16.Encode(owner.Address.ToByteArray());
+            var addressStr = Base16.Encode(testUser.Address.ToByteArray());
 
             scriptString = new string[]
             {
@@ -1577,9 +1577,11 @@ namespace Phantasma.Tests
                 $"alias r2, $triggerReceive",
                 $"alias r3, $triggerBurn",
                 $"alias r4, $triggerMint",
-                $"alias r5, $currentTrigger",
+                $"alias r5, $triggerWitness",
                 $"alias r6, $comparisonResult",
-                $"alias r7, $triggerWitness",
+                $"alias r7, $currentTrigger",
+                $"alias r8, $currentAddress",
+                $"alias r9, $sourceAddress",
 
                 $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
                 $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
@@ -1587,6 +1589,10 @@ namespace Phantasma.Tests
                 $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
                 $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
                 $"pop $currentTrigger",
+                $"pop $currentAddress",
+
+                $"equal $triggerWitness, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @witnessHandler",
 
                 $"equal $triggerSend, $currentTrigger, $comparisonResult",
                 $"jmpif $comparisonResult, @sendHandler",
@@ -1601,6 +1607,15 @@ namespace Phantasma.Tests
                 $"jmpif $comparisonResult, @mintHandler",
 
                 $"jmp @end",
+
+                $"@witnessHandler: ",
+                $"load r11 0x{addressStr}",
+                $"push r11",
+                $@"extcall ""Address()""",
+                $"pop $sourceAddress",
+                $"equal $sourceAddress, $currentAddress, $comparisonResult",
+                $"jmpif $comparisonResult, @end",
+                $"throw",
 
                 $"@sendHandler: jmp @end",
 

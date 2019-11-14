@@ -65,13 +65,13 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.OrganizationExists(name), "name already used for a organization");
             Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
 
-            System.Console.WriteLine("Trying to register: " + name);
+            //System.Console.WriteLine("Trying to register: " + name);
             bool isReserved = false;
             for (int i = 0; i < prefixNames.Length; i++)
             {
                 if (name.StartsWith(prefixNames[i]))
                 {
-                    System.Console.WriteLine("Starts with : " + prefixNames[i]+ " at index " +i);
+                    //System.Console.WriteLine("Starts with : " + prefixNames[i]+ " at index " +i);
                     isReserved = true;
                     break;
                 }
@@ -81,7 +81,7 @@ namespace Phantasma.Contracts.Native
             {
                 if (name == reservedNames[i])
                 {
-                    System.Console.WriteLine("Reserved with : " + reservedNames[i]);
+                    //System.Console.WriteLine("Reserved with : " + reservedNames[i]);
                     isReserved = true;
                     break;
                 }
@@ -128,8 +128,11 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(!_scriptMap.ContainsKey(target), "address already has a script");
 
-            var witnessCheck = Runtime.InvokeTrigger(script, AccountTrigger.OnWitness.ToString(), Address.Null);
-            Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly");
+            var witnessCheck = Runtime.InvokeTrigger(script, AccountTrigger.OnWitness.ToString(), target);
+            Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #1");
+
+            witnessCheck = Runtime.InvokeTrigger(script, AccountTrigger.OnWitness.ToString(), Address.Null);
+            Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #2");
 
             _scriptMap.Set(target, script);
 
