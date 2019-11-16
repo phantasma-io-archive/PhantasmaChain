@@ -603,11 +603,14 @@ namespace Phantasma.Blockchain
 
             VMObject temp;
 
-            var owner = Runtime.Nexus.GetChainOwnerByName(Runtime.Chain.Name);
+            var org = Runtime.Nexus.GetChainOrganization(Runtime.Chain.Name);
+
+            var owner = PopAddress(Runtime);
             Runtime.Expect(owner.IsUser, "address must be user");
 
             if (Runtime.Nexus.HasGenesis)
             {
+                //Runtime.Expect(org != DomainSettings.ValidatorsOrganizationName, "cannot deploy contract via this organization");
                 Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
             }
 
@@ -697,6 +700,10 @@ namespace Phantasma.Blockchain
             var source = PopAddress(Runtime);
 
             temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for organization");
+            var org = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.String, "expected string for name");
             var name = temp.AsString();
 
@@ -704,7 +711,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for parent");
             var parentName = temp.AsString();
 
-            Runtime.CreateChain(source, name, parentName);
+            Runtime.CreateChain(source, org, name, parentName);
 
             return ExecutionState.Running;
         }

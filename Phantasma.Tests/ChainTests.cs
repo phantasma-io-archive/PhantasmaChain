@@ -86,7 +86,7 @@ namespace Phantasma.Tests
             var supply = nexus.RootChain.GetTokenSupply(rootChain.Storage, symbol);
             Assert.IsTrue(supply > 0);
 
-            var balance = UnitConversion.ToDecimal(nexus.RootChain.GetTokenBalance(rootChain.Storage, symbol, owner.Address), DomainSettings.FuelTokenDecimals);
+            var balance = UnitConversion.ToDecimal(nexus.RootChain.GetTokenBalance(rootChain.Storage, token, owner.Address), DomainSettings.FuelTokenDecimals);
             Assert.IsTrue(balance > 0);
 
             Assert.IsTrue(rootChain != null);
@@ -125,7 +125,7 @@ namespace Phantasma.Tests
             simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUserA.Address);
+            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserA.Address);
 
             Assert.IsTrue(oldBalance == amount);
 
@@ -136,10 +136,10 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUserB.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserB.Address);
             Assert.IsTrue(transferBalance == amount);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUserA.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserA.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
             var sum = transferBalance + newBalance + gasFee;
@@ -168,7 +168,7 @@ namespace Phantasma.Tests
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
 
             Assert.IsTrue(oldBalance > amount);
 
@@ -178,10 +178,10 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUser.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUser.Address);
             Assert.IsTrue(transferBalance == amount);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
 
             Assert.IsTrue(transferBalance + newBalance == oldBalance);
         }
@@ -208,7 +208,7 @@ namespace Phantasma.Tests
 
             var amount = UnitConversion.ToBigInteger(2, token.Decimals);
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
 
             Assert.IsTrue(oldBalance > amount);
 
@@ -218,10 +218,10 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUser.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUser.Address);
             Assert.IsTrue(transferBalance == amount);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
 
             Assert.IsTrue(transferBalance + newBalance == oldBalance);
         }
@@ -275,7 +275,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUser.Address);
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUser.Address);
             Assert.IsTrue(balance == amount);
 
             // make user stake enough to register a name
@@ -335,7 +335,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(hashes.Any(x => x == txB.Hash));
             Assert.IsTrue(hashes.Any(x => x == txC.Hash));
 
-            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
+            var stakeToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, stakeToken, testUserB.Address);
             Assert.IsTrue(finalBalance == transferAmount);
         }
 
@@ -366,7 +367,8 @@ namespace Phantasma.Tests
             Assert.IsTrue(blockA != null);
             Assert.IsFalse(blockA.OracleData.Any());
 
-            var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, testUserA.Address);
+            var fuelToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol);
+            var originalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, fuelToken, testUserA.Address);
 
             var swapAmount = UnitConversion.ToBigInteger(0.01m, DomainSettings.StakingTokenDecimals);
             simulator.BeginBlock();
@@ -380,7 +382,7 @@ namespace Phantasma.Tests
             var otherBlock = Block.Unserialize(bytes);
             Assert.IsTrue(otherBlock.Hash == blockB.Hash);
 
-            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol, testUserA.Address);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, fuelToken, testUserA.Address);
             Assert.IsTrue(finalBalance > originalBalance);
 
             /*
@@ -437,10 +439,11 @@ namespace Phantasma.Tests
             });
             simulator.EndBlock();
 
-            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, swapSymbol, transcodedAddress);
+            var swapToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, swapSymbol);
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, swapToken, transcodedAddress);
             Assert.IsTrue(balance == 0);
 
-            balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, swapSymbol, testUser.Address);
+            balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, swapToken, testUser.Address);
             Assert.IsTrue(balance > 0);
 
             var settleHash = (Hash)nexus.RootChain.InvokeContract(nexus.RootStorage, "interop", nameof(InteropContract.GetSettlement), "neo", neoTxHash).ToObject();
@@ -572,7 +575,7 @@ namespace Phantasma.Tests
             // Send from Genesis address to test user
             var transferAmount = 1;
 
-            var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUser.Address);
+            var initialFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUser.Address);
 
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
@@ -581,7 +584,7 @@ namespace Phantasma.Tests
                     .SpendGas(owner.Address).EndScript());
             simulator.EndBlock();
 
-            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, testUser.Address);
+            var finalFuelBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUser.Address);
 
             Assert.IsTrue(finalFuelBalance - initialFuelBalance == transferAmount);
         }
@@ -614,7 +617,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             var crossFee = UnitConversion.ToBigInteger(0.001m, token.Decimals);
@@ -633,13 +636,13 @@ namespace Phantasma.Tests
 
             // verify balances
             var feeB = targetChain.GetTransactionFee(txB);
-            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, receiver.Address);
+            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, token, receiver.Address);
             Assert.IsTrue(balance == sideAmount - feeB);
 
             var feeA = sourceChain.GetTransactionFee(txA);
             var leftoverAmount = originalAmount - (sideAmount + feeA + crossFee);
 
-            balance = sourceChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            balance = sourceChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
         }
 
@@ -667,13 +670,16 @@ namespace Phantasma.Tests
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
-            simulator.GenerateChain(owner, "main", "test");
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateChain(owner, DomainSettings.ValidatorsOrganizationName, "main", "test");
             simulator.EndBlock();
 
             var targetChain = nexus.GetChainByName("test");
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             // do a side chain send using test user balance from root to account chain
@@ -689,13 +695,13 @@ namespace Phantasma.Tests
 
             // verify balances
             var feeB = targetChain.GetTransactionFee(txB);
-            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             //Assert.IsTrue(balance == sideAmount - feeB); TODO CHECK THIS BERNARDO
 
             var feeA = sourceChain.GetTransactionFee(txA);
             var leftoverAmount = originalAmount - (sideAmount + feeA);
 
-            balance = sourceChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            balance = sourceChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
 
             sideAmount /= 2;
@@ -738,13 +744,13 @@ namespace Phantasma.Tests
             // Send from Genesis address to "sender" user
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
-            simulator.GenerateChain(owner, sideChain.Name, newChainName);
+            simulator.GenerateChain(owner, DomainSettings.ValidatorsOrganizationName, sideChain.Name, newChainName);
             simulator.EndBlock();
 
             var targetChain = nexus.GetChainByName(newChainName);
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             // do a side chain send using test user balance from root to apps chain
@@ -762,7 +768,7 @@ namespace Phantasma.Tests
             var txCostB = sideChain.GetTransactionFee(txB);
             sideAmount = sideAmount - txCostB;
 
-            balance = sideChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            balance = sideChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == sideAmount);
 
             var extraFree = UnitConversion.ToBigInteger(0.01m, token.Decimals);
@@ -1011,7 +1017,7 @@ namespace Phantasma.Tests
             // Send some SOUL to the test user (required for gas used in "transfer" transaction)
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, sourceChain, DomainSettings.FuelTokenSymbol, fullAmount);
-            simulator.GenerateChain(owner, "main", "test");
+            simulator.GenerateChain(owner, DomainSettings.ValidatorsOrganizationName, "main", "test");
             simulator.EndBlock();
 
             var targetChain = nexus.GetChainByName("test");
@@ -1108,7 +1114,7 @@ namespace Phantasma.Tests
             var tx = simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, amount);
             simulator.EndBlock();
 
-            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            var oldBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(oldBalance == amount);
 
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
@@ -1120,9 +1126,9 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, receiver.Address);
+            var transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, receiver.Address);
 
-            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
 
             Assert.IsTrue(transferBalance + newBalance + gasFee == oldBalance);
 
@@ -1142,7 +1148,7 @@ namespace Phantasma.Tests
             }
 
             // verify balances, receiver should have 0 balance
-            transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, receiver.Address);
+            transferBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, receiver.Address);
             Assert.IsTrue(transferBalance == 0, "Transaction failed completely as expected");
         }
 
@@ -1174,7 +1180,7 @@ namespace Phantasma.Tests
             simulator.EndBlock();
 
             // verify test user balance
-            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, sender.Address);
+            var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
             Assert.IsTrue(balance == originalAmount);
 
             Transaction txA = null, txB = null;
@@ -1207,9 +1213,8 @@ namespace Phantasma.Tests
                 Assert.IsNotNull(e);
             }
 
-
             // verify balances, receiver should have 0 balance
-            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, receiver.Address);
+            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, token, receiver.Address);
             Assert.IsTrue(balance == 0);
         }
 
@@ -1260,7 +1265,9 @@ namespace Phantasma.Tests
             var evts = block.GetEventsForTransaction(tx.Hash);
             Assert.IsTrue(evts.Any(x => x.Kind == EventKind.TokenReceive && x.Address == chainAddress));
 
-            var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, chainAddress);
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
+
+            var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, chainAddress);
             Assert.IsTrue(initialBalance > 10000);
 
             string[] scriptString = new string[]
@@ -1309,7 +1316,7 @@ namespace Phantasma.Tests
                 Assert.IsTrue(e is ChainException);
             }
 
-            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, simulator.Nexus.RootChain.Address);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, simulator.Nexus.RootChain.Address);
             Assert.IsTrue(initialBalance == finalBalance);
         }
 
@@ -1347,7 +1354,8 @@ namespace Phantasma.Tests
             var feeAmount = UnitConversion.ToDecimal(feeValue, DomainSettings.FuelTokenDecimals);
             Assert.IsTrue(feeAmount >= 0.0009m);
 
-            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserB.Address);
             Assert.IsTrue(finalBalance == transferAmount);
         }
 
@@ -1431,9 +1439,10 @@ namespace Phantasma.Tests
             
             var currentValidatorIndex = 1;
 
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
             for (int i = 0; i < validatorSwitchAttempts; i++)
             {
-                var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
+                var initialBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserB.Address);
 
                 // here we skip to a time where its supposed to be the turn of the given validator index
 
@@ -1451,7 +1460,7 @@ namespace Phantasma.Tests
                 Assert.IsTrue(events.Length > 0);
                 //Assert.IsTrue(events.Any(x => x.Kind == EventKind.ValidatorSwitch));
 
-                var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol, testUserB.Address);
+                var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserB.Address);
                 Assert.IsTrue(finalBalance == initialBalance + transferAmount);
 
                 currentValidatorIndex = currentValidatorIndex == 1 ? 0 : 1; //toggle the current validator index

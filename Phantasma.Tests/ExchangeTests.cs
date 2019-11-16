@@ -502,8 +502,8 @@ namespace Phantasma.Tests
                 var orderSizeBigint = UnitConversion.ToBigInteger(orderSize, baseDecimals);
                 var orderPriceBigint = UnitConversion.ToBigInteger(orderPrice, quoteDecimals);
 
-                var OpenerBaseTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseSymbol, user.Address);
-                var OpenerQuoteTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteSymbol, user.Address);
+                var OpenerBaseTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseToken, user.Address);
+                var OpenerQuoteTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteToken, user.Address);
 
                 BigInteger OpenerBaseTokensDelta = 0;
                 BigInteger OpenerQuoteTokensDelta = 0;
@@ -521,7 +521,8 @@ namespace Phantasma.Tests
                     if (OtherAddressesTokensInitial.ContainsKey(oppositeOrder.Creator) == false)
                     {
                         var targetSymbol = otherSide == Buy ? baseSymbol : quoteSymbol;
-                        OtherAddressesTokensInitial.Add(oppositeOrder.Creator, simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetSymbol, oppositeOrder.Creator));
+                        var targetToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, targetSymbol);
+                        OtherAddressesTokensInitial.Add(oppositeOrder.Creator, simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetToken, oppositeOrder.Creator));
                     }
                 }
                 //--------------------------
@@ -698,8 +699,8 @@ namespace Phantasma.Tests
 
 
                 //get the actual final balance of all addresses involved and make sure it matches the expected deltas
-                var OpenerBaseTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseSymbol, user.Address);
-                var OpenerQuoteTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteSymbol, user.Address);
+                var OpenerBaseTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseToken, user.Address);
+                var OpenerQuoteTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteToken, user.Address);
 
                 Assert.IsTrue(OpenerBaseTokensFinal == OpenerBaseTokensDelta + OpenerBaseTokensInitial);
                 Assert.IsTrue(OpenerQuoteTokensFinal == OpenerQuoteTokensDelta + OpenerQuoteTokensInitial);
@@ -713,8 +714,9 @@ namespace Phantasma.Tests
                         delta = OtherAddressesTokensDelta[entry.Key];
 
                     var targetSymbol = otherSide == Buy ? baseSymbol : quoteSymbol;
+                    var targetToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, targetSymbol);
 
-                    var otherAddressFinalTokens = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetSymbol, entry.Key);
+                    var otherAddressFinalTokens = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetToken, entry.Key);
 
                     Assert.IsTrue(otherAddressFinalTokens == delta + otherAddressInitialTokens);
                 }
@@ -735,8 +737,8 @@ namespace Phantasma.Tests
 
                 var orderSizeBigint = UnitConversion.ToBigInteger(orderSize, orderToken.Decimals);
 
-                var OpenerBaseTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseSymbol, user.Address);
-                var OpenerQuoteTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteSymbol, user.Address);
+                var OpenerBaseTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseToken, user.Address);
+                var OpenerQuoteTokensInitial = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteToken, user.Address);
 
                 BigInteger OpenerBaseTokensDelta = 0;
                 BigInteger OpenerQuoteTokensDelta = 0;
@@ -754,7 +756,8 @@ namespace Phantasma.Tests
                     if (OtherAddressesTokensInitial.ContainsKey(oppositeOrder.Creator) == false)
                     {
                         var targetSymbol = otherSide == Buy ? baseSymbol : quoteSymbol;
-                        OtherAddressesTokensInitial.Add(oppositeOrder.Creator, simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetSymbol, oppositeOrder.Creator));
+                        var targetToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, targetSymbol);
+                        OtherAddressesTokensInitial.Add(oppositeOrder.Creator, simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetToken, oppositeOrder.Creator));
                     }
                 }
                 //--------------------------
@@ -890,8 +893,8 @@ namespace Phantasma.Tests
                 }
 
                 //get the actual final balance of all addresses involved and make sure it matches the expected deltas
-                var OpenerBaseTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseSymbol, user.Address);
-                var OpenerQuoteTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteSymbol, user.Address);
+                var OpenerBaseTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, baseToken, user.Address);
+                var OpenerQuoteTokensFinal = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, quoteToken, user.Address);
 
                 Assert.IsTrue(OpenerBaseTokensFinal == OpenerBaseTokensDelta + OpenerBaseTokensInitial);
                 Assert.IsTrue(OpenerQuoteTokensFinal == OpenerQuoteTokensDelta + OpenerQuoteTokensInitial);
@@ -905,8 +908,9 @@ namespace Phantasma.Tests
                         delta = OtherAddressesTokensDelta[entry.Key];
 
                     var targetSymbol = otherSide == Buy ? baseSymbol : quoteSymbol;
+                    var targetToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, targetSymbol);
 
-                    var otherAddressFinalTokens = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetSymbol, entry.Key);
+                    var otherAddressFinalTokens = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, targetToken, entry.Key);
 
                     Assert.IsTrue(otherAddressFinalTokens == delta + otherAddressInitialTokens);
                 }

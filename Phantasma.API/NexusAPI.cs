@@ -493,15 +493,17 @@ namespace Phantasma.API
             Throw.IfNull(chain, nameof(chain));
 
             var parentName = Nexus.GetParentChainByName(chain.Name);
-            var parentChain = Nexus.GetChainByName(parentName);
+            var orgName = Nexus.GetChainOrganization(chain.Name);
 
             var result = new ChainResult
             {
                 name = chain.Name,
                 address = chain.Address.Text,
                 height = (uint)chain.Height,
-                parentAddress = parentChain != null ? parentChain.Address.ToString() : "",
-                contracts = chain.GetContracts(chain.Storage).Select(x => x.Name).ToArray()
+                parent = parentName,
+                organization = orgName,
+                contracts = chain.GetContracts(chain.Storage).Select(x => x.Name).ToArray(),
+                dapps = new string[0],
             };
 
             return result;
@@ -597,10 +599,10 @@ namespace Phantasma.API
                 foreach (var chainName in chains)
                 {
                     var chain = Nexus.GetChainByName(chainName);
-                    var balance = chain.GetTokenBalance(chain.Storage, symbol, address);
+                    var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
+                    var balance = chain.GetTokenBalance(chain.Storage, token, address);
                     if (balance > 0)
                     {
-                        var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
                         var balanceEntry = new BalanceResult
                         {
                             chain = chain.Name,
@@ -1270,7 +1272,8 @@ namespace Phantasma.API
             }
 
             var address = Address.FromText(account);
-            var balance = chain.GetTokenBalance(chain.Storage, tokenSymbol, address);
+            var token = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
+            var balance = chain.GetTokenBalance(chain.Storage, token, address);
 
             var result = new BalanceResult()
             {

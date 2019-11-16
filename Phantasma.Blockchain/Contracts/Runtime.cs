@@ -767,7 +767,8 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger GetBalance(string symbol, Address address)
         {
             Expect(TokenExists(symbol), $"Token does not exist ({symbol})");
-            return Chain.GetTokenBalance(this.Storage, symbol, address);
+            var token = GetToken(symbol);
+            return Chain.GetTokenBalance(this.Storage, token, address);
         }
 
         public BigInteger[] GetOwnerships(string symbol, Address address)
@@ -854,7 +855,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Notify(EventKind.TokenCreate, from, symbol);
         }
 
-        public void CreateChain(Address owner, string name, string parentName)
+        public void CreateChain(Address creator, string organization, string name, string parentName)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
@@ -865,15 +866,19 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(!string.IsNullOrEmpty(name), "name required");
             Runtime.Expect(!string.IsNullOrEmpty(parentName), "parent chain required");
 
-            Runtime.Expect(owner.IsUser, "owner address must be user address");
-            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+            Runtime.Expect(Runtime.OrganizationExists(organization), "invalid organization");
+            var org = Runtime.GetOrganization(organization);
+            Runtime.Expect(org.IsMember(creator), "creator does not belong to organization");
+
+            Runtime.Expect(creator.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(creator), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(creator), "invalid witness");
 
             name = name.ToLowerInvariant();
             Runtime.Expect(!name.Equals(parentName, StringComparison.OrdinalIgnoreCase), "same name as parent");
 
-            Nexus.CreateChain(RootStorage, owner, name, parentName);
-            Runtime.Notify(EventKind.ChainCreate, owner, name);
+            Nexus.CreateChain(RootStorage, organization, name, parentName);
+            Runtime.Notify(EventKind.ChainCreate, creator, name);
         }
 
         public void CreateFeed(Address owner, string name, FeedMode mode)

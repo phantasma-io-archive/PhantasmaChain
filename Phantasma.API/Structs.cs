@@ -120,20 +120,32 @@ namespace Phantasma.API
         public string address;
         public string value;
     }
+    public struct DappResult : IAPIResult
+    {
+        public string name;
+        public string address;
+        public string chain;
+    }
 
     public struct ChainResult : IAPIResult
     {
         public string name;
         public string address;
 
-        [APIDescription("Address of parent chain")]
-        public string parentAddress;
+        [APIDescription("Name of parent chain")]
+        public string parent;
 
         [APIDescription("Current chain height")]
         public uint height;
 
+        [APIDescription("Chain organization")]
+        public string organization;
+
         [APIDescription("Contracts deployed in the chain")]
         public string[] contracts;
+
+        [APIDescription("Dapps deployed in the chain")]
+        public string[] dapps;
     }
 
     public struct EventResult : IAPIResult

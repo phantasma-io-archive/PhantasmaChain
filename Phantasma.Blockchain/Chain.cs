@@ -287,17 +287,16 @@ namespace Phantasma.Blockchain
         }
 
         // NOTE should never be used directly from a contract, instead use Runtime.GetBalance!
-        public BigInteger GetTokenBalance(StorageContext storage, string tokenSymbol, Address address)
+        public BigInteger GetTokenBalance(StorageContext storage, IToken token, Address address)
         {
-            var tokenInfo = Nexus.GetTokenInfo(storage, tokenSymbol);
-            if (tokenInfo.Flags.HasFlag(TokenFlags.Fungible))
+            if (token.Flags.HasFlag(TokenFlags.Fungible))
             {
-                var balances = new BalanceSheet(tokenSymbol);
+                var balances = new BalanceSheet(token.Symbol);
                 return balances.Get(storage, address);
             }
             else
             {
-                var ownerships = new OwnershipSheet(tokenSymbol);
+                var ownerships = new OwnershipSheet(token.Symbol);
                 var items = ownerships.Get(storage, address);
                 return items.Length;
             }

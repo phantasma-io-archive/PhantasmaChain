@@ -23,7 +23,7 @@ namespace Phantasma.Blockchain
     {
         private string ChainNameMapKey => ".chain.name.";
         private string ChainAddressMapKey => ".chain.addr.";
-        private string ChainOwnerKey => ".chain.owner.";
+        private string ChainOrgKey => ".chain.org.";
         private string ChainParentNameKey => ".chain.parent.";
         private string ChainChildrenBlockKey => ".chain.children.";
 
@@ -325,7 +325,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CHAINS
-        internal bool CreateChain(StorageContext storage, Address owner, string name, string parentChainName)
+        internal bool CreateChain(StorageContext storage, string organization, string name, string parentChainName)
         {
             if (name != DomainSettings.RootChainName)
             {
@@ -365,7 +365,7 @@ namespace Phantasma.Blockchain
             // add address and name mapping 
             storage.Put(ChainNameMapKey + chain.Name, chain.Address.ToByteArray());
             storage.Put(ChainAddressMapKey + chain.Address.Text, Encoding.UTF8.GetBytes(chain.Name));
-            storage.Put(ChainOwnerKey + chain.Name, owner.ToByteArray());
+            storage.Put(ChainOrgKey + chain.Name, Encoding.UTF8.GetBytes(organization));
 
             if (!string.IsNullOrEmpty(parentChainName))
             {
@@ -432,17 +432,17 @@ namespace Phantasma.Blockchain
             throw new Exception("Parent name not found for chain: " + chainName);
         }
 
-        public Address GetChainOwnerByName(string chainName)
+        public string GetChainOrganization(string chainName)
         {
-            var key = ChainOwnerKey + chainName;
+            var key = ChainOrgKey + chainName;
             if (RootStorage.Has(key))
             {
                 var bytes = RootStorage.Get(key);
-                var owner = Address.FromBytes(bytes);
-                return owner;
+                var orgName = Encoding.UTF8.GetString(bytes);
+                return orgName;
             }
 
-            return GetGenesisAddress(RootStorage);
+            return null;
         }
 
         public IEnumerable<string> GetChildChainsByAddress(StorageContext storage, Address chainAddress)
@@ -911,23 +911,23 @@ namespace Phantasma.Blockchain
             var sb = ScriptUtils.BeginScript();
 
             var deployInterop = "Runtime.DeployContract";
-            sb.CallInterop(deployInterop, ValidatorContractName);
-            sb.CallInterop(deployInterop, GovernanceContractName);
-            sb.CallInterop(deployInterop, ConsensusContractName);
-            sb.CallInterop(deployInterop, AccountContractName);
-            sb.CallInterop(deployInterop, ExchangeContractName);
-            sb.CallInterop(deployInterop, SwapContractName);
-            sb.CallInterop(deployInterop, InteropContractName);
-            sb.CallInterop(deployInterop, StakeContractName);
-            sb.CallInterop(deployInterop, InteropContractName);
-            sb.CallInterop(deployInterop, StorageContractName);
-            sb.CallInterop(deployInterop, RelayContractName);
-            sb.CallInterop(deployInterop, RankingContractName);
-            sb.CallInterop(deployInterop, BombContractName);
-            sb.CallInterop(deployInterop, PrivacyContractName);
-            sb.CallInterop(deployInterop, "friends");
-            sb.CallInterop(deployInterop, "market");
-            sb.CallInterop(deployInterop, "mail");
+            sb.CallInterop(deployInterop, owner.Address, ValidatorContractName);
+            sb.CallInterop(deployInterop, owner.Address, GovernanceContractName);
+            sb.CallInterop(deployInterop, owner.Address, ConsensusContractName);
+            sb.CallInterop(deployInterop, owner.Address, AccountContractName);
+            sb.CallInterop(deployInterop, owner.Address, ExchangeContractName);
+            sb.CallInterop(deployInterop, owner.Address, SwapContractName);
+            sb.CallInterop(deployInterop, owner.Address, InteropContractName);
+            sb.CallInterop(deployInterop, owner.Address, StakeContractName);
+            sb.CallInterop(deployInterop, owner.Address, InteropContractName);
+            sb.CallInterop(deployInterop, owner.Address, StorageContractName);
+            sb.CallInterop(deployInterop, owner.Address, RelayContractName);
+            sb.CallInterop(deployInterop, owner.Address, RankingContractName);
+            sb.CallInterop(deployInterop, owner.Address, BombContractName);
+            sb.CallInterop(deployInterop, owner.Address, PrivacyContractName);
+            sb.CallInterop(deployInterop, owner.Address, "friends");
+            sb.CallInterop(deployInterop, owner.Address, "market");
+            sb.CallInterop(deployInterop, owner.Address, "mail");
 
             var orgInterop = "Nexus.CreateOrganization";
             var orgScript = new byte[0];
@@ -960,7 +960,7 @@ namespace Phantasma.Blockchain
 
             foreach (var contractName in contracts)
             {
-                sb.CallInterop("Runtime.DeployContract", contractName);
+                sb.CallInterop("Runtime.DeployContract", owner.Address, contractName);
             }
 
             var script = //SpendGas(owner.Address).
@@ -1027,7 +1027,7 @@ namespace Phantasma.Blockchain
             storage.Put(GetNexusKey("name"), name);
             storage.Put(GetNexusKey("owner"), owner.Address);
 
-            if (!CreateChain(storage, owner.Address, DomainSettings.RootChainName, null))
+            if (!CreateChain(storage, DomainSettings.ValidatorsOrganizationName, DomainSettings.RootChainName, null))
             {
                 throw new ChainException("failed to create root chain");
             }

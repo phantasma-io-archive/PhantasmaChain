@@ -153,7 +153,8 @@ namespace Phantasma.Tests
             //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
             Assert.IsTrue(balance == 1000);
 
             Assert.ThrowsException<ChainException>(() =>
@@ -163,7 +164,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
             Assert.IsTrue(balance == 1000);
         }
 
@@ -243,7 +244,8 @@ namespace Phantasma.Tests
             //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
             Assert.IsTrue(balance == 1000);
 
             var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
@@ -261,7 +263,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
             Assert.IsTrue(balance == 1000);
         }
 
@@ -336,7 +338,8 @@ namespace Phantasma.Tests
             var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
             simulator.EndBlock();
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
             Assert.IsTrue(balance == 1000);
 
             Assert.ThrowsException<ChainException>(() =>
@@ -346,7 +349,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, owner.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
             Assert.IsTrue(balance == 1000);
         }
 
@@ -433,7 +436,8 @@ namespace Phantasma.Tests
             var accountScript = simulator.Nexus.LookUpAddressScript(simulator.Nexus.RootStorage, target.Address);
             Assert.IsTrue(accountScript != null && accountScript.Length > 0);
 
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, target.Address);
+            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
+            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, target.Address);
             Assert.IsTrue(balance == 1000);
 
             var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
@@ -451,7 +455,7 @@ namespace Phantasma.Tests
                 simulator.EndBlock();
             });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, symbol, target.Address);
+            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, target.Address);
             Assert.IsTrue(balance == 1000);
         }
 
