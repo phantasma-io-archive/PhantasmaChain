@@ -1502,7 +1502,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void ChainStressTest()
+        public void ChainTransferStressTest()
         {
             var owner = PhantasmaKeys.Generate();
             var simulator = new NexusSimulator(owner, 1234);
@@ -1510,12 +1510,23 @@ namespace Phantasma.Tests
 
             var nexus = simulator.Nexus;
 
-            var secondValidator = PhantasmaKeys.Generate();
+            var testUser = PhantasmaKeys.Generate();
 
-            var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
+            var fuelAmount = UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals);
             var stakeAmount = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
 
-            // make first validator allocate 5 more validator spots       
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
             simulator.BeginBlock();
             for (int i = 0; i < 1000; i++)
             {

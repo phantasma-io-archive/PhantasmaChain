@@ -1586,10 +1586,22 @@ namespace Phantasma.Blockchain
         {
             if (HasGenesis)
             {
-                return RootChain.InvokeContract(storage, Nexus.GovernanceContractName, "GetValue", name).AsNumber();
+                //return RootChain.InvokeContract(storage, Nexus.GovernanceContractName, nameof(GovernanceContract.GetValue), name).AsNumber();
+                return OptimizedGetGovernanceValue(storage, name);
             }
 
             return 0;
+        }
+
+        private BigInteger OptimizedGetGovernanceValue(StorageContext storage, string name)
+        {
+            var valueMapKey = Encoding.UTF8.GetBytes($".{Nexus.GovernanceContractName}._valueMap");
+            var valueMap = new StorageMap(valueMapKey, storage);
+
+            Throw.If(valueMap.ContainsKey(name) == false, "invalid value name");
+
+            var value = valueMap.Get<string, BigInteger>(name);
+            return value;
         }
 
         // TODO optimize this
