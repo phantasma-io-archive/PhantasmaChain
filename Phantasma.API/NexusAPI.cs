@@ -409,6 +409,7 @@ namespace Phantasma.API
                 blockHeight = block != null ? (int)block.Height : -1,
                 blockHash = block != null ? block.Hash.ToString() : Hash.Null.ToString(),
                 script = tx.Script.Encode(),
+                payload = tx.Payload.Encode(),
                 fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0"
             };
 
