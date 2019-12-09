@@ -175,6 +175,9 @@ namespace Phantasma.API
         [APIDescription("Script content of the transaction, in hexadecimal format")]
         public string script;
 
+        [APIDescription("Payload content of the transaction, in hexadecimal format")]
+        public string payload;
+
         [APIDescription("List of events that triggered in the transaction")]
         public EventResult[] events;
 
