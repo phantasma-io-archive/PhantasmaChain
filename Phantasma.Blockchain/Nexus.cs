@@ -293,6 +293,7 @@ namespace Phantasma.Blockchain
                 RegisterContract<FriendsContract>();
                 RegisterContract<MailContract>();
                 RegisterContract<PrivacyContract>();
+                RegisterContract<SaleContract>();
             }
 
             if (_contractMap.ContainsKey(contractAdress)) {
@@ -928,6 +929,7 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, owner.Address, "friends");
             sb.CallInterop(deployInterop, owner.Address, "market");
             sb.CallInterop(deployInterop, owner.Address, "mail");
+            sb.CallInterop(deployInterop, owner.Address, "sale");
 
             var orgInterop = "Nexus.CreateOrganization";
             var orgScript = new byte[0];
@@ -935,7 +937,7 @@ namespace Phantasma.Blockchain
             sb.CallInterop(orgInterop, owner.Address, DomainSettings.MastersOrganizationName, "Soul Masters", orgScript);
             sb.CallInterop(orgInterop, owner.Address, DomainSettings.StakersOrganizationName, "Soul Stakers", orgScript);
 
-            sb.MintTokens(DomainSettings.StakingTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(8863626, DomainSettings.StakingTokenDecimals));
+            sb.MintTokens(DomainSettings.StakingTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(2863626, DomainSettings.StakingTokenDecimals));
             sb.MintTokens(DomainSettings.FuelTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(1000000, DomainSettings.FuelTokenDecimals));
             // requires staking token to be created previously
             sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, StakeContract.DefaultMasterThreshold);
@@ -1498,6 +1500,12 @@ namespace Phantasma.Blockchain
 
         public bool ContractExists(StorageContext storage, string name)
         {
+            NativeContractKind kind;
+            if (Enum.TryParse<NativeContractKind>(name, true, out kind))
+            {
+                return true;
+            }
+
             var key = GetContractInfoKey(name);
             return storage.Has(key);
         }

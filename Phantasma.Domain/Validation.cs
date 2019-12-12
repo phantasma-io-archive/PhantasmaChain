@@ -48,7 +48,7 @@ namespace Phantasma.Domain
 
                 if (c >= 97 && c <= 122) continue; // lowercase allowed
                 if (c == 95) continue; // underscore allowed
-                if (c >= 48 && c <= 57) continue; // numbers allowed
+                if (index > 1 && c >= 48 && c <= 57) continue; // numbers allowed except first char
 
                 return false;
             }

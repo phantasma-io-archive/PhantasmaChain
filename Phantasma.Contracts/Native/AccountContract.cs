@@ -54,9 +54,6 @@ namespace Phantasma.Contracts.Native
             var stake = Runtime.GetStake(target);
             Runtime.Expect(stake >= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals), "must have something staked");
 
-            Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
-            Runtime.Expect(!_nameMap.ContainsKey(name), "name already used for other account");
-
             Runtime.Expect(name != Runtime.NexusName, "name already used for nexus");
             Runtime.Expect(!Runtime.ChainExists(name), "name already used for a chain");
             Runtime.Expect(!Runtime.PlatformExists(name), "name already used for a platform");
@@ -64,6 +61,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(!Runtime.FeedExists(name), "name already used for a feed");
             Runtime.Expect(!Runtime.OrganizationExists(name), "name already used for a organization");
             Runtime.Expect(!Runtime.TokenExists(name.ToUpper()), "name already used for a token");
+
+            Runtime.Expect(!_addressMap.ContainsKey(target), "address already has a name");
+            Runtime.Expect(!_nameMap.ContainsKey(name), "name already used for other account");
 
             //System.Console.WriteLine("Trying to register: " + name);
             bool isReserved = false;
