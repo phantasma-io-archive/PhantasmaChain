@@ -598,7 +598,6 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-            var targetChain = nexus.GetChainByName("sale");
 
             var symbol = DomainSettings.FuelTokenSymbol;
 
@@ -612,9 +611,16 @@ namespace Phantasma.Tests
             Assert.IsTrue(sideAmount > 0);
 
             // Send from Genesis address to "sender" user
+            // Send from Genesis address to "sender" user
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, sender.Address, nexus.RootChain, symbol, originalAmount);
             simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateChain(owner, DomainSettings.ValidatorsOrganizationName, "main", "test");
+            simulator.EndBlock();
+
+            var targetChain = nexus.GetChainByName("test");
 
             // verify test user balance
             var balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
@@ -636,13 +642,14 @@ namespace Phantasma.Tests
 
             // verify balances
             var feeB = targetChain.GetTransactionFee(txB);
-            balance = targetChain.GetTokenBalance(simulator.Nexus.RootStorage, token, receiver.Address);
-            Assert.IsTrue(balance == sideAmount - feeB);
+            balance = targetChain.GetTokenBalance(targetChain.Storage, token, receiver.Address);
+            var expectedAmount = (sideAmount + crossFee) - feeB;
+            Assert.IsTrue(balance == expectedAmount);
 
             var feeA = sourceChain.GetTransactionFee(txA);
             var leftoverAmount = originalAmount - (sideAmount + feeA + crossFee);
 
-            balance = sourceChain.GetTokenBalance(simulator.Nexus.RootStorage, token, sender.Address);
+            balance = sourceChain.GetTokenBalance(sourceChain.Storage, token, sender.Address);
             Assert.IsTrue(balance == leftoverAmount);
         }
 
@@ -655,7 +662,6 @@ namespace Phantasma.Tests
             var nexus = simulator.Nexus;
 
             var sourceChain = nexus.RootChain;
-
 
             var symbol = DomainSettings.FuelTokenSymbol;
 
