@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Text;
 using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -442,7 +443,11 @@ namespace Phantasma.Blockchain.Contracts
 
             if (address.IsUser)
             {
-                var accountScript = Nexus.LookUpAddressScript(RootStorage, address);
+                
+                //var accountScript = Nexus.LookUpAddressScript(RootStorage, address);
+                var accountScript = OptimizedAddressScriptLookup(address);
+
+                //Expect(accountScript.SequenceEqual(accountScript2), "different account scripts");
                 return InvokeTrigger(accountScript, trigger.ToString(), args);
             }
 
@@ -462,6 +467,19 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return true;
+        }
+
+        private byte[] OptimizedAddressScriptLookup(Address target)
+        {
+            var scriptMapKey = Encoding.UTF8.GetBytes($".{Nexus.AccountContractName}._scriptMap");
+
+            var scriptMap = new StorageMap(scriptMapKey, RootStorage);
+
+            if (scriptMap.ContainsKey(target))
+                return scriptMap.Get<Address, byte[]>(target);
+            else
+               return new byte[0];
+
         }
 
         public bool InvokeTriggerOnToken(TokenInfo token, TokenTrigger trigger, params object[] args)
@@ -568,7 +586,7 @@ namespace Phantasma.Blockchain.Contracts
 
             bool accountResult;
 
-            if (address.IsUser && Nexus.HasGenesis && this.Nexus.HasAddressScript(RootStorage, address))
+            if (address.IsUser && Nexus.HasGenesis && OptimizedHasAddressScript(RootStorage, address))
             {
                 accountResult = InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
             }
@@ -583,6 +601,21 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return accountResult;
+        }
+
+        bool OptimizedHasAddressScript(StorageContext context, Address address)
+        {
+            var scriptMapKey = Encoding.UTF8.GetBytes($".{Nexus.AccountContractName}._scriptMap");
+
+            var scriptMap = new StorageMap(scriptMapKey, context);
+
+            if (address.IsUser)
+            {
+                return scriptMap.ContainsKey(address);
+            }
+
+            return false;
+
         }
 
         public IBlock GetBlockByHash(Hash hash)

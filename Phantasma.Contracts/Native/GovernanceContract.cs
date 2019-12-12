@@ -147,6 +147,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Notify(EventKind.ValueCreate, Runtime.GenesisAddress, new ChainValueEventData() { Name = name, Value = initial });
         }
 
+        //Optimized function in Nexus.OptimizedGetGovernanceValue
         public BigInteger GetValue(string name)
         {
             Runtime.Expect(HasValue(name), "invalid value name");
