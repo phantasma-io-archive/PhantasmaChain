@@ -31,6 +31,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
+            vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
 
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
             vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
@@ -590,6 +591,29 @@ namespace Phantasma.Blockchain
             var tokenID = temp.AsNumber();
 
             Runtime.BurnToken(symbol, source, tokenID);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_WriteToken(RuntimeVM Runtime)
+        {
+            ExpectStackSize(Runtime, 3);
+
+            VMObject temp;
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            var tokenID = temp.AsNumber();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
+            var ram = temp.AsByteArray();
+
+            Runtime.WriteToken(symbol, tokenID, ram);
 
             return ExecutionState.Running;
         }
