@@ -31,6 +31,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
+            vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
 
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
@@ -587,10 +588,33 @@ namespace Phantasma.Blockchain
             var symbol = temp.AsString();
 
             temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for token ID");
             var tokenID = temp.AsNumber();
 
             Runtime.BurnToken(symbol, source, tokenID);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_ReadToken(RuntimeVM Runtime)
+        {
+            ExpectStackSize(Runtime, 2);
+
+            VMObject temp;
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for token ID");
+            var tokenID = temp.AsNumber();
+
+            var content = Runtime.ReadToken(symbol, tokenID);
+
+            var result = new VMObject();
+            result.SetValue(content.RAM, VMType.Bytes);
+            Runtime.Stack.Push(result);
 
             return ExecutionState.Running;
         }
@@ -606,7 +630,7 @@ namespace Phantasma.Blockchain
             var symbol = temp.AsString();
 
             temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
+            Runtime.Expect(temp.Type == VMType.Number, "expected number for token ID");
             var tokenID = temp.AsNumber();
 
             temp = Runtime.Stack.Pop();
