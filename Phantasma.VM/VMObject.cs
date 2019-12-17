@@ -567,21 +567,21 @@ namespace Phantasma.VM
                         case VMType.Bool:
                             {
                                 var result = new VMObject();
-                                result.SetValue(new byte[] { (byte)(srcObj.AsBool() ? 1 : 0) });
+                                result.SetValue(new byte[] { (byte)(srcObj.AsBool() ? 1 : 0) }, VMType.Bytes);
                                 return result;
                             }
 
                         case VMType.String:
                             {
                                 var result = new VMObject();
-                                result.SetValue(Encoding.UTF8.GetBytes((string)srcObj.Data));
+                                result.SetValue(Encoding.UTF8.GetBytes((string)srcObj.Data), VMType.Bytes);
                                 return result;
                             }
 
                         case VMType.Number:
                             {
                                 var result = new VMObject();
-                                result.SetValue(((BigInteger)srcObj.Data).ToSignedByteArray());
+                                result.SetValue(((BigInteger)srcObj.Data).ToSignedByteArray(), VMType.Bytes);
                                 return result;
                             }
 
