@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LunarLabs.Parser;
 using LunarLabs.Parser.JSON;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
 using Phantasma.Numerics;
 
 namespace Phantasma.API
@@ -68,7 +69,7 @@ namespace Phantasma.API
                 }
             }
 
-            return Phantasma.API.APIUtils.FromAPIResult(new Error() { message = "Invalid or missing API token" });
+            return APIUtils.FromAPIResult(new Error() { message = "Invalid or missing API token" });
         }
 
         protected abstract void InvokeScript(string script, int id, Action<int, DataNode, bool> callback);
@@ -87,7 +88,7 @@ namespace Phantasma.API
 
             if (args.Length != 2)
             {
-                root = Phantasma.API.APIUtils.FromAPIResult(new Error() { message = "Malformed request" });
+                root = APIUtils.FromAPIResult(new Error() { message = "Malformed request" });
                 callback(id, root, false);
                 return;
             }
@@ -120,11 +121,11 @@ namespace Phantasma.API
                             }
 
                             success = true;
-                            root = Phantasma.API.APIUtils.FromAPIResult(new Authorization() { dapp = dapp, token = token });
+                            root = APIUtils.FromAPIResult(new Authorization() { dapp = dapp, token = token });
                         }
                         else
                         {
-                            root = Phantasma.API.APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                            root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
                         }
 
                         break;
@@ -135,7 +136,7 @@ namespace Phantasma.API
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            root = Phantasma.API.APIUtils.FromAPIResult(new WalletAccount()
+                            root = APIUtils.FromAPIResult(new WalletAccount()
                             {
                                 address = Keys.Address.Text,
                                 id = "relfos",
@@ -167,7 +168,7 @@ namespace Phantasma.API
                             }
                             else
                             {
-                                root = Phantasma.API.APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                                root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
                             }
 
                         }
@@ -175,7 +176,7 @@ namespace Phantasma.API
                     }
 
                 default:
-                    root = Phantasma.API.APIUtils.FromAPIResult(new Error() { message = "Invalid request type" });
+                    root = APIUtils.FromAPIResult(new Error() { message = "Invalid request type" });
                     break;
             }
 
