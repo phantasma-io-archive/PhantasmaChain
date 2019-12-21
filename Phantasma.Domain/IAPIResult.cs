@@ -1,9 +1,28 @@
 ﻿using LunarLabs.Parser;
-using Phantasma.Storage;
 using System;
+using Phantasma.Core;
 
-namespace Phantasma.API
+namespace Phantasma.Domain
 {
+    public interface IAPIResult
+    {
+    }
+
+    public struct ErrorResult : IAPIResult
+    {
+        public string error;
+    }
+
+    public struct SingleResult : IAPIResult
+    {
+        public object value;
+    }
+
+    public struct ArrayResult : IAPIResult
+    {
+        public object[] values;
+    }
+
     public static class APIUtils
     {
         public static DataNode FromAPIResult(IAPIResult input)
@@ -98,4 +117,5 @@ namespace Phantasma.API
             return result;
         }
     }
+
 }

@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <FileUpgradeFlags>40</FileUpgradeFlags>
+    <UpgradeBackupLocation>C:\Code\PhantasmaSpook\Backup\Phantasma.Simulator\</UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Blockchain\Phantasma.Blockchain.csproj" />
     <ProjectReference Include="..\Phantasma.CodeGen\Phantasma.CodeGen.csproj" />
@@ -16,5 +17,4 @@
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
     <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />
   </ItemGroup>
-
 </Project>

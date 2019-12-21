@@ -151,7 +151,7 @@ namespace Phantasma.Storage
                 writer.WriteVarInt(val);
             }
             else
-            if (IsStructOrClass(type)) // check if struct or class
+            if (type.IsStructOrClass()) // check if struct or class
             {
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
 
@@ -306,7 +306,7 @@ namespace Phantasma.Storage
                 return Enum.Parse(type, val.ToString());
             }
 
-            if (IsStructOrClass(type)) // check if struct or class
+            if (type.IsStructOrClass()) // check if struct or class
             {
                 var obj = Activator.CreateInstance(type);
                 var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(x => x.MetadataToken);
@@ -338,22 +338,12 @@ namespace Phantasma.Storage
             throw new Exception("Unknown type");
         }
 
-        public static bool IsStructOrClass(this Type type)
-        {
-            if (type == typeof(string))
-            {
-                return false;
-            }
-
-            return (!type.IsPrimitive && type.IsValueType && !type.IsEnum) || type.IsClass || type.IsInterface;
-        }
-
         // only works in structs and classes
         public static void Copy(this object target, object source)
         {
             var type = target.GetType();
 
-            Throw.IfNot(IsStructOrClass(type), "invalid type");
+            Throw.IfNot(type.IsStructOrClass(), "invalid type");
 
             var fields = type.GetFields();
 
@@ -362,7 +352,7 @@ namespace Phantasma.Storage
                 var fieldType = field.FieldType;
 
                 object val;
-                if (IsStructOrClass(fieldType))
+                if (fieldType.IsStructOrClass())
                 {
                     val = Activator.CreateInstance(fieldType);
                     val.Copy(field.GetValue(source));

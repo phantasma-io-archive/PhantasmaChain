@@ -1,8 +1,8 @@
 ﻿using LunarLabs.Parser;
 using LunarLabs.WebServer.Core;
 using LunarLabs.WebServer.HTTP;
-using LunarLabs.WebServer.Plugins;
 using Phantasma.Core;
+using Phantasma.Domain;
 using System.Collections.Generic;
 
 namespace Phantasma.API

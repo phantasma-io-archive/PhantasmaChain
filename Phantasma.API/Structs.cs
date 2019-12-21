@@ -1,25 +1,8 @@
 // notes: Keep the structs here simple only using primitive C# types or arrays
+using Phantasma.Domain;
+
 namespace Phantasma.API
 {
-    public interface IAPIResult
-    {
-    }
-
-    public struct ErrorResult : IAPIResult
-    {
-        public string error;
-    }
-
-    public struct SingleResult : IAPIResult
-    {
-        public object value;
-    }
-
-    public struct ArrayResult : IAPIResult
-    {
-        public object[] values;
-    }
-
     public struct BalanceResult : IAPIResult
     {
         public string chain;

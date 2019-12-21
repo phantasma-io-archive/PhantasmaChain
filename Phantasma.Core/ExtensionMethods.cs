@@ -8,6 +8,16 @@ namespace Phantasma.Core
 {
     public static class ExtensionMethods
     {
+        public static bool IsStructOrClass(this Type type)
+        {
+            if (type == typeof(string))
+            {
+                return false;
+            }
+
+            return (!type.IsPrimitive && type.IsValueType && !type.IsEnum) || type.IsClass || type.IsInterface;
+        }
+
         public static byte[] AsByteArray(this string source) { return Encoding.UTF8.GetBytes(source); }
 
         public static string AsString(this byte[] source) { return Encoding.UTF8.GetString(source); }

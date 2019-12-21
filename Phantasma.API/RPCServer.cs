@@ -2,6 +2,7 @@
 using LunarLabs.WebServer.HTTP;
 using LunarLabs.WebServer.Plugins;
 using Phantasma.Core;
+using Phantasma.Domain;
 
 namespace Phantasma.API
 {
