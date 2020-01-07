@@ -107,7 +107,7 @@ namespace Phantasma.Contracts.Native
 
         public static readonly int MinimumReceiptsPerTransaction = 20;
 
-        public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(DomainSettings.FuelTokenDecimals) / (1000 * StakeContract.BaseEnergyRatioDivisor);
+        public static readonly BigInteger RelayFeePerMessage = UnitConversion.GetUnitValue(DomainSettings.FuelTokenDecimals) / (1000 * StakeContract.DefaultEnergyRatioDivisor);
 
         internal StorageMap _keys; //<address, ECPoint>
         internal StorageMap _balances; //<address, BigInteger>

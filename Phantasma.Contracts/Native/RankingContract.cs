@@ -46,6 +46,22 @@ namespace Phantasma.Contracts.Native
             Runtime.Notify(EventKind.LeaderboardCreate, from, name);
         }
 
+        public void ResetLeaderboard(Address from, string name)
+        {
+            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+
+            Runtime.Expect(from == leaderboard.owner, "invalid leaderboard owner");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            leaderboard.round++;
+
+            var rows = _rows.Get<string, StorageList>(name);
+            rows.Clear();
+
+            Runtime.Notify(EventKind.LeaderboardReset, from, name);
+        }
+
         public Leaderboard GetLeaderboard(string name)
         {
             Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");

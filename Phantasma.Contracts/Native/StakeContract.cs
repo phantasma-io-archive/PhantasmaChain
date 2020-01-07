@@ -48,14 +48,14 @@ namespace Phantasma.Contracts.Native
         private Timestamp _lastMasterClaim;
         private BigInteger _masterClaimCount;
 
+        private BigInteger _CurrentEnergyRatioDivisor;
+
         private StorageMap _voteHistory; // <Address, List<StakeLog>>
 
         private Timestamp genesisTimestamp = 0;
 
         public static readonly BigInteger DefaultMasterThreshold = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
         public readonly static BigInteger MasterClaimGlobalAmount = UnitConversion.ToBigInteger(125000, DomainSettings.StakingTokenDecimals);
-
-        public readonly static BigInteger BaseEnergyRatioDivisor = 500; // used as 1/500, will generate 0.002 per staked token
         public static BigInteger MinimumValidStake => UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
         public const string MasterStakeThresholdTag = "stake.master.threshold";
@@ -64,10 +64,16 @@ namespace Phantasma.Contracts.Native
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
 
+        public const uint DefaultEnergyRatioDivisor = 500; // used as 1/500, will initially generate 0.002 per staked token
+
         public StakeContract() : base()
         {
         }
 
+        public void Initialize(Address from)
+        {
+            _CurrentEnergyRatioDivisor = DefaultEnergyRatioDivisor; // used as 1/500, will initially generate 0.002 per staked token
+        }
         public BigInteger GetMasterThreshold()
         {
             if (Runtime.HasGenesis)
@@ -632,6 +638,15 @@ namespace Phantasma.Contracts.Native
             {
                 _leftoverMap.Remove<Address>(stakeAddress);
             }
+
+            // mark date to prevent imediate unstake
+            if (Runtime.Time >= ContractPatch.UnstakePatch)
+            {
+                Runtime.Expect(_stakeMap.ContainsKey<Address>(stakeAddress), "invalid stake address");
+                var stake = _stakeMap.Get<Address, EnergyStake>(stakeAddress);
+                stake.stakeTime = Runtime.Time;
+                _stakeMap.Set<Address, EnergyStake>(stakeAddress, stake);
+            }
         }
 
         public BigInteger GetStake(Address address)
@@ -766,14 +781,24 @@ namespace Phantasma.Contracts.Native
             Runtime.Notify(EventKind.AddressUnlink, from, to);
         }
 
-        public static BigInteger FuelToStake(BigInteger fuelAmount)
+        public BigInteger FuelToStake(BigInteger fuelAmount)
         {
-            return UnitConversion.ConvertDecimals(fuelAmount * BaseEnergyRatioDivisor, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
+            return UnitConversion.ConvertDecimals(fuelAmount * _CurrentEnergyRatioDivisor, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
         }
 
-        public static BigInteger StakeToFuel(BigInteger stakeAmount)
+        public BigInteger StakeToFuel(BigInteger stakeAmount)
         {
-            return UnitConversion.ConvertDecimals(stakeAmount, DomainSettings.StakingTokenDecimals, DomainSettings.FuelTokenDecimals) / BaseEnergyRatioDivisor;
+            return UnitConversion.ConvertDecimals(stakeAmount, DomainSettings.StakingTokenDecimals, DomainSettings.FuelTokenDecimals) / _CurrentEnergyRatioDivisor;
+        }
+
+        public static BigInteger FuelToStake(BigInteger fuelAmount, uint _BaseEnergyRatioDivisor)
+        {
+            return UnitConversion.ConvertDecimals(fuelAmount, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
+        }
+
+        public static BigInteger StakeToFuel(BigInteger stakeAmount, uint _BaseEnergyRatioDivisor)
+        {
+            return UnitConversion.ConvertDecimals(stakeAmount, DomainSettings.StakingTokenDecimals, DomainSettings.FuelTokenDecimals) / _BaseEnergyRatioDivisor;
         }
 
         public BigInteger GetAddressVotingPower(Address address)
@@ -819,63 +844,19 @@ namespace Phantasma.Contracts.Native
             return votingPower;
         }
 
-        private BigInteger CalculateRewardsWithHalving(BigInteger totalStake, BigInteger unclaimedPartials, Timestamp startTime, Timestamp endTime)
+        public void UpdateRate(bool victory)
         {
-            if (genesisTimestamp == 0)
+            var bombAddress = GetAddressForName("bomb");
+            Runtime.Expect(Runtime.IsWitness(bombAddress), "must be called from bomb address");
+
+            if (victory)
             {
-                Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-                var genesisBlock = Runtime.GetBlockByHeight(1);
-                if (genesisBlock == null)   //special case for genesis block's creation
-                    return StakeToFuel(totalStake);
-
-                genesisTimestamp = genesisBlock.Timestamp;
+                _CurrentEnergyRatioDivisor /= 2;
             }
-
-            if (StakeToFuel(totalStake + unclaimedPartials) <= 0)
-                return 0;
-
-            DateTime genesisDate = genesisTimestamp;
-            DateTime startDate = startTime;
-            DateTime endDate = endTime;
-
-            BigInteger reward = 0;
-            uint halvingAmount = 1;
-            var currentDate = startDate;
-            var nextHalvingDate = genesisDate.AddYears(2);
-            var partialRewardsFlag = true;
-
-            while (currentDate <= endDate)
+            else
             {
-                if (startDate < nextHalvingDate)
-                {
-                    var daysInCurrentHalving = 0;
-
-                    if (partialRewardsFlag)
-                    {
-                        partialRewardsFlag = false;
-                        reward += StakeToFuel(unclaimedPartials) / halvingAmount;
-                    }
-
-                    if (endDate > nextHalvingDate)
-                    {
-                        daysInCurrentHalving = (nextHalvingDate - currentDate).Days;
-                        currentDate = nextHalvingDate;
-                    }
-                    else
-                    {
-                        daysInCurrentHalving = (endDate - currentDate).Days;
-
-                        currentDate = endDate.AddDays(1);   //to force the while to break on next condition evaluation
-                    }
-
-                    reward += StakeToFuel(totalStake) * daysInCurrentHalving / halvingAmount;
-                }
-
-                nextHalvingDate = nextHalvingDate.AddYears(2);
-                halvingAmount *= 2;
+                _CurrentEnergyRatioDivisor *= 2;
             }
-
-            return reward;
         }
     }
 }
