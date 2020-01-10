@@ -49,6 +49,8 @@ namespace Phantasma.Domain
         public const string MastersOrganizationName = "masters";
         public const string StakersOrganizationName = "stakers";
 
+        public const string PhantomForceOrganizationName = "phantom_force";
+
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
         public static readonly string PlatformName = "phantasma";
 

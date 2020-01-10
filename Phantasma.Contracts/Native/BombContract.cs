@@ -11,14 +11,21 @@ namespace Phantasma.Contracts.Native
         public BigInteger round;
     }
 
+    public struct BombSeason
+    {
+        public BigInteger burned;
+        public BigInteger total;
+    }
+
     public sealed class BombContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Bomb;
 
         public const string SESLeaderboardName = "ses";
-        public const string BPLeaderboardName = "sesbp";
+        public const string PointsLeaderboardName = "ses2";
 
         internal StorageMap _entries;
+        internal StorageMap _seasons;
         internal BigInteger _lastSeason;
 
         public BombContract() : base()
@@ -30,8 +37,8 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis address");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, SESLeaderboardName, 100, 0);
-            Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, BPLeaderboardName, 10, 0);
-            _lastSeason = 0;
+            Runtime.CallContext(NativeContractKind.Ranking, "CreateLeaderboard", this.Address, PointsLeaderboardName, 50, 0);
+            _lastSeason = -1;
         }
 
         public BigInteger GetSeason()
@@ -39,6 +46,89 @@ namespace Phantasma.Contracts.Native
             var diff = Runtime.Time - Runtime.GetGenesisTime();
             var season = diff / (SecondsInDay * 90);
             return season;
+        }
+
+        private void FinishSeason()
+        {
+            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, this.Address);
+            var halfSupply = Runtime.GetTokenSupply(DomainSettings.FuelTokenSymbol) / 2;
+            var victory = balance >= halfSupply;
+
+            var amountToBurn = balance;
+            if (!victory)
+            {
+                amountToBurn /= 2;
+            }
+
+            Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, this.Address, amountToBurn);
+
+            var rows = Runtime.CallContext(NativeContractKind.Ranking, "GetRows", SESLeaderboardName).AsInterop<LeaderboardRow[]>();
+
+            int maxEntries = rows.Length;
+            if (maxEntries > 50)
+            {
+                maxEntries = 50;
+            }
+
+            for (int i = 0; i < maxEntries; i++)
+            {
+                var points = (50 - i) * 5;
+                var target = rows[i].address;
+
+                var score = Runtime.CallContext(NativeContractKind.Ranking, "GetScore", target, PointsLeaderboardName).AsNumber();
+                score += points;
+
+                Runtime.CallContext(NativeContractKind.Ranking, "InsertScore", this.Address, target, PointsLeaderboardName, score);
+            }
+
+            Runtime.CallContext(NativeContractKind.Ranking, "ResetLeaderboard", this.Address, SESLeaderboardName);
+            
+            var currentRate = Runtime.CallContext(NativeContractKind.Stake, "GetRate").AsNumber();
+
+            if (victory)
+            {
+                currentRate /= 2;
+            }
+            else
+            {
+                currentRate *= 2;
+            }
+
+            Runtime.CallContext(NativeContractKind.Stake, "UpdateRate", currentRate);
+
+            var season = new BombSeason()
+            {
+                burned = balance,
+                total = halfSupply,
+            };
+            _seasons.Set<BigInteger, BombSeason>(_lastSeason, season);
+
+            ApplyInflation();
+
+            _lastSeason = GetSeason();
+        }
+
+        private void ApplyInflation()
+        {
+            var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
+
+            // NOTE this gives an approximate inflation of 3% per year (0.75% per season)
+            var mintAmount = currentSupply / 133;
+            Runtime.Expect(mintAmount > 0, "invalid inflation amount");
+
+            var phantomOrg = Runtime.GetOrganization(DomainSettings.PhantomForceOrganizationName);
+            if (phantomOrg != null)
+            {
+                var phantomFunding = mintAmount / 3;
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, phantomOrg.Address, phantomFunding);
+                mintAmount -= phantomFunding;
+            }
+
+            var bpOrg = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);
+            if (bpOrg != null)
+            {
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, mintAmount);
+            }
         }
 
         public void OnReceive(Address source, Address destination, string symbol, BigInteger amount)
@@ -59,15 +149,7 @@ namespace Phantasma.Contracts.Native
             var currentSeason = GetSeason();
             if (currentSeason != _lastSeason)
             {
-                var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, this.Address);
-                var halfSupply = Runtime.GetTokenSupply(DomainSettings.FuelTokenSymbol) / 2;
-                var victory = balance >= halfSupply;
-
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, this.Address, balance);
-
-                Runtime.CallContext(NativeContractKind.Ranking, "ResetLeaderboard", this.Address, leaderboardName);
-                Runtime.CallContext(NativeContractKind.Stake, "UpdateRate", victory);
-                _lastSeason = currentSeason;
+                FinishSeason();
             }
 
             BombEntry entry;

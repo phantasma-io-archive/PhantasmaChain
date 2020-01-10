@@ -323,6 +323,10 @@ namespace Phantasma.Blockchain.Contracts
             var method = callingFrame.GetMethod();
 
             description = $"{description} @ {method.Name}";
+#if DEBUG
+            description += $", tx: {this.Transaction.Hash}";
+#endif
+
             throw new VMException(this, description);
         }
 

@@ -48,7 +48,7 @@ namespace Phantasma.Contracts.Native
         private Timestamp _lastMasterClaim;
         private BigInteger _masterClaimCount;
 
-        private BigInteger _CurrentEnergyRatioDivisor;
+        private BigInteger _currentEnergyRatioDivisor;
 
         private StorageMap _voteHistory; // <Address, List<StakeLog>>
 
@@ -72,7 +72,7 @@ namespace Phantasma.Contracts.Native
 
         public void Initialize(Address from)
         {
-            _CurrentEnergyRatioDivisor = DefaultEnergyRatioDivisor; // used as 1/500, will initially generate 0.002 per staked token
+            _currentEnergyRatioDivisor = DefaultEnergyRatioDivisor; // used as 1/500, will initially generate 0.002 per staked token
         }
         public BigInteger GetMasterThreshold()
         {
@@ -783,12 +783,12 @@ namespace Phantasma.Contracts.Native
 
         public BigInteger FuelToStake(BigInteger fuelAmount)
         {
-            return UnitConversion.ConvertDecimals(fuelAmount * _CurrentEnergyRatioDivisor, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
+            return UnitConversion.ConvertDecimals(fuelAmount * _currentEnergyRatioDivisor, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
         }
 
         public BigInteger StakeToFuel(BigInteger stakeAmount)
         {
-            return UnitConversion.ConvertDecimals(stakeAmount, DomainSettings.StakingTokenDecimals, DomainSettings.FuelTokenDecimals) / _CurrentEnergyRatioDivisor;
+            return UnitConversion.ConvertDecimals(stakeAmount, DomainSettings.StakingTokenDecimals, DomainSettings.FuelTokenDecimals) / _currentEnergyRatioDivisor;
         }
 
         public static BigInteger FuelToStake(BigInteger fuelAmount, uint _BaseEnergyRatioDivisor)
@@ -844,19 +844,18 @@ namespace Phantasma.Contracts.Native
             return votingPower;
         }
 
-        public void UpdateRate(bool victory)
+        public void UpdateRate(BigInteger rate)
         {
             var bombAddress = GetAddressForName("bomb");
             Runtime.Expect(Runtime.IsWitness(bombAddress), "must be called from bomb address");
 
-            if (victory)
-            {
-                _CurrentEnergyRatioDivisor /= 2;
-            }
-            else
-            {
-                _CurrentEnergyRatioDivisor *= 2;
-            }
+            Runtime.Expect(rate > 0, "invalid rate");
+            _currentEnergyRatioDivisor = rate;
+        }
+
+        public BigInteger GetRate()
+        {
+            return _currentEnergyRatioDivisor;
         }
     }
 }

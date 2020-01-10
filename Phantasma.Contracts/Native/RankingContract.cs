@@ -76,6 +76,25 @@ namespace Phantasma.Contracts.Native
 
             return rows.All<LeaderboardRow>();
         }
+        public BigInteger GetScore(Address target, string name)
+        {
+            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+
+            var rows = _rows.Get<string, StorageList>(name);
+            var count = rows.Count();
+
+            for (int i=0; i<count; i++)
+            {
+                var entry = rows.Get<LeaderboardRow>(i);
+                if (entry.address == target)
+                {
+                    return entry.score;
+                }
+            }
+
+            return 0;
+        }
 
         public void InsertScore(Address from, Address target, string name, BigInteger score)
         {

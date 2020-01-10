@@ -123,7 +123,7 @@ namespace Phantasma.Simulator
 
             var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
             var orgScript = new byte[0];
-            var orgID = "phantom_force";
+            var orgID = DomainSettings.PhantomForceOrganizationName;
             var orgAddress = Address.FromHash(orgID);
             GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
             {
