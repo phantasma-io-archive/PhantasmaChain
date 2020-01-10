@@ -1186,6 +1186,27 @@ namespace Phantasma.API
             };
         }
 
+        public IAPIResult GetLeaderboard(string name)
+        {
+            var temp = Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "ranking", nameof(RankingContract.GetRows), name).ToObject();
+
+            try
+            {
+                var board = ((LeaderboardRow[])temp).ToArray();
+
+                return new LeaderboardResult()
+                {
+                    name = name,
+                    rows = board.Select(x => new LeaderboardRowResult() { address = x.address.Text, value = x.score.ToString() }).ToArray(),
+                };
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = "error fetching leaderboard" };
+            }
+
+        }
+
         [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 30)]
         public IAPIResult GetTokens()
         {

@@ -98,11 +98,18 @@ namespace Phantasma.API
         public string[] txs;
     }
 
-    public struct LeaderboardResult : IAPIResult
+    public struct LeaderboardRowResult : IAPIResult
     {
         public string address;
         public string value;
     }
+
+    public struct LeaderboardResult : IAPIResult
+    {
+        public string name;
+        public LeaderboardRowResult[] rows;
+    }
+
     public struct DappResult : IAPIResult
     {
         public string name;
