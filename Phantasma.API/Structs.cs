@@ -61,7 +61,7 @@ namespace Phantasma.API
         public string[] organizations;
 
         [APIDescription("SES leaderboard")]
-        public LeaderboardResult[] ses;
+        public LeaderboardRowResult[] ses;
     }
 
     public struct StakeResult: IAPIResult
