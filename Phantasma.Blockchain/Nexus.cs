@@ -40,7 +40,6 @@ namespace Phantasma.Blockchain
         public const string ExchangeContractName = "exchange";
         public const string PrivacyContractName = "privacy";
         public const string RelayContractName = "relay";
-        public const string BombContractName = "bomb";
         public const string RankingContractName = "ranking";
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
@@ -288,7 +287,6 @@ namespace Phantasma.Blockchain
                 RegisterContract<StorageContract>();
                 RegisterContract<InteropContract>();
                 RegisterContract<NachoContract>();
-                RegisterContract<BombContract>();
                 RegisterContract<RankingContract>();
                 RegisterContract<FriendsContract>();
                 RegisterContract<MailContract>();
@@ -924,7 +922,6 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, owner.Address, StorageContractName);
             sb.CallInterop(deployInterop, owner.Address, RelayContractName);
             sb.CallInterop(deployInterop, owner.Address, RankingContractName);
-            sb.CallInterop(deployInterop, owner.Address, BombContractName);
             sb.CallInterop(deployInterop, owner.Address, PrivacyContractName);
             sb.CallInterop(deployInterop, owner.Address, "friends");
             sb.CallInterop(deployInterop, owner.Address, "market");

@@ -215,11 +215,6 @@ namespace Phantasma.Blockchain.Contracts
             CurrentContext = previousContext;
             this.EntryAddress = previousCaller;
 
-            if (contextName == Nexus.BombContractName)
-            {
-                this.UsedGas = savedGas;
-            }
-
             if (this.Stack.Count > 0)
             {
                 var result = this.Stack.Pop();

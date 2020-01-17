@@ -92,15 +92,6 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, availableAmount);
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
-            var bombGas = Runtime.IsRootChain() ? spentGas / 2 : 0;
-
-            if (bombGas > 0)
-            {
-                var bombPayment = bombGas * Runtime.GasPrice;
-                var bombAddress = SmartContract.GetAddressForNative(NativeContractKind.Bomb);
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, bombAddress, bombPayment);
-                spentGas -= bombGas;
-            }
 
             if (!targetAddress.IsNull)
             {

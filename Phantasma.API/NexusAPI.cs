@@ -1153,8 +1153,6 @@ namespace Phantasma.API
 
             var orgs = Nexus.GetOrganizations(Nexus.RootStorage);
 
-            var ses = ((LeaderboardRow[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "ranking", nameof(RankingContract.GetRows), BombContract.SESLeaderboardName).ToObject()).ToArray();
-
             return new NexusResult()
             {
                 name = Nexus.GetName(Nexus.RootStorage),
@@ -1162,7 +1160,6 @@ namespace Phantasma.API
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
                 organizations = orgs,
-                ses = ses.Select(x => new LeaderboardRowResult() { address = x.address.Text, value = x.score.ToString() }).ToArray(),
                 governance = governance.Select(x => new GovernanceResult() { name = x.Name, value = x.Value.ToString() }).ToArray()
             };
         }
