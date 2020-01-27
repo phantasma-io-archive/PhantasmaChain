@@ -1,16 +1,31 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
+using Phantasma.Storage;
 using Phantasma.Storage.Context;
+using Phantasma.Storage.Utils;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Phantasma.Contracts.Native
 {
-    public struct SwapPair
+    public struct SwapPair: ISerializable
     {
         public string Symbol;
         public BigInteger Value;
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteVarString(Symbol);
+            writer.WriteBigInteger(Value);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            Symbol = reader.ReadVarString();
+            Value = reader.ReadBigInteger();
+        }
     }
 
     public sealed class SwapContract : NativeContract
