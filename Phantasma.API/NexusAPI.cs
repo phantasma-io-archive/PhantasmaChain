@@ -300,6 +300,7 @@ namespace Phantasma.API
         public ITokenSwapper TokenSwapper;
         public Mempool Mempool;
         public Node Node;
+        public bool acceptTransactions;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
@@ -315,6 +316,7 @@ namespace Phantasma.API
             Nexus = nexus;
             UseCache = useCache;
             this.logger = logger;
+            this.acceptTransactions = true;
 
             var methodInfo = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -496,6 +498,8 @@ namespace Phantasma.API
             var parentName = Nexus.GetParentChainByName(chain.Name);
             var orgName = Nexus.GetChainOrganization(chain.Name);
 
+            var contracts = chain.GetContracts(chain.Storage).ToArray();
+
             var result = new ChainResult
             {
                 name = chain.Name,
@@ -503,7 +507,7 @@ namespace Phantasma.API
                 height = (uint)chain.Height,
                 parent = parentName,
                 organization = orgName,
-                contracts = chain.GetContracts(chain.Storage).Select(x => x.Name).ToArray(),
+                contracts = contracts.Select(x => x.Name).ToArray(),
                 dapps = new string[0],
             };
 
@@ -920,6 +924,11 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No mempool" };
             }
 
+            if (!acceptTransactions)
+            {
+                return new ErrorResult { error = "Node not accepting transactions" };
+            }
+            
             byte[] bytes;
             try
             {
