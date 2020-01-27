@@ -56,6 +56,7 @@ namespace Phantasma.Domain
         AddressMigration = 46,
         ContractUpgrade = 47,
         Log = 48,
+        Inflation = 49,
         Custom = 64,
     }
 

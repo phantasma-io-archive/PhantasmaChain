@@ -301,6 +301,21 @@ namespace Phantasma.Blockchain.Contracts
                 case EventKind.ValueUpdate:
                     Expect(contract == Nexus.GovernanceContractName, $"event kind only in {Nexus.GovernanceContractName} contract");
                     break;
+
+                case EventKind.Inflation:
+
+                    var inflationSymbol = Serialization.Unserialize<string>(bytes);
+
+                    if (inflationSymbol == DomainSettings.StakingTokenSymbol)
+                    {
+                        Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
+                    }
+                    else
+                    {
+                        Expect(inflationSymbol != DomainSettings.FuelTokenSymbol, $"{inflationSymbol} cannot have inflation event");
+                    }
+
+                    break;
             }
 
             var evt = new Event(kind, address, contract, bytes);
