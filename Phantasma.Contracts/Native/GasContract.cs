@@ -92,6 +92,13 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, availableAmount);
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
+            var burnGas = spentGas / 2;
+
+            if (burnGas > 0)
+            {
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, burnGas);
+                spentGas -= burnGas;
+            }
 
             if (!targetAddress.IsNull)
             {
