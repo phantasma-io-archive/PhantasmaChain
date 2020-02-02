@@ -13,6 +13,7 @@ namespace Phantasma.Domain
         Timestamp Time { get; }
         StorageContext Storage { get; }
         bool IsTrigger { get; }
+        int TransactionIndex { get; }
 
         Address GasTarget { get; }
         BigInteger UsedGas { get; }

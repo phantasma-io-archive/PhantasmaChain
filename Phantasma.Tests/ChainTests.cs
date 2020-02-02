@@ -341,6 +341,41 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void SystemAddressTransfer()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+
+            var testUser = PhantasmaKeys.Generate();
+            var systemAddr = Address.FromText("S3dNNgHpUgHhA3U8ZLEbS3fn28scs4y6fs8TB6A14WNWSJA");
+
+            var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
+            var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            var txA = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
+            var txB = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            // Send from user A to user B
+            simulator.BeginBlock();
+            var txC = simulator.GenerateTransfer(testUser, systemAddr, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            var hashes = simulator.Nexus.RootChain.GetTransactionHashesForAddress(testUser.Address);
+            Assert.IsTrue(hashes.Length == 3);
+            Assert.IsTrue(hashes.Any(x => x == txA.Hash));
+            Assert.IsTrue(hashes.Any(x => x == txB.Hash));
+            Assert.IsTrue(hashes.Any(x => x == txC.Hash));
+
+            var stakeToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, stakeToken, systemAddr);
+            Assert.IsTrue(finalBalance == transferAmount);
+        }
+
+        [TestMethod]
         public void CosmicSwap()
         {
             var owner = PhantasmaKeys.Generate();
@@ -483,7 +518,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, "NEO"));
 
             var context = new StorageChangeSetContext(nexus.RootStorage);
-            var runtime = new RuntimeVM(new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
+            var runtime = new RuntimeVM(-1, new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
 
             var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
             var price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);

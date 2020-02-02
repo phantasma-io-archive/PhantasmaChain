@@ -26,13 +26,13 @@ namespace Phantasma.Blockchain.Contracts
         public IEnumerable<Event> Events => _events;
 
         public Address FeeTargetAddress { get; private set; }
-
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
 
         private bool gasPaymentInProgress = false;
 
+        public int TransactionIndex { get; private set; }
         public Address GasTarget { get; private set; }
         public bool DelayPayment { get; private set; }
         public readonly bool readOnlyMode;
@@ -46,7 +46,7 @@ namespace Phantasma.Blockchain.Contracts
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
-        public RuntimeVM(byte[] script, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
+        public RuntimeVM(int index, byte[] script, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
@@ -55,6 +55,7 @@ namespace Phantasma.Blockchain.Contracts
             //Throw.IfNull(block, nameof(block));
             //Throw.IfNull(transaction, nameof(transaction));
 
+            this.TransactionIndex = index;
             this.MinimumFee = 1;
             this.GasPrice = 0;
             this.PaidGas = 0;
@@ -509,7 +510,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
-            var runtime = new RuntimeVM(script, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true);
+            var runtime = new RuntimeVM(-1, script, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true);
             runtime.ThrowOnFault = true;
 
             for (int i = args.Length - 1; i >= 0; i--)

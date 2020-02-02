@@ -212,12 +212,13 @@ namespace Phantasma.Blockchain
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
             }
 
+            int txIndex = 0; 
             foreach (var tx in transactions)
             {
                 byte[] result;
                 try
                 {
-                    if (ExecuteTransaction(tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
+                    if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
                     {
                         if (result != null)
                         {
@@ -243,6 +244,8 @@ namespace Phantasma.Blockchain
 
                     throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
+
+                txIndex++;
             }
 
             CloseBlock(block, changeSet);
@@ -255,11 +258,11 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        private bool ExecuteTransaction(Transaction transaction, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
+        private bool ExecuteTransaction(int index, Transaction transaction, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
         {
             result = null;
 
-            var runtime = new RuntimeVM(transaction.Script, this, time, transaction, changeSet, oracle, false);
+            var runtime = new RuntimeVM(index, transaction.Script, this, time, transaction, changeSet, oracle, false);
             runtime.MinimumFee = minimumFee;
             runtime.ThrowOnFault = true;
 
@@ -402,7 +405,7 @@ namespace Phantasma.Blockchain
         {
             var oracle = Nexus.CreateOracleReader();
             var changeSet = new StorageChangeSetContext(storage);
-            var vm = new RuntimeVM(script, this, time, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(-1, script, this, time, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 

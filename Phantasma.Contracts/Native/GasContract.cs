@@ -166,7 +166,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Notify(EventKind.GasPayment, Address.Null, new GasEventData(targetAddress, Runtime.GasPrice, spentGas));
 
-            if (Runtime.HasGenesis)
+            if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
             {
                 if (_lastInflation.Value == 0)
                 {
