@@ -83,7 +83,7 @@ namespace Phantasma.Blockchain
             var unsignedBytes = block.ToByteArray(false);
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
             {
-                throw new BlockGenerationException($"block signature does not match validator");
+                throw new BlockGenerationException($"block signature does not match validator {block.Validator.Text}");
             }
 
             var hashList = new StorageList(BlockHeightListTag, this.Storage);
