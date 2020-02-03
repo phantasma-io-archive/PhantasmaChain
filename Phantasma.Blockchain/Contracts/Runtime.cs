@@ -304,7 +304,7 @@ namespace Phantasma.Blockchain.Contracts
                     break;
 
                 case EventKind.Inflation:
-
+                        
                     var inflationSymbol = Serialization.Unserialize<string>(bytes);
 
                     if (inflationSymbol == DomainSettings.StakingTokenSymbol)

@@ -71,6 +71,7 @@ namespace Phantasma.Neo.Core
     public abstract class NeoAPI
     {
         private static Dictionary<string, string> _systemAssets = null;
+        public string LastError { get; protected set; }
 
         private Action<string> _logger;
         public Action<string> Logger
