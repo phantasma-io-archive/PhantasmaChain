@@ -17,7 +17,7 @@ namespace Phantasma.Neo.Utils
         {
             string contents;
 
-            if (!url.StartsWith("http://"))
+            if (!url.Contains("://"))
             {
                 url = "http://" + url;
             }

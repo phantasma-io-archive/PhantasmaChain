@@ -72,28 +72,33 @@ namespace Phantasma.Neo.Core
 
                 var response = RequestUtils.Request(RequestType.POST, rpcEndpoint, jsonRpcData);
 
-                if (response != null && response.HasNode("result"))
+                if (response != null)
                 {
-                    LastError = null;
-                    return response;
-                }
-                else
-                {
-                    if (response != null && response.HasNode("error"))
+                    if (response.HasNode("result"))
+                    {
+                        LastError = null;
+                        return response;
+                    }
+
+                    if (response.HasNode("error"))
                     {
                         var error = response["error"];
                         LastError = error.GetString("message");
                     }
                     else
                     {
-                        LastError = "No answer";
+                        LastError = "Unknown RPC error";
                     }
-
-                    Logger("RPC Error: " + LastError);
-                    rpcEndpoint = null;
-                    retryCount++;
-                    Thread.Sleep(1000);
                 }
+                else
+                {
+                    LastError = "Connection failure";
+                }
+
+                Logger("RPC Error: " + LastError);
+                rpcEndpoint = null;
+                retryCount++;
+                Thread.Sleep(1000);
 
             } while (retryCount < 10);
 
