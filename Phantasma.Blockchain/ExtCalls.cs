@@ -696,7 +696,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreateToken(RuntimeVM Runtime)
         {
-            ExpectStackSize(Runtime, 9);
+            ExpectStackSize(Runtime, 7);
 
             VMObject temp;
 
@@ -710,13 +710,14 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for name");
             var name = temp.AsString();
 
+            /*
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.String, "expected string for platform");
             var platform = temp.AsString();
 
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
-            var hash = Serialization.Unserialize<Hash>(temp.AsByteArray());
+            var hash = Serialization.Unserialize<Hash>(temp.AsByteArray());*/
 
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.Number, "expected number for maxSupply");
@@ -734,7 +735,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
             var script = temp.AsByteArray();
 
-            Runtime.CreateToken(source, symbol, name, platform, hash, maxSupply, decimals, flags, script);
+            Runtime.CreateToken(source, symbol, name, maxSupply, decimals, flags, script);
 
             return ExecutionState.Running;
         }

@@ -34,7 +34,7 @@ namespace Phantasma.Tests
             var tokenSupply = ToBigInteger(69931640.63m, NACHO_TOKEN_DECIMALS);
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, NACHO_SYMBOL, NACHO_SYMBOL, DomainSettings.PlatformName, Hash.FromString(NACHO_SYMBOL), tokenSupply, NACHO_TOKEN_DECIMALS, Fungible | Transferable | Finite | Divisible);
+            simulator.GenerateToken(owner, NACHO_SYMBOL, NACHO_SYMBOL, tokenSupply, NACHO_TOKEN_DECIMALS, Fungible | Transferable | Finite | Divisible);
             simulator.MintTokens(owner, owner.Address, NACHO_SYMBOL, tokenSupply);
             simulator.EndBlock();
 
@@ -108,7 +108,7 @@ namespace Phantasma.Tests
             var tokenSupply = ToBigInteger(69931640.63m, NACHO_TOKEN_DECIMALS);
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, NACHO_SYMBOL, NACHO_SYMBOL, DomainSettings.PlatformName, Hash.FromString(NACHO_SYMBOL), tokenSupply, NACHO_TOKEN_DECIMALS, Fungible | Transferable | Finite | Divisible);
+            simulator.GenerateToken(owner, NACHO_SYMBOL, NACHO_SYMBOL, tokenSupply, NACHO_TOKEN_DECIMALS, Fungible | Transferable | Finite | Divisible);
             simulator.MintTokens(owner, owner.Address, NACHO_SYMBOL, tokenSupply);
             simulator.EndBlock();
 

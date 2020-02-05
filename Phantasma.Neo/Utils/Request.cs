@@ -1,4 +1,4 @@
-﻿using LunarLabs.Parser;
+using LunarLabs.Parser;
 using LunarLabs.Parser.JSON;
 using System;
 using System.Net;
@@ -57,7 +57,7 @@ namespace Phantasma.Neo.Utils
 
         public static string GetWebRequest(string url)
         {
-            if (!url.StartsWith("http://"))
+            if (!url.Contains("://"))
             {
                 url = "http://" + url;
             }

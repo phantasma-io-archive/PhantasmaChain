@@ -57,7 +57,7 @@ namespace Phantasma.Contracts.Native
             }
 
             var info = Runtime.GetToken(symbol);
-            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.External);
+            return info.IsFungible() && info.Flags.HasFlag(TokenFlags.Foreign);
         }
 
         // returns how many tokens would be obtained by trading from one type of another

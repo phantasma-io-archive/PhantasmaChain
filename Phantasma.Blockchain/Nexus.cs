@@ -578,9 +578,9 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal void CreateToken(StorageContext storage, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        internal void CreateToken(StorageContext storage, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
-            var tokenInfo = new TokenInfo(symbol, name, platform, hash, maxSupply, decimals, flags, script);
+            var tokenInfo = new TokenInfo(symbol, name, maxSupply, decimals, flags, script);
             EditToken(storage, symbol, tokenInfo);
 
             // add to persistent list of tokens
@@ -1039,9 +1039,21 @@ namespace Phantasma.Blockchain
             var rootChain = GetChainByName(DomainSettings.RootChainName);
 
             var tokenScript = new byte[0];
-            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals), DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable | TokenFlags.External, tokenScript);
-            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FuelTokenSymbol), DomainSettings.PlatformSupply, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript);
-            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, DomainSettings.PlatformName, Hash.FromString(DomainSettings.FiatTokenSymbol), 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals), DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript);
+            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, DomainSettings.PlatformSupply, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript);
+            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+
+            CreateToken(storage, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "DAI", "Dai Stablecoin", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
+            //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
+
+            SetTokenPlatformHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
+            SetTokenPlatformHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
+            SetTokenPlatformHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
+            SetTokenPlatformHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
+            SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), storage);
 
             // create genesis transactions
             var transactions = new List<Transaction>
@@ -1745,6 +1757,48 @@ namespace Phantasma.Blockchain
             }
 
             return null;
+        }
+
+        public Hash GetTokenPlatformHash(string symbol, string platform, StorageContext storage)
+        {
+            if (platform == DomainSettings.PlatformName)
+            {
+                return Hash.FromString(symbol);
+            }
+
+            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            if (storage.Has(key))
+            {
+                return storage.Get<Hash>(key);
+            }
+
+            return Hash.Null;
+        }
+
+        public void SetTokenPlatformHash(string symbol, string platform, Hash hash, StorageContext storage)
+        {
+            if (platform == DomainSettings.PlatformName)
+            {
+                throw new ChainException($"cannot set token hash of {symbol} for native platform");
+            }
+
+            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            if (storage.Has(key))
+            {
+                throw new ChainException($"token hash of {symbol} already set for platform {platform}");
+            }
+
+            storage.Put<Hash>(key, hash);
+        }
+        public bool HasTokenPlatformHash(string symbol, string platform, StorageContext storage)
+        {
+            if (platform == DomainSettings.PlatformName)
+            {
+                return true;
+            }
+
+            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            return storage.Has(key);
         }
 
         public string Name { get; private set; }

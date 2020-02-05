@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
@@ -12,6 +13,7 @@ namespace Phantasma.Pay.Chains
     public class EthereumWallet : CryptoWallet
     {
         public const string EthereumPlatform = "ethereum";
+        public const byte EthereumID = 2;
 
         public EthereumWallet(PhantasmaKeys keys) : base(keys)
         {
@@ -55,13 +57,16 @@ namespace Phantasma.Pay.Chains
             return "0x" + Base16.Encode(kak.Skip(12).ToArray());
         }
 
-        /* public static Address EncodeAddress(string addressText)
-         {
-             Throw.If(!IsValidAddress(addressText), "invalid ethereum address");
-             var input = addressText.Substring(2);
-             var bytes = Base16.Decode(input);
-             return Cryptography.Address.EncodeInterop(EthereumPlatform, bytes);
-         }*/
+        public static Address EncodeAddress(string addressText)
+        {
+            Throw.If(!IsValidAddress(addressText), "invalid ethereum address");
+            var input = addressText.Substring(2);
+            var bytes = Base16.Decode(input);
+
+            var pubKey = new byte[33];
+            ByteArrayUtils.CopyBytes(bytes, 0, pubKey, 0, bytes.Length);
+            return Cryptography.Address.FromInterop(EthereumID, pubKey);
+        }
 
         private static bool IsValidAddress(string addressText)
         {

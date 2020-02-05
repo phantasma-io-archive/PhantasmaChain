@@ -51,7 +51,7 @@ namespace Phantasma.Tests
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, Domain.TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
@@ -2320,8 +2320,7 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(owner, 1234);
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, "INFI", "infinity token", "phantasma",
-                Hash.FromString("infinity stable token"), BigInteger.Zero, 8,
+            simulator.GenerateToken(owner, "INFI", "infinity token", BigInteger.Zero, 8,
             TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible);
             simulator.EndBlock();
 

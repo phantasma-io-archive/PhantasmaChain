@@ -158,7 +158,7 @@ namespace Phantasma.Tests
 
             var tokenSupply = UnitConversion.ToBigInteger(10000, 18);
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "BlaToken", DomainSettings.PlatformName, Hash.FromString(symbol), tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
@@ -198,7 +198,7 @@ namespace Phantasma.Tests
 
             var tokenSupply = UnitConversion.ToBigInteger(100000000, 18);
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "BlaToken", DomainSettings.PlatformName, Hash.FromString(symbol), tokenSupply, 0, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 0, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
@@ -391,7 +391,7 @@ namespace Phantasma.Tests
             var symbol = "COOL";
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible);
             simulator.MintTokens(owner, testUserA.Address, symbol, 100000);
             simulator.EndBlock();
 
@@ -851,7 +851,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
@@ -906,7 +906,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Burnable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable);
             simulator.EndBlock();
 
             // Send some SOUL to the test user (required for gas used in "burn" transaction)
@@ -982,7 +982,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, nftName, DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, nftName, 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
@@ -1065,7 +1065,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);

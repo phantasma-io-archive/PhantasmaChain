@@ -369,8 +369,8 @@ namespace Phantasma.API
                 maxSupply = tokenInfo.MaxSupply.ToString(),
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
-                platform = tokenInfo.Platform,
-                hash = tokenInfo.Hash.ToString(),
+                /*platform = tokenInfo.Platform,
+                hash = tokenInfo.Hash.ToString(),*/
             };
         }
 
@@ -1144,7 +1144,7 @@ namespace Phantasma.API
                 }).ToArray();
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
-                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(Nexus.RootStorage, x).Platform == platform).ToArray();
+                entry.tokens = symbols.Where(x => Nexus.HasTokenPlatformHash(x, platform, Nexus.RootStorage)).ToArray();
                 platformList.Add(entry);
             }
 
@@ -1706,7 +1706,7 @@ namespace Phantasma.API
                 }).ToArray();
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
-                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(Nexus.RootStorage, x).Platform == platform).ToArray();
+                entry.tokens = symbols.Where(x => Nexus.HasTokenPlatformHash(x, platform, Nexus.RootStorage)).ToArray();
                 platformList.Add(entry);
             }
 
