@@ -110,7 +110,7 @@ namespace Phantasma.Simulator
             
             GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
                 CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
-                CallInterop("Nexus.CreatePlatform", _owner.Address, ethKeys.PublicKey, ethPlatform, "ETH").
+                CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").
             SpendGas(_owner.Address).EndScript());
 
             var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
