@@ -128,7 +128,9 @@ namespace Phantasma.Simulator
                 SpendGas(_owner.Address).
                 EndScript();
             });
-                       
+            EndBlock();
+
+            BeginBlock();
             var communitySupply = 100000;
             GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
             MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
