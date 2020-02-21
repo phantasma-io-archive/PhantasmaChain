@@ -92,22 +92,17 @@ namespace Phantasma.API
                                 }
                             }
 
-                            result = api.Execute(apiMethod.Name, args);
+                            var json = api.Execute(apiMethod.Name, args);
+                            return json;
                         }
                         catch (APIException e)
                         {
                             result = new ErrorResult() { error = e.Message };
-                        }
-
-                        if (result is ErrorResult)
-                        {
                             var temp = (ErrorResult)result;
                             var error = DataNode.CreateObject();
                             error.AddField("error", temp.error);
                             return error;
                         }
-
-                        return APIUtils.FromAPIResult(result);
                     });
                 }
 

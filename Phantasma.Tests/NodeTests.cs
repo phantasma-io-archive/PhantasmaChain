@@ -139,7 +139,8 @@ namespace Phantasma.Tests
             nexus = simulator.Nexus;
 
             // mempool setup
-            mempool = new Mempool(node_keys, nexus, Mempool.MinimumBlockTime, 1, System.Text.Encoding.UTF8.GetBytes("TEST"));
+            mempool = new Mempool(nexus, Mempool.MinimumBlockTime, 1, System.Text.Encoding.UTF8.GetBytes("TEST"));
+            mempool.SetKeys(node_keys);
             mempool.Start();
 
             // node setup

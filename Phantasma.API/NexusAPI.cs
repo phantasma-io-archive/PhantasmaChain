@@ -18,6 +18,7 @@ using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
+using LunarLabs.Parser.JSON;
 
 namespace Phantasma.API
 {
@@ -110,7 +111,7 @@ namespace Phantasma.API
         private readonly NexusAPI _api;
         private readonly MethodInfo _info;
 
-        private CacheDictionary<string, IAPIResult> _cache;
+        private CacheDictionary<string, string> _cache;
 
         public APIEntry(NexusAPI api, MethodInfo info)
         {
@@ -170,7 +171,7 @@ namespace Phantasma.API
 
                 if (attr.CacheDuration > 0 && api.UseCache)
                 {
-                    _cache = new CacheDictionary<string, IAPIResult>(32, TimeSpan.FromSeconds(attr.CacheDuration));
+                    _cache = new CacheDictionary<string, string>(32, TimeSpan.FromSeconds(attr.CacheDuration));
                 }
             }
             catch
@@ -186,7 +187,7 @@ namespace Phantasma.API
             return Name;
         }
 
-        public IAPIResult Execute(params object[] input)
+        public string Execute(string methodName, params object[] input)
         {
             if (input.Length != Parameters.Count)
             {
@@ -194,23 +195,25 @@ namespace Phantasma.API
             }
 
             string key = null;
-            IAPIResult result = null;
+            string result = null;
 
             bool cacheHit = false;
 
-            if (_cache != null)
+            if (_cache != null || _api.ProxyURL != null)
             {
                 var sb = new StringBuilder();
                 foreach (var arg in input)
                 {
+                    sb.Append('/');
                     sb.Append(arg.ToString());
                 }
 
                 key = sb.ToString();
-                if (_cache.TryGet(key, out result))
-                {
-                    cacheHit = true;
-                }
+            }
+
+            if (_cache != null && _cache.TryGet(key, out result))
+            {
+                cacheHit = true;
             }
 
             if (!cacheHit)
@@ -254,7 +257,41 @@ namespace Phantasma.API
                     throw new APIException("invalid parameter type: " + Parameters[i].Name);
                 }
 
-                result = (IAPIResult)_info.Invoke(_api, args);
+                if (_api.ProxyURL != null)
+                {
+                    methodName = char.ToLower(methodName[0]) + methodName.Substring(1);
+                    var url = $"{_api.ProxyURL}/{methodName}";
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        url = $"{url}/{key}";
+                    }
+
+                    try
+                    {
+                        using (var wc = new System.Net.WebClient())
+                        {
+                            result = wc.DownloadString(url);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        throw new APIException($"Proxy error: {e.Message}");
+                    }
+                }
+                else
+                {
+                    var apiResult = (IAPIResult)_info.Invoke(_api, args);
+
+                    if (apiResult is ErrorResult)
+                    {
+                        var temp = (ErrorResult)apiResult;
+                        throw new APIException(temp.error);
+                    }
+
+                    // convert to json string
+                    var node = APIUtils.FromAPIResult(apiResult);
+                    result = JSONWriter.WriteToString(node);
+                }
 
                 if (_cache != null)
                 {
@@ -307,6 +344,8 @@ namespace Phantasma.API
 
         private const int PaginationMaxResults = 50;
 
+        public string ProxyURL = null;
+
         internal readonly Logger logger;
 
         public NexusAPI(Nexus nexus, bool useCache = false, Logger logger = null)
@@ -342,12 +381,12 @@ namespace Phantasma.API
             logger?.Message($"Phantasma API enabled. {_methods.Count} methods available.");
         }
 
-        public IAPIResult Execute(string methodName, object[] args)
+        public string Execute(string methodName, object[] args)
         {
-            methodName = methodName.ToLower();
-            if (_methods.ContainsKey(methodName))
+            var uniformizedName = methodName.ToLower();
+            if (_methods.ContainsKey(uniformizedName))
             {
-                return _methods[methodName].Execute(args);
+                return _methods[uniformizedName].Execute(methodName, args);
             }
             else
             {

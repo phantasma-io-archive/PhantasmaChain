@@ -241,6 +241,12 @@ namespace Phantasma.Blockchain
 
         private void MintBlock(List<Transaction> transactions)
         {
+            if (Mempool.ValidatorAddress == null)
+            {
+                Mempool.Logger.Error($"Validator keys not set for mempool");
+                return;
+            }
+
             var lastBlockHash = Chain.GetLastBlockHash();
             var lastBlock = Chain.GetBlockByHash(lastBlockHash);
             var isFirstBlock = lastBlock == null;
@@ -364,7 +370,7 @@ namespace Phantasma.Blockchain
         public Nexus Nexus { get; private set; }
 
         internal PhantasmaKeys ValidatorKeys { get; private set; }
-        public Address ValidatorAddress => ValidatorKeys.Address;
+        public Address ValidatorAddress => ValidatorKeys != null ? ValidatorKeys.Address : Address.Null;
 
         public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
 
@@ -373,6 +379,8 @@ namespace Phantasma.Blockchain
         public MempoolEventHandler OnTransactionFailed;
         public MempoolEventHandler OnTransactionCommitted;
 
+        public Action<Transaction, Chain> SubmissionCallback;
+
         public BigInteger MinimumFee { get; private set; }
 
         public readonly int BlockTime; // in seconds
@@ -380,17 +388,21 @@ namespace Phantasma.Blockchain
 
         public Logger Logger { get; }
 
-        public Mempool(PhantasmaKeys validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, byte[] payload, uint defaultPoW = 0, Logger logger = null)
+        public Mempool(Nexus nexus, int blockTime, BigInteger minimumFee, byte[] payload, uint defaultPoW = 0, Logger logger = null)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 
-            this.ValidatorKeys = validatorKeys;
+            this.ValidatorKeys = null;
             this.Nexus = nexus;
             this.BlockTime = blockTime;
             this.MinimumFee = minimumFee;
             this.DefaultPoW = defaultPoW;
             this.Payload = payload;
             this.Logger = logger;
+            this.SubmissionCallback = (tx, chain) =>
+            {
+                Logger?.Error("transaction submission handler not setup correctly for mempool");
+            };
 
             Logger?.Message($"Starting mempool with block time of {blockTime} seconds.");
         }
@@ -398,6 +410,11 @@ namespace Phantasma.Blockchain
         public void SetKeys(PhantasmaKeys keys)
         {
             this.ValidatorKeys = keys;
+            this.SubmissionCallback = (tx, chain) =>
+            {
+                var chainPool = GetPoolForChain(chain);
+                chainPool.Submit(tx);
+            };
         }
 
         internal void RejectTransaction(Transaction tx, string reason)
@@ -462,8 +479,7 @@ namespace Phantasma.Blockchain
                 RejectTransaction(tx, "invalid nexus name");
             }
 
-            var chainPool = GetPoolForChain(chain);
-            chainPool.Submit(tx);
+            SubmissionCallback(tx, chain);
             return true;
         }
 
