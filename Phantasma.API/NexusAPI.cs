@@ -199,136 +199,139 @@ namespace Phantasma.API
 
             bool cacheHit = false;
 
-            if (_cache != null || _api.ProxyURL != null)
+            lock (string.Intern(methodName))
             {
-                var sb = new StringBuilder();
-                foreach (var arg in input)
+                if (_cache != null || _api.ProxyURL != null)
                 {
-                    sb.Append('/');
-                    sb.Append(arg.ToString());
-                }
-
-                key = sb.ToString();
-            }
-
-            if (_cache != null && _cache.TryGet(key, out result))
-            {
-                cacheHit = true;
-            }
-
-            if (!cacheHit)
-            {
-                var args = new object[input.Length];
-                for (int i = 0; i < args.Length; i++)
-                {
-                    if (Parameters[i].Type == typeof(string))
+                    var sb = new StringBuilder();
+                    foreach (var arg in input)
                     {
-                        args[i] = input[i] == null ? null : input[i].ToString();
-                        continue;
+                        sb.Append('/');
+                        sb.Append(arg.ToString());
                     }
 
-                    if (Parameters[i].Type == typeof(uint))
+                    key = sb.ToString();
+                }
+
+                if (_cache != null && _cache.TryGet(key, out result))
+                {
+                    cacheHit = true;
+                }
+
+                if (!cacheHit)
+                {
+                    var args = new object[input.Length];
+                    for (int i = 0; i < args.Length; i++)
                     {
-                        if (uint.TryParse(input[i].ToString(), out uint val))
+                        if (Parameters[i].Type == typeof(string))
                         {
-                            args[i] = val;
+                            args[i] = input[i] == null ? null : input[i].ToString();
                             continue;
                         }
+
+                        if (Parameters[i].Type == typeof(uint))
+                        {
+                            if (uint.TryParse(input[i].ToString(), out uint val))
+                            {
+                                args[i] = val;
+                                continue;
+                            }
+                        }
+
+                        if (Parameters[i].Type == typeof(int))
+                        {
+                            if (int.TryParse(input[i].ToString(), out int val))
+                            {
+                                args[i] = val;
+                                continue;
+                            }
+                        }
+
+                        if (Parameters[i].Type == typeof(bool))
+                        {
+                            if (bool.TryParse(input[i].ToString(), out bool val))
+                            {
+                                args[i] = val;
+                                continue;
+                            }
+                        }
+
+                        throw new APIException("invalid parameter type: " + Parameters[i].Name);
                     }
 
-                    if (Parameters[i].Type == typeof(int))
+                    if (_api.ProxyURL != null)
                     {
-                        if (int.TryParse(input[i].ToString(), out int val))
+                        methodName = char.ToLower(methodName[0]) + methodName.Substring(1);
+                        var url = $"{_api.ProxyURL}/{methodName}";
+                        if (!string.IsNullOrEmpty(key))
                         {
-                            args[i] = val;
-                            continue;
+                            url = $"{url}{key}";
+                        }
+
+                        _api.logger?.Message("Proxy call: " + url);
+
+                        try
+                        {
+                            using (var wc = new System.Net.WebClient())
+                            {
+                                result = wc.DownloadString(url);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            throw new APIException($"Proxy error: {e.Message}");
                         }
                     }
-
-                    if (Parameters[i].Type == typeof(bool))
+                    else
                     {
-                        if (bool.TryParse(input[i].ToString(), out bool val))
+                        var apiResult = (IAPIResult)_info.Invoke(_api, args);
+
+                        if (apiResult is ErrorResult)
                         {
-                            args[i] = val;
-                            continue;
+                            var temp = (ErrorResult)apiResult;
+                            throw new APIException(temp.error);
                         }
+
+                        // convert to json string
+                        var node = APIUtils.FromAPIResult(apiResult);
+                        result = JSONWriter.WriteToString(node);
                     }
 
-                    throw new APIException("invalid parameter type: " + Parameters[i].Name);
+                    if (_cache != null)
+                    {
+                        _cache.Add(key, result);
+                    }
                 }
 
-                if (_api.ProxyURL != null)
+                if (_api.logger != null)
                 {
-                    methodName = char.ToLower(methodName[0]) + methodName.Substring(1);
-                    var url = $"{_api.ProxyURL}/{methodName}";
-                    if (!string.IsNullOrEmpty(key))
+                    var sb = new StringBuilder();
+                    sb.Append("API request");
+
+                    if (cacheHit)
                     {
-                        url = $"{url}/{key}";
+                        sb.Append(" [Cached]");
                     }
 
-                    _api.logger?.Message("Proxy call: " + url);
+                    sb.Append($": {this.Name}(");
 
-                    try
+                    for (int i = 0; i < input.Length; i++)
                     {
-                        using (var wc = new System.Net.WebClient())
+                        if (i > 0)
                         {
-                            result = wc.DownloadString(url);
+                            sb.Append(',');
+                            sb.Append(' ');
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new APIException($"Proxy error: {e.Message}");
-                    }
-                }
-                else
-                {
-                    var apiResult = (IAPIResult)_info.Invoke(_api, args);
-
-                    if (apiResult is ErrorResult)
-                    {
-                        var temp = (ErrorResult)apiResult;
-                        throw new APIException(temp.error);
+                        sb.Append(input[i].ToString());
                     }
 
-                    // convert to json string
-                    var node = APIUtils.FromAPIResult(apiResult);
-                    result = JSONWriter.WriteToString(node);
+                    sb.Append(')');
+
+                    _api.logger?.Message(sb.ToString());
                 }
 
-                if (_cache != null)
-                {
-                    _cache.Add(key, result);
-                }
+                return result;
             }
-
-            if (_api.logger != null)
-            {
-                var sb = new StringBuilder();
-                sb.Append("API request");
-
-                if (cacheHit)
-                {
-                    sb.Append(" [Cached]");
-                }
-
-                sb.Append($": {this.Name}(");
-
-                for (int i = 0; i < input.Length; i++)
-                {
-                    if (i > 0)
-                    {
-                        sb.Append(',');
-                        sb.Append(' ');
-                    }
-                    sb.Append(input[i].ToString());
-                }
-
-                sb.Append(')');
-
-                _api.logger?.Message(sb.ToString());
-            }
-
-            return result;
         }
     }
 
