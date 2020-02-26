@@ -6,6 +6,7 @@ using Phantasma.VM;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core.Types;
+using Phantasma.Core.Performance;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
@@ -150,7 +151,8 @@ namespace Phantasma.Blockchain.Contracts
 
             if (handlers.ContainsKey(method))
             {
-                return handlers[method](this);
+                using (var m = new ProfileMarker(method))
+                    return handlers[method](this);
             }
 
             return ExecutionState.Fault;
@@ -568,6 +570,7 @@ namespace Phantasma.Blockchain.Contracts
                 return true;
             }
 
+            using (var m = new ProfileMarker("validatedWitnesses.Contains"))
             if (validatedWitnesses.Contains(address))
             {
                 return true;
@@ -603,11 +606,13 @@ namespace Phantasma.Blockchain.Contracts
 
             if (address.IsUser && Nexus.HasGenesis && OptimizedHasAddressScript(RootStorage, address))
             {
-                accountResult = InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
+                using (var m = new ProfileMarker("InvokeTriggerOnAccount"))
+                    accountResult = InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
             }
             else
             {
-                accountResult = this.Transaction.IsSignedBy(address);
+                using (var m = new ProfileMarker("Transaction.IsSignedBy"))
+                    accountResult = this.Transaction.IsSignedBy(address);
             }
 
             if (accountResult)
@@ -1041,18 +1046,23 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(amount > 0, "amount must be positive and greater than zero");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
-            var token = Runtime.GetToken(symbol);
+            IToken token;
+            using (var m = new ProfileMarker("Runtime.GetToken"))
+                token = Runtime.GetToken(symbol);
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
             Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fiat), "token can't be fiat");
 
-            Nexus.MintTokens(this, token, from, target, Chain.Name, amount);
+            using (var m = new ProfileMarker("Nexus.MintTokens"))
+                Nexus.MintTokens(this, token, from, target, Chain.Name, amount);
         }
 
         public BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
-            var token = Runtime.GetToken(symbol);
+            IToken token;
+            using (var m = new ProfileMarker("Runtime.GetToken"))
+                token = Runtime.GetToken(symbol);
             Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
             // TODO should not be necessary, verified by trigger
             //Runtime.Expect(IsWitness(target), "invalid witness");
@@ -1062,10 +1072,13 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
             Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
 
-            var tokenID = Nexus.CreateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram);
+            BigInteger tokenID;
+            using (var m = new ProfileMarker("Nexus.CreateNFT"))
+                tokenID = Nexus.CreateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
-            Nexus.MintToken(this, token, from, target, Chain.Name, tokenID, rom, ram);
+            using (var m = new ProfileMarker("Nexus.MintToken"))
+                Nexus.MintToken(this, token, from, target, Chain.Name, tokenID, rom, ram);
 
             return tokenID;
         }

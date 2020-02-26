@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Phantasma.Core;
+using Phantasma.Core.Performance;
 using Phantasma.Cryptography;
 using System;
 using System.Linq;
@@ -197,9 +198,12 @@ namespace Phantasma.VM
 
         internal ExecutionState SwitchContext(ExecutionContext context, uint instructionPointer)
         {
-            this.CurrentContext = context;
-            PushFrame(context, instructionPointer, DefaultRegisterCount);
-            return context.Execute(this.CurrentFrame, this.Stack);
+            using (var m = new ProfileMarker("SwitchContext"))
+            {
+                this.CurrentContext = context;
+                PushFrame(context, instructionPointer, DefaultRegisterCount);
+                return context.Execute(this.CurrentFrame, this.Stack);
+            }
         }
         #endregion
 

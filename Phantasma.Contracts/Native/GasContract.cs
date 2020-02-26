@@ -3,6 +3,7 @@ using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using Phantasma.Core.Performance;
 
 namespace Phantasma.Contracts.Native
 {
@@ -51,18 +52,25 @@ namespace Phantasma.Contracts.Native
 
             var maxAmount = price * limit;
 
-            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
-            Runtime.Expect(allowance == 0, "unexpected pending allowance");
+            using (var m = new ProfileMarker("_allowanceMap"))
+            {
+                var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
+                Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
-            allowance += maxAmount;
-            _allowanceMap.Set(from, allowance);
-            _allowanceTargets.Set(from, target);
+                allowance += maxAmount;
+                _allowanceMap.Set(from, allowance);
+                _allowanceTargets.Set(from, target);
+            }
 
-            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            BigInteger balance;
+            using (var m = new ProfileMarker("Runtime.GetBalance"))
+                balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
             Runtime.Expect(balance >= maxAmount, "not enough gas in address");
 
-            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
-            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));
+            using (var m = new ProfileMarker("Runtime.TransferTokens"))
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
+            using (var m = new ProfileMarker("Runtime.Notify"))
+                Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));
         }
 
         private Timestamp _lastInflation;
