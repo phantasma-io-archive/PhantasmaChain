@@ -2,6 +2,7 @@
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.VM;
+using Phantasma.Core.Performance;
 using System;
 using System.Collections.Generic;
 
@@ -46,6 +47,7 @@ namespace Phantasma.Blockchain.Contracts
 
             var runtime = (RuntimeVM)frame.VM;
 
+            using (var m = new ProfileMarker("InternalCall"))
             if (this.Contract.HasInternalMethod(methodName))
             {
                 ExecutionState result;
@@ -95,7 +97,9 @@ namespace Phantasma.Blockchain.Contracts
                 args[i] = arg.Data;
             }
 
-            var result = this.Contract.CallInternalMethod((RuntimeVM) frame.VM, method.name, args);
+            object result;
+            using (var m = new ProfileMarker(method.name))
+                result = this.Contract.CallInternalMethod((RuntimeVM) frame.VM, method.name, args);
 
             if (method.returnType != VMType.None)
             {

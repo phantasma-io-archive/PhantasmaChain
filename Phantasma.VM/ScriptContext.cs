@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Phantasma.Core;
+using Phantasma.Core.Performance;
 using Phantasma.Numerics;
 
 namespace Phantasma.VM
@@ -252,12 +253,13 @@ namespace Phantasma.VM
 
                     // args: byte srcReg
                     case Opcode.EXTCALL:
+                        using (var m = new ProfileMarker("EXTCALL"))
                         {
                             var src = Read8();
                             Expect(src < frame.Registers.Length);
 
                             var method = frame.Registers[src].AsString();
-
+                            
                             var state = frame.VM.ExecuteInterop(method);
                             if (state != ExecutionState.Running)
                             {
@@ -758,6 +760,7 @@ namespace Phantasma.VM
 
                     // args: byte dest_reg, var key
                     case Opcode.CTX:
+                        using (var m = new ProfileMarker("CTX"))
                         {
                             var src = Read8();
                             var dst = Read8();
@@ -781,6 +784,7 @@ namespace Phantasma.VM
 
                     // args: byte src_reg
                     case Opcode.SWITCH:
+                        using (var m = new ProfileMarker("SWITCH"))
                         {
                             var src = Read8();
                             Expect(src < frame.Registers.Length);

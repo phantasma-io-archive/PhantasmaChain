@@ -15,6 +15,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
+using Phantasma.Core.Performance;
 using Phantasma.Contracts;
 using Phantasma.Contracts.Native;
 
@@ -78,7 +79,9 @@ namespace Phantasma.Blockchain
                 throw new BlockGenerationException($"block must be signed");
             }
 
-            var changeSet = ValidateBlock(block, transactions, minimumFee);
+            StorageChangeSetContext changeSet;
+            using (var m = new ProfileMarker("ValidateBlock"))
+                changeSet = ValidateBlock(block, transactions, minimumFee);
 
             var unsignedBytes = block.ToByteArray(false);
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
@@ -94,25 +97,30 @@ namespace Phantasma.Blockchain
             }
 
             // from here on, the block is accepted
-            changeSet.Execute();
+            using (var m = new ProfileMarker("changeSet.Execute"))
+                changeSet.Execute();
 
             hashList.Add<Hash>(block.Hash);
 
-            var blockMap = new StorageMap(BlockHashMapTag, this.Storage);
-            var blockBytes = block.ToByteArray(true);
-            blockBytes = CompressionUtils.Compress(blockBytes);
-            blockMap.Set<Hash, byte[]>(block.Hash, blockBytes);
-
-            var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
-            var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
-            foreach (Transaction tx in transactions)
+            using (var m = new ProfileMarker("Compress"))
             {
-                var txBytes = tx.ToByteArray(true);
-                txBytes = CompressionUtils.Compress(txBytes);
-                txMap.Set<Hash, byte[]>(tx.Hash, txBytes);
-                txBlockMap.Set<Hash, Hash>(tx.Hash, block.Hash);
+                var blockMap = new StorageMap(BlockHashMapTag, this.Storage);
+                var blockBytes = block.ToByteArray(true);
+                blockBytes = CompressionUtils.Compress(blockBytes);
+                blockMap.Set<Hash, byte[]>(block.Hash, blockBytes);
+
+                var txMap = new StorageMap(TransactionHashMapTag, this.Storage);
+                var txBlockMap = new StorageMap(TxBlockHashMapTag, this.Storage);
+                foreach (Transaction tx in transactions)
+                {
+                    var txBytes = tx.ToByteArray(true);
+                    txBytes = CompressionUtils.Compress(txBytes);
+                    txMap.Set<Hash, byte[]>(tx.Hash, txBytes);
+                    txBlockMap.Set<Hash, Hash>(tx.Hash, block.Hash);
+                }
             }
 
+            using (var m = new ProfileMarker("AddressBlockHashMapTag"))
             foreach (var transaction in transactions)
             {
                 var addresses = new HashSet<Address>();
@@ -136,7 +144,8 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            Nexus.PluginTriggerBlock(this, block);
+            using (var m = new ProfileMarker("Nexus.PluginTriggerBlock"))
+                Nexus.PluginTriggerBlock(this, block);
         }
 
         public StorageChangeSetContext ValidateBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
@@ -146,8 +155,12 @@ namespace Phantasma.Blockchain
                 throw new BlockGenerationException($"block validator must be user address");
             }
 
-            var lastBlockHash = GetLastBlockHash();
-            var lastBlock = GetBlockByHash(lastBlockHash);
+            Block lastBlock;
+            using (var m = new ProfileMarker("GetLastBlock"))
+            {
+                var lastBlockHash = GetLastBlockHash();
+                lastBlock = GetBlockByHash(lastBlockHash);
+            }
 
             if (lastBlock != null)
             {
@@ -206,7 +219,9 @@ namespace Phantasma.Blockchain
 
             block.CleanUp();
 
-            var expectedValidator = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
+            Address expectedValidator;
+            using (var m = new ProfileMarker("GetValidator"))
+                expectedValidator  = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
             if (block.Validator != expectedValidator)
             {
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
@@ -218,16 +233,19 @@ namespace Phantasma.Blockchain
                 byte[] result;
                 try
                 {
-                    if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
+                    using (var m = new ProfileMarker("ExecuteTransaction"))
                     {
-                        if (result != null)
+                        if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
                         {
-                            block.SetResultForHash(tx.Hash, result);
+                            if (result != null)
+                            {
+                                block.SetResultForHash(tx.Hash, result);
+                            }
                         }
-                    }
-                    else
-                    {
-                        throw new InvalidTransactionException(tx.Hash, "script execution failed");
+                        else
+                        {
+                            throw new InvalidTransactionException(tx.Hash, "script execution failed");
+                        }
                     }
                 }
                 catch (Exception e)
@@ -248,7 +266,10 @@ namespace Phantasma.Blockchain
                 txIndex++;
             }
 
-            CloseBlock(block, changeSet);
+            using (var m = new ProfileMarker("CloseBlock"))
+            {
+                CloseBlock(block, changeSet);
+            }
 
             if (oracle.Entries.Any())
             {
@@ -262,11 +283,15 @@ namespace Phantasma.Blockchain
         {
             result = null;
 
-            var runtime = new RuntimeVM(index, transaction.Script, this, time, transaction, changeSet, oracle, false);
+            RuntimeVM runtime;
+            using (var m = new ProfileMarker("new RuntimeVM"))
+                runtime = new RuntimeVM(index, transaction.Script, this, time, transaction, changeSet, oracle, false);
             runtime.MinimumFee = minimumFee;
             runtime.ThrowOnFault = true;
 
-            var state = runtime.Execute();
+            ExecutionState state;
+            using (var m = new ProfileMarker("runtime.Execute"))
+                state = runtime.Execute();
 
             if (state != ExecutionState.Halt)
             {
@@ -275,9 +300,13 @@ namespace Phantasma.Blockchain
 
             var cost = runtime.UsedGas;
 
-            foreach (var evt in runtime.Events)
+            using (var m = new ProfileMarker("runtime.Events"))
             {
-                onNotify(transaction.Hash, evt);
+                foreach (var evt in runtime.Events)
+                {
+                    using (var m2 = new ProfileMarker(evt.ToString()))
+                        onNotify(transaction.Hash, evt);
+                }
             }
 
             if (runtime.Stack.Count > 0)

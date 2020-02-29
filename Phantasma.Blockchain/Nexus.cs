@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
+using Phantasma.Core.Performance;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Numerics;
@@ -458,7 +459,8 @@ namespace Phantasma.Blockchain
         public OracleReader CreateOracleReader()
         {
             Throw.If(_oracleFactory == null, "oracle factory is not setup");
-            return _oracleFactory(this);
+            using (var m = new ProfileMarker("_oracleFactory"))
+                return _oracleFactory(this);
         }
 
         public IEnumerable<string> GetChildChainsByName(StorageContext storage, string chainName)
@@ -667,8 +669,10 @@ namespace Phantasma.Blockchain
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, accountTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
 
-            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, !isSettlement);
+            using (var m = new ProfileMarker("Nexus.WriteNFT"))
+                WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, !isSettlement);
 
+            using (var m = new ProfileMarker("Runtime.Notify"))
             if (isSettlement)
             {
                 Runtime.Notify(EventKind.TokenSend, source, new TokenEventData(token.Symbol, tokenID, sourceChain));
