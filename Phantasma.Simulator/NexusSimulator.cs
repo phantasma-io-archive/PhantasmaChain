@@ -54,7 +54,7 @@ namespace Phantasma.Simulator
 
         public readonly Logger Logger;
 
-        public TimeSpan blockTimeSkip = TimeSpan.FromMinutes(45);
+        public TimeSpan blockTimeSkip = TimeSpan.FromMinutes(0);
         public BigInteger MinimumFee = 1;
 
         public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
