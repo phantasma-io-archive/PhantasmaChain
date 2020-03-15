@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Phantasma.Core.Performance
 {
@@ -17,7 +18,10 @@ namespace Phantasma.Core.Performance
         }
         void IDisposable.Dispose()
         {
-            Stop();
+            new Thread(() =>
+            {
+                Stop();
+            }).Start();
         }
 
         public void Stop()
