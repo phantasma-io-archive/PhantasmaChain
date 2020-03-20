@@ -1768,7 +1768,7 @@ namespace Phantasma.API
         }
 
 
-        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, -1)]
+        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0)]
         public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")]string sourcePlatform, [APIParameter("Name of platform to settle", "phantasma")]string destPlatform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
@@ -1827,7 +1827,7 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, -1)]
+        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account)
         {
             if (TokenSwapper == null)
