@@ -55,19 +55,16 @@ namespace Phantasma.API
                         }
                     }
 
-                    IAPIResult result;
                     try
                     {
-                        result = api.Execute(apiMethod.Name, args);
+                        var json = api.Execute(apiMethod.Name, args);
+                        return json;
                     }
                     catch (APIException e)
                     {
                         throw new RPCException(e.Message);
                     }
-
-                    CheckForError(result);
-                    return APIUtils.FromAPIResult(result);
-                    
+                   
                 });
             }
         }
@@ -81,15 +78,6 @@ namespace Phantasma.API
         {
             _server.Run();
             return true;
-        }
-
-        private static void CheckForError(IAPIResult response)
-        {
-            if (response is ErrorResult)
-            {
-                var temp = (ErrorResult)response;
-                throw new RPCException(temp.error);
-            }
         }
     }
 }

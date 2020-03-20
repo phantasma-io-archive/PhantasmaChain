@@ -65,10 +65,13 @@ namespace Phantasma.Core.Utils
         public readonly int Capacity;
         public readonly TimeSpan Duration;
 
-        public CacheDictionary(int capacity, TimeSpan duration)
+        public readonly bool Infinite;
+
+        public CacheDictionary(int capacity, TimeSpan duration, bool infinite)
         {
             this.Capacity = capacity;
             this.Duration = duration;
+            this.Infinite = infinite;
             _order = new K[capacity];
         }
 
@@ -102,7 +105,7 @@ namespace Phantasma.Core.Utils
                 {
                     var result =_items[key];
                     var diff = DateTime.UtcNow - result.Key;
-                    if (diff < Duration)
+                    if (Infinite || diff < Duration)
                     {
                         value = result.Value;
                         return true;

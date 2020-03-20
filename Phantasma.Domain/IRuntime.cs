@@ -13,6 +13,7 @@ namespace Phantasma.Domain
         Timestamp Time { get; }
         StorageContext Storage { get; }
         bool IsTrigger { get; }
+        int TransactionIndex { get; }
 
         Address GasTarget { get; }
         BigInteger UsedGas { get; }
@@ -39,6 +40,7 @@ namespace Phantasma.Domain
         string[] GetOrganizations();
 
         IToken GetToken(string symbol);
+        Hash GetTokenPlatformHash(string symbol, IPlatform platform);
         IFeed GetFeed(string name);
         IContract GetContract(string name);
 
@@ -109,7 +111,8 @@ namespace Phantasma.Domain
         BigInteger[] GetOwnerships(string symbol, Address address);
         BigInteger GetTokenSupply(string symbol);
 
-        void CreateToken(Address from, string symbol, string name, string platform, Hash hash, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
+        void CreateToken(Address from, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
+        void SetTokenPlatformHash(string symbol, string platform, Hash hash);
         void CreateChain(Address creator, string organization, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
         void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);

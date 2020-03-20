@@ -158,7 +158,7 @@ namespace Phantasma.Tests
 
             var tokenSupply = UnitConversion.ToBigInteger(10000, 18);
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "BlaToken", DomainSettings.PlatformName, Hash.FromString(symbol), tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
@@ -198,7 +198,7 @@ namespace Phantasma.Tests
 
             var tokenSupply = UnitConversion.ToBigInteger(100000000, 18);
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "BlaToken", DomainSettings.PlatformName, Hash.FromString(symbol), tokenSupply, 0, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 0, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
@@ -341,6 +341,41 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void SystemAddressTransfer()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+
+            var nexus = simulator.Nexus;
+
+            var testUser = PhantasmaKeys.Generate();
+            var systemAddr = Address.FromText("S3dNNgHpUgHhA3U8ZLEbS3fn28scs4y6fs8TB6A14WNWSJA");
+
+            var fuelAmount = UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals);
+            var transferAmount = UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            var txA = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
+            var txB = simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            // Send from user A to user B
+            simulator.BeginBlock();
+            var txC = simulator.GenerateTransfer(testUser, systemAddr, nexus.RootChain, DomainSettings.StakingTokenSymbol, transferAmount);
+            simulator.EndBlock();
+
+            var hashes = simulator.Nexus.RootChain.GetTransactionHashesForAddress(testUser.Address);
+            Assert.IsTrue(hashes.Length == 3);
+            Assert.IsTrue(hashes.Any(x => x == txA.Hash));
+            Assert.IsTrue(hashes.Any(x => x == txB.Hash));
+            Assert.IsTrue(hashes.Any(x => x == txC.Hash));
+
+            var stakeToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
+            var finalBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, stakeToken, systemAddr);
+            Assert.IsTrue(finalBalance == transferAmount);
+        }
+
+        [TestMethod]
         public void CosmicSwap()
         {
             var owner = PhantasmaKeys.Generate();
@@ -356,7 +391,7 @@ namespace Phantasma.Tests
             var symbol = "COOL";
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible);
             simulator.MintTokens(owner, testUserA.Address, symbol, 100000);
             simulator.EndBlock();
 
@@ -483,7 +518,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, "NEO"));
 
             var context = new StorageChangeSetContext(nexus.RootStorage);
-            var runtime = new RuntimeVM(new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
+            var runtime = new RuntimeVM(-1, new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
 
             var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
             var price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);
@@ -816,7 +851,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
@@ -871,7 +906,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Burnable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable);
             simulator.EndBlock();
 
             // Send some SOUL to the test user (required for gas used in "burn" transaction)
@@ -947,7 +982,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, nftName, DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, nftName, 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
@@ -1030,7 +1065,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", DomainSettings.PlatformName, Hash.FromString(symbol), 0, 0, TokenFlags.Transferable);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Transferable);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);

@@ -18,6 +18,7 @@ using Phantasma.Core.Types;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
+using LunarLabs.Parser.JSON;
 
 namespace Phantasma.API
 {
@@ -67,7 +68,7 @@ namespace Phantasma.API
         public readonly bool Paginated;
         public readonly int CacheDuration;
 
-        public APIInfoAttribute(Type returnType, string description, bool paginated = false, int cacheDuration = -1) : base(description)
+        public APIInfoAttribute(Type returnType, string description, bool paginated = false, int cacheDuration = 0) : base(description)
         {
             ReturnType = returnType;
             Paginated = paginated;
@@ -110,7 +111,7 @@ namespace Phantasma.API
         private readonly NexusAPI _api;
         private readonly MethodInfo _info;
 
-        private CacheDictionary<string, IAPIResult> _cache;
+        private CacheDictionary<string, string> _cache;
 
         public APIEntry(NexusAPI api, MethodInfo info)
         {
@@ -168,9 +169,9 @@ namespace Phantasma.API
                 Description = attr.Description;
                 IsPaginated = attr.Paginated;
 
-                if (attr.CacheDuration > 0 && api.UseCache)
+                if (attr.CacheDuration != 0 && api.UseCache)
                 {
-                    _cache = new CacheDictionary<string, IAPIResult>(32, TimeSpan.FromSeconds(attr.CacheDuration));
+                    _cache = new CacheDictionary<string, string>(256, TimeSpan.FromSeconds(attr.CacheDuration > 0 ? attr.CacheDuration : 0), attr.CacheDuration < 0);
                 }
             }
             catch
@@ -186,7 +187,7 @@ namespace Phantasma.API
             return Name;
         }
 
-        public IAPIResult Execute(params object[] input)
+        public string Execute(string methodName, params object[] input)
         {
             if (input.Length != Parameters.Count)
             {
@@ -194,102 +195,143 @@ namespace Phantasma.API
             }
 
             string key = null;
-            IAPIResult result = null;
+            string result = null;
 
             bool cacheHit = false;
 
-            if (_cache != null)
+            lock (string.Intern(methodName))
             {
-                var sb = new StringBuilder();
-                foreach (var arg in input)
+                if (_cache != null || _api.ProxyURL != null)
                 {
-                    sb.Append(arg.ToString());
+                    var sb = new StringBuilder();
+                    foreach (var arg in input)
+                    {
+                        sb.Append('/');
+                        sb.Append(arg.ToString());
+                    }
+
+                    key = sb.ToString();
                 }
 
-                key = sb.ToString();
-                if (_cache.TryGet(key, out result))
+                if (_cache != null && _cache.TryGet(key, out result))
                 {
                     cacheHit = true;
                 }
-            }
 
-            if (!cacheHit)
-            {
-                var args = new object[input.Length];
-                for (int i = 0; i < args.Length; i++)
+                if (!cacheHit)
                 {
-                    if (Parameters[i].Type == typeof(string))
+                    var args = new object[input.Length];
+                    for (int i = 0; i < args.Length; i++)
                     {
-                        args[i] = input[i] == null ? null : input[i].ToString();
-                        continue;
-                    }
-
-                    if (Parameters[i].Type == typeof(uint))
-                    {
-                        if (uint.TryParse(input[i].ToString(), out uint val))
+                        if (Parameters[i].Type == typeof(string))
                         {
-                            args[i] = val;
+                            args[i] = input[i] == null ? null : input[i].ToString();
                             continue;
                         }
+
+                        if (Parameters[i].Type == typeof(uint))
+                        {
+                            if (uint.TryParse(input[i].ToString(), out uint val))
+                            {
+                                args[i] = val;
+                                continue;
+                            }
+                        }
+
+                        if (Parameters[i].Type == typeof(int))
+                        {
+                            if (int.TryParse(input[i].ToString(), out int val))
+                            {
+                                args[i] = val;
+                                continue;
+                            }
+                        }
+
+                        if (Parameters[i].Type == typeof(bool))
+                        {
+                            if (bool.TryParse(input[i].ToString(), out bool val))
+                            {
+                                args[i] = val;
+                                continue;
+                            }
+                        }
+
+                        throw new APIException("invalid parameter type: " + Parameters[i].Name);
                     }
 
-                    if (Parameters[i].Type == typeof(int))
+                    if (_api.ProxyURL != null)
                     {
-                        if (int.TryParse(input[i].ToString(), out int val))
+                        methodName = char.ToLower(methodName[0]) + methodName.Substring(1);
+                        var url = $"{_api.ProxyURL}/{methodName}";
+                        if (!string.IsNullOrEmpty(key))
                         {
-                            args[i] = val;
-                            continue;
+                            url = $"{url}{key}";
+                        }
+
+                        _api.logger?.Message("Proxy call: " + url);
+
+                        try
+                        {
+                            using (var wc = new System.Net.WebClient())
+                            {
+                                result = wc.DownloadString(url);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            throw new APIException($"Proxy error: {e.Message}");
                         }
                     }
-
-                    if (Parameters[i].Type == typeof(bool))
+                    else
                     {
-                        if (bool.TryParse(input[i].ToString(), out bool val))
+                        var apiResult = (IAPIResult)_info.Invoke(_api, args);
+
+                        if (apiResult is ErrorResult)
                         {
-                            args[i] = val;
-                            continue;
+                            var temp = (ErrorResult)apiResult;
+                            throw new APIException(temp.error);
                         }
+
+                        // convert to json string
+                        var node = APIUtils.FromAPIResult(apiResult);
+                        result = JSONWriter.WriteToString(node);
                     }
 
-                    throw new APIException("invalid parameter type: " + Parameters[i].Name);
-                }
-
-                result = (IAPIResult)_info.Invoke(_api, args);
-
-                if (_cache != null)
-                {
-                    _cache.Add(key, result);
-                }
-            }
-
-            if (_api.logger != null)
-            {
-                var sb = new StringBuilder();
-                sb.Append("API request");
-
-                if (cacheHit)
-                {
-                    sb.Append(" [Cached]");
-                }
-
-                sb.Append($": {this.Name}(");
-
-                for (int i = 0; i < input.Length; i++)
-                {
-                    if (i > 0)
+                    if (_cache != null)
                     {
-                        sb.Append(',');
-                        sb.Append(' ');
+                        _cache.Add(key, result);
                     }
-                    sb.Append(input[i].ToString());
                 }
 
-                sb.Append(')');
+                if (_api.logger != null)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("API request");
 
-                _api.logger?.Message(sb.ToString());
+                    if (cacheHit)
+                    {
+                        sb.Append(" [Cached]");
+                    }
+
+                    sb.Append($": {this.Name}(");
+
+                    for (int i = 0; i < input.Length; i++)
+                    {
+                        if (i > 0)
+                        {
+                            sb.Append(',');
+                            sb.Append(' ');
+                        }
+                        sb.Append(input[i].ToString());
+                    }
+
+                    sb.Append(')');
+
+                    _api.logger?.Message(sb.ToString());
+                }
+
+                return result;
             }
-
-            return result;
         }
     }
 
@@ -300,11 +342,14 @@ namespace Phantasma.API
         public ITokenSwapper TokenSwapper;
         public Mempool Mempool;
         public Node Node;
+        public bool acceptTransactions;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
         private const int PaginationMaxResults = 50;
+
+        public string ProxyURL = null;
 
         internal readonly Logger logger;
 
@@ -315,6 +360,7 @@ namespace Phantasma.API
             Nexus = nexus;
             UseCache = useCache;
             this.logger = logger;
+            this.acceptTransactions = true;
 
             var methodInfo = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -340,12 +386,12 @@ namespace Phantasma.API
             logger?.Message($"Phantasma API enabled. {_methods.Count} methods available.");
         }
 
-        public IAPIResult Execute(string methodName, object[] args)
+        public string Execute(string methodName, object[] args)
         {
-            methodName = methodName.ToLower();
-            if (_methods.ContainsKey(methodName))
+            var uniformizedName = methodName.ToLower();
+            if (_methods.ContainsKey(uniformizedName))
             {
-                return _methods[methodName].Execute(args);
+                return _methods[uniformizedName].Execute(methodName, args);
             }
             else
             {
@@ -367,8 +413,8 @@ namespace Phantasma.API
                 maxSupply = tokenInfo.MaxSupply.ToString(),
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
-                platform = tokenInfo.Platform,
-                hash = tokenInfo.Hash.ToString(),
+                /*platform = tokenInfo.Platform,
+                hash = tokenInfo.Hash.ToString(),*/
             };
         }
 
@@ -496,6 +542,8 @@ namespace Phantasma.API
             var parentName = Nexus.GetParentChainByName(chain.Name);
             var orgName = Nexus.GetChainOrganization(chain.Name);
 
+            var contracts = chain.GetContracts(chain.Storage).ToArray();
+
             var result = new ChainResult
             {
                 name = chain.Name,
@@ -503,7 +551,7 @@ namespace Phantasma.API
                 height = (uint)chain.Height,
                 parent = parentName,
                 organization = orgName,
-                contracts = chain.GetContracts(chain.Storage).Select(x => x.Name).ToArray(),
+                contracts = contracts.Select(x => x.Name).ToArray(),
                 dapps = new string[0],
             };
 
@@ -636,7 +684,7 @@ namespace Phantasma.API
             return result;
         }
 
-        [APIInfo(typeof(string), "Returns the address that owns a given name.", false, 30)]
+        [APIInfo(typeof(string), "Returns the address that owns a given name.", false, 60)]
         [APIFailCase("address is invalid", "ABCD123")]
         public IAPIResult LookUpName([APIParameter("Name of account", "blabla")] string name)
         {
@@ -668,7 +716,7 @@ namespace Phantasma.API
             return new SingleResult { value = chain.Height };
         }
 
-        [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.", false, 30)]
+        [APIInfo(typeof(int), "Returns the number of transactions of given block hash or error if given hash is invalid or is not found.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         public IAPIResult GetBlockTransactionCountByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
@@ -687,7 +735,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(BlockResult), "Returns information about a block by hash.", false, 30)]
+        [APIInfo(typeof(BlockResult), "Returns information about a block by hash.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         public IAPIResult GetBlockByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
@@ -708,7 +756,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(string), "Returns a serialized string, containing information about a block by hash.", false, 30)]
+        [APIInfo(typeof(string), "Returns a serialized string, containing information about a block by hash.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         public IAPIResult GetRawBlockByHash([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash)
         {
@@ -729,7 +777,7 @@ namespace Phantasma.API
             return new ErrorResult() { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.", false, 30)]
+        [APIInfo(typeof(BlockResult), "Returns information about a block by height and chain.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         [APIFailCase("chain is invalid", "453dsa")]
         public IAPIResult GetBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
@@ -752,7 +800,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "block not found" };
         }
 
-        [APIInfo(typeof(string), "Returns a serialized string, in hex format, containing information about a block by height and chain.", false, 30)]
+        [APIInfo(typeof(string), "Returns a serialized string, in hex format, containing information about a block by height and chain.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         [APIFailCase("chain is invalid", "453dsa")]
         public IAPIResult GetRawBlockByHeight([APIParameter("Address or name of chain", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string chainInput, [APIParameter("Height of block", "1")] uint height)
@@ -784,7 +832,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "block not found" };
         }
 
-        [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.", false, 5)]
+        [APIInfo(typeof(TransactionResult), "Returns the information about a transaction requested by a block hash and transaction index.", false, -1)]
         [APIFailCase("block hash is invalid", "asdfsa")]
         [APIFailCase("index transaction is invalid", "-1")]
         public IAPIResult GetTransactionByBlockHashAndIndex([APIParameter("Hash of block", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockHash, [APIParameter("Index of transaction", "0")] int index)
@@ -816,7 +864,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "invalid block hash" };
         }
 
-        [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.", true)]
+        [APIInfo(typeof(AccountTransactionsResult), "Returns last X transactions of given address.", true, 3)]
         [APIFailCase("address is invalid", "543533")]
         [APIFailCase("page is invalid", "-1")]
         [APIFailCase("pageSize is invalid", "-1")]
@@ -870,7 +918,7 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(int), "Get number of transactions in a specific address and chain", false, 5)]
+        [APIInfo(typeof(int), "Get number of transactions in a specific address and chain", false, 3)]
         [APIFailCase("address is invalid", "43242342")]
         [APIFailCase("chain is invalid", "-1")]
         public IAPIResult GetAddressTransactionCount([APIParameter("Address of account", "PDHcAHq1fZXuwDrtJGDhjemFnj2ZaFc7iu3qD4XjZG9eV")] string account, [APIParameter("Name or address of chain, optional", "apps")] string chainInput = "main")
@@ -920,6 +968,11 @@ namespace Phantasma.API
                 return new ErrorResult { error = "No mempool" };
             }
 
+            if (!acceptTransactions)
+            {
+                return new ErrorResult { error = "Node not accepting transactions" };
+            }
+            
             byte[] bytes;
             try
             {
@@ -959,7 +1012,7 @@ namespace Phantasma.API
             return new SingleResult { value = tx.Hash.ToString() };
         }
 
-        [APIInfo(typeof(ScriptResult), "Allows to invoke script based on network state, without state changes.")]
+        [APIInfo(typeof(ScriptResult), "Allows to invoke script based on network state, without state changes.", false, 5)]
         [APIFailCase("script is invalid", "")]
         [APIFailCase("failed to decoded script", "0000")]
         public IAPIResult InvokeRawScript([APIParameter("Address or name of chain", "root")] string chainInput, [APIParameter("Serialized script bytes, in hexadecimal format", "0000000000")] string scriptData)
@@ -989,7 +1042,7 @@ namespace Phantasma.API
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var oracle = Nexus.CreateOracleReader();
-            var vm = new RuntimeVM(script, chain, Timestamp.Now, null, changeSet, oracle, true);
+            var vm = new RuntimeVM(-1, script, chain, Timestamp.Now, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 
@@ -1088,7 +1141,7 @@ namespace Phantasma.API
             return new ErrorResult { error = "Transaction not found" };
         }
 
-        [APIInfo(typeof(ChainResult[]), "Returns an array of all chains deployed in Phantasma.", false, 30)]
+        [APIInfo(typeof(ChainResult[]), "Returns an array of all chains deployed in Phantasma.", false, 300)]
         public IAPIResult GetChains()
         {
             var result = new ArrayResult();
@@ -1107,7 +1160,7 @@ namespace Phantasma.API
             return result;
         }
 
-        [APIInfo(typeof(NexusResult), "Returns info about the nexus.", false, 30)]
+        [APIInfo(typeof(NexusResult), "Returns info about the nexus.", false, 60)]
         public IAPIResult GetNexus()
         {
             var tokenList = new List<TokenResult>();
@@ -1135,7 +1188,7 @@ namespace Phantasma.API
                 }).ToArray();
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
-                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(Nexus.RootStorage, x).Platform == platform).ToArray();
+                entry.tokens = symbols.Where(x => Nexus.HasTokenPlatformHash(x, platform, Nexus.RootStorage)).ToArray();
                 platformList.Add(entry);
             }
 
@@ -1153,8 +1206,6 @@ namespace Phantasma.API
 
             var orgs = Nexus.GetOrganizations(Nexus.RootStorage);
 
-            var ses = ((LeaderboardRow[])Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "ranking", nameof(RankingContract.GetRows), BombContract.SESLeaderboardName).ToObject()).ToArray();
-
             return new NexusResult()
             {
                 name = Nexus.GetName(Nexus.RootStorage),
@@ -1162,12 +1213,11 @@ namespace Phantasma.API
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
                 organizations = orgs,
-                ses = ses.Select(x => new LeaderboardRowResult() { address = x.address.Text, value = x.score.ToString() }).ToArray(),
                 governance = governance.Select(x => new GovernanceResult() { name = x.Name, value = x.Value.ToString() }).ToArray()
             };
         }
 
-        [APIInfo(typeof(OrganizationResult), "Returns info about an organization.", false, 30)]
+        [APIInfo(typeof(OrganizationResult), "Returns info about an organization.", false, 60)]
         public IAPIResult GetOrganization(string ID)
         {
             if (!Nexus.OrganizationExists(Nexus.RootStorage, ID))
@@ -1208,7 +1258,7 @@ namespace Phantasma.API
 
         }
 
-        [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 30)]
+        [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 300)]
         public IAPIResult GetTokens()
         {
             var tokenList = new List<object>();
@@ -1223,7 +1273,7 @@ namespace Phantasma.API
             return new ArrayResult() { values = tokenList.ToArray() };
         }
 
-        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 30)]
+        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, -1)]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
@@ -1237,7 +1287,7 @@ namespace Phantasma.API
             return result;
         }
 
-        [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 5)]
+        [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
         public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
@@ -1532,7 +1582,7 @@ namespace Phantasma.API
             return FillABI(contractName, contract.ABI);
         }
 
-        [APIInfo(typeof(PeerResult[]), "Returns list of known peers.", false, 20)]
+        [APIInfo(typeof(PeerResult[]), "Returns list of known peers.", false, 30)]
         public IAPIResult GetPeers()
         {
             if (Node == null)
@@ -1542,7 +1592,7 @@ namespace Phantasma.API
 
             var peers = Node.Peers.Select(x => new PeerResult() { url = x.Endpoint.ToString(), version = x.Version, flags = x.Capabilities.ToString(), fee = x.MinimumFee.ToString(), pow = (uint)x.MinimumPoW }).ToList();
 
-            peers.Add(new PeerResult() { url = Node.PublicIP, version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
+            peers.Add(new PeerResult() { url = $"{Node.PublicIP}:{Node.Port}", version = Node.Version, flags = Node.Capabilities.ToString(), fee = Node.MinimumFee.ToString(), pow = (uint)Node.MinimumPoW });
 
             peers.Shuffle();
 
@@ -1700,7 +1750,7 @@ namespace Phantasma.API
                 }).ToArray();
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
-                entry.tokens = symbols.Where(x => Nexus.GetTokenInfo(Nexus.RootStorage, x).Platform == platform).ToArray();
+                entry.tokens = symbols.Where(x => Nexus.HasTokenPlatformHash(x, platform, Nexus.RootStorage)).ToArray();
                 platformList.Add(entry);
             }
 
@@ -1718,7 +1768,7 @@ namespace Phantasma.API
         }
 
 
-        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 1)]
+        [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0)]
         public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")]string sourcePlatform, [APIParameter("Name of platform to settle", "phantasma")]string destPlatform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
@@ -1777,7 +1827,7 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, -1)]
+        [APIInfo(typeof(SwapResult[]), "Returns platform swaps for a specific address.", false, 0)]
         public IAPIResult GetSwapsForAddress([APIParameter("Address or account name", "helloman")] string account)
         {
             if (TokenSwapper == null)

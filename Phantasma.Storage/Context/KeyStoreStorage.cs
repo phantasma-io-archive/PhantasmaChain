@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Phantasma.Storage.Context
 {
@@ -34,6 +35,14 @@ namespace Phantasma.Storage.Context
         public override void Put(StorageKey key, byte[] value)
         {
             Adapter.SetValue(key.keyData, value);
+        }
+
+        public void Visit(Action<byte[], byte[]> visitor)
+        {
+            Adapter.Visit((keyBytes, valBytes) =>
+            {
+                visitor(keyBytes, valBytes);
+            });
         }
     }
 }

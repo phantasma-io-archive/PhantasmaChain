@@ -92,7 +92,6 @@ namespace Phantasma.Contracts.Native
                     var token = this.Runtime.GetToken(transfer.Symbol);
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
                     Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
-                    Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
                     var withdraw = _withdraws.Get<InteropWithdraw>(index);
                     _withdraws.RemoveAt<InteropWithdraw>(index);
@@ -117,7 +116,6 @@ namespace Phantasma.Contracts.Native
 
                             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
                             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
-                            Runtime.Expect(token.Flags.HasFlag(TokenFlags.External), "token must be external");
 
                             Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
@@ -150,7 +148,6 @@ namespace Phantasma.Contracts.Native
 
             var transferTokenInfo = this.Runtime.GetToken(symbol);
             Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "transfer token must be transferable");
-            Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.External), "transfer token must be external");
             Runtime.Expect(transferTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "transfer token must be fungible");
 
             byte platformID;
@@ -169,6 +166,9 @@ namespace Phantasma.Contracts.Native
                     break;
                 }
             }
+
+            var platformTokenHash = Runtime.GetTokenPlatformHash(symbol, platform);
+            Runtime.Expect(platformTokenHash != Hash.Null, "invalid foreign token hash");
 
             Runtime.Expect(interopIndex == -1, "invalid target address");
 

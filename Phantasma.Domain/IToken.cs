@@ -18,7 +18,7 @@ namespace Phantasma.Domain
         Fuel = 1 << 4,
         Stakable = 1 << 5,
         Fiat = 1 << 6,
-        External = 1 << 7,
+        Foreign = 1 << 7,
         Burnable = 1 << 8,
     }
 
@@ -26,8 +26,6 @@ namespace Phantasma.Domain
     {
         string Name { get; }
         string Symbol { get; }
-        string Platform { get; }
-        Hash Hash { get; }
         TokenFlags Flags { get; }
         BigInteger MaxSupply { get;  }
         int Decimals { get; }

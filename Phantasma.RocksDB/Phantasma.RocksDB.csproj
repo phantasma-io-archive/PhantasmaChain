@@ -2,13 +2,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\Code\PhantasmaSpook\Backup\Phantasma.RocksDB\</UpgradeBackupLocation>
-    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.RocksDB\</UpgradeBackupLocation>
+    <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="RocksDbSharp" Version="5.17.2" />
+    <PackageReference Include="RocksDbSharp" Version="6.2.2" />
+    <PackageReference Include="RocksDbNative" Version="6.2.2" />
   </ItemGroup>
 </Project>

@@ -3,8 +3,8 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>Phantasma.Tests</RootNamespace>
     <FileUpgradeFlags>40</FileUpgradeFlags>
-    <UpgradeBackupLocation>C:\Code\PhantasmaSpook\Backup\Phantasma.Tests\</UpgradeBackupLocation>
-    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>C:\code\PhantasmaSpook\Backup\Phantasma.Tests\</UpgradeBackupLocation>
+    <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>

@@ -8,6 +8,8 @@ using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
+using Phantasma.Core.Performance;
+using System.IO;
 
 namespace Phantasma.Blockchain
 {
@@ -145,8 +147,18 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void Run()
+        internal void Run(string _profilerPath)
         {
+            if (_profilerPath != null)
+            {
+                string fileName = String.Format("{0}/", _profilerPath);
+                var path = Path.GetDirectoryName(fileName);
+                if (!string.IsNullOrEmpty(path) && !Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+            }
+
             lock (_phone)
             {
                 while (Mempool.Running)
@@ -219,21 +231,32 @@ namespace Phantasma.Blockchain
 
                     if (readyTransactions != null)
                     {
-
-                        lock (_txMap)
+                        ProfileSession profiler = null;
+                        if (_profilerPath != null)
                         {
-                            lock (_pending)
-                            {
-                                foreach (var tx in readyTransactions)
-                                {
-                                    _pending.Add(tx.Hash);
-                                    _txMap.Remove(tx.Hash);
-                                }
-                            }
+                            string fileName = String.Format("{0}/block{1}_{2}.json", _profilerPath, currentTime.Value, new Random().Next(99999));
+                            FileInfo f = new FileInfo(fileName);
+                            Stream profileOut = f.OpenWrite();
+                            profiler = new ProfileSession(profileOut);
                         }
 
-                        //var readyToMint = timeDiff >= Mempool.BlockTime * 2 || readyTransactions.Count >= 3;
-                        MintBlock(readyTransactions);
+                        using (profiler)
+                        {
+                            lock (_txMap)
+                            {
+                                lock (_pending)
+                                {
+                                    foreach (var tx in readyTransactions)
+                                    {
+                                        _pending.Add(tx.Hash);
+                                        _txMap.Remove(tx.Hash);
+                                    }
+                                }
+                            }
+
+                            //var readyToMint = timeDiff >= Mempool.BlockTime * 2 || readyTransactions.Count >= 3;
+                            MintBlock(readyTransactions);
+                        }
                     }
                 }
             }
@@ -241,6 +264,12 @@ namespace Phantasma.Blockchain
 
         private void MintBlock(List<Transaction> transactions)
         {
+            if (Mempool.ValidatorAddress == null)
+            {
+                Mempool.Logger.Error($"Validator keys not set for mempool");
+                return;
+            }
+
             var lastBlockHash = Chain.GetLastBlockHash();
             var lastBlock = Chain.GetBlockByHash(lastBlockHash);
             var isFirstBlock = lastBlock == null;
@@ -257,40 +286,48 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    Chain.ValidateBlock(block, transactions, minFee);
+                    using (var m = new ProfileMarker("Chain.ValidateBlock"))
+                    {
+                        Chain.ValidateBlock(block, transactions, minFee);
+                    }
                 }
                 catch (InvalidTransactionException e)
                 {
-                    int index = -1;
-
-                    for (int i=0; i<transactions.Count; i++)
+                    using (var m = new ProfileMarker("InvalidTransactionException"))
                     {
-                        if (transactions[i].Hash == e.Hash)
+                        int index = -1;
+
+                        for (int i = 0; i < transactions.Count; i++)
                         {
-                            index = i;
-                            break;
+                            if (transactions[i].Hash == e.Hash)
+                            {
+                                index = i;
+                                break;
+                            }
                         }
-                    }
 
-                    if (index >= 0)
-                    {
-                        transactions.RemoveAt(index);
-                    }
+                        if (index >= 0)
+                        {
+                            transactions.RemoveAt(index);
+                        }
 
-                    lock (_pending)
-                    {
-                        _pending.Remove(e.Hash);
-                    }
+                        lock (_pending)
+                        {
+                            _pending.Remove(e.Hash);
+                        }
 
-                    Mempool.RegisterRejectionReason(e.Hash, e.Message);
-                    Mempool.OnTransactionFailed?.Invoke(e.Hash);
-                    continue;
+                        Mempool.RegisterRejectionReason(e.Hash, e.Message);
+                        Mempool.OnTransactionFailed?.Invoke(e.Hash);
+                        continue;
+                    }
                 }
 
                 try
                 {
-                    block.Sign(Mempool.ValidatorKeys);
-                    Chain.AddBlock(block, transactions, minFee);
+                    using (var m = new ProfileMarker("block.Sign"))
+                        block.Sign(Mempool.ValidatorKeys);
+                    using (var m = new ProfileMarker("Chain.AddBlock"))
+                        Chain.AddBlock(block, transactions, minFee);
                 }
                 catch (Exception e)
                 {
@@ -302,6 +339,7 @@ namespace Phantasma.Blockchain
                     _pending.Clear();
                 }
 
+                using (var m = new ProfileMarker("Mempool.OnTransactionCommitted"))
                 foreach (var tx in transactions)
                 {
                     Mempool.OnTransactionCommitted?.Invoke(tx.Hash);
@@ -361,10 +399,12 @@ namespace Phantasma.Blockchain
 
         private Dictionary<string, ChainPool> _chains = new Dictionary<string, ChainPool>();
 
+        private string _profilerPath = null;
+
         public Nexus Nexus { get; private set; }
 
         internal PhantasmaKeys ValidatorKeys { get; private set; }
-        public Address ValidatorAddress => ValidatorKeys.Address;
+        public Address ValidatorAddress => ValidatorKeys != null ? ValidatorKeys.Address : Address.Null;
 
         public static readonly int MaxExpirationTimeDifferenceInSeconds = 3600; // 1 hour
 
@@ -373,6 +413,8 @@ namespace Phantasma.Blockchain
         public MempoolEventHandler OnTransactionFailed;
         public MempoolEventHandler OnTransactionCommitted;
 
+        public Action<Transaction, Chain> SubmissionCallback;
+
         public BigInteger MinimumFee { get; private set; }
 
         public readonly int BlockTime; // in seconds
@@ -380,17 +422,22 @@ namespace Phantasma.Blockchain
 
         public Logger Logger { get; }
 
-        public Mempool(PhantasmaKeys validatorKeys, Nexus nexus, int blockTime, BigInteger minimumFee, byte[] payload, uint defaultPoW = 0, Logger logger = null)
+        public Mempool(Nexus nexus, int blockTime, BigInteger minimumFee, byte[] payload, uint defaultPoW = 0, Logger logger = null, string profilerPath=null)
         {
             Throw.If(blockTime < MinimumBlockTime, "invalid block time");
 
-            this.ValidatorKeys = validatorKeys;
+            this.ValidatorKeys = null;
             this.Nexus = nexus;
             this.BlockTime = blockTime;
             this.MinimumFee = minimumFee;
             this.DefaultPoW = defaultPoW;
             this.Payload = payload;
             this.Logger = logger;
+            this._profilerPath = profilerPath;
+            this.SubmissionCallback = (tx, chain) =>
+            {
+                Logger?.Error("transaction submission handler not setup correctly for mempool");
+            };
 
             Logger?.Message($"Starting mempool with block time of {blockTime} seconds.");
         }
@@ -398,6 +445,11 @@ namespace Phantasma.Blockchain
         public void SetKeys(PhantasmaKeys keys)
         {
             this.ValidatorKeys = keys;
+            this.SubmissionCallback = (tx, chain) =>
+            {
+                var chainPool = GetPoolForChain(chain);
+                chainPool.Submit(tx);
+            };
         }
 
         internal void RejectTransaction(Transaction tx, string reason)
@@ -462,8 +514,7 @@ namespace Phantasma.Blockchain
                 RejectTransaction(tx, "invalid nexus name");
             }
 
-            var chainPool = GetPoolForChain(chain);
-            chainPool.Submit(tx);
+            SubmissionCallback(tx, chain);
             return true;
         }
 
@@ -484,7 +535,7 @@ namespace Phantasma.Blockchain
 
                     new Thread(() =>
                     {
-                        chainPool.Run();
+                        chainPool.Run(_profilerPath);
                     }).Start();
                 }
             }

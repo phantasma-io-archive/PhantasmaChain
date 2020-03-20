@@ -1,7 +1,9 @@
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using Phantasma.Core.Performance;
 
 namespace Phantasma.Contracts.Native
 {
@@ -27,6 +29,13 @@ namespace Phantasma.Contracts.Native
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
 
+        public void Initialize(Address from)
+        {
+            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis address");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            _lastInflation = Runtime.Time;
+        }
+
         public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
         {
             if (Runtime.IsReadOnlyMode())
@@ -43,20 +52,56 @@ namespace Phantasma.Contracts.Native
 
             var maxAmount = price * limit;
 
-            var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
-            Runtime.Expect(allowance == 0, "unexpected pending allowance");
+            using (var m = new ProfileMarker("_allowanceMap"))
+            {
+                var allowance = _allowanceMap.ContainsKey(from) ? _allowanceMap.Get<Address, BigInteger>(from) : 0;
+                Runtime.Expect(allowance == 0, "unexpected pending allowance");
 
-            allowance += maxAmount;
-            _allowanceMap.Set(from, allowance);
-            _allowanceTargets.Set(from, target);
+                allowance += maxAmount;
+                _allowanceMap.Set(from, allowance);
+                _allowanceTargets.Set(from, target);
+            }
 
-            var balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            BigInteger balance;
+            using (var m = new ProfileMarker("Runtime.GetBalance"))
+                balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
             Runtime.Expect(balance >= maxAmount, "not enough gas in address");
 
-            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
-            Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));
+            using (var m = new ProfileMarker("Runtime.TransferTokens"))
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
+            using (var m = new ProfileMarker("Runtime.Notify"))
+                Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));
         }
+
+        private Timestamp _lastInflation;
         
+        private void ApplyInflation()
+        {
+            var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
+
+            // NOTE this gives an approximate inflation of 3% per year (0.75% per season)
+            var mintAmount = currentSupply / 133;
+            Runtime.Expect(mintAmount > 0, "invalid inflation amount");
+
+            var phantomOrg = Runtime.GetOrganization(DomainSettings.PhantomForceOrganizationName);
+            if (phantomOrg != null)
+            {
+                var phantomFunding = mintAmount / 3;
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, phantomOrg.Address, phantomFunding);
+                mintAmount -= phantomFunding;
+            }
+
+            var bpOrg = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);
+            if (bpOrg != null)
+            {
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, mintAmount);
+            }
+
+            Runtime.Notify(EventKind.Inflation, this.Address, DomainSettings.StakingTokenSymbol);
+
+            _lastInflation = Runtime.Time;
+        }
+
         public void SpendGas(Address from)
         {
             if (Runtime.IsReadOnlyMode())
@@ -92,14 +137,12 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, availableAmount);
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
-            var bombGas = Runtime.IsRootChain() ? spentGas / 2 : 0;
+            var burnGas = spentGas / 2;
 
-            if (bombGas > 0)
+            if (burnGas > 0)
             {
-                var bombPayment = bombGas * Runtime.GasPrice;
-                var bombAddress = SmartContract.GetAddressForNative(NativeContractKind.Bomb);
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, bombAddress, bombPayment);
-                spentGas -= bombGas;
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, burnGas);
+                spentGas -= burnGas;
             }
 
             if (!targetAddress.IsNull)
@@ -130,6 +173,24 @@ namespace Phantasma.Contracts.Native
             _allowanceTargets.Remove(from);
 
             Runtime.Notify(EventKind.GasPayment, Address.Null, new GasEventData(targetAddress, Runtime.GasPrice, spentGas));
+
+            if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
+            {
+                if (_lastInflation.Value == 0)
+                {
+                    var genesisTime = Runtime.GetGenesisTime();
+                    _lastInflation = genesisTime;
+                }
+                else
+                {
+                    var infDiff = Runtime.Time - _lastInflation;
+                    var inflationPeriod = SecondsInDay * 90;
+                    if (infDiff >= inflationPeriod)
+                    {
+                        ApplyInflation();
+                    }
+                }
+            }
         }
     }
 }

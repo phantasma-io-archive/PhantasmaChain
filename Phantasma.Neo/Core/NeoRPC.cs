@@ -4,6 +4,7 @@ using Phantasma.Neo.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace Phantasma.Neo.Core
 {
@@ -43,7 +44,6 @@ namespace Phantasma.Neo.Core
             foreach (DataNode child in node.Children)
                 LogData(child, ident + 1);
         }
-
         public DataNode QueryRPC(string method, object[] _params, int id = 1)
         {
             var paramData = DataNode.CreateArray("params");
@@ -72,24 +72,33 @@ namespace Phantasma.Neo.Core
 
                 var response = RequestUtils.Request(RequestType.POST, rpcEndpoint, jsonRpcData);
 
-                if (response != null && response.HasNode("result"))
+                if (response != null)
                 {
-                    return response;
-                }
-                else
-                {
-                    if (response != null && response.HasNode("error"))
+                    if (response.HasNode("result"))
+                    {
+                        LastError = null;
+                        return response;
+                    }
+
+                    if (response.HasNode("error"))
                     {
                         var error = response["error"];
-                        Logger("RPC Error: " + error.GetString("message"));
+                        LastError = error.GetString("message");
                     }
                     else
                     {
-                        Logger("No answer");
+                        LastError = "Unknown RPC error";
                     }
-                    rpcEndpoint = null;
-                    retryCount++;
                 }
+                else
+                {
+                    LastError = "Connection failure";
+                }
+
+                Logger("RPC Error: " + LastError);
+                rpcEndpoint = null;
+                retryCount++;
+                Thread.Sleep(1000);
 
             } while (retryCount < 10);
 
