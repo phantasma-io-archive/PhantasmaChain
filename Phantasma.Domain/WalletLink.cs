@@ -83,6 +83,9 @@ namespace Phantasma.Domain
         protected abstract Account GetAccount();
 
         protected abstract void InvokeScript(string script, int id, Action<int, DataNode, bool> callback);
+
+        protected abstract void SignTransaction(string script, int id, Action<int, DataNode, bool> callback);
+
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
             var args = cmd.Split(',');
@@ -164,6 +167,27 @@ namespace Phantasma.Domain
                             success = true;
                         }
 
+                        break;
+                    }
+
+                case "signTx":
+                    {
+                        root = ValidateRequest(args);
+                        if (root == null)
+                        {
+                            if (args.Length == 3)
+                            {
+                                var script = args[1];
+
+                                SignTransaction(script, id, callback);
+                                return;
+                            }
+                            else
+                            {
+                                root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                            }
+
+                        }
                         break;
                     }
 
