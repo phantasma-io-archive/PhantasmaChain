@@ -1547,7 +1547,7 @@ namespace Phantasma.API
 
             try
             {
-                Nexus.WriteArchiveBlock(archive, bytes, blockIndex);
+                Nexus.WriteArchiveBlock(archive, blockIndex, bytes);
                 return new SingleResult()
                 {
                     value = true

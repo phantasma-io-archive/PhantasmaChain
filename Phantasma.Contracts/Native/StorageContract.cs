@@ -1,16 +1,16 @@
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
+using Phantasma.Storage;
 using Phantasma.Storage.Context;
-using System;
-using System.Runtime.InteropServices;
 
 namespace Phantasma.Contracts.Native
 {
     public struct StorageEntry
     {
         public string Name;
-        public Hash hash;
+        public Hash Hash;
+        public Address Creator;
     }
 
     public sealed class StorageContract : NativeContract
@@ -19,8 +19,10 @@ namespace Phantasma.Contracts.Native
 
         public const string KilobytesPerStakeTag = "storage.stake.kb";
 
+        public const int DefaultForeignSpacedPercent = 20;
+
         internal StorageMap _storageMap; //<string, Collection<StorageEntry>>
-        internal StorageMap _referenceMap; //<string, int>
+        internal StorageMap _foreignMap; //<Address, BigInt>
 
         public StorageContract() : base()
         {
@@ -35,36 +37,79 @@ namespace Phantasma.Contracts.Native
             return availableSize;
         }
 
-        public void UploadFile(Address from, string name, BigInteger contentSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
+        // this is an helper method to upload smaller files...
+        public void UploadData(Address sender, Address target, string fileName, byte[] data, ArchiveFlags flags, byte[] key)
         {
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(from.IsUser, "address must be user address");
-            Runtime.Expect(contentSize >= DomainSettings.ArchiveMinSize, "file too small");
-            Runtime.Expect(contentSize <= DomainSettings.ArchiveMaxSize, "file too big");
+            BigInteger fileSize = data.Length;
+            Runtime.Expect(fileSize <= MerkleTree.ChunkSize, "data too big");
 
-            BigInteger requiredSize = CalculateRequiredSize(name, contentSize);
+            var merkle = new MerkleTree(data);
+            var serializedMerkle = Serialization.Serialize(merkle);
+            UploadFile(sender, target, fileName, fileSize, serializedMerkle, flags, key);
 
-            var usedSize = GetUsedSpace(from);
+            var archive = Runtime.CreateArchive(sender, target, merkle, fileSize, flags, key);
+            Runtime.Expect(archive != null, "failed to create archive");
 
-            var stakedAmount = Runtime.GetStake(from);
-            var availableSize = CalculateStorageSizeForStake(stakedAmount);
-           
-            availableSize -= usedSize;
-            Runtime.Expect(availableSize >= requiredSize, "account does not have available space");
+            Runtime.Expect(Runtime.WriteArchive(archive, 0, data), "failed to write archive content");
+        }
+
+        public void UploadFile(Address sender, Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
+        {
+            Runtime.Expect(Runtime.IsWitness(sender), "invalid witness");
+            Runtime.Expect(target.IsUser, "destination address must be user address");
+            Runtime.Expect(fileSize >= DomainSettings.ArchiveMinSize, "file too small");
+            Runtime.Expect(fileSize <= DomainSettings.ArchiveMaxSize, "file too big");
+
+            BigInteger requiredSize = CalculateRequiredSize(fileName, fileSize);
+
+            var targetUsedSize = GetUsedSpace(target);
+            var targetStakedAmount = Runtime.GetStake(target);
+            var targetAvailableSize = CalculateStorageSizeForStake(targetStakedAmount);
+            targetAvailableSize -= targetUsedSize;
+
+            if (sender == target)
+            {
+                Runtime.Expect(targetAvailableSize >= requiredSize, "target account does not have available space");
+            }
+            else // otherwise we need to run some extra checks in case the sender is not the target
+            {
+                var foreignSpace = GetForeignSpace(target);
+                if (foreignSpace < targetAvailableSize) 
+                {
+                    targetAvailableSize = foreignSpace; // limit available space to max allocated space to foreign addresses
+                }
+
+                Runtime.Expect(targetAvailableSize >= requiredSize, "target account does not have available space");
+
+                if (sender.IsUser)
+                {
+                    // note that here we require sender to have at least free space equal to msg size, mostly a protection against spam
+                    var senderUsedSize = GetUsedSpace(sender);
+                    var senderStakedAmount = Runtime.GetStake(sender);
+                    var senderAvailableSize = CalculateStorageSizeForStake(senderStakedAmount);
+                    senderAvailableSize -= senderUsedSize;
+                    Runtime.Expect(senderAvailableSize >= requiredSize, "sender account does not have available space");
+                }
+                else
+                {
+                    Runtime.Expect(sender.IsSystem, "invalid address type for sender");
+                }
+            }
 
             var hashes = MerkleTree.FromBytes(contentMerkle);
-            Runtime.CreateArchive(from, hashes, contentSize, flags, key);
+            Runtime.CreateArchive(sender, target, hashes, fileSize, flags, key);
 
             var newEntry = new StorageEntry()
             {
-                Name = name,
-                hash = hashes.Root,
+                Name = fileName,
+                Hash = hashes.Root,
+                Creator = sender,
             };
 
-            var list = _storageMap.Get<Address, StorageList>(from);
+            var list = _storageMap.Get<Address, StorageList>(target);
             list.Add<StorageEntry>(newEntry);
 
-            Runtime.Notify(EventKind.FileCreate, from, name);
+            Runtime.Notify(EventKind.FileCreate, target, newEntry);
         }
 
         public void DeleteFile(Address from, string name)
@@ -82,7 +127,7 @@ namespace Phantasma.Contracts.Native
                 if (entry.Name == name)
                 {
                     targetIndex = i;
-                    targetHash = entry.hash;
+                    targetHash = entry.Hash;
                     break;
                 }
             }
@@ -108,7 +153,7 @@ namespace Phantasma.Contracts.Native
             for (int i = 0; i < count; i++)
             {
                 var entry = list[i];
-                var archive = Runtime.GetArchive(entry.hash);
+                var archive = Runtime.GetArchive(entry.Hash);
                 Runtime.Expect(archive != null, "missing archive");
                 usedSize += archive.Size;
                 usedSize += entry.Name.Length;
@@ -125,6 +170,44 @@ namespace Phantasma.Contracts.Native
             return list.All<StorageEntry>();
         }
 
-        public static BigInteger CalculateRequiredSize(string name, BigInteger contentSize) => contentSize + Hash.Length + name.Length;
+        public BigInteger GetForeignSpace(Address target)
+        {
+            BigInteger result;
+
+            if (_foreignMap.ContainsKey<Address>(target))
+            {
+                result = _foreignMap.Get<Address, BigInteger>(target);
+            }
+            else
+            {
+                var targetStakedAmount = Runtime.GetStake(target);
+                var targetAvailableSize = CalculateStorageSizeForStake(targetStakedAmount);
+
+                result = (targetAvailableSize * DefaultForeignSpacedPercent) / 100;
+            }
+
+            if (result < 0)
+            {
+                result = 0;
+            }
+
+            return result;
+        }
+
+        public void SetForeignSpace(Address from, BigInteger percent)
+        {
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            Runtime.Expect(from.IsUser, "destination address must be user address");
+            Runtime.Expect(percent >= 0, "percent too small");
+            Runtime.Expect(percent <= 100, "percent too big");
+
+            var exists = _foreignMap.ContainsKey<Address>(from);
+
+            _foreignMap.Set<Address, BigInteger>(from, percent);
+
+            Runtime.Notify(exists ? EventKind.ValueUpdate : EventKind.ValueCreate, from, new ChainValueEventData() { Name = $"{from.Text}.storage.foreign", Value = percent});
+        }
+
+        public static BigInteger CalculateRequiredSize(string fileName, BigInteger contentSize) => contentSize + Hash.Length + fileName.Length;
     }
 }

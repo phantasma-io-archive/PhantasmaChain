@@ -54,7 +54,7 @@ namespace Phantasma.Domain
         public static readonly BigInteger PlatformSupply = UnitConversion.ToBigInteger(100000000, FuelTokenDecimals);
         public static readonly string PlatformName = "phantasma";
 
-        public static readonly int ArchiveMinSize = 1024; //1kb
+        public static readonly int ArchiveMinSize = 1024; // 1KB
         public static readonly int ArchiveMaxSize = 104857600; //100mb
         public static readonly uint ArchiveBlockSize = MerkleTree.ChunkSize;
     }

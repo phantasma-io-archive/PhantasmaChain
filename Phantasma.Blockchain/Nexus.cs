@@ -1343,19 +1343,24 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public bool CreateArchive(StorageContext storage, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
             var archive = GetArchive(merkleTree.Root);
             if (archive != null)
             {
-                return false;
+                if (archive.Size != size || archive.Flags != flags)
+                {
+                    return null; // TODO proper handle this
+                }
+
+                return archive;
             }
 
             archive = new Archive(merkleTree, size, flags, key);
             var archiveHash = merkleTree.Root;
             _archiveEntries.Set(archiveHash, archive);
 
-            return true;
+            return archive;
         }
 
         public bool DeleteArchive(Archive archive)
@@ -1385,7 +1390,7 @@ namespace Phantasma.Blockchain
             return _archiveContents.ContainsKey(hash);
         }
 
-        public void WriteArchiveBlock(Archive archive, byte[] content, int blockIndex)
+        public void WriteArchiveBlock(Archive archive, int blockIndex, byte[] content)
         {
             Throw.IfNull(archive, nameof(archive));
             Throw.IfNull(content, nameof(content));

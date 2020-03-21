@@ -10,15 +10,15 @@ using Phantasma.Core.Types;
 using Phantasma.Blockchain;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Numerics;
-using static Phantasma.Contracts.Native.StakeContract;
 using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Contracts.Extra;
 using Phantasma.Blockchain.Contracts;
+using Phantasma.Domain;
+using static Phantasma.Contracts.Native.StakeContract;
 using static Phantasma.Domain.DomainSettings;
 using static Phantasma.Numerics.UnitConversion;
-using Phantasma.Domain;
 
 namespace Phantasma.Tests
 {
@@ -2346,8 +2346,6 @@ namespace Phantasma.Tests
             balance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, infiToken, user.Address);
             Assert.IsTrue(balance == infiAmount);
         }
-
-           
     }
 }
 

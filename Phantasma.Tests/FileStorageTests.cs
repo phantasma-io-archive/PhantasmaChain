@@ -93,7 +93,7 @@ namespace Phantasma.Tests
             {
                 int ofs = (int)(i * Archive.BlockSize);
                 var blockContent = content.Skip(ofs).Take((int)Archive.BlockSize).ToArray();
-                simulator.Nexus.WriteArchiveBlock(archive, blockContent, i);
+                simulator.Nexus.WriteArchiveBlock(archive, i, blockContent);
             }
         }
 
@@ -948,6 +948,65 @@ namespace Phantasma.Tests
 
         #endregion
 
+        [TestMethod]
+        public void SmallFileContractUpload()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var simulator = new NexusSimulator(owner, 1234);
+            var nexus = simulator.Nexus;
+
+            var testUser = PhantasmaKeys.Generate();
+
+            var stakeAmount = MinimumValidStake * 5;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 1000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            var sb = new System.Text.StringBuilder();
+            for (int i=0; i<64; i++)
+            {
+                sb.AppendLine("Hello Phantasma!");
+            }
+
+            var testMsg = sb.ToString();
+            var textFile = System.Text.Encoding.UTF8.GetBytes(testMsg);
+            var key = new byte[0];
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+            ScriptUtils.
+                  BeginScript().
+                  AllowGas(testUser.Address, Address.Null, 1, 9999).
+                  CallContract("storage", "UploadData", testUser.Address, testUser.Address, "test.txt", textFile, ArchiveFlags.None, key).
+                  SpendGas(testUser.Address).
+                  EndScript()
+            );
+            var block = simulator.EndBlock().FirstOrDefault();
+
+            var evts = block.GetEventsForTransaction(tx.Hash);
+            Assert.IsTrue(evts.Length > 0);
+
+            var evt = evts.Where(x => x.Kind == EventKind.FileCreate).FirstOrDefault();
+            var entry = evt.GetContent<StorageEntry>();
+
+            Assert.IsTrue(entry.Creator == testUser.Address);
+
+            var archive = nexus.GetArchive(entry.Hash);
+            Assert.IsTrue(archive != null);
+
+            var readBytes = nexus.ReadArchiveBlock(archive, 0);
+            var readMsg = System.Text.Encoding.UTF8.GetString(readBytes);
+            Assert.IsTrue(readMsg == testMsg);
+        }
 
     }
 }

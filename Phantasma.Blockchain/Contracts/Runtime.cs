@@ -995,10 +995,27 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
 
-        public void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(Address creator, Address owner, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
             // TODO validation
-            Nexus.CreateArchive(this.RootStorage, merkleTree, size, flags, key);
+            return Nexus.CreateArchive(this.RootStorage, merkleTree, size, flags, key);
+        }
+
+        public bool WriteArchive(IArchive archive, int blockIndex, byte[] content)
+        {
+            if (archive == null)
+            {
+                return false;
+            }
+
+            var blockCount = (int)archive.GetBlockCount();
+            if (blockIndex < 0 || blockIndex >= blockCount)
+            {
+                return false; 
+            }
+
+            Nexus.WriteArchiveBlock((Archive)archive, blockIndex, content);
+            return true;
         }
 
         public bool IsAddressOfParentChain(Address address)

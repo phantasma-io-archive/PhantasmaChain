@@ -1,9 +1,8 @@
-﻿using Phantasma.Cryptography;
+﻿using System.Collections.Generic;
+using System.IO;
+using Phantasma.Cryptography;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Phantasma.Numerics;
 using Phantasma.Domain;
 
@@ -33,7 +32,7 @@ namespace Phantasma.Blockchain
         public ArchiveFlags Flags { get; private set; }
         public byte[] Key { get; private set; }
 
-        public BigInteger BlockCount => Size / BlockSize;
+        public BigInteger BlockCount => this.GetBlockCount();
 
         public IEnumerable<Hash> Blocks
         {
