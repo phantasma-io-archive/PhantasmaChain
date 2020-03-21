@@ -65,6 +65,8 @@ namespace Phantasma.Domain
         IArchive GetArchive(Hash hash);
         bool DeleteArchive(Hash hash);
 
+        bool WriteArchive(IArchive archive, int blockIndex, byte[] data);
+
         bool ChainExists(string name);
         IChain GetChainByAddress(Address address);
         IChain GetChainByName(string name);
@@ -115,7 +117,7 @@ namespace Phantasma.Domain
         void SetTokenPlatformHash(string symbol, string platform, Hash hash);
         void CreateChain(Address creator, string organization, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
-        void CreateArchive(Address from, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
+        IArchive CreateArchive(Address creator, Address owner, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
 
         BigInteger CreatePlatform(Address from, string name, string externalAddress, Address interopAddress, string fuelSymbol);
 

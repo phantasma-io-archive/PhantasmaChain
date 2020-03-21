@@ -153,7 +153,14 @@ namespace Phantasma.Domain
 
         public static BigInteger GetBlockCount(this IArchive archive)
         {
-            return archive.Size / DomainSettings.ArchiveBlockSize;
+            var total = (archive.Size / DomainSettings.ArchiveBlockSize);
+
+            if (archive.Size % DomainSettings.ArchiveBlockSize != 0)
+            {
+                total++;
+            }
+
+            return total;
         }
 
         // price is in quote Tokens

@@ -13,10 +13,11 @@ namespace Phantasma.Cryptography
     public class MerkleTree: ISerializable
     {
         private Hash[] _tree;
+        private uint _maxDepthLeafCount;
+        public uint MaxDepthLeafCount => _maxDepthLeafCount;
 
         public Hash Root => _tree[_tree.Length - 1];
 
-        public uint MaxDepthLeafCount { get; private set; }
         public static readonly uint ChunkSize = 256 * 1024;
 
         private MerkleTree()
@@ -50,7 +51,7 @@ namespace Phantasma.Cryptography
                 chunkCount++;
             }
 
-            MaxDepthLeafCount = NextPowerOf2(chunkCount);
+            _maxDepthLeafCount = NextPowerOf2(chunkCount);
 
             //int maxLevel = 1;
             var temp = MaxDepthLeafCount;
@@ -142,6 +143,7 @@ namespace Phantasma.Cryptography
 
         public void SerializeData(BinaryWriter writer)
         {
+            writer.WriteVarInt(_maxDepthLeafCount);
             writer.WriteVarInt(_tree.Length);
             for (int i = 0; i < _tree.Length; i++)
             {
@@ -151,6 +153,7 @@ namespace Phantasma.Cryptography
 
         public void UnserializeData(BinaryReader reader)
         {
+            _maxDepthLeafCount = (uint)reader.ReadVarInt();
             var len = (int)reader.ReadVarInt();
             _tree = new Hash[len];
             for (int i = 0; i < len; i++)
