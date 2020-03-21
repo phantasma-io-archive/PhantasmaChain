@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using LunarLabs.Parser;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Domain
 {
@@ -32,6 +34,14 @@ namespace Phantasma.Domain
             public int decimals;
         }
 
+        public struct File: IAPIResult
+        {
+            public string name;
+            public int size;
+            public uint date;
+            public string hash;
+        }
+
         public struct Account : IAPIResult
         {
             public string id;
@@ -39,6 +49,7 @@ namespace Phantasma.Domain
             public string name;
             public string avatar;
             public Balance[] balances;
+            public File[] files;
         }
 
         public struct Invocation : IAPIResult
@@ -46,12 +57,16 @@ namespace Phantasma.Domain
             public string result;
         }
 
+        public struct Transaction : IAPIResult
+        {
+            public string bytes;
+        }
 
         private Random rnd = new Random();
 
         private Dictionary<string, string> authTokens = new Dictionary<string, string>();
 
-        protected abstract PhantasmaKeys Keys { get; } 
+        protected abstract PhantasmaKeys Keys { get; }
         protected abstract WalletStatus Status { get; }
 
         public string Name { get; private set; }
@@ -82,9 +97,9 @@ namespace Phantasma.Domain
 
         protected abstract Account GetAccount();
 
-        protected abstract void InvokeScript(string script, int id, Action<int, DataNode, bool> callback);
+        protected abstract void InvokeScript(byte[] script, int id, Action<int, DataNode, bool> callback);
 
-        protected abstract void SignTransaction(string script, int id, Action<int, DataNode, bool> callback);
+        protected abstract byte[] SignTransaction(string nexus, string chain, byte[] script, int id, Action<int, DataNode, bool> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
@@ -175,12 +190,16 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 3)
+                            if (args.Length == 5)
                             {
-                                var script = args[1];
+                                var nexus = args[1];
+                                var chain = args[2];
+                                var script = Base16.Decode(args[3]);
 
-                                SignTransaction(script, id, callback);
-                                return;
+                                var bytes = SignTransaction(nexus, chain, script, id, callback);
+
+                                success = true;
+                                root = APIUtils.FromAPIResult(new Transaction() { bytes = Base16.Encode(bytes) });
                             }
                             else
                             {
@@ -198,7 +217,7 @@ namespace Phantasma.Domain
                         {
                             if (args.Length == 3)
                             {
-                                var script = args[1];
+                                var script = Base16.Decode(args[1]);
 
                                 InvokeScript(script, id, callback);
                                 return;
