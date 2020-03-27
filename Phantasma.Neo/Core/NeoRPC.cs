@@ -1,4 +1,5 @@
 ﻿using LunarLabs.Parser;
+using LunarLabs.Parser.JSON;
 using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
@@ -105,6 +106,45 @@ namespace Phantasma.Neo.Core
             return null;
         }
         #endregion
+
+        public override bool HasPlugin(string pluginName)
+        {
+            var response = QueryRPC("listplugins", new object[]{});
+            var result = new Dictionary<string, decimal>();
+            var resultNode = response.GetNode("result");
+
+            foreach (var entry in resultNode.Children)
+            {
+                foreach (var en in entry.Children)
+                {
+                    if (string.Equals(en.Name, "name")
+                            && string.Equals(en.Value, pluginName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            Console.WriteLine("FALSE");
+            return false;
+        }
+
+        public override string GetNep5Transfers(UInt160 scriptHash, DateTime timestamp)
+        {
+            if (!HasPlugin("RpcNep5Tracker"))
+            {
+                return null;
+
+            }
+
+            var unixTimestamp = (timestamp.ToUniversalTime()
+                    - (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc))).TotalSeconds;
+
+            var response = QueryRPC("getnep5transfers", new object[] { scriptHash.ToAddress(), unixTimestamp });
+            string json = JSONWriter.WriteToString(response);
+
+            return json;
+        }
 
         public override Dictionary<string, decimal> GetAssetBalancesOf(UInt160 scriptHash)
         {
@@ -393,7 +433,7 @@ namespace Phantasma.Neo.Core
 
                         nodes = new string[5];
                         for (int i = 0; i < nodes.Length; i++)
-                        {                            
+                        {
                             nodes[i] = $"http://seed{i}.cityofzion.io:{port}";
                         }
                         break;

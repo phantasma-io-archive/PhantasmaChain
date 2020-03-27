@@ -974,6 +974,22 @@ namespace Phantasma.Neo.Core
             return result;
         }
 
+        public abstract bool HasPlugin(string hash);
+
+        public abstract string GetNep5Transfers(UInt160 hash, DateTime timestamp);
+
+        public string GetNep5Transfers(NeoKeys key, DateTime timestamp)
+        {
+            return GetNep5Transfers(key.Address, timestamp);
+        }
+
+        public string GetNep5Transfers(string address, DateTime timestamp)
+        {
+            var hash = new UInt160(address.AddressToScriptHash());
+            return GetNep5Transfers(hash, timestamp);
+        }
+
+
         public abstract Dictionary<string, decimal> GetAssetBalancesOf(UInt160 hash);
 
         public Dictionary<string, decimal> GetAssetBalancesOf(NeoKeys key)
