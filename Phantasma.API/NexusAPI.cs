@@ -347,7 +347,7 @@ namespace Phantasma.API
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
-        private const int PaginationMaxResults = 50;
+        private const int PaginationMaxResults = 200;
 
         public string ProxyURL = null;
 
@@ -972,7 +972,7 @@ namespace Phantasma.API
             {
                 return new ErrorResult { error = "Node not accepting transactions" };
             }
-            
+
             byte[] bytes;
             try
             {
@@ -1848,7 +1848,7 @@ namespace Phantasma.API
             }
             else
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, account);                
+                address = Nexus.LookUpName(Nexus.RootStorage, account);
             }
 
             if (address.IsNull)
