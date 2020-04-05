@@ -718,6 +718,14 @@ namespace Phantasma.Neo.Core
 
         public abstract byte[] GetStorage(string scriptHash, byte[] key);
 
+        public abstract string GetTransactionHeight(UInt256 hash);
+
+        public string GetTransactionHeight(string hash)
+        {
+            var val = new UInt256(LuxUtils.ReverseHex(hash).HexToBytes());
+            return GetTransactionHeight(val);
+        }
+
         public abstract Transaction GetTransaction(UInt256 hash);
 
         public Transaction GetTransaction(string hash)
@@ -989,6 +997,18 @@ namespace Phantasma.Neo.Core
             return GetNep5Transfers(hash, timestamp);
         }
 
+        public abstract string GetUnspents(UInt160 hash);
+
+        public string GetUnspents(NeoKeys key)
+        {
+            return GetUnspents(key.Address);
+        }
+
+        public string GetUnspents(string address)
+        {
+            var hash = new UInt160(address.AddressToScriptHash());
+            return GetUnspents(hash);
+        }
 
         public abstract Dictionary<string, decimal> GetAssetBalancesOf(UInt160 hash);
 

@@ -134,13 +134,25 @@ namespace Phantasma.Neo.Core
             if (!HasPlugin("RpcNep5Tracker"))
             {
                 return null;
-
             }
 
             var unixTimestamp = (timestamp.ToUniversalTime()
                     - (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc))).TotalSeconds;
 
             var response = QueryRPC("getnep5transfers", new object[] { scriptHash.ToAddress(), unixTimestamp });
+            string json = JSONWriter.WriteToString(response);
+
+            return json;
+        }
+
+        public override string GetUnspents(UInt160 scriptHash)
+        {
+            if (!HasPlugin("RpcSystemAssetTrackerPlugin"))
+            {
+                return null;
+            }
+
+            var response = QueryRPC("getunspents", new object[] { scriptHash.ToAddress() });
             string json = JSONWriter.WriteToString(response);
 
             return json;
@@ -308,6 +320,19 @@ namespace Phantasma.Neo.Core
             }
 
             return invoke;
+        }
+
+        public override string GetTransactionHeight(UInt256 hash)
+        {
+            var response = QueryRPC("gettransactionheight", new object[] { hash.ToString() });
+            if (response != null && response.HasNode("result"))
+            {
+                return response.GetString("result");
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public override Transaction GetTransaction(UInt256 hash)
