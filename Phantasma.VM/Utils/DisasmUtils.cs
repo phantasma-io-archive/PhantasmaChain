@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Phantasma.VM.Utils
 {
@@ -8,6 +9,11 @@ namespace Phantasma.VM.Utils
         public string MethodName;
 
         // TODO method arguments
+
+        public override string ToString()
+        {
+            return $"{MethodName}()";
+        }
     }
 
     public static class DisasmUtils
@@ -55,6 +61,24 @@ namespace Phantasma.VM.Utils
             }
 
             return result;
+        }
+
+        public static string GetDescription(byte[] script)
+        {
+            var disasm = ExtractMethodCalls(script);
+
+            var sb = new StringBuilder();
+            foreach (var entry in disasm)
+            {
+                sb.AppendLine(entry.ToString());
+            }
+
+            if (sb.Length > 0)
+            {
+                return sb.ToString();
+            }
+
+            return "Unknown transaction.";
         }
     }
 }
