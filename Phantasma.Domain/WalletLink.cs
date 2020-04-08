@@ -215,7 +215,7 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 3)
+                            if (args.Length == 1)
                             {
                                 var script = Base16.Decode(args[1]);
 
