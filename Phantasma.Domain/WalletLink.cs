@@ -190,7 +190,7 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 5)
+                            if (args.Length == 4)
                             {
                                 var nexus = args[1];
                                 var chain = args[2];
@@ -215,7 +215,7 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 1)
+                            if (args.Length == 2)
                             {
                                 var script = Base16.Decode(args[1]);
 
