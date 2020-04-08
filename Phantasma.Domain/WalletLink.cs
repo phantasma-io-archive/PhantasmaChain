@@ -59,7 +59,7 @@ namespace Phantasma.Domain
 
         public struct Transaction : IAPIResult
         {
-            public string bytes;
+            public string hash;
         }
 
         private Random rnd = new Random();
@@ -99,7 +99,7 @@ namespace Phantasma.Domain
 
         protected abstract void InvokeScript(byte[] script, int id, Action<int, DataNode, bool> callback);
 
-        protected abstract byte[] SignTransaction(string nexus, string chain, byte[] script, int id, Action<int, DataNode, bool> callback);
+        protected abstract Hash SignTransaction(string nexus, string chain, byte[] script, int id, Action<int, DataNode, bool> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
@@ -196,10 +196,10 @@ namespace Phantasma.Domain
                                 var chain = args[2];
                                 var script = Base16.Decode(args[3]);
 
-                                var bytes = SignTransaction(nexus, chain, script, id, callback);
+                                var hash = SignTransaction(nexus, chain, script, id, callback);
 
                                 success = true;
-                                root = APIUtils.FromAPIResult(new Transaction() { bytes = Base16.Encode(bytes) });
+                                root = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
                             }
                             else
                             {
