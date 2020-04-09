@@ -15,6 +15,8 @@ namespace Phantasma.Domain
     }
     public abstract class WalletLink
     {
+        public const int WebSocketPort = 7090;
+
         public struct Error : IAPIResult
         {
             public string message;
@@ -71,6 +73,8 @@ namespace Phantasma.Domain
 
         public string Name { get; private set; }
 
+        private bool _isPendingRequest;
+
         public WalletLink(string name)
         {
             this.Name = name;
@@ -95,11 +99,13 @@ namespace Phantasma.Domain
             return APIUtils.FromAPIResult(new Error() { message = "Invalid or missing API token" });
         }
 
-        protected abstract Account GetAccount();
+        protected abstract void Authorize(string dapp, Action<bool, string> callback);
 
-        protected abstract void InvokeScript(byte[] script, int id, Action<int, DataNode, bool> callback);
+        protected abstract Account GetAccount(); // TODO this one also maybe use callbacks later, but not neessary for now...
 
-        protected abstract Hash SignTransaction(string nexus, string chain, byte[] script, int id, Action<int, DataNode, bool> callback);
+        protected abstract void InvokeScript(byte[] script, int id, Action<byte[], string> callback);
+
+        protected abstract void SignTransaction(string nexus, string chain, byte[] script, int id, Action<Hash, string> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
@@ -139,6 +145,15 @@ namespace Phantasma.Domain
                 }
             }
 
+            if (_isPendingRequest)
+            {
+                root = APIUtils.FromAPIResult(new Error() { message = $"A previouus request is still pending" });
+                callback(id, root, false);
+                return;
+            }
+
+            _isPendingRequest = true;
+
             switch (requestType)
             {
                 case "authorize":
@@ -151,17 +166,35 @@ namespace Phantasma.Domain
                             if (authTokens.ContainsKey(dapp))
                             {
                                 token = authTokens[dapp];
+                                success = true;
+                                root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
                             }
                             else
                             {
-                                var bytes = new byte[32];
-                                rnd.NextBytes(bytes);
-                                token = Base16.Encode(bytes);
-                                authTokens[dapp] = token;
+                                this.Authorize(dapp, (authorized, error) =>
+                                {
+                                    if (authorized)
+                                    {
+                                        var bytes = new byte[32];
+                                        rnd.NextBytes(bytes);
+                                        token = Base16.Encode(bytes);
+                                        authTokens[dapp] = token;
+
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = error});
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
+
+                                return;
                             }
 
-                            success = true;
-                            root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
                         }
                         else
                         {
@@ -190,16 +223,28 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 4)
+                            if (args.Length == 6)
                             {
                                 var nexus = args[1];
                                 var chain = args[2];
                                 var script = Base16.Decode(args[3]);
 
-                                var hash = SignTransaction(nexus, chain, script, id, callback);
+                                SignTransaction(nexus, chain, script, id, (hash, txError) => { 
+                                    if (hash != Hash.Null)
+                                    {
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = txError });
+                                    }
 
-                                success = true;
-                                root = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
+
+                                return;
                             }
                             else
                             {
@@ -215,11 +260,25 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 2)
+                            if (args.Length == 4)
                             {
                                 var script = Base16.Decode(args[1]);
 
-                                InvokeScript(script, id, callback);
+                                InvokeScript(script, id, (invokeResult, invokeError) =>
+                                {
+                                    if (invokeResult != null)
+                                    {
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Invocation() {  result = Base16.Encode(invokeResult) });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = invokeError });
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
                                 return;
                             }
                             else
@@ -237,6 +296,7 @@ namespace Phantasma.Domain
             }
 
             callback(id, root, success);
+            _isPendingRequest = false;
         }
     }
 }
