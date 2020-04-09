@@ -123,7 +123,7 @@ namespace Phantasma.Simulator
                 CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
                 CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
                 TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
-                CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 50000).
+                CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 500000).
                 CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
                 SpendGas(_owner.Address).
                 EndScript();
