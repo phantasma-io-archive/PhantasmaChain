@@ -338,7 +338,6 @@ namespace Phantasma.Contracts
                 }
             }
 
-            /*
             if (expectedType == typeof(BigInteger))
             {
                 if (receivedType == typeof(string))
@@ -349,7 +348,7 @@ namespace Phantasma.Contracts
                         arg = number;
                     }
                 }
-            }*/
+            }
             
             if (typeof(ISerializable).IsAssignableFrom(expectedType))
             {
