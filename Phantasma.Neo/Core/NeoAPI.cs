@@ -12,7 +12,7 @@ namespace Phantasma.Neo.Core
 {
     public class BlockIterator
     {
-        public uint currentBlock;
+        public BigInteger currentBlock;
         public uint currentTransaction;
 
         public BlockIterator(NeoAPI api)
@@ -726,6 +726,14 @@ namespace Phantasma.Neo.Core
             return GetTransactionHeight(val);
         }
 
+        public abstract ApplicationLog[] GetApplicationLog(UInt256 hash);
+
+        public ApplicationLog[] GetApplicationLog(string hash)
+        {
+            var val = new UInt256(LuxUtils.ReverseHex(hash).HexToBytes());
+            return GetApplicationLog(val);
+        }
+
         public abstract Transaction GetTransaction(UInt256 hash);
 
         public Transaction GetTransaction(string hash)
@@ -1064,9 +1072,9 @@ namespace Phantasma.Neo.Core
         }
 
         #region BLOCKS
-        public abstract uint GetBlockHeight();
+        public abstract BigInteger GetBlockHeight();
         public abstract Block GetBlock(UInt256 hash);
-        public abstract Block GetBlock(uint height);
+        public abstract Block GetBlock(BigInteger height);
 
         #endregion
 
@@ -1132,7 +1140,7 @@ namespace Phantasma.Neo.Core
 
         public Transaction WaitForTransaction(BlockIterator iterator, Func<Transaction, bool> filter, int maxBlocksToWait = 9999)
         {
-            uint newBlock;
+            BigInteger newBlock;
 
             while (true)
             {

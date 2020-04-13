@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using NativeBigInt = System.Numerics.BigInteger; // hack to overcome Phantasma.Numerics.BigInteger
 using Phantasma.Blockchain;
 using Phantasma.Domain;
 using Phantasma.Pay.Chains;
@@ -71,7 +72,7 @@ namespace Phantasma.Simulator
             throw new OracleException("invalid oracle url: " + url);
         }
 
-        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash)
+        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height)
         {
             throw new OracleException($"unknown block for {platformName}.{chainName} : {hash}");
         }

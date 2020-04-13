@@ -20,7 +20,7 @@ using Phantasma.Contracts.Extra;
 
 namespace Phantasma.Blockchain
 {
-    public class Nexus 
+    public class Nexus : INexus
     {
         private string ChainNameMapKey => ".chain.name.";
         private string ChainAddressMapKey => ".chain.addr.";
@@ -69,6 +69,8 @@ namespace Phantasma.Blockchain
 
         private Func<string, IKeyValueStoreAdapter> _adapterFactory = null;
         private Func<Nexus, OracleReader> _oracleFactory = null;
+        private OracleReader oracleReader = null;
+        private List<IOracleObserver> _observers = new List<IOracleObserver>();
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
@@ -91,6 +93,26 @@ namespace Phantasma.Blockchain
             _archiveContents = new KeyValueStore<Hash, byte[]>(CreateKeyStoreAdapter("contents"));
 
             _logger = logger;
+
+            oracleReader = _oracleFactory(this);
+        }
+
+        public void Attach(IOracleObserver observer)
+        {
+            this._observers.Add(observer);
+        }
+
+        public void Detach(IOracleObserver observer)
+        {
+            this._observers.Remove(observer);
+        }
+
+        public void Notify()
+        {
+            foreach (var observer in _observers)
+            {
+                observer.Update(this);
+            }
         }
 
         public void LoadNexus(StorageContext storage)
@@ -456,11 +478,10 @@ namespace Phantasma.Blockchain
             return GetChildChainsByName(storage, chain.Name);
         }
 
-        public OracleReader CreateOracleReader()
+        public OracleReader GetOracleReader()
         {
-            Throw.If(_oracleFactory == null, "oracle factory is not setup");
-            using (var m = new ProfileMarker("_oracleFactory"))
-                return _oracleFactory(this);
+            Throw.If(oracleReader == null, "Oracle reader has not been set yet.");
+            return oracleReader;
         }
 
         public IEnumerable<string> GetChildChainsByName(StorageContext storage, string chainName)
@@ -1453,6 +1474,8 @@ namespace Phantasma.Blockchain
             platformList.Add(name);
 
             EditPlatform(storage, name, entry);
+            // notify oracles on new platform
+            Notify();
             return platformID;
         }
 

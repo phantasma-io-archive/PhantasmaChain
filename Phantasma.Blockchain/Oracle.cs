@@ -2,6 +2,7 @@
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
+using NativeBigInt = System.Numerics.BigInteger; // hack to overcome Phantasma.Numerics.BigInteger
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using System;
@@ -108,7 +109,7 @@ namespace Phantasma.Blockchain
 
         protected abstract byte[] PullData(Timestamp time, string url);
         protected abstract decimal PullPrice(Timestamp time, string symbol);
-        protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash);
+        protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
 
         public readonly Nexus Nexus;
@@ -295,10 +296,11 @@ namespace Phantasma.Blockchain
                 case "block":
                     {
                         Hash hash;
+                        InteropBlock block;
+                        NativeBigInt height;
+                        // if it fails it might be block height
                         if (Hash.TryParse(input[1], out hash))
                         {
-                            InteropBlock block;
-
                             if (platformName == DomainSettings.PlatformName)
                             {
                                 var chain = Nexus.GetChainByName(chainName);
@@ -316,6 +318,28 @@ namespace Phantasma.Blockchain
                             }
 
                             return Serialization.Serialize(block);
+                        }
+                        //TODO
+                        else if (NativeBigInt.TryParse(input[1], out height))
+                        {
+                            if (platformName == DomainSettings.PlatformName)
+                            {
+                                var chain = Nexus.GetChainByName(chainName);
+                                var temp = chain.GetBlockByHash(hash);
+                                if (temp == null)
+                                {
+                                    throw new OracleException($"invalid block hash for chain {chainName} @ {platformName}");
+                                }
+
+                                block = new InteropBlock(platformName, chainName, hash, temp.TransactionHashes);
+                            }
+                            else
+                            {
+                                block = PullPlatformBlock(platformName, chainName, Hash.Null, height);
+                            }
+
+                            return Serialization.Serialize(block);
+
                         }
                         else
                         {

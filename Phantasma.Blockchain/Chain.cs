@@ -215,7 +215,7 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
 
             block.CleanUp();
 
@@ -432,7 +432,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeScript(StorageContext storage, byte[] script, Timestamp time)
         {
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
             var changeSet = new StorageChangeSetContext(storage);
             var vm = new RuntimeVM(-1, script, this, time, null, changeSet, oracle, true);
 

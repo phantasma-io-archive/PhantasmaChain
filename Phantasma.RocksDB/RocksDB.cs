@@ -146,8 +146,8 @@ namespace Phantasma.RocksDB
 
     public class RocksDbStore
     {
-	private static RocksDb _db;
-	private static RocksDbStore _rdb;
+	    private static Dictionary<string, RocksDb> _db = new Dictionary<string, RocksDb>();
+	    private static Dictionary<string, RocksDbStore> _rdb = new Dictionary<string, RocksDbStore>();
         private readonly Logger logger = new ConsoleLogger();
 
         private string fileName;
@@ -197,26 +197,29 @@ namespace Phantasma.RocksDB
             }
 
             logger.Message("Opening database at: " + path);
-	        _db = RocksDb.Open(options, path, columnFamilies);
+	        _db.Add(fileName, RocksDb.Open(options, path, columnFamilies));
         }
 
-        public static RocksDb Instance(string name=null)
+        public static RocksDb Instance(string name)
         {
-            if (_db == null)
+            if (!_db.ContainsKey(name))
             {
                 if (string.IsNullOrEmpty(name)) throw new System.ArgumentException("Parameter cannot be null", "name");
 
-                _rdb = new RocksDbStore(name);
+                _rdb.Add(name, new RocksDbStore(name));
             }
 
-            return _db;
+            return _db[name];
         }
 
         private void Shutdown()
         {
 
             logger.Message("Shutting down database...");
-            _db.Dispose();
+            foreach (var db in _db)
+            {
+                db.Value.Dispose();
+            }
             logger.Message("Database has been shut down!");
         }
 
