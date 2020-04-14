@@ -54,16 +54,56 @@ namespace Phantasma.VM.Utils
             }
             else
             {
-                throw new System.Exception("Cannot disassemble method arguments => " + method);
+                throw new System.Exception("Cannot disassemble method arguments => " + key);
             }
         }
 
         public static Dictionary<string, int> GetDefaultDisasmTable()
         {
             var table = new Dictionary<string, int>();
+            table["Runtime.Log"] = 1;
+            table["Runtime.Event"] = 3;
+            table["Runtime.IsWitness"] = 1;
+            table["Runtime.IsTrigger"] = 0;
+            table["Runtime.TransferBalance"] = 3;
+            table["Runtime.MintTokens"] = 4;
+            table["Runtime.BurnTokens"] = 3;
+            table["Runtime.SwapTokens"] = 5;
+            table["Runtime.TransferTokens"] = 4;
+            table["Runtime.TransferToken"] = 4;
+            table["Runtime.MintToken"] = 4;
+            table["Runtime.BurnToken"] = 3;
+
             table["gas.AllowGas"] = 4;
             table["gas.SpendGas"] = 1;
-            table["Runtime.TransferTokens"] = 4;
+
+            table["market.SellToken"] = 6;
+            table["market.BuyToken"] = 3;
+
+            table["swap.GetRate"] = 3;
+            table["swap.DepositTokens"] = 3;
+            table["swap.SwapFee"] = 3;
+            table["swap.SwapReverse"] = 4;
+            table["swap.SwapFiat"] = 4;
+            table["swap.SwapTokens"] = 4;
+            table["stake.Migrate"] = 2;
+            table["stake.MasterClaim"] = 1;
+            table["stake.Stake"] = 2;
+            table["stake.Unstake"] = 2;
+            table["stake.Claim"] = 2;
+            table["stake.AddProxy"] = 3;
+            table["stake.RemoveProxy"] = 2;
+            
+            table["account.RegisterName"] = 2;
+            table["account.UnregisterName"] = 1;
+            table["account.RegisterScript"] = 2;
+            
+            table["storage.UploadData"] = 6;
+            table["storage.UploadFile"] = 7;
+            table["storage.DeleteFile"] = 2;
+            table["storage.SetForeignSpace"] = 2;
+
+            // TODO add more here
             return table;
         }
 
