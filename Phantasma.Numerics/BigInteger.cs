@@ -1315,6 +1315,19 @@ public void SetBit(uint bitNum)
         {
             return this ^ (One << bit);
         }
+
+        public static bool IsParsable(string val)
+        {
+            foreach (var ch in val)
+            {
+                if (ch >='0'  && ch <= '9')
+                {
+                    continue;
+                }
+                return false;
+            }
+            return true;
+        }
     }
 
     public static class BigIntegerExtensions
