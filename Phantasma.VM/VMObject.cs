@@ -67,6 +67,18 @@ namespace Phantasma.VM
 
         public BigInteger AsNumber()
         {
+            if (this.Type == VMType.String)
+            {
+                if (BigInteger.TryParse((string)Data, out BigInteger number))
+                {
+                    return number;
+                }
+                else
+                {
+                    throw new Exception($"Cannot convert String '{(string)Data}' to BigInteger.");
+                }
+            }
+
             if (this.Type != VMType.Number)
             {
                 throw new Exception("Invalid cast");
