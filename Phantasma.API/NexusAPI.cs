@@ -281,6 +281,24 @@ namespace Phantasma.API
                         {
                             throw new APIException($"Proxy error: {e.Message}");
                         }
+
+                        // Checking if it's a JSON with error inside.
+                        // If so, emulating same error response for Proxy sever as BP sends.
+                        LunarLabs.Parser.DataNode root = null;
+                        try
+                        {
+                            root = JSONReader.ReadFromString(result);
+                        }
+                        catch (Exception e)
+                        {
+                            // It's not JSON, do nothing.
+                        }
+
+                        if (root != null && root.HasNode("error"))
+                        {
+                            var errorDesc = root.GetString("error");
+                            throw new APIException(errorDesc);
+                        }
                     }
                     else
                     {
