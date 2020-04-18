@@ -7,6 +7,7 @@ using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 
@@ -69,7 +70,7 @@ namespace Phantasma.Blockchain
     public struct OracleEntry: IOracleEntry
     {
         public string URL { get; private set; }
-        public byte[] Content { get; private set; }
+        public object Content { get; private set; }
 
         public OracleEntry(string uRL, byte[] content)
         {
@@ -86,14 +87,14 @@ namespace Phantasma.Blockchain
 
             var entry = (OracleEntry)obj;
             return URL == entry.URL &&
-                   EqualityComparer<byte[]>.Default.Equals(Content, entry.Content);
+                   EqualityComparer<object>.Default.Equals(Content, entry.Content);
         }
 
         public override int GetHashCode()
         {
             var hashCode = 1993480784;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(URL);
-            hashCode = hashCode * -1521134295 + EqualityComparer<byte[]>.Default.GetHashCode(Content);
+            hashCode = hashCode * -1521134295 + EqualityComparer<object>.Default.GetHashCode(Content);
             return hashCode;
         }
     }
@@ -103,14 +104,18 @@ namespace Phantasma.Blockchain
         public const string interopTag = "interop://";
         public const string priceTag = "price://";
 
-        private Dictionary<string, OracleEntry> _entries = new Dictionary<string, OracleEntry>();
+        private static readonly object _lockObj = new object();
+        public ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
 
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 
-        protected abstract byte[] PullData(Timestamp time, string url);
+        protected abstract T PullData<T>(Timestamp time, string url);
         protected abstract decimal PullPrice(Timestamp time, string symbol);
         protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
+        public abstract string GetCurrentHeight(string platformName, string chainName);
+        public abstract void SetCurrentHeight(string platformName, string chainName, string height);
+        public abstract List<InteropBlock> ReadAllBlocks(string platformName, string chainName);
 
         public readonly Nexus Nexus;
 
@@ -119,14 +124,14 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
         }
 
-        public byte[] Read(Timestamp time, string url)
+        public T Read<T>(Timestamp time, string url)where T : class 
         {
             if (_entries.ContainsKey(url))
             {
-                return _entries[url].Content;
+                return (_entries[url].Content) as T;
             }
 
-            byte[] content;
+            T content;
 
             if (url.StartsWith(interopTag))
             {
@@ -138,7 +143,7 @@ namespace Phantasma.Blockchain
                 if (Nexus.PlatformExists(Nexus.RootStorage, platformName))
                 {
                     args = args.Skip(2).ToArray();
-                    content = ReadChainOracle(platformName, chainName, args);
+                    content = ReadChainOracle<T>(platformName, chainName, args);
                 }
                 else
                 { 
@@ -164,15 +169,18 @@ namespace Phantasma.Blockchain
 
                 var price = PullPrice(time, baseSymbol);
                 var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
-                content = val.ToUnsignedByteArray();
+                content = val.ToUnsignedByteArray() as T;
             }
             else
             {
-                content = PullData(time, url);
+                content = PullData<T>(time, url);
             }
         
-            var entry = new OracleEntry(url, content);
-            _entries[url] = entry;
+            var entry = new OracleEntry(url, Serialization.Serialize(content));
+            lock (_entries)
+            {
+                _entries[url] = entry;
+            }
 
             return content;
         }
@@ -192,7 +200,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        private byte[] ReadChainOracle(string platformName, string chainName, string[] input)
+        private T ReadChainOracle<T>(string platformName, string chainName, string[] input) where T : class
         {
             if (input == null || input.Length != 2)
             {
@@ -279,13 +287,22 @@ namespace Phantasma.Blockchain
                                 }
 
                                 tx = new InteropTransaction(hash, transfers);
+                                if (typeof(T) == typeof(byte[]))
+                                {
+                                    return Serialization.Serialize(tx) as T;
+                                }
                             }
                             else
                             {
                                 tx = PullPlatformTransaction(platformName, chainName, hash);
                             }
 
-                            return Serialization.Serialize(tx);
+                            if (typeof(T) == typeof(byte[]))
+                            {
+                                return Serialization.Serialize(tx) as T;
+                            }
+
+                            return tx as T;
                         }
                         else
                         {
@@ -317,7 +334,12 @@ namespace Phantasma.Blockchain
                                 block = PullPlatformBlock(platformName, chainName, hash);
                             }
 
-                            return Serialization.Serialize(block);
+                            if (typeof(T) == typeof(byte[]))
+                            {
+                                return Serialization.Serialize(block) as T;
+                            }
+
+                            return (block) as T;
                         }
                         //TODO
                         else if (NativeBigInt.TryParse(input[1], out height))
@@ -338,7 +360,12 @@ namespace Phantasma.Blockchain
                                 block = PullPlatformBlock(platformName, chainName, Hash.Null, height);
                             }
 
-                            return Serialization.Serialize(block);
+                            if (typeof(T) == typeof(byte[]))
+                            {
+                                return Serialization.Serialize(block) as T;
+                            }
+
+                            return (block) as T;
 
                         }
                         else
@@ -355,8 +382,8 @@ namespace Phantasma.Blockchain
         public InteropTransaction ReadTransaction(string platform, string chain, Hash hash)
         {
             var url = DomainExtensions.GetOracleTransactionURL(platform, chain, hash);
-            var bytes = this.Read(Timestamp.Now, url);
-            return Serialization.Unserialize<InteropTransaction>(bytes);
+            var bytes = this.Read<InteropTransaction>(Timestamp.Now, url);
+            return bytes;
         }
     }
 }

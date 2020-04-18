@@ -167,7 +167,7 @@ namespace Phantasma.Blockchain
                 return ExecutionState.Fault;
             }
 
-            var result = Runtime.Oracle.Read(Runtime.Time,/*vm.Transaction.Hash, */url);
+            var result = Runtime.Oracle.Read<byte[]>(Runtime.Time,/*vm.Transaction.Hash, */url);
 
             return ExecutionState.Running;
         }

@@ -91,6 +91,10 @@ namespace Phantasma.Blockchain
 
         public void Sign(IKeyPair keys)
         {
+            if (_dirty)
+            {
+                UpdateHash();
+            }
             var msg = this.ToByteArray(false);
             this.Signature = keys.Sign(msg);
         }
@@ -192,7 +196,13 @@ namespace Phantasma.Blockchain
             foreach (var entry in _oracleData)
             {
                 writer.WriteVarString(entry.URL);
-                writer.WriteByteArray(entry.Content);
+                if (entry.Content.GetType() == typeof(byte[])){
+                    writer.WriteByteArray(entry.Content as byte[]);
+                }
+                else
+                {
+                    writer.WriteByteArray(Serialization.Serialize(entry.Content as byte[]));
+                }
             }
 
             if (Payload != null)

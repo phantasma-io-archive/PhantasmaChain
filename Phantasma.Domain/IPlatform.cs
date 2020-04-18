@@ -18,12 +18,17 @@ namespace Phantasma.Domain
         PlatformSwapAddress[] InteropAddresses { get; }
     }
 
-    public struct InteropBlock
+    public class InteropBlock
     {
         public readonly string Platform;
         public readonly string Chain;
         public readonly Hash Hash;
         public readonly Hash[] Transactions;
+
+        public InteropBlock()
+        {
+
+        }
 
         public InteropBlock(string platform, string chain, Hash hash, Hash[] transactions)
         {
@@ -34,10 +39,15 @@ namespace Phantasma.Domain
         }
     }
 
-    public struct InteropTransaction
+    public class InteropTransaction
     {
         public readonly Hash Hash;        
         public readonly InteropTransfer[] Transfers;
+
+        public InteropTransaction()
+        {
+
+        }
 
         public InteropTransaction(Hash hash, IEnumerable<InteropTransfer> transfers)
         {

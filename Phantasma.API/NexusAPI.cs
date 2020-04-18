@@ -499,7 +499,9 @@ namespace Phantasma.API
             return new OracleResult
             {
                 url = oracle.URL,
-                content = Base16.Encode(oracle.Content)
+                content = (oracle.Content.GetType() == typeof(byte[]))
+                    ? Base16.Encode(oracle.Content as byte[])
+                    : Base16.Encode(Serialization.Serialize(oracle.Content))
             };
         }
 
@@ -1068,7 +1070,11 @@ namespace Phantasma.API
 
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
-            var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) }).ToArray();
+            var oracleReads = oracle.Entries.Select(x => new OracleResult() 
+                    { 
+                        url = x.URL, 
+                        content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content))) 
+                    }).ToArray();
 
             var resultArray = results.ToArray();
             return new ScriptResult { results = resultArray, result = resultArray.FirstOrDefault(), events = evts, oracles = oracleReads };
@@ -1859,6 +1865,7 @@ namespace Phantasma.API
             }
 
             var swapList = TokenSwapper.GetPendingSwaps(address);
+            Console.WriteLine("=============================== swapListCount: " + swapList.Count());
 
             var oracleReader = Nexus.GetOracleReader();
 

@@ -8,6 +8,7 @@ using PBigInteger = Phantasma.Numerics.BigInteger;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Phantasma.Neo.Core
 {
@@ -62,16 +63,16 @@ namespace Phantasma.Neo.Core
             jsonRpcData.AddNode(paramData);
             jsonRpcData.AddField("id", id);
 
-            Logger("QueryRPC: " + method);
-            LogData(jsonRpcData);
+            //Logger("QueryRPC: " + method);
+            //LogData(jsonRpcData);
 
             int retryCount = 0;
             do
             {
                 if (rpcEndpoint == null)
                 {
-                    rpcEndpoint = GetRPCEndpoint();
-                    Logger("Update RPC Endpoint: " + rpcEndpoint);
+                  rpcEndpoint = GetRPCEndpoint();
+                  Logger("Update RPC Endpoint: " + rpcEndpoint);
                 }
 
                 var response = RequestUtils.Request(RequestType.POST, rpcEndpoint, jsonRpcData);
@@ -351,20 +352,23 @@ namespace Phantasma.Neo.Core
                 //var json = LunarLabs.Parser.JSON.JSONReader.ReadFromString(response);
                 List<ApplicationLog> appLogList = new List<ApplicationLog>();
 
-                var executions = response["executions"];
+                var executions = response["result"]["executions"];
+                LogData(executions);
                 for (var i = 0; i < executions.ChildCount; i++)
                 {
                     VMState vmstate;
                     if (Enum.TryParse(executions[i].GetString("vmstate"), out vmstate))
                     {
-                        var contract = executions[i].GetString("contract"); 
-                        var states = executions[i]["notifications"]["state"]["value"];
-                        for (var j = 0; j < states.ChildCount; j++)
+                        LogData(executions[i]["notifications"][0]["state"]["value"]);
+                        var notifications = executions[i]["notifications"];
+                        for (var j = 0; j < notifications.ChildCount; j++)
                         {
+                            var states = notifications[j]["state"]["value"];
                             string txevent = "";
                             UInt160 source = UInt160.Zero;
                             UInt160 target = UInt160.Zero;
                             PBigInteger amount = 0;
+                            var contract = notifications[j].GetString("contract"); 
 
                             if(states[0].GetString("type") == "ByteArray")
                                 txevent = (states[0].GetString("value"));
@@ -378,8 +382,9 @@ namespace Phantasma.Neo.Core
                                 target = UInt160.Parse(states[2].GetString("value"));
 
                             if (states[3].GetString("type") == "ByteArray")
-                                amount = PBigInteger.Parse(states[3].GetString("value")); // needs to be Phantasma.Numerics.BigInteger for now.
-
+                            {
+                                amount = PBigInteger.FromUnsignedArray(states[3].GetString("value").HexToBytes(), true); // needs to be Phantasma.Numerics.BigInteger for now.
+                            }
                             appLogList.Add(new ApplicationLog(vmstate, contract, txevent, source, target, amount));
                         }
                     }
@@ -413,6 +418,57 @@ namespace Phantasma.Neo.Core
             var response = QueryRPC("getblockcount", new object[] { });
             var blockCount = response.GetUInt32("result");
             return blockCount;
+        }
+
+        public override List<Block> GetBlockRange(PBigInteger start, PBigInteger end)
+        {
+            List<Task<DataNode>> taskList = new List<Task<DataNode>>();
+            List<Block> blockList = new List<Block>();
+
+            for (var i = start; i < end; i++)
+            {
+                var height = i;
+                object[] heightData = new object[] { (int)height };
+
+                taskList.Add(
+                        new Task<DataNode>(() => 
+                        {
+                            return QueryRPC("getblock", heightData, 1, true);
+                        })
+                );
+            }
+
+            foreach (var task in taskList)
+            {
+                task.Start();
+            }
+
+            Task.WaitAll(taskList.ToArray());
+
+            foreach (var task in taskList)
+            {
+                var response = task.Result;
+
+                if (response == null || !response.HasNode("result"))
+                {
+                    return null;
+                }
+
+                var result = response.GetString("result");
+
+                var bytes = result.HexToBytes();
+
+                using (var stream = new MemoryStream(bytes))
+                {
+                    using (var reader = new BinaryReader(stream))
+                    {
+                        var block = Block.Unserialize(reader);
+                        blockList.Add(block);
+                    }
+                }
+            }
+
+            return blockList;
         }
 
         public override Block GetBlock(BigInteger height)

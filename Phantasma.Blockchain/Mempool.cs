@@ -282,7 +282,14 @@ namespace Phantasma.Blockchain
 
             while (transactions.Count > 0)
             {
-                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1), Chain.Address, Timestamp.Now, transactions.Select(x => x.Hash), isFirstBlock ? Hash.Null : lastBlock.Hash, protocol, Mempool.ValidatorAddress, Mempool.Payload);
+                var block = new Block(isFirstBlock ? 1 : (lastBlock.Height + 1)
+                            , Chain.Address
+                            , Timestamp.Now
+                            , transactions.Select(x => x.Hash)
+                            , isFirstBlock ? Hash.Null : lastBlock.Hash
+                            , protocol
+                            , Mempool.ValidatorAddress
+                            , Mempool.Payload);
 
                 try
                 {

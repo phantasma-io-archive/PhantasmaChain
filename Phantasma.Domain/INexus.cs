@@ -1,3 +1,5 @@
+using Phantasma.Storage.Context;
+
 namespace Phantasma.Domain
 {
     public interface INexus
@@ -6,7 +8,7 @@ namespace Phantasma.Domain
 
         void Detach(IOracleObserver observer);
 
-        void Notify();
+        void Notify(StorageContext storage);
     }
 }
 

@@ -6,6 +6,7 @@ using Phantasma.Neo.Cryptography;
 using System.Numerics;
 using Phantasma.Neo.Utils;
 using System.Threading;
+using PBigInteger = Phantasma.Numerics.BigInteger;
 using Phantasma.Neo.VM.Types;
 
 namespace Phantasma.Neo.Core
@@ -1075,6 +1076,7 @@ namespace Phantasma.Neo.Core
         public abstract BigInteger GetBlockHeight();
         public abstract Block GetBlock(UInt256 hash);
         public abstract Block GetBlock(BigInteger height);
+        public abstract List<Block> GetBlockRange(PBigInteger start, PBigInteger end);
 
         #endregion
 

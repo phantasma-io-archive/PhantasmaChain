@@ -107,11 +107,11 @@ namespace Phantasma.Blockchain
             this._observers.Remove(observer);
         }
 
-        public void Notify()
+        public void Notify(StorageContext storage)
         {
             foreach (var observer in _observers)
             {
-                observer.Update(this);
+                observer.Update(this, storage);
             }
         }
 
@@ -1475,7 +1475,7 @@ namespace Phantasma.Blockchain
 
             EditPlatform(storage, name, entry);
             // notify oracles on new platform
-            Notify();
+            this.Notify(storage);
             return platformID;
         }
 

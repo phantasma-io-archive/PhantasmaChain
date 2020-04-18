@@ -12,6 +12,7 @@ namespace Phantasma.Pay.Chains
 {
     public class NeoWallet : CryptoWallet
     {
+        private static readonly object _lockObj = new object();
         public const string NeoPlatform = "neo";
         public const byte NeoID = 1;
 

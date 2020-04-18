@@ -33,6 +33,21 @@ namespace Phantasma.Simulator
             _swaps.Clear();
         }
 
+        public override string GetCurrentHeight(string platformName, string chainName)
+        {
+            return "";
+        }
+
+        public override void SetCurrentHeight(string platformName, string chainName, string height)
+        {
+
+        }
+
+        public override List<InteropBlock> ReadAllBlocks(string platformName, string chainName)
+        {
+            return new List<InteropBlock>();
+        }
+
         public static Hash SimulateExternalTransaction(string platformName, byte platformID, byte[] publicKey, string publicAddress, string symbol, decimal amount)
         {
             var interopAddress = Address.FromInterop(platformID, publicKey);
@@ -67,7 +82,7 @@ namespace Phantasma.Simulator
             return swap.hash;
         }
 
-        protected override byte[] PullData(Timestamp time, string url)
+        protected override T PullData<T>(Timestamp time, string url)
         {
             throw new OracleException("invalid oracle url: " + url);
         }
