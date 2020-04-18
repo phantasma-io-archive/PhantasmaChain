@@ -313,9 +313,9 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                chain.ValidateBlock(block, transactions, MinimumFee);
+                                var changeSet = chain.ValidateBlock(block, transactions, MinimumFee);
                                 block.Sign(this._owner);
-                                chain.AddBlock(block, txs, MinimumFee);
+                                chain.AddBlock(block, txs, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)

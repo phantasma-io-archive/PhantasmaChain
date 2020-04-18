@@ -72,19 +72,11 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
-        public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext cSet = null)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext changeSet)
         {
             if (!block.IsSigned)
             {
                 throw new BlockGenerationException($"block must be signed");
-            }
-
-            StorageChangeSetContext changeSet = cSet;
-            if (changeSet == null)
-            {
-                // actually, that should never happen, ValidateBlock alters the block and therefore would destroy its signature
-                using (var m = new ProfileMarker("ValidateBlock"))
-                    changeSet = ValidateBlock(block, transactions, minimumFee);
             }
 
             var unsignedBytes = block.ToByteArray(false);
