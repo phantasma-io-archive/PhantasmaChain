@@ -210,6 +210,10 @@ namespace Phantasma.Storage
         public uint Count => Adapter.Count;
 
         // TODO increase default size
+        public KeyValueStore()
+        {
+        }
+
         public KeyValueStore(IKeyValueStoreAdapter adapter)
         {
             Adapter = adapter;
@@ -226,6 +230,19 @@ namespace Phantasma.Storage
             var keyBytes = Serialization.Serialize(key);
             var valBytes = Serialization.Serialize(value);
             Adapter.SetValue(keyBytes, valBytes);
+        }
+
+        public bool TryGet(K key, out V value)
+        {
+            var keyBytes = Serialization.Serialize(key);
+            var bytes = Adapter.GetValue(keyBytes);
+            if (bytes == null)
+            {
+                value = default(V);
+               return false;
+            }
+            value = Serialization.Unserialize<V>(bytes);
+            return true;
         }
 
         public V Get(K key)

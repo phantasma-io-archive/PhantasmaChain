@@ -2,6 +2,7 @@
 using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
+using Phantasma.Numerics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -558,4 +559,23 @@ namespace Phantasma.Neo.Core
         }
     }
 
+    public class ApplicationLog
+    {
+        public VMState state;
+        public string contract;
+        public string txevent;
+        public UInt160 sourceAddress;
+        public UInt160 targetAddress;
+        public BigInteger amount;
+
+        public ApplicationLog(VMState state, string contract, string txevent, UInt160 source, UInt160 target, BigInteger amount)
+        {
+            this.state = state;
+            this.contract = contract;
+            this.txevent = txevent;
+            this.sourceAddress = source;
+            this.targetAddress = target;
+            this.amount = amount;
+        }
+    }
 }

@@ -72,16 +72,12 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
-        public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext changeSet)
         {
             if (!block.IsSigned)
             {
                 throw new BlockGenerationException($"block must be signed");
             }
-
-            StorageChangeSetContext changeSet;
-            using (var m = new ProfileMarker("ValidateBlock"))
-                changeSet = ValidateBlock(block, transactions, minimumFee);
 
             var unsignedBytes = block.ToByteArray(false);
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
@@ -215,7 +211,7 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
 
             block.CleanUp();
 
@@ -432,7 +428,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeScript(StorageContext storage, byte[] script, Timestamp time)
         {
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
             var changeSet = new StorageChangeSetContext(storage);
             var vm = new RuntimeVM(-1, script, this, time, null, changeSet, oracle, true);
 

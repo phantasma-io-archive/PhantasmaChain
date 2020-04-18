@@ -1,10 +1,14 @@
 ﻿using LunarLabs.Parser;
+using LunarLabs.Parser.JSON;
 using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
+using System.Numerics;
+using PBigInteger = Phantasma.Numerics.BigInteger;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Phantasma.Neo.Core
 {
@@ -44,12 +48,13 @@ namespace Phantasma.Neo.Core
             foreach (DataNode child in node.Children)
                 LogData(child, ident + 1);
         }
-        public DataNode QueryRPC(string method, object[] _params, int id = 1)
+
+        public DataNode QueryRPC(string method, object[] _params, int id = 1, bool numeric = false)
         {
             var paramData = DataNode.CreateArray("params");
             foreach (var entry in _params)
             {
-                paramData.AddField(null, entry);
+                paramData.AddField(null, (numeric) ? (int)entry : entry);
             }
 
             var jsonRpcData = DataNode.CreateObject(null);
@@ -58,7 +63,7 @@ namespace Phantasma.Neo.Core
             jsonRpcData.AddNode(paramData);
             jsonRpcData.AddField("id", id);
 
-            Logger("QueryRPC: " + method);
+            //Logger("QueryRPC: " + method);
             //LogData(jsonRpcData);
 
             int retryCount = 0;
@@ -66,8 +71,8 @@ namespace Phantasma.Neo.Core
             {
                 if (rpcEndpoint == null)
                 {
-                    rpcEndpoint = GetRPCEndpoint();
-                    Logger("Update RPC Endpoint: " + rpcEndpoint);
+                  rpcEndpoint = GetRPCEndpoint();
+                  Logger("Update RPC Endpoint: " + rpcEndpoint);
                 }
 
                 var response = RequestUtils.Request(RequestType.POST, rpcEndpoint, jsonRpcData);
@@ -105,6 +110,57 @@ namespace Phantasma.Neo.Core
             return null;
         }
         #endregion
+
+        public override bool HasPlugin(string pluginName)
+        {
+            var response = QueryRPC("listplugins", new object[]{});
+            var result = new Dictionary<string, decimal>();
+            var resultNode = response.GetNode("result");
+
+            foreach (var entry in resultNode.Children)
+            {
+                foreach (var en in entry.Children)
+                {
+                    if (string.Equals(en.Name, "name")
+                            && string.Equals(en.Value, pluginName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            Console.WriteLine("FALSE");
+            return false;
+        }
+
+        public override string GetNep5Transfers(UInt160 scriptHash, DateTime timestamp)
+        {
+            if (!HasPlugin("RpcNep5Tracker"))
+            {
+                return null;
+            }
+
+            var unixTimestamp = (timestamp.ToUniversalTime()
+                    - (new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc))).TotalSeconds;
+
+            var response = QueryRPC("getnep5transfers", new object[] { scriptHash.ToAddress(), unixTimestamp });
+            string json = JSONWriter.WriteToString(response);
+
+            return json;
+        }
+
+        public override string GetUnspents(UInt160 scriptHash)
+        {
+            if (!HasPlugin("RpcSystemAssetTrackerPlugin"))
+            {
+                return null;
+            }
+
+            var response = QueryRPC("getunspents", new object[] { scriptHash.ToAddress() });
+            string json = JSONWriter.WriteToString(response);
+
+            return json;
+        }
 
         public override Dictionary<string, decimal> GetAssetBalancesOf(UInt160 scriptHash)
         {
@@ -270,6 +326,78 @@ namespace Phantasma.Neo.Core
             return invoke;
         }
 
+        public override string GetTransactionHeight(UInt256 hash)
+        {
+            var response = QueryRPC("gettransactionheight", new object[] { hash.ToString() });
+            if (response != null && response.HasNode("result"))
+            {
+                return response.GetString("result");
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public override ApplicationLog[] GetApplicationLog(UInt256 hash)
+        {
+            if (!HasPlugin("ApplicationLogs"))
+            {
+                return null;
+            }
+
+            var response = QueryRPC("getapplicationlog", new object[] { hash.ToString() });
+            if (response != null && response.HasNode("result"))
+            {
+                //var json = LunarLabs.Parser.JSON.JSONReader.ReadFromString(response);
+                List<ApplicationLog> appLogList = new List<ApplicationLog>();
+
+                var executions = response["result"]["executions"];
+                LogData(executions);
+                for (var i = 0; i < executions.ChildCount; i++)
+                {
+                    VMState vmstate;
+                    if (Enum.TryParse(executions[i].GetString("vmstate"), out vmstate))
+                    {
+                        LogData(executions[i]["notifications"][0]["state"]["value"]);
+                        var notifications = executions[i]["notifications"];
+                        for (var j = 0; j < notifications.ChildCount; j++)
+                        {
+                            var states = notifications[j]["state"]["value"];
+                            string txevent = "";
+                            UInt160 source = UInt160.Zero;
+                            UInt160 target = UInt160.Zero;
+                            PBigInteger amount = 0;
+                            var contract = notifications[j].GetString("contract"); 
+
+                            if(states[0].GetString("type") == "ByteArray")
+                                txevent = (states[0].GetString("value"));
+
+                            if(states[1].GetString("type") == "ByteArray" 
+                                    && !string.IsNullOrEmpty(states[1].GetString("value")))
+                                source = UInt160.Parse(states[1].GetString("value"));
+
+                            if(states[2].GetString("type") == "ByteArray" 
+                                    && !string.IsNullOrEmpty(states[2].GetString("value")))
+                                target = UInt160.Parse(states[2].GetString("value"));
+
+                            if (states[3].GetString("type") == "ByteArray")
+                            {
+                                amount = PBigInteger.FromUnsignedArray(states[3].GetString("value").HexToBytes(), true); // needs to be Phantasma.Numerics.BigInteger for now.
+                            }
+                            appLogList.Add(new ApplicationLog(vmstate, contract, txevent, source, target, amount));
+                        }
+                    }
+                }
+
+                return appLogList.ToArray();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public override Transaction GetTransaction(UInt256 hash)
         {
             var response = QueryRPC("getrawtransaction", new object[] { hash.ToString() });
@@ -285,16 +413,68 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public override uint GetBlockHeight()
+        public override BigInteger GetBlockHeight()
         {
             var response = QueryRPC("getblockcount", new object[] { });
             var blockCount = response.GetUInt32("result");
             return blockCount;
         }
 
-        public override Block GetBlock(uint height)
+        public override List<Block> GetBlockRange(PBigInteger start, PBigInteger end)
         {
-            var response = QueryRPC("getblock", new object[] { height });
+            List<Task<DataNode>> taskList = new List<Task<DataNode>>();
+            List<Block> blockList = new List<Block>();
+
+            for (var i = start; i < end; i++)
+            {
+                var height = i;
+                object[] heightData = new object[] { (int)height };
+
+                taskList.Add(
+                        new Task<DataNode>(() => 
+                        {
+                            return QueryRPC("getblock", heightData, 1, true);
+                        })
+                );
+            }
+
+            foreach (var task in taskList)
+            {
+                task.Start();
+            }
+
+            Task.WaitAll(taskList.ToArray());
+
+            foreach (var task in taskList)
+            {
+                var response = task.Result;
+
+                if (response == null || !response.HasNode("result"))
+                {
+                    return null;
+                }
+
+                var result = response.GetString("result");
+
+                var bytes = result.HexToBytes();
+
+                using (var stream = new MemoryStream(bytes))
+                {
+                    using (var reader = new BinaryReader(stream))
+                    {
+                        var block = Block.Unserialize(reader);
+                        blockList.Add(block);
+                    }
+                }
+            }
+
+            return blockList;
+        }
+
+        public override Block GetBlock(BigInteger height)
+        {
+            object[] heightData = new object[] { (int)height };
+            var response = QueryRPC("getblock", heightData, 1, true);
             if (response == null || !response.HasNode("result"))
             {
                 return null;
@@ -393,7 +573,7 @@ namespace Phantasma.Neo.Core
 
                         nodes = new string[5];
                         for (int i = 0; i < nodes.Length; i++)
-                        {                            
+                        {
                             nodes[i] = $"http://seed{i}.cityofzion.io:{port}";
                         }
                         break;

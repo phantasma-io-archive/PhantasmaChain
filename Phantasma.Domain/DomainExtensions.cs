@@ -151,6 +151,16 @@ namespace Phantasma.Domain
             return $"interop://{platform}/{chain}/tx/{hash}";
         }
 
+        public static string GetOracleBlockURL(string platform, string chain, Hash hash)
+        {
+            return $"interop://{platform}/{chain}/block/{hash}";
+        }
+
+        public static string GetOracleBlockURL(string platform, string chain, BigInteger height)
+        {
+            return $"interop://{platform}/{chain}/block/{height}";
+        }
+
         public static BigInteger GetBlockCount(this IArchive archive)
         {
             var total = (archive.Size / DomainSettings.ArchiveBlockSize);

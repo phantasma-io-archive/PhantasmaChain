@@ -167,7 +167,7 @@ namespace Phantasma.Blockchain
                 return ExecutionState.Fault;
             }
 
-            var result = Runtime.Oracle.Read(Runtime.Time,/*vm.Transaction.Hash, */url);
+            var result = Runtime.Oracle.Read<byte[]>(Runtime.Time,/*vm.Transaction.Hash, */url);
 
             return ExecutionState.Running;
         }
@@ -388,6 +388,22 @@ namespace Phantasma.Blockchain
                 var addr = temp.AsInterop<Address>();
                 return addr;
             }
+        }
+
+        private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)
+        {
+            var temp = vm.Stack.Pop();
+
+            if (temp.Type == VMType.String)
+            {
+                vm.Expect(BigInteger.IsParsable(temp.AsString()), $"expected number for {ArgumentName}");
+            }
+            else
+            {
+                vm.Expect(temp.Type == VMType.Number, $"expected number for {ArgumentName}");
+            }
+
+            return temp.AsNumber();
         }
 
         private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)

@@ -517,7 +517,9 @@ namespace Phantasma.API
             return new OracleResult
             {
                 url = oracle.URL,
-                content = Base16.Encode(oracle.Content)
+                content = (oracle.Content.GetType() == typeof(byte[]))
+                    ? Base16.Encode(oracle.Content as byte[])
+                    : Base16.Encode(Serialization.Serialize(oracle.Content))
             };
         }
 
@@ -1059,7 +1061,7 @@ namespace Phantasma.API
             //System.IO.File.AppendAllLines(@"c:\code\bug_vm.txt", new []{string.Join("\n", new VM.Disassembler(script).Instructions)});
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
             var vm = new RuntimeVM(-1, script, chain, Timestamp.Now, null, changeSet, oracle, true);
 
             var state = vm.Execute();
@@ -1086,7 +1088,11 @@ namespace Phantasma.API
 
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
-            var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) }).ToArray();
+            var oracleReads = oracle.Entries.Select(x => new OracleResult() 
+                    { 
+                        url = x.URL, 
+                        content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content))) 
+                    }).ToArray();
 
             var resultArray = results.ToArray();
             return new ScriptResult { results = resultArray, result = resultArray.FirstOrDefault(), events = evts, oracles = oracleReads };
@@ -1787,7 +1793,9 @@ namespace Phantasma.API
 
 
         [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0)]
-        public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")]string sourcePlatform, [APIParameter("Name of platform to settle", "phantasma")]string destPlatform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")] string sourcePlatform
+                ,[APIParameter("Name of platform to settle", "phantasma")] string destPlatform
+                ,[APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
             {
@@ -1875,8 +1883,9 @@ namespace Phantasma.API
             }
 
             var swapList = TokenSwapper.GetPendingSwaps(address);
+            Console.WriteLine("=============================== swapListCount: " + swapList.Count());
 
-            var oracleReader = Nexus.CreateOracleReader();
+            var oracleReader = Nexus.GetOracleReader();
 
             var txswaps = swapList.
                 Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, oracleReader.ReadTransaction(x.sourcePlatform, x.sourceChain, x.sourceHash))).ToArray();
