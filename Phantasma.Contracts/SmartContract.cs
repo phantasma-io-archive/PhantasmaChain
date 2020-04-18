@@ -321,14 +321,23 @@ namespace Phantasma.Contracts
             {
                 if (receivedType == typeof(string))
                 {
-                    // when a string is passed instead of an address we do an automatic lookup and replace
-                    var name = (string)arg;
-                    var address = runtime.LookUpName(name);
+                    var text = (string)arg;
+                    Address address;
+
+                    if (Address.IsValidAddress(text))
+                    {
+                        address = Address.FromText(text);
+                    }
+                    else
+                    {
+                        // when a name string is passed instead of an address we do an automatic lookup and replace
+                        address = runtime.LookUpName(text);
+                    }
+
                     return address;
                 }
             }
 
-            /*
             if (expectedType == typeof(BigInteger))
             {
                 if (receivedType == typeof(string))
@@ -339,7 +348,7 @@ namespace Phantasma.Contracts
                         arg = number;
                     }
                 }
-            }*/
+            }
             
             if (typeof(ISerializable).IsAssignableFrom(expectedType))
             {

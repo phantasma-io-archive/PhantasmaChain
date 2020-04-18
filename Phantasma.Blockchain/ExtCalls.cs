@@ -390,6 +390,22 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)
+        {
+            var temp = vm.Stack.Pop();
+
+            if (temp.Type == VMType.String)
+            {
+                vm.Expect(BigInteger.IsParsable(temp.AsString()), $"expected number for {ArgumentName}");
+            }
+            else
+            {
+                vm.Expect(temp.Type == VMType.Number, $"expected number for {ArgumentName}");
+            }
+
+            return temp.AsNumber();
+        }
+
         private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
         {
             ExpectStackSize(Runtime, 4);
@@ -403,9 +419,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
-            var amount = temp.AsNumber();
+            var amount = PopNumber(Runtime, "amount");
 
             Runtime.TransferTokens(symbol, source, destination, amount);
 
@@ -452,9 +466,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
-            var value = temp.AsNumber();
+            var value = PopNumber(Runtime, "amount");
 
             var token = Runtime.GetToken(symbol);
             if (token.IsFungible())
@@ -483,9 +495,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
-            var amount = temp.AsNumber();
+            var amount = PopNumber(Runtime, "amount");
 
             if (Runtime.Nexus.HasGenesis)
             {
@@ -510,9 +520,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
-            var amount = temp.AsNumber();
+            var amount = PopNumber(Runtime, "amount");
 
             if (Runtime.Nexus.HasGenesis)
             {
@@ -537,9 +545,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for amount");
-            var tokenID = temp.AsNumber();
+            var tokenID = PopNumber(Runtime, "token ID");
 
             Runtime.TransferToken(symbol, source, destination, tokenID);
 
@@ -588,9 +594,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for token ID");
-            var tokenID = temp.AsNumber();
+            var tokenID = PopNumber(Runtime, "token ID");
 
             Runtime.BurnToken(symbol, source, tokenID);
 
@@ -607,9 +611,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for token ID");
-            var tokenID = temp.AsNumber();
+            var tokenID = PopNumber(Runtime, "token ID");
 
             return Runtime.ReadToken(symbol, tokenID);
         }
@@ -646,9 +648,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for token ID");
-            var tokenID = temp.AsNumber();
+            var tokenID = PopNumber(Runtime, "token ID");
 
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
@@ -736,13 +736,9 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
             var hash = Serialization.Unserialize<Hash>(temp.AsByteArray());*/
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for maxSupply");
-            var maxSupply = temp.AsNumber();
+            var maxSupply = PopNumber(Runtime, "maxSupply");
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Number, "expected number for decimals");
-            var decimals = (int)temp.AsNumber();
+            var decimals = (int)PopNumber(Runtime, "decimals");
 
             temp = Runtime.Stack.Pop();
             Runtime.Expect(temp.Type == VMType.Enum, "expected enum for flags");

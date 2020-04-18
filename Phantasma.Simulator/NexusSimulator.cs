@@ -121,17 +121,18 @@ namespace Phantasma.Simulator
             var orgScript = new byte[0];
             var orgID = DomainSettings.PhantomForceOrganizationName;
             var orgAddress = Address.FromHash(orgID);
-            //GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
-            //{
-            //    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
-            //    CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
-            //    CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
-            //    TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
-            //    CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 50000).
-            //    CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
-            //    SpendGas(_owner.Address).
-            //    EndScript();
-            //});
+
+            GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+            {
+                return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
+                CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
+                TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
+                CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 500000).
+                CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
+                SpendGas(_owner.Address).
+                EndScript();
+            });
             EndBlock();
 
             BeginBlock();
@@ -316,9 +317,9 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                chain.ValidateBlock(block, transactions, MinimumFee);
+                                var changeSet = chain.ValidateBlock(block, transactions, MinimumFee);
                                 block.Sign(this._owner);
-                                chain.AddBlock(block, txs, MinimumFee);
+                                chain.AddBlock(block, txs, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)

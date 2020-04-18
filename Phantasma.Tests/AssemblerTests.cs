@@ -2622,7 +2622,8 @@ namespace Phantasma.Tests
 
             var script = AssemblerUtils.BuildScript(scriptString);
 
-            var calls = DisasmUtils.ExtractMethodCalls(script);
+            var table = DisasmUtils.GetDefaultDisasmTable();
+            var calls = DisasmUtils.ExtractMethodCalls(script, table);
 
             Assert.IsTrue(calls.Count() == 1);
             Assert.IsTrue(calls.First().MethodName == methodName);

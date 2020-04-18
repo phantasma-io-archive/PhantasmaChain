@@ -1206,9 +1206,9 @@ namespace Phantasma.Blockchain
             var payload = Encoding.UTF8.GetBytes("A Phantasma was born...");
             var block = new Block(Chain.InitialHeight, rootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
 
-            rootChain.ValidateBlock(block, transactions, 1);
+            var changeSet = rootChain.ValidateBlock(block, transactions, 1);
             block.Sign(owner);
-            rootChain.AddBlock(block, transactions, 1);
+            rootChain.AddBlock(block, transactions, 1, changeSet);
 
             storage.Put(GetNexusKey("hash"), block.Hash);
             this.HasGenesis = true;

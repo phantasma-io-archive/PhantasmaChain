@@ -8,6 +8,7 @@ using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
+using Phantasma.Storage.Context;
 using Phantasma.Core.Performance;
 using System.IO;
 
@@ -331,10 +332,19 @@ namespace Phantasma.Blockchain
 
                 try
                 {
+                    StorageChangeSetContext changeSet;
+                    using (var m = new ProfileMarker("block.validate"))
+                    {
+                        changeSet = Chain.ValidateBlock(block, transactions, minFee);
+                    }
+
                     using (var m = new ProfileMarker("block.Sign"))
+                    {
                         block.Sign(Mempool.ValidatorKeys);
+                    }
+
                     using (var m = new ProfileMarker("Chain.AddBlock"))
-                        Chain.AddBlock(block, transactions, minFee);
+                        Chain.AddBlock(block, transactions, minFee, changeSet);
                 }
                 catch (Exception e)
                 {

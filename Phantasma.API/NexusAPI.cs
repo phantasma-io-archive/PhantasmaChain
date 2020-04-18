@@ -281,6 +281,24 @@ namespace Phantasma.API
                         {
                             throw new APIException($"Proxy error: {e.Message}");
                         }
+
+                        // Checking if it's a JSON with error inside.
+                        // If so, emulating same error response for Proxy sever as BP sends.
+                        LunarLabs.Parser.DataNode root = null;
+                        try
+                        {
+                            root = JSONReader.ReadFromString(result);
+                        }
+                        catch (Exception e)
+                        {
+                            // It's not JSON, do nothing.
+                        }
+
+                        if (root != null && root.HasNode("error"))
+                        {
+                            var errorDesc = root.GetString("error");
+                            throw new APIException(errorDesc);
+                        }
                     }
                     else
                     {
@@ -347,7 +365,7 @@ namespace Phantasma.API
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
-        private const int PaginationMaxResults = 50;
+        private const int PaginationMaxResults = 99999;
 
         public string ProxyURL = null;
 
@@ -974,7 +992,7 @@ namespace Phantasma.API
             {
                 return new ErrorResult { error = "Node not accepting transactions" };
             }
-            
+
             byte[] bytes;
             try
             {
@@ -1856,7 +1874,7 @@ namespace Phantasma.API
             }
             else
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, account);                
+                address = Nexus.LookUpName(Nexus.RootStorage, account);
             }
 
             if (address.IsNull)
