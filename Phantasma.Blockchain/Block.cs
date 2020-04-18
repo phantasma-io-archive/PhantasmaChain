@@ -91,10 +91,6 @@ namespace Phantasma.Blockchain
 
         public void Sign(IKeyPair keys)
         {
-            if (_dirty)
-            {
-                UpdateHash();
-            }
             var msg = this.ToByteArray(false);
             this.Signature = keys.Sign(msg);
         }
