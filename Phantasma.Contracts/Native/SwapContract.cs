@@ -192,10 +192,7 @@ namespace Phantasma.Contracts.Native
                 Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} as a fee");
             }
 
-            if (amount > 0)
-            {
-                SwapTokens(from, fromSymbol, toSymbol, amount);
-            }
+            SwapTokens(from, fromSymbol, toSymbol, amount);
         }
 
         public void SwapReverse(Address from, string fromSymbol, string toSymbol, BigInteger total)
