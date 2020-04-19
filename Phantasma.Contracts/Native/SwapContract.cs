@@ -173,6 +173,13 @@ namespace Phantasma.Contracts.Native
         {
             var toSymbol = DomainSettings.FuelTokenSymbol;
 
+            var feeBalance = Runtime.GetBalance(toSymbol, from);
+            feeAmount -= feeBalance;
+            if (feeAmount <= 0)
+            {
+                return;
+            }
+
             var amount = GetRate(toSymbol, fromSymbol, feeAmount);
 
             var token = Runtime.GetToken(fromSymbol);
@@ -183,9 +190,6 @@ namespace Phantasma.Contracts.Native
             else
             {
                 Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} as a fee");
-
-                var balance = Runtime.GetBalance(toSymbol, from);
-                amount -= balance;
             }
 
             if (amount > 0)
