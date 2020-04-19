@@ -406,13 +406,6 @@ namespace Phantasma.Blockchain
             return temp.AsNumber();
         }
 
-        private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)
-        {
-            var temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Number || temp.Type == VMType.String, $"expected number for {ArgumentName}");
-            return temp.AsNumber();
-        }
-
         private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
         {
             ExpectStackSize(Runtime, 4);
