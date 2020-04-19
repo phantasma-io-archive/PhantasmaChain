@@ -397,7 +397,7 @@ namespace Phantasma.Blockchain.Contracts
             var token = GetToken(symbol);
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
-            var bytes = Oracle.Read(this.Time, "price://" + symbol);
+            var bytes = Oracle.Read<byte[]>(this.Time, "price://" + symbol);
             var value = BigInteger.FromUnsignedArray(bytes, true);
 
             Expect(value > 0, "token price not available for " + symbol);
@@ -1289,7 +1289,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public byte[] ReadOracle(string URL)
         {
-            return this.Oracle.Read(this.Time, URL);
+            return this.Oracle.Read<byte[]>(this.Time, URL);
         }
 
         public Hash GetTokenPlatformHash(string symbol, IPlatform platform)

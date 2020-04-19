@@ -20,7 +20,7 @@ namespace Phantasma.Core.Log
                     case LogEntryKind.Debug: Console.ForegroundColor = ConsoleColor.Cyan; break;
                     default: return;
                 }
-                Console.WriteLine(msg);
+                Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " +msg);
                 Console.ForegroundColor = color;
             }
         }

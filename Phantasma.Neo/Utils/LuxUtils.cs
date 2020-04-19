@@ -303,6 +303,27 @@ namespace Phantasma.Neo.Utils
             return sum_value / sum_weight;
         }
 
+        public static string HexToString(this string hex)
+        {
+            if (hex.Length % 2 != 0)
+            {
+                throw new ArgumentException();
+            }
+            var output = "";
+            for (int i = 0; i <= hex.Length - 2; i += 2)
+            {
+                try
+                {
+                    var result = Convert.ToByte(new string(hex.Skip(i).Take(2).ToArray()), 16);
+                    output += (Convert.ToChar(result));
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+            return output;
+        }
 
         public static byte[] HexToBytes(this string value)
         {

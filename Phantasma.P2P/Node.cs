@@ -599,7 +599,8 @@ namespace Phantasma.Network.P2P
                                     // TODO this wont work in the future...
                                     try
                                     {
-                                        chain.AddBlock(block, transactions, 1);
+                                        var changeSet = chain.ValidateBlock(block, transactions, 1);
+                                        chain.AddBlock(block, transactions, 1, changeSet);
                                     }
                                     catch (Exception e)
                                     {

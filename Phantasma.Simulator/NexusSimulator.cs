@@ -108,15 +108,20 @@ namespace Phantasma.Simulator
 
             BeginBlock();
             
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine("neoaddress:" + neoAddress);
+            Console.WriteLine("neoText:" + neoText);
             GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
                 CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
                 CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").
             SpendGas(_owner.Address).EndScript());
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
             var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
             var orgScript = new byte[0];
             var orgID = DomainSettings.PhantomForceOrganizationName;
             var orgAddress = Address.FromHash(orgID);
+
             GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
             {
                 return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
@@ -312,9 +317,9 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                chain.ValidateBlock(block, transactions, MinimumFee);
+                                var changeSet = chain.ValidateBlock(block, transactions, MinimumFee);
                                 block.Sign(this._owner);
-                                chain.AddBlock(block, txs, MinimumFee);
+                                chain.AddBlock(block, txs, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)
