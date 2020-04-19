@@ -193,6 +193,9 @@ namespace Phantasma.Contracts.Native
             }
 
             SwapTokens(from, fromSymbol, toSymbol, amount);
+
+            var finalFeeBalance = Runtime.GetBalance(toSymbol, from);
+            Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee");
         }
 
         public void SwapReverse(Address from, string fromSymbol, string toSymbol, BigInteger total)
