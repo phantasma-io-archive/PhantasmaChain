@@ -180,19 +180,19 @@ namespace Phantasma.Contracts.Native
                 return;
             }
 
-            var amount = GetRate(toSymbol, fromSymbol, feeAmount);
+            var amountInOtherSymbol = GetRate(toSymbol, fromSymbol, feeAmount);
 
             var token = Runtime.GetToken(fromSymbol);
-            if (token.Decimals == 0 && amount < 1)
+            if (token.Decimals == 0 && amountInOtherSymbol < 1)
             {
-                amount = 1;
+                amountInOtherSymbol = 1;
             }
             else
             {
-                Runtime.Expect(amount > 0, $"cannot swap {fromSymbol} as a fee");
+                Runtime.Expect(amountInOtherSymbol > 0, $"cannot swap {fromSymbol} as a fee");
             }
 
-            SwapTokens(from, fromSymbol, toSymbol, amount);
+            SwapTokens(from, fromSymbol, toSymbol, amountInOtherSymbol);
 
             var finalFeeBalance = Runtime.GetBalance(toSymbol, from);
             Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee");
