@@ -105,7 +105,7 @@ namespace Phantasma.Domain
 
         protected abstract void InvokeScript(byte[] script, int id, Action<byte[], string> callback);
 
-        protected abstract void SignTransaction(string nexus, string chain, byte[] script, int id, Action<Hash, string> callback);
+        protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
@@ -223,13 +223,14 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 6)
+                            if (args.Length == 7)
                             {
                                 var nexus = args[1];
                                 var chain = args[2];
                                 var script = Base16.Decode(args[3]);
+                                byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4]): null;
 
-                                SignTransaction(nexus, chain, script, id, (hash, txError) => { 
+                                SignTransaction(nexus, chain, script, payload, id, (hash, txError) => { 
                                     if (hash != Hash.Null)
                                     {
                                         success = true;
