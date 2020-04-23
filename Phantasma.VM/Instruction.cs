@@ -31,6 +31,7 @@ namespace Phantasma.VM
                 case Opcode.NOT:
                 case Opcode.NEGATE:
                 case Opcode.ABS:
+                case Opcode.CTX:
                     {
                         AppendRegister(sb, Args[0]);
                         sb.Append(',');
@@ -61,6 +62,7 @@ namespace Phantasma.VM
                 case Opcode.EXTCALL:
                 case Opcode.DEC:
                 case Opcode.INC:
+                case Opcode.SWITCH:
                     {
                         AppendRegister(sb, Args[0]);
                         break;
