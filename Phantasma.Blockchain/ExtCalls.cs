@@ -373,8 +373,12 @@ namespace Phantasma.Blockchain
             var temp = vm.Stack.Pop();
             if (temp.Type == VMType.String)
             {
-                var name = temp.AsString();
-                return vm.Nexus.LookUpName(vm.Storage, name);
+                var text = temp.AsString();
+                if (Address.IsValidAddress(text))
+                {
+                    return Address.FromText(text);
+                }
+                return vm.Nexus.LookUpName(vm.Storage, text);
             }
             else
             if (temp.Type == VMType.Bytes)
