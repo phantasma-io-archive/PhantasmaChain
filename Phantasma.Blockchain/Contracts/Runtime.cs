@@ -335,10 +335,12 @@ namespace Phantasma.Blockchain.Contracts
             var callingFrame = new StackFrame(1);
             var method = callingFrame.GetMethod();
 
-            description = $"{description} @ {method.Name}";
 #if DEBUG
-            description += $", tx: {this.Transaction.Hash}";
+            if (this.Transaction != null)
+                description += $", tx: {this.Transaction.Hash}";
+            else
 #endif
+            description = $"{description} @ {method.Name}";
 
             throw new VMException(this, description);
         }
@@ -1131,6 +1133,7 @@ namespace Phantasma.Blockchain.Contracts
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             var Runtime = this;
+            Runtime.Expect(!source.IsNull, "invalid source");
 
             if (source == destination)
             {
