@@ -198,7 +198,7 @@ namespace Phantasma.Domain
                         }
                         else
                         {
-                            root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                            root = APIUtils.FromAPIResult(new Error() { message = $"authorize: Invalid amount of arguments: {args.Length} instead of 2" });
                         }
 
                         break;
@@ -249,7 +249,7 @@ namespace Phantasma.Domain
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                                root = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 7" });
                             }
 
                         }
@@ -284,7 +284,7 @@ namespace Phantasma.Domain
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                                root = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 4" });
                             }
 
                         }
