@@ -397,7 +397,16 @@ namespace Phantasma.Blockchain
         private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)
         {
             var temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Number || temp.Type == VMType.String, $"expected number for {ArgumentName}");
+
+            if (temp.Type == VMType.String)
+            {
+                vm.Expect(BigInteger.IsParsable(temp.AsString()), $"expected number for {ArgumentName}");
+            }
+            else
+            {
+                vm.Expect(temp.Type == VMType.Number, $"expected number for {ArgumentName}");
+            }
+
             return temp.AsNumber();
         }
 
