@@ -59,10 +59,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("ABI()", Constructor_ABI);
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
-            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);          
+            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
         }
 
-        private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
+        private static ExecutionState Constructor_Object<IN, OUT>(RuntimeVM vm, Func<IN, OUT> loader)
         {
             var type = VMObject.GetVMType(typeof(IN));
             var input = vm.Stack.Pop().AsType(type);
@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain
             {
                 return ExecutionState.Fault;
             }
-            
+
             url = url.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(url))
             {
@@ -397,7 +397,16 @@ namespace Phantasma.Blockchain
         private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)
         {
             var temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Number || temp.Type == VMType.String, $"expected number for {ArgumentName}");
+
+            if (temp.Type == VMType.String)
+            {
+                vm.Expect(BigInteger.IsParsable(temp.AsString()), $"expected number for {ArgumentName}");
+            }
+            else
+            {
+                vm.Expect(temp.Type == VMType.Number, $"expected number for {ArgumentName}");
+            }
+
             return temp.AsNumber();
         }
 
@@ -530,7 +539,7 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_TransferToken(RuntimeVM Runtime)
         {
             ExpectStackSize(Runtime, 4);
-            
+
             VMObject temp;
 
             var source = PopAddress(Runtime);
@@ -621,7 +630,7 @@ namespace Phantasma.Blockchain
 
             return ExecutionState.Running;
         }
-        
+
         private static ExecutionState Runtime_ReadTokenROM(RuntimeVM Runtime)
         {
             var content = Runtime_ReadTokenInternal(Runtime);
@@ -678,14 +687,14 @@ namespace Phantasma.Blockchain
 
             temp = Runtime.Stack.Pop();
 
-            switch (temp.Type) 
+            switch (temp.Type)
             {
                 case VMType.String:
                     {
                         var name = temp.AsString();
                         var success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
 
-                        Runtime.Expect(success, name+" contract deploy failed");
+                        Runtime.Expect(success, name + " contract deploy failed");
 
                         var contract = Runtime.Nexus.GetContractByName(Runtime.RootStorage, name);
                         var constructor = "Initialize";

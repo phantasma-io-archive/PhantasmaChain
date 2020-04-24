@@ -238,7 +238,7 @@ namespace Phantasma.Numerics
 
             result = value.Data[0];
 
-            if(value.dataLength > 1)
+            if (value.dataLength > 1)
                 result |= (long)((ulong)value.Data[1] << 32);
 
             if (value._sign < 0)
@@ -1053,7 +1053,7 @@ namespace Phantasma.Numerics
 
         public int GetLowestSetBit()
         {
-            if (this.Sign== 0)
+            if (this.Sign == 0)
                 return -1;
 
             byte[] b = this.ToSignedByteArray();
@@ -1094,7 +1094,7 @@ namespace Phantasma.Numerics
 
             var result = (Data.Length - 1) * 32;
 
-            result += (int) Math.Log(Data[Data.Length - 1], 2) + 1;
+            result += (int)Math.Log(Data[Data.Length - 1], 2) + 1;
 
             return result;
         }
@@ -1239,7 +1239,7 @@ public void SetBit(uint bitNum)
                         continue;
 
                     if (applyTwosComplement)
-                        result[j + k] = (byte) ~bytes[k];
+                        result[j + k] = (byte)~bytes[k];
                     else
                         result[j + k] = bytes[k];
                 }
@@ -1252,7 +1252,7 @@ public void SetBit(uint bitNum)
                 var tmp = (new BigInteger(result, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1.
 
                 result = tmp.ToSignedByteArray();         //when we call the ToByteArray, we will get an extra byte on the array to keep sign information while in byte[] format
-                                                    //but the twos complement logic won't get applied again given the bigint has positive sign.
+                                                          //but the twos complement logic won't get applied again given the bigint has positive sign.
 
                 result[result.Length - 1] = 0xFF;      //sets the MSB to 1's, as this array represents a negative number.
             }
@@ -1277,7 +1277,7 @@ public void SetBit(uint bitNum)
             var tmp = (new BigInteger(buffer, sign: 1) + 1); //create a biginteger with the inverted bits but with positive sign, and add 1. result will remain with positive sign
 
             buffer = tmp.ToSignedByteArray(); //when we call the ToByteArray asking to include sign, we will get an extra byte on the array to make sure sign is correct 
-                                        //but the twos complement logic won't get applied again given the bigint has positive sign.
+                                              //but the twos complement logic won't get applied again given the bigint has positive sign.
 
             return buffer;
         }
@@ -1314,6 +1314,19 @@ public void SetBit(uint bitNum)
         public BigInteger FlipBit(int bit)
         {
             return this ^ (One << bit);
+        }
+
+        public static bool IsParsable(string val)
+        {
+            foreach (var ch in val)
+            {
+                if (ch >= '0' && ch <= '9')
+                {
+                    continue;
+                }
+                return false;
+            }
+            return true;
         }
     }
 
