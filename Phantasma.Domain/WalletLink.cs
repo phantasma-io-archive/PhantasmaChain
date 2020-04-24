@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using LunarLabs.Parser;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using Phantasma.VM.Utils;
 
 namespace Phantasma.Domain
 {
@@ -13,6 +15,8 @@ namespace Phantasma.Domain
     }
     public abstract class WalletLink
     {
+        public const int WebSocketPort = 7090;
+
         public struct Error : IAPIResult
         {
             public string message;
@@ -32,6 +36,14 @@ namespace Phantasma.Domain
             public int decimals;
         }
 
+        public struct File : IAPIResult
+        {
+            public string name;
+            public int size;
+            public uint date;
+            public string hash;
+        }
+
         public struct Account : IAPIResult
         {
             public string id;
@@ -39,6 +51,7 @@ namespace Phantasma.Domain
             public string name;
             public string avatar;
             public Balance[] balances;
+            public File[] files;
         }
 
         public struct Invocation : IAPIResult
@@ -46,15 +59,21 @@ namespace Phantasma.Domain
             public string result;
         }
 
+        public struct Transaction : IAPIResult
+        {
+            public string hash;
+        }
 
         private Random rnd = new Random();
 
         private Dictionary<string, string> authTokens = new Dictionary<string, string>();
 
-        protected abstract PhantasmaKeys Keys { get; } 
+        protected abstract PhantasmaKeys Keys { get; }
         protected abstract WalletStatus Status { get; }
 
         public string Name { get; private set; }
+
+        private bool _isPendingRequest;
 
         public WalletLink(string name)
         {
@@ -80,11 +99,13 @@ namespace Phantasma.Domain
             return APIUtils.FromAPIResult(new Error() { message = "Invalid or missing API token" });
         }
 
-        protected abstract Account GetAccount();
+        protected abstract void Authorize(string dapp, Action<bool, string> callback);
 
-        protected abstract void InvokeScript(string script, int id, Action<int, DataNode, bool> callback);
+        protected abstract Account GetAccount(); // TODO this one also maybe use callbacks later, but not neessary for now...
 
-        protected abstract void SignTransaction(string script, int id, Action<int, DataNode, bool> callback);
+        protected abstract void InvokeScript(byte[] script, int id, Action<byte[], string> callback);
+
+        protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
@@ -124,6 +145,15 @@ namespace Phantasma.Domain
                 }
             }
 
+            if (_isPendingRequest)
+            {
+                root = APIUtils.FromAPIResult(new Error() { message = $"A previouus request is still pending" });
+                callback(id, root, false);
+                return;
+            }
+
+            _isPendingRequest = true;
+
             switch (requestType)
             {
                 case "authorize":
@@ -136,21 +166,39 @@ namespace Phantasma.Domain
                             if (authTokens.ContainsKey(dapp))
                             {
                                 token = authTokens[dapp];
+                                success = true;
+                                root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
                             }
                             else
                             {
-                                var bytes = new byte[32];
-                                rnd.NextBytes(bytes);
-                                token = Base16.Encode(bytes);
-                                authTokens[dapp] = token;
+                                this.Authorize(dapp, (authorized, error) =>
+                                {
+                                    if (authorized)
+                                    {
+                                        var bytes = new byte[32];
+                                        rnd.NextBytes(bytes);
+                                        token = Base16.Encode(bytes);
+                                        authTokens[dapp] = token;
+
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = error });
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
+
+                                return;
                             }
 
-                            success = true;
-                            root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
                         }
                         else
                         {
-                            root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                            root = APIUtils.FromAPIResult(new Error() { message = $"authorize: Invalid amount of arguments: {args.Length} instead of 2" });
                         }
 
                         break;
@@ -175,16 +223,33 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 3)
+                            if (args.Length == 7)
                             {
-                                var script = args[1];
+                                var nexus = args[1];
+                                var chain = args[2];
+                                var script = Base16.Decode(args[3]);
+                                byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4]) : null;
 
-                                SignTransaction(script, id, callback);
+                                SignTransaction(nexus, chain, script, payload, id, (hash, txError) => {
+                                    if (hash != Hash.Null)
+                                    {
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = txError });
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
+
                                 return;
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                                root = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 7" });
                             }
 
                         }
@@ -196,16 +261,30 @@ namespace Phantasma.Domain
                         root = ValidateRequest(args);
                         if (root == null)
                         {
-                            if (args.Length == 3)
+                            if (args.Length == 4)
                             {
-                                var script = args[1];
+                                var script = Base16.Decode(args[1]);
 
-                                InvokeScript(script, id, callback);
+                                InvokeScript(script, id, (invokeResult, invokeError) =>
+                                {
+                                    if (invokeResult != null)
+                                    {
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = invokeError });
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
                                 return;
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = "Invalid amount of arguments" });
+                                root = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 4" });
                             }
 
                         }
@@ -218,6 +297,7 @@ namespace Phantasma.Domain
             }
 
             callback(id, root, success);
+            _isPendingRequest = false;
         }
     }
 }
