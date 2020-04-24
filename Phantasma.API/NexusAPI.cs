@@ -347,7 +347,7 @@ namespace Phantasma.API
 
         private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
 
-        private const int PaginationMaxResults = 50;
+        private const int PaginationMaxResults = 99999;
 
         public string ProxyURL = null;
 
