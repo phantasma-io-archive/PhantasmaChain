@@ -1133,6 +1133,7 @@ namespace Phantasma.Blockchain.Contracts
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             var Runtime = this;
+            Runtime.Expect(!source.IsNull, "invalid source");
 
             if (source == destination)
             {
