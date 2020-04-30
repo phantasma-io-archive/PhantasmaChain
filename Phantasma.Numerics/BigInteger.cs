@@ -1318,6 +1318,11 @@ public void SetBit(uint bitNum)
 
         public static bool IsParsable(string val)
         {
+            if (string.IsNullOrEmpty(val))
+            {
+                return false;
+            }
+
             foreach (var ch in val)
             {
                 if (ch >='0'  && ch <= '9')
