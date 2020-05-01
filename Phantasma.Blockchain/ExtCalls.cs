@@ -42,6 +42,7 @@ namespace Phantasma.Blockchain
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
+            vm.RegisterMethod("Data.Field", Data_Field);
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
             vm.RegisterMethod("Data.Delete", Data_Delete);
@@ -320,6 +321,20 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        // returns the key for a field from a contract
+        private static ExecutionState Data_Field(RuntimeVM runtime)
+        {
+            var contract = PopString(runtime, "contract");
+            var field = PopString(runtime, "contract");
+            var key_bytes = SmartContract.GetKeyForField(contract, field);
+
+            var val = new VMObject();
+            val.SetValue(key_bytes, VMType.Bytes);
+            runtime.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Data_Get(RuntimeVM runtime)
         {
             var key = runtime.Stack.Pop();
@@ -408,6 +423,15 @@ namespace Phantasma.Blockchain
             }
 
             return temp.AsNumber();
+        }
+
+        private static string PopString(RuntimeVM vm, string ArgumentName)
+        {
+            var temp = vm.Stack.Pop();
+
+            vm.Expect(temp.Type == VMType.String, $"expected strng for {ArgumentName}");
+
+            return temp.AsString();
         }
 
         private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
