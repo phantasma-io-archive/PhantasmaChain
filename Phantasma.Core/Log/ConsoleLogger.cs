@@ -18,6 +18,7 @@ namespace Phantasma.Core.Log
                     case LogEntryKind.Message: Console.ForegroundColor = ConsoleColor.Gray; break;
                     case LogEntryKind.Sucess: Console.ForegroundColor = ConsoleColor.Green; break;
                     case LogEntryKind.Debug: Console.ForegroundColor = ConsoleColor.Cyan; break;
+                    case LogEntryKind.Shell: break; // no color change for shell
                     default: return;
                 }
                 Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " +msg);
