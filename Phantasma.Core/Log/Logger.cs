@@ -69,6 +69,11 @@ namespace Phantasma.Core.Log
             Write(LogEntryKind.Sucess, msg);
         }
 
+        public void Shell(string msg)
+        {
+            Write(LogEntryKind.Shell, msg);
+        }
+
         public void Exception(Exception ex)
         {
             Error(ex.ToString());

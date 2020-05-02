@@ -4,7 +4,7 @@ using System.IO;
 using Phantasma.Storage;
 using Phantasma.Core;
 using Logger = Phantasma.Core.Log.Logger;
-using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
+using Phantasma.Core.Log;
 using RocksDbSharp;
 
 namespace Phantasma.RocksDB
@@ -15,22 +15,24 @@ namespace Phantasma.RocksDB
         private ColumnFamilyHandle partition;
         private string partitionName;
         private string path;
-        private readonly Logger logger = new ConsoleLogger();
+        private readonly Logger logger;
 
         public uint Count => GetCount();
 
-        public DBPartition(string fileName)
+        public DBPartition(Logger logger, string fileName)
         {
-            logger.Message("FileName: " + fileName);
             this.partitionName = Path.GetFileName(fileName);
             this.path = Path.GetDirectoryName(fileName);
+            this.logger = logger;
+
+            logger.Message("FileName: " + fileName);
 
             if (!path.EndsWith("/"))
             {
                 path += '/';
             }
 
-	        this._db = RocksDbStore.Instance(path);
+	        this._db = RocksDbStore.Instance(logger, path);
 
             // Create partition if it doesn't exist already
             try
@@ -148,13 +150,14 @@ namespace Phantasma.RocksDB
     {
 	    private static Dictionary<string, RocksDb> _db = new Dictionary<string, RocksDb>();
 	    private static Dictionary<string, RocksDbStore> _rdb = new Dictionary<string, RocksDbStore>();
-        private readonly Logger logger = new ConsoleLogger();
+        private readonly Logger logger;
 
         private string fileName;
 
-        private RocksDbStore(string fileName)
+        private RocksDbStore(string fileName, Logger logger)
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Shutdown();
+            this.logger = logger;
             logger.Message("RocksDBStore: " + fileName);
             this.fileName = fileName.Replace("\\", "/");
 
@@ -200,13 +203,13 @@ namespace Phantasma.RocksDB
 	        _db.Add(fileName, RocksDb.Open(options, path, columnFamilies));
         }
 
-        public static RocksDb Instance(string name)
+        public static RocksDb Instance(Logger logger, string name)
         {
             if (!_db.ContainsKey(name))
             {
                 if (string.IsNullOrEmpty(name)) throw new System.ArgumentException("Parameter cannot be null", "name");
 
-                _rdb.Add(name, new RocksDbStore(name));
+                _rdb.Add(name, new RocksDbStore(name, logger));
             }
 
             return _db[name];

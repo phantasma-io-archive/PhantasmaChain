@@ -1,19 +1,35 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Phantasma.Core.Log
 {
-    public class FileLog : Logger
+    public class FileLogger : Logger
     {
-        readonly string fileName;
+        private static object _lock = new object();
+        private static StreamWriter sw;
 
-        public FileLog(string file)
+        public FileLogger(string file)
         {
-            fileName = file;
+            if (sw != null)
+            {
+                return;
+            }
+            sw = new StreamWriter(file, true);
+        }
+
+        ~FileLogger()
+        {
+            sw.Dispose();
+            sw.Close();
         }
 
         public override void Write(LogEntryKind kind, string msg)
         {
-            File.AppendAllLines(fileName, new string[] { msg });
+            lock (_lock)
+            {
+                sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + msg);
+                sw.Flush();
+            }
         }
     }
 }

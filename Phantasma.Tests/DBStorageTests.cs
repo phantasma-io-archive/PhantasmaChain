@@ -6,8 +6,7 @@ using Phantasma.Core;
 using Phantasma.RocksDB;
 using Phantasma.Storage;
 using System.Threading;
-
-using RocksDbSharp;
+using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
 
 namespace Phantasma.Tests
 {
@@ -22,7 +21,7 @@ namespace Phantasma.Tests
         [TestInitialize()]
         public void TestInitialize()
         {
-            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(path + name); };
+            _adapterFactory = _adapterFactory = (name) => { return new DBPartition(new ConsoleLogger(), path + name); };
             _testStorage = new KeyValueStore<string, string>(CreateKeyStoreAdapterTest("test"));
         }
 
