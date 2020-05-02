@@ -974,7 +974,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid platform name");
 
             var platformID = Nexus.CreatePlatform(RootStorage, externalAddress, interopAddress, name, fuelSymbol);
-            Runtime.Expect(platformID > 0, "creation of platform failed");
+            Runtime.Expect(platformID > 0, $"creation of platform with id {platformID} failed");
 
             Runtime.Notify(EventKind.PlatformCreate, from, name);
             return platformID;
