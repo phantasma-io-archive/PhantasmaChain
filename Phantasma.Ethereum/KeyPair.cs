@@ -33,10 +33,10 @@ namespace Phantasma.Ethereum
         }
     }
 
-    public class EthereumKey 
+    public class EthereumKey : IKeyPair
     {
-        public readonly byte[] PrivateKey;
-        public readonly byte[] PublicKey;
+        public byte[] PrivateKey{ get; private set; }
+        public byte[] PublicKey { get; private set; }
         public readonly string Address;
 
         public EthereumKey(byte[] privateKey)
@@ -101,6 +101,11 @@ namespace Phantasma.Ethereum
         public override string ToString()
         {
             return this.Address;
+        }
+
+        public Signature Sign(byte[] msg)
+        {
+            return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256r1);
         }
     }
 }
