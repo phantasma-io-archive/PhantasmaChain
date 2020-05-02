@@ -1456,7 +1456,7 @@ namespace Phantasma.Blockchain
         #region PLATFORMS
         internal int CreatePlatform(StorageContext storage, string externalAddress, Address interopAddress, string name, string fuelSymbol)
         {
-            // check if already exists something with that name
+            // check if something with this name already exists
             if (PlatformExists(storage, name))
             {
                 return -1;
