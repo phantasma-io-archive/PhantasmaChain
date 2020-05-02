@@ -54,7 +54,7 @@ namespace Phantasma.Simulator
 
         public readonly Logger Logger;
 
-        public TimeSpan blockTimeSkip = TimeSpan.FromMinutes(0);
+        public TimeSpan blockTimeSkip = TimeSpan.FromSeconds(3);
         public BigInteger MinimumFee = 1;
 
         public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
@@ -80,8 +80,9 @@ namespace Phantasma.Simulator
             }
             else
             {
-                var genesisBlock = Nexus.GetGenesisBlock();
-                CurrentTime = new Timestamp(genesisBlock.Timestamp.Value + 1);
+                var lastBlockHash = Nexus.RootChain.GetLastBlockHash();
+                var lastBlock = Nexus.RootChain.GetBlockByHash(lastBlockHash);
+                CurrentTime = new Timestamp(lastBlock.Timestamp.Value + 1);
             }
 
             _rnd = new Random(seed);
@@ -106,40 +107,39 @@ namespace Phantasma.Simulator
             var ethText = Phantasma.Ethereum.EthereumKey.FromWIF(ethKeys.ToWIF()).Address;
             var ethAddress = Phantasma.Pay.Chains.EthereumWallet.EncodeAddress(ethText);
 
-            BeginBlock();
-            
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            Console.WriteLine("neoaddress:" + neoAddress);
-            Console.WriteLine("neoText:" + neoText);
-            GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
-                CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").
-            SpendGas(_owner.Address).EndScript());
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-            var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
-            var orgScript = new byte[0];
-            var orgID = DomainSettings.PhantomForceOrganizationName;
-            var orgAddress = Address.FromHash(orgID);
-
-            GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+            // only create all this stuff once
+            if (!nexus.PlatformExists(nexus.RootStorage, neoPlatform))
             {
-                return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
-                CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
-                CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
-                TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
-                CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 500000).
-                CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
-                SpendGas(_owner.Address).
-                EndScript();
-            });
-            EndBlock();
+                BeginBlock();
+                GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
+                    CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
+                    CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").
+                SpendGas(_owner.Address).EndScript());
 
-            BeginBlock();
-            var communitySupply = 100000;
-            GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
-            MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
-            EndBlock();
+                var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
+                var orgScript = new byte[0];
+                var orgID = DomainSettings.PhantomForceOrganizationName;
+                var orgAddress = Address.FromHash(orgID);
+
+                GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                {
+                    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                    CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
+                    CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
+                    TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
+                    CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 500000).
+                    CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
+                    SpendGas(_owner.Address).
+                    EndScript();
+                });
+                EndBlock();
+
+                BeginBlock();
+                var communitySupply = 100000;
+                GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
+                MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
+                EndBlock();
+            }
 
             /*
             var market = Nexus.FindChainByName("market");
