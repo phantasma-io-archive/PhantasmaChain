@@ -154,6 +154,15 @@ namespace Phantasma.API
         public string content;
     }
 
+    public struct SignatureResult: IAPIResult
+    {
+        [APIDescription("Kind of signature")]
+        public string Kind;
+
+        [APIDescription("Byte array containing signature data, encoded as hex string")]
+        public string Data;
+    }
+
     public struct TransactionResult : IAPIResult
     {
         [APIDescription("Hash of the transaction")]
@@ -187,7 +196,7 @@ namespace Phantasma.API
         public string fee;
 
         [APIDescription("List of signatures that signed the transaction")]
-        public string signatures;
+        public SignatureResult[] signatures;
 
         [APIDescription("Expiration time of the transaction")]
         public uint expiration;

@@ -477,7 +477,7 @@ namespace Phantasma.API
                 payload = tx.Payload.Encode(),
                 fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0",
                 expiration = tx.Expiration.Value,
-                signatures = null // TODO
+                signatures = tx.Signatures.Select(x => new SignatureResult() { Kind = x.Kind.ToString(), Data = Base16.Encode(x.ToByteArray()) }).ToArray(),
             };
 
             if (block != null)
