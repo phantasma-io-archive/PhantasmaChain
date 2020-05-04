@@ -20,5 +20,18 @@ namespace Phantasma.Cryptography
         {
             return Verify(message, new Address[] { address });
         }
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    this.SerializeData(writer);
+                }
+
+                return stream.ToArray();
+            }
+        }
     }
 }
