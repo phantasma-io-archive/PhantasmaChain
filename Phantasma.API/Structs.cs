@@ -185,6 +185,12 @@ namespace Phantasma.API
 
         [APIDescription("Fee of the transaction, in KCAL, fixed point")]
         public string fee;
+
+        [APIDescription("List of signatures that signed the transaction")]
+        public string signatures;
+
+        [APIDescription("Expiration time of the transaction")]
+        public uint expiration;
     }
 
     public struct AccountTransactionsResult : IAPIResult
@@ -262,6 +268,9 @@ namespace Phantasma.API
         public string hash;
 
         public string flags;
+
+        [APIDescription("Script attached to token, in hex")]
+        public string script;
     }
 
     public struct TokenDataResult : IAPIResult
