@@ -433,6 +433,7 @@ namespace Phantasma.API
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 /*platform = tokenInfo.Platform,
                 hash = tokenInfo.Hash.ToString(),*/
+                script = tokenInfo.Script.Encode()
             };
         }
 
@@ -474,7 +475,9 @@ namespace Phantasma.API
                 blockHash = block != null ? block.Hash.ToString() : Hash.Null.ToString(),
                 script = tx.Script.Encode(),
                 payload = tx.Payload.Encode(),
-                fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0"
+                fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0",
+                expiration = tx.Expiration.Value,
+                signatures = null // TODO
             };
 
             if (block != null)
@@ -1088,10 +1091,10 @@ namespace Phantasma.API
 
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
-            var oracleReads = oracle.Entries.Select(x => new OracleResult() 
-                    { 
-                        url = x.URL, 
-                        content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content))) 
+            var oracleReads = oracle.Entries.Select(x => new OracleResult()
+                    {
+                        url = x.URL,
+                        content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content)))
                     }).ToArray();
 
             var resultArray = results.ToArray();
