@@ -6,7 +6,7 @@
     <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="LunarLabs.Parser" Version="1.2.7" />
+    <PackageReference Include="LunarLabs.Parser" Version="1.2.8" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cryptography\" />
