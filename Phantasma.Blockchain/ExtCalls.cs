@@ -342,9 +342,12 @@ namespace Phantasma.Blockchain
 
             runtime.Expect(key_bytes.Length > 0, "invalid key");
 
+            var type_obj = runtime.Stack.Pop();
+            var vmType = type_obj.AsEnum<VMType>();
+
             var value_bytes = runtime.Storage.Get(key_bytes);
             var val = new VMObject();
-            val.SetValue(value_bytes, VMType.Bytes);
+            val.SetValue(value_bytes, vmType);
             runtime.Stack.Push(val);
 
             return ExecutionState.Running;
