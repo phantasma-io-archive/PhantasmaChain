@@ -62,12 +62,14 @@ namespace Phantasma.Contracts
             return Address.FromHash(name);
         }
 
-        public static byte[] GetKeyForField(string contractName, string fieldName)
+        public static byte[] GetKeyForField(string contractName, string fieldName, bool isProtected)
         {
             Throw.If(string.IsNullOrEmpty(contractName), "invalid contract name");
             Throw.If(string.IsNullOrEmpty(fieldName), "invalid field name");
 
-            return Encoding.UTF8.GetBytes($".{contractName}.{fieldName}");
+            string prefix = isProtected ? "." : "";
+
+            return Encoding.UTF8.GetBytes($"{prefix}{contractName}.{fieldName}");
         }
 
         // here we auto-initialize any fields from storage
@@ -85,7 +87,7 @@ namespace Phantasma.Contracts
 
             foreach (var field in fields)
             {
-                var baseKey = GetKeyForField(this.Name, field.Name);
+                var baseKey = GetKeyForField(this.Name, field.Name, true);
 
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)
@@ -142,7 +144,7 @@ namespace Phantasma.Contracts
 
             foreach (var field in fields)
             {
-                var baseKey = GetKeyForField(this.Name, field.Name);
+                var baseKey = GetKeyForField(this.Name, field.Name, true);
 
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)

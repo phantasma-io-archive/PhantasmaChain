@@ -326,7 +326,7 @@ namespace Phantasma.Blockchain
         {
             var contract = PopString(runtime, "contract");
             var field = PopString(runtime, "contract");
-            var key_bytes = SmartContract.GetKeyForField(contract, field);
+            var key_bytes = SmartContract.GetKeyForField(contract, field, false);
 
             var val = new VMObject();
             val.SetValue(key_bytes, VMType.Bytes);
