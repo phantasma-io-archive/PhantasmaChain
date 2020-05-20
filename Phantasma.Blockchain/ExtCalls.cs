@@ -286,7 +286,9 @@ namespace Phantasma.Blockchain
                 ExpectStackSize(vm, 1);
 
                 var address = PopAddress(vm);
-                var success = tx.IsSignedBy(address);
+                //var success = tx.IsSignedBy(address);
+                // TODO check if this was just a bug or there was a real reason 
+                var success = vm.IsWitness(address);
 
                 var result = new VMObject();
                 result.SetValue(success);
