@@ -1935,7 +1935,7 @@ namespace Phantasma.Contracts.Extra
         public string nickname;
         public string intro;
 
-        public Hash itemID;
+        public BigInteger itemID;
 
         public WrestlerFlags flags;
         public WrestlerLocation location;
@@ -2492,23 +2492,11 @@ namespace Phantasma.Contracts.Extra
 
         public void OnSendWrestlerTrigger(BigInteger tokenID, Address sender)
         {
-            TransferWrestler(tokenID);
-        }
-
-        public void TransferWrestler(/*Address from, Address to, */BigInteger wrestlerID)
-        {
-            //Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            //Runtime.Expect(to != from, "same address");
-
-            //var wrestlers = Storage.FindCollectionForAddress<BigInteger>(ACCOUNT_WRESTLERS, from);
-            //var wrestlers = _accountWrestlers.Get<Address, StorageList>(from);
-            //Runtime.Expect(wrestlers.Contains(wrestlerID), "wrestler invalid");
-
-            var wrestler = GetWrestler(wrestlerID);
+            var wrestler = GetWrestler(tokenID);
 
             Runtime.Expect(!wrestler.flags.HasFlag(WrestlerFlags.Locked), "locked wrestler");
             Runtime.Expect(wrestler.location == WrestlerLocation.None, "location invalid");
-            Runtime.Expect(wrestler.itemID == Hash.Null, "can't have equipped item");
+            Runtime.Expect(wrestler.itemID == 0, "can't have equipped item");
 
             // change owner
             //wrestler.owner = to;
@@ -2522,8 +2510,6 @@ namespace Phantasma.Contracts.Extra
             //var otherWrestlers = _accountWrestlers.Get<Address, StorageList>(to);
             //otherWrestlers.Add(wrestlerID);
 
-            //Runtime.Notify(EventKind.TokenSend, from, wrestlerID);
-            //Runtime.Notify(EventKind.TokenReceive, to, wrestlerID);
         }
 
         public void OnSendItemTrigger(BigInteger tokenID, Address sender)
@@ -3023,9 +3009,9 @@ namespace Phantasma.Contracts.Extra
         //}
 
         // TODO error handling when item not exist
-        public NachoItem GetItem(Hash ID)
+        public NachoItem GetItem(BigInteger itemID)
         {
-            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, ID);
+            var nft = Runtime.ReadToken(Constants.ITEM_SYMBOL, itemID);
 
             var item = Serialization.Unserialize<NachoItem>(nft.RAM);
 
@@ -3034,7 +3020,7 @@ namespace Phantasma.Contracts.Extra
                 if (item.wrestlerID != 0) // TODO confirmar se o operador != dos BigInteger já foi corrigido. Alternativa => ID > 0
                 {
                     var wrestler = GetWrestler(item.wrestlerID);
-                    if (wrestler.itemID != ID)
+                    if (wrestler.itemID != itemID)
                     {
                         item.location = ItemLocation.None;
                     }
@@ -3407,7 +3393,7 @@ namespace Phantasma.Contracts.Extra
             {
                 //owner = to,
                 //genes = genes,
-                itemID = Hash.Null,
+                itemID = 0,
                 nickname = "",
                 score = Constants.DEFAULT_SCORE,
                 maxMojo = Constants.DEFAULT_MOJO,
@@ -3771,7 +3757,7 @@ namespace Phantasma.Contracts.Extra
 
             // TODO fix -> por alguma razão o itemID não está inicializado mas quando se cria um novo lutador no server, o itemID é inicializado com 0
             //if (wrestler.itemID != 0) // TODO podemos por este if outra vez dps dos operadores do big int estarem corrigidos
-            if (wrestler.itemID != Hash.Null)
+            if (wrestler.itemID != 0)
             {
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
                 //var itemKind = GetItem(wrestler.itemID).kind;
@@ -4237,7 +4223,7 @@ namespace Phantasma.Contracts.Extra
             var nachoWrestler = GetWrestler(wrestlerID);
             var wrestlerGenes = GetWrestlerGenes(wrestlerID);
 
-            Runtime.Expect(nachoWrestler.itemID != Hash.Null, "item failed");
+            Runtime.Expect(nachoWrestler.itemID != 0, "item failed");
 
             var itemID = nachoWrestler.itemID;
 
@@ -4556,7 +4542,7 @@ namespace Phantasma.Contracts.Extra
             Runtime.Expect(wrestler.location == WrestlerLocation.Gym, "location failed");
 
             //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-            var itemKind = wrestler.itemID != Hash.Null ? GetItem(wrestler.itemID).kind : ItemKind.None;
+            var itemKind = wrestler.itemID != 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
             var maxXP = GetMaxGymXPForWrestler(wrestler, itemKind);
             var obtainedXP = GetObtainedGymXP(wrestler, maxXP, itemKind);
@@ -4576,7 +4562,7 @@ namespace Phantasma.Contracts.Extra
             Runtime.Expect(nachoWrestler.location == WrestlerLocation.Gym, "location failed");
 
             //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-            var itemKind = nachoWrestler.itemID != Hash.Null ? GetItem(nachoWrestler.itemID).kind : ItemKind.None;
+            var itemKind = nachoWrestler.itemID != 0 ? GetItem(nachoWrestler.itemID).kind : ItemKind.None;
 
             var maxXPPerSession = GetMaxGymXPForWrestler(nachoWrestler, itemKind);
 
@@ -5411,7 +5397,7 @@ namespace Phantasma.Contracts.Extra
                 var wrestler = GetWrestler(accountA.queueWrestlerIDs[i]);
 
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-                var itemKind = wrestler.itemID != Hash.Null ? GetItem(wrestler.itemID).kind : ItemKind.None;
+                var itemKind = wrestler.itemID != 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 var genes = GetWrestlerGenes(accountA.queueWrestlerIDs[i]);
@@ -5438,7 +5424,7 @@ namespace Phantasma.Contracts.Extra
                 var wrestler = GetWrestler(accountB.queueWrestlerIDs[i]);
 
                 //var itemKind = Formulas.GetItemKind(wrestler.itemID);
-                var itemKind = wrestler.itemID != Hash.Null ? GetItem(wrestler.itemID).kind : ItemKind.None;
+                var itemKind = wrestler.itemID != 0 ? GetItem(wrestler.itemID).kind : ItemKind.None;
 
                 var level = Formulas.CalculateWrestlerLevel((int)wrestler.experience);
                 //var genes = wrestler.genes;
@@ -7783,7 +7769,7 @@ namespace Phantasma.Contracts.Extra
                             break;
 
                         case WrestlingMove.Recycle:
-                            if (states[i].itemKind == ItemKind.None && wrestlers[i].itemID != Hash.Null)
+                            if (states[i].itemKind == ItemKind.None && wrestlers[i].itemID != 0)
                             {
                                 //states[i].itemKind = Formulas.GetItemKind(wrestlers[i].itemID);
                                 states[i].itemKind = GetItem(wrestlers[i].itemID).kind;
