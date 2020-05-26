@@ -217,13 +217,16 @@ namespace Phantasma.RocksDB
 
         private void Shutdown()
         {
-
-            logger.Message("Shutting down database...");
-            foreach (var db in _db)
+            if (_db.Count > 0)
             {
-                db.Value.Dispose();
+                logger.Message($"Shutting down databases...");
+                foreach (var db in _db)
+                {
+                    db.Value.Dispose();
+                    _db.Remove(db.Key);
+                }
+                logger.Message("Databases shut down!");
             }
-            logger.Message("Database has been shut down!");
         }
 
     }
