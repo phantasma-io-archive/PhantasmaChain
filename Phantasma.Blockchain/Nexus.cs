@@ -309,7 +309,6 @@ namespace Phantasma.Blockchain
                 RegisterContract<RelayContract>();
                 RegisterContract<StorageContract>();
                 RegisterContract<InteropContract>();
-                RegisterContract<NachoContract>();
                 RegisterContract<RankingContract>();
                 RegisterContract<FriendsContract>();
                 RegisterContract<MailContract>();
