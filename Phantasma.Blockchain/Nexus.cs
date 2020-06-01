@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory = null, Func<Nexus, OracleReader> oracleFactory = null)
+        public Nexus(string name, Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory = null, Func<Nexus, OracleReader> oracleFactory = null)
         {
             this._adapterFactory = adapterFactory;
             this._oracleFactory = oracleFactory;
@@ -83,6 +83,13 @@ namespace Phantasma.Blockchain
             var key = GetNexusKey("hash");
             var storage = RootStorage;
             HasGenesis = storage.Has(key);
+
+            if (!ValidationUtils.IsValidIdentifier(name))
+            {
+                throw new ChainException("invalid nexus name");
+            }
+
+            this.Name = name;
 
             if (HasGenesis)
             {
@@ -117,7 +124,6 @@ namespace Phantasma.Blockchain
 
         public void LoadNexus(StorageContext storage)
         {
-            this.Name = GetName(storage);
             var chainList = this.GetChains(storage);
             foreach (var chainName in chainList)
             {
@@ -1040,22 +1046,15 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public bool CreateGenesisBlock(string name, PhantasmaKeys owner, Timestamp timestamp)
+        public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp)
         {
             if (HasGenesis)
             {
                 return false;
             }
 
-            if (!ValidationUtils.IsValidIdentifier(name))
-            {
-                throw new ChainException("invalid nexus name");
-            }
-
             var storage = RootStorage;
-            this.Name = name;
 
-            storage.Put(GetNexusKey("name"), name);
             storage.Put(GetNexusKey("owner"), owner.Address);
 
             if (!CreateChain(storage, DomainSettings.ValidatorsOrganizationName, DomainSettings.RootChainName, null))

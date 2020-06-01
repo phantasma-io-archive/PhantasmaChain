@@ -66,9 +66,9 @@ namespace Phantasma.Tests
         public void GenesisBlock()
         {
             var owner = PhantasmaKeys.Generate();
-            var nexus = new Nexus(null, null, (n) => new OracleSimulator(n));
+            var nexus = new Nexus("simnet", null, null, (n) => new OracleSimulator(n));
 
-            Assert.IsTrue(nexus.CreateGenesisBlock("simnet", owner, DateTime.Now));
+            Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
 
             var genesisHash = nexus.GetGenesisHash(nexus.RootStorage);
             Assert.IsTrue(genesisHash != Hash.Null);

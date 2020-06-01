@@ -86,7 +86,7 @@ namespace Phantasma.Network.P2P
             this.Keys = keys;
             this.Capabilities = caps;
 
-            if (Capabilities.HasFlag(PeerCaps.Events))
+            if (Capabilities.HasFlag(PeerCaps.Sync))
             {
                 this.Nexus.AddPlugin(new NodePlugin(this));
             }
@@ -155,17 +155,17 @@ namespace Phantasma.Network.P2P
 
             if (!IPAddress.TryParse(src, out ipAddress))
             {
-                if (Socket.OSSupportsIPv6)
-                {
-                    if (src == "localhost")
-                    {
-                        ipAddress = IPAddress.IPv6Loopback;
-                    }
-                    else
-                    {
-                        ipAddress = Endpoint.ResolveAddress(src, AddressFamily.InterNetworkV6);
-                    }
-                }
+                //if (Socket.OSSupportsIPv6)
+                //{
+                //    if (src == "localhost")
+                //    {
+                //        ipAddress = IPAddress.IPv6Loopback;
+                //    }
+                //    else
+                //    {
+                //        ipAddress = Endpoint.ResolveAddress(src, AddressFamily.InterNetworkV6);
+                //    }
+                //}
                 if (ipAddress == null)
                 {
                     ipAddress = Endpoint.ResolveAddress(src, AddressFamily.InterNetwork);
@@ -494,7 +494,7 @@ namespace Phantasma.Network.P2P
                                 }
 
                                 // TODO investigate magic number, why the 50 here??
-                                answer.AddBlockRange(chain, startBlock, 50);
+                                answer.AddBlockRange(chain, startBlock, 1);
                             }
                         }
 
@@ -711,6 +711,22 @@ namespace Phantasma.Network.P2P
             }
 
             list.Add(receipt);
+        }
+
+        internal void AddBlock(Chain chain, Block block)
+        {
+            if (!Capabilities.HasFlag(PeerCaps.Sync))
+            {
+                return;
+            }
+
+            foreach (var peer in _peers)
+            {
+                var msg = new ListMessage(peer.Address, RequestKind.Blocks);
+                msg.AddBlockRange(chain, block.Height, 1);
+
+                SendMessage(peer, msg);
+            }
         }
 
         internal void AddEvent(Event evt)

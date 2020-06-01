@@ -13,8 +13,7 @@ namespace Phantasma.Network.P2P
 
         public override void OnBlock(Chain chain, Block block)
         {
-            // TODO add here logic to sync the newly added block with other nodes
-            throw new System.NotImplementedException();
+            Node.AddBlock(chain, block);
         }
 
         // this plugin is responsible for catching any event occuring in the chain and saving them

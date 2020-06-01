@@ -57,7 +57,7 @@ namespace Phantasma.Simulator
         public TimeSpan blockTimeSkip = TimeSpan.FromSeconds(3);
         public BigInteger MinimumFee = 1;
 
-        public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
+        public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus("simnet", null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
         {
 
         }
@@ -73,7 +73,7 @@ namespace Phantasma.Simulator
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock("simnet", _owner, CurrentTime))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime))
                 {
                     throw new ChainException("Genesis block failure");
                 }

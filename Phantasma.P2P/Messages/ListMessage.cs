@@ -274,22 +274,25 @@ namespace Phantasma.Network.P2P.Messages
 
         public void AddBlockRange(Chain chain, BigInteger startHeight, uint count)
         {
-            var blocks = new Block[count];
+            var targetHeight = startHeight + count;
+            var blocks = new List<Block>();
             var transactions = new Dictionary<Hash, Transaction>();
-            for (uint i=0; i<count; i++)
+            var height = startHeight;
+            while (height < targetHeight)
             {
-                var hash = chain.GetBlockHashAtHeight(i);
+                var hash = chain.GetBlockHashAtHeight(height);
                 var block = chain.GetBlockByHash(hash);
-                blocks[i] = block;
+                blocks.Add(block);
 
                 foreach (var txHash in block.TransactionHashes)
                 {
                     var tx = chain.GetTransactionByHash(txHash);
                     transactions[txHash] = tx;
                 }
+                height++;
             }
 
-            AddBlockRange(chain.Name, blocks, transactions);
+            AddBlockRange(chain.Name, blocks.ToArray(), transactions);
         }
     }
 }
