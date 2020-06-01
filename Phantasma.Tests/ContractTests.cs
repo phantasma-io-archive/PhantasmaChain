@@ -25,12 +25,18 @@ namespace Phantasma.Tests
     [TestClass]
     public class ContractTests
     {
+        public enum CustomEvent
+        {
+            None,
+            Stuff = 20,
+        }
+
         [TestMethod]
         public void CustomEvents()
         {
-            var A = NachoEvent.Buff;
+            var A = CustomEvent.Stuff;
             EventKind evt = DomainExtensions.EncodeCustomEvent(A);
-            var B = evt.DecodeCustomEvent<NachoEvent>();
+            var B = evt.DecodeCustomEvent<CustomEvent>();
             Assert.IsTrue(A == B);
         }
 
