@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Phantasma.Storage.Utils;
 using Phantasma.Numerics;
+using Phantasma.Blockchain;
 
 namespace Phantasma.Network.P2P.Messages
 {
@@ -40,8 +41,14 @@ namespace Phantasma.Network.P2P.Messages
 
     public struct BlockRange
     {
-        public BigInteger startHeight;
-        public string[] rawBlocks;
+        public readonly Block[] blocks;
+        public readonly Dictionary<Hash, Transaction> transactions;
+
+        public BlockRange(Block[] blocks, Dictionary<Hash, Transaction> transactions)
+        {
+            this.blocks = blocks;
+            this.transactions = transactions;
+        }
     }
 
     public class ListMessage : Message
@@ -57,6 +64,7 @@ namespace Phantasma.Network.P2P.Messages
         private ChainInfo[] _chains = null;
         public IEnumerable<ChainInfo> Chains => _chains;
 
+        // here the dictionary key is the chain name
         private Dictionary<string, BlockRange> _blockRanges;
         public IEnumerable<KeyValuePair<string, BlockRange>> Blocks => _blockRanges;
 
@@ -131,16 +139,26 @@ namespace Phantasma.Network.P2P.Messages
                 while (chainCount > 0)
                 {
                     var chainName = reader.ReadVarString();
-                    var blockHeight = reader.ReadUInt32();
-                    var blockCount = reader.ReadUInt16();
+                    var blockCount = (int)reader.ReadVarInt();
 
-                    var rawBlocks = new string[blockCount];
+                    var blocks = new Block[blockCount];
+                    var transactions = new Dictionary<Hash, Transaction>();
+
                     for (int i=0; i<blockCount; i++)
                     {
-                        rawBlocks[i] = reader.ReadVarString();
+                        var bytes = reader.ReadByteArray();
+                        var block = Block.Unserialize(bytes);
+                        blocks[i] = block;
+
+                        foreach (var txHash in block.TransactionHashes)
+                        {
+                            bytes = reader.ReadByteArray();
+                            var tx = Transaction.Unserialize(bytes);
+                            transactions[txHash] = tx;
+                        }
                     }
 
-                    result.AddBlockRange(chainName, blockHeight, rawBlocks);
+                    result.AddBlockRange(chainName, blocks, transactions);
 
                     chainCount--;
                 }
@@ -185,12 +203,21 @@ namespace Phantasma.Network.P2P.Messages
                 writer.Write((ushort)_blockRanges.Count);
                 foreach (var entry in _blockRanges)
                 {
+                    var range = entry.Value;
                     writer.WriteVarString(entry.Key);
-                    writer.Write((uint)entry.Value.startHeight);
-                    writer.Write((ushort)entry.Value.rawBlocks.Length);
-                    foreach (var rawBlock in entry.Value.rawBlocks)
+
+                    writer.WriteVarInt(range.blocks.Length);
+                    foreach (var block in range.blocks)
                     {
-                        writer.WriteVarString(rawBlock);
+                        var bytes = block.ToByteArray(true);
+                        writer.WriteByteArray(bytes);
+
+                        foreach (var txHash in block.TransactionHashes)
+                        {
+                            var tx = range.transactions[txHash];
+                            bytes = tx.ToByteArray(true);
+                            writer.WriteByteArray(bytes);
+                        }
                     }
                 }
             }
@@ -228,21 +255,41 @@ namespace Phantasma.Network.P2P.Messages
             {
                 foreach (var entry in _blockRanges)
                 {
-                    yield return $"{entry.Key} blocks #{entry.Value.startHeight} to #{entry.Value.startHeight + (entry.Value.rawBlocks.Length-1)}";
+                    yield return $"{entry.Key} blocks #{entry.Value.blocks[0].Height} to #{entry.Value.blocks[entry.Value.blocks.Length - 1].Height}";
                 }
             }
 
             yield break;
         }
 
-        public void AddBlockRange(string chainName, BigInteger startHeight, IEnumerable<string> rawBlocks)
+        public void AddBlockRange(string chainName, Block[] blocks, Dictionary<Hash, Transaction> transactions)
         {
             if (_blockRanges == null)
             {
                 _blockRanges = new Dictionary<string, BlockRange>();
             }
 
-            _blockRanges[chainName] = new BlockRange() { startHeight = startHeight, rawBlocks = rawBlocks.ToArray() };
+            _blockRanges[chainName] = new BlockRange(blocks, transactions);
+        }
+
+        public void AddBlockRange(Chain chain, BigInteger startHeight, uint count)
+        {
+            var blocks = new Block[count];
+            var transactions = new Dictionary<Hash, Transaction>();
+            for (uint i=0; i<count; i++)
+            {
+                var hash = chain.GetBlockHashAtHeight(i);
+                var block = chain.GetBlockByHash(hash);
+                blocks[i] = block;
+
+                foreach (var txHash in block.TransactionHashes)
+                {
+                    var tx = chain.GetTransactionByHash(txHash);
+                    transactions[txHash] = tx;
+                }
+            }
+
+            AddBlockRange(chain.Name, blocks, transactions);
         }
     }
 }

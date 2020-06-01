@@ -493,26 +493,8 @@ namespace Phantasma.Network.P2P
                                     continue;
                                 }
 
-                                var blockList = new List<string>();
-                                var currentBlock = startBlock;
-                                while (blockList.Count < 50 && currentBlock <= chain.Height)
-                                {
-                                    var blockHash = chain.GetBlockHashAtHeight(currentBlock);
-                                    var block = chain.GetBlockByHash(blockHash);
-                                    var bytes = block.ToByteArray(true);
-                                    var str = Base16.Encode(bytes);
-
-                                    foreach (var tx in chain.GetBlockTransactions(block))
-                                    {
-                                        var txBytes = tx.ToByteArray(true);
-                                        str += "/" + Base16.Encode(txBytes);
-                                    }
-
-                                    blockList.Add(str);
-                                    currentBlock++;
-                                }
-
-                                answer.AddBlockRange(chain.Name, startBlock, blockList);
+                                // TODO investigate magic number, why the 50 here??
+                                answer.AddBlockRange(chain, startBlock, 50);
                             }
                         }
 
@@ -582,17 +564,13 @@ namespace Phantasma.Network.P2P
                                 }
 
                                 var blockRange = entry.Value;
-                                var currentBlock = blockRange.startHeight;
-                                foreach (var rawBlock in blockRange.rawBlocks)
+                                foreach (var block in blockRange.blocks)
                                 {
-                                    var temp = rawBlock.Split('/');
-
-                                    var block = Block.Unserialize(Base16.Decode(temp[0]));
-
                                     var transactions = new List<Transaction>();
-                                    for (int i= 1; i<temp.Length; i++)
+                                    // TODO validation
+                                    foreach (var txHash in block.TransactionHashes)
                                     {
-                                        var tx = Transaction.Unserialize(Base16.Decode(temp[i]));
+                                        var tx = entry.Value.transactions[txHash];
                                         transactions.Add(tx);
                                     }
 
@@ -607,9 +585,8 @@ namespace Phantasma.Network.P2P
                                         throw new Exception("block add failed");
                                     }
 
-                                    Logger.Message($"Added block #{currentBlock} to {chain.Name}");
+                                    Logger.Message($"Added block #{block.Height} to {chain.Name}");
                                     addedBlocks = true;
-                                    currentBlock++;
                                 }
                             }
 

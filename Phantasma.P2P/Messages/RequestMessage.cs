@@ -16,6 +16,7 @@ namespace Phantasma.Network.P2P.Messages
         Chains = 0x2,
         Mempool = 0x4,
         Blocks = 0x8,
+        Transactions = 0x16,
     }
 
     public sealed class RequestMessage : Message
@@ -69,12 +70,12 @@ namespace Phantasma.Network.P2P.Messages
             if (Kind.HasFlag(RequestKind.Blocks))
             {
                 Throw.IfNull(_blockFetches, nameof(_blockFetches));
-                Throw.If(_blockFetches.Count > 255, "max chain block fetches per request reached");
+                Throw.If(_blockFetches.Count > 1024, "max chain block fetches per request reached");
                 writer.WriteVarInt(_blockFetches.Count);
                 foreach (var entry in _blockFetches)
                 {
                     writer.WriteVarString(entry.Key);
-                    writer.Write((uint)entry.Value);
+                    writer.WriteBigInteger(entry.Value);
                 }
             }
         }
