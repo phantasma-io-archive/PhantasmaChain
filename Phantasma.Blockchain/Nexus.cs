@@ -160,6 +160,8 @@ namespace Phantasma.Blockchain
         {
             foreach (var plugin in _plugins)
             {
+                plugin.OnBlock(chain, block);
+
                 var txs = chain.GetBlockTransactions(block);
                 foreach (var tx in txs)
                 {
