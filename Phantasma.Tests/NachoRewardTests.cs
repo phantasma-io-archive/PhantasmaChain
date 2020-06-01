@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
@@ -6,7 +6,6 @@ using Phantasma.Numerics;
 using Phantasma.Simulator;
 using Phantasma.VM.Utils;
 using static System.MidpointRounding;
-using static Phantasma.Contracts.Extra.Constants;
 using static Phantasma.Domain.DomainSettings;
 using static Phantasma.Numerics.UnitConversion;
 using static Phantasma.Domain.TokenFlags;
@@ -202,3 +201,4 @@ namespace Phantasma.Tests
         }
     }
 }
+*/
