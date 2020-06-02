@@ -2,7 +2,6 @@
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
-using Phantasma.Storage.Context;
 using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
@@ -76,14 +75,17 @@ namespace Phantasma.Contracts.Native
 
             var rate = Runtime.GetTokenQuote(fromSymbol, toSymbol, amount);
 
-            var fromPrice = Runtime.GetTokenPrice(fromSymbol);
-            var toPrice = Runtime.GetTokenPrice(toSymbol);
+            if (toSymbol != DomainSettings.FuelTokenSymbol)
+            {
+                var fromPrice = Runtime.GetTokenPrice(fromSymbol);
+                var toPrice = Runtime.GetTokenPrice(toSymbol);
 
-            var feeTag = fromPrice > toPrice ? SwapMakerFeePercentTag : SwapTakerFeePercentTag; 
+                var feeTag = fromPrice > toPrice ? SwapMakerFeePercentTag : SwapTakerFeePercentTag;
 
-            var feePercent = Runtime.GetGovernanceValue(feeTag);
-            var fee = (rate * feePercent) / 100;
-            rate -= fee;
+                var feePercent = Runtime.GetGovernanceValue(feeTag);
+                var fee = (rate * feePercent) / 100;
+                rate -= fee;
+            }
 
             if (rate < 0)
             {
