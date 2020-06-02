@@ -60,7 +60,7 @@ namespace Phantasma.Contracts.Native
         }
 
         // returns how many tokens would be obtained by trading from one type of another
-        public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
+        public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount, bool applyFee)
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
@@ -75,7 +75,7 @@ namespace Phantasma.Contracts.Native
 
             var rate = Runtime.GetTokenQuote(fromSymbol, toSymbol, amount);
 
-            if (toSymbol != DomainSettings.FuelTokenSymbol)
+            if (applyFee && toSymbol != DomainSettings.FuelTokenSymbol)
             {
                 var fromPrice = Runtime.GetTokenPrice(fromSymbol);
                 var toPrice = Runtime.GetTokenPrice(toSymbol);
@@ -157,7 +157,7 @@ namespace Phantasma.Contracts.Native
                     continue;
                 }
 
-                var rate = GetRate(fromSymbol, toSymbol, amount);
+                var rate = GetRate(fromSymbol, toSymbol, amount, true);
                 if (rate > 0)
                 {
                     result.Add(new SwapPair()
@@ -182,7 +182,7 @@ namespace Phantasma.Contracts.Native
                 return;
             }
 
-            var amountInOtherSymbol = GetRate(toSymbol, fromSymbol, feeAmount);
+            var amountInOtherSymbol = GetRate(toSymbol, fromSymbol, feeAmount, false);
 
             var token = Runtime.GetToken(fromSymbol);
             if (token.Decimals == 0 && amountInOtherSymbol < 1)
@@ -203,14 +203,14 @@ namespace Phantasma.Contracts.Native
 
         public void SwapReverse(Address from, string fromSymbol, string toSymbol, BigInteger total)
         {
-            var amount = GetRate(toSymbol, fromSymbol, total);
+            var amount = GetRate(toSymbol, fromSymbol, total, true);
             Runtime.Expect(amount > 0, $"cannot reverse swap {fromSymbol}");
             SwapTokens(from, fromSymbol, toSymbol, amount);
         }
 
         public void SwapFiat(Address from, string fromSymbol, string toSymbol, BigInteger worth)
         {
-            var amount = GetRate(DomainSettings.FiatTokenSymbol, fromSymbol, worth);
+            var amount = GetRate(DomainSettings.FiatTokenSymbol, fromSymbol, worth, true);
 
             var token = Runtime.GetToken(fromSymbol);
             if (token.Decimals == 0 && amount < 1)
@@ -243,7 +243,7 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Expect(toBalance > 0, $"not enough balance of {toSymbol} available in the pot");
 
-            var total = GetRate(fromSymbol, toSymbol, amount);
+            var total = GetRate(fromSymbol, toSymbol, amount, true);
             Runtime.Expect(total > 0, "amount to swap needs to be larger than zero");
             Runtime.Expect(toBalance >= total, "insufficient balance in pot");
 
