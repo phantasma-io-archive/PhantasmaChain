@@ -205,6 +205,7 @@ namespace Phantasma.Blockchain
             {
                 if (!tx.IsValid(this))
                 {
+                    tx.IsValid(this);
                     throw new InvalidTransactionException(tx.Hash, $"invalid transaction with hash {tx.Hash}");
                 }
             }

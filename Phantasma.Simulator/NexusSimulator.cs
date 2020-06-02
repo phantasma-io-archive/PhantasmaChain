@@ -357,15 +357,14 @@ namespace Phantasma.Simulator
                 throw new Exception("Call BeginBlock first");
             }
 
-            var name = Nexus.GetName(Nexus.RootStorage);
-            var tx = new Transaction(name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
+            var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             Throw.If(!signees.Any(), "at least one signer required");
 
             Signature[] existing = tx.Signatures;
             var msg = tx.ToByteArray(false);
 
-            tx = new Transaction(name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
+            tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             tx.Mine((int)pow);
 

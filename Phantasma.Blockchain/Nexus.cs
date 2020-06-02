@@ -45,6 +45,8 @@ namespace Phantasma.Blockchain
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
 
+        public readonly string Name;
+
         private Chain _rootChain = null;
         public Chain RootChain
         {
@@ -1747,17 +1749,6 @@ namespace Phantasma.Blockchain
             return bytes;
         }
 
-        public string GetName(StorageContext storage)
-        {
-            var key = GetNexusKey("name");
-            if (storage.Has(key))
-            {
-                return storage.Get<string>(key);
-            }
-
-            return null;
-        }
-
         public Address GetGenesisAddress(StorageContext storage)
         {
             var key = GetNexusKey("owner");
@@ -1832,7 +1823,5 @@ namespace Phantasma.Blockchain
             var key = GetNexusKey($"{symbol}.{platform}.hash");
             return storage.Has(key);
         }
-
-        public string Name { get; private set; }
     }
 }

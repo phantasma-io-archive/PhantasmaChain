@@ -1460,7 +1460,7 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         public bool HasGenesis => Nexus.HasGenesis;
-        public string NexusName => Nexus.GetName(RootStorage);
+        public string NexusName => Nexus.Name;
         public Address GenesisAddress => Nexus.GetGenesisAddress(RootStorage);
         public Hash GenesisHash => Nexus.GetGenesisHash(RootStorage);
     }
