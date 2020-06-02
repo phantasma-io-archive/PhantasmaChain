@@ -35,6 +35,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
 
+            vm.RegisterMethod("Nexus.Init", Runtime_NexusInit);
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
             vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
             vm.RegisterMethod("Nexus.CreatePlatform", Runtime_CreatePlatform);
@@ -744,6 +745,19 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Runtime_NexusInit(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Chain == null || Runtime.Chain.Height == 0, "nexus already initialized");
+
+            ExpectStackSize(Runtime, 1);
+
+            var owner = PopAddress(Runtime);
+
+            Runtime.Nexus.Initialize(owner);
+
+            return ExecutionState.Running;
+        }
+        
         private static ExecutionState Runtime_CreateToken(RuntimeVM Runtime)
         {
             ExpectStackSize(Runtime, 7);

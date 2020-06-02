@@ -97,6 +97,13 @@ namespace Phantasma.Blockchain
             {
                 LoadNexus(storage);
             }
+            else
+            {
+                if (!CreateChain(storage, DomainSettings.ValidatorsOrganizationName, DomainSettings.RootChainName, null))
+                {
+                    throw new ChainException("failed to create root chain");
+                }
+            }
 
             _archiveEntries = new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
             _archiveContents = new KeyValueStore<Hash, byte[]>(CreateKeyStoreAdapter("contents"));
@@ -948,6 +955,7 @@ namespace Phantasma.Blockchain
         private Transaction BeginNexusCreateTx(PhantasmaKeys owner)
         {
             var sb = ScriptUtils.BeginScript();
+            sb.CallInterop("Nexus.Init", owner.Address);
 
             var deployInterop = "Runtime.DeployContract";
             sb.CallInterop(deployInterop, owner.Address, ValidatorContractName);
@@ -1048,22 +1056,11 @@ namespace Phantasma.Blockchain
             return tx;
         }
 
-        public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp)
+        internal void Initialize(Address owner)
         {
-            if (HasGenesis)
-            {
-                return false;
-            }
-
             var storage = RootStorage;
 
-            storage.Put(GetNexusKey("owner"), owner.Address);
-
-            if (!CreateChain(storage, DomainSettings.ValidatorsOrganizationName, DomainSettings.RootChainName, null))
-            {
-                throw new ChainException("failed to create root chain");
-            }
-            var rootChain = GetChainByName(DomainSettings.RootChainName);
+            storage.Put(GetNexusKey("owner"), owner);
 
             var tokenScript = new byte[0];
             CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals), DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript);
@@ -1081,6 +1078,14 @@ namespace Phantasma.Blockchain
             SetTokenPlatformHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
             SetTokenPlatformHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
             SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), storage);
+        }
+
+        public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp)
+        {
+            if (HasGenesis)
+            {
+                return false;
+            }
 
             // create genesis transactions
             var transactions = new List<Transaction>
@@ -1205,6 +1210,8 @@ namespace Phantasma.Blockchain
                 EndNexusCreateTx(owner)
             };
 
+            var rootChain = GetChainByName(DomainSettings.RootChainName);
+
             var payload = Encoding.UTF8.GetBytes("A Phantasma was born...");
             var block = new Block(Chain.InitialHeight, rootChain.Address, timestamp, transactions.Select(tx => tx.Hash), Hash.Null, 0, owner.Address, payload);
 
@@ -1212,7 +1219,9 @@ namespace Phantasma.Blockchain
             block.Sign(owner);
             rootChain.AddBlock(block, transactions, 1, changeSet);
 
+            var storage = RootStorage;
             storage.Put(GetNexusKey("hash"), block.Hash);
+
             this.HasGenesis = true;
             return true;
         }

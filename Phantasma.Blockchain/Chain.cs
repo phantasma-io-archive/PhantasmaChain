@@ -219,7 +219,7 @@ namespace Phantasma.Blockchain
             Address expectedValidator;
             using (var m = new ProfileMarker("GetValidator"))
                 expectedValidator  = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
-            if (block.Validator != expectedValidator)
+            if (block.Validator != expectedValidator && !expectedValidator.IsNull)
             {
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
             }
