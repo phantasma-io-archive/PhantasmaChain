@@ -142,6 +142,9 @@ namespace Phantasma.Tests
             var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, testUserA.Address);
             var gasFee = nexus.RootChain.GetTransactionFee(tx);
 
+            var expectedFee = oldBalance - (newBalance + transferBalance);
+            Assert.IsTrue(expectedFee == gasFee);
+
             var sum = transferBalance + newBalance + gasFee;
             Assert.IsTrue(sum == oldBalance);
         }

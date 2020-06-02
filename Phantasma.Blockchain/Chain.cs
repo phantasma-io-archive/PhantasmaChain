@@ -500,13 +500,10 @@ namespace Phantasma.Blockchain
             var events = block.GetEventsForTransaction(transactionHash);
             foreach (var evt in events)
             {
-                if (evt.Kind == EventKind.TokenReceive && evt.Contract == "gas")
+                if (evt.Kind == EventKind.GasPayment && evt.Contract == "gas")
                 {
-                    var info = evt.GetContent<TokenEventData>();
-                    if (info.Symbol == DomainSettings.FuelTokenSymbol)
-                    {
-                        fee += info.Value;
-                    }
+                    var info = evt.GetContent<GasEventData>();
+                    fee += info.amount * info.price;
                 }
             }
 
