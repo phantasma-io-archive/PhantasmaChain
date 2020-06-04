@@ -99,9 +99,12 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                if (!CreateChain(storage, DomainSettings.ValidatorsOrganizationName, DomainSettings.RootChainName, null))
+                if (!ChainExists(storage, DomainSettings.RootChainName))
                 {
-                    throw new ChainException("failed to create root chain");
+                    if (!CreateChain(storage, DomainSettings.ValidatorsOrganizationName, DomainSettings.RootChainName, null))
+                    {
+                        throw new ChainException("failed to create root chain");
+                    }
                 }
             }
 
