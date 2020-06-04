@@ -133,15 +133,18 @@ namespace Phantasma.Contracts.Native
 
             Runtime.Notify(EventKind.GasPayment, from, new GasEventData(targetAddress,  Runtime.GasPrice, spentGas));
 
-            // return escrowed gas to transaction creator
-            Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, availableAmount);
+            // return leftover escrowed gas to transaction creator
+            if (leftoverAmount > 0)
+            {
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, leftoverAmount);
+            }
 
             Runtime.Expect(spentGas > 1, "gas spent too low");
             var burnGas = spentGas / 2;
 
             if (burnGas > 0)
             {
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, burnGas);
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, this.Address, burnGas);
                 spentGas -= burnGas;
             }
 
@@ -154,10 +157,10 @@ namespace Phantasma.Contracts.Native
                 targetGas = 0;
             }
 
-            if (targetGas > 0)
+            if (targetGas > 0 && targetAddress != this.Address)
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, targetAddress, targetPayment);
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment);
                 spentGas -= targetGas;
             }
 
@@ -165,7 +168,7 @@ namespace Phantasma.Contracts.Native
             {
                 var validatorPayment = spentGas * Runtime.GasPrice;
                 var validatorAddress = SmartContract.GetAddressForNative(NativeContractKind.Block);
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, validatorAddress, validatorPayment);
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment);
                 spentGas = 0;
             }
 
