@@ -104,8 +104,7 @@ namespace Phantasma.Blockchain
         public const string interopTag = "interop://";
         public const string priceTag = "price://";
 
-        private static readonly object _lockObj = new object();
-        public ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
+        private ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
 
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 
@@ -384,6 +383,11 @@ namespace Phantasma.Blockchain
             var url = DomainExtensions.GetOracleTransactionURL(platform, chain, hash);
             var bytes = this.Read<InteropTransaction>(Timestamp.Now, url);
             return bytes;
+        }
+
+        public void Clear()
+        {
+            _entries.Clear();
         }
     }
 }

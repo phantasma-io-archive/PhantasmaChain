@@ -213,6 +213,7 @@ namespace Phantasma.Blockchain
             var changeSet = new StorageChangeSetContext(this.Storage);
 
             var oracle = Nexus.GetOracleReader();
+            oracle.Clear();
 
             block.CleanUp();
 
