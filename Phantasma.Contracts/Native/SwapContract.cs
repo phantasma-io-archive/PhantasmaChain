@@ -185,13 +185,29 @@ namespace Phantasma.Contracts.Native
             var amountInOtherSymbol = GetRate(toSymbol, fromSymbol, feeAmount, false);
 
             var token = Runtime.GetToken(fromSymbol);
-            if (token.Decimals == 0 && amountInOtherSymbol < 1)
+            BigInteger minAmount;
+
+            // different tokens have different decimals, so we need to make sure a certain minimum amount is swapped
+            if (token.Decimals == 0)
             {
-                amountInOtherSymbol = 1;
+                minAmount = 1;
             }
             else
             {
-                Runtime.Expect(amountInOtherSymbol > 0, $"cannot swap {fromSymbol} as a fee");
+                var diff = DomainSettings.FuelTokenDecimals - token.Decimals;
+                if (diff > 0)
+                {
+                    minAmount = BigInteger.Pow(10, diff);
+                }
+                else
+                {
+                    minAmount = 1;
+                }
+            }
+
+            if (amountInOtherSymbol < minAmount)
+            {
+                amountInOtherSymbol = minAmount;
             }
 
             SwapTokens(from, fromSymbol, toSymbol, amountInOtherSymbol);
