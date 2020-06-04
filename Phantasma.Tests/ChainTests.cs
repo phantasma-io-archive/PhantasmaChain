@@ -1409,8 +1409,7 @@ namespace Phantasma.Tests
 
             Assert.IsTrue(block != null);
 
-            // here we skip the first one as it is always the OpenBlock tx
-            var hash = block.TransactionHashes.Skip(1).First();
+            var hash = block.TransactionHashes.First();
 
             var feeValue = nexus.RootChain.GetTransactionFee(hash);
             var feeAmount = UnitConversion.ToDecimal(feeValue, DomainSettings.FuelTokenDecimals);

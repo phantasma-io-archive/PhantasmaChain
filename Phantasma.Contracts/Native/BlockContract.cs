@@ -1,5 +1,4 @@
-﻿using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
