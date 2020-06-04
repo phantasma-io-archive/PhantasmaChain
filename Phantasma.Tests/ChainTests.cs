@@ -465,16 +465,30 @@ namespace Phantasma.Tests
             var platformName = Pay.Chains.NeoWallet.NeoPlatform;
             var platformChain = Pay.Chains.NeoWallet.NeoPlatform;
 
-            simulator.BeginBlock();
-            var tx = simulator.GenerateCustomTransaction(neoKeys, ProofOfWork.None, () =>
+            var gasPrice = simulator.MinimumFee;
+
+            Func<decimal, byte[]> genScript = (fee) =>
             {
                 return new ScriptBuilder()
                 .CallContract("interop", "SettleTransaction", transcodedAddress, platformName, platformChain, neoTxHash)
-                .CallContract("swap", "SwapFee", transcodedAddress, swapSymbol, UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals))
+                .CallContract("swap", "SwapFee", transcodedAddress, swapSymbol, UnitConversion.ToBigInteger(fee, DomainSettings.FuelTokenDecimals))
                 .TransferBalance(swapSymbol, transcodedAddress, testUser.Address)
-                .AllowGas(transcodedAddress, Address.Null, simulator.MinimumFee, limit)
+                .AllowGas(transcodedAddress, Address.Null, gasPrice, limit)
+                .TransferBalance(DomainSettings.FuelTokenSymbol, transcodedAddress, testUser.Address)
                 .SpendGas(transcodedAddress).EndScript();
+            };
+
+            // note the 0.1m passed here could be anything else. It's just used to calculate the actual fee
+            var vm = new GasMachine(genScript(0.1m));
+            var result = vm.Execute();
+            var usedGas = UnitConversion.ToDecimal((int)(vm.UsedGas * gasPrice), DomainSettings.FuelTokenDecimals);
+
+            simulator.BeginBlock();
+            var tx = simulator.GenerateCustomTransaction(neoKeys, ProofOfWork.None, () =>
+            {
+                return genScript(usedGas);
             });
+
             simulator.EndBlock();
 
             var swapToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, swapSymbol);
@@ -486,6 +500,10 @@ namespace Phantasma.Tests
 
             var settleHash = (Hash)nexus.RootChain.InvokeContract(nexus.RootStorage, "interop", nameof(InteropContract.GetSettlement), "neo", neoTxHash).ToObject();
             Assert.IsTrue(settleHash == tx.Hash);
+
+            var fuelToken = nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.FuelTokenSymbol);
+            var leftoverBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, fuelToken, transcodedAddress);
+            //Assert.IsTrue(leftoverBalance == 0);
         }
 
         [TestMethod]
