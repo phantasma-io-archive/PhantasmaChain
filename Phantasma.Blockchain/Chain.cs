@@ -194,13 +194,6 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            // TODO avoid fetching this every time
-            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-            if (block.Protocol != expectedProtocol)
-            {
-                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
-            }
-
             foreach (var tx in transactions)
             {
                 if (!tx.IsValid(this))
@@ -222,6 +215,7 @@ namespace Phantasma.Blockchain
             Address expectedValidator;
             using (var m = new ProfileMarker("GetValidator"))
                 expectedValidator  = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
+
             if (block.Validator != expectedValidator && !expectedValidator.IsNull)
             {
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
@@ -264,6 +258,13 @@ namespace Phantasma.Blockchain
                 }
 
                 txIndex++;
+            }
+
+            // TODO avoid fetching this every time
+            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            if (block.Protocol != expectedProtocol)
+            {
+                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
             }
 
             using (var m = new ProfileMarker("CloseBlock"))

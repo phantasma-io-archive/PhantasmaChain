@@ -176,6 +176,13 @@ namespace Phantasma.Blockchain
 
         internal void PluginTriggerBlock(Chain chain, Block block)
         {
+            if (chain == _rootChain && block.Height == 1)
+            {
+                var storage = RootStorage;
+                storage.Put(GetNexusKey("hash"), block.Hash);
+                HasGenesis = true;
+            }
+
             foreach (var plugin in _plugins)
             {
                 plugin.OnBlock(chain, block);
