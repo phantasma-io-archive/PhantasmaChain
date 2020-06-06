@@ -10,8 +10,6 @@ namespace Phantasma.Contracts.Native
     {
         public override NativeContractKind Kind => NativeContractKind.Block;
 
-        private Address previousValidator;
-
         public BlockContract() : base()
         {
         }
