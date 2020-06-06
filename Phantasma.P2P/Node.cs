@@ -493,7 +493,6 @@ namespace Phantasma.Network.P2P
                                     continue;
                                 }
 
-                                // TODO investigate magic number, why the 50 here??
                                 answer.AddBlockRange(chain, startBlock, 1);
                             }
                         }
@@ -582,6 +581,7 @@ namespace Phantasma.Network.P2P
                                     }
                                     catch (Exception e)
                                     {
+                                        Logger.Error(e.ToString());
                                         throw new Exception("block add failed");
                                     }
 
@@ -722,7 +722,7 @@ namespace Phantasma.Network.P2P
 
             foreach (var peer in _peers)
             {
-                var msg = new ListMessage(peer.Address, RequestKind.Blocks);
+                var msg = new ListMessage(this.Keys.Address, RequestKind.Blocks);
                 msg.AddBlockRange(chain, block.Height, 1);
 
                 SendMessage(peer, msg);

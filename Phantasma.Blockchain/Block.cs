@@ -8,6 +8,7 @@ using Phantasma.Storage;
 using Phantasma.Core;
 using Phantasma.Storage.Utils;
 using Phantasma.Domain;
+using System;
 
 namespace Phantasma.Blockchain
 {
@@ -211,7 +212,7 @@ namespace Phantasma.Blockchain
 
                 writer.WriteAddress(this.Validator);
                 writer.WriteByteArray(this.Payload);
-                writer.Write((byte)0);
+                writer.Write((byte)0); // indicates the end of the block
 
                 if (withSignatures)
                 {
@@ -313,6 +314,9 @@ namespace Phantasma.Blockchain
 
                 Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
+
+                var blockEnd = reader.ReadByte();
+
                 Signature = reader.ReadSignature();
             }
             catch
