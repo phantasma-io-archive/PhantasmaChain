@@ -579,7 +579,7 @@ namespace Phantasma.Tests
                 }
             }
 
-            Assert.IsTrue(targetRate == 4.9m);
+            Assert.IsTrue(targetRate == 5m);
         }
 
         [TestMethod]
