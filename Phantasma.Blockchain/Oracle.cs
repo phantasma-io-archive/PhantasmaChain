@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain
     public struct OracleEntry: IOracleEntry
     {
         public string URL { get; private set; }
-        public object Content { get; private set; }
+        public byte[] Content { get; private set; }
 
         public OracleEntry(string uRL, byte[] content)
         {

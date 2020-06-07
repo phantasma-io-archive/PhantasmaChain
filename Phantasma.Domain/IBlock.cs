@@ -7,8 +7,7 @@ namespace Phantasma.Domain
     public interface IOracleEntry
     {
         string URL { get; }
-        object Content { get; }
-
+        byte[] Content { get; }
     }
 
     public interface IBlock

@@ -82,8 +82,8 @@ namespace Phantasma.Tests
 
             var oracleEntries = new OracleEntry[]
             {
-                new OracleEntry("test", new BigInteger(123)),
-                new OracleEntry("test2", "hello world"),
+                new OracleEntry("test", new BigInteger(123).AsByteArray()),
+                new OracleEntry("test2", Encoding.UTF8.GetBytes("hello world")),
             };
 
             var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null, protocol, chainKeys.Address, System.Text.Encoding.UTF8.GetBytes("TEST"), oracleEntries);
@@ -121,7 +121,7 @@ namespace Phantasma.Tests
             for (int i = 0; i < oracleEntries.Length; i++)
             {
                 Assert.IsTrue(oracleEntries[i].URL == block2.OracleData[i].URL);
-                Assert.IsTrue(oracleEntries[i].Content == block2.OracleData[i].Content);
+                Assert.IsTrue(oracleEntries[i].Content.SequenceEqual(block2.OracleData[i].Content));
             }
 
             Assert.IsTrue(block.Hash == block2.Hash);
