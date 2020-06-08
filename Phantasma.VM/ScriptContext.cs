@@ -367,6 +367,11 @@ namespace Phantasma.VM
                                 }
                                 else
                                 {
+                                    if (A.Type != B.Type)
+                                    {
+                                        throw new VMException(frame.VM, "Invalid cast during concat opcode");
+                                    }
+
                                     var bytesA = A.AsByteArray();
                                     var bytesB = B.AsByteArray();
 
@@ -374,8 +379,6 @@ namespace Phantasma.VM
                                     Array.Copy(bytesA, result, bytesA.Length);
                                     Array.Copy(bytesB, 0, result, bytesA.Length, bytesB.Length);
                                     
-                                    Expect(A.Type == B.Type);
-
                                     VMType type = A.Type;
                                     frame.Registers[dst].SetValue(result, type);
                                 }

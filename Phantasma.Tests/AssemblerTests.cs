@@ -45,6 +45,11 @@ namespace Phantasma.Tests
             Assert.IsTrue(result == 5);
         }
 
+        private bool IsInvalidCast(Exception e)
+        {
+            return e.Message.StartsWith("Cannot convert") || e.Message.StartsWith("Invalid cast");
+        }
+
         [TestMethod]
         public void EventNotify()
         {
@@ -870,7 +875,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -930,7 +935,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -990,7 +995,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1050,7 +1055,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1154,7 +1159,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1213,7 +1218,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1272,7 +1277,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1331,7 +1336,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1387,7 +1392,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1441,7 +1446,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1497,7 +1502,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1553,7 +1558,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1597,7 +1602,7 @@ namespace Phantasma.Tests
 
             scriptString = new string[]
             {
-                $"load r1, \\\"abc\\\"",
+                $"load r1, \"abc\"",
                 @"abs r1, r2",
                 @"push r2",
                 @"ret"
@@ -1609,7 +1614,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1667,7 +1672,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1725,7 +1730,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1783,7 +1788,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1841,7 +1846,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1899,7 +1904,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -1957,7 +1962,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -2015,7 +2020,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -2075,7 +2080,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -2134,7 +2139,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -2428,7 +2433,7 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
 
@@ -2486,11 +2491,9 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
-
-            throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
         }
 
         [TestMethod]
@@ -2544,11 +2547,9 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
-
-            throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
         }
 
         [TestMethod]
@@ -2600,11 +2601,9 @@ namespace Phantasma.Tests
             }
             catch (Exception e)
             {
-                Assert.IsTrue(e.Message == "Invalid cast");
+                Assert.IsTrue(IsInvalidCast(e));
                 return;
             }
-
-            throw new Exception("VM did not throw exception when trying to cat a string and a non-string object, and it should");
         }
         #endregion
 
@@ -2623,6 +2622,8 @@ namespace Phantasma.Tests
             var script = AssemblerUtils.BuildScript(scriptString);
 
             var table = DisasmUtils.GetDefaultDisasmTable();
+            table[methodName] = 0; // this method has no args
+
             var calls = DisasmUtils.ExtractMethodCalls(script, table);
 
             Assert.IsTrue(calls.Count() == 1);
