@@ -108,8 +108,8 @@ The Phantasma project is released under the MIT license, see `LICENSE.md` for mo
 
 Project	| Description	| Status	| Percentage
 :---------------------- | :------------ | :------------  | :------------ 
-[Phantasma Wallet](https://github.com/phantasma-io/PhantasmaWallet) 		| Cross platform Phantasma wallet | 2 Available | 100%
-[Phantasma Explorer](https://github.com/phantasma-io/PhantasmaExplorer) | Block explorer for visualizing Phantasma chain data | Complete | 100%
+[Phantasma Wallet](https://www.phantasma.io/wallets) 		| Cross platform Phantasma wallet | 2 Available | 100%
+[Phantasma Explorer](https://explorer.phantasma.io/) | Block explorer for visualizing Phantasma chain data | Complete | 100%
 [Phantasma Node](https://github.com/phantasma-io/PhantasmaNode) | Phantasma node deployment | In development | 90%
 [Phantasma SDK](https://github.com/phantasma-io/PhantasmaSDK) 		| Software development kit | In development | 60%
 [Phantasma Link](https://github.com/phantasma-io/PhantasmaLink) 		| Browser extensions for interacting with Phantasma dApps | Complete - PhantasmaLink | 100%
