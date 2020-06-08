@@ -74,6 +74,7 @@ Platform 		| Status
 .NET Core 		| Working
 Unity 			| Working
 Xamarin / Mobile 	| Working
+C++ 		| Working
 Mono 			| Working
 UWP 			| Untested
 
