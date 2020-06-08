@@ -70,17 +70,15 @@ namespace Phantasma.Blockchain
         private readonly Logger _logger;
 
         private Func<string, IKeyValueStoreAdapter> _adapterFactory = null;
-        private Func<Nexus, OracleReader> _oracleFactory = null;
-        private OracleReader oracleReader = null;
+        private OracleReader _oracleReader = null;
         private List<IOracleObserver> _observers = new List<IOracleObserver>();
 
         /// <summary>
         /// The constructor bootstraps the main chain and all core side chains.
         /// </summary>
-        public Nexus(string name, Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory = null, Func<Nexus, OracleReader> oracleFactory = null)
+        public Nexus(string name, Logger logger = null, Func<string, IKeyValueStoreAdapter> adapterFactory = null)
         {
             this._adapterFactory = adapterFactory;
-            this._oracleFactory = oracleFactory;
 
             var key = GetNexusKey("hash");
             var storage = RootStorage;
@@ -113,7 +111,12 @@ namespace Phantasma.Blockchain
 
             _logger = logger;
 
-            oracleReader = _oracleFactory(this);
+            this._oracleReader = null;
+        }
+
+        public void SetOracleReader(OracleReader oracleReader)
+        {
+            this._oracleReader = oracleReader;
         }
 
         public void Attach(IOracleObserver observer)
@@ -506,8 +509,8 @@ namespace Phantasma.Blockchain
 
         public OracleReader GetOracleReader()
         {
-            Throw.If(oracleReader == null, "Oracle reader has not been set yet.");
-            return oracleReader;
+            Throw.If(_oracleReader == null, "Oracle reader has not been set yet.");
+            return _oracleReader;
         }
 
         public IEnumerable<string> GetChildChainsByName(StorageContext storage, string chainName)
