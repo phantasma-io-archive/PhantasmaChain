@@ -278,7 +278,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(Runtime.IsWitness(from), "witness failed");
 
             var balance = Runtime.GetBalance(DomainSettings.StakingTokenSymbol, from);
-            Runtime.Expect(balance >= stakeAmount, "not enough balance");
+            Runtime.Expect(balance >= stakeAmount, "not enough balance to stake");
 
             Runtime.TransferTokens(DomainSettings.StakingTokenSymbol, from, this.Address, stakeAmount);
 
@@ -352,7 +352,7 @@ namespace Phantasma.Contracts.Native
 
             var token = Runtime.GetToken(DomainSettings.StakingTokenSymbol);
             var balance = Runtime.GetBalance(token.Symbol, this.Address);
-            Runtime.Expect(balance >= unstakeAmount, "not enough balance");
+            Runtime.Expect(balance >= unstakeAmount, "not enough balance to unstake");
 
             var availableStake = stake.stakeAmount;
             availableStake -= GetStorageStake(from);
