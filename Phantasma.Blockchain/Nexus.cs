@@ -81,7 +81,8 @@ namespace Phantasma.Blockchain
             this._adapterFactory = adapterFactory;
 
             var key = GetNexusKey("hash");
-            var storage = RootStorage;
+            var storage = new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName));
+            RootStorage = storage;
             HasGenesis = storage.Has(key);
 
             if (!ValidationUtils.IsValidIdentifier(name))
@@ -1708,7 +1709,7 @@ namespace Phantasma.Blockchain
             return false;
         }
 
-        public StorageContext RootStorage => _rootChain != null ? _rootChain.Storage : new KeyStoreStorage(GetChainStorage(DomainSettings.RootChainName));
+        public readonly StorageContext RootStorage;
 
         private StorageList GetSystemList(string name, StorageContext storage)
         {
