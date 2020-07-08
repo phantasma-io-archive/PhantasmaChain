@@ -721,7 +721,13 @@ namespace Phantasma.Blockchain
             {
                 case VMType.String:
                     {
+                        // TODO not sure about that
                         var name = temp.AsString();
+                        if (name == "validator" && Runtime.GenesisAddress == Address.Null)
+                        {
+                            Runtime.Nexus.Initialize(owner);
+
+                        }
                         var success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
 
                         Runtime.Expect(success, name+" contract deploy failed");

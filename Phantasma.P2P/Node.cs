@@ -13,6 +13,7 @@ using Phantasma.Network.P2P.Messages;
 using Phantasma.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
+using Phantasma.Blockchain;
 using System.Threading;
 
 namespace Phantasma.Network.P2P
@@ -576,7 +577,15 @@ namespace Phantasma.Network.P2P
                                     // TODO this wont work in the future...
                                     try
                                     {
-                                        var changeSet = chain.ValidateBlock(block, transactions, 1);
+                                        var unsignedBytes = block.ToByteArray(false);
+                                        var oracle = new BlockOracleReader(Nexus, block);
+                                        var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1);
+
+                                        // TEST
+                                        //if (!block.Signature.Verify(unsignedBytes, block.Validator))
+                                        //{
+                                        //    throw new Exception("sig wrong");
+                                        //}
                                         chain.AddBlock(block, transactions, 1, changeSet);
                                     }
                                     catch (Exception e)

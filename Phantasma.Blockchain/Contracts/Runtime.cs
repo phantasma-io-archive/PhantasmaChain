@@ -968,7 +968,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis");
+            Runtime.Expect(from == Runtime.GenesisAddress, "(CreatePlatform) must be genesis");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid platform name");
@@ -985,7 +985,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis");
+            Runtime.Expect(from == Runtime.GenesisAddress, $"(CreateOrganization) must be genesis from: {from} genesis: {Runtime.GenesisAddress}");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(ID), "invalid organization name");

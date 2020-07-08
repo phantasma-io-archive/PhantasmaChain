@@ -123,7 +123,7 @@ namespace Phantasma.Blockchain
             this.Nexus = nexus;
         }
 
-        public T Read<T>(Timestamp time, string url)where T : class 
+        public virtual T Read<T>(Timestamp time, string url) where T : class
         {
             if (_entries.ContainsKey(url))
             {

@@ -317,7 +317,7 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                var changeSet = chain.ValidateBlock(block, transactions, MinimumFee);
+                                var changeSet = chain.ProcessBlock(block, transactions, MinimumFee);
                                 block.Sign(this._owner);
                                 chain.AddBlock(block, txs, MinimumFee, changeSet);
                                 submitted = true;
@@ -654,7 +654,6 @@ namespace Phantasma.Simulator
 
         public void GenerateRandomBlock(Mempool mempool = null)
         {
-            //Console.WriteLine("begin block #" + Nexus.RootChain.BlockHeight);
             BeginBlock();
 
             int transferCount = 1 + _rnd.Next() % 10;

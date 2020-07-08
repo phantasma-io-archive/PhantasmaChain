@@ -294,9 +294,9 @@ namespace Phantasma.Blockchain
 
                 try
                 {
-                    using (var m = new ProfileMarker("Chain.ValidateBlock"))
+                    using (var m = new ProfileMarker("Chain.ProcessBlock"))
                     {
-                        Chain.ValidateBlock(block, transactions, minFee);
+                        Chain.ProcessBlock(block, transactions, minFee);
                     }
                 }
                 catch (InvalidTransactionException e)
@@ -333,9 +333,9 @@ namespace Phantasma.Blockchain
                 try
                 {
                     StorageChangeSetContext changeSet;
-                    using (var m = new ProfileMarker("block.validate"))
+                    using (var m = new ProfileMarker("block.process"))
                     {
-                        changeSet = Chain.ValidateBlock(block, transactions, minFee);
+                        changeSet = Chain.ProcessBlock(block, transactions, minFee);
                     }
 
                     using (var m = new ProfileMarker("block.Sign"))

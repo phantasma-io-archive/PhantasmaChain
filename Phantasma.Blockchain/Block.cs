@@ -8,7 +8,6 @@ using Phantasma.Storage;
 using Phantasma.Core;
 using Phantasma.Storage.Utils;
 using Phantasma.Domain;
-using System;
 
 namespace Phantasma.Blockchain
 {
