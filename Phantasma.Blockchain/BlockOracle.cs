@@ -17,7 +17,7 @@ namespace Phantasma.Blockchain
             this.Block = block;
         }
 
-        public override T Read<T>(Timestamp time, string url) where T : class 
+        public override T Read<T>(Timestamp time, string url) 
         {
             Console.WriteLine("read now");
             T content = null;
