@@ -917,7 +917,9 @@ namespace Phantasma.Blockchain
             var tokenID = Hash.FromBytes(rom);
             Runtime.Expect(!nftMap.ContainsKey<Hash>(tokenID), "nft with same hash already exists");
 
-            var content = new TokenContent(chainName, targetAddress, rom, ram);
+            var mintID = nftMap.Count() + 1; // starts counting on 1, not on 0
+
+            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram);
             nftMap.Set<Hash, TokenContent>(tokenID, content);
             return tokenID;
         }
@@ -942,7 +944,7 @@ namespace Phantasma.Blockchain
 
                 Runtime.Expect(rom.SequenceEqual(content.ROM), "invalid nft rom");
 
-                content = new TokenContent(chainName, owner, content.ROM, ram);
+                content = new TokenContent(content.MintID, chainName, owner, content.ROM, ram);
                 nftMap.Set<Hash, TokenContent>(tokenHash, content);
             }
             else

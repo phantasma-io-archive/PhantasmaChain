@@ -284,8 +284,11 @@ namespace Phantasma.API
 
     public struct TokenDataResult : IAPIResult
     {
-        [APIDescription("ID of token")]
+        [APIDescription("id of token")]
         public string ID;
+
+        [APIDescription("mint number of token")]
+        public string mint;
 
         [APIDescription("Chain where currently is stored")]
         public string chainName;
