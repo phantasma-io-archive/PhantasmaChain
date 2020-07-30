@@ -183,6 +183,15 @@ namespace Phantasma.Contracts.Native
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
+            var feeBalance = Runtime.GetBalance(feeSymbol, from);
+            if (feeBalance < feeAmount)
+            {
+                Runtime.CallContext("swap", "SwapReverse", from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
+
+                feeBalance = Runtime.GetBalance(feeSymbol, from);
+                Runtime.Expect(feeBalance >= feeAmount, $"missing {feeSymbol} for interop swap");
+            }
+
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
 
             // TODO support NFT
