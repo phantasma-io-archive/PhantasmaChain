@@ -147,7 +147,7 @@ namespace Phantasma.Network.P2P.Messages
                     for (int i=0; i<blockCount; i++)
                     {
                         var bytes = reader.ReadByteArray();
-                        var block = Block.Unserialize(reader.ReadByteArray());
+                        var block = Block.Unserialize(bytes);
                         blocks[i] = block;
 
                         foreach (var txHash in block.TransactionHashes)
