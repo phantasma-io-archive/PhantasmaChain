@@ -1,5 +1,4 @@
 ﻿using Phantasma.Core.Types;
-using Phantasma.Core;
 using System.Collections.Generic;
 using Phantasma.Domain;
 using NativeBigInt = System.Numerics.BigInteger;
@@ -10,19 +9,21 @@ namespace Phantasma.Blockchain
 {
     public class BlockOracleReader : OracleReader
     {
-        private Block Block;
+        private List<OracleEntry> _oracleData = new List<OracleEntry>();
 
         public BlockOracleReader(Nexus nexus, Block block) : base(nexus)
         {
-            this.Block = block;
+            foreach (var entry in block.OracleData)
+            {
+                _oracleData.Add((OracleEntry)entry);
+            }
         }
 
         public override T Read<T>(Timestamp time, string url) 
         {
-            Console.WriteLine("read now");
             T content = null;
 
-            foreach (var data in Block.OracleData)
+            foreach (var data in _oracleData)
             {
                 var tag = url.Substring(url.IndexOf("//")+2);
                 if (string.Equals(data.URL, tag))
@@ -32,7 +33,6 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            Throw.IfNull(content, "Block oracle content cannot be null!");
             return content;
         }
 
@@ -73,7 +73,6 @@ namespace Phantasma.Blockchain
 
         public new void Clear()
         {
-            Console.WriteLine("Cleared!!!!!!!!11");
         }
     }
 }
