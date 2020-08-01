@@ -63,7 +63,7 @@ namespace Phantasma.Blockchain
         public void SerializeData(BinaryWriter writer)
         {
             MerkleTree.SerializeData(writer);
-            writer.Write((long)Size);
+            writer.WriteBigInteger(Size);
             writer.Write((byte)Flags);
             writer.WriteByteArray(Key);
         }
@@ -71,7 +71,7 @@ namespace Phantasma.Blockchain
         public void UnserializeData(BinaryReader reader)
         {
             MerkleTree = MerkleTree.Unserialize(reader);
-            Size = reader.ReadInt64();
+            Size = reader.ReadBigInteger();
             Flags = (ArchiveFlags) reader.ReadByte();
 
             Key = reader.ReadByteArray();
