@@ -104,7 +104,7 @@ namespace Phantasma.Blockchain
         public const string interopTag = "interop://";
         public const string priceTag = "price://";
 
-        private ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
+        protected ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
 
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 

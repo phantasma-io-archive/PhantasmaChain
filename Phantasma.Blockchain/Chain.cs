@@ -144,9 +144,14 @@ namespace Phantasma.Blockchain
                 Nexus.PluginTriggerBlock(this, block);
         }
 
-        public StorageChangeSetContext ProcessTransactions(Block block, IEnumerable<Transaction> transactions, OracleReader oracle, BigInteger minimumFee)
+        public StorageChangeSetContext ProcessTransactions(Block block, IEnumerable<Transaction> transactions
+                , OracleReader oracle, BigInteger minimumFee, bool allowModify = true)
         {
-            block.CleanUp();
+            if (allowModify)
+            {
+                block.CleanUp();
+            }
+
             var changeSet = new StorageChangeSetContext(this.Storage);
 
             int txIndex = 0; 
@@ -157,11 +162,14 @@ namespace Phantasma.Blockchain
                 {
                     using (var m = new ProfileMarker("ExecuteTransaction"))
                     {
-                        if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
+                        if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result, allowModify))
                         {
                             if (result != null)
                             {
-                                block.SetResultForHash(tx.Hash, result);
+                                if (allowModify)
+                                {
+                                    block.SetResultForHash(tx.Hash, result);
+                                }
                             }
                         }
                         else
@@ -198,7 +206,10 @@ namespace Phantasma.Blockchain
 
             using (var m = new ProfileMarker("CloseBlock"))
             {
-                CloseBlock(block, changeSet);
+                if (allowModify)
+                {
+                    CloseBlock(block, changeSet);
+                }
             }
 
             return changeSet;
@@ -290,7 +301,8 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        private bool ExecuteTransaction(int index, Transaction transaction, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
+        private bool ExecuteTransaction(int index, Transaction transaction, Timestamp time, StorageChangeSetContext changeSet
+                , Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result, bool allowModify = true)
         {
             result = null;
 
@@ -316,7 +328,10 @@ namespace Phantasma.Blockchain
                 foreach (var evt in runtime.Events)
                 {
                     using (var m2 = new ProfileMarker(evt.ToString()))
-                        onNotify(transaction.Hash, evt);
+                        if (allowModify)
+                        {
+                            onNotify(transaction.Hash, evt);
+                        }
                 }
             }
 

@@ -9,13 +9,12 @@ namespace Phantasma.Blockchain
 {
     public class BlockOracleReader : OracleReader
     {
-        private List<OracleEntry> _oracleData = new List<OracleEntry>();
-
         public BlockOracleReader(Nexus nexus, Block block) : base(nexus)
         {
             foreach (var entry in block.OracleData)
             {
-                _oracleData.Add((OracleEntry)entry);
+                var oEntry = (OracleEntry)entry;
+                _entries[entry.URL] = oEntry;
             }
         }
 
@@ -23,12 +22,13 @@ namespace Phantasma.Blockchain
         {
             T content = null;
 
-            foreach (var data in _oracleData)
+
+            foreach(KeyValuePair<string, OracleEntry> entry in _entries)
             {
                 var tag = url.Substring(url.IndexOf("//")+2);
-                if (string.Equals(data.URL, tag))
+                if (string.Equals(entry.Key, tag))
                 {
-                    content = data.Content as T;
+                    content = entry.Value.Content as T;
                     break;
                 }
             }

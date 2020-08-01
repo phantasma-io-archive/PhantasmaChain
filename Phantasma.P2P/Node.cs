@@ -577,15 +577,9 @@ namespace Phantasma.Network.P2P
                                     // TODO this wont work in the future...
                                     try
                                     {
-                                        var unsignedBytes = block.ToByteArray(false);
                                         var oracle = new BlockOracleReader(Nexus, block);
-                                        var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1);
+                                        var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
 
-                                        // TEST
-                                        //if (!block.Signature.Verify(unsignedBytes, block.Validator))
-                                        //{
-                                        //    throw new Exception("sig wrong");
-                                        //}
                                         chain.AddBlock(block, transactions, 1, changeSet);
                                     }
                                     catch (Exception e)
