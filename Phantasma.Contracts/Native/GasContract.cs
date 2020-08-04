@@ -79,6 +79,12 @@ namespace Phantasma.Contracts.Native
         {
             var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
 
+            var minExpectedSupply = UnitConversion.ToBigInteger(100000000, DomainSettings.StakingTokenDecimals);
+            if (currentSupply < minExpectedSupply)
+            {
+                currentSupply = minExpectedSupply;
+            }
+
             // NOTE this gives an approximate inflation of 3% per year (0.75% per season)
             var mintAmount = currentSupply / 133;
             Runtime.Expect(mintAmount > 0, "invalid inflation amount");
