@@ -617,6 +617,12 @@ namespace Phantasma.Blockchain.Contracts
                     accountResult = this.Transaction.IsSignedBy(address);
             }
 
+            // workaround for supporting txs done in older nodes
+            if (!accountResult && this.IsRootChain() && this.Chain.Height < 50000)
+            {
+                accountResult = this.Transaction.IsSignedBy(this.GenesisAddress);
+            }
+
             if (accountResult)
             {
                 validatedWitnesses.Add(address);
