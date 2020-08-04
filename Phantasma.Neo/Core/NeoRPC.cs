@@ -38,6 +38,7 @@ namespace Phantasma.Neo.Core
 
         #region RPC API
         public string rpcEndpoint { get; set; }
+        private static object rpcEndpointUpdateLocker = new object();
 
         protected abstract string GetRPCEndpoint();
 
@@ -69,13 +70,18 @@ namespace Phantasma.Neo.Core
             int retryCount = 0;
             do
             {
-                if (rpcEndpoint == null)
+                string currentRpcEndpoint; // Using local var to avoid it being nullified by another thread right before RequestUtils.Request() call.
+                lock (rpcEndpointUpdateLocker)
                 {
-                  rpcEndpoint = GetRPCEndpoint();
-                  Logger("Update RPC Endpoint: " + rpcEndpoint);
+                    if (rpcEndpoint == null)
+                    {
+                        rpcEndpoint = GetRPCEndpoint();
+                        Logger("Update RPC Endpoint: " + rpcEndpoint);
+                    }
+                    currentRpcEndpoint = rpcEndpoint;
                 }
 
-                var response = RequestUtils.Request(RequestType.POST, rpcEndpoint, jsonRpcData);
+                var response = RequestUtils.Request(RequestType.POST, currentRpcEndpoint, jsonRpcData);
 
                 if (response != null)
                 {
