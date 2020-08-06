@@ -270,6 +270,20 @@ namespace Phantasma.Neo.Core
             return invoke;
         }
 
+        public override string GetTransactionHeight(UInt256 hash)
+        {
+            var response = QueryRPC("gettransactionheight", new object[] { hash.ToString() });
+            if (response != null && response.HasNode("result"))
+            {
+                return response.GetString("result");
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
         public override Transaction GetTransaction(UInt256 hash)
         {
             var response = QueryRPC("getrawtransaction", new object[] { hash.ToString() });
