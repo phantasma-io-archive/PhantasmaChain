@@ -338,7 +338,7 @@ namespace Phantasma.Neo.Core
 
         public InvokeResult InvokeScript(UInt160 scriptHash, object[] args)
         {
-            var script = GenerateScript(scriptHash, args);
+            var script = GenerateScript(scriptHash, args, new byte[0]);
 
             return InvokeScript(script);
         }
@@ -412,7 +412,7 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public static byte[] GenerateScript(UInt160 scriptHash, object[] args, bool addNonce = true)
+        public static byte[] GenerateScript(UInt160 scriptHash, object[] args, byte[] nonce)
         {
             using (var sb = new ScriptBuilder())
             {
@@ -434,12 +434,14 @@ namespace Phantasma.Neo.Core
 
                 sb.EmitAppCall(scriptHash, false);
 
-                if (addNonce)
+                if (nonce == null)
                 {
                     var timestamp = DateTime.UtcNow.ToTimestamp();
-                    var nonce = BitConverter.GetBytes(timestamp);
+                    nonce = BitConverter.GetBytes(timestamp);
+                }
 
-                    //sb.Emit(OpCode.THROWIFNOT);
+                if (nonce.Length > 0) 
+                { 
                     sb.Emit(OpCode.RET);
                     sb.EmitPush(nonce);
                 }
@@ -657,15 +659,15 @@ namespace Phantasma.Neo.Core
 
         }
 
-        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null, byte[] nonce = null)
         {
-            var bytes = GenerateScript(scriptHash, args);
+            var bytes = GenerateScript(scriptHash, args, nonce);
             return CallContract(key, scriptHash, bytes, attachSymbol, attachTargets);
         }
 
-        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, string operation, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)
+        public Transaction CallContract(NeoKeys key, UInt160 scriptHash, string operation, object[] args, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null, byte[] nonce = null)
         {
-            return CallContract(key, scriptHash, new object[] { operation, args }, attachSymbol, attachTargets);
+            return CallContract(key, scriptHash, new object[] { operation, args }, attachSymbol, attachTargets, nonce);
         }
 
         public Transaction CallContract(NeoKeys key, UInt160 scriptHash, byte[] bytes, string attachSymbol = null, IEnumerable<Transaction.Output> attachTargets = null)

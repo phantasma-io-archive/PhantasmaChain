@@ -194,22 +194,22 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public Transaction Transfer(NeoKeys from_key, string to_address, decimal value)
+        public Transaction Transfer(NeoKeys from_key, string to_address, decimal value, byte[] nonce = null)
         {
-            return Transfer(from_key, to_address.GetScriptHashFromAddress(), value);
+            return Transfer(from_key, to_address.GetScriptHashFromAddress(), value, nonce);
         }
 
-        public Transaction Transfer(NeoKeys from_key, UInt160 to_address_hash, decimal value)
+        public Transaction Transfer(NeoKeys from_key, UInt160 to_address_hash, decimal value, byte[] nonce = null)
         {
-            return Transfer(from_key, to_address_hash.ToArray(), value);
+            return Transfer(from_key, to_address_hash.ToArray(), value, nonce);
         }
 
-        public Transaction Transfer(NeoKeys from_key, byte[] to_address_hash, decimal value)
+        public Transaction Transfer(NeoKeys from_key, byte[] to_address_hash, decimal value, byte[] nonce = null)
         {
             BigInteger amount = ConvertToBigInt(value);
 
             var sender_address_hash = from_key.Address.GetScriptHashFromAddress();
-            var response = api.CallContract(from_key, ScriptHash, "transfer", new object[] { sender_address_hash, to_address_hash, amount });
+            var response = api.CallContract(from_key, ScriptHash, "transfer", new object[] { sender_address_hash, to_address_hash, amount }, null, null, nonce);
             return response;
         }
 
@@ -258,7 +258,7 @@ namespace Phantasma.Neo.Core
 
                 var isLast = index == transfers.Count - 1;
                 var args = new object[] { sender_address_hash, entry.Key, amount };
-                var bytes = NeoAPI.GenerateScript(ScriptHash, new object[] { "transfer", args }, isLast);
+                var bytes = NeoAPI.GenerateScript(ScriptHash, new object[] { "transfer", args }, isLast ?  null : new byte[0]);
 
                 scripts.Add(bytes);
                 index++;
