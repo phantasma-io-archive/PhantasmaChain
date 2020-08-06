@@ -58,7 +58,7 @@ namespace Phantasma.Neo.Core
             jsonRpcData.AddNode(paramData);
             jsonRpcData.AddField("id", id);
 
-            Logger("QueryRPC: " + method);
+            //Logger("QueryRPC: " + method);
             //LogData(jsonRpcData);
 
             int retryCount = 0;
@@ -100,7 +100,7 @@ namespace Phantasma.Neo.Core
                 retryCount++;
                 Thread.Sleep(1000);
 
-            } while (retryCount < 10);
+            } while (retryCount < 5);
 
             return null;
         }
