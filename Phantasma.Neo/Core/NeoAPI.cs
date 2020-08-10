@@ -729,6 +729,8 @@ namespace Phantasma.Neo.Core
             return GetTransactionHeight(val);
         }
 
+        public abstract BigInteger[] GetSwapBlocks(string hash, string address, string height = null);
+
         public abstract ApplicationLog[] GetApplicationLog(UInt256 hash);
 
         public ApplicationLog[] GetApplicationLog(string hash)

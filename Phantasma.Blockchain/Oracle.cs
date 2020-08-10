@@ -326,7 +326,7 @@ namespace Phantasma.Blockchain
                                     throw new OracleException($"invalid block hash for chain {chainName} @ {platformName}");
                                 }
 
-                                block = new InteropBlock(platformName, chainName, hash, temp.TransactionHashes);
+                                block = new InteropBlock(platformName, chainName, temp.Height, hash, temp.TransactionHashes);
                             }
                             else
                             {
@@ -352,7 +352,7 @@ namespace Phantasma.Blockchain
                                     throw new OracleException($"invalid block hash for chain {chainName} @ {platformName}");
                                 }
 
-                                block = new InteropBlock(platformName, chainName, hash, temp.TransactionHashes);
+                                block = new InteropBlock(platformName, chainName, temp.Height, hash, temp.TransactionHashes);
                             }
                             else
                             {

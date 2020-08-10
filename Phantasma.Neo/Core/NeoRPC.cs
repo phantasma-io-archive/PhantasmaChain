@@ -55,8 +55,24 @@ namespace Phantasma.Neo.Core
             var paramData = DataNode.CreateArray("params");
             foreach (var entry in _params)
             {
-                paramData.AddField(null, (numeric) ? (int)entry : entry);
+                if (numeric)
+                {
+                    paramData.AddField(null, (int)entry);
+                }
+                else if (entry.GetType() == typeof(BigInteger))
+                { 
+                    /*
+                     * TODO sufficient for neo2 but needs a better solution in the future.
+                     * Could fail if entry > maxInt.
+                     */
+                    paramData.AddField(null, (int)(BigInteger)entry);
+                }
+                else
+                {
+                    paramData.AddField(null, entry);
+                }
             }
+            LogData(paramData);
 
             var jsonRpcData = DataNode.CreateObject(null);
             jsonRpcData.AddField("jsonrpc", "2.0");
@@ -338,6 +354,42 @@ namespace Phantasma.Neo.Core
             if (response != null && response.HasNode("result"))
             {
                 return response.GetString("result");
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public override BigInteger[] GetSwapBlocks(string hash, string address, string height = null)
+        {
+            if (!HasPlugin("EventTracker"))
+            {
+                Console.WriteLine("no plugin");
+                return null;
+            }
+            Console.WriteLine("have plugin");
+
+            var objects = new List<object>() {hash, address};
+
+            if (!string.IsNullOrEmpty(height))
+            {
+                objects.Add(BigInteger.Parse(height));
+            }
+
+            var response = QueryRPC("getblockids", objects.ToArray());
+            if (response != null && response.HasNode("result"))
+            {
+                List<BigInteger> blockIdList = new List<BigInteger>();
+
+                var blocks = response["result"];
+                LogData(blocks);
+                for (var i = 0; i < blocks.ChildCount; i++)
+                {
+                    blockIdList.Add(new BigInteger(blocks[i].GetInt32("block_index")));
+                }
+
+                return blockIdList.ToArray();
             }
             else
             {
