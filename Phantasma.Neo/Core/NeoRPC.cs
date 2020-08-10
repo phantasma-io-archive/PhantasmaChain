@@ -361,14 +361,12 @@ namespace Phantasma.Neo.Core
             }
         }
 
-        public override BigInteger[] GetSwapBlocks(string hash, string address, string height = null)
+        public override Dictionary<string, BigInteger> GetSwapBlocks(string hash, string address, string height = null)
         {
             if (!HasPlugin("EventTracker"))
             {
-                Console.WriteLine("no plugin");
                 return null;
             }
-            Console.WriteLine("have plugin");
 
             var objects = new List<object>() {hash, address};
 
@@ -380,16 +378,22 @@ namespace Phantasma.Neo.Core
             var response = QueryRPC("getblockids", objects.ToArray());
             if (response != null && response.HasNode("result"))
             {
-                List<BigInteger> blockIdList = new List<BigInteger>();
+                var blockIds = new Dictionary<string, BigInteger>();
 
                 var blocks = response["result"];
                 LogData(blocks);
                 for (var i = 0; i < blocks.ChildCount; i++)
                 {
-                    blockIdList.Add(new BigInteger(blocks[i].GetInt32("block_index")));
+                    var blockHash = blocks[i].GetString("block_hash");
+                    if (blockHash.StartsWith("0x"))
+                    {
+                        blockHash = blockHash.Substring(2);
+                    }
+
+                    blockIds.Add(blocks[i].GetString("block_hash"), new BigInteger(blocks[i].GetInt32("block_index")));
                 }
 
-                return blockIdList.ToArray();
+                return blockIds;
             }
             else
             {

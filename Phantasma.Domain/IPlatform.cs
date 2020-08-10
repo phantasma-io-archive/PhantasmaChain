@@ -22,7 +22,6 @@ namespace Phantasma.Domain
     {
         public readonly string Platform;
         public readonly string Chain;
-        public readonly BigInteger Height;
         public readonly Hash Hash;
         public readonly Hash[] Transactions;
 
@@ -31,11 +30,10 @@ namespace Phantasma.Domain
 
         }
 
-        public InteropBlock(string platform, string chain, BigInteger height, Hash hash, Hash[] transactions)
+        public InteropBlock(string platform, string chain, Hash hash, Hash[] transactions)
         {
             Platform = platform;
             Chain = chain;
-            Height = height;
             Hash = hash;
             Transactions = transactions;
         }
