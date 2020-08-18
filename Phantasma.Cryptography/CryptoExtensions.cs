@@ -197,12 +197,11 @@ namespace Phantasma.Cryptography
                     break;
 
                 case ECDsaCurve.Secp256k1:
-                    var oid = NetCrypto.Oid.FromFriendlyName("secP256k1", NetCrypto.OidGroup.PublicKeyAlgorithm);
                     usedCurve = ECC.ECCurve.Secp256k1;
                     break;
             };
-            byte[] bytes;
 
+            byte[] bytes;
             if (pubKey.Length == 32)
             {
                 pubKey = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, pubKey.Skip(1).ToArray());
