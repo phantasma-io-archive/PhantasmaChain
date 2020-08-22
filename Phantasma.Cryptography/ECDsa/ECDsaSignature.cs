@@ -64,9 +64,9 @@ namespace Phantasma.Cryptography.ECC
 
         public static ECDsaSignature Generate(IKeyPair keypair, byte[] message, ECDsaCurve curve)
         {
-            if (keypair.PublicKey.Length != 33 && keypair.PublicKey.Length != 64)
+            if (keypair.PublicKey.Length != 32 && keypair.PublicKey.Length != 33 && keypair.PublicKey.Length != 64)
             {
-                throw new System.Exception("public key must be 33 bytes");
+                throw new System.Exception($"public key must be 32, 33 or 64 bytes, given key's length: {keypair.PublicKey.Length}");
             }
 
             var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey, curve);
