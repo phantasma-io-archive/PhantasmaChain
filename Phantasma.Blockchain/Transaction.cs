@@ -11,6 +11,7 @@ using Phantasma.Domain;
 using Phantasma.Cryptography.EdDSA;
 using Phantasma.Cryptography.ECC;
 using System.Text;
+using System;
 
 namespace Phantasma.Blockchain
 {
@@ -110,13 +111,13 @@ namespace Phantasma.Blockchain
 
         public bool HasSignatures => Signatures != null && Signatures.Length > 0;
 
-        public void Sign(IKeyPair keypair)
+        public void Sign(IKeyPair keypair, Func<byte[], byte[], byte[], byte[]> customSignFunction = null)
         {
             Throw.If(keypair == null, "invalid keypair");
 
             var msg = this.ToByteArray(false);
 
-            Signature sig = keypair.Sign(msg);
+            Signature sig = keypair.Sign(msg, customSignFunction);
 
             var sigs = new List<Signature>();
 
