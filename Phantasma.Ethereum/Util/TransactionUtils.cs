@@ -2,7 +2,7 @@
 using System.Text;
 using System;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     public static class TransactionUtils
     {

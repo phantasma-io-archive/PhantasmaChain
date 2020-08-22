@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Nethereum.Util {
+namespace Phantasma.Ethereum.Util {
     internal static class BigDecimalFormatter {
         public static string ToCurrencyString(this BigDecimal value, int maxDigits, NumberFormatInfo format) {
             value.Normalize();

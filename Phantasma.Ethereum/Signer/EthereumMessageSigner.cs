@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Text;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
-    public class EthereumMessageSigner : MessageSigner
+    public class PEthereumMessageSigner : MessageSigner
     {
         public override string EcRecover(byte[] message, string signature)
         {

@@ -1,4 +1,4 @@
-namespace Nethereum.Hex.HexConvertors
+namespace Phantasma.Ethereum.Hex.HexConvertors
 {
     public interface IHexConvertor<T>
     {

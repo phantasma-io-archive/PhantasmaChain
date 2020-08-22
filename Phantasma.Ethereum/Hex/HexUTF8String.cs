@@ -1,6 +1,6 @@
-using Nethereum.Hex.HexConvertors;
+using Phantasma.Ethereum.Hex.HexConvertors;
 
-namespace Nethereum.Hex.HexTypes
+namespace Phantasma.Ethereum.Hex.HexTypes
 {
     public class HexUTF8String : HexRPCType<string>
     {

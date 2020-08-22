@@ -1,9 +1,8 @@
-using System;
 using System.Text;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Util;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Util;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class MessageSigner
     {

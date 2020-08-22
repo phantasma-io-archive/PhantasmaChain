@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 using System.Threading.Tasks;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class TransactionSigner
     {

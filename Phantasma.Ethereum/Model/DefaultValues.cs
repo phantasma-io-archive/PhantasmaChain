@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Nethereum.Util;
+using Phantasma.Ethereum.Util;
 
-namespace Nethereum.Model
+namespace Phantasma.Ethereum.Model
 {
     public class DefaultValues
     {

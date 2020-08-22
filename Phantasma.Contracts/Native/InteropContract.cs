@@ -168,7 +168,7 @@ namespace Phantasma.Contracts.Native
             }
 
             var platformTokenHash = Runtime.GetTokenPlatformHash(symbol, platform);
-            Runtime.Expect(platformTokenHash != Hash.Null, "invalid foreign token hash");
+            Runtime.Expect(platformTokenHash != Hash.Null, $"invalid foreign token hash {platformTokenHash}");
 
             Runtime.Expect(interopIndex == -1, "invalid target address");
 

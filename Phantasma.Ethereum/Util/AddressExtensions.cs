@@ -1,4 +1,4 @@
-﻿namespace Nethereum.Util
+﻿namespace Phantasma.Ethereum.Util
 {
     public static class AddressExtensions
     {

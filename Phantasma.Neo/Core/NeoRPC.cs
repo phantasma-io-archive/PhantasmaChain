@@ -72,7 +72,6 @@ namespace Phantasma.Neo.Core
                     paramData.AddField(null, entry);
                 }
             }
-            LogData(paramData);
 
             var jsonRpcData = DataNode.CreateObject(null);
             jsonRpcData.AddField("jsonrpc", "2.0");

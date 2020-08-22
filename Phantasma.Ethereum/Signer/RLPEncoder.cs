@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Nethereum.Model;
+using Phantasma.Ethereum.Model;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class RLPEncoder
     {

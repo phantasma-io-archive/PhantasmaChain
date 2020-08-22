@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Nethereum.Utils
+namespace Phantasma.Ethereum.Utils
 {
     public interface IWaitStrategy
     {

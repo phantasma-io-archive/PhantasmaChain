@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Text;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 using Org.BouncyCastle.Crypto.Digests;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     public class Sha3Keccack
     {

@@ -1,8 +1,7 @@
-using System;
 using System.Numerics;
-using Nethereum.Hex.HexConvertors;
+using Phantasma.Ethereum.Hex.HexConvertors;
 
-namespace Nethereum.Hex.HexTypes
+namespace Phantasma.Ethereum.Hex.HexTypes
 {
     public class HexBigInteger : HexRPCType<BigInteger>
     {

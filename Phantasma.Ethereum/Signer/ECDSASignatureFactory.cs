@@ -1,9 +1,9 @@
 ﻿using System;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Signer.Crypto;
+using Phantasma.Ethereum.Signer.Crypto;
 using Org.BouncyCastle.Math;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class ECDSASignatureFactory
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nethereum.Hex.HexConvertors.Extensions
+namespace Phantasma.Ethereum.Hex.HexConvertors.Extensions
 {
     public static class HexByteConvertorExtensions
     {

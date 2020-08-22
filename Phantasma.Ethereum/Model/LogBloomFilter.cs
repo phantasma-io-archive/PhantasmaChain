@@ -1,6 +1,6 @@
-﻿using Nethereum.Hex.HexConvertors.Extensions;
+﻿using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Model
+namespace Phantasma.Ethereum.Model
 {
     /*   
         # Ethereum Bloom Filters 

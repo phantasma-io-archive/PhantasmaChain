@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Nethereum.RLP;
+using Phantasma.Ethereum.RLP;
 
-namespace Nethereum.Model
+namespace Phantasma.Ethereum.Model
 {
     public class AccountEncoder
     {

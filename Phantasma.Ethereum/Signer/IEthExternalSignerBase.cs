@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using System.Threading.Tasks;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
 #if !DOTNET35
     public interface IEthExternalSigner

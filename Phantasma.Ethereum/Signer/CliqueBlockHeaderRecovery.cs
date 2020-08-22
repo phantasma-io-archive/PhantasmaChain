@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Model;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Model;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class CliqueBlockHeaderRecovery
     {

@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RLP;
-using Nethereum.Signer.Crypto;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.RLP;
+using Phantasma.Ethereum.Signer.Crypto;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
 #if !DOTNET35
     public abstract class EthExternalSignerBase : IEthExternalSigner

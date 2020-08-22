@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Nethereum.Model
+namespace Phantasma.Ethereum.Model
 {
     public class Account
     {

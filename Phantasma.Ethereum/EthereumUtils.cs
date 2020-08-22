@@ -1,5 +1,5 @@
 ﻿using LunarLabs.Parser;
-using Nethereum.Signer;
+using Phantasma.Ethereum.Signer;
 using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using System;

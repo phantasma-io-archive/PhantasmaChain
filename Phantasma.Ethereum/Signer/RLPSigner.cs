@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading.Tasks;
-using Nethereum.Util;
+using Phantasma.Ethereum.Util;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class RLPSigner
     {

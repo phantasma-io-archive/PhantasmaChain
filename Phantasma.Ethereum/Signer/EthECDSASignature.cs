@@ -1,11 +1,11 @@
 ﻿using System;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RLP;
-using Nethereum.Signer.Crypto;
-using Nethereum.Util;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.RLP;
+using Phantasma.Ethereum.Signer.Crypto;
+using Phantasma.Ethereum.Util;
 using Org.BouncyCastle.Math;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class EthECDSASignature
     {

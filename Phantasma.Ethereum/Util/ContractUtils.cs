@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RLP;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.RLP;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     public static class ContractUtils
     {

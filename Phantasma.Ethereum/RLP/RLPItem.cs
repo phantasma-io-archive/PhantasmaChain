@@ -1,4 +1,4 @@
-namespace Nethereum.RLP
+namespace Phantasma.Ethereum.RLP
 {
     public class RLPItem : IRLPElement
     {

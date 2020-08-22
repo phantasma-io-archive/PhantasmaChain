@@ -1,4 +1,4 @@
-﻿namespace Nethereum.Signer
+﻿namespace Phantasma.Ethereum.Signer
 {
     public class EthECDSASignatureFactory
     {
