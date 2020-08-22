@@ -104,7 +104,7 @@ namespace Phantasma.Ethereum
 
         public Signature Sign(byte[] msg)
         {
-            return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256r1);
+            return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256k1);
         }
     }
 }
