@@ -27,7 +27,7 @@ namespace Phantasma.Cryptography.ECC
 
         public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
-            if (Curve != ECDsaCurve.Secp256r1)
+            if (Curve != ECDsaCurve.Secp256r1 && Curve != ECDsaCurve.Secp256k1)
             {
                 throw new System.Exception($"Support for verifying ECDsa with curve {Curve} not implemented!");
             }
@@ -41,7 +41,7 @@ namespace Phantasma.Cryptography.ECC
 
                 var pubKey = ExtractPublicKeyFromAddress(address);
 
-                if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKey))
+                if (CryptoExtensions.VerifySignatureECDsa(message, this.Bytes, pubKey, this.Curve))
                 {
                     return true;
                 }
@@ -64,14 +64,12 @@ namespace Phantasma.Cryptography.ECC
 
         public static ECDsaSignature Generate(IKeyPair keypair, byte[] message, ECDsaCurve curve)
         {
-            Throw.If(curve != ECDsaCurve.Secp256r1, "curve support not implemented for " + curve);
-
-            if (keypair.PublicKey.Length != 33)
+            if (keypair.PublicKey.Length != 33 && keypair.PublicKey.Length != 64)
             {
                 throw new System.Exception("public key must be 33 bytes");
             }
 
-            var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey);
+            var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey, curve);
             return new ECDsaSignature(signature, curve);
         }
 

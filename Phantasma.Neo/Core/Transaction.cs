@@ -366,7 +366,7 @@ namespace Phantasma.Neo.Core
             {
                 var privkey = key.PrivateKey;
                 var pubkey = key.UncompressedPublicKey;
-                var signature = Phantasma.Cryptography.CryptoExtensions.SignECDsa(txdata, privkey, pubkey);
+                var signature = Phantasma.Cryptography.CryptoExtensions.SignECDsa(txdata, privkey, pubkey, ECDsaCurve.Secp256r1);
 
                 var invocationScript = new byte[] { (byte)OpCode.PUSHBYTES64 }.Concat(signature).ToArray();
                 var verificationScript = key.signatureScript;

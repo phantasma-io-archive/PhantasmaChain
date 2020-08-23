@@ -38,6 +38,7 @@ namespace Phantasma.Ethereum
         public byte[] PrivateKey{ get; private set; }
         public byte[] PublicKey { get; private set; }
         public readonly string Address;
+        public readonly byte[] UncompressedPublicKey;
 
         public EthereumKey(byte[] privateKey)
         {
@@ -48,12 +49,10 @@ namespace Phantasma.Ethereum
 
             var pKey = ECCurve.Secp256k1.G * privateKey;
 
-            var bytes = pKey.EncodePoint(true).ToArray();
+            this.PublicKey = pKey.EncodePoint(true).ToArray();
+            this.UncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 
-            this.PublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
-
-            var temp = Base16.Encode(PublicKey);
-            var kak = Sha3Keccack.CalculateHash(PublicKey);
+            var kak = Sha3Keccack.CalculateHash(this.UncompressedPublicKey);
             this.Address = "0x"+Base16.Encode( kak.Skip(12).ToArray());
         }
 
