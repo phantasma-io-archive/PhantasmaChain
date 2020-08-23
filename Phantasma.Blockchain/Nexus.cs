@@ -1203,15 +1203,6 @@ namespace Phantasma.Blockchain
                      },
 
                      {
-                         InteropContract.InteropFeeTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             UnitConversion.ToBigInteger(0.10m, DomainSettings.FiatTokenDecimals), new ChainConstraint[]
-                         {
-                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = UnitConversion.ToBigInteger(0.01m, DomainSettings.FiatTokenDecimals)},
-                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = UnitConversion.ToBigInteger(1, DomainSettings.FiatTokenDecimals)},
-                         })
-                     },
-
-                     {
                          StorageContract.KilobytesPerStakeTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
                              40, new ChainConstraint[]
                          {

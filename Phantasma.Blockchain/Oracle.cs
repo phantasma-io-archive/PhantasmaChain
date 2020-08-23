@@ -103,6 +103,7 @@ namespace Phantasma.Blockchain
     {
         public const string interopTag = "interop://";
         public const string priceTag = "price://";
+        public const string feeTag = "fee://";
 
         protected ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
 
@@ -110,6 +111,7 @@ namespace Phantasma.Blockchain
 
         protected abstract T PullData<T>(Timestamp time, string url);
         protected abstract decimal PullPrice(Timestamp time, string symbol);
+        protected abstract BigInteger PullFee(Timestamp time, string platform);
         protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
         public abstract string GetCurrentHeight(string platformName, string chainName);
@@ -168,6 +170,26 @@ namespace Phantasma.Blockchain
 
                 var price = PullPrice(time, baseSymbol);
                 var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
+                content = val.ToUnsignedByteArray() as T;
+            }
+            else
+            if (url.StartsWith(feeTag))
+            {
+                url = url.Substring(feeTag.Length);
+
+                if (url.Contains('/'))
+                {
+                    throw new OracleException("invalid oracle fee request");
+                }
+
+                var platform = url;
+
+                if (!Nexus.PlatformExists(Nexus.RootStorage, platform))
+                {
+                    throw new OracleException("unknown platform: " + platform);
+                }
+
+                var val = PullFee(time, platform);
                 content = val.ToUnsignedByteArray() as T;
             }
             else

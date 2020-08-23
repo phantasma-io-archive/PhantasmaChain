@@ -146,6 +146,14 @@ namespace Phantasma.Domain
             return tx;
         }
 
+        public static BigInteger ReadFeeFromOracle(this IRuntime runtime, string platform)
+        {
+            var url = GetOracleFeeURL(platform);
+            var bytes = runtime.ReadOracle(url);
+            var fee = Serialization.Unserialize<BigInteger>(bytes);
+            return fee;
+        }
+
         public static string GetOracleTransactionURL(string platform, string chain, Hash hash)
         {
             return $"interop://{platform}/{chain}/tx/{hash}";
@@ -159,6 +167,11 @@ namespace Phantasma.Domain
         public static string GetOracleBlockURL(string platform, string chain, BigInteger height)
         {
             return $"interop://{platform}/{chain}/block/{height}";
+        }
+
+        public static string GetOracleFeeURL(string platform)
+        {
+            return $"fee://{platform}";
         }
 
         public static BigInteger GetBlockCount(this IArchive archive)

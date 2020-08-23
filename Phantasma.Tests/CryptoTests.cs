@@ -9,7 +9,7 @@ using Phantasma.Numerics;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Neo.Core;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
 namespace Phantasma.Tests
 {

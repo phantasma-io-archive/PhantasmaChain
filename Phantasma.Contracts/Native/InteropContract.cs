@@ -37,8 +37,6 @@ namespace Phantasma.Contracts.Native
         private StorageMap _links;
         private StorageMap _reverseMap;
 
-        public const string InteropFeeTag = "interop.fee";
-
         public InteropContract() : base()
         {
         }
@@ -179,7 +177,9 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var basePrice = Runtime.GetGovernanceValue(InteropFeeTag); 
+            var chain = DomainSettings.RootChainName; // TODO is this correct?
+            var basePrice = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fiat dollars
+
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
