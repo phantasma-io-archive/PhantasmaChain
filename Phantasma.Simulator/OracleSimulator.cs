@@ -112,6 +112,11 @@ namespace Phantasma.Simulator
             throw new OracleException($"unknown transaction for {platformName}.{chainName} : {hash}");
         }
 
+        protected override Phantasma.Numerics.BigInteger PullFee(Timestamp time, string platform)
+        {
+            return Phantasma.Numerics.UnitConversion.ToBigInteger(0.1m, DomainSettings.FiatTokenDecimals);
+        }
+
         protected override decimal PullPrice(Timestamp time, string baseSymbol)
         {
             // some dummy values, only really used in the test suite ...
