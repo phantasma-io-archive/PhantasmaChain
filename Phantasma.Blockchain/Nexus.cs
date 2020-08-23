@@ -747,11 +747,11 @@ namespace Phantasma.Blockchain
 
             if (token.IsCapped())
             {
-                Runtime.Expect(supply.Burn(Runtime.Storage, amount), "burn failed");
+                Runtime.Expect(supply.Burn(Runtime.Storage, amount), $"{token.Symbol} burn failed");
             }
 
             var balances = new BalanceSheet(token.Symbol);
-            Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), "balance subtract failed");
+            Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
 
             Runtime.Expect(Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, destination, token.Symbol, amount), "token trigger failed");
 
@@ -827,8 +827,8 @@ namespace Phantasma.Blockchain
             }
 
             var balances = new BalanceSheet(token.Symbol);
-            Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), "balance subtract failed");
-            Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
+            Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
+            Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), $"{token.Symbol} balance add failed to {destination.Text}");
 
             Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, destination, token.Symbol, amount), "token onSend trigger failed");
             Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, source, destination, token.Symbol, amount), "token onReceive trigger failed");
