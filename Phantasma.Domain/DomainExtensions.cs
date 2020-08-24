@@ -150,7 +150,7 @@ namespace Phantasma.Domain
         {
             var url = GetOracleFeeURL(platform);
             var bytes = runtime.ReadOracle(url);
-            var fee = Serialization.Unserialize<BigInteger>(bytes);
+            var fee = BigInteger.FromUnsignedArray(bytes, true);
             return fee;
         }
 
