@@ -87,7 +87,7 @@ namespace Phantasma.Tests
             var publicKey = pKey.EncodePoint(true).ToArray();
             var uncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 
-            var kak = Phantasma.Ethereum.Sha3Keccack.CalculateHash(uncompressedPublicKey);
+            var kak = new Phantasma.Ethereum.Util.Sha3Keccack().CalculateHash(uncompressedPublicKey);
             var Address = "0x"+Base16.Encode( kak.Skip(12).ToArray()).ToLower();
             Console.WriteLine("Address: " + Address);
             Console.WriteLine("address: " + address);
