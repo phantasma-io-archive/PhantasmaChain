@@ -1814,6 +1814,33 @@ namespace Phantasma.Blockchain
             return Hash.Null;
         }
 
+        public string GetPlatformTokenByHash(Hash hash, string platform, StorageContext storage)
+        {
+            var tokens = GetTokens(storage);
+
+            if (platform == DomainSettings.PlatformName)
+            {
+                foreach (var token in tokens)
+                {
+                    if (Hash.FromString(token) == hash)
+                        return token;
+                }
+            }
+
+            foreach (var token in tokens)
+            {
+                var key = GetNexusKey($"{token}.{platform}.hash");
+                var tokenHash = storage.Get<Hash>(key);
+                if (tokenHash == hash)
+                {
+                    return token;
+                }
+            }
+
+            _logger.Warning($"Token hash {hash} doesn't exist!");
+            return null;
+        }
+
         public void SetTokenPlatformHash(string symbol, string platform, Hash hash, StorageContext storage)
         {
             if (platform == DomainSettings.PlatformName)
