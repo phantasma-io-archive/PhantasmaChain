@@ -102,7 +102,7 @@ namespace Phantasma.Contracts.Native
                 Runtime.Expect(quoteToken.Flags.HasFlag(TokenFlags.Fungible), "quote token must be fungible");
 
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
-                Runtime.Expect(balance >= auction.Price, "not enough balance");
+                Runtime.Expect(balance >= auction.Price, $"not enough {quoteToken.Symbol} balance at {from.Text}");
 
                 Runtime.TransferTokens(quoteToken.Symbol, from, auction.Creator, auction.Price);
             }

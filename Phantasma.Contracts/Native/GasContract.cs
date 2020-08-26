@@ -65,7 +65,7 @@ namespace Phantasma.Contracts.Native
             BigInteger balance;
             using (var m = new ProfileMarker("Runtime.GetBalance"))
                 balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
-            Runtime.Expect(balance >= maxAmount, "not enough gas in address");
+            Runtime.Expect(balance >= maxAmount, $"not enough {DomainSettings.FuelTokenSymbol} in address {from}");
 
             using (var m = new ProfileMarker("Runtime.TransferTokens"))
                 Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);

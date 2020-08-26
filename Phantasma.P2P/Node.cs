@@ -574,7 +574,7 @@ namespace Phantasma.Network.P2P
                                         transactions.Add(tx);
                                     }
 
-                                    // TODO this wont work in the future...
+                                    // TODO this wont work in the future... Question: Really? What this comment meant??
                                     try
                                     {
                                         var oracle = new BlockOracleReader(Nexus, block);

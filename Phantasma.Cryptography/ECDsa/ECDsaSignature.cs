@@ -1,6 +1,7 @@
 ﻿using Phantasma.Core;
 using Phantasma.Core.Utils;
 using Phantasma.Storage.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -62,14 +63,19 @@ namespace Phantasma.Cryptography.ECC
             this.Bytes = reader.ReadByteArray();
         }
 
-        public static ECDsaSignature Generate(IKeyPair keypair, byte[] message, ECDsaCurve curve)
+        public static ECDsaSignature Generate(IKeyPair keypair, byte[] message, ECDsaCurve curve, Func<byte[], byte[], byte[], byte[]> customSignFunction = null)
         {
-            if (keypair.PublicKey.Length != 33 && keypair.PublicKey.Length != 64)
+            if (keypair.PublicKey.Length != 32 && keypair.PublicKey.Length != 33 && keypair.PublicKey.Length != 64)
             {
-                throw new System.Exception("public key must be 33 bytes");
+                throw new System.Exception($"public key must be 32, 33 or 64 bytes, given key's length: {keypair.PublicKey.Length}");
             }
 
-            var signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey, curve);
+            byte[] signature;
+            if (customSignFunction != null)
+                signature = customSignFunction(message, keypair.PrivateKey, keypair.PublicKey);
+            else
+                signature = CryptoExtensions.SignECDsa(message, keypair.PrivateKey, keypair.PublicKey, curve);
+            
             return new ECDsaSignature(signature, curve);
         }
 

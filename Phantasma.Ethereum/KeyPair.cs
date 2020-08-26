@@ -82,9 +82,9 @@ namespace Phantasma.Ethereum
             return this.Address;
         }
 
-        public Signature Sign(byte[] msg)
+        public Signature Sign(byte[] msg, Func<byte[], byte[], byte[], byte[]> customSignFunction = null)
         {
-            return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256k1);
+            return ECDsaSignature.Generate(this, msg, ECDsaCurve.Secp256k1, customSignFunction);
         }
     }
 }
