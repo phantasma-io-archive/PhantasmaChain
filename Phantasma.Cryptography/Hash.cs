@@ -87,7 +87,7 @@ namespace Phantasma.Cryptography
         public Hash(byte[] value)
         {
             Throw.If(value == null, "value cannot be null");
-            Throw.If(value.Length != Length, $"value must have length {Length}");
+            Throw.If(value.Length != Length, $"value must have length {Length}/{value.Length}");
 
             this._data = value;
         }

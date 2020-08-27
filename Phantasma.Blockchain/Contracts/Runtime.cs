@@ -379,7 +379,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (UsedGas > MaxGas && !DelayPayment)
             {
-                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})");
+                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})/({UsedGas})");
             }
 
             return result;

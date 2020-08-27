@@ -10,6 +10,7 @@ using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Contracts;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -878,8 +879,8 @@ namespace Phantasma.Blockchain
             var platform = temp.AsString();
 
             temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected bytes for hash");
-            var hash = Hash.FromUnpaddedHex(temp.AsString());
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
+            var hash = new Hash(temp.AsByteArray().Skip(1).ToArray());
 
             Runtime.SetTokenPlatformHash(symbol, platform, hash);
 
