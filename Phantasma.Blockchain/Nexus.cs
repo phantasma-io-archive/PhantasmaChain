@@ -1798,6 +1798,17 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        public bool TokenExistsOnPlatform(string symbol, string platform, StorageContext storage)
+        {
+            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            if (storage.Has(key))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public Hash GetTokenPlatformHash(string symbol, string platform, StorageContext storage)
         {
             if (platform == DomainSettings.PlatformName)

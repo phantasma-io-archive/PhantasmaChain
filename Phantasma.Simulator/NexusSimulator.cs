@@ -141,7 +141,7 @@ namespace Phantasma.Simulator
                 EndBlock();
 
                 BeginBlock();
-                GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                GenerateCustomTransaction(_owner, ProofOfWork.Minimal, () =>
                 {
                     return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
                     CallInterop("Nexus.SetTokenPlatformHash", "SOUL", ethPlatform, "53d5bdb2c8797218f8a0e11e997c4ab84f0b40ce"). // eth ropsten testnet hash
