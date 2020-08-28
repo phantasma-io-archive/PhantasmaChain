@@ -868,6 +868,8 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
 
+            Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "invalid witness, must be genesis");
+
             Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
         }
 
