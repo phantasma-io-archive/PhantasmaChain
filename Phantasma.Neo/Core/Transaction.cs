@@ -121,6 +121,10 @@ namespace Phantasma.Neo.Core
 
         public Phantasma.Cryptography.Address ExtractAddress()
         {
+            if (this.verificationScript.Length == 0)
+            {
+                return Phantasma.Cryptography.Address.Null;
+            }
             var bytes = new byte[34];
             bytes[0] = (byte)Phantasma.Cryptography.AddressKind.User;
             Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 1, bytes, 1, 33);

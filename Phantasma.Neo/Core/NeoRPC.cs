@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Neo.Core
 {
@@ -380,16 +381,16 @@ namespace Phantasma.Neo.Core
                 var blockIds = new Dictionary<string, BigInteger>();
 
                 var blocks = response["result"];
-                LogData(blocks);
+                //LogData(blocks);
                 for (var i = 0; i < blocks.ChildCount; i++)
                 {
                     var blockHash = blocks[i].GetString("block_hash");
                     if (blockHash.StartsWith("0x"))
                     {
-                        blockHash = blockHash.Substring(2);
+                        blockHash = Hash.Parse(blockHash.Substring(2)).ToString();
                     }
 
-                    blockIds.Add(blocks[i].GetString("block_hash"), new BigInteger(blocks[i].GetInt32("block_index")));
+                    blockIds.Add(blockHash, new BigInteger(blocks[i].GetInt32("block_index")));
                 }
 
                 return blockIds;
@@ -414,13 +415,13 @@ namespace Phantasma.Neo.Core
                 List<ApplicationLog> appLogList = new List<ApplicationLog>();
 
                 var executions = response["result"]["executions"];
-                LogData(executions);
+                //LogData(executions);
                 for (var i = 0; i < executions.ChildCount; i++)
                 {
                     VMState vmstate;
                     if (Enum.TryParse(executions[i].GetString("vmstate"), out vmstate))
                     {
-                        LogData(executions[i]["notifications"][0]["state"]["value"]);
+                        //LogData(executions[i]["notifications"][0]["state"]["value"]);
                         var notifications = executions[i]["notifications"];
                         for (var j = 0; j < notifications.ChildCount; j++)
                         {

@@ -31,7 +31,8 @@ namespace Phantasma.Neo.Core
             {
                 if (_hash == null)
                 {
-                    var data = this.Serialize();
+                    // neo block hash is only calculated through the unsigned block header
+                    var data = this.SerializeUnsigned();
                     _hash = new UInt256(Phantasma.Cryptography.CryptoExtensions.Hash256(data));
                 }
 
@@ -50,6 +51,24 @@ namespace Phantasma.Neo.Core
             }
         }
 
+        public byte[] SerializeUnsigned()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    writer.Write(Version);
+                    writer.Write(PreviousHash != null ? PreviousHash.ToArray() : new byte[32]);
+                    writer.Write(MerkleRoot != null ? MerkleRoot : new byte[32]);
+                    writer.Write(Timestamp);
+                    writer.Write(Height);
+                    writer.Write((UInt64)ConsensusData);
+                    writer.Write(Validator !=null ? Validator.ToArray(): new byte[20]);
+                    return stream.ToArray();
+                }
+            }
+        }
+
         public byte[] Serialize()
         {
             using (var stream = new MemoryStream())
@@ -59,7 +78,7 @@ namespace Phantasma.Neo.Core
                     writer.Write(Version);
                     writer.Write(PreviousHash != null ? PreviousHash.ToArray() : new byte[32]);
                     writer.Write(MerkleRoot != null ? MerkleRoot : new byte[32]);
-                    writer.Write((uint)Date.ToTimestamp());
+                    writer.Write(Timestamp);
                     writer.Write(Height);
                     writer.Write((UInt64)ConsensusData);
                     writer.Write(Validator!=null ? Validator.ToArray(): new byte[20]);
