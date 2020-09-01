@@ -1149,7 +1149,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(!source.IsNull, "invalid source");
 
-            if (source == destination)
+            if (source == destination || amount == 0)
             {
                 return;
             }

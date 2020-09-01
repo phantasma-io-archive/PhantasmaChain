@@ -177,7 +177,6 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var chain = DomainSettings.RootChainName; // TODO is this correct?
             var basePrice = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fiat dollars
 
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);

@@ -1180,28 +1180,6 @@ namespace Phantasma.Blockchain
                          })
                      },
 
-
-                     {
-                         SwapContract.SwapMakerFeePercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             2, new ChainConstraint[]
-                         {
-                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 0},
-                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 20},
-                             new ChainConstraint() { Kind = ConstraintKind.LessThanOther, Tag = SwapContract.SwapTakerFeePercentTag},
-                         })
-                     },
-
-
-                     {
-                         SwapContract.SwapTakerFeePercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             5, new ChainConstraint[]
-                         {
-                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 1},
-                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 20},
-                             new ChainConstraint() { Kind = ConstraintKind.GreatThanOther, Tag = SwapContract.SwapMakerFeePercentTag},
-                         })
-                     },
-
                      {
                          StorageContract.KilobytesPerStakeTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
                              40, new ChainConstraint[]
