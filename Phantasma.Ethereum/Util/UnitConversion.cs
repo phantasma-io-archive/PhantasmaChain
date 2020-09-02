@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     public class UnitConversion
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace Nethereum.RLP
+namespace Phantasma.Ethereum.RLP
 {
     public static class ConvertorForRLPEncodingExtensions
     {

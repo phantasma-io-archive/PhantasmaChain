@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     public class UniqueAddressList : HashSet<string>
     {

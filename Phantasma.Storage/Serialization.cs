@@ -223,7 +223,7 @@ namespace Phantasma.Storage
                 return bytes;
             }
 
-            if (bytes.Length == 0)
+            if (bytes == null || bytes.Length == 0)
             {
                 return null;
             }

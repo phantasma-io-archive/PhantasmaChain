@@ -1180,37 +1180,6 @@ namespace Phantasma.Blockchain
                          })
                      },
 
-
-                     {
-                         SwapContract.SwapMakerFeePercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             2, new ChainConstraint[]
-                         {
-                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 0},
-                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 20},
-                             new ChainConstraint() { Kind = ConstraintKind.LessThanOther, Tag = SwapContract.SwapTakerFeePercentTag},
-                         })
-                     },
-
-
-                     {
-                         SwapContract.SwapTakerFeePercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             5, new ChainConstraint[]
-                         {
-                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 1},
-                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 20},
-                             new ChainConstraint() { Kind = ConstraintKind.GreatThanOther, Tag = SwapContract.SwapMakerFeePercentTag},
-                         })
-                     },
-
-                     {
-                         InteropContract.InteropFeeTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             UnitConversion.ToBigInteger(0.10m, DomainSettings.FiatTokenDecimals), new ChainConstraint[]
-                         {
-                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = UnitConversion.ToBigInteger(0.01m, DomainSettings.FiatTokenDecimals)},
-                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = UnitConversion.ToBigInteger(1, DomainSettings.FiatTokenDecimals)},
-                         })
-                     },
-
                      {
                          StorageContract.KilobytesPerStakeTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
                              40, new ChainConstraint[]
@@ -1807,6 +1776,17 @@ namespace Phantasma.Blockchain
             return null;
         }
 
+        public bool TokenExistsOnPlatform(string symbol, string platform, StorageContext storage)
+        {
+            var key = GetNexusKey($"{symbol}.{platform}.hash");
+            if (storage.Has(key))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public Hash GetTokenPlatformHash(string symbol, string platform, StorageContext storage)
         {
             if (platform == DomainSettings.PlatformName)
@@ -1821,6 +1801,64 @@ namespace Phantasma.Blockchain
             }
 
             return Hash.Null;
+        }
+
+        public Hash[] GetPlatformTokenHashes(string platform, StorageContext storage)
+        {
+            var tokens = GetTokens(storage);
+
+            var hashes = new List<Hash>();
+
+            if (platform == DomainSettings.PlatformName)
+            {
+                foreach (var token in tokens)
+                {
+                    hashes.Add(Hash.FromString(token));
+                }
+                return hashes.ToArray();
+            }
+
+            foreach (var token in tokens)
+            {
+                var key = GetNexusKey($"{token}.{platform}.hash");
+                if (storage.Has(key))
+                {
+                    var tokenHash = storage.Get<Hash>(key);
+                    if (tokenHash != null)
+                    {
+                        hashes.Add(tokenHash);
+                    }
+                }
+            }
+
+            return hashes.Distinct().ToArray();
+        }
+
+        public string GetPlatformTokenByHash(Hash hash, string platform, StorageContext storage)
+        {
+            var tokens = GetTokens(storage);
+
+            if (platform == DomainSettings.PlatformName)
+            {
+                foreach (var token in tokens)
+                {
+                    if (Hash.FromString(token) == hash)
+                        return token;
+                }
+            }
+
+            foreach (var token in tokens)
+            {
+                var key = GetNexusKey($"{token}.{platform}.hash");
+                var tokenHash = storage.Get<Hash>(key);
+                if (tokenHash == hash)
+                {
+                    return token;
+                }
+            }
+
+            _logger.Warning($"Token hash {hash} doesn't exist!");
+            return null;
         }
 
         public void SetTokenPlatformHash(string symbol, string platform, Hash hash, StorageContext storage)

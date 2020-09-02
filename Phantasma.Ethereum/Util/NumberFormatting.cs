@@ -1,4 +1,4 @@
-﻿namespace Nethereum.Util {
+﻿namespace Phantasma.Ethereum.Util {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;

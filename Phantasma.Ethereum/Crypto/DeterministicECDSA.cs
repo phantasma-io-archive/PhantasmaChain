@@ -5,7 +5,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 
-namespace Nethereum.Signer.Crypto
+namespace Phantasma.Ethereum.Signer.Crypto
 {
     internal class DeterministicECDSA : ECDsaSigner
     {

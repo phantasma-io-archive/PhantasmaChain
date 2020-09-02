@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 
-namespace Nethereum.Hex.HexConvertors.Extensions
+namespace Phantasma.Ethereum.Hex.HexConvertors.Extensions
 {
     public static class HexBigIntegerConvertorExtensions
     {

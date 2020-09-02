@@ -146,6 +146,14 @@ namespace Phantasma.Domain
             return tx;
         }
 
+        public static BigInteger ReadFeeFromOracle(this IRuntime runtime, string platform)
+        {
+            var url = GetOracleFeeURL(platform);
+            var bytes = runtime.ReadOracle(url);
+            var fee = BigInteger.FromUnsignedArray(bytes, true);
+            return fee;
+        }
+
         public static string GetOracleTransactionURL(string platform, string chain, Hash hash)
         {
             return $"interop://{platform}/{chain}/tx/{hash}";
@@ -159,6 +167,11 @@ namespace Phantasma.Domain
         public static string GetOracleBlockURL(string platform, string chain, BigInteger height)
         {
             return $"interop://{platform}/{chain}/block/{height}";
+        }
+
+        public static string GetOracleFeeURL(string platform)
+        {
+            return $"fee://{platform}";
         }
 
         public static BigInteger GetBlockCount(this IArchive archive)
@@ -184,6 +197,7 @@ namespace Phantasma.Domain
             return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(baseAmount, baseToken.Decimals) * UnitConversion.ToDecimal(price, quoteToken.Decimals), quoteToken.Decimals);
         }
 
+        // converts amount in baseSymbol to amount in quoteSymbol
         public static BigInteger GetTokenQuote(this IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
         {
             if (baseSymbol == quoteSymbol)
@@ -192,20 +206,43 @@ namespace Phantasma.Domain
             var basePrice = runtime.GetTokenPrice(baseSymbol);
 
             var baseToken = runtime.GetToken(baseSymbol);
-            var fiatToken = runtime.GetToken(DomainSettings.FiatTokenSymbol);
 
-            // this gives how many dollars is "amount"
-            BigInteger result = runtime.ConvertBaseToQuote(amount, basePrice, baseToken, fiatToken);
             if (quoteSymbol == DomainSettings.FiatTokenSymbol)
             {
+                var fiatToken = runtime.GetToken(DomainSettings.FiatTokenSymbol);
+
+                // this gives how many dollars is "amount"
+                BigInteger result = runtime.ConvertBaseToQuote(amount, basePrice, baseToken, fiatToken);
+
                 return result;
             }
+            else
+            {
+                var quotePrice = runtime.GetTokenPrice(quoteSymbol);
+                var quoteToken = runtime.GetToken(quoteSymbol);
 
-            var quotePrice = runtime.GetTokenPrice(quoteSymbol);
-            var quoteToken = runtime.GetToken(quoteSymbol);
+                if (quoteToken.Decimals <= baseToken.Decimals)
+                {
+                    var result = ((basePrice * amount) / quotePrice);
 
-            result = runtime.ConvertQuoteToBase(result, quotePrice, quoteToken, fiatToken);
-            return result;
+                    var diff = baseToken.Decimals - quoteToken.Decimals;
+                    var pow = BigInteger.Pow(10, diff);
+                    result /= pow;
+
+                    return result;
+                }
+                else // here we invert order of calculations for improved precision
+                {
+                    var diff = quoteToken.Decimals - baseToken.Decimals;
+                    var pow = BigInteger.Pow(10, diff);
+
+                    amount *= pow;
+
+                    var result = ((basePrice * amount) / quotePrice);
+
+                    return result;
+                }
+            }
         }
 
         #region TRIGGERS

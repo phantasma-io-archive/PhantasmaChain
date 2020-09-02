@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.RLP
+namespace Phantasma.Ethereum.RLP
 {
     /// <summary>
     ///     Recursive Length Prefix (RLP) encoding.

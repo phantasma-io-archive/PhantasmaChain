@@ -1875,6 +1875,11 @@ namespace Phantasma.API
                 address = Pay.Chains.NeoWallet.EncodeAddress(account);
             }
             else
+            if (Pay.Chains.EthereumWallet.IsValidAddress(account))
+            {
+                address = Pay.Chains.EthereumWallet.EncodeAddress(account);
+            }
+            else
             {
                 address = Nexus.LookUpName(Nexus.RootStorage, account);
             }
@@ -1885,7 +1890,6 @@ namespace Phantasma.API
             }
 
             var swapList = TokenSwapper.GetPendingSwaps(address);
-            Console.WriteLine("=============================== swapListCount: " + swapList.Count());
 
             var oracleReader = Nexus.GetOracleReader();
 

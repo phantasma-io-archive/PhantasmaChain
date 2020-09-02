@@ -1,38 +1,13 @@
 ﻿using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
-using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Util;
 using System;
 using System.Linq;
-using System.Text;
 
 namespace Phantasma.Ethereum
 {
-    public static class Sha3Keccack
-    {
-        public static string CalculateHash(string value)
-        {
-            var input = Encoding.UTF8.GetBytes(value);
-            var output = CalculateHash(input);
-            return Base16.Encode(output);
-        }
-
-        public static string CalculateHashFromHex(params string[] hexValues)
-        {
-            var joinedHex = string.Join("", hexValues.Select(x => x.Replace("0x","")).ToArray());
-            return Base16.Encode( CalculateHash(Base16.Decode( joinedHex)));
-        }
-
-        public static byte[] CalculateHash(byte[] value)
-        {
-            var digest = new KeccakDigest(256);
-            var output = new byte[digest.GetDigestSize()];
-            digest.BlockUpdate(value, 0, value.Length);
-            digest.DoFinal(output, 0);
-            return output;
-        }
-    }
-
     public class EthereumKey : IKeyPair
     {
         public byte[] PrivateKey{ get; private set; }
@@ -46,14 +21,19 @@ namespace Phantasma.Ethereum
                 throw new ArgumentException();
             this.PrivateKey = new byte[32];
             Buffer.BlockCopy(privateKey, privateKey.Length - 32, PrivateKey, 0, 32);
-
             var pKey = ECCurve.Secp256k1.G * privateKey;
 
             this.PublicKey = pKey.EncodePoint(true).ToArray();
             this.UncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
 
-            var kak = Sha3Keccack.CalculateHash(this.UncompressedPublicKey);
+            var kak = new Sha3Keccack().CalculateHash(this.UncompressedPublicKey);
             this.Address = "0x"+Base16.Encode( kak.Skip(12).ToArray());
+        }
+
+        public static EthereumKey FromPrivateKey(string prv)
+        {
+            if (prv == null) throw new ArgumentNullException();
+            return new EthereumKey(prv.HexToByteArray());
         }
 
         public static EthereumKey FromWIF(string wif)

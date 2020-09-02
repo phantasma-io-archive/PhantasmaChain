@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Nethereum.Signer.Crypto;
+using Phantasma.Ethereum.Signer.Crypto;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
 #if !DOTNET35
 

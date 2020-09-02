@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Numerics;
 using System.Threading.Tasks;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Model;
-using Nethereum.RLP;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Model;
+using Phantasma.Ethereum.RLP;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class Transaction : SignedTransactionBase
     {

@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Numerics;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     /// BigNumber based on the original http://uberscraper.blogspot.co.uk/2013/09/c-bigdecimal-class-from-stackoverflow.html
     /// which was inspired by http://stackoverflow.com/a/4524254

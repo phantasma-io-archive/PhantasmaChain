@@ -3,7 +3,7 @@ using System.IO;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Math;
 
-namespace Nethereum.Signer.Crypto
+namespace Phantasma.Ethereum.Signer.Crypto
 {
     public class ECDSASignature
     {

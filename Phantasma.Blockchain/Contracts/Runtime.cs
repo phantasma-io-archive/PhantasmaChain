@@ -379,7 +379,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (UsedGas > MaxGas && !DelayPayment)
             {
-                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})");
+                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})/({UsedGas})");
             }
 
             return result;
@@ -672,6 +672,11 @@ namespace Phantasma.Blockchain.Contracts
             return Nexus.TokenExists(RootStorage, symbol);
         }
 
+        public bool TokenExists(string symbol, string platform)
+        {
+            return Nexus.TokenExistsOnPlatform(symbol, platform, RootStorage);
+        }
+
         public bool FeedExists(string name)
         {
             return Nexus.FeedExists(RootStorage, name);
@@ -855,12 +860,15 @@ namespace Phantasma.Blockchain.Contracts
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
+            Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
+
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
             Runtime.Expect(ValidationUtils.IsValidTicker(symbol), "invalid symbol");
-            Runtime.Expect(!Runtime.TokenExists(symbol), "token already exists");
+            Runtime.Expect(!Runtime.TokenExists(symbol, platform), $"token {symbol}/{platform} already exists");
 
             Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
-            Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
+
+            Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "invalid witness, must be genesis");
 
             Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
         }
@@ -1141,7 +1149,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(!source.IsNull, "invalid source");
 
-            if (source == destination)
+            if (source == destination || amount == 0)
             {
                 return;
             }

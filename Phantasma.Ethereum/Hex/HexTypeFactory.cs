@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Nethereum.Hex.HexTypes
+namespace Phantasma.Ethereum.Hex.HexTypes
 {
     public class HexTypeFactory
     {

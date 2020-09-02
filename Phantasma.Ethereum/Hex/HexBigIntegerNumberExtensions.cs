@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Nethereum.Hex.HexTypes
+namespace Phantasma.Ethereum.Hex.HexTypes
 {
     public static class HexBigIntegerNumberExtensions
     {

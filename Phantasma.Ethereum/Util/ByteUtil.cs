@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     public static class ByteUtil
     {

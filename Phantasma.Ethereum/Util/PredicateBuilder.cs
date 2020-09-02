@@ -3,7 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 
-namespace Nethereum.Util
+namespace Phantasma.Ethereum.Util
 {
     //Predicate Builder from Joseph and Ben Albahari http://www.albahari.com/nutshell/predicatebuilder.aspx
     public static class PredicateBuilder

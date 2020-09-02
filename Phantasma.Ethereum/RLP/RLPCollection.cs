@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Nethereum.RLP
+namespace Phantasma.Ethereum.RLP
 {
     public class RLPCollection : List<IRLPElement>, IRLPElement
     {

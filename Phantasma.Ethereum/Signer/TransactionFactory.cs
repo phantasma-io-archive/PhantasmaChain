@@ -1,8 +1,8 @@
-﻿using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.RLP;
+﻿using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.RLP;
 using System.Numerics;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class TransactionFactory
     {

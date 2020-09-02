@@ -139,6 +139,18 @@ namespace Phantasma.Simulator
                 GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
                 EndBlock();
+
+                //TODO add SOUL/KCAL on ethereum
+                //BeginBlock();
+                //GenerateCustomTransaction(_owner, ProofOfWork.Minimal, () =>
+                //{
+                //    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                //    CallInterop("Nexus.SetTokenPlatformHash", "SOUL", ethPlatform, System.Text.Encoding.UTF8.GetBytes("53d5bdb2c8797218f8a0e11e997c4ab84f0b40ce")). // eth ropsten testnet hash
+                //    CallInterop("Nexus.SetTokenPlatformHash", "KCAL", ethPlatform, System.Text.Encoding.UTF8.GetBytes("67B132A32E7A3c4Ba7dEbedeFf6290351483008f")). // eth ropsten testnet hash
+                //    SpendGas(_owner.Address).
+                //    EndScript();
+                //});
+                //EndBlock();
             }
 
             /*

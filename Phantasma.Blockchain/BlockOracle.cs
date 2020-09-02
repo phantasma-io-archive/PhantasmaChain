@@ -56,6 +56,11 @@ namespace Phantasma.Blockchain
             throw new NotImplementedException();
         }
 
+        protected override Phantasma.Numerics.BigInteger PullFee(Timestamp time, string platform)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override decimal PullPrice(Timestamp time, string symbol)
         {
             throw new NotImplementedException();

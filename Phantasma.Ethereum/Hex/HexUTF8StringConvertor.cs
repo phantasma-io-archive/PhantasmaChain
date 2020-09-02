@@ -1,6 +1,6 @@
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Hex.HexConvertors
+namespace Phantasma.Ethereum.Hex.HexConvertors
 {
     public class HexUTF8StringConvertor : IHexConvertor<string>
     {

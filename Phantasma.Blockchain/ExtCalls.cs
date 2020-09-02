@@ -10,6 +10,7 @@ using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Contracts;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -40,6 +41,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
             vm.RegisterMethod("Nexus.CreatePlatform", Runtime_CreatePlatform);
             vm.RegisterMethod("Nexus.CreateOrganization", Runtime_CreateOrganization);
+            vm.RegisterMethod("Nexus.SetTokenPlatformHash", Runtime_SetTokenPlatformHash);
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
@@ -858,6 +860,29 @@ namespace Phantasma.Blockchain
             var result = new VMObject();
             result.SetValue(target);
             Runtime.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_SetTokenPlatformHash(RuntimeVM Runtime)
+        {
+            ExpectStackSize(Runtime, 3);
+
+            VMObject temp;
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for platform");
+            var platform = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
+            var hash = new Hash(temp.AsByteArray().Skip(1).ToArray());
+
+            Runtime.SetTokenPlatformHash(symbol, platform, hash);
 
             return ExecutionState.Running;
         }

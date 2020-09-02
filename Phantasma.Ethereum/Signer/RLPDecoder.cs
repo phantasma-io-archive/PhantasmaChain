@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Nethereum.RLP;
+using Phantasma.Ethereum.RLP;
 
-namespace Nethereum.Signer
+namespace Phantasma.Ethereum.Signer
 {
     public class RLPDecoder
     {

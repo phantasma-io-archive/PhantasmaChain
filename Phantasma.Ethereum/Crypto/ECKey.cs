@@ -6,7 +6,7 @@ using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
 
-namespace Nethereum.Signer.Crypto
+namespace Phantasma.Ethereum.Signer.Crypto
 {
     /// <summary>
     ///     ECKey based on the implementation of NBitcoin

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace Nethereum.Util {
+namespace Phantasma.Ethereum.Util {
     public static class FormattingExtensions
     {
         /// <summary>

@@ -1,8 +1,8 @@
 using System;
-using Nethereum.Hex.HexConvertors;
-using Nethereum.Hex.HexConvertors.Extensions;
+using Phantasma.Ethereum.Hex.HexConvertors;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
-namespace Nethereum.Hex.HexTypes
+namespace Phantasma.Ethereum.Hex.HexTypes
 {
     public class HexRPCType<T>: IEquatable<HexRPCType<T>>
     {

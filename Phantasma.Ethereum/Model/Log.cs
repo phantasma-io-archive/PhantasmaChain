@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Nethereum.Model
+namespace Phantasma.Ethereum.Model
 {
     public class Log
     {
