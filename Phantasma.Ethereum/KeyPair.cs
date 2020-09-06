@@ -60,7 +60,7 @@ namespace Phantasma.Ethereum
             return new EthereumKey(bytes);
         }
 
-        private string GetWIF()
+        public string GetWIF()
         {
             byte[] data = new byte[34];
             data[0] = 0x80;
