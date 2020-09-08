@@ -140,13 +140,13 @@ namespace Phantasma.Simulator
                 MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
                 EndBlock();
 
-                //TODO add SOUL/KCAL on ethereum
+                //TODO add SOUL/KCAL on ethereum, removed for now because hash is not fixed yet
                 //BeginBlock();
                 //GenerateCustomTransaction(_owner, ProofOfWork.Minimal, () =>
                 //{
                 //    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
-                //    CallInterop("Nexus.SetTokenPlatformHash", "SOUL", ethPlatform, System.Text.Encoding.UTF8.GetBytes("53d5bdb2c8797218f8a0e11e997c4ab84f0b40ce")). // eth ropsten testnet hash
-                //    CallInterop("Nexus.SetTokenPlatformHash", "KCAL", ethPlatform, System.Text.Encoding.UTF8.GetBytes("67B132A32E7A3c4Ba7dEbedeFf6290351483008f")). // eth ropsten testnet hash
+                //    CallInterop("Nexus.SetTokenPlatformHash", "SOUL", ethPlatform, Hash.FromUnpaddedHex("53d5bdb2c8797218f8a0e11e997c4ab84f0b40ce")). // eth ropsten testnet hash
+                //    CallInterop("Nexus.SetTokenPlatformHash", "KCAL", ethPlatform, Hash.FromUnpaddedHex("67B132A32E7A3c4Ba7dEbedeFf6290351483008f")). // eth ropsten testnet hash
                 //    SpendGas(_owner.Address).
                 //    EndScript();
                 //});
@@ -302,7 +302,7 @@ namespace Phantasma.Simulator
                         BigInteger nextHeight = lastBlock != null ? lastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = lastBlock != null ? lastBlock.Hash : Hash.Null;
 
-                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, _owner.Address, System.Text.Encoding.UTF8.GetBytes("SIM"));
+                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, this.blockValidator.Address, System.Text.Encoding.UTF8.GetBytes("SIM"));
 
                         bool submitted;
 
@@ -330,7 +330,7 @@ namespace Phantasma.Simulator
                             try
                             {
                                 var changeSet = chain.ProcessBlock(block, transactions, MinimumFee);
-                                block.Sign(this._owner);
+                                block.Sign(this.blockValidator);
                                 chain.AddBlock(block, txs, MinimumFee, changeSet);
                                 submitted = true;
                             }
@@ -879,7 +879,7 @@ namespace Phantasma.Simulator
 
                                 if (tokenBalance > expectedTotal && fuelBalance > fee)
                                 {
-                                    Logger.Debug($"Rnd.Transfer: {total} {tokenSymbol} from {source.Address} to {targetAddress}");
+                                    Logger.Message($"Rnd.Transfer: {total} {tokenSymbol} from {source.Address} to {targetAddress}");
                                     GenerateTransfer(source, targetAddress, sourceChain, tokenSymbol, total);
                                 }
                             }
