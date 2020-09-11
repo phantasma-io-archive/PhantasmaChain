@@ -219,11 +219,17 @@ namespace Phantasma.RocksDB
         {
             if (_db.Count > 0)
             {
+                var toRemove = new List<String>();
                 logger.Message($"Shutting down databases...");
                 foreach (var db in _db)
                 {
                     db.Value.Dispose();
-                    _db.Remove(db.Key);
+                    toRemove.Add(db.Key);
+                }
+
+                foreach (var key in toRemove)
+                {
+                    _db.Remove(key);
                 }
                 logger.Message("Databases shut down!");
             }
