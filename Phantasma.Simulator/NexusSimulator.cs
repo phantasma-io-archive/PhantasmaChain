@@ -54,7 +54,7 @@ namespace Phantasma.Simulator
 
         public readonly Logger Logger;
 
-        public TimeSpan blockTimeSkip = TimeSpan.FromSeconds(3);
+        public TimeSpan blockTimeSkip = TimeSpan.FromSeconds(2);
         public BigInteger MinimumFee = 1;
 
         public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus("simnet", null, null), ownerKey, seed, logger)
@@ -69,7 +69,7 @@ namespace Phantasma.Simulator
             _owner = ownerKey;
             this.Nexus = nexus;
 
-            CurrentTime = new DateTime(2018, 8, 26);
+            CurrentTime = new DateTime(2018, 8, 26, 0, 0, 0, DateTimeKind.Utc);
 
             if (!Nexus.HasGenesis)
             {
@@ -83,6 +83,7 @@ namespace Phantasma.Simulator
                 var lastBlockHash = Nexus.RootChain.GetLastBlockHash();
                 var lastBlock = Nexus.RootChain.GetBlockByHash(lastBlockHash);
                 CurrentTime = new Timestamp(lastBlock.Timestamp.Value + 1);
+                DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
             }
 
             _rnd = new Random(seed);
@@ -897,9 +898,25 @@ namespace Phantasma.Simulator
             }
         }
 
+        public void TimeSkipHours(int hours)
+        {
+            CurrentTime = CurrentTime.AddHours(hours);
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
+
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
+                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+        }
+
         public void TimeSkipYears(int years)
         {
             CurrentTime = CurrentTime.AddYears(years);
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
@@ -914,6 +931,7 @@ namespace Phantasma.Simulator
         public void TimeSkipToDate(DateTime date)
         {
             CurrentTime = date;
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
@@ -930,14 +948,14 @@ namespace Phantasma.Simulator
             if (roundUp)
             {
                 CurrentTime = CurrentTime.AddDays(1);
-                CurrentTime = new DateTime(CurrentTime.Year, CurrentTime.Month, CurrentTime.Day);
+                CurrentTime = new DateTime(CurrentTime.Year, CurrentTime.Month, CurrentTime.Day, 0, 0, 0, DateTimeKind.Utc);
 
                 var timestamp = (Timestamp) CurrentTime;
                 var datetime = (DateTime) timestamp;
                 if (datetime.Hour == 23)
                     datetime = datetime.AddHours(2);
                 
-                CurrentTime = new DateTime(datetime.Year, datetime.Month, datetime.Day, datetime.Hour, 0 , 0);   //to set the time of day component to 0
+                CurrentTime = new DateTime(datetime.Year, datetime.Month, datetime.Day, datetime.Hour, 0 , 0, DateTimeKind.Utc);   //to set the time of day component to 0
             }
 
             BeginBlock();
