@@ -159,7 +159,7 @@ namespace Phantasma.Contracts.Native
                 referenceDate = _lastMasterClaim;
             }
 
-            var nextMasterClaim = (Timestamp)(new DateTime(referenceDate.Year, referenceDate.Month, 1, 0, 0, 0)).AddMonths((int)claimDistance);
+            var nextMasterClaim = (Timestamp)(new DateTime(referenceDate.Year, referenceDate.Month, 1, 0, 0, 0, DateTimeKind.Utc)).AddMonths((int)claimDistance);
             var dateTimeClaim = (DateTime)nextMasterClaim;
 
             if (dateTimeClaim.Hour == 23)
@@ -223,7 +223,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(_masterClaimCount < 12 * 4, "no more claims available"); // 4 years
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            Runtime.Expect(IsMaster(from), "invalid master");
+            Runtime.Expect(IsMaster(from), $"{from} is no SoulMaster");
 
             var thisClaimDate = _masterClaims.Get<Address, Timestamp>(from);
             Runtime.Expect(Runtime.Time >= thisClaimDate, "not enough time waited");
@@ -236,7 +236,7 @@ namespace Phantasma.Contracts.Native
 
             var masters = Runtime.GetOrganization(DomainSettings.MastersOrganizationName);
 
-            var validMasterCount = GetClaimMasterCount(thisClaimDate);
+            var validMasterCount = GetClaimMasterCount(Runtime.Time);
 
             var individualAmount = totalAmount / validMasterCount;
             var leftovers = totalAmount % validMasterCount;
@@ -266,7 +266,7 @@ namespace Phantasma.Contracts.Native
                 _masterClaims.Set<Address, Timestamp>(addr, nextClaim);
             }
 
-            Runtime.Expect(totalAmount == 0, "something failed");
+            Runtime.Expect(totalAmount == 0, $"{totalAmount} something failed");
 
             _lastMasterClaim = Runtime.Time;
             _masterClaimCount++;
@@ -793,7 +793,7 @@ namespace Phantasma.Contracts.Native
 
         public static BigInteger FuelToStake(BigInteger fuelAmount, uint _BaseEnergyRatioDivisor)
         {
-            return UnitConversion.ConvertDecimals(fuelAmount, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
+            return UnitConversion.ConvertDecimals(fuelAmount * _BaseEnergyRatioDivisor, DomainSettings.FuelTokenDecimals, DomainSettings.StakingTokenDecimals);
         }
 
         public static BigInteger StakeToFuel(BigInteger stakeAmount, uint _BaseEnergyRatioDivisor)
