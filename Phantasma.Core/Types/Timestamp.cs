@@ -77,7 +77,12 @@ namespace Phantasma.Core.Types
 
         public static implicit operator Timestamp(DateTime time)
         {
-            var ticks = (uint)(time.ToUniversalTime() - unixEpoch).TotalSeconds;
+            if (time.Kind != DateTimeKind.Utc)
+            {
+                time = time.ToUniversalTime();
+            }
+
+            var ticks = (uint)(time - unixEpoch).TotalSeconds;
             return new Timestamp(ticks);
         }
 
