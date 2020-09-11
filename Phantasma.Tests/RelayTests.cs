@@ -28,10 +28,13 @@ namespace Phantasma.Tests
         private ApiTests.TestData CreateAPI(bool useMempool = true)
         {
             var owner = PhantasmaKeys.FromWIF(testWIF);
-            var sim = new NexusSimulator(owner, 1234);
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var sim = new NexusSimulator(nexus, owner, 1234);
+
             var mempool = useMempool ? new Mempool(sim.Nexus, 2, 1, System.Text.Encoding.UTF8.GetBytes("TEST")) : null;
             mempool.SetKeys(owner);
-            var node = useMempool ? new Node("relay node", sim.Nexus, mempool, owner, 7073, PeerCaps.None, new List<string>() { "192.168.0.1:7073" }, null) : null;
+            var node = useMempool ? new Node("relay node", sim.Nexus, mempool, owner, 7073, PeerCaps.Relay , new List<string>() { "192.168.0.1:7073" }, null) : null;
             var api = useMempool ? new NexusAPI(sim.Nexus) : null;
 
             if (api != null)
@@ -58,8 +61,9 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(from, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(from.Address, Address.Null, 1, 9999)
-                    .CallContract("relay", "TopUpChannel", from.Address, amount).
-                    SpendGas(from.Address).EndScript());
+                    .CallContract("relay", "OpenChannel", from.Address, from.PublicKey)
+                    .CallContract("relay", "TopUpChannel", from.Address, amount/RelayFeePerMessage)
+                    .SpendGas(from.Address).EndScript());
             simulator.EndBlock();
         }
 
@@ -75,7 +79,7 @@ namespace Phantasma.Tests
             var api = test.api;
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, RelayFeePerMessage * 10);
             simulator.EndBlock();
 
             var desiredChannelBalance = RelayFeePerMessage;
@@ -600,6 +604,7 @@ namespace Phantasma.Tests
         */
 
         [TestMethod]
+        [Ignore]
         public void TestAutoSendAddress()
         {
             var test = CreateAPI();
@@ -617,15 +622,24 @@ namespace Phantasma.Tests
 
             var senderAddressStr = Base16.Encode(autoSender.Address.ToByteArray());
             var receivingAddressStr = Base16.Encode(receiver.Address.ToByteArray());
+            var isTrue = true;
 
             string[] scriptString = new string[]
             {
                 $"alias r1, $triggerReceive",
                 $"alias r2, $currentTrigger",
                 $"alias r3, $comparisonResult",
+                $"alias r13, $triggerWitness",
+                $"alias r14, $currentAddress",
+                $"alias r15, $sourceAddress",
                 
                 $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
+                $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
                 $"pop $currentTrigger",
+                $"pop $currentAddress",
+
+                $"equal $triggerWitness, $currentTrigger, $comparisonResult",
+                $"jmpif $comparisonResult, @witnessHandler",
 
                 $"equal $triggerReceive, $currentTrigger, $comparisonResult",
                 $"jmpif $comparisonResult, @receiveHandler",
@@ -641,8 +655,8 @@ namespace Phantasma.Tests
                 $"alias r8, $symbol",
                 $"alias r9, $methodName",
 
-                $"pop $symbol",
                 $"pop $sourceAddress",
+                $"pop $symbol",
                 $"pop $receivedAmount",
 
                 $"load r11 0x{receivingAddressStr}",
@@ -650,19 +664,25 @@ namespace Phantasma.Tests
                 $@"extcall ""Address()""",
                 $"pop $targetAddress",
 
-                $@"load $methodName, ""TransferTokens""",
-
                 $"push $receivedAmount",
                 $"push $symbol",
                 $"push $targetAddress",
                 $"push $sourceAddress",
-                $@"push $methodName",
+                "extcall \"Runtime.TransferTokens\"",
                 
-                //switch to token contract
-                $@"load r12, ""token""",
-                $"ctx r12, $tokenContract",
-                $"switch $tokenContract",
-                
+                $"@witnessHandler: ",
+                $"load r11 0x{senderAddressStr}",
+                $"push r11",
+                "extcall \"Address()\"",
+                $"pop $sourceAddress",
+                $"equal $sourceAddress, $currentAddress, $comparisonResult",
+                "jmpif $comparisonResult, @endWitness",
+                "throw",
+
+                $"@endWitness: ret",
+                $"load r11 {isTrue}",
+                $"push r11",
+
                 $"@end: ret"
             };
 
@@ -670,8 +690,10 @@ namespace Phantasma.Tests
 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, autoSender.Address, simulator.Nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000);
+            simulator.GenerateTransfer(owner, autoSender.Address, simulator.Nexus.RootChain, DomainSettings.StakingTokenSymbol, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals));
             simulator.GenerateCustomTransaction(autoSender, ProofOfWork.None,
                 () => ScriptUtils.BeginScript().AllowGas(autoSender.Address, Address.Null, 1, 9999)
+                    .CallContract("stake", "Stake", autoSender.Address, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals))
                     .CallContract("account", "RegisterScript", autoSender.Address, script).SpendGas(autoSender.Address)
                     .EndScript());
             simulator.EndBlock();
