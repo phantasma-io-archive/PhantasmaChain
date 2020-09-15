@@ -105,44 +105,35 @@ namespace Phantasma.RocksDB
         public void SetValue(byte[] key, byte[] value)
         {
             Throw.IfNull(key, nameof(key));
-
-            if (value == null || value.Length == 0)
-            {
-                Remove_Internal(key);
-            }
-            else
-            {
-                Put_Internal(key, value);
-            }
+            Put_Internal(key, value);
         }
 
         public byte[] GetValue(byte[] key)
         {
-            if (ContainsKey(key))
+            byte[] value;
+            if (ContainsKey_Internal(key, out value))
             {
-                return Get_Internal(key);
+                return value;
             }
 
             return null;
         }
 
-        public bool ContainsKey(byte[] key)
+        public bool ContainsKey_Internal(byte[] key, out byte[] value)
         {
-            var result = Get_Internal(key);
-            return (result != null  && result.Length > 0) ? true : false;
+            value = Get_Internal(key);
+            return (value != null) ? true : false;
         }
 
-        public bool Remove(byte[] key)
+        public bool ContainsKey(byte[] key)
         {
-            if (ContainsKey(key))
-            {
-                Remove_Internal(key);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            var value = Get_Internal(key);
+            return (value != null) ? true : false;
+        }
+
+        public void Remove(byte[] key)
+        {
+            Remove_Internal(key);
         }
     }
 
@@ -175,14 +166,6 @@ namespace Phantasma.RocksDB
             var columnFamilies = new ColumnFamilies
             {
                 { "default", new ColumnFamilyOptions().OptimizeForPointLookup(256) },
-                //{ "test", new ColumnFamilyOptions()
-                //    //.SetWriteBufferSize(writeBufferSize)
-                //    //.SetMaxWriteBufferNumber(maxWriteBufferNumber)
-                //    //.SetMinWriteBufferNumberToMerge(minWriteBufferNumberToMerge)
-                //    .SetMemtableHugePageSize(2 * 1024 * 1024)
-                //    .SetPrefixExtractor(SliceTransform.CreateFixedPrefix((ulong)8))
-                //    .SetBlockBasedTableFactory(bbto)
-                //},
             };
 
             try

@@ -13,7 +13,7 @@ namespace Phantasma.Storage
         void SetValue(byte[] key, byte[] value);
         byte[] GetValue(byte[] key);
         bool ContainsKey(byte[] key);
-        bool Remove(byte[] key);
+        void Remove(byte[] key);
         uint Count { get; }
         void Visit(Action<byte[], byte[]> visitor);
     }
@@ -55,17 +55,9 @@ namespace Phantasma.Storage
             return result;
         }
 
-        public bool Remove(byte[] key)
+        public void Remove(byte[] key)
         {
-            if (ContainsKey(key))
-            {
-                _entries.Remove(key);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            _entries.Remove(key);
         }
 
         public void Visit(Action<byte[], byte[]> visitor)
@@ -172,23 +164,15 @@ namespace Phantasma.Storage
             }
         }
 
-        public bool Remove(byte[] key)
+        public void Remove(byte[] key)
         {
-            if (ContainsKey(key))
+            lock (_cache)
             {
-                lock (_cache)
+                _cache.Remove(key);
+                if (AutoFlush)
                 {
-                    _cache.Remove(key);
-                    if (AutoFlush)
-                    {
-                        UpdateToDisk();
-                    }
+                    UpdateToDisk();
                 }
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
 
@@ -263,10 +247,10 @@ namespace Phantasma.Storage
             return Adapter.ContainsKey(keyBytes);
         }
 
-        public bool Remove(K key)
+        public void Remove(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            return Adapter.Remove(keyBytes);
+            Adapter.Remove(keyBytes);
         }
 
         public void Visit(Action<K, V> visitor)
@@ -278,5 +262,5 @@ namespace Phantasma.Storage
                 visitor(key, val);
             });
         }
-}
+    }
 }

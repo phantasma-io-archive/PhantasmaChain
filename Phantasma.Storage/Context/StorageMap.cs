@@ -3,6 +3,7 @@ using Phantasma.Core.Utils;
 using System.Text;
 using System;
 using Phantasma.Core;
+using System.Collections.Generic;
 
 namespace Phantasma.Storage.Context
 {
@@ -136,6 +137,28 @@ namespace Phantasma.Storage.Context
                 items[i] = map.Get<K,V>(keys[i]);
             }
             return items;
+        }
+
+        public static K[] AllKeys<K>(this StorageMap map)
+        {
+            var values = new List<K>();
+            map.Context.Visit((key, _) =>
+            {
+                K Key;
+                if (typeof(IStorageCollection).IsAssignableFrom(typeof(K)))
+                {
+                    var args = new object[] { key, map.Context };
+                    var obj = (K)Activator.CreateInstance(typeof(K), args);
+                    Key = obj;
+                }
+                else
+                {
+                    Key = Serialization.Unserialize<K>(key);
+                }
+                values.Add(Key);
+            });
+
+            return values.ToArray();
         }
 
     }

@@ -70,5 +70,7 @@ namespace Phantasma.Storage.Context
         public void Put(string key, byte[] value) { Put(Encoding.UTF8.GetBytes(key), value); }
 
         public void Delete(string key) { Delete(Encoding.UTF8.GetBytes(key)); }
+
+        public abstract void Visit(Action<byte[], byte[]> visitor);
     }
 }

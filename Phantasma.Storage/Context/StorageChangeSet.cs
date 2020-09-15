@@ -1,4 +1,5 @@
 ﻿using Phantasma.Core;
+using System;
 using System.Collections.Generic;
 
 namespace Phantasma.Storage.Context
@@ -118,6 +119,11 @@ namespace Phantasma.Storage.Context
         public bool Any()
         {
             return _entries.Count > 0;
+        }
+
+        public override void Visit(Action<byte[], byte[]> visitor)
+        {
+            throw new NotImplementedException();
         }
     }
 }
