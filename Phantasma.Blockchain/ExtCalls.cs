@@ -397,7 +397,9 @@ namespace Phantasma.Blockchain
             if (temp.Type == VMType.String)
             {
                 var text = temp.AsString();
-                if (Address.IsValidAddress(text))
+                //TODO_FIX_TX
+                //if (Address.IsValidAddress(text) && vm.Nexus.GetGovernanceValue(vm.Nexus.RootStorage, vm.Nexus.NexusProtocolVersionTag) > 1)
+                if (Address.IsValidAddress(text) && vm.Chain.Height > 65932)
                 {
                     return Address.FromText(text);
                 }

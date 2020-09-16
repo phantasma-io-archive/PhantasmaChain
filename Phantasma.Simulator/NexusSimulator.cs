@@ -112,6 +112,16 @@ namespace Phantasma.Simulator
             if (!nexus.PlatformExists(nexus.RootStorage, neoPlatform))
             {
                 BeginBlock();
+                GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                {
+                    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                    CallContract("governance", "SetValue", Nexus.NexusProtocolVersionTag, 3).
+                    SpendGas(_owner.Address).
+                    EndScript();
+                });
+                EndBlock();
+
+                BeginBlock();
                 GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
                     CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
                     CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").

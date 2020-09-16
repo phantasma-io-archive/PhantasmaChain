@@ -150,7 +150,16 @@ namespace Phantasma.Domain
         {
             var url = GetOracleFeeURL(platform);
             var bytes = runtime.ReadOracle(url);
-            var fee = BigInteger.FromUnsignedArray(bytes, true);
+            BigInteger fee;
+            if (bytes == null)
+            {
+                fee = runtime.GetGovernanceValue("interop.fee");
+            }
+            else
+            {
+                fee = BigInteger.FromUnsignedArray(bytes, true);
+            }
+            //fee = BigInteger.FromUnsignedArray(bytes, true);
             return fee;
         }
 
@@ -197,8 +206,48 @@ namespace Phantasma.Domain
             return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(baseAmount, baseToken.Decimals) * UnitConversion.ToDecimal(price, quoteToken.Decimals), quoteToken.Decimals);
         }
 
-        // converts amount in baseSymbol to amount in quoteSymbol
+
         public static BigInteger GetTokenQuote(this IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
+        {
+            //if (vm.Nexus.GetGovernanceValue(vm.Nexus.RootStorage, vm.Nexus.NexusProtocolVersionTag) > 2)
+            if (runtime.Chain.Height > 120000)
+            {
+                return GetTokenQuoteV1(runtime, baseSymbol, quoteSymbol, amount);
+            }
+            else
+            {
+                return GetTokenQuoteV2(runtime, baseSymbol, quoteSymbol, amount);
+            }
+        }
+
+        // converts amount in baseSymbol to amount in quoteSymbol
+        public static BigInteger GetTokenQuoteV1(IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
+        {
+
+            if (baseSymbol == quoteSymbol)
+                return amount;
+
+            // old
+            var basePrice = runtime.GetTokenPrice(baseSymbol);
+
+            var baseToken = runtime.GetToken(baseSymbol);
+            var fiatToken = runtime.GetToken(DomainSettings.FiatTokenSymbol);
+
+            // this gives how many dollars is "amount"
+            BigInteger result = runtime.ConvertBaseToQuote(amount, basePrice, baseToken, fiatToken);
+            if (quoteSymbol == DomainSettings.FiatTokenSymbol)
+            {
+                return result;
+            }
+
+            var quotePrice = runtime.GetTokenPrice(quoteSymbol);
+            var quoteToken = runtime.GetToken(quoteSymbol);
+
+            result = runtime.ConvertQuoteToBase(result, quotePrice, quoteToken, fiatToken);
+            return result;
+        }
+
+        public static BigInteger GetTokenQuoteV2(IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
         {
             if (baseSymbol == quoteSymbol)
                 return amount;
