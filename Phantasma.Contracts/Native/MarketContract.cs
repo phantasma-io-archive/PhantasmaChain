@@ -42,7 +42,6 @@ namespace Phantasma.Contracts.Native
         public override NativeContractKind Kind => NativeContractKind.Market;
 
         internal StorageMap _auctionMap; //<string, MarketAuction>
-        internal StorageList _auctionIDs;
 
         public MarketContract() : base()
         {
@@ -73,7 +72,6 @@ namespace Phantasma.Contracts.Native
             var auction = new MarketAuction(from, Runtime.Time, endDate, baseSymbol, quoteSymbol, tokenID, price);
             var auctionID = baseSymbol + "." + tokenID;
             _auctionMap.Set(auctionID, auction);
-            _auctionIDs.Add(auctionID);
 
             Runtime.Notify(EventKind.OrderCreated, from, new MarketEventData() { ID = tokenID, BaseSymbol = baseSymbol, QuoteSymbol = quoteSymbol, Price = price });
         }
@@ -110,7 +108,6 @@ namespace Phantasma.Contracts.Native
             Runtime.TransferToken(baseToken.Symbol, this.Address, from, auction.TokenID);
 
             _auctionMap.Remove<string>(auctionID);
-            _auctionIDs.Remove(auctionID);
 
             if (auction.Creator == from)
             {
@@ -124,7 +121,7 @@ namespace Phantasma.Contracts.Native
 
         public MarketAuction[] GetAuctions()
         {
-            var ids = _auctionIDs.All<string>();
+            var ids = _auctionMap.AllValues<string>();
             var auctions = new MarketAuction[ids.Length];
             for (int i = 0; i < auctions.Length; i++)
             {
