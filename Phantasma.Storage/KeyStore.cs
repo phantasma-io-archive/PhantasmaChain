@@ -15,7 +15,7 @@ namespace Phantasma.Storage
         bool ContainsKey(byte[] key);
         void Remove(byte[] key);
         uint Count { get; }
-        void Visit(Action<byte[], byte[]> visitor);
+        void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix);
     }
 
     public class MemoryStore : IKeyValueStoreAdapter
@@ -60,8 +60,9 @@ namespace Phantasma.Storage
             _entries.Remove(key);
         }
 
-        public void Visit(Action<byte[], byte[]> visitor)
+        public void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix)
         {
+            // TODO use prefiy
             foreach (var entry in _entries)
             {
                 visitor(entry.Key, entry.Value);
@@ -105,10 +106,11 @@ namespace Phantasma.Storage
             }
         }
 
-        public void Visit(Action<byte[], byte[]> visitor)
+        public void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix)
         {
             lock (_cache)
             {
+                //TODO use prefix
                 foreach (var entry in _cache)
                 {
                     visitor(entry.Key, entry.Value);
@@ -253,14 +255,16 @@ namespace Phantasma.Storage
             Adapter.Remove(keyBytes);
         }
 
-        public void Visit(Action<K, V> visitor)
+        public void Visit(Action<K, V> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
             Adapter.Visit((keyBytes, valBytes) =>
             {
                 var key = Serialization.Unserialize<K>(keyBytes);
                 var val = Serialization.Unserialize<V>(valBytes);
+                Console.WriteLine("1key: " + key);
+                Console.WriteLine("1val: " + val);
                 visitor(key, val);
-            });
+            }, searchCount, prefix);
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using System;
 using Phantasma.Core;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Storage.Context
 {
@@ -68,7 +69,6 @@ namespace Phantasma.Storage.Context
         public static void Set<K, V>(this StorageMap map, K key, V value)
         {
             bool exists = map.ContainsKey(key);
-
             byte[] bytes;
             if (typeof(IStorageCollection).IsAssignableFrom(typeof(V)))
             {
@@ -139,24 +139,42 @@ namespace Phantasma.Storage.Context
             return items;
         }
 
-        public static K[] AllKeys<K>(this StorageMap map)
+        public static V[] AllValues<V>(this StorageMap map)
         {
-            var values = new List<K>();
-            map.Context.Visit((key, _) =>
+            var values = new List<V>();
+            var countKey = CountKey(map.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
+            map.Context.Visit((key, value) =>
             {
-                K Key;
-                if (typeof(IStorageCollection).IsAssignableFrom(typeof(K)))
+                if (!found && key.SequenceEqual(countKey))
                 {
-                    var args = new object[] { key, map.Context };
-                    var obj = (K)Activator.CreateInstance(typeof(K), args);
-                    Key = obj;
+                    countKeyRun = true;
+                    found = true;
+                }
+
+                if (!countKeyRun)
+                {
+                    V Val;
+                    if (typeof(IStorageCollection).IsAssignableFrom(typeof(V)))
+                    {
+                        var args = new object[] { value, map.Context };
+                        var obj = (V)Activator.CreateInstance(typeof(V), args);
+                        Val = obj;
+                        values.Add(Val);
+                    }
+                    else
+                    {
+                        Val = Serialization.Unserialize<V>(value);
+                        values.Add(Val);
+                    }
                 }
                 else
                 {
-                    Key = Serialization.Unserialize<K>(key);
+                    countKeyRun = false;
                 }
-                values.Add(Key);
-            });
+            }, (uint)map.Count(), map.BaseKey);
 
             return values.ToArray();
         }

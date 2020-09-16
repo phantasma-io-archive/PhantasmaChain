@@ -37,12 +37,12 @@ namespace Phantasma.Storage.Context
             Adapter.SetValue(key.keyData, value);
         }
 
-        public override void Visit(Action<byte[], byte[]> visitor)
+        public override void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
             Adapter.Visit((keyBytes, valBytes) =>
             {
                 visitor(keyBytes, valBytes);
-            });
+            }, searchCount, prefix);
         }
     }
 }

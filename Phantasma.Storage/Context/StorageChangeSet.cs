@@ -121,7 +121,7 @@ namespace Phantasma.Storage.Context
             return _entries.Count > 0;
         }
 
-        public override void Visit(Action<byte[], byte[]> visitor)
+        public override void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
             throw new NotImplementedException();
         }

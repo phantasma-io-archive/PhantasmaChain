@@ -4,7 +4,6 @@ using System.IO;
 using Phantasma.Storage;
 using Phantasma.Core;
 using Logger = Phantasma.Core.Log.Logger;
-using Phantasma.Core.Log;
 using RocksDbSharp;
 
 namespace Phantasma.RocksDB
@@ -43,9 +42,9 @@ namespace Phantasma.RocksDB
             catch
             {
                 logger.Message("Partition not found, create it now: " + this.partitionName);
-
+                var cf = new ColumnFamilyOptions();
                 // TODO different partitions might need different options...
-                this.partition = this._db.CreateColumnFamily(new ColumnFamilyOptions(), partitionName);
+                this.partition = this._db.CreateColumnFamily(cf, partitionName);
             }
         }
 
@@ -71,6 +70,12 @@ namespace Phantasma.RocksDB
         }
         #endregion
 
+        public void CreateCF(string name)
+        {
+            var cf = new ColumnFamilyOptions();
+            _db.CreateColumnFamily(cf, name);
+        }
+
         public uint GetCount()
         {
             uint count = 0;
@@ -88,16 +93,30 @@ namespace Phantasma.RocksDB
             return count;
         }
 
-        public void Visit(Action<byte[], byte[]> visitor)
+        public void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
-            var readOptions = new ReadOptions();
+            var readOptions = new ReadOptions().SetPrefixSameAsStart(true);
             using (var iter = _db.NewIterator(readOptions: readOptions, cf: GetPartition()))
             {
-                iter.SeekToFirst();
-                while (iter.Valid())
+                if (prefix == null || prefix.Length == 0)
                 {
-                    visitor(iter.Key(), iter.Value());
-                    iter.Next();
+                    iter.SeekToFirst();
+                    while (iter.Valid())
+                    {
+                        visitor(iter.Key(), iter.Value());
+                        iter.Next();
+                    }
+                }
+                else
+                {
+                    ulong _count = 0;
+                    iter.Seek(prefix);
+                    while (iter.Valid() && _count < searchCount)
+                    {
+                        visitor(iter.Key(), iter.Value());
+                        iter.Next();
+                        _count++;
+                    }
                 }
             }
         }

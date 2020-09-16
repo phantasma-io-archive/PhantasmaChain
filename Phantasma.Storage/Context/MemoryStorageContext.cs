@@ -100,7 +100,7 @@ namespace Phantasma.Storage.Context
             }
         }
 
-        public override void Visit(Action<byte[], byte[]> visitor)
+        public override void Visit(Action<byte[], byte[]> visitor, ulong SearchCount = 0, byte[] prefix = null)
         {
             foreach(var entry in _entries)
             {

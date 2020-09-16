@@ -71,6 +71,6 @@ namespace Phantasma.Storage.Context
 
         public void Delete(string key) { Delete(Encoding.UTF8.GetBytes(key)); }
 
-        public abstract void Visit(Action<byte[], byte[]> visitor);
+        public abstract void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null);
     }
 }
