@@ -13,8 +13,9 @@ using Phantasma.Network.P2P.Messages;
 using Phantasma.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
-using Phantasma.Blockchain;
 using System.Threading;
+using Phantasma.VM.Utils;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Network.P2P
 {
@@ -570,38 +571,72 @@ namespace Phantasma.Network.P2P
                                     if (block.Height == 65932)
                                     {
                                         // add setValue tx here
-                                        var tx = new Transaction(); // build tx
+                                        var bpKeys = PhantasmaKeys.FromWIF(""); //TODO add wif here
+                                        var script = ScriptUtils.BeginScript()
+                                            .AllowGas(bpKeys.Address, Address.Null, 1, 99999)
+                                            .CallContract("governance", "SetValue", Nexus.NexusProtocolVersionTag, 2) // Protocol version 2
+                                            .SpendGas(bpKeys.Address)
+                                            .EndScript();
+
+                                        var tx= new Phantasma.Blockchain.Transaction(Nexus.Name, chain.Name, script, DateTime.UtcNow + TimeSpan.FromMinutes(30), "PROTOV2");
+
                                         // sign tx
-                                        
-                                        // add tx hash to block.TransactionHashes
+                                        tx.Sign(bpKeys);
 
                                         // add tx to transactions
                                         transactions.Add(tx);
 
+                                        foreach (var txHash in block.TransactionHashes)
+                                        {
+                                            var txx = entry.Value.transactions[txHash];
+                                            transactions.Add(txx);
+                                        }
+
+                                        var hashes = block.TransactionHashes.Select(x => x).ToList();
+                                        hashes.Add(tx.Hash);
+                                        
+                                        var prevHash = chain.GetLastBlockHash();
+                                        var newBlock = new Block(block.Height, chain.Address, block.Timestamp, hashes, prevHash, block.Protocol, bpKeys.Address, System.Text.Encoding.UTF8.GetBytes("SPK1.0"));
+
                                         // sign block
+                                        newBlock.Sign(bpKeys);
 
+                                        try
+                                        {
+                                            var oracle = new BlockOracleReader(Nexus, newBlock);
+                                            var changeSet = chain.ProcessTransactions(newBlock, transactions, oracle, 1, false);
 
-                                        // done
+                                            chain.AddBlock(newBlock, transactions, 1, changeSet);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Logger.Error(e.ToString());
+                                            throw new Exception("block add failed");
+                                        }
                                     }
-
-                                    foreach (var txHash in block.TransactionHashes)
+                                    else
                                     {
-                                        var tx = entry.Value.transactions[txHash];
-                                        transactions.Add(tx);
+                                        foreach (var txHash in block.TransactionHashes)
+                                        {
+                                            var tx = entry.Value.transactions[txHash];
+                                            transactions.Add(tx);
+                                        }
+
+                                        try
+                                        {
+                                            var oracle = new BlockOracleReader(Nexus, block);
+                                            var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
+
+                                            chain.AddBlock(block, transactions, 1, changeSet);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Logger.Error(e.ToString());
+                                            throw new Exception("block add failed");
+                                        }
+
                                     }
 
-                                    try
-                                    {
-                                        var oracle = new BlockOracleReader(Nexus, block);
-                                        var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
-
-                                        chain.AddBlock(block, transactions, 1, changeSet);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Logger.Error(e.ToString());
-                                        throw new Exception("block add failed");
-                                    }
 
                                     Logger.Message($"Added block #{block.Height} to {chain.Name}");
                                     addedBlocks = true;

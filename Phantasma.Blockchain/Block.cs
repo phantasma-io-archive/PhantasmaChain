@@ -35,7 +35,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        private List<Hash> _transactionHashes;
+        public List<Hash> _transactionHashes;
         public Hash[] TransactionHashes => _transactionHashes.ToArray();
         public int TransactionCount => _transactionHashes.Count;
 
