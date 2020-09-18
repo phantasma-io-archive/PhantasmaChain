@@ -567,14 +567,29 @@ namespace Phantasma.Network.P2P
                                 foreach (var block in blockRange.blocks)
                                 {
                                     var transactions = new List<Transaction>();
-                                    // TODO validation
+                                    if (block.Height == 65932)
+                                    {
+                                        // add setValue tx here
+                                        var tx = new Transaction(); // build tx
+                                        // sign tx
+                                        
+                                        // add tx hash to block.TransactionHashes
+
+                                        // add tx to transactions
+                                        transactions.Add(tx);
+
+                                        // sign block
+
+
+                                        // done
+                                    }
+
                                     foreach (var txHash in block.TransactionHashes)
                                     {
                                         var tx = entry.Value.transactions[txHash];
                                         transactions.Add(tx);
                                     }
 
-                                    // TODO this wont work in the future... Question: Really? What this comment meant??
                                     try
                                     {
                                         var oracle = new BlockOracleReader(Nexus, block);
