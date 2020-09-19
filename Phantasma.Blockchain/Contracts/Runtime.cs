@@ -1147,7 +1147,10 @@ namespace Phantasma.Blockchain.Contracts
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             var Runtime = this;
-            Runtime.Expect(!source.IsNull, "invalid source");
+            if (ProtocolVersion > 2)
+            {
+                Runtime.Expect(!source.IsNull, "invalid source");
+            }
 
             if (source == destination || amount == 0)
             {
@@ -1475,6 +1478,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public bool HasGenesis => Nexus.HasGenesis;
         public string NexusName => Nexus.Name;
+        public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
         public Address GenesisAddress => Nexus.GetGenesisAddress(RootStorage);
         public Hash GenesisHash => Nexus.GetGenesisHash(RootStorage);
     }

@@ -62,8 +62,8 @@ namespace Phantasma.Contracts.Native
         public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
         {
             //TODO_FIX_TX
-            //if (vm.Nexus.GetGovernanceValue(vm.Nexus.RootStorage, vm.Nexus.NexusProtocolVersionTag) > 2)
-            if (Runtime.Chain.Height > 120000)
+            //if (Runtime.Chain.Height > 120000)
+            if (Runtime.ProtocolVersion > 2)
             {
                 return GetRateV2(fromSymbol, toSymbol, amount);
             }

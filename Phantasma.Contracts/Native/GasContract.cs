@@ -111,8 +111,8 @@ namespace Phantasma.Contracts.Native
         public void SpendGas(Address from)
         {
             //TODO_FIX_TX
-            //if (vm.Nexus.GetGovernanceValue(vm.Nexus.RootStorage, vm.Nexus.NexusProtocolVersionTag) > 2)
-            if (Runtime.Chain.Height > 120000)
+            //if (Runtime.Chain.Height > 120000)
+            if (Runtime.ProtocolVersion > 2)
             {
                 SpendGasV2(from);
             }
