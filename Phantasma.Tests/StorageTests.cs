@@ -97,6 +97,11 @@ namespace Phantasma.Tests
             Assert.IsTrue(map.ContainsKey<BigInteger>(big3));
 
             var all = map.AllValues<BigInteger>();
+            foreach(var x in all)
+            {
+                System.Console.WriteLine(x);
+            }
+
             System.Console.WriteLine("COUNT: " + all.Count());
             Assert.IsTrue(all.Count() == 3);
         }
