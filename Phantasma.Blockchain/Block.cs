@@ -67,7 +67,7 @@ namespace Phantasma.Blockchain
         /// <summary>
         /// Note: When creating the genesis block of a new side chain, the previous block would be the block that contained the CreateChain call
         /// </summary>
-        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol, Address validator, byte[] payload)
+        public Block(BigInteger height, Address chainAddress, Timestamp timestamp, IEnumerable<Hash> hashes, Hash previousHash, uint protocol, Address validator, byte[] payload, IEnumerable<OracleEntry> oracleEntries = null)
         {
             this.ChainAddress = chainAddress;
             this.Timestamp = timestamp;
@@ -85,6 +85,15 @@ namespace Phantasma.Blockchain
             this.Payload = payload;
             this.Validator = validator;
             this.Signature = null;
+
+            this._oracleData = new List<OracleEntry>();
+            if (oracleEntries != null)
+            {
+                foreach (var entry in oracleEntries)
+                {
+                    _oracleData.Add(entry);
+                }
+            }
 
             this._dirty = true;
         }
@@ -205,7 +214,7 @@ namespace Phantasma.Blockchain
 
                 writer.WriteAddress(this.Validator);
                 writer.WriteByteArray(this.Payload);
-                writer.Write((byte)0);
+                writer.Write((byte)0); // indicates the end of the block
 
                 if (withSignatures)
                 {
@@ -307,6 +316,9 @@ namespace Phantasma.Blockchain
 
                 Validator = reader.ReadAddress();
                 Payload = reader.ReadByteArray();
+
+                var blockEnd = reader.ReadByte();
+
                 Signature = reader.ReadSignature();
             }
             catch

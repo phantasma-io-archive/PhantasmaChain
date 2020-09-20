@@ -25,8 +25,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -78,7 +79,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
 
             //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
@@ -102,8 +103,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -150,7 +152,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
             simulator.EndBlock();
@@ -166,8 +168,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -209,7 +212,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -244,8 +247,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -287,7 +291,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -333,8 +337,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -381,7 +386,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -403,7 +408,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -425,7 +430,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -440,8 +445,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -488,7 +494,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -517,7 +523,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -532,8 +538,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUserA = PhantasmaKeys.Generate();
             var testUserB = PhantasmaKeys.Generate();
@@ -600,7 +607,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUserA.Address, testUserA.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
@@ -615,7 +622,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUserB.Address, testUserB.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
@@ -633,8 +640,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -676,7 +684,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -720,8 +728,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -770,7 +779,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             })
@@ -786,8 +795,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -834,7 +844,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -858,7 +868,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -872,8 +882,9 @@ namespace Phantasma.Tests
         {
             var owner = PhantasmaKeys.Generate();
 
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 
@@ -920,7 +931,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -937,7 +948,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -952,8 +963,9 @@ namespace Phantasma.Tests
         public void SmallFileContractUpload()
         {
             var owner = PhantasmaKeys.Generate();
-            var simulator = new NexusSimulator(owner, 1234);
-            var nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
 
             var testUser = PhantasmaKeys.Generate();
 

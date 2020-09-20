@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 
 using Phantasma.Cryptography;
-using Phantasma.Core.Utils;
 using Phantasma.Numerics;
 using Phantasma.Cryptography.Ring;
 using Phantasma.Cryptography.ECC;
 using Phantasma.Neo.Core;
+using Phantasma.Ethereum.Hex.HexConvertors.Extensions;
 
 namespace Phantasma.Tests
 {
@@ -70,6 +70,39 @@ namespace Phantasma.Tests
             Assert.IsFalse(otherKeys.Address == targetAddress);
             verified = signature.Verify(msgBytes, otherKeys.Address);
             Assert.IsFalse(verified);
+        }
+
+        [TestMethod]
+        public void ECDsaSecP256k1()
+        {
+            var address = "0x66571c32d77c4852be4c282eb952ba94efbeac20";
+            var key = "6f6784731c4e526c97fa6a97b6f22e96f307588c5868bc2c545248bc31207eb1";
+            Assert.IsTrue(key.Length == 64);
+
+            var curve = ECCurve.Secp256k1;
+
+            var privateKey = key.HexToByteArray();
+            var pKey = ECCurve.Secp256k1.G * privateKey;
+
+            var publicKey = pKey.EncodePoint(true).ToArray();
+            var uncompressedPublicKey = pKey.EncodePoint(false).Skip(1).ToArray();
+
+            var kak = new Phantasma.Ethereum.Util.Sha3Keccack().CalculateHash(uncompressedPublicKey);
+            var Address = "0x"+Base16.Encode( kak.Skip(12).ToArray()).ToLower();
+            Console.WriteLine("Address: " + Address);
+            Console.WriteLine("address: " + address);
+            Assert.IsTrue(Address == address);
+
+            var msgBytes = Encoding.ASCII.GetBytes("Phantasma");
+
+            var signature = CryptoExtensions.SignECDsa(msgBytes, privateKey, publicKey, ECDsaCurve.Secp256k1);
+            Assert.IsNotNull(signature);
+
+            var signatureUncompressed = CryptoExtensions.SignECDsa(msgBytes, privateKey, uncompressedPublicKey, ECDsaCurve.Secp256k1);
+            Assert.IsNotNull(signatureUncompressed);
+
+            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, publicKey, ECDsaCurve.Secp256k1));
+            Assert.IsTrue(CryptoExtensions.VerifySignatureECDsa(msgBytes, signature, uncompressedPublicKey, ECDsaCurve.Secp256k1));
         }
 
         [TestMethod]

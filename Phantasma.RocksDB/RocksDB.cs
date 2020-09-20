@@ -4,7 +4,6 @@ using System.IO;
 using Phantasma.Storage;
 using Phantasma.Core;
 using Logger = Phantasma.Core.Log.Logger;
-using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
 using RocksDbSharp;
 
 namespace Phantasma.RocksDB
@@ -15,22 +14,24 @@ namespace Phantasma.RocksDB
         private ColumnFamilyHandle partition;
         private string partitionName;
         private string path;
-        private readonly Logger logger = new ConsoleLogger();
+        private readonly Logger logger;
 
         public uint Count => GetCount();
 
-        public DBPartition(string fileName)
+        public DBPartition(Logger logger, string fileName)
         {
-            logger.Message("FileName: " + fileName);
             this.partitionName = Path.GetFileName(fileName);
             this.path = Path.GetDirectoryName(fileName);
+            this.logger = logger;
+
+            logger.Message("FileName: " + fileName);
 
             if (!path.EndsWith("/"))
             {
                 path += '/';
             }
 
-	        this._db = RocksDbStore.Instance(path);
+	        this._db = RocksDbStore.Instance(logger, path);
 
             // Create partition if it doesn't exist already
             try
@@ -41,9 +42,9 @@ namespace Phantasma.RocksDB
             catch
             {
                 logger.Message("Partition not found, create it now: " + this.partitionName);
-
+                var cf = new ColumnFamilyOptions();
                 // TODO different partitions might need different options...
-                this.partition = this._db.CreateColumnFamily(new ColumnFamilyOptions(), partitionName);
+                this.partition = this._db.CreateColumnFamily(cf, partitionName);
             }
         }
 
@@ -69,6 +70,12 @@ namespace Phantasma.RocksDB
         }
         #endregion
 
+        public void CreateCF(string name)
+        {
+            var cf = new ColumnFamilyOptions();
+            _db.CreateColumnFamily(cf, name);
+        }
+
         public uint GetCount()
         {
             uint count = 0;
@@ -86,16 +93,30 @@ namespace Phantasma.RocksDB
             return count;
         }
 
-        public void Visit(Action<byte[], byte[]> visitor)
+        public void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
-            var readOptions = new ReadOptions();
+            var readOptions = new ReadOptions().SetPrefixSameAsStart(true);
             using (var iter = _db.NewIterator(readOptions: readOptions, cf: GetPartition()))
             {
-                iter.SeekToFirst();
-                while (iter.Valid())
+                if (prefix == null || prefix.Length == 0)
                 {
-                    visitor(iter.Key(), iter.Value());
-                    iter.Next();
+                    iter.SeekToFirst();
+                    while (iter.Valid())
+                    {
+                        visitor(iter.Key(), iter.Value());
+                        iter.Next();
+                    }
+                }
+                else
+                {
+                    ulong _count = 0;
+                    iter.Seek(prefix);
+                    while (iter.Valid() && _count < searchCount)
+                    {
+                        visitor(iter.Key(), iter.Value());
+                        iter.Next();
+                        _count++;
+                    }
                 }
             }
         }
@@ -103,58 +124,50 @@ namespace Phantasma.RocksDB
         public void SetValue(byte[] key, byte[] value)
         {
             Throw.IfNull(key, nameof(key));
-
-            if (value == null || value.Length == 0)
-            {
-                Remove_Internal(key);
-            }
-            else
-            {
-                Put_Internal(key, value);
-            }
+            Put_Internal(key, value);
         }
 
         public byte[] GetValue(byte[] key)
         {
-            if (ContainsKey(key))
+            byte[] value;
+            if (ContainsKey_Internal(key, out value))
             {
-                return Get_Internal(key);
+                return value;
             }
 
             return null;
         }
 
-        public bool ContainsKey(byte[] key)
+        public bool ContainsKey_Internal(byte[] key, out byte[] value)
         {
-            var result = Get_Internal(key);
-            return (result != null  && result.Length > 0) ? true : false;
+            value = Get_Internal(key);
+            return (value != null) ? true : false;
         }
 
-        public bool Remove(byte[] key)
+        public bool ContainsKey(byte[] key)
         {
-            if (ContainsKey(key))
-            {
-                Remove_Internal(key);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            var value = Get_Internal(key);
+            return (value != null) ? true : false;
+        }
+
+        public void Remove(byte[] key)
+        {
+            Remove_Internal(key);
         }
     }
 
     public class RocksDbStore
     {
-	private static RocksDb _db;
-	private static RocksDbStore _rdb;
-        private readonly Logger logger = new ConsoleLogger();
+	    private static Dictionary<string, RocksDb> _db = new Dictionary<string, RocksDb>();
+	    private static Dictionary<string, RocksDbStore> _rdb = new Dictionary<string, RocksDbStore>();
+        private readonly Logger logger;
 
         private string fileName;
 
-        private RocksDbStore(string fileName)
+        private RocksDbStore(string fileName, Logger logger)
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Shutdown();
+            this.logger = logger;
             logger.Message("RocksDBStore: " + fileName);
             this.fileName = fileName.Replace("\\", "/");
 
@@ -172,14 +185,6 @@ namespace Phantasma.RocksDB
             var columnFamilies = new ColumnFamilies
             {
                 { "default", new ColumnFamilyOptions().OptimizeForPointLookup(256) },
-                //{ "test", new ColumnFamilyOptions()
-                //    //.SetWriteBufferSize(writeBufferSize)
-                //    //.SetMaxWriteBufferNumber(maxWriteBufferNumber)
-                //    //.SetMinWriteBufferNumberToMerge(minWriteBufferNumberToMerge)
-                //    .SetMemtableHugePageSize(2 * 1024 * 1024)
-                //    .SetPrefixExtractor(SliceTransform.CreateFixedPrefix((ulong)8))
-                //    .SetBlockBasedTableFactory(bbto)
-                //},
             };
 
             try
@@ -197,27 +202,39 @@ namespace Phantasma.RocksDB
             }
 
             logger.Message("Opening database at: " + path);
-	        _db = RocksDb.Open(options, path, columnFamilies);
+	        _db.Add(fileName, RocksDb.Open(options, path, columnFamilies));
         }
 
-        public static RocksDb Instance(string name=null)
+        public static RocksDb Instance(Logger logger, string name)
         {
-            if (_db == null)
+            if (!_db.ContainsKey(name))
             {
                 if (string.IsNullOrEmpty(name)) throw new System.ArgumentException("Parameter cannot be null", "name");
 
-                _rdb = new RocksDbStore(name);
+                _rdb.Add(name, new RocksDbStore(name, logger));
             }
 
-            return _db;
+            return _db[name];
         }
 
         private void Shutdown()
         {
+            if (_db.Count > 0)
+            {
+                var toRemove = new List<String>();
+                logger.Message($"Shutting down databases...");
+                foreach (var db in _db)
+                {
+                    db.Value.Dispose();
+                    toRemove.Add(db.Key);
+                }
 
-            logger.Message("Shutting down database...");
-            _db.Dispose();
-            logger.Message("Database has been shut down!");
+                foreach (var key in toRemove)
+                {
+                    _db.Remove(key);
+                }
+                logger.Message("Databases shut down!");
+            }
         }
 
     }

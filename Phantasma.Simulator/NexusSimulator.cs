@@ -54,13 +54,13 @@ namespace Phantasma.Simulator
 
         public readonly Logger Logger;
 
-        public TimeSpan blockTimeSkip = TimeSpan.FromMinutes(0);
+        public TimeSpan blockTimeSkip = TimeSpan.FromSeconds(2);
         public BigInteger MinimumFee = 1;
 
-        public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus(null, null, (n) => new OracleSimulator(n)), ownerKey, seed, logger)
-        {
-
-        }
+        //public NexusSimulator(PhantasmaKeys ownerKey, int seed, Logger logger = null) : this(new Nexus("simnet", null, null), ownerKey, seed, logger)
+        //{
+        //    this.Nexus.SetOracleReader(new OracleSimulator(this.Nexus));
+        //}
        
         public NexusSimulator(Nexus nexus, PhantasmaKeys ownerKey, int seed, Logger logger = null)
         {
@@ -69,19 +69,21 @@ namespace Phantasma.Simulator
             _owner = ownerKey;
             this.Nexus = nexus;
 
-            CurrentTime = new DateTime(2018, 8, 26);
+            CurrentTime = new DateTime(2018, 8, 26, 0, 0, 0, DateTimeKind.Utc);
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock("simnet", _owner, CurrentTime))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime))
                 {
                     throw new ChainException("Genesis block failure");
                 }
             }
             else
             {
-                var genesisBlock = Nexus.GetGenesisBlock();
-                CurrentTime = new Timestamp(genesisBlock.Timestamp.Value + 1);
+                var lastBlockHash = Nexus.RootChain.GetLastBlockHash();
+                var lastBlock = Nexus.RootChain.GetBlockByHash(lastBlockHash);
+                CurrentTime = new Timestamp(lastBlock.Timestamp.Value + 1);
+                DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
             }
 
             _rnd = new Random(seed);
@@ -106,35 +108,61 @@ namespace Phantasma.Simulator
             var ethText = Phantasma.Ethereum.EthereumKey.FromWIF(ethKeys.ToWIF()).Address;
             var ethAddress = Phantasma.Pay.Chains.EthereumWallet.EncodeAddress(ethText);
 
-            BeginBlock();
-            
-            GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
-                CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").
-            SpendGas(_owner.Address).EndScript());
-
-            var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
-            var orgScript = new byte[0];
-            var orgID = DomainSettings.PhantomForceOrganizationName;
-            var orgAddress = Address.FromHash(orgID);
-            GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+            // only create all this stuff once
+            if (!nexus.PlatformExists(nexus.RootStorage, neoPlatform))
             {
-                return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
-                CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
-                CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
-                TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
-                CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 50000).
-                CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
-                SpendGas(_owner.Address).
-                EndScript();
-            });
-            EndBlock();
+                BeginBlock();
+                GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                {
+                    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                    CallContract("governance", "SetValue", Nexus.NexusProtocolVersionTag, 3).
+                    SpendGas(_owner.Address).
+                    EndScript();
+                });
+                EndBlock();
 
-            BeginBlock();
-            var communitySupply = 100000;
-            GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
-            MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
-            EndBlock();
+                BeginBlock();
+                GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
+                    CallInterop("Nexus.CreatePlatform", _owner.Address, neoPlatform, neoText, neoAddress, "GAS").
+                    CallInterop("Nexus.CreatePlatform", _owner.Address, ethPlatform, ethText, ethAddress, "ETH").
+                SpendGas(_owner.Address).EndScript());
+
+                var orgFunding = UnitConversion.ToBigInteger(1863626, DomainSettings.StakingTokenDecimals);
+                var orgScript = new byte[0];
+                var orgID = DomainSettings.PhantomForceOrganizationName;
+                var orgAddress = Address.FromHash(orgID);
+
+                GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                {
+                    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                    CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
+                    CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
+                    TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
+                    CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 500000).
+                    CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
+                    SpendGas(_owner.Address).
+                    EndScript();
+                });
+                EndBlock();
+
+                BeginBlock();
+                var communitySupply = 100000;
+                GenerateToken(_owner, "MKNI", "Mankini Token", UnitConversion.ToBigInteger(communitySupply, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite);
+                MintTokens(_owner, _owner.Address, "MKNI", communitySupply);
+                EndBlock();
+
+                //TODO add SOUL/KCAL on ethereum, removed for now because hash is not fixed yet
+                //BeginBlock();
+                //GenerateCustomTransaction(_owner, ProofOfWork.Minimal, () =>
+                //{
+                //    return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
+                //    CallInterop("Nexus.SetTokenPlatformHash", "SOUL", ethPlatform, Hash.FromUnpaddedHex("53d5bdb2c8797218f8a0e11e997c4ab84f0b40ce")). // eth ropsten testnet hash
+                //    CallInterop("Nexus.SetTokenPlatformHash", "KCAL", ethPlatform, Hash.FromUnpaddedHex("67B132A32E7A3c4Ba7dEbedeFf6290351483008f")). // eth ropsten testnet hash
+                //    SpendGas(_owner.Address).
+                //    EndScript();
+                //});
+                //EndBlock();
+            }
 
             /*
             var market = Nexus.FindChainByName("market");
@@ -285,7 +313,7 @@ namespace Phantasma.Simulator
                         BigInteger nextHeight = lastBlock != null ? lastBlock.Height + 1 : Chain.InitialHeight;
                         var prevHash = lastBlock != null ? lastBlock.Hash : Hash.Null;
 
-                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, _owner.Address, System.Text.Encoding.UTF8.GetBytes("SIM"));
+                        var block = new Block(nextHeight, chain.Address, CurrentTime, hashes, prevHash, protocol, this.blockValidator.Address, System.Text.Encoding.UTF8.GetBytes("SIM"));
 
                         bool submitted;
 
@@ -312,9 +340,9 @@ namespace Phantasma.Simulator
                         {
                             try
                             {
-                                chain.ValidateBlock(block, transactions, MinimumFee);
-                                block.Sign(this._owner);
-                                chain.AddBlock(block, txs, MinimumFee);
+                                var changeSet = chain.ProcessBlock(block, transactions, MinimumFee);
+                                block.Sign(this.blockValidator);
+                                chain.AddBlock(block, txs, MinimumFee, changeSet);
                                 submitted = true;
                             }
                             catch (Exception e)
@@ -352,15 +380,14 @@ namespace Phantasma.Simulator
                 throw new Exception("Call BeginBlock first");
             }
 
-            var name = Nexus.GetName(Nexus.RootStorage);
-            var tx = new Transaction(name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
+            var tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             Throw.If(!signees.Any(), "at least one signer required");
 
             Signature[] existing = tx.Signatures;
             var msg = tx.ToByteArray(false);
 
-            tx = new Transaction(name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
+            tx = new Transaction(Nexus.Name, chain.Name, script, CurrentTime + TimeSpan.FromSeconds(Mempool.MaxExpirationTimeDifferenceInSeconds / 2));
 
             tx.Mine((int)pow);
 
@@ -650,7 +677,6 @@ namespace Phantasma.Simulator
 
         public void GenerateRandomBlock(Mempool mempool = null)
         {
-            //Console.WriteLine("begin block #" + Nexus.RootChain.BlockHeight);
             BeginBlock();
 
             int transferCount = 1 + _rnd.Next() % 10;
@@ -864,7 +890,7 @@ namespace Phantasma.Simulator
 
                                 if (tokenBalance > expectedTotal && fuelBalance > fee)
                                 {
-                                    Logger.Debug($"Rnd.Transfer: {total} {tokenSymbol} from {source.Address} to {targetAddress}");
+                                    Logger.Message($"Rnd.Transfer: {total} {tokenSymbol} from {source.Address} to {targetAddress}");
                                     GenerateTransfer(source, targetAddress, sourceChain, tokenSymbol, total);
                                 }
                             }
@@ -882,9 +908,25 @@ namespace Phantasma.Simulator
             }
         }
 
+        public void TimeSkipHours(int hours)
+        {
+            CurrentTime = CurrentTime.AddHours(hours);
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
+
+            BeginBlock();
+            var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
+                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
+                    SpendGas(_owner.Address).EndScript());
+            EndBlock();
+
+            var txCost = Nexus.RootChain.GetTransactionFee(tx);
+        }
+
         public void TimeSkipYears(int years)
         {
             CurrentTime = CurrentTime.AddYears(years);
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
@@ -899,6 +941,7 @@ namespace Phantasma.Simulator
         public void TimeSkipToDate(DateTime date)
         {
             CurrentTime = date;
+            DateTime.SpecifyKind(CurrentTime, DateTimeKind.Utc);
 
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
@@ -915,14 +958,14 @@ namespace Phantasma.Simulator
             if (roundUp)
             {
                 CurrentTime = CurrentTime.AddDays(1);
-                CurrentTime = new DateTime(CurrentTime.Year, CurrentTime.Month, CurrentTime.Day);
+                CurrentTime = new DateTime(CurrentTime.Year, CurrentTime.Month, CurrentTime.Day, 0, 0, 0, DateTimeKind.Utc);
 
                 var timestamp = (Timestamp) CurrentTime;
                 var datetime = (DateTime) timestamp;
                 if (datetime.Hour == 23)
                     datetime = datetime.AddHours(2);
                 
-                CurrentTime = new DateTime(datetime.Year, datetime.Month, datetime.Day, datetime.Hour, 0 , 0);   //to set the time of day component to 0
+                CurrentTime = new DateTime(datetime.Year, datetime.Month, datetime.Day, datetime.Hour, 0 , 0, DateTimeKind.Utc);   //to set the time of day component to 0
             }
 
             BeginBlock();

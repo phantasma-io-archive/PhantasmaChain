@@ -29,7 +29,7 @@ namespace Phantasma.Tests
         [TestMethod]
         public void TestTransactions()
         {
-            InitMainNode();
+            InitMainNode(7078);
 
             int addressCount = 20;
             LinkedList<PhantasmaKeys> addressList = new LinkedList<PhantasmaKeys>();
@@ -125,18 +125,19 @@ namespace Phantasma.Tests
             return nexus.RootChain.GetTokenBalance(nexus.RootStorage, fuelToken, address);
         }
 
-        private void InitMainNode()
+        private void InitMainNode(int _port = 7077)
         {
             var log = new ConsoleLogger();
 
             string wif = nexusWif;
 
-            int port = 7077;
+            int port = _port;
 
             var node_keys = PhantasmaKeys.FromWIF(wif);
 
-            var simulator = new NexusSimulator(node_keys, 1234);
-            nexus = simulator.Nexus;
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, node_keys, 1234);
 
             // mempool setup
             mempool = new Mempool(nexus, Mempool.MinimumBlockTime, 1, System.Text.Encoding.UTF8.GetBytes("TEST"));

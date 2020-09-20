@@ -1,6 +1,7 @@
 ﻿using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.CodeGen.Assembler
 {
@@ -8,10 +9,10 @@ namespace Phantasma.CodeGen.Assembler
     {
         public static byte[] BuildScript(IEnumerable<string> lines)
         {
-            IEnumerable<Semanteme> semantemes = null;
+            Semanteme[] semantemes = null;
             try
             {
-                semantemes = Semanteme.ProcessLines(lines);
+                semantemes = Semanteme.ProcessLines(lines).ToArray();
             }
             catch (Exception e)
             {

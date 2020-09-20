@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Collections.Generic;
 using Phantasma.Core.Utils;
@@ -36,7 +36,7 @@ namespace Phantasma.Contracts
             {
                 if (_address.IsNull)
                 {
-                    _address = GetAddressForName(Name);
+                   _address = GetAddressForName(Name);
                 }
 
                 return _address;
@@ -62,9 +62,14 @@ namespace Phantasma.Contracts
             return Address.FromHash(name);
         }
 
-        private byte[] GetKeyForField(FieldInfo field)
+        public static byte[] GetKeyForField(string contractName, string fieldName, bool isProtected)
         {
-            return Encoding.UTF8.GetBytes($".{this.Name}.{field.Name}");
+            Throw.If(string.IsNullOrEmpty(contractName), "invalid contract name");
+            Throw.If(string.IsNullOrEmpty(fieldName), "invalid field name");
+
+            string prefix = isProtected ? "." : "";
+
+            return Encoding.UTF8.GetBytes($"{prefix}{contractName}.{fieldName}");
         }
 
         // here we auto-initialize any fields from storage
@@ -82,7 +87,7 @@ namespace Phantasma.Contracts
 
             foreach (var field in fields)
             {
-                var baseKey = GetKeyForField(field);
+                var baseKey = GetKeyForField(this.Name, field.Name, true);
 
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)
@@ -139,7 +144,7 @@ namespace Phantasma.Contracts
 
             foreach (var field in fields)
             {
-                var baseKey = GetKeyForField(field);
+                var baseKey = GetKeyForField(this.Name, field.Name, true);
 
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)
@@ -307,7 +312,7 @@ namespace Phantasma.Contracts
                     return array;
                 }
             }
-
+            
             if (expectedType.IsEnum)
             {
                 if (!receivedType.IsEnum)
@@ -349,7 +354,7 @@ namespace Phantasma.Contracts
                     }
                 }
             }
-
+            
             if (typeof(ISerializable).IsAssignableFrom(expectedType))
             {
                 if (receivedType == typeof(byte[]))

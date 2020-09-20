@@ -13,6 +13,7 @@ using Phantasma.Network.P2P.Messages;
 using Phantasma.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
+using Phantasma.Blockchain;
 using System.Threading;
 
 namespace Phantasma.Network.P2P
@@ -86,7 +87,7 @@ namespace Phantasma.Network.P2P
             this.Keys = keys;
             this.Capabilities = caps;
 
-            if (Capabilities.HasFlag(PeerCaps.Events))
+            if (Capabilities.HasFlag(PeerCaps.Sync))
             {
                 this.Nexus.AddPlugin(new NodePlugin(this));
             }
@@ -155,17 +156,17 @@ namespace Phantasma.Network.P2P
 
             if (!IPAddress.TryParse(src, out ipAddress))
             {
-                if (Socket.OSSupportsIPv6)
-                {
-                    if (src == "localhost")
-                    {
-                        ipAddress = IPAddress.IPv6Loopback;
-                    }
-                    else
-                    {
-                        ipAddress = Endpoint.ResolveAddress(src, AddressFamily.InterNetworkV6);
-                    }
-                }
+                //if (Socket.OSSupportsIPv6)
+                //{
+                //    if (src == "localhost")
+                //    {
+                //        ipAddress = IPAddress.IPv6Loopback;
+                //    }
+                //    else
+                //    {
+                //        ipAddress = Endpoint.ResolveAddress(src, AddressFamily.InterNetworkV6);
+                //    }
+                //}
                 if (ipAddress == null)
                 {
                     ipAddress = Endpoint.ResolveAddress(src, AddressFamily.InterNetwork);
@@ -493,26 +494,7 @@ namespace Phantasma.Network.P2P
                                     continue;
                                 }
 
-                                var blockList = new List<string>();
-                                var currentBlock = startBlock;
-                                while (blockList.Count < 50 && currentBlock <= chain.Height)
-                                {
-                                    var blockHash = chain.GetBlockHashAtHeight(currentBlock);
-                                    var block = chain.GetBlockByHash(blockHash);
-                                    var bytes = block.ToByteArray(true);
-                                    var str = Base16.Encode(bytes);
-
-                                    foreach (var tx in chain.GetBlockTransactions(block))
-                                    {
-                                        var txBytes = tx.ToByteArray(true);
-                                        str += "/" + Base16.Encode(txBytes);
-                                    }
-
-                                    blockList.Add(str);
-                                    currentBlock++;
-                                }
-
-                                answer.AddBlockRange(chain.Name, startBlock, blockList);
+                                answer.AddBlockRange(chain, startBlock, 1);
                             }
                         }
 
@@ -582,33 +564,32 @@ namespace Phantasma.Network.P2P
                                 }
 
                                 var blockRange = entry.Value;
-                                var currentBlock = blockRange.startHeight;
-                                foreach (var rawBlock in blockRange.rawBlocks)
+                                foreach (var block in blockRange.blocks)
                                 {
-                                    var temp = rawBlock.Split('/');
-
-                                    var block = Block.Unserialize(Base16.Decode(temp[0]));
-
                                     var transactions = new List<Transaction>();
-                                    for (int i= 1; i<temp.Length; i++)
+                                    // TODO validation
+                                    foreach (var txHash in block.TransactionHashes)
                                     {
-                                        var tx = Transaction.Unserialize(Base16.Decode(temp[i]));
+                                        var tx = entry.Value.transactions[txHash];
                                         transactions.Add(tx);
                                     }
 
-                                    // TODO this wont work in the future...
+                                    // TODO this wont work in the future... Question: Really? What this comment meant??
                                     try
                                     {
-                                        chain.AddBlock(block, transactions, 1);
+                                        var oracle = new BlockOracleReader(Nexus, block);
+                                        var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
+
+                                        chain.AddBlock(block, transactions, 1, changeSet);
                                     }
                                     catch (Exception e)
                                     {
+                                        Logger.Error(e.ToString());
                                         throw new Exception("block add failed");
                                     }
 
-                                    Logger.Message($"Added block #{currentBlock} to {chain.Name}");
+                                    Logger.Message($"Added block #{block.Height} to {chain.Name}");
                                     addedBlocks = true;
-                                    currentBlock++;
                                 }
                             }
 
@@ -733,6 +714,22 @@ namespace Phantasma.Network.P2P
             }
 
             list.Add(receipt);
+        }
+
+        internal void AddBlock(Chain chain, Block block)
+        {
+            if (!Capabilities.HasFlag(PeerCaps.Sync))
+            {
+                return;
+            }
+
+            foreach (var peer in _peers)
+            {
+                var msg = new ListMessage(this.Keys.Address, RequestKind.Blocks);
+                msg.AddBlockRange(chain, block.Height, 1);
+
+                SendMessage(peer, msg);
+            }
         }
 
         internal void AddEvent(Event evt)

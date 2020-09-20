@@ -12,6 +12,7 @@ using Phantasma.VM.Utils;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Domain;
+using System.Text;
 
 namespace Phantasma.Tests
 {
@@ -78,7 +79,15 @@ namespace Phantasma.Tests
             var chainKeys = PhantasmaKeys.Generate();
             var hashes = txs.Select(x => x.Hash);
             uint protocol = 42;
-            var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null, protocol, chainKeys.Address, System.Text.Encoding.UTF8.GetBytes("TEST"));
+
+            var oracleEntries = new OracleEntry[]
+            {
+                new OracleEntry("test", new BigInteger(123).AsByteArray()),
+                new OracleEntry("test2", Encoding.UTF8.GetBytes("hello world")),
+            };
+
+            var block = new Block(1, chainKeys.Address, Timestamp.Now, hashes, Hash.Null, protocol, chainKeys.Address, System.Text.Encoding.UTF8.GetBytes("TEST"), oracleEntries);
+            Assert.IsTrue(block.OracleData.Length == oracleEntries.Length);
 
             int index = 0;
             foreach (var hash in hashes)
@@ -90,12 +99,30 @@ namespace Phantasma.Tests
             }
 
             block.Sign(chainKeys);
+
+            for (int i = 0; i < oracleEntries.Length; i++)
+            {
+                Assert.IsTrue(oracleEntries[i].URL == block.OracleData[i].URL);
+                Assert.IsTrue(oracleEntries[i].Content == block.OracleData[i].Content);
+            }
+
             var bytes = block.ToByteArray(true);
 
             Assert.IsTrue(bytes != null);
 
             var block2 = Block.Unserialize(bytes);
             Assert.IsTrue(block2 != null);
+
+            var bytes2 = block2.ToByteArray(true);
+            Assert.IsTrue(bytes2.Length == bytes.Length);
+
+            Assert.IsTrue(block2.OracleData.Length == oracleEntries.Length);
+
+            for (int i = 0; i < oracleEntries.Length; i++)
+            {
+                Assert.IsTrue(oracleEntries[i].URL == block2.OracleData[i].URL);
+                Assert.IsTrue(oracleEntries[i].Content.SequenceEqual(block2.OracleData[i].Content));
+            }
 
             Assert.IsTrue(block.Hash == block2.Hash);
         }

@@ -311,9 +311,11 @@ namespace Phantasma.Numerics
         {
             string result = "";
 
-            foreach (var digit in Data)
+            // Whole code is written to be compatible with little-endian arch only.
+            // Here we should process digits in reverse order.
+            for (var i = Data.Length - 1; i >= 0; i--)
             {
-                result += digit.ToString("x8");
+                result += Data[i].ToString("x8");
             }
 
             result = result.TrimStart('0');
@@ -1318,9 +1320,14 @@ public void SetBit(uint bitNum)
 
         public static bool IsParsable(string val)
         {
+            if (string.IsNullOrEmpty(val))
+            {
+                return false;
+            }
+
             foreach (var ch in val)
             {
-                if (ch >= '0' && ch <= '9')
+                if (ch >='0'  && ch <= '9')
                 {
                     continue;
                 }

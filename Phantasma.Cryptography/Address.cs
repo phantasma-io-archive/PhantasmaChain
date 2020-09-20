@@ -30,7 +30,7 @@ namespace Phantasma.Cryptography
         public const int LengthInBytes = 34;
         public const int MaxPlatformNameLength = 10;
 
-        public AddressKind Kind => IsNull ? AddressKind.System: (AddressKind)_bytes[0];
+        public AddressKind Kind => IsNull ? AddressKind.System : (_bytes[0] >= 3) ? AddressKind.Interop : (AddressKind)_bytes[0];
 
         public bool IsSystem => Kind == AddressKind.System;
 

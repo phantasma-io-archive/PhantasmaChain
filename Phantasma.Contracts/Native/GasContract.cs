@@ -65,7 +65,7 @@ namespace Phantasma.Contracts.Native
             BigInteger balance;
             using (var m = new ProfileMarker("Runtime.GetBalance"))
                 balance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
-            Runtime.Expect(balance >= maxAmount, "not enough gas in address");
+            Runtime.Expect(balance >= maxAmount, $"not enough {DomainSettings.FuelTokenSymbol} {balance} in address {from} {maxAmount}");
 
             using (var m = new ProfileMarker("Runtime.TransferTokens"))
                 Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, maxAmount);
@@ -78,6 +78,12 @@ namespace Phantasma.Contracts.Native
         private void ApplyInflation()
         {
             var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
+
+            var minExpectedSupply = UnitConversion.ToBigInteger(100000000, DomainSettings.StakingTokenDecimals);
+            if (currentSupply < minExpectedSupply)
+            {
+                currentSupply = minExpectedSupply;
+            }
 
             // NOTE this gives an approximate inflation of 3% per year (0.75% per season)
             var mintAmount = currentSupply / 133;
@@ -103,6 +109,21 @@ namespace Phantasma.Contracts.Native
         }
 
         public void SpendGas(Address from)
+        {
+            //TODO_FIX_TX
+            //if (Runtime.Chain.Height > 120000)
+            if (Runtime.ProtocolVersion > 2)
+            {
+                SpendGasV2(from);
+            }
+            else
+            {
+                SpendGasV1(from);
+            }
+
+        }
+
+        private void SpendGasV1(Address from)
         {
             if (Runtime.IsReadOnlyMode())
             {
@@ -166,6 +187,100 @@ namespace Phantasma.Contracts.Native
                 var validatorPayment = spentGas * Runtime.GasPrice;
                 var validatorAddress = SmartContract.GetAddressForNative(NativeContractKind.Block);
                 Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, validatorAddress, validatorPayment);
+                spentGas = 0;
+            }
+
+            _allowanceMap.Remove(from);
+            _allowanceTargets.Remove(from);
+
+            Runtime.Notify(EventKind.GasPayment, Address.Null, new GasEventData(targetAddress, Runtime.GasPrice, spentGas));
+
+            if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
+            {
+                if (_lastInflation.Value == 0)
+                {
+                    var genesisTime = Runtime.GetGenesisTime();
+                    _lastInflation = genesisTime;
+                }
+                else
+                {
+                    var infDiff = Runtime.Time - _lastInflation;
+                    var inflationPeriod = SecondsInDay * 90;
+                    if (infDiff >= inflationPeriod)
+                    {
+                        ApplyInflation();
+                    }
+                }
+            }
+        }
+
+        private void SpendGasV2(Address from)
+        {
+            if (Runtime.IsReadOnlyMode())
+            {
+                return;
+            }
+
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
+
+            var availableAmount = _allowanceMap.Get<Address, BigInteger>(from);
+
+            var spentGas = Runtime.UsedGas;
+            var requiredAmount = spentGas * Runtime.GasPrice;
+            Runtime.Expect(requiredAmount > 0, $"{Runtime.GasPrice} {spentGas} gas fee must exist");
+
+            Runtime.Expect(availableAmount >= requiredAmount, "gas allowance is not enough");
+
+            /*var token = this.Runtime.Nexus.FuelToken;
+            Runtime.Expect(token != null, "invalid token");
+            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
+            */
+
+            var leftoverAmount = availableAmount - requiredAmount;
+
+            var targetAddress = _allowanceTargets.Get<Address, Address>(from);
+            BigInteger targetGas;
+
+            Runtime.Notify(EventKind.GasPayment, from, new GasEventData(targetAddress,  Runtime.GasPrice, spentGas));
+
+            // return leftover escrowed gas to transaction creator
+            if (leftoverAmount > 0)
+            {
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, from, leftoverAmount);
+            }
+
+            Runtime.Expect(spentGas > 1, "gas spent too low");
+            var burnGas = spentGas / 2;
+
+            if (burnGas > 0)
+            {
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, this.Address, burnGas);
+                spentGas -= burnGas;
+            }
+
+            if (!targetAddress.IsNull)
+            {
+                targetGas = spentGas / 2; // 50% for dapps
+            }
+            else
+            {
+                targetGas = 0;
+            }
+
+            if (targetGas > 0 && targetAddress != this.Address)
+            {
+                var targetPayment = targetGas * Runtime.GasPrice;
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment);
+                spentGas -= targetGas;
+            }
+
+            if (spentGas > 0)
+            {
+                var validatorPayment = spentGas * Runtime.GasPrice;
+                var validatorAddress = SmartContract.GetAddressForNative(NativeContractKind.Block);
+                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, validatorAddress, validatorPayment);
                 spentGas = 0;
             }
 

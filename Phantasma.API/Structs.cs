@@ -154,6 +154,15 @@ namespace Phantasma.API
         public string content;
     }
 
+    public struct SignatureResult: IAPIResult
+    {
+        [APIDescription("Kind of signature")]
+        public string Kind;
+
+        [APIDescription("Byte array containing signature data, encoded as hex string")]
+        public string Data;
+    }
+
     public struct TransactionResult : IAPIResult
     {
         [APIDescription("Hash of the transaction")]
@@ -185,6 +194,12 @@ namespace Phantasma.API
 
         [APIDescription("Fee of the transaction, in KCAL, fixed point")]
         public string fee;
+
+        [APIDescription("List of signatures that signed the transaction")]
+        public SignatureResult[] signatures;
+
+        [APIDescription("Expiration time of the transaction")]
+        public uint expiration;
     }
 
     public struct AccountTransactionsResult : IAPIResult
@@ -262,12 +277,18 @@ namespace Phantasma.API
         public string hash;
 
         public string flags;
+
+        [APIDescription("Script attached to token, in hex")]
+        public string script;
     }
 
     public struct TokenDataResult : IAPIResult
     {
-        [APIDescription("ID of token")]
+        [APIDescription("id of token")]
         public string ID;
+
+        [APIDescription("mint number of token")]
+        public string mint;
 
         [APIDescription("Chain where currently is stored")]
         public string chainName;

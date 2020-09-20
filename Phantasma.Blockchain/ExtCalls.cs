@@ -10,6 +10,7 @@ using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Contracts;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -35,13 +36,16 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
 
+            vm.RegisterMethod("Nexus.Init", Runtime_NexusInit);
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
             vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
             vm.RegisterMethod("Nexus.CreatePlatform", Runtime_CreatePlatform);
             vm.RegisterMethod("Nexus.CreateOrganization", Runtime_CreateOrganization);
+            vm.RegisterMethod("Nexus.SetTokenPlatformHash", Runtime_SetTokenPlatformHash);
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
+            vm.RegisterMethod("Data.Field", Data_Field);
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
             vm.RegisterMethod("Data.Delete", Data_Delete);
@@ -59,10 +63,10 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("ABI()", Constructor_ABI);
             vm.RegisterMethod("Address()", Constructor_Address);
             vm.RegisterMethod("Hash()", Constructor_Hash);
-            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
+            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);          
         }
 
-        private static ExecutionState Constructor_Object<IN, OUT>(RuntimeVM vm, Func<IN, OUT> loader)
+        private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
         {
             var type = VMObject.GetVMType(typeof(IN));
             var input = vm.Stack.Pop().AsType(type);
@@ -160,14 +164,14 @@ namespace Phantasma.Blockchain
             {
                 return ExecutionState.Fault;
             }
-
+            
             url = url.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(url))
             {
                 return ExecutionState.Fault;
             }
 
-            var result = Runtime.Oracle.Read(Runtime.Time,/*vm.Transaction.Hash, */url);
+            var result = Runtime.Oracle.Read<byte[]>(Runtime.Time,/*vm.Transaction.Hash, */url);
 
             return ExecutionState.Running;
         }
@@ -285,7 +289,9 @@ namespace Phantasma.Blockchain
                 ExpectStackSize(vm, 1);
 
                 var address = PopAddress(vm);
-                var success = tx.IsSignedBy(address);
+                //var success = tx.IsSignedBy(address);
+                // TODO check if this was just a bug or there was a real reason 
+                var success = vm.IsWitness(address);
 
                 var result = new VMObject();
                 result.SetValue(success);
@@ -320,6 +326,20 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        // returns the key for a field from a contract
+        private static ExecutionState Data_Field(RuntimeVM runtime)
+        {
+            var contract = PopString(runtime, "contract");
+            var field = PopString(runtime, "contract");
+            var key_bytes = SmartContract.GetKeyForField(contract, field, false);
+
+            var val = new VMObject();
+            val.SetValue(key_bytes, VMType.Bytes);
+            runtime.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+
         private static ExecutionState Data_Get(RuntimeVM runtime)
         {
             var key = runtime.Stack.Pop();
@@ -327,9 +347,12 @@ namespace Phantasma.Blockchain
 
             runtime.Expect(key_bytes.Length > 0, "invalid key");
 
+            var type_obj = runtime.Stack.Pop();
+            var vmType = type_obj.AsEnum<VMType>();
+
             var value_bytes = runtime.Storage.Get(key_bytes);
             var val = new VMObject();
-            val.SetValue(value_bytes, VMType.Bytes);
+            val.SetValue(value_bytes, vmType);
             runtime.Stack.Push(val);
 
             return ExecutionState.Running;
@@ -374,7 +397,9 @@ namespace Phantasma.Blockchain
             if (temp.Type == VMType.String)
             {
                 var text = temp.AsString();
-                if (Address.IsValidAddress(text))
+                //TODO_FIX_TX
+                //if (Address.IsValidAddress(text) && vm.Chain.Height > 65932)
+                if (Address.IsValidAddress(text) && vm.ProtocolVersion > 1)
                 {
                     return Address.FromText(text);
                 }
@@ -408,6 +433,15 @@ namespace Phantasma.Blockchain
             }
 
             return temp.AsNumber();
+        }
+
+        private static string PopString(RuntimeVM vm, string ArgumentName)
+        {
+            var temp = vm.Stack.Pop();
+
+            vm.Expect(temp.Type == VMType.String, $"expected strng for {ArgumentName}");
+
+            return temp.AsString();
         }
 
         private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
@@ -539,7 +573,7 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_TransferToken(RuntimeVM Runtime)
         {
             ExpectStackSize(Runtime, 4);
-
+            
             VMObject temp;
 
             var source = PopAddress(Runtime);
@@ -630,7 +664,7 @@ namespace Phantasma.Blockchain
 
             return ExecutionState.Running;
         }
-
+        
         private static ExecutionState Runtime_ReadTokenROM(RuntimeVM Runtime)
         {
             var content = Runtime_ReadTokenInternal(Runtime);
@@ -687,14 +721,20 @@ namespace Phantasma.Blockchain
 
             temp = Runtime.Stack.Pop();
 
-            switch (temp.Type)
+            switch (temp.Type) 
             {
                 case VMType.String:
                     {
+                        // TODO not sure about that
                         var name = temp.AsString();
+                        if (name == "validator" && Runtime.GenesisAddress == Address.Null)
+                        {
+                            Runtime.Nexus.Initialize(owner);
+
+                        }
                         var success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
 
-                        Runtime.Expect(success, name + " contract deploy failed");
+                        Runtime.Expect(success, name+" contract deploy failed");
 
                         var contract = Runtime.Nexus.GetContractByName(Runtime.RootStorage, name);
                         var constructor = "Initialize";
@@ -715,6 +755,19 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Runtime_NexusInit(RuntimeVM Runtime)
+        {
+            Runtime.Expect(Runtime.Chain == null || Runtime.Chain.Height == 0, "nexus already initialized");
+
+            ExpectStackSize(Runtime, 1);
+
+            var owner = PopAddress(Runtime);
+
+            Runtime.Nexus.Initialize(owner);
+
+            return ExecutionState.Running;
+        }
+        
         private static ExecutionState Runtime_CreateToken(RuntimeVM Runtime)
         {
             ExpectStackSize(Runtime, 7);
@@ -809,6 +862,29 @@ namespace Phantasma.Blockchain
             var result = new VMObject();
             result.SetValue(target);
             Runtime.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_SetTokenPlatformHash(RuntimeVM Runtime)
+        {
+            ExpectStackSize(Runtime, 3);
+
+            VMObject temp;
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.String, "expected string for platform");
+            var platform = temp.AsString();
+
+            temp = Runtime.Stack.Pop();
+            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
+            var hash = new Hash(temp.AsByteArray().Skip(1).ToArray());
+
+            Runtime.SetTokenPlatformHash(symbol, platform, hash);
 
             return ExecutionState.Running;
         }

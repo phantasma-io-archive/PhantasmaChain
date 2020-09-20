@@ -68,12 +68,11 @@ namespace Phantasma.Pay.Chains
             return Cryptography.Address.FromInterop(EthereumID, pubKey);
         }
 
-        private static bool IsValidAddress(string addressText)
+        public static bool IsValidAddress(string addressText)
         {
             return addressText.StartsWith("0x") && addressText.Length == 42;
         }
 
-        /*
         public static string DecodeAddress(Address address)
         {
             if (!address.IsInterop)
@@ -81,17 +80,17 @@ namespace Phantasma.Pay.Chains
                 throw new Exception("not an interop address");
             }
 
-            string platformName;
+            byte platformID;
             byte[] data;
-            address.DecodeInterop(out platformName, out data, 20);
+            address.DecodeInterop(out platformID, out data);
 
-            if (platformName != EthereumPlatform)
+            if (platformID != EthereumID)
             {
                 throw new Exception("not a Ethereum interop address");
             }
 
-            return $"0x{Base16.Encode(data)}";
-        }*/
+            return $"0x{Base16.Encode(data.Take(20).ToArray())}";
+        }
 
         public override IEnumerable<CryptoCurrencyInfo> GetCryptoCurrencyInfos()
         {

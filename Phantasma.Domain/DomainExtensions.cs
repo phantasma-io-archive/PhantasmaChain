@@ -146,9 +146,41 @@ namespace Phantasma.Domain
             return tx;
         }
 
+        public static BigInteger ReadFeeFromOracle(this IRuntime runtime, string platform)
+        {
+            var url = GetOracleFeeURL(platform);
+            var bytes = runtime.ReadOracle(url);
+            BigInteger fee;
+            if (bytes == null)
+            {
+                fee = runtime.GetGovernanceValue("interop.fee");
+            }
+            else
+            {
+                fee = BigInteger.FromUnsignedArray(bytes, true);
+            }
+            //fee = BigInteger.FromUnsignedArray(bytes, true);
+            return fee;
+        }
+
         public static string GetOracleTransactionURL(string platform, string chain, Hash hash)
         {
             return $"interop://{platform}/{chain}/tx/{hash}";
+        }
+
+        public static string GetOracleBlockURL(string platform, string chain, Hash hash)
+        {
+            return $"interop://{platform}/{chain}/block/{hash}";
+        }
+
+        public static string GetOracleBlockURL(string platform, string chain, BigInteger height)
+        {
+            return $"interop://{platform}/{chain}/block/{height}";
+        }
+
+        public static string GetOracleFeeURL(string platform)
+        {
+            return $"fee://{platform}";
         }
 
         public static BigInteger GetBlockCount(this IArchive archive)
@@ -174,11 +206,28 @@ namespace Phantasma.Domain
             return UnitConversion.ToBigInteger(UnitConversion.ToDecimal(baseAmount, baseToken.Decimals) * UnitConversion.ToDecimal(price, quoteToken.Decimals), quoteToken.Decimals);
         }
 
+
         public static BigInteger GetTokenQuote(this IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
         {
+            //if (vm.Nexus.GetGovernanceValue(vm.Nexus.RootStorage, vm.Nexus.NexusProtocolVersionTag) > 2)
+            if (runtime.Chain.Height > 120000)
+            {
+                return GetTokenQuoteV1(runtime, baseSymbol, quoteSymbol, amount);
+            }
+            else
+            {
+                return GetTokenQuoteV2(runtime, baseSymbol, quoteSymbol, amount);
+            }
+        }
+
+        // converts amount in baseSymbol to amount in quoteSymbol
+        public static BigInteger GetTokenQuoteV1(IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
+        {
+
             if (baseSymbol == quoteSymbol)
                 return amount;
 
+            // old
             var basePrice = runtime.GetTokenPrice(baseSymbol);
 
             var baseToken = runtime.GetToken(baseSymbol);
@@ -196,6 +245,53 @@ namespace Phantasma.Domain
 
             result = runtime.ConvertQuoteToBase(result, quotePrice, quoteToken, fiatToken);
             return result;
+        }
+
+        public static BigInteger GetTokenQuoteV2(IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
+        {
+            if (baseSymbol == quoteSymbol)
+                return amount;
+
+            var basePrice = runtime.GetTokenPrice(baseSymbol);
+
+            var baseToken = runtime.GetToken(baseSymbol);
+
+            if (quoteSymbol == DomainSettings.FiatTokenSymbol)
+            {
+                var fiatToken = runtime.GetToken(DomainSettings.FiatTokenSymbol);
+
+                // this gives how many dollars is "amount"
+                BigInteger result = runtime.ConvertBaseToQuote(amount, basePrice, baseToken, fiatToken);
+
+                return result;
+            }
+            else
+            {
+                var quotePrice = runtime.GetTokenPrice(quoteSymbol);
+                var quoteToken = runtime.GetToken(quoteSymbol);
+
+                if (quoteToken.Decimals <= baseToken.Decimals)
+                {
+                    var result = ((basePrice * amount) / quotePrice);
+
+                    var diff = baseToken.Decimals - quoteToken.Decimals;
+                    var pow = BigInteger.Pow(10, diff);
+                    result /= pow;
+
+                    return result;
+                }
+                else // here we invert order of calculations for improved precision
+                {
+                    var diff = quoteToken.Decimals - baseToken.Decimals;
+                    var pow = BigInteger.Pow(10, diff);
+
+                    amount *= pow;
+
+                    var result = ((basePrice * amount) / quotePrice);
+
+                    return result;
+                }
+            }
         }
 
         #region TRIGGERS

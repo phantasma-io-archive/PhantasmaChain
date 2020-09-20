@@ -1,5 +1,7 @@
 ﻿using Phantasma.Core;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Storage.Context
 {
@@ -118,6 +120,24 @@ namespace Phantasma.Storage.Context
         public bool Any()
         {
             return _entries.Count > 0;
+        }
+
+        public override void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
+        {
+            ulong count = 0;
+            baseContext.Visit((key, value) =>
+            {
+                var entryPrefix = key.Take(prefix.Length);
+                if (count < searchCount && entryPrefix.SequenceEqual(prefix))
+                {
+                    visitor(key, value);
+                    count++;
+                }
+
+                if (count == searchCount)
+                    return;
+
+            }, searchCount, prefix);
         }
     }
 }

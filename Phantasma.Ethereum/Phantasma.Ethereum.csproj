@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <FileUpgradeFlags>40</FileUpgradeFlags>
@@ -6,7 +6,8 @@
     <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="LunarLabs.Parser" Version="1.2.7" />
+    <PackageReference Include="BouncyCastle.NetCore" Version="1.8.6" />
+    <PackageReference Include="LunarLabs.Parser" Version="1.2.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phantasma.Cryptography\Phantasma.Cryptography.csproj" />

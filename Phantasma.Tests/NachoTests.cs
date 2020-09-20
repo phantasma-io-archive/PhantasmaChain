@@ -11,6 +11,7 @@ using Phantasma.VM.Utils;
 
 namespace Phantasma.Tests
 {
+    /*
     [TestClass]
     class NachoTests
     {
@@ -31,5 +32,5 @@ namespace Phantasma.Tests
 
         }
 
-    }
+    }*/
 }

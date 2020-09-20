@@ -208,20 +208,20 @@ namespace Phantasma.Contracts.Native
             Runtime.Notify(EventKind.ChannelClose, from, channelName);
         }*/
 
-        public void OpenChannel(Address from, ECPoint publicKey)
+        public void OpenChannel(Address from, byte[] publicKey)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(!_keys.ContainsKey<Address>(from), "channel already open");
 
-            _keys.Set<Address, ECPoint>(from, publicKey);
+            _keys.Set<Address, byte[]>(from, publicKey);
 
             Runtime.Notify(EventKind.ChannelCreate, from, publicKey);
         }
 
-        public ECPoint GetKey(Address from)
+        public byte[] GetKey(Address from)
         {
             Runtime.Expect(_keys.ContainsKey<Address>(from), "channel not open");
-            return _keys.Get<Address, ECPoint>(from);
+            return _keys.Get<Address, byte[]>(from);
         }
 
         public void TopUpChannel(Address from, BigInteger count)
@@ -234,6 +234,8 @@ namespace Phantasma.Contracts.Native
 
             BigInteger balance = _balances.ContainsKey(from) ? _balances.Get<Address, BigInteger>(from) : 0;
 
+            var availableBalance = Runtime.GetBalance(DomainSettings.FuelTokenSymbol, from);
+            Runtime.Expect(availableBalance >= amount, $"insufficient balance in account {availableBalance}/{amount}");
             Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, amount);
             balance += amount;
             Runtime.Expect(balance >= 0, "invalid balance");

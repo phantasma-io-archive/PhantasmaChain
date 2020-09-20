@@ -8,7 +8,6 @@ namespace Phantasma.Domain
     {
         string URL { get; }
         byte[] Content { get; }
-
     }
 
     public interface IBlock

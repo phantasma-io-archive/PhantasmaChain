@@ -72,16 +72,12 @@ namespace Phantasma.Blockchain
             return $"{Name} ({Address})";
         }
 
-        public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
+        public void AddBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee, StorageChangeSetContext changeSet)
         {
             if (!block.IsSigned)
             {
                 throw new BlockGenerationException($"block must be signed");
             }
-
-            StorageChangeSetContext changeSet;
-            using (var m = new ProfileMarker("ValidateBlock"))
-                changeSet = ValidateBlock(block, transactions, minimumFee);
 
             var unsignedBytes = block.ToByteArray(false);
             if (!block.Signature.Verify(unsignedBytes, block.Validator))
@@ -148,8 +144,80 @@ namespace Phantasma.Blockchain
                 Nexus.PluginTriggerBlock(this, block);
         }
 
-        public StorageChangeSetContext ValidateBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
+        public StorageChangeSetContext ProcessTransactions(Block block, IEnumerable<Transaction> transactions
+                , OracleReader oracle, BigInteger minimumFee, bool allowModify = true)
         {
+            if (allowModify)
+            {
+                block.CleanUp();
+            }
+
+            var changeSet = new StorageChangeSetContext(this.Storage);
+
+            int txIndex = 0; 
+            foreach (var tx in transactions)
+            {
+                byte[] result;
+                try
+                {
+                    using (var m = new ProfileMarker("ExecuteTransaction"))
+                    {
+                        if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result, allowModify))
+                        {
+                            if (result != null)
+                            {
+                                if (allowModify)
+                                {
+                                    block.SetResultForHash(tx.Hash, result);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidTransactionException(tx.Hash, "script execution failed");
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (e.InnerException != null)
+                    {
+                        e = e.InnerException;
+                    }
+
+                    if (tx == null)
+                    {
+                        throw new BlockGenerationException(e.Message);
+                    }
+
+                    Console.WriteLine(e);
+                    throw new InvalidTransactionException(tx.Hash, e.Message);
+                }
+
+                txIndex++;
+            }
+
+            // TODO avoid fetching this every time
+            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            if (block.Protocol != expectedProtocol)
+            {
+                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
+            }
+
+            using (var m = new ProfileMarker("CloseBlock"))
+            {
+                if (allowModify)
+                {
+                    CloseBlock(block, changeSet);
+                }
+            }
+
+            return changeSet;
+        }
+
+        public StorageChangeSetContext ProcessBlock(Block block, IEnumerable<Transaction> transactions, BigInteger minimumFee)
+        {
+
             if (!block.Validator.IsUser)
             {
                 throw new BlockGenerationException($"block validator must be user address");
@@ -176,7 +244,7 @@ namespace Phantasma.Blockchain
 
                 if (block.Timestamp < lastBlock.Timestamp)
                 {
-                    throw new BlockGenerationException($"timestamp of block should be greater than {lastBlock.Timestamp}");
+                    throw new BlockGenerationException($"timestamp of block {block.Timestamp} should be greater than {lastBlock.Timestamp}");
                 }
             }
 
@@ -198,78 +266,32 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            // TODO avoid fetching this every time
-            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-            if (block.Protocol != expectedProtocol)
-            {
-                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
-            }
-
             foreach (var tx in transactions)
             {
                 if (!tx.IsValid(this))
                 {
+#if DEBUG
+                    tx.IsValid(this);
+#endif
                     throw new InvalidTransactionException(tx.Hash, $"invalid transaction with hash {tx.Hash}");
                 }
             }
 
-            var changeSet = new StorageChangeSetContext(this.Storage);
-
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
+            oracle.Clear();
 
             block.CleanUp();
 
             Address expectedValidator;
             using (var m = new ProfileMarker("GetValidator"))
                 expectedValidator  = Nexus.HasGenesis ? GetValidator(Nexus.RootStorage, block.Timestamp) : Nexus.GetGenesisAddress(Nexus.RootStorage);
-            if (block.Validator != expectedValidator)
+
+            if (block.Validator != expectedValidator && !expectedValidator.IsNull)
             {
                 throw new BlockGenerationException($"unexpected validator {block.Validator}, expected {expectedValidator}");
             }
 
-            int txIndex = 0; 
-            foreach (var tx in transactions)
-            {
-                byte[] result;
-                try
-                {
-                    using (var m = new ProfileMarker("ExecuteTransaction"))
-                    {
-                        if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result))
-                        {
-                            if (result != null)
-                            {
-                                block.SetResultForHash(tx.Hash, result);
-                            }
-                        }
-                        else
-                        {
-                            throw new InvalidTransactionException(tx.Hash, "script execution failed");
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    if (e.InnerException != null)
-                    {
-                        e = e.InnerException;
-                    }
-
-                    if (tx == null)
-                    {
-                        throw new BlockGenerationException(e.Message);
-                    }
-
-                    throw new InvalidTransactionException(tx.Hash, e.Message);
-                }
-
-                txIndex++;
-            }
-
-            using (var m = new ProfileMarker("CloseBlock"))
-            {
-                CloseBlock(block, changeSet);
-            }
+            var changeSet = ProcessTransactions(block, transactions, oracle, minimumFee);
 
             if (oracle.Entries.Any())
             {
@@ -279,7 +301,8 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        private bool ExecuteTransaction(int index, Transaction transaction, Timestamp time, StorageChangeSetContext changeSet, Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result)
+        private bool ExecuteTransaction(int index, Transaction transaction, Timestamp time, StorageChangeSetContext changeSet
+                , Action<Hash, Event> onNotify, OracleReader oracle, BigInteger minimumFee, out byte[] result, bool allowModify = true)
         {
             result = null;
 
@@ -305,7 +328,10 @@ namespace Phantasma.Blockchain
                 foreach (var evt in runtime.Events)
                 {
                     using (var m2 = new ProfileMarker(evt.ToString()))
-                        onNotify(transaction.Hash, evt);
+                        if (allowModify)
+                        {
+                            onNotify(transaction.Hash, evt);
+                        }
                 }
             }
 
@@ -432,7 +458,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeScript(StorageContext storage, byte[] script, Timestamp time)
         {
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
             var changeSet = new StorageChangeSetContext(storage);
             var vm = new RuntimeVM(-1, script, this, time, null, changeSet, oracle, true);
 
@@ -503,13 +529,10 @@ namespace Phantasma.Blockchain
             var events = block.GetEventsForTransaction(transactionHash);
             foreach (var evt in events)
             {
-                if (evt.Kind == EventKind.TokenReceive && evt.Contract == "gas")
+                if (evt.Kind == EventKind.GasPayment && evt.Contract == "gas")
                 {
-                    var info = evt.GetContent<TokenEventData>();
-                    if (info.Symbol == DomainSettings.FuelTokenSymbol)
-                    {
-                        fee += info.Value;
-                    }
+                    var info = evt.GetContent<GasEventData>();
+                    fee += info.amount * info.price;
                 }
             }
 

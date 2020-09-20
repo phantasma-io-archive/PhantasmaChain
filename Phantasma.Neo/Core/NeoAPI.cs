@@ -6,13 +6,14 @@ using Phantasma.Neo.Cryptography;
 using System.Numerics;
 using Phantasma.Neo.Utils;
 using System.Threading;
+using PBigInteger = Phantasma.Numerics.BigInteger;
 using Phantasma.Neo.VM.Types;
 
 namespace Phantasma.Neo.Core
 {
     public class BlockIterator
     {
-        public uint currentBlock;
+        public BigInteger currentBlock;
         public uint currentTransaction;
 
         public BlockIterator(NeoAPI api)
@@ -728,6 +729,15 @@ namespace Phantasma.Neo.Core
             return GetTransactionHeight(val);
         }
 
+        public abstract Dictionary<string, BigInteger> GetSwapBlocks(string hash, string address, string height = null);
+
+        public abstract ApplicationLog[] GetApplicationLog(UInt256 hash);
+
+        public ApplicationLog[] GetApplicationLog(string hash)
+        {
+            var val = new UInt256(LuxUtils.ReverseHex(hash).HexToBytes());
+            return GetApplicationLog(val);
+        }
 
         public abstract Transaction GetTransaction(UInt256 hash);
 
@@ -985,6 +995,34 @@ namespace Phantasma.Neo.Core
             return result;
         }
 
+        public abstract bool HasPlugin(string hash);
+
+        public abstract string GetNep5Transfers(UInt160 hash, DateTime timestamp);
+
+        public string GetNep5Transfers(NeoKeys key, DateTime timestamp)
+        {
+            return GetNep5Transfers(key.Address, timestamp);
+        }
+
+        public string GetNep5Transfers(string address, DateTime timestamp)
+        {
+            var hash = new UInt160(address.AddressToScriptHash());
+            return GetNep5Transfers(hash, timestamp);
+        }
+
+        public abstract string GetUnspents(UInt160 hash);
+
+        public string GetUnspents(NeoKeys key)
+        {
+            return GetUnspents(key.Address);
+        }
+
+        public string GetUnspents(string address)
+        {
+            var hash = new UInt160(address.AddressToScriptHash());
+            return GetUnspents(hash);
+        }
+
         public abstract Dictionary<string, decimal> GetAssetBalancesOf(UInt160 hash);
 
         public Dictionary<string, decimal> GetAssetBalancesOf(NeoKeys key)
@@ -1039,9 +1077,10 @@ namespace Phantasma.Neo.Core
         }
 
         #region BLOCKS
-        public abstract uint GetBlockHeight();
+        public abstract BigInteger GetBlockHeight();
         public abstract Block GetBlock(UInt256 hash);
-        public abstract Block GetBlock(uint height);
+        public abstract Block GetBlock(BigInteger height);
+        public abstract List<Block> GetBlockRange(PBigInteger start, PBigInteger end);
 
         #endregion
 
@@ -1107,7 +1146,7 @@ namespace Phantasma.Neo.Core
 
         public Transaction WaitForTransaction(BlockIterator iterator, Func<Transaction, bool> filter, int maxBlocksToWait = 9999)
         {
-            uint newBlock;
+            BigInteger newBlock;
 
             while (true)
             {
@@ -1164,8 +1203,5 @@ namespace Phantasma.Neo.Core
             WaitForTransaction(iterator, x => x.Hash == tx.Hash, maxBlocksToWait);
             lastTransactions[keys.Address] = tx;
         }
-
-
     }
-
 }

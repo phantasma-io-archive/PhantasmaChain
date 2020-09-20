@@ -379,7 +379,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (UsedGas > MaxGas && !DelayPayment)
             {
-                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})");
+                throw new VMException(this, $"VM gas limit exceeded ({MaxGas})/({UsedGas})");
             }
 
             return result;
@@ -399,7 +399,7 @@ namespace Phantasma.Blockchain.Contracts
             var token = GetToken(symbol);
 
             Core.Throw.If(Oracle == null, "cannot read price from null oracle");
-            var bytes = Oracle.Read(this.Time, "price://" + symbol);
+            var bytes = Oracle.Read<byte[]>(this.Time, "price://" + symbol);
             var value = BigInteger.FromUnsignedArray(bytes, true);
 
             Expect(value > 0, "token price not available for " + symbol);
@@ -617,6 +617,12 @@ namespace Phantasma.Blockchain.Contracts
                     accountResult = this.Transaction.IsSignedBy(address);
             }
 
+            // workaround for supporting txs done in older nodes
+            if (!accountResult && this.IsRootChain() && this.Chain.Height < 50000)
+            {
+                accountResult = this.Transaction.IsSignedBy(this.GenesisAddress);
+            }
+
             if (accountResult)
             {
                 validatedWitnesses.Add(address);
@@ -664,6 +670,11 @@ namespace Phantasma.Blockchain.Contracts
         public bool TokenExists(string symbol)
         {
             return Nexus.TokenExists(RootStorage, symbol);
+        }
+
+        public bool TokenExists(string symbol, string platform)
+        {
+            return Nexus.TokenExistsOnPlatform(symbol, platform, RootStorage);
         }
 
         public bool FeedExists(string name)
@@ -849,12 +860,15 @@ namespace Phantasma.Blockchain.Contracts
             var pow = Runtime.Transaction.Hash.GetDifficulty();
             Runtime.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
+            Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
+
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
             Runtime.Expect(ValidationUtils.IsValidTicker(symbol), "invalid symbol");
-            Runtime.Expect(!Runtime.TokenExists(symbol), "token already exists");
+            Runtime.Expect(!Runtime.TokenExists(symbol, platform), $"token {symbol}/{platform} already exists");
 
             Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
-            Runtime.Expect(Runtime.PlatformExists(platform), "platform not found");
+
+            Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "invalid witness, must be genesis");
 
             Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
         }
@@ -968,13 +982,13 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis");
+            Runtime.Expect(from == Runtime.GenesisAddress, "(CreatePlatform) must be genesis");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid platform name");
 
             var platformID = Nexus.CreatePlatform(RootStorage, externalAddress, interopAddress, name, fuelSymbol);
-            Runtime.Expect(platformID > 0, "creation of platform failed");
+            Runtime.Expect(platformID > 0, $"creation of platform with id {platformID} failed");
 
             Runtime.Notify(EventKind.PlatformCreate, from, name);
             return platformID;
@@ -985,7 +999,7 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
-            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis");
+            Runtime.Expect(from == Runtime.GenesisAddress, $"(CreateOrganization) must be genesis from: {from} genesis: {Runtime.GenesisAddress}");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             Runtime.Expect(ValidationUtils.IsValidIdentifier(ID), "invalid organization name");
@@ -1133,8 +1147,12 @@ namespace Phantasma.Blockchain.Contracts
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             var Runtime = this;
+            if (ProtocolVersion > 2)
+            {
+                Runtime.Expect(!source.IsNull, "invalid source");
+            }
 
-            if (source == destination)
+            if (source == destination || amount == 0)
             {
                 return;
             }
@@ -1291,7 +1309,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public byte[] ReadOracle(string URL)
         {
-            return this.Oracle.Read(this.Time, URL);
+            return this.Oracle.Read<byte[]>(this.Time, URL);
         }
 
         public Hash GetTokenPlatformHash(string symbol, IPlatform platform)
@@ -1459,7 +1477,8 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         public bool HasGenesis => Nexus.HasGenesis;
-        public string NexusName => Nexus.GetName(RootStorage);
+        public string NexusName => Nexus.Name;
+        public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
         public Address GenesisAddress => Nexus.GetGenesisAddress(RootStorage);
         public Hash GenesisHash => Nexus.GetGenesisHash(RootStorage);
     }

@@ -81,6 +81,8 @@ namespace Phantasma.Contracts.Native
                 switch (constraint.Kind)
                 {
                     case ConstraintKind.MustIncrease:
+                        System.Console.WriteLine("previous " + previous);
+                        System.Console.WriteLine("current" + current);
                         Runtime.Expect(!usePrevious || previous < current, "value must increase");
                         break;
 
@@ -150,14 +152,14 @@ namespace Phantasma.Contracts.Native
         //Optimized function in Nexus.OptimizedGetGovernanceValue
         public BigInteger GetValue(string name)
         {
-            Runtime.Expect(HasValue(name), "invalid value name");
+            Runtime.Expect(HasValue(name), "invalid value name in GetValue");
             var value = _valueMap.Get<string, BigInteger>(name);
             return value;
         }
 
         public void SetValue(string name, BigInteger value)
         {
-            Runtime.Expect(HasValue(name), "invalid value name");
+            Runtime.Expect(HasValue(name), "invalid value name in SetValue");
 
             var pollName = ConsensusContract.SystemPoll + name;
             var hasConsensus = Runtime.CallContext("consensus", "HasConsensus", pollName, value).AsBool();

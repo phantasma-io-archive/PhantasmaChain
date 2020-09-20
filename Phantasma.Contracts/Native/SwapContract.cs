@@ -2,7 +2,6 @@
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
-using Phantasma.Storage.Context;
 using Phantasma.Storage.Utils;
 using System.Collections.Generic;
 using System.IO;
@@ -31,10 +30,6 @@ namespace Phantasma.Contracts.Native
     public sealed class SwapContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Swap;
-
-        public const string SwapMakerFeePercentTag = "swap.fee.maker";
-        public const string SwapTakerFeePercentTag = "swap.fee.taker";
-
         public SwapContract() : base()
         {
         }
@@ -60,8 +55,25 @@ namespace Phantasma.Contracts.Native
             return info.IsFungible() && info.Flags.HasFlag(TokenFlags.Foreign);
         }
 
+        public const string SwapMakerFeePercentTag = "swap.fee.maker";
+        public const string SwapTakerFeePercentTag = "swap.fee.taker";
+
         // returns how many tokens would be obtained by trading from one type of another
         public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
+        {
+            //TODO_FIX_TX
+            //if (Runtime.Chain.Height > 120000)
+            if (Runtime.ProtocolVersion > 2)
+            {
+                return GetRateV2(fromSymbol, toSymbol, amount);
+            }
+            else
+            {
+                return GetRateV1(fromSymbol, toSymbol, amount);
+            }
+        }
+
+        public BigInteger GetRateV1(string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
@@ -89,6 +101,26 @@ namespace Phantasma.Contracts.Native
             {
                 rate = 0;
             }
+
+            return rate;
+        }
+
+        public BigInteger GetRateV2(string fromSymbol, string toSymbol, BigInteger amount)
+        {
+            Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
+
+            Runtime.Expect(IsSupportedToken(fromSymbol), "unsupported from symbol");
+            Runtime.Expect(IsSupportedToken(toSymbol), "unsupported to symbol");
+
+            var fromInfo = Runtime.GetToken(fromSymbol);
+            Runtime.Expect(fromInfo.IsFungible(), "must be fungible");
+
+            var toInfo = Runtime.GetToken(toSymbol);
+            Runtime.Expect(toInfo.IsFungible(), "must be fungible");
+
+            var rate = Runtime.GetTokenQuote(fromSymbol, toSymbol, amount);
+
+            Runtime.Expect(rate >= 0, "invalid swap rate");
 
             return rate;
         }
@@ -171,10 +203,69 @@ namespace Phantasma.Contracts.Native
 
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
         {
+            if (Runtime.ProtocolVersion > 2)
+            {
+                SwapFeeV2(from, fromSymbol, feeAmount);
+            }
+            else
+            {
+                SwapFeeV1(from, fromSymbol, feeAmount);
+            }
+
+        }
+
+        public void SwapFeeV2(Address from, string fromSymbol, BigInteger feeAmount)
+        {
+            var feeSymbol = DomainSettings.FuelTokenSymbol;
+
+            var feeBalance = Runtime.GetBalance(feeSymbol, from);
+            feeAmount -= feeBalance;
+            if (feeAmount <= 0)
+            {
+                return;
+            }
+
+            var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
+
+            var token = Runtime.GetToken(fromSymbol);
+            BigInteger minAmount;
+
+            // different tokens have different decimals, so we need to make sure a certain minimum amount is swapped
+            if (token.Decimals == 0)
+            {
+                minAmount = 1;
+            }
+            else
+            {
+                var diff = DomainSettings.FuelTokenDecimals - token.Decimals;
+                if (diff > 0)
+                {
+                    minAmount = BigInteger.Pow(10, diff);
+                }
+                else
+                {
+                    minAmount = 1;
+                }
+            }
+
+            if (amountInOtherSymbol < minAmount)
+            {
+                amountInOtherSymbol = minAmount;
+            }
+
+            // round up
+            amountInOtherSymbol++;
+
+            SwapTokens(from, fromSymbol, feeSymbol, amountInOtherSymbol);
+
+            var finalFeeBalance = Runtime.GetBalance(feeSymbol, from);
+            Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeAmount: {feeAmount}");
+        }
+
+        public void SwapFeeV1(Address from, string fromSymbol, BigInteger feeAmount)
+        {
             var toSymbol = DomainSettings.FuelTokenSymbol;
-
             var amount = GetRate(toSymbol, fromSymbol, feeAmount);
-
             var token = Runtime.GetToken(fromSymbol);
             if (token.Decimals == 0 && amount < 1)
             {

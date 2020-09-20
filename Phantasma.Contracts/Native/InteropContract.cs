@@ -37,8 +37,6 @@ namespace Phantasma.Contracts.Native
         private StorageMap _links;
         private StorageMap _reverseMap;
 
-        public const string InteropFeeTag = "interop.fee";
-
         public InteropContract() : base()
         {
         }
@@ -168,7 +166,7 @@ namespace Phantasma.Contracts.Native
             }
 
             var platformTokenHash = Runtime.GetTokenPlatformHash(symbol, platform);
-            Runtime.Expect(platformTokenHash != Hash.Null, "invalid foreign token hash");
+            Runtime.Expect(platformTokenHash != Hash.Null, $"invalid foreign token hash {platformTokenHash}");
 
             Runtime.Expect(interopIndex == -1, "invalid target address");
 
@@ -179,9 +177,19 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var basePrice = Runtime.GetGovernanceValue(InteropFeeTag); 
+            var basePrice = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fiat dollars
+
             var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             Runtime.Expect(feeAmount > 0, "fee is too small");
+
+            var feeBalance = Runtime.GetBalance(feeSymbol, from);
+            if (feeBalance < feeAmount)
+            {
+                Runtime.CallContext("swap", "SwapReverse", from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
+
+                feeBalance = Runtime.GetBalance(feeSymbol, from);
+                Runtime.Expect(feeBalance >= feeAmount, $"missing {feeSymbol} for interop swap");
+            }
 
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
 

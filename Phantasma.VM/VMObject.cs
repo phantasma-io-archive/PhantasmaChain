@@ -67,24 +67,37 @@ namespace Phantasma.VM
 
         public BigInteger AsNumber()
         {
-            if (this.Type == VMType.String)
+            switch (this.Type)
             {
-                if (BigInteger.TryParse((string)Data, out BigInteger number))
-                {
-                    return number;
-                }
-                else
-                {
-                    throw new Exception($"Cannot convert String '{(string)Data}' to BigInteger.");
-                }
-            }
+                case VMType.String:
+                    {
+                        if (BigInteger.TryParse((string)Data, out BigInteger number))
+                        {
+                            return number;
+                        }
+                        else
+                        {
+                            throw new Exception($"Cannot convert String '{(string)Data}' to BigInteger.");
+                        }
+                    }
 
-            if (this.Type != VMType.Number)
-            {
-                throw new Exception("Invalid cast");
-            }
+                case VMType.Bytes:
+                    {
+                        var bytes = (byte[])Data;
+                        var num = BigInteger.FromSignedArray(bytes);
+                        return num;
+                    }
 
-            return (BigInteger)Data;
+                default:
+                    {
+                        if (this.Type != VMType.Number)
+                        {
+                            throw new Exception("Invalid cast");
+                        }
+
+                        return (BigInteger)Data;
+                    }
+            }
         }
 
         public Timestamp AsTimestamp()
@@ -112,18 +125,16 @@ namespace Phantasma.VM
 
         public T AsEnum<T>() where T: struct, IConvertible
         {
-            if (this.Type != VMType.Enum && this.Type != VMType.Number)
-            {
-                throw new Exception("Invalid cast");
-            }
-
             if (!typeof(T).IsEnum)
             {
                 throw new ArgumentException("T must be an enumerated type");
             }
 
-            if (this.Type == VMType.Number)
-                Data = (int)((BigInteger) Data);
+            if (this.Type != VMType.Enum)
+            {
+                var num = this.AsNumber();
+                Data = (int)((BigInteger)Data);
+            }
 
             return (T)Enum.Parse(typeof(T), Data.ToString());
         }
@@ -172,6 +183,19 @@ namespace Phantasma.VM
                     {
                         var str = AsString();
                         return Encoding.UTF8.GetBytes(str);
+                    }
+
+                case VMType.Number:
+                    {
+                        var num = AsNumber();
+                        return num.ToSignedByteArray();
+                    }
+
+                case VMType.Timestamp:
+                    {
+                        var time = AsTimestamp();
+                        var bytes = BitConverter.GetBytes(time.Value);
+                        return bytes;
                     }
 
                 default:

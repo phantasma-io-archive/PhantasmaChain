@@ -543,6 +543,15 @@ namespace Phantasma.CodeGen.Assembler
                     sb.EmitRaw(bytes);
                 }
                 else
+                if (Arguments[0].IsString())
+                {
+                    var str = Arguments[0].AsString();
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(str);
+                    sb.Emit(this._opcode.Value);
+                    sb.EmitVarBytes(bytes.Length);
+                    sb.EmitRaw(bytes);
+                }
+                else
                 {
                     throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
                 }

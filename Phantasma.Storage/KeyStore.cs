@@ -13,9 +13,9 @@ namespace Phantasma.Storage
         void SetValue(byte[] key, byte[] value);
         byte[] GetValue(byte[] key);
         bool ContainsKey(byte[] key);
-        bool Remove(byte[] key);
+        void Remove(byte[] key);
         uint Count { get; }
-        void Visit(Action<byte[], byte[]> visitor);
+        void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix);
     }
 
     public class MemoryStore : IKeyValueStoreAdapter
@@ -55,24 +55,25 @@ namespace Phantasma.Storage
             return result;
         }
 
-        public bool Remove(byte[] key)
+        public void Remove(byte[] key)
         {
-            if (ContainsKey(key))
-            {
-                _entries.Remove(key);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            _entries.Remove(key);
         }
 
-        public void Visit(Action<byte[], byte[]> visitor)
+        public void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix)
         {
-            foreach (var entry in _entries)
+            ulong count = 0;
+            foreach(var entry in _entries)
             {
-                visitor(entry.Key, entry.Value);
+                var entryPrefix = entry.Key.Take(prefix.Length);
+                if (count < searchCount && entryPrefix.SequenceEqual(prefix))
+                {
+                    visitor(entry.Key, entry.Value);
+                    count++;
+                }
+
+                if (count == searchCount)
+                    break;
             }
         }
     }
@@ -113,10 +114,11 @@ namespace Phantasma.Storage
             }
         }
 
-        public void Visit(Action<byte[], byte[]> visitor)
+        public void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix)
         {
             lock (_cache)
             {
+                //TODO use prefix
                 foreach (var entry in _cache)
                 {
                     visitor(entry.Key, entry.Value);
@@ -172,23 +174,15 @@ namespace Phantasma.Storage
             }
         }
 
-        public bool Remove(byte[] key)
+        public void Remove(byte[] key)
         {
-            if (ContainsKey(key))
+            lock (_cache)
             {
-                lock (_cache)
+                _cache.Remove(key);
+                if (AutoFlush)
                 {
-                    _cache.Remove(key);
-                    if (AutoFlush)
-                    {
-                        UpdateToDisk();
-                    }
+                    UpdateToDisk();
                 }
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
 
@@ -210,6 +204,10 @@ namespace Phantasma.Storage
         public uint Count => Adapter.Count;
 
         // TODO increase default size
+        public KeyValueStore()
+        {
+        }
+
         public KeyValueStore(IKeyValueStoreAdapter adapter)
         {
             Adapter = adapter;
@@ -226,6 +224,19 @@ namespace Phantasma.Storage
             var keyBytes = Serialization.Serialize(key);
             var valBytes = Serialization.Serialize(value);
             Adapter.SetValue(keyBytes, valBytes);
+        }
+
+        public bool TryGet(K key, out V value)
+        {
+            var keyBytes = Serialization.Serialize(key);
+            var bytes = Adapter.GetValue(keyBytes);
+            if (bytes == null)
+            {
+                value = default(V);
+               return false;
+            }
+            value = Serialization.Unserialize<V>(bytes);
+            return true;
         }
 
         public V Get(K key)
@@ -246,20 +257,20 @@ namespace Phantasma.Storage
             return Adapter.ContainsKey(keyBytes);
         }
 
-        public bool Remove(K key)
+        public void Remove(K key)
         {
             var keyBytes = Serialization.Serialize(key);
-            return Adapter.Remove(keyBytes);
+            Adapter.Remove(keyBytes);
         }
 
-        public void Visit(Action<K, V> visitor)
+        public void Visit(Action<K, V> visitor, ulong searchCount = 0, byte[] prefix = null)
         {
             Adapter.Visit((keyBytes, valBytes) =>
             {
                 var key = Serialization.Unserialize<K>(keyBytes);
                 var val = Serialization.Unserialize<V>(valBytes);
                 visitor(key, val);
-            });
+            }, searchCount, prefix);
         }
-}
+    }
 }

@@ -58,6 +58,55 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void TestStorageMapBigInt()
+        {
+            var context = new MemoryStorageContext();
+
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+
+            var big = BigInteger.Parse("1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
+            map.Set<BigInteger, BigInteger>(big, big);
+            Assert.IsTrue(map.Count() == 1);
+
+            Assert.IsTrue(map.ContainsKey<BigInteger>(big));
+
+            map.Remove<BigInteger>(big);
+            Assert.IsTrue(map.Count() == 0);
+        }
+
+        [TestMethod]
+        public void TestStorageMapAllValues()
+        {
+            var context = new MemoryStorageContext();
+
+            var map = new StorageMap("test".AsByteArray(), context);
+            Assert.IsTrue(map.Count() == 0);
+
+            var big1 = BigInteger.Parse("1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
+            var big2 = BigInteger.Parse("2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222");
+            var big3 = BigInteger.Parse("3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333");
+
+            map.Set<BigInteger, BigInteger>(big1, big1);
+            map.Set<BigInteger, BigInteger>(big2, big2);
+            map.Set<BigInteger, BigInteger>(big3, big3);
+            Assert.IsTrue(map.Count() == 3);
+
+            Assert.IsTrue(map.ContainsKey<BigInteger>(big1));
+            Assert.IsTrue(map.ContainsKey<BigInteger>(big2));
+            Assert.IsTrue(map.ContainsKey<BigInteger>(big3));
+
+            var all = map.AllValues<BigInteger>();
+            foreach(var x in all)
+            {
+                System.Console.WriteLine(x);
+            }
+
+            System.Console.WriteLine("COUNT: " + all.Count());
+            Assert.IsTrue(all.Count() == 3);
+        }
+
+        [TestMethod]
         public void TestStorageListWithNestedMap()
         {
             var context = new MemoryStorageContext();

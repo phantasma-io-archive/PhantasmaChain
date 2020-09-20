@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,8 +16,31 @@ namespace Phantasma.Storage
         void UnserializeData(BinaryReader reader);
     }
 
+    public delegate void CustomWriter(BinaryWriter writer, object obj);
+    public delegate object CustomReader(BinaryReader reader);
+
+    public struct CustomSerializer
+    {
+        public readonly CustomReader Read;
+        public readonly CustomWriter Write;
+
+        public CustomSerializer(CustomReader reader, CustomWriter writer)
+        {
+            Read = reader;
+            Write = writer;
+        }
+    }
+
     public static class Serialization
     {
+        private static Dictionary<Type, CustomSerializer> _customSerializers = new Dictionary<Type, CustomSerializer>();
+
+        public static void RegisterType<T>(CustomReader reader, CustomWriter writer)
+        {
+            var type = typeof(T);
+            _customSerializers[type] = new CustomSerializer(reader, writer);
+        }
+
         public static byte[] Serialize(this object obj)
         {
             if (obj == null)
@@ -49,6 +73,13 @@ namespace Phantasma.Storage
 
         public static void Serialize(BinaryWriter writer, object obj, Type type)
         {
+            if (_customSerializers.ContainsKey(type))
+            {
+                var serializer = _customSerializers[type];
+                serializer.Write(writer, obj);
+                return;
+            }
+
             if (type == typeof(void))
             {
                 return;
@@ -192,7 +223,7 @@ namespace Phantasma.Storage
                 return bytes;
             }
 
-            if (bytes.Length == 0)
+            if (bytes == null || bytes.Length == 0)
             {
                 return null;
             }
@@ -213,6 +244,12 @@ namespace Phantasma.Storage
 
         public static object Unserialize(BinaryReader reader, Type type)
         {
+            if (_customSerializers.ContainsKey(type))
+            {
+                var serializer = _customSerializers[type];
+                return serializer.Read(reader);
+            }
+
             if (type == typeof(bool))
             {
                 return reader.ReadByte() != 0;

@@ -53,8 +53,9 @@ namespace Phantasma.Domain
         public static readonly int MaxROMSize = 256;
         public static readonly int MaxRAMSize = 256;
 
-        public TokenContent(string currentChain, Address currentOwner, byte[] ROM, byte[] RAM) : this()
+        public TokenContent(BigInteger mintID, string currentChain, Address currentOwner, byte[] ROM, byte[] RAM) : this()
         {
+            this.MintID = mintID;
             CurrentChain = currentChain;
             CurrentOwner = currentOwner;
             this.ROM = ROM;
@@ -66,8 +67,11 @@ namespace Phantasma.Domain
         public byte[] ROM { get; private set; }
         public byte[] RAM { get; private set; }
 
+        public BigInteger MintID { get; private set; }
+
         public void SerializeData(BinaryWriter writer)
         {
+            writer.WriteBigInteger(MintID);
             writer.WriteVarString(CurrentChain);
             writer.WriteAddress(CurrentOwner);
             writer.WriteByteArray(ROM);
@@ -76,6 +80,8 @@ namespace Phantasma.Domain
 
         public void UnserializeData(BinaryReader reader)
         {
+            MintID = reader.ReadBigInteger();
+
             CurrentChain = reader.ReadVarString();
             CurrentOwner = reader.ReadAddress();
 

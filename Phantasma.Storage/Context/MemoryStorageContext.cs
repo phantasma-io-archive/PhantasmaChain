@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Storage.Context
 {
@@ -96,6 +98,26 @@ namespace Phantasma.Storage.Context
             if (_entries.ContainsKey(key))
             {
                 _entries.Remove(key);
+            }
+        }
+
+        public override void Visit(Action<byte[], byte[]> visitor, ulong searchCount = 0, byte[] prefix = null)
+        {
+            ulong count = 0;
+            searchCount += 1; // ugly hack, count key is filterd in StorageMap
+            foreach(var entry in _entries)
+            {
+                var bytePrefix = entry.Key.keyData.Take(prefix.Length);
+                if (count < searchCount && bytePrefix.SequenceEqual(prefix))
+                {
+                    visitor(entry.Key.keyData, entry.Value);
+                    count++;
+                }
+
+                if (count == searchCount)
+                {
+                    break;
+                }
             }
         }
     }

@@ -281,6 +281,24 @@ namespace Phantasma.API
                         {
                             throw new APIException($"Proxy error: {e.Message}");
                         }
+
+                        // Checking if it's a JSON with error inside.
+                        // If so, emulating same error response for Proxy sever as BP sends.
+                        LunarLabs.Parser.DataNode root = null;
+                        try
+                        {
+                            root = JSONReader.ReadFromString(result);
+                        }
+                        catch (Exception e)
+                        {
+                            // It's not JSON, do nothing.
+                        }
+
+                        if (root != null && root.HasNode("error"))
+                        {
+                            var errorDesc = root.GetString("error");
+                            throw new APIException(errorDesc);
+                        }
                     }
                     else
                     {
@@ -415,6 +433,7 @@ namespace Phantasma.API
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 /*platform = tokenInfo.Platform,
                 hash = tokenInfo.Hash.ToString(),*/
+                script = tokenInfo.Script.Encode()
             };
         }
 
@@ -456,7 +475,9 @@ namespace Phantasma.API
                 blockHash = block != null ? block.Hash.ToString() : Hash.Null.ToString(),
                 script = tx.Script.Encode(),
                 payload = tx.Payload.Encode(),
-                fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0"
+                fee = chain != null ? chain.GetTransactionFee(tx.Hash).ToString() : "0",
+                expiration = tx.Expiration.Value,
+                signatures = tx.Signatures.Select(x => new SignatureResult() { Kind = x.Kind.ToString(), Data = Base16.Encode(x.ToByteArray()) }).ToArray(),
             };
 
             if (block != null)
@@ -499,7 +520,9 @@ namespace Phantasma.API
             return new OracleResult
             {
                 url = oracle.URL,
-                content = Base16.Encode(oracle.Content)
+                content = (oracle.Content.GetType() == typeof(byte[]))
+                    ? Base16.Encode(oracle.Content as byte[])
+                    : Base16.Encode(Serialization.Serialize(oracle.Content))
             };
         }
 
@@ -972,7 +995,7 @@ namespace Phantasma.API
             {
                 return new ErrorResult { error = "Node not accepting transactions" };
             }
-            
+
             byte[] bytes;
             try
             {
@@ -1041,7 +1064,7 @@ namespace Phantasma.API
             //System.IO.File.AppendAllLines(@"c:\code\bug_vm.txt", new []{string.Join("\n", new VM.Disassembler(script).Instructions)});
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
-            var oracle = Nexus.CreateOracleReader();
+            var oracle = Nexus.GetOracleReader();
             var vm = new RuntimeVM(-1, script, chain, Timestamp.Now, null, changeSet, oracle, true);
 
             var state = vm.Execute();
@@ -1068,7 +1091,11 @@ namespace Phantasma.API
 
             var evts = vm.Events.Select(evt => new EventResult() { address = evt.Address.Text, kind = evt.Kind.ToString(), data = Base16.Encode(evt.Data) }).ToArray();
 
-            var oracleReads = oracle.Entries.Select(x => new OracleResult() { url = x.URL, content = Base16.Encode(x.Content) }).ToArray();
+            var oracleReads = oracle.Entries.Select(x => new OracleResult()
+                    {
+                        url = x.URL,
+                        content = Base16.Encode((x.Content.GetType() == typeof(byte[]) ? x.Content as byte[] : Serialization.Serialize(x.Content)))
+                    }).ToArray();
 
             var resultArray = results.ToArray();
             return new ScriptResult { results = resultArray, result = resultArray.FirstOrDefault(), events = evts, oracles = oracleReads };
@@ -1208,7 +1235,7 @@ namespace Phantasma.API
 
             return new NexusResult()
             {
-                name = Nexus.GetName(Nexus.RootStorage),
+                name = Nexus.Name,
                 tokens = tokenList.ToArray(),
                 platforms = platformList.ToArray(),
                 chains = chainList.ToArray(),
@@ -1315,8 +1342,7 @@ namespace Phantasma.API
                 forSale = false;
             }
 
-
-            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
+            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
         }
 
         [APIInfo(typeof(BalanceResult), "Returns the balance for a specific token and chain, given an address.", false, 5)]
@@ -1769,7 +1795,9 @@ namespace Phantasma.API
 
 
         [APIInfo(typeof(string), "Tries to settle a pending swap for a specific hash.", false, 0)]
-        public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")]string sourcePlatform, [APIParameter("Name of platform to settle", "phantasma")]string destPlatform, [APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
+        public IAPIResult SettleSwap([APIParameter("Name of platform where swap transaction was created", "phantasma")] string sourcePlatform
+                ,[APIParameter("Name of platform to settle", "phantasma")] string destPlatform
+                ,[APIParameter("Hash of transaction to settle", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText)
         {
             if (TokenSwapper == null)
             {
@@ -1847,8 +1875,13 @@ namespace Phantasma.API
                 address = Pay.Chains.NeoWallet.EncodeAddress(account);
             }
             else
+            if (Pay.Chains.EthereumWallet.IsValidAddress(account))
             {
-                address = Nexus.LookUpName(Nexus.RootStorage, account);                
+                address = Pay.Chains.EthereumWallet.EncodeAddress(account);
+            }
+            else
+            {
+                address = Nexus.LookUpName(Nexus.RootStorage, account);
             }
 
             if (address.IsNull)
@@ -1858,7 +1891,7 @@ namespace Phantasma.API
 
             var swapList = TokenSwapper.GetPendingSwaps(address);
 
-            var oracleReader = Nexus.CreateOracleReader();
+            var oracleReader = Nexus.GetOracleReader();
 
             var txswaps = swapList.
                 Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, oracleReader.ReadTransaction(x.sourcePlatform, x.sourceChain, x.sourceHash))).ToArray();

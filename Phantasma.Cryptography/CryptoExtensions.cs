@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
+using NetCrypto = System.Security.Cryptography;
 using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Utils;
-using Phantasma.Cryptography.Hashing;
+using Phantasma.Cryptography.ECC;
 using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography
@@ -187,10 +187,21 @@ namespace Phantasma.Cryptography
             return concatSignature;
         }
 
-        private static ECPoint ECPointDecode(byte[] pubKey)
+        private static NetCrypto.ECPoint ECPointDecode(byte[] pubKey, ECDsaCurve curve)
         {
-            byte[] bytes;
+            ECCurve usedCurve = ECC.ECCurve.Secp256r1;
+            switch (curve)
+            {
+                case ECDsaCurve.Secp256r1:
+                    // default
+                    break;
 
+                case ECDsaCurve.Secp256k1:
+                    usedCurve = ECC.ECCurve.Secp256k1;
+                    break;
+            };
+
+            byte[] bytes;
             if (pubKey.Length == 32)
             {
                 pubKey = ByteArrayUtils.ConcatBytes(new byte[] { 2 }, pubKey.Skip(1).ToArray());
@@ -200,7 +211,7 @@ namespace Phantasma.Cryptography
             {
                 try
                 {
-                    bytes = ECC.ECPoint.DecodePoint(pubKey, ECC.ECCurve.Secp256r1).EncodePoint(false).Skip(1).ToArray();
+                    bytes = ECC.ECPoint.DecodePoint(pubKey, usedCurve).EncodePoint(false).Skip(1).ToArray();
                 }
                 catch
                 {
@@ -221,28 +232,54 @@ namespace Phantasma.Cryptography
                 bytes = pubKey;
             }
 
-            return new ECPoint
+            return new NetCrypto.ECPoint
             {
                 X = bytes.Take(32).ToArray(),
                 Y = bytes.Skip(32).ToArray()
             };
         }
 
-        public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey)
+        public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey, ECDsaCurve curve)
         {
-            using (var ecdsa = ECDsa.Create(new ECParameters
+            Console.WriteLine("CURVE::::::::::::: " + curve);
+            NetCrypto.ECCurve usedCurve = NetCrypto.ECCurve.NamedCurves.nistP256;
+            switch (curve)
             {
-                Curve = ECCurve.NamedCurves.nistP256,
+                case ECDsaCurve.Secp256r1:
+                    // default
+                    break;
+
+                case ECDsaCurve.Secp256k1:
+                    var oid = NetCrypto.Oid.FromFriendlyName("secP256k1", NetCrypto.OidGroup.PublicKeyAlgorithm);
+                    usedCurve = NetCrypto.ECCurve.CreateFromOid(oid);
+                    break;
+            };
+
+            using (var ecdsa = NetCrypto.ECDsa.Create(new NetCrypto.ECParameters
+            {
+                Curve = usedCurve,
                 D = prikey,
-                Q = ECPointDecode(pubkey)
+                Q = ECPointDecode(pubkey, curve)
             }))
             {
-                return ecdsa.SignData(message, HashAlgorithmName.SHA256);
+                return ecdsa.SignData(message, NetCrypto.HashAlgorithmName.SHA256);
             }
         }
 
-        public static bool VerifySignatureECDsa(byte[] message, byte[] signature, byte[] pubkey)
+        public static bool VerifySignatureECDsa(byte[] message, byte[] signature, byte[] pubkey, ECDsaCurve curve)
         {
+            NetCrypto.ECCurve usedCurve = NetCrypto.ECCurve.NamedCurves.nistP256;
+            switch (curve)
+            {
+                case ECDsaCurve.Secp256r1:
+                    // default
+                    break;
+
+                case ECDsaCurve.Secp256k1:
+                    var oid = NetCrypto.Oid.FromFriendlyName("secP256k1", NetCrypto.OidGroup.PublicKeyAlgorithm);
+                    usedCurve = NetCrypto.ECCurve.CreateFromOid(oid);
+                    break;
+            };
 #if NET461
             const int ECDSA_PUBLIC_P256_MAGIC = 0x31534345;
             pubkey = BitConverter.GetBytes(ECDSA_PUBLIC_P256_MAGIC).Concat(BitConverter.GetBytes(32)).Concat(pubkey).ToArray();
@@ -252,13 +289,13 @@ namespace Phantasma.Cryptography
                 return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
             }
 #else
-            using (var ecdsa = ECDsa.Create(new ECParameters
+            using (var ecdsa = NetCrypto.ECDsa.Create(new NetCrypto.ECParameters
             {
-                Curve = ECCurve.NamedCurves.nistP256,
-                Q = ECPointDecode(pubkey)
+                Curve = usedCurve,
+                Q = ECPointDecode(pubkey, curve)
             }))
             {
-                return ecdsa.VerifyData(message, signature, HashAlgorithmName.SHA256);
+                return ecdsa.VerifyData(message, signature, NetCrypto.HashAlgorithmName.SHA256);
             }
 #endif
         }

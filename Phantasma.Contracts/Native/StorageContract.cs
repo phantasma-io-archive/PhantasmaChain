@@ -1,3 +1,4 @@
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
@@ -11,6 +12,7 @@ namespace Phantasma.Contracts.Native
         public string Name;
         public Hash Hash;
         public Address Creator;
+        public Timestamp Date;
     }
 
     public sealed class StorageContract : NativeContract
@@ -104,6 +106,7 @@ namespace Phantasma.Contracts.Native
                 Name = fileName,
                 Hash = hashes.Root,
                 Creator = sender,
+                Date = Runtime.Time,
             };
 
             var list = _storageMap.Get<Address, StorageList>(target);

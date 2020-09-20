@@ -2,6 +2,7 @@
 using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
+using Phantasma.Numerics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -120,6 +121,10 @@ namespace Phantasma.Neo.Core
 
         public Phantasma.Cryptography.Address ExtractAddress()
         {
+            if (this.verificationScript.Length == 0)
+            {
+                return Phantasma.Cryptography.Address.Null;
+            }
             var bytes = new byte[34];
             bytes[0] = (byte)Phantasma.Cryptography.AddressKind.User;
             Phantasma.Core.Utils.ByteArrayUtils.CopyBytes(this.verificationScript, 1, bytes, 1, 33);
@@ -365,7 +370,7 @@ namespace Phantasma.Neo.Core
             {
                 var privkey = key.PrivateKey;
                 var pubkey = key.UncompressedPublicKey;
-                var signature = Phantasma.Cryptography.CryptoExtensions.SignECDsa(txdata, privkey, pubkey);
+                var signature = Phantasma.Cryptography.CryptoExtensions.SignECDsa(txdata, privkey, pubkey, ECDsaCurve.Secp256r1);
 
                 var invocationScript = new byte[] { (byte)OpCode.PUSHBYTES64 }.Concat(signature).ToArray();
                 var verificationScript = key.signatureScript;
@@ -558,4 +563,23 @@ namespace Phantasma.Neo.Core
         }
     }
 
+    public class ApplicationLog
+    {
+        public VMState state;
+        public string contract;
+        public string txevent;
+        public UInt160 sourceAddress;
+        public UInt160 targetAddress;
+        public BigInteger amount;
+
+        public ApplicationLog(VMState state, string contract, string txevent, UInt160 source, UInt160 target, BigInteger amount)
+        {
+            this.state = state;
+            this.contract = contract;
+            this.txevent = txevent;
+            this.sourceAddress = source;
+            this.targetAddress = target;
+            this.amount = amount;
+        }
+    }
 }

@@ -11,6 +11,14 @@ namespace Phantasma.Network.P2P
             this.Node = node;
         }
 
+        public override void OnBlock(Chain chain, Block block)
+        {
+            if (block.Validator == Node.Address)
+            {
+                Node.AddBlock(chain, block);
+            }
+        }
+
         // this plugin is responsible for catching any event occuring in the chain and saving them
         public override void OnTransaction(Chain chain, Block block, Transaction transaction)
         {

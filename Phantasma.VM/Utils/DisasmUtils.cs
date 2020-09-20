@@ -16,7 +16,7 @@ namespace Phantasma.VM.Utils
         {
             var sb = new StringBuilder();
             sb.Append($"{ContractName}.{MethodName}(");
-            for (int i = 0; i < Arguments.Length; i++)
+            for (int i=0; i<Arguments.Length; i++)
             {
                 if (i > 0)
                 {
@@ -93,11 +93,11 @@ namespace Phantasma.VM.Utils
             table["stake.Claim"] = 2;
             table["stake.AddProxy"] = 3;
             table["stake.RemoveProxy"] = 2;
-
+            
             table["account.RegisterName"] = 2;
             table["account.UnregisterName"] = 1;
             table["account.RegisterScript"] = 2;
-
+            
             table["storage.UploadData"] = 6;
             table["storage.UploadFile"] = 7;
             table["storage.DeleteFile"] = 2;

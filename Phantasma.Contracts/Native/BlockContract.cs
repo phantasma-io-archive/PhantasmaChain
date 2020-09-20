@@ -1,5 +1,4 @@
-﻿using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
@@ -10,8 +9,6 @@ namespace Phantasma.Contracts.Native
     public sealed class BlockContract: NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Block;
-
-        private Address previousValidator;
 
         public BlockContract() : base()
         {

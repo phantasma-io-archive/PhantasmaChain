@@ -11,7 +11,9 @@ namespace Phantasma.Cryptography
         byte[] PrivateKey { get; }
         byte[] PublicKey { get; }
 
-        Signature Sign(byte[] msg);
+        // byte[] customSignFunction(byte[] message, byte[] prikey, byte[] pubkey)
+        // allows singning with custom crypto libs.
+        Signature Sign(byte[] msg, Func<byte[], byte[], byte[], byte[]> customSignFunction = null);
     }
 
     public sealed class PhantasmaKeys : IKeyPair
@@ -76,7 +78,7 @@ namespace Phantasma.Cryptography
             return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
         }
 
-        public Signature Sign(byte[] msg)
+        public Signature Sign(byte[] msg, Func<byte[], byte[], byte[], byte[]> customSignFunction = null)
         {
             return Ed25519Signature.Generate(this, msg);
         }

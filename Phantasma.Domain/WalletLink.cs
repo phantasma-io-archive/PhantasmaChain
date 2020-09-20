@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using LunarLabs.Parser;
 using Phantasma.Core.Types;
@@ -36,7 +36,7 @@ namespace Phantasma.Domain
             public int decimals;
         }
 
-        public struct File : IAPIResult
+        public struct File: IAPIResult
         {
             public string name;
             public int size;
@@ -185,7 +185,7 @@ namespace Phantasma.Domain
                                     }
                                     else
                                     {
-                                        root = APIUtils.FromAPIResult(new Error() { message = error });
+                                        root = APIUtils.FromAPIResult(new Error() { message = error});
                                     }
 
                                     callback(id, root, success);
@@ -228,9 +228,9 @@ namespace Phantasma.Domain
                                 var nexus = args[1];
                                 var chain = args[2];
                                 var script = Base16.Decode(args[3]);
-                                byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4]) : null;
+                                byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4]): null;
 
-                                SignTransaction(nexus, chain, script, payload, id, (hash, txError) => {
+                                SignTransaction(nexus, chain, script, payload, id, (hash, txError) => { 
                                     if (hash != Hash.Null)
                                     {
                                         success = true;
@@ -270,7 +270,7 @@ namespace Phantasma.Domain
                                     if (invokeResult != null)
                                     {
                                         success = true;
-                                        root = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
+                                        root = APIUtils.FromAPIResult(new Invocation() {  result = Base16.Encode(invokeResult) });
                                     }
                                     else
                                     {

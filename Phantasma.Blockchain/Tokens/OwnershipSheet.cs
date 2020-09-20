@@ -18,7 +18,7 @@ namespace Phantasma.Blockchain.Tokens
             this._prefixOwner = Encoding.ASCII.GetBytes($".ownership.{symbol}");
         }
 
-        private byte[] GetKeyForList(Address address)
+        private byte[] GetKeyForMap(Address address)
         {
             return ByteArrayUtils.ConcatBytes(_prefixItems, address.ToByteArray());
         }
@@ -32,9 +32,9 @@ namespace Phantasma.Blockchain.Tokens
         {
             lock (storage)
             {
-                var listKey = GetKeyForList(address);
-                var list = new StorageList(listKey, storage);
-                return list.All<BigInteger>();
+                var mapKey = GetKeyForMap(address);
+                var map = new StorageMap(mapKey, storage);
+                return map.AllValues<BigInteger>();
             }
         }
 
@@ -65,13 +65,13 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            var listKey = GetKeyForList(address);
+            var mapKey = GetKeyForMap(address);
             var ownerKey = GetKeyForOwner(tokenID);
 
             lock (storage)
             {
-                var list = new StorageList(listKey, storage);
-                list.Add<BigInteger>(tokenID);
+                var map = new StorageMap(mapKey, storage);
+                map.Set<BigInteger, BigInteger>(tokenID, tokenID);
 
                 storage.Put(ownerKey, address);
             }
@@ -90,13 +90,13 @@ namespace Phantasma.Blockchain.Tokens
                 return false;
             }
 
-            var listKey = GetKeyForList(address);
+            var mapKey = GetKeyForMap(address);
             var ownerKey = GetKeyForOwner(tokenID);
 
             lock (storage)
             {
-                var list = new StorageList(listKey, storage);
-                list.Remove(tokenID);
+                var map = new StorageMap(mapKey, storage);
+                map.Remove<BigInteger>(tokenID);
 
                 storage.Delete(ownerKey);
             }
