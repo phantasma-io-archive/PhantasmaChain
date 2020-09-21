@@ -62,10 +62,18 @@ namespace Phantasma.Storage
 
         public void Visit(Action<byte[], byte[]> visitor, ulong searchCount, byte[] prefix)
         {
-            // TODO use prefiy
-            foreach (var entry in _entries)
+            ulong count = 0;
+            foreach(var entry in _entries)
             {
-                visitor(entry.Key, entry.Value);
+                var entryPrefix = entry.Key.Take(prefix.Length);
+                if (count < searchCount && entryPrefix.SequenceEqual(prefix))
+                {
+                    visitor(entry.Key, entry.Value);
+                    count++;
+                }
+
+                if (count == searchCount)
+                    break;
             }
         }
     }
@@ -261,8 +269,6 @@ namespace Phantasma.Storage
             {
                 var key = Serialization.Unserialize<K>(keyBytes);
                 var val = Serialization.Unserialize<V>(valBytes);
-                Console.WriteLine("1key: " + key);
-                Console.WriteLine("1val: " + val);
                 visitor(key, val);
             }, searchCount, prefix);
         }

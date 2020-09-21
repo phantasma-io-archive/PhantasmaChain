@@ -201,9 +201,68 @@ namespace Phantasma.Contracts.Native
             return result.ToArray();
         }
 
-
-
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
+        {
+            if (Runtime.ProtocolVersion > 2)
+            {
+                SwapFeeV2(from, fromSymbol, feeAmount);
+            }
+            else
+            {
+                SwapFeeV1(from, fromSymbol, feeAmount);
+            }
+
+        }
+
+        public void SwapFeeV2(Address from, string fromSymbol, BigInteger feeAmount)
+        {
+            var feeSymbol = DomainSettings.FuelTokenSymbol;
+
+            var feeBalance = Runtime.GetBalance(feeSymbol, from);
+            feeAmount -= feeBalance;
+            if (feeAmount <= 0)
+            {
+                return;
+            }
+
+            var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
+
+            var token = Runtime.GetToken(fromSymbol);
+            BigInteger minAmount;
+
+            // different tokens have different decimals, so we need to make sure a certain minimum amount is swapped
+            if (token.Decimals == 0)
+            {
+                minAmount = 1;
+            }
+            else
+            {
+                var diff = DomainSettings.FuelTokenDecimals - token.Decimals;
+                if (diff > 0)
+                {
+                    minAmount = BigInteger.Pow(10, diff);
+                }
+                else
+                {
+                    minAmount = 1;
+                }
+            }
+
+            if (amountInOtherSymbol < minAmount)
+            {
+                amountInOtherSymbol = minAmount;
+            }
+
+            // round up
+            amountInOtherSymbol++;
+
+            SwapTokens(from, fromSymbol, feeSymbol, amountInOtherSymbol);
+
+            var finalFeeBalance = Runtime.GetBalance(feeSymbol, from);
+            Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeAmount: {feeAmount}");
+        }
+
+        public void SwapFeeV1(Address from, string fromSymbol, BigInteger feeAmount)
         {
             var toSymbol = DomainSettings.FuelTokenSymbol;
             var amount = GetRate(toSymbol, fromSymbol, feeAmount);
@@ -224,51 +283,6 @@ namespace Phantasma.Contracts.Native
             {
                 SwapTokens(from, fromSymbol, toSymbol, amount);
             }
-
-            //var feeSymbol = DomainSettings.FuelTokenSymbol;
-
-            //var feeBalance = Runtime.GetBalance(feeSymbol, from);
-            //feeAmount -= feeBalance;
-            //if (feeAmount <= 0)
-            //{
-            //    return;
-            //}
-
-            //var amountInOtherSymbol = GetRate(feeSymbol, fromSymbol, feeAmount);
-
-            //var token = Runtime.GetToken(fromSymbol);
-            //BigInteger minAmount;
-
-            //// different tokens have different decimals, so we need to make sure a certain minimum amount is swapped
-            //if (token.Decimals == 0)
-            //{
-            //    minAmount = 1;
-            //}
-            //else
-            //{
-            //    var diff = DomainSettings.FuelTokenDecimals - token.Decimals;
-            //    if (diff > 0)
-            //    {
-            //        minAmount = BigInteger.Pow(10, diff);
-            //    }
-            //    else
-            //    {
-            //        minAmount = 1;
-            //    }
-            //}
-
-            //if (amountInOtherSymbol < minAmount)
-            //{
-            //    amountInOtherSymbol = minAmount;
-            //}
-
-            //// round up
-            //amountInOtherSymbol++;
-
-            //SwapTokens(from, fromSymbol, feeSymbol, amountInOtherSymbol);
-
-            //var finalFeeBalance = Runtime.GetBalance(feeSymbol, from);
-            //Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeAmount: {feeAmount}");
         }
 
         public void SwapReverse(Address from, string fromSymbol, string toSymbol, BigInteger total)
