@@ -365,7 +365,7 @@ namespace Phantasma.Neo.Core
         {
             if (!HasPlugin("EventTracker"))
             {
-                return null;
+                return new Dictionary<string, BigInteger>();
             }
 
             var objects = new List<object>() {hash, address};
@@ -397,7 +397,7 @@ namespace Phantasma.Neo.Core
             }
             else
             {
-                return null;
+                return new Dictionary<string, BigInteger>();
             }
         }
 
