@@ -399,7 +399,7 @@ namespace Phantasma.Blockchain
                 var text = temp.AsString();
                 //TODO_FIX_TX
                 //if (Address.IsValidAddress(text) && vm.Chain.Height > 65932)
-                if (Address.IsValidAddress(text) && vm.ProtocolVersion > 1)
+                if (Address.IsValidAddress(text) && vm.ProtocolVersion >= 2)
                 {
                     return Address.FromText(text);
                 }
