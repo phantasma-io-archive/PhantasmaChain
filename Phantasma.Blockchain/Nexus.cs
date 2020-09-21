@@ -844,9 +844,6 @@ namespace Phantasma.Blockchain
             if (source.IsSystem && source == Runtime.CurrentContext.Address)
             {
                 Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
-                //DEBUG LOG, remove after testing!
-                System.Diagnostics.StackTrace t = new System.Diagnostics.StackTrace();
-                Console.WriteLine("CALLSTACK:::: " + t);
             }
             else
             {
