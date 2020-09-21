@@ -209,8 +209,7 @@ namespace Phantasma.Domain
 
         public static BigInteger GetTokenQuote(this IRuntime runtime, string baseSymbol, string quoteSymbol, BigInteger amount)
         {
-            //if (vm.Nexus.GetGovernanceValue(vm.Nexus.RootStorage, vm.Nexus.NexusProtocolVersionTag) > 2)
-            if (runtime.Chain.Height > 120000)
+            if (runtime.ProtocolVersion >= 3)
             {
                 return GetTokenQuoteV1(runtime, baseSymbol, quoteSymbol, amount);
             }

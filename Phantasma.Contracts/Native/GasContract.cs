@@ -112,7 +112,7 @@ namespace Phantasma.Contracts.Native
         {
             //TODO_FIX_TX
             //if (Runtime.Chain.Height > 120000)
-            if (Runtime.ProtocolVersion > 2)
+            if (Runtime.ProtocolVersion >= 3)
             {
                 SpendGasV2(from);
             }

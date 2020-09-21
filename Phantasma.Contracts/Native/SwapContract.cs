@@ -63,7 +63,7 @@ namespace Phantasma.Contracts.Native
         {
             //TODO_FIX_TX
             //if (Runtime.Chain.Height > 120000)
-            if (Runtime.ProtocolVersion > 2)
+            if (Runtime.ProtocolVersion >= 3)
             {
                 return GetRateV2(fromSymbol, toSymbol, amount);
             }
@@ -203,7 +203,7 @@ namespace Phantasma.Contracts.Native
 
         public void SwapFee(Address from, string fromSymbol, BigInteger feeAmount)
         {
-            if (Runtime.ProtocolVersion > 2)
+            if (Runtime.ProtocolVersion >= 3)
             {
                 SwapFeeV2(from, fromSymbol, feeAmount);
             }
