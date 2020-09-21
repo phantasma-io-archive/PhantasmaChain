@@ -186,10 +186,7 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var basePrice = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fiat dollars
-
-            System.Console.WriteLine($"base fee: {basePrice}");
-            var feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
+            var feeAmount = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fee currency (gwei for eth, gas for neo)
             System.Console.WriteLine($"fee amount: {feeAmount}");
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
