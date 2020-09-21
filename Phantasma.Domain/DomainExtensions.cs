@@ -211,11 +211,11 @@ namespace Phantasma.Domain
         {
             if (runtime.ProtocolVersion >= 3)
             {
-                return GetTokenQuoteV1(runtime, baseSymbol, quoteSymbol, amount);
+                return GetTokenQuoteV2(runtime, baseSymbol, quoteSymbol, amount);
             }
             else
             {
-                return GetTokenQuoteV2(runtime, baseSymbol, quoteSymbol, amount);
+                return GetTokenQuoteV1(runtime, baseSymbol, quoteSymbol, amount);
             }
         }
 
