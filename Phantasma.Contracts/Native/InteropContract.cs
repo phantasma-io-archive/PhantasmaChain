@@ -94,7 +94,10 @@ namespace Phantasma.Contracts.Native
                     var withdraw = _withdraws.Get<InteropWithdraw>(index);
                     _withdraws.RemoveAt<InteropWithdraw>(index);
 
-                    Runtime.TransferTokens(withdraw.feeSymbol, this.Address, transfer.sourceAddress, withdraw.feeAmount);
+                    var org = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);
+                    Runtime.Expect(org.IsMember(from), $"{from.Text} is not a validator node");
+
+                    Runtime.TransferTokens(withdraw.feeSymbol, from, transfer.sourceAddress, withdraw.feeAmount);
 
                     swapCount++;
                 }
