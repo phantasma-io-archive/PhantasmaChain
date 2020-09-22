@@ -170,7 +170,7 @@ namespace Phantasma.Blockchain
 
                 var price = PullPrice(time, baseSymbol);
                 var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
-                content = val.ToUnsignedByteArray() as T;
+                content = val.ToSignedByteArray() as T;
             }
             else
             if (url.StartsWith(feeTag))
@@ -190,14 +190,20 @@ namespace Phantasma.Blockchain
                 }
 
                 var val = PullFee(time, platform);
-                content = val.ToUnsignedByteArray() as T;
+                content = val.ToSignedByteArray() as T;
             }
             else
             {
                 content = PullData<T>(time, url);
             }
         
-            var entry = new OracleEntry(url, Serialization.Serialize(content));
+            var value = Serialization.Serialize(content);
+            if (value == null)
+            {
+                throw new OracleException($"Serialized value can't be null, url: {url}");
+            }
+
+            var entry = new OracleEntry(url, value);
             lock (_entries)
             {
                 _entries[url] = entry;
