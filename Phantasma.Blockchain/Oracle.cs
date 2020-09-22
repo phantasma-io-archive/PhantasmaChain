@@ -104,6 +104,7 @@ namespace Phantasma.Blockchain
         public const string interopTag = "interop://";
         public const string priceTag = "price://";
         public const string feeTag = "fee://";
+        public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
 
         protected ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
 
@@ -170,7 +171,15 @@ namespace Phantasma.Blockchain
 
                 var price = PullPrice(time, baseSymbol);
                 var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
-                content = val.ToSignedByteArray() as T;
+
+                if (ProtocolVersion >= 3)
+                {
+                    content = val.ToSignedByteArray() as T;
+                }
+                else
+                {
+                    content = val.ToUnsignedByteArray() as T;
+                }
             }
             else
             if (url.StartsWith(feeTag))
@@ -190,7 +199,14 @@ namespace Phantasma.Blockchain
                 }
 
                 var val = PullFee(time, platform);
-                content = val.ToSignedByteArray() as T;
+                if (ProtocolVersion >= 3)
+                {
+                    content = val.ToSignedByteArray() as T;
+                }
+                else
+                {
+                    content = val.ToUnsignedByteArray() as T;
+                }
             }
             else
             {
