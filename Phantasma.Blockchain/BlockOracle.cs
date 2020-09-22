@@ -14,6 +14,7 @@ namespace Phantasma.Blockchain
             foreach (var entry in block.OracleData)
             {
                 var oEntry = (OracleEntry)entry;
+                Console.WriteLine($"init block {block.Height} oracle: " + entry.URL);
                 _entries[entry.URL] = oEntry;
             }
         }
@@ -22,6 +23,7 @@ namespace Phantasma.Blockchain
         {
             T content = null;
 
+            Console.WriteLine("Block oracle read: " + url);
 
             foreach(KeyValuePair<string, OracleEntry> entry in _entries)
             {
