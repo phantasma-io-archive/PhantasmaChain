@@ -97,6 +97,7 @@ namespace Phantasma.Neo.Core
                     currentRpcEndpoint = rpcEndpoint;
                 }
 
+                Logger($"NeoRPC: QueryRPC({currentRpcEndpoint}): data: " + jsonRpcData != null ? JSONWriter.WriteToString(jsonRpcData) : "{}");
                 var response = RequestUtils.Request(RequestType.POST, currentRpcEndpoint, jsonRpcData);
 
                 if (response != null)
@@ -119,7 +120,7 @@ namespace Phantasma.Neo.Core
                 }
                 else
                 {
-                    LastError = "Connection failure";
+                    LastError = $"NeoRPC: QueryRPC({currentRpcEndpoint}): Connection failure";
                 }
 
                 Logger("RPC Error: " + LastError);
@@ -277,7 +278,7 @@ namespace Phantasma.Neo.Core
             var response = QueryRPC("sendrawtransaction", new object[] { hexTx });
             if (response == null)
             {
-                throw new Exception("Connection failure");
+                throw new Exception($"SendRawTransaction({hexTx}): Connection failure");
             }
 
             try
