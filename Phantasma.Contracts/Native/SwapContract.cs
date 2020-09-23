@@ -329,7 +329,7 @@ namespace Phantasma.Contracts.Native
 
             var total = GetRate(fromSymbol, toSymbol, amount);
             Runtime.Expect(total > 0, "amount to swap needs to be larger than zero");
-            Runtime.Expect(toBalance >= total, "insufficient balance in pot");
+            Runtime.Expect(toBalance >= total, $"insufficient balance in pot, need {toBalance} {toSymbol} have {total} {fromSymbol}");
 
             var half = toBalance / 2;
             Runtime.Expect(total < half, $"taking too much {toSymbol} from pot at once");
