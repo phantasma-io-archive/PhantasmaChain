@@ -817,9 +817,14 @@ namespace Phantasma.VM
             }
             catch (Exception ex)
             {
-                if (ex is TargetInvocationException)
+                var safeguard = 0;
+                while (ex is TargetInvocationException)
                 {
                     ex = ((TargetInvocationException)ex).InnerException;
+                    safeguard++;
+
+                    if (safeguard == 100)
+                        break;
                 }
 
                 Trace.WriteLine(ex.ToString());
