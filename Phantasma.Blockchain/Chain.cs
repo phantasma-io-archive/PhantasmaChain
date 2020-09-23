@@ -197,18 +197,18 @@ namespace Phantasma.Blockchain
                 txIndex++;
             }
 
-            // TODO avoid fetching this every time
-            var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-            if (block.Protocol != expectedProtocol)
+            // Only check protocol version if block is created on this node, no need to check if it's a non validator node.
+            if (allowModify)
             {
-                throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
-            }
-
-            using (var m = new ProfileMarker("CloseBlock"))
-            {
-                if (allowModify)
+                var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+                if (block.Protocol != expectedProtocol)
                 {
-                    CloseBlock(block, changeSet);
+                    throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
+                }
+
+                using (var m = new ProfileMarker("CloseBlock"))
+                {
+                        CloseBlock(block, changeSet);
                 }
             }
 
