@@ -151,8 +151,6 @@ namespace Phantasma.Neo.Core
                     }
                 }
             }
-
-            Console.WriteLine("FALSE");
             return false;
         }
 
@@ -364,13 +362,7 @@ namespace Phantasma.Neo.Core
 
         public override Dictionary<string, BigInteger> GetSwapBlocks(string hash, string address, string height = null)
         {
-            if (!HasPlugin("EventTracker"))
-            {
-                return new Dictionary<string, BigInteger>();
-            }
-
             var objects = new List<object>() {hash, address};
-
             if (!string.IsNullOrEmpty(height))
             {
                 objects.Add(BigInteger.Parse(height));
