@@ -241,7 +241,6 @@ namespace Phantasma.Cryptography
 
         public static byte[] SignECDsa(byte[] message, byte[] prikey, byte[] pubkey, ECDsaCurve curve)
         {
-            Console.WriteLine("CURVE::::::::::::: " + curve);
             NetCrypto.ECCurve usedCurve = NetCrypto.ECCurve.NamedCurves.nistP256;
             switch (curve)
             {

@@ -360,12 +360,6 @@ namespace Phantasma.Blockchain
 
         internal void MergeOracle(OracleReader oracle)
         {
-            System.Console.WriteLine($"Height {Height} merge Oracle");
-            foreach (var x in oracle.Entries)
-            {
-                System.Console.WriteLine("entry: " + x.URL);
-            }
-
             if (oracle.Entries.Any())
             {
                 _oracleData = oracle.Entries.ToList();

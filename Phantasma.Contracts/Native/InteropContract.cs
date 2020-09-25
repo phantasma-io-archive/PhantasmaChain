@@ -197,7 +197,6 @@ namespace Phantasma.Contracts.Native
                 feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
             }
 
-            System.Console.WriteLine($"fee amount: {feeAmount}");
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
