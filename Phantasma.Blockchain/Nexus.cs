@@ -1676,6 +1676,24 @@ namespace Phantasma.Blockchain
             return value;
         }
 
+        public void RegisterPlatformAddress(StorageContext storage, string platform, Address localAddress, string externalAddress)
+        {
+            var platformInfo = GetPlatformInfo(storage, platform);
+            
+            foreach (var entry in platformInfo.InteropAddresses)
+            {
+                Throw.If(entry.LocalAddress == localAddress || entry.ExternalAddress== externalAddress, "address already part of platform interops");
+            }
+
+            var newEntry = new PlatformSwapAddress()
+            {
+                ExternalAddress = externalAddress,
+                LocalAddress = localAddress,
+            };
+
+            platformInfo.AddAddress(newEntry);
+        }
+
         // TODO optimize this
         public bool IsPlatformAddress(StorageContext storage, Address address)
         {

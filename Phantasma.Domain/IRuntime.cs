@@ -126,6 +126,7 @@ namespace Phantasma.Domain
         bool IsAddressOfChildChain(Address address);
 
         bool IsPlatformAddress(Address address);
+        void RegisterPlatformAddress(string platform, Address localAddress, string externalAddress);
 
         void MintTokens(string symbol, Address from, Address target, BigInteger amount);
         void BurnTokens(string symbol, Address from, BigInteger amount);

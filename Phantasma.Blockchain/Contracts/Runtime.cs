@@ -1307,6 +1307,12 @@ namespace Phantasma.Blockchain.Contracts
             return Nexus.IsPlatformAddress(RootStorage, address);
         }
 
+        public void RegisterPlatformAddress(string platform, Address localAddress, string externalAddress)
+        {
+            Expect(this.Chain.Name == DomainSettings.RootChainName, "must be in root chain");
+            Nexus.RegisterPlatformAddress(RootStorage, platform, localAddress, externalAddress);
+        }
+
         public byte[] ReadOracle(string URL)
         {
             return this.Oracle.Read<byte[]>(this.Time, URL);
