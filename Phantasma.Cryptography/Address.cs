@@ -292,10 +292,12 @@ namespace Phantasma.Cryptography
 
         public void DecodeInterop(out byte platformID, out byte[] publicKey)
         {
-            platformID = (byte)(1 + _bytes[0] - AddressKind.Interop);
+            platformID = this.PlatformID;
             publicKey = new byte[33];
             ByteArrayUtils.CopyBytes(_bytes, 1, publicKey, 0, publicKey.Length);
         }
+
+        public byte PlatformID => (byte)(1 + _bytes[0] - AddressKind.Interop);
 
         public static Address FromInterop(byte platformID, byte[] publicKey)
         {
