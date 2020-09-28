@@ -854,6 +854,8 @@ namespace Phantasma.Blockchain.Contracts
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
+            Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "invalid witness, must be genesis");
+
             Runtime.Expect(platform != DomainSettings.PlatformName, "external token chain required");
             Runtime.Expect(hash != Hash.Null, "hash cannot be null");
 
@@ -864,11 +866,9 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(!string.IsNullOrEmpty(symbol), "token symbol required");
             Runtime.Expect(ValidationUtils.IsValidTicker(symbol), "invalid symbol");
-            Runtime.Expect(!Runtime.TokenExists(symbol, platform), $"token {symbol}/{platform} already exists");
+            //Runtime.Expect(!Runtime.TokenExists(symbol, platform), $"token {symbol}/{platform} already exists");
 
             Runtime.Expect(!string.IsNullOrEmpty(platform), "chain name required");
-
-            Runtime.Expect(Runtime.IsWitness(Runtime.GenesisAddress), "invalid witness, must be genesis");
 
             Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
         }
