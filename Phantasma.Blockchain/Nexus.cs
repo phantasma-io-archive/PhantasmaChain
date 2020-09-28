@@ -1908,13 +1908,16 @@ namespace Phantasma.Blockchain
             }
 
             var key = GetNexusKey($"{symbol}.{platform}.hash");
+
+            //should be updateable since a foreign token hash could change
             if (storage.Has(key))
             {
-                throw new ChainException($"token hash of {symbol} already set for platform {platform}");
+                _logger.Warning($"Token hash of {symbol} already set for platform {platform}, updating to {hash}");
             }
 
             storage.Put<Hash>(key, hash);
         }
+
         public bool HasTokenPlatformHash(string symbol, string platform, StorageContext storage)
         {
             if (platform == DomainSettings.PlatformName)
