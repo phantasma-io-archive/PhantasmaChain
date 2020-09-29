@@ -21,6 +21,13 @@ namespace Phantasma.Blockchain
             InteropAddresses = interopAddresses.ToArray();
         }
 
+        internal void AddAddress(PlatformSwapAddress addr)
+        {
+            var list = InteropAddresses.ToList();
+            list.Add(addr);
+            this.InteropAddresses = list.ToArray();
+        }
+
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteVarString(Name);

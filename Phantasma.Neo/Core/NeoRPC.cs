@@ -97,6 +97,7 @@ namespace Phantasma.Neo.Core
                     currentRpcEndpoint = rpcEndpoint;
                 }
 
+                Logger($"NeoRPC: QueryRPC({currentRpcEndpoint}): data: " + jsonRpcData != null ? JSONWriter.WriteToString(jsonRpcData) : "{}");
                 var response = RequestUtils.Request(RequestType.POST, currentRpcEndpoint, jsonRpcData);
 
                 if (response != null)
@@ -119,7 +120,7 @@ namespace Phantasma.Neo.Core
                 }
                 else
                 {
-                    LastError = "Connection failure";
+                    LastError = $"NeoRPC: QueryRPC({currentRpcEndpoint}): Connection failure";
                 }
 
                 Logger("RPC Error: " + LastError);
@@ -150,8 +151,6 @@ namespace Phantasma.Neo.Core
                     }
                 }
             }
-
-            Console.WriteLine("FALSE");
             return false;
         }
 
@@ -277,7 +276,7 @@ namespace Phantasma.Neo.Core
             var response = QueryRPC("sendrawtransaction", new object[] { hexTx });
             if (response == null)
             {
-                throw new Exception("Connection failure");
+                throw new Exception($"SendRawTransaction({hexTx}): Connection failure");
             }
 
             try
@@ -363,13 +362,7 @@ namespace Phantasma.Neo.Core
 
         public override Dictionary<string, BigInteger> GetSwapBlocks(string hash, string address, string height = null)
         {
-            if (!HasPlugin("EventTracker"))
-            {
-                return new Dictionary<string, BigInteger>();
-            }
-
             var objects = new List<object>() {hash, address};
-
             if (!string.IsNullOrEmpty(height))
             {
                 objects.Add(BigInteger.Parse(height));

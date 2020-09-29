@@ -81,8 +81,6 @@ namespace Phantasma.Contracts.Native
                 switch (constraint.Kind)
                 {
                     case ConstraintKind.MustIncrease:
-                        System.Console.WriteLine("previous " + previous);
-                        System.Console.WriteLine("current" + current);
                         Runtime.Expect(!usePrevious || previous < current, "value must increase");
                         break;
 

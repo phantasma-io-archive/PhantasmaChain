@@ -41,6 +41,20 @@ namespace Phantasma.Contracts.Native
         {
         }
 
+
+        // This contract call associates a new swap address to a specific platform. 
+        // Existing swap addresses will still be considered valid for receiving funds
+        // However nodes should start sending assets from this new address when doing swaps going from Phantasma to this platform
+        // For all purposes, any transfer coming from another swap address of same platform into this one shall not being considered a "swap"        
+        public void RegisterAddress(Address from, string platform, Address localAddress, string externalAddress)
+        {
+            Runtime.Expect(from == Runtime.GenesisAddress, "only genesis allowed");
+            Runtime.Expect(Runtime.IsWitness(from), "witness failed");
+            Runtime.Expect(localAddress.IsInterop, "swap target must be interop address");
+
+            Runtime.RegisterPlatformAddress(platform, localAddress, externalAddress);
+        }
+
         public void SettleTransaction(Address from, string platform, string chain, Hash hash)
         {
             PlatformSwapAddress[] swapAddresses;
@@ -116,21 +130,28 @@ namespace Phantasma.Contracts.Native
                         {
                             Runtime.Expect(!transfer.sourceAddress.IsNull, "invalid source address");
 
-                            Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
+                            // Here we detect if this transfer occurs between two swap addresses
+                            var isInternalTransfer = Runtime.IsPlatformAddress(transfer.sourceAddress);
 
-                            Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
-                            var token = this.Runtime.GetToken(transfer.Symbol);
+                            if (!isInternalTransfer)
+                            {
+                                Runtime.Expect(transfer.Value > 0, "amount must be positive and greater than zero");
 
-                            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
-                            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
+                                Runtime.Expect(Runtime.TokenExists(transfer.Symbol), "invalid token");
+                                var token = this.Runtime.GetToken(transfer.Symbol);
 
-                            Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
+                                Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "token must be fungible");
+                                Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "token must be transferable");
 
-                            // TODO support NFT
-                            Runtime.SwapTokens(platform, transfer.sourceAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
-                            //Runtime.Notify(EventKind.TokenSwap, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+                                Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
-                            swapCount++;
+                                // TODO support NFT
+                                Runtime.SwapTokens(platform, transfer.sourceAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, null, null);
+                                //Runtime.Notify(EventKind.TokenSwap, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
+
+                                swapCount++;
+                            }
+
                             break;
                         }
                     }
@@ -186,8 +207,17 @@ namespace Phantasma.Contracts.Native
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Fungible), "fee token must be fungible");
             Runtime.Expect(feeTokenInfo.Flags.HasFlag(TokenFlags.Transferable), "fee token must be transferable");
 
-            var feeAmount = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fee currency (gwei for eth, gas for neo)
-            System.Console.WriteLine($"fee amount: {feeAmount}");
+            BigInteger feeAmount;
+            if (Runtime.ProtocolVersion >= 3)
+            {
+                feeAmount = Runtime.ReadFeeFromOracle(platform.Name); // fee is in fee currency (gwei for eth, gas for neo)
+            }
+            else
+            {
+                var basePrice = Runtime.ReadFeeFromOracle(platform.Name);
+                feeAmount = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, feeSymbol, basePrice);
+            }
+
             Runtime.Expect(feeAmount > 0, "fee is too small");
 
             var feeBalance = Runtime.GetBalance(feeSymbol, from);

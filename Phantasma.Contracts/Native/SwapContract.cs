@@ -323,15 +323,15 @@ namespace Phantasma.Contracts.Native
             var toInfo = Runtime.GetToken(toSymbol);
             Runtime.Expect(IsSupportedToken(toSymbol), "destination token is unsupported");
 
-            var toBalance = GetAvailableForSymbol(toSymbol);
+            var toPotBalance = GetAvailableForSymbol(toSymbol);
 
-            Runtime.Expect(toBalance > 0, $"not enough balance of {toSymbol} available in the pot");
+            Runtime.Expect(toPotBalance > 0, $"not enough balance of {toSymbol} available in the pot");
 
             var total = GetRate(fromSymbol, toSymbol, amount);
             Runtime.Expect(total > 0, "amount to swap needs to be larger than zero");
-            Runtime.Expect(toBalance >= total, "insufficient balance in pot");
+            Runtime.Expect(toPotBalance >= total, $"insufficient balance in pot, have {toPotBalance} {toSymbol} in pot, need {total} {toSymbol}, have {fromBalance} {fromSymbol} to convert from");
 
-            var half = toBalance / 2;
+            var half = toPotBalance / 2;
             Runtime.Expect(total < half, $"taking too much {toSymbol} from pot at once");
 
             Runtime.TransferTokens(fromSymbol, from, this.Address, amount);

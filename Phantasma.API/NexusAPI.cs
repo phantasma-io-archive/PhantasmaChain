@@ -1765,15 +1765,14 @@ namespace Phantasma.API
             foreach (var platform in platforms)
             {
                 var info = Nexus.GetPlatformInfo(Nexus.RootStorage, platform);
-
-
                 var entry = new PlatformResult();
                 entry.platform = platform;
                 entry.interop = info.InteropAddresses.Select(x => new InteropResult()
                 {
                     local = x.LocalAddress.Text,
                     external = x.ExternalAddress
-                }).ToArray();
+                }).Reverse().ToArray();
+                //TODO reverse array for now, only the last item is valid for now.
                 entry.chain = DomainExtensions.GetChainAddress(info).Text;
                 entry.fuel = info.Symbol;
                 entry.tokens = symbols.Where(x => Nexus.HasTokenPlatformHash(x, platform, Nexus.RootStorage)).ToArray();

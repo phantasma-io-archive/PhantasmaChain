@@ -77,6 +77,8 @@ namespace Phantasma.Network.P2P
         public readonly string PublicIP;
         public readonly PeerCaps Capabilities;
 
+        private Dictionary<BigInteger, Tuple<Block, List<Transaction>>> _blockCache = new Dictionary<BigInteger, Tuple<Block, List<Transaction>>>();
+
         public Node(string version, Nexus nexus, Mempool mempool, PhantasmaKeys keys, int port, PeerCaps caps, IEnumerable<string> seeds, Logger log)
         {
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
@@ -417,6 +419,26 @@ namespace Phantasma.Network.P2P
             }
         }
 
+        private bool HandleBlock(Chain chain, Block block , IList<Transaction> transactions)
+        {
+            try
+            {
+                var oracle = new BlockOracleReader(Nexus, block);
+                var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
+    
+                chain.AddBlock(block, transactions, 1, changeSet);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToString());
+                throw new Exception("block add failed");
+            }
+    
+            Logger.Message($"Added block #{block.Height} to {chain.Name}");
+            return true;
+
+        }
+
         private Message HandleMessage(Peer peer, Message msg)
         {
             if (msg.IsSigned && !msg.Address.IsNull)
@@ -555,9 +577,10 @@ namespace Phantasma.Network.P2P
                         {
                             bool addedBlocks = false;
 
+                            Chain chain = null; 
                             foreach (var entry in listMsg.Blocks)
                             {
-                                var chain = Nexus.GetChainByName(entry.Key);
+                                chain = Nexus.GetChainByName(entry.Key);
                                 if (chain == null)
                                 {
                                     continue;
@@ -567,29 +590,32 @@ namespace Phantasma.Network.P2P
                                 foreach (var block in blockRange.blocks)
                                 {
                                     var transactions = new List<Transaction>();
-                                    // TODO validation
                                     foreach (var txHash in block.TransactionHashes)
                                     {
                                         var tx = entry.Value.transactions[txHash];
                                         transactions.Add(tx);
                                     }
 
-                                    // TODO this wont work in the future... Question: Really? What this comment meant??
-                                    try
+                                    if (chain.Height + 1 < block.Height)
                                     {
-                                        var oracle = new BlockOracleReader(Nexus, block);
-                                        var changeSet = chain.ProcessTransactions(block, transactions, oracle, 1, false); // false, because we don't want to modify the block
-
-                                        chain.AddBlock(block, transactions, 1, changeSet);
+                                        _blockCache.Add(block.Height, Tuple.Create(block, transactions));
                                     }
-                                    catch (Exception e)
+                                    else 
                                     {
-                                        Logger.Error(e.ToString());
-                                        throw new Exception("block add failed");
+                                        addedBlocks = HandleBlock(chain, block, transactions);
                                     }
+                                }
+                            }
+                            // check if we have any cached blocks TODO: needs to be revisited when we have multiple chains
 
-                                    Logger.Message($"Added block #{block.Height} to {chain.Name}");
-                                    addedBlocks = true;
+                            if (_blockCache.ContainsKey(chain.Height + 1))
+                            {
+                                foreach (var entry in _blockCache.OrderBy(x => x.Key))
+                                {
+                                    if (entry.Key == chain.Height + 1)
+                                    {
+                                        addedBlocks = HandleBlock(chain, entry.Value.Item1/*Block*/, entry.Value.Item2 /*Transactions*/);
+                                    }
                                 }
                             }
 

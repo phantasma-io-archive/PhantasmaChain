@@ -1676,6 +1676,25 @@ namespace Phantasma.Blockchain
             return value;
         }
 
+        public void RegisterPlatformAddress(StorageContext storage, string platform, Address localAddress, string externalAddress)
+        {
+            var platformInfo = GetPlatformInfo(storage, platform);
+            
+            foreach (var entry in platformInfo.InteropAddresses)
+            {
+                Throw.If(entry.LocalAddress == localAddress || entry.ExternalAddress== externalAddress, "address already part of platform interops");
+            }
+
+            var newEntry = new PlatformSwapAddress()
+            {
+                ExternalAddress = externalAddress,
+                LocalAddress = localAddress,
+            };
+
+            platformInfo.AddAddress(newEntry);
+            EditPlatform(storage, platform, platformInfo);
+        }
+
         // TODO optimize this
         public bool IsPlatformAddress(StorageContext storage, Address address)
         {
@@ -1890,13 +1909,16 @@ namespace Phantasma.Blockchain
             }
 
             var key = GetNexusKey($"{symbol}.{platform}.hash");
+
+            //should be updateable since a foreign token hash could change
             if (storage.Has(key))
             {
-                throw new ChainException($"token hash of {symbol} already set for platform {platform}");
+                _logger.Warning($"Token hash of {symbol} already set for platform {platform}, updating to {hash}");
             }
 
             storage.Put<Hash>(key, hash);
         }
+
         public bool HasTokenPlatformHash(string symbol, string platform, StorageContext storage)
         {
             if (platform == DomainSettings.PlatformName)

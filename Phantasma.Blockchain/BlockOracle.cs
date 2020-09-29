@@ -22,7 +22,6 @@ namespace Phantasma.Blockchain
         {
             T content = null;
 
-
             foreach(KeyValuePair<string, OracleEntry> entry in _entries)
             {
                 var tag = url.Substring(url.IndexOf("//")+2);
