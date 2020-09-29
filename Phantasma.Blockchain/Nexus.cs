@@ -1692,6 +1692,7 @@ namespace Phantasma.Blockchain
             };
 
             platformInfo.AddAddress(newEntry);
+            EditPlatform(storage, platform, platformInfo);
         }
 
         // TODO optimize this
