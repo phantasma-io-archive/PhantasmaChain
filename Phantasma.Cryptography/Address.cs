@@ -8,6 +8,7 @@ using Phantasma.Storage;
 using System.IO;
 using Phantasma.Storage.Utils;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Phantasma.Cryptography
 {
@@ -59,22 +60,33 @@ namespace Phantasma.Cryptography
         }
 
         private string _text;
+
+        private static Dictionary<byte[], string> _keyToTextCache = new Dictionary<byte[], string>(new ByteArrayComparer());
+
         public string Text
         {
             get
             {
                 if (string.IsNullOrEmpty(_text))
                 {
-                    char prefix;
-
-                    switch (Kind)
+                    if (_keyToTextCache.ContainsKey(_bytes))
                     {
-                        case AddressKind.User: prefix = 'P'; break;
-                        case AddressKind.Interop: prefix = 'X'; break;
-                        default: prefix = 'S'; break;
-
+                        _text = _keyToTextCache[_bytes];
                     }
-                    _text =  prefix + Base58.Encode(_bytes);
+                    else
+                    {
+                        char prefix;
+
+                        switch (Kind)
+                        {
+                            case AddressKind.User: prefix = 'P'; break;
+                            case AddressKind.Interop: prefix = 'X'; break;
+                            default: prefix = 'S'; break;
+
+                        }
+                        _text = prefix + Base58.Encode(_bytes);
+                        _keyToTextCache[_bytes] = _text;
+                    }
                 }
 
                 return _text;
@@ -229,8 +241,15 @@ namespace Phantasma.Cryptography
             return keyPair.Address;
         }
 
+        private static Dictionary<string, Address> _textToAddressCache = new Dictionary<string, Address>();
+
         public static Address FromText(string text)
         {
+            if (_textToAddressCache.ContainsKey(text))
+            {
+                return _textToAddressCache[text];
+            }
+
             var prefix = text[0];
 
             text = text.Substring(1);
@@ -258,6 +277,7 @@ namespace Phantasma.Cryptography
                     throw new Exception("invalid address prefix: " + prefix);
             }
 
+            _textToAddressCache[text] = addr;
             return addr;
         }
 
