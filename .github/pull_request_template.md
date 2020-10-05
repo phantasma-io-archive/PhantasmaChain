@@ -1,8 +1,6 @@
+## Please do not open any `Pull Requests` to the `master` branch. 
+## If you do so expect them to be closed without further notice.
 
-**What current issue(s) does this address, or what feature is it adding?**
+## `Pull Requests` are very weclome on the `development` branch.
 
-**How did you solve this problem?**
-
-**How did you make sure your solution works?**
-
-**Are there any special changes in the code that we should be aware of?**
+Thank you.

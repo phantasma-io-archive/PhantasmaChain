@@ -128,7 +128,7 @@ namespace Phantasma.Neo.Core
                 retryCount++;
                 Thread.Sleep(1000);
 
-            } while (retryCount < 10);
+            } while (retryCount < 5);
 
             return null;
         }

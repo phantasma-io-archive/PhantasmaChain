@@ -74,6 +74,7 @@ Platform 		| Status
 .NET Core 		| Working
 Unity 			| Working
 Xamarin / Mobile 	| Working
+C++ 		| Working
 Mono 			| Working
 UWP 			| Untested
 
@@ -107,11 +108,11 @@ The Phantasma project is released under the MIT license, see `LICENSE.md` for mo
 
 Project	| Description	| Status	| Percentage
 :---------------------- | :------------ | :------------  | :------------ 
-[Phantasma Wallet](https://github.com/phantasma-io/PhantasmaWallet) 		| Cross platform Phantasma wallet | In development | 60%
-[Phantasma Explorer](https://github.com/phantasma-io/PhantasmaExplorer) | Block explorer for visualizing Phantasma chain data | In development | 70%
-[Phantasma Node](https://github.com/phantasma-io/PhantasmaNode) | Phantasma node deployment | In development | 60%
-[Phantasma SDK](https://github.com/phantasma-io/PhantasmaSDK) 		| Software development kit | In development | 30%
-[Phantasma Link](https://github.com/phantasma-io/PhantasmaLink) 		| Browser extensions for interacting with Phantasma dApps | In development | 20%
-[Phantasma Compiler](https://github.com/phantasma-io/PhantasmaCompiler) | Phantasma smart contract compiler for high-level languages | In development | 10%
+[Phantasma Wallet](https://www.phantasma.io/wallets) 		| Cross platform Phantasma wallet | 2 Available | 100%
+[Phantasma Explorer](https://explorer.phantasma.io/) | Block explorer for visualizing Phantasma chain data | Complete | 100%
+[Phantasma Node](https://github.com/phantasma-io/PhantasmaNode) | Phantasma node deployment | In development | 90%
+[Phantasma SDK](https://github.com/phantasma-io/PhantasmaSDK) 		| Software development kit | In development | 60%
+[Phantasma Link](https://github.com/phantasma-io/PhantasmaLink) 		| Browser extensions for interacting with Phantasma dApps | Complete - PhantasmaLink | 100%
+[Phantasma Compiler](https://github.com/phantasma-io/PhantasmaCompiler) | Phantasma smart contract compiler for high-level languages | In development | 30%
 [Phantasma Assembler](https://github.com/phantasma-io/PhantasmaAssembler) | Phantasma smart contract assembler for low-level instructions | In development | 90%
-[Nachomen](https://nacho.men) 			| Phantasma-based video game | In development | 90%
+[Nachomen](https://nacho.men) 			| Phantasma-based video game | In development | 95%

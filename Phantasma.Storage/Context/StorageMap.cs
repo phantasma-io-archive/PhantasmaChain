@@ -128,6 +128,17 @@ namespace Phantasma.Storage.Context
             }
         }
 
+        public static void Visit(this StorageMap map, Action<byte[],byte[]> visitor)
+        {
+            var tempMap = (KeyStoreStorage)map.Context;
+            tempMap.Visit((key, value) =>
+            {
+                byte[] newKey = new byte[key.Length - map.BaseKey.Length];
+                Buffer.BlockCopy(key, map.BaseKey.Length, newKey, 0, newKey.Length);
+                visitor(newKey, value);
+            });
+        }
+
         public static V[] All<K,V>(this StorageMap map, K[] keys)
         {
             var size = keys.Length;

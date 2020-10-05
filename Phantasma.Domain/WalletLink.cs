@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using LunarLabs.Parser;
 using Phantasma.Core.Types;

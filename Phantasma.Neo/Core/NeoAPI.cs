@@ -1203,8 +1203,5 @@ namespace Phantasma.Neo.Core
             WaitForTransaction(iterator, x => x.Hash == tx.Hash, maxBlocksToWait);
             lastTransactions[keys.Address] = tx;
         }
-
-
     }
-
 }
