@@ -338,6 +338,11 @@ namespace Phantasma.Blockchain
                             else
                             {
                                 tx = PullPlatformTransaction(platformName, chainName, hash);
+                                
+                                if (tx == null)
+                                {
+                                    return null;
+                                }
                             }
 
                             if (typeof(T) == typeof(byte[]))
