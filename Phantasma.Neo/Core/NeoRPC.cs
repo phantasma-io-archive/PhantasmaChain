@@ -97,7 +97,7 @@ namespace Phantasma.Neo.Core
                     currentRpcEndpoint = rpcEndpoint;
                 }
 
-                Logger($"NeoRPC: QueryRPC({currentRpcEndpoint}): data: " + jsonRpcData != null ? JSONWriter.WriteToString(jsonRpcData) : "{}");
+                //Logger($"NeoRPC: QueryRPC({currentRpcEndpoint}): data: " + jsonRpcData != null ? JSONWriter.WriteToString(jsonRpcData) : "{}");
                 var response = RequestUtils.Request(RequestType.POST, currentRpcEndpoint, jsonRpcData);
 
                 if (response != null)
