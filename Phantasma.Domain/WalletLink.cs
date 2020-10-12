@@ -46,7 +46,7 @@ namespace Phantasma.Domain
 
         public struct Account : IAPIResult
         {
-            public string id;
+            public string alias;
             public string address;
             public string name;
             public string avatar;
