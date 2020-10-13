@@ -9,11 +9,11 @@ namespace Phantasma.Blockchain
 {
     public class NativeExecutionContext : ExecutionContext
     {
-        public readonly NativeContract Contract;
+        public readonly SmartContract Contract;
 
         public override string Name => Contract.Name;
 
-        public NativeExecutionContext(NativeContract contract)
+        public NativeExecutionContext(SmartContract contract)
         {
             this.Contract = contract;
         }
@@ -46,36 +46,62 @@ namespace Phantasma.Blockchain
 
             var runtime = (RuntimeVM)frame.VM;
 
-            using (var m = new ProfileMarker("InternalCall"))
-            { 
-                ExecutionState result;
-                try
-                {
-                    BigInteger gasCost = 10;
-                    result = runtime.ConsumeGas(gasCost);
-                    if (result == ExecutionState.Running)
-                    {
-                        Contract.LoadRuntimeData(runtime);
-                        result = InternalCall(method, frame, stack);
-                        Contract.UnloadRuntimeData();
-                    }
-                }
-                catch (ArgumentException ex)
-                {
-                    throw new VMException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
-                }
+            ExecutionState result;
 
-                // we terminate here execution, since it will be restarted in next context
-                if (result == ExecutionState.Running)
-                {
-                    result = ExecutionState.Halt;
-                }
-
+            BigInteger gasCost = 10;
+            result = runtime.ConsumeGas(gasCost);
+            if (result != ExecutionState.Running)
+            {
                 return result;
             }
+
+                var native = Contract as NativeContract;
+            if (native != null)
+            {
+                using (var m = new ProfileMarker("InternalCall"))
+                {
+                    try
+                    {            
+                        native.LoadRuntimeData(runtime);
+                        result = InternalCall(native, method, frame, stack);
+                        native.UnloadRuntimeData();
+                     
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new VMException(frame.VM, $"VM nativecall failed: calling method {methodName} with arguments of wrong type, " + ex.ToString());
+                    }
+                }
+            }
+            else
+            {
+                var custom = Contract as CustomContract;
+                
+                if (custom != null)
+                {
+                    stack.Push(stackObj);
+
+                    var context = new ScriptContext(Contract.Name, custom.Script);
+                    result = context.Execute(frame, stack);
+                }
+                else
+                {
+                    throw new VMException(frame.VM, $"VM context call failed: unknown contract instance class {Contract.GetType().Name}");
+                }
+
+            }
+
+
+            // we terminate here execution, since it will be restarted in next context
+            if (result == ExecutionState.Running)
+            {
+                result = ExecutionState.Halt;
+            }
+
+            return result;
         }
 
-        private ExecutionState InternalCall(ContractMethod method, ExecutionFrame frame, Stack<VMObject> stack)
+        private ExecutionState InternalCall(NativeContract contract, ContractMethod method, ExecutionFrame frame, Stack<VMObject> stack)
         {
             var args = new object[method.parameters.Length];
             for (int i = 0; i < args.Length; i++)
@@ -86,7 +112,7 @@ namespace Phantasma.Blockchain
 
             object result;
             using (var m = new ProfileMarker(method.name))
-                result = this.Contract.CallInternalMethod((RuntimeVM) frame.VM, method.name, args);
+                result = contract.CallInternalMethod((RuntimeVM) frame.VM, method.name, args);
 
             if (method.returnType != VMType.None)
             {

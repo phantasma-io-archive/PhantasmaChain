@@ -732,6 +732,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(!deployed, $"{contractName} is already deployed");
 
             byte[] script;
+            ContractInterface abi;
 
             bool hasConstructor;
             var constructorName = "Initialize";
@@ -746,11 +747,15 @@ namespace Phantasma.Blockchain
                 script = new byte[] { (byte)Opcode.RET };
 
                 var contractInstance = Runtime.Nexus.GetContractByAddress(contractAddress);
+                abi = contractInstance.ABI;
                 hasConstructor = contractInstance.HasInternalMethod(constructorName);
             }
             else
             {
                 script = PopBytes(Runtime, "contractScript");
+
+                var abiBytes = PopBytes(Runtime, "contractABI");
+                abi = ContractInterface.Unserialize(abiBytes);
 
                 var temp = System.Text.Encoding.UTF8.GetBytes(constructorName);
                 var constructorIndex = script.SearchBytes(temp);
@@ -758,7 +763,7 @@ namespace Phantasma.Blockchain
             }
 
 
-            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractAddress, script);
+            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
             if (hasConstructor)

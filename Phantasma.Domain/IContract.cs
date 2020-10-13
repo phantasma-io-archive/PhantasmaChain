@@ -120,12 +120,36 @@ namespace Phantasma.Domain
             return new ContractInterface(methods);
         }
 
+        public static ContractInterface Unserialize(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    return Unserialize(reader);
+                }
+            }
+        }
+
         public void Serialize(BinaryWriter writer)
         {
             writer.Write((byte)_methods.Count);
             foreach (var method in _methods.Values)
             {
                 method.Serialize(writer);
+            }
+        }
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    Serialize(writer);
+                }
+
+                return stream.ToArray();
             }
         }
     }

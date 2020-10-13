@@ -422,7 +422,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"contract {contract.Name} not deployed on {Name} chain");
             }
 
-            var context = contract.CreateContext();
+            var context = new NativeExecutionContext(contract);
             return context;
         }
 
@@ -543,9 +543,9 @@ namespace Phantasma.Blockchain
             return Encoding.ASCII.GetBytes("contracts.");
         }
 
-        private byte[] GetContractDeploymentKey(Address contractAddress)
+        private byte[] GetContractKey(Address contractAddress, string field)
         {
-            var bytes = Encoding.ASCII.GetBytes("deploy.");
+            var bytes = Encoding.ASCII.GetBytes(field);
             var key = ByteArrayUtils.ConcatBytes(bytes, contractAddress.ToByteArray());
             return key;
         }
@@ -567,19 +567,23 @@ namespace Phantasma.Blockchain
                 return true;
             }
 
-            var key = GetContractDeploymentKey(contractAddress);
+            var key = GetContractKey(contractAddress, "script");
             return storage.Has(key);
         }
 
-        public bool DeployContractScript(StorageContext storage, Address contractAddress, byte[] script)
+        public bool DeployContractScript(StorageContext storage, Address contractAddress, byte[] script, ContractInterface abi)
         {
-            var key = GetContractDeploymentKey(contractAddress);
-            if (storage.Has(key))
+            var scriptKey = GetContractKey(contractAddress, "script");
+            if (storage.Has(scriptKey))
             {
                 return false;
             }
 
-            storage.Put(key, script);
+            storage.Put(scriptKey, script);
+
+            var abiBytes = abi.ToByteArray();
+            var abiKey = GetContractKey(contractAddress, "abi");
+            storage.Put(abiKey, abiBytes);
 
             var contractList = new StorageList(GetContractListKey(), storage);
             contractList.Add<Address>(contractAddress);                       
@@ -595,14 +599,19 @@ namespace Phantasma.Blockchain
             }
 
             var address = SmartContract.GetAddressForName(name);
-            var key = GetContractDeploymentKey(address);
-            if (!storage.Has(key))
+            var scriptKey = GetContractKey(address, "script");
+            if (!storage.Has(scriptKey))
             {
                 return null;
             }
 
-            var script = storage.Get(key);
-            return new CustomContract(name, script);
+            var script = storage.Get(scriptKey);
+
+            var abiKey = GetContractKey(address, "abi");
+            var abiBytes = storage.Get(abiKey);
+            var abi = ContractInterface.Unserialize(abiBytes);
+
+            return new CustomContract(name, script, abi);
         }
         #endregion
 

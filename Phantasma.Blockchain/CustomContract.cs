@@ -11,17 +11,14 @@ namespace Phantasma.Blockchain
 
         public byte[] Script { get; private set; }
 
-        public CustomContract(string name, byte[] script) : base()
+        public CustomContract(string name, byte[] script, ContractInterface abi) : base()
         {
             Throw.IfNull(script, nameof(script));
             this.Script = script;
 
-            _name = name; 
-        }
+            _name = name;
 
-        public override ExecutionContext CreateContext()
-        {
-            return new CustomExecutionContext(this);
+            this.ABI = abi;
         }
     }
 }

@@ -319,7 +319,7 @@ namespace Phantasma.Blockchain
         }
 
         // only works for native contracts!!
-        public SmartContract GetContractByAddress(Address contractAdress)
+        public NativeContract GetContractByAddress(Address contractAdress)
         {
             if (_contractMap == null)
             {
@@ -347,7 +347,7 @@ namespace Phantasma.Blockchain
 
             if (_contractMap.ContainsKey(contractAdress)) {
                 var type = _contractMap[contractAdress];
-                return (SmartContract)Activator.CreateInstance(type);
+                return (NativeContract)Activator.CreateInstance(type);
             }
 
             return null;
