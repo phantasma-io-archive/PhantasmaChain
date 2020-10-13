@@ -1585,7 +1585,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(ABIContractResult), "Returns the ABI interface of specific contract.", false, 300)]
-        public IAPIResult GetABI([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
+        public IAPIResult GetABI([APIParameter("Chain address or name where the contract is deployed", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
         {
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
@@ -1603,7 +1603,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Contract not found" };
             }
 
-            var contract = this.Nexus.GetContractByName(contractName);
+            var contract = chain.GetContractByName(chain.Storage, contractName);
             return FillABI(contractName, contract.ABI);
         }
 
