@@ -2,7 +2,7 @@
 using Phantasma.Domain;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public sealed class FriendsContract : NativeContract
     {

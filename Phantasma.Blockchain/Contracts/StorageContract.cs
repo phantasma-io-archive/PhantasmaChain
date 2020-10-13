@@ -5,7 +5,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public struct StorageEntry
     {

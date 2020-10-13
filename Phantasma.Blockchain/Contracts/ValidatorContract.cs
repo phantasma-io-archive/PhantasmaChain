@@ -4,7 +4,7 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public sealed class ValidatorContract : NativeContract
     {

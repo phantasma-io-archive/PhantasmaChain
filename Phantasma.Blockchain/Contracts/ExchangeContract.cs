@@ -5,12 +5,12 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System;
-using static Phantasma.Contracts.Native.ExchangeOrderSide;
-using static Phantasma.Contracts.Native.ExchangeOrderType;
+using static Phantasma.Blockchain.Contracts.ExchangeOrderSide;
+using static Phantasma.Blockchain.Contracts.ExchangeOrderType;
 using Phantasma.Domain;
 using System.Linq;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public enum ExchangeOrderSide
     {

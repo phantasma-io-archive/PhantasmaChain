@@ -5,7 +5,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using Phantasma.Core.Performance;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public struct GasLoanEntry
     {
@@ -29,18 +29,16 @@ namespace Phantasma.Contracts.Native
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
 
-        public void Initialize(Address from)
-        {
-            Runtime.Expect(from == Runtime.GenesisAddress, "must be genesis address");
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            _lastInflation = Runtime.Time;
-        }
-
         public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
         {
             if (Runtime.IsReadOnlyMode())
             {
                 return;
+            }
+
+            if (_lastInflation == 0)
+            {
+                _lastInflation = Runtime.Time;
             }
 
             Runtime.Expect(from.IsUser, "must be a user address");

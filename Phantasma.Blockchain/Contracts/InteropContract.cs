@@ -5,7 +5,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using System.Linq;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public enum InteropTransferStatus
     {

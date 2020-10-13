@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.API;
 using Phantasma.Blockchain;
-using Phantasma.Contracts.Native;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Simulator;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Types;
@@ -12,10 +12,8 @@ using Phantasma.Network.P2P;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM.Utils;
-using static Phantasma.Contracts.Native.RelayContract;
-using Phantasma.Blockchain.Contracts;
+using static Phantasma.Blockchain.Contracts.RelayContract;
 using Phantasma.Domain;
-using Phantasma.Contracts;
 
 namespace Phantasma.Tests
 {

@@ -3,7 +3,7 @@ using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Storage.Context;
 
-namespace Phantasma.Contracts.Extra
+namespace Phantasma.Blockchain.Contracts
 {
     public struct Mail
     {

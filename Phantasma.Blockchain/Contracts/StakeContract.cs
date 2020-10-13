@@ -6,7 +6,7 @@ using Phantasma.Numerics;
 using System.Linq;
 using Phantasma.Domain;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public struct EnergyStake
     {

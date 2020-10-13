@@ -12,7 +12,7 @@ using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using Phantasma.Storage.Utils;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public struct RelayMessage : ISerializable
     {

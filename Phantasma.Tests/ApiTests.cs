@@ -2,16 +2,14 @@
 
 using Phantasma.API;
 using Phantasma.Blockchain;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using System;
 using System.Linq;
-using Phantasma.Contracts.Native;
-using Phantasma.Core.Types;
 using Phantasma.Domain;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage;
 using Phantasma.VM;
 using Phantasma.Core.Log;

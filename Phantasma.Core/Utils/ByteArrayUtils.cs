@@ -69,5 +69,22 @@ namespace Phantasma.Core.Utils
 
             return result;
         }
+
+        public static int SearchBytes(this byte[] haystack, byte[] needle)
+        {
+            var len = needle.Length;
+            var limit = haystack.Length - len;
+            for (var i = 0; i <= limit; i++)
+            {
+                var k = 0;
+                for (; k < len; k++)
+                {
+                    if (needle[k] != haystack[i + k]) break;
+                }
+                if (k == len) return i;
+            }
+            return -1;
+        }
+
     }
 }

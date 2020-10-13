@@ -7,7 +7,6 @@ using Phantasma.Blockchain;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
-using Phantasma.Contracts.Native;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.VM;
 using Phantasma.Storage;
@@ -1604,7 +1603,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Contract not found" };
             }
 
-            var contract = this.Nexus.GetContractByName(Nexus.RootStorage, contractName);
+            var contract = this.Nexus.GetContractByName(contractName);
             return FillABI(contractName, contract.ABI);
         }
 

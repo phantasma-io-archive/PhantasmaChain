@@ -1,9 +1,8 @@
-﻿using System;
-using Phantasma.Numerics;
+﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain
 {
     public static class ScriptBuilderExtensions
     {

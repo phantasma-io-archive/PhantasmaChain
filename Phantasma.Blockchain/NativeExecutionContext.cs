@@ -1,20 +1,19 @@
-﻿using Phantasma.Contracts;
-using Phantasma.Domain;
+﻿using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.Core.Performance;
 using System;
 using System.Collections.Generic;
 
-namespace Phantasma.Blockchain.Contracts
+namespace Phantasma.Blockchain
 {
     public class NativeExecutionContext : ExecutionContext
     {
-        public readonly SmartContract Contract;
+        public readonly NativeContract Contract;
 
         public override string Name => Contract.Name;
 
-        public NativeExecutionContext(SmartContract contract)
+        public NativeExecutionContext(NativeContract contract)
         {
             this.Contract = contract;
         }
@@ -48,8 +47,7 @@ namespace Phantasma.Blockchain.Contracts
             var runtime = (RuntimeVM)frame.VM;
 
             using (var m = new ProfileMarker("InternalCall"))
-            if (this.Contract.HasInternalMethod(methodName))
-            {
+            { 
                 ExecutionState result;
                 try
                 {
@@ -75,17 +73,6 @@ namespace Phantasma.Blockchain.Contracts
 
                 return result;
             }
-
-
-            if (!(this.Contract is CustomContract customContract))
-            {
-                throw new VMException(frame.VM, $"VM nativecall failed: contract '{this.Contract.Name}' is not a valid custom contract");
-            }
-
-            stack.Push(stackObj);
-
-            var context = new ScriptContext(customContract.Name, customContract.Script);
-            return context.Execute(frame, stack);
         }
 
         private ExecutionState InternalCall(ContractMethod method, ExecutionFrame frame, Stack<VMObject> stack)

@@ -6,11 +6,10 @@ using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using static Phantasma.Contracts.Native.StakeContract;
-using static Phantasma.Contracts.Native.StorageContract;
+using static Phantasma.Blockchain.Contracts.StakeContract;
+using static Phantasma.Blockchain.Contracts.StorageContract;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
-using Phantasma.Contracts.Native;
 
 namespace Phantasma.Tests
 {

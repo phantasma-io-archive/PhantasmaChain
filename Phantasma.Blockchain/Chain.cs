@@ -16,8 +16,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
 using Phantasma.Core.Performance;
-using Phantasma.Contracts;
-using Phantasma.Contracts.Native;
 
 namespace Phantasma.Blockchain
 {
@@ -64,7 +62,7 @@ namespace Phantasma.Blockchain
         {
             var contractList = new StorageList(GetContractListKey(), storage);
             var addresses = contractList.All<Address>();
-            return addresses.Select(x => Nexus.GetContractByAddress(Nexus.RootStorage, x)).ToArray();
+            return addresses.Select(x => Nexus.GetContractByAddress(x)).ToArray();
         }
 
         public override string ToString()
@@ -424,14 +422,13 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"contract {contract.Name} not deployed on {Name} chain");
             }
 
-            // TODO this needs to suport non-native contexts too..
-            var context = new NativeExecutionContext(contract);
+            var context = contract.CreateContext();
             return context;
         }
 
         public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
         {
-            var contract = Nexus.GetContractByName(storage, contractName);
+            var contract = Nexus.GetContractByName(contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
@@ -574,7 +571,7 @@ namespace Phantasma.Blockchain
             return storage.Has(key);
         }
 
-        private bool DeployContractScript(StorageContext storage, Address contractAddress, byte[] script)
+        public bool DeployContractScript(StorageContext storage, Address contractAddress, byte[] script)
         {
             var key = GetContractDeploymentKey(contractAddress);
             if (storage.Has(key))
@@ -590,23 +587,22 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public bool DeployNativeContract(StorageContext storage, Address contractAddress)
+        public SmartContract GetContractByName(StorageContext storage, string name)
         {
-            var contract = Nexus.GetContractByAddress(storage, contractAddress);
-            if (contract == null)
+            if (Nexus.IsNativeContract(name))
             {
-                return false;
+                return Nexus.GetContractByName(name);
             }
 
-            DeployContractScript(storage, contractAddress, new byte[] { (byte)Opcode.RET });
-            return true;
-        }
+            var address = SmartContract.GetAddressForName(name);
+            var key = GetContractDeploymentKey(address);
+            if (!storage.Has(key))
+            {
+                return null;
+            }
 
-        public bool DeployContract(StorageContext storage, byte[] script)
-        {
-            var contractAddress = Address.FromHash(script);
-            DeployContractScript(storage, contractAddress, script);
-            return true;
+            var script = storage.Get(key);
+            return new CustomContract(name, script);
         }
         #endregion
 

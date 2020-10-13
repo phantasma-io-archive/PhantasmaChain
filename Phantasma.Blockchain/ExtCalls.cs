@@ -8,9 +8,9 @@ using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.Domain;
 using Phantasma.Storage;
-using Phantasma.Contracts;
 using System.Diagnostics;
 using System.Linq;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -439,9 +439,18 @@ namespace Phantasma.Blockchain
         {
             var temp = vm.Stack.Pop();
 
-            vm.Expect(temp.Type == VMType.String, $"expected strng for {ArgumentName}");
+            vm.Expect(temp.Type == VMType.String, $"expected string for {ArgumentName}");
 
             return temp.AsString();
+        }
+
+        private static byte[] PopBytes(RuntimeVM vm, string ArgumentName)
+        {
+            var temp = vm.Stack.Pop();
+
+            vm.Expect(temp.Type == VMType.Bytes, $"expected bytes for {ArgumentName}");
+
+            return temp.AsByteArray();
         }
 
         private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
@@ -704,10 +713,6 @@ namespace Phantasma.Blockchain
 
             ExpectStackSize(Runtime, 1);
 
-            VMObject temp;
-
-            var org = Runtime.Nexus.GetChainOrganization(Runtime.Chain.Name);
-
             var owner = PopAddress(Runtime);
             Runtime.Expect(owner.IsUser, "address must be user");
 
@@ -719,38 +724,49 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
-            temp = Runtime.Stack.Pop();
+            var contractName = PopString(Runtime, "contractName");
 
-            switch (temp.Type) 
+            var contractAddress = SmartContract.GetAddressForName(contractName);
+            var deployed = Runtime.Chain.IsContractDeployed(Runtime.Storage, contractAddress);
+
+            Runtime.Expect(!deployed, $"{contractName} is already deployed");
+
+            byte[] script;
+
+            bool hasConstructor;
+            var constructorName = "Initialize";
+
+            if (Nexus.IsNativeContract(contractName))
             {
-                case VMType.String:
-                    {
-                        // TODO not sure about that
-                        var name = temp.AsString();
-                        if (name == "validator" && Runtime.GenesisAddress == Address.Null)
-                        {
-                            Runtime.Nexus.Initialize(owner);
+                if (contractName == "validator" && Runtime.GenesisAddress == Address.Null)
+                {
+                    Runtime.Nexus.Initialize(owner);
+                }
 
-                        }
-                        var success = Runtime.Chain.DeployNativeContract(Runtime.Storage, SmartContract.GetAddressForName(name));
+                script = new byte[] { (byte)Opcode.RET };
 
-                        Runtime.Expect(success, name+" contract deploy failed");
-
-                        var contract = Runtime.Nexus.GetContractByName(Runtime.RootStorage, name);
-                        var constructor = "Initialize";
-                        if (contract.HasInternalMethod(constructor))
-                        {
-                            Runtime.CallContext(name, constructor, owner);
-                        }
-
-                        Runtime.Notify(EventKind.ContractDeploy, owner, contract.Name);
-                    }
-                    break;
-
-                default:
-                    Runtime.Expect(false, "invalid contract type for deploy");
-                    break;
+                var contractInstance = Runtime.Nexus.GetContractByAddress(contractAddress);
+                hasConstructor = contractInstance.HasInternalMethod(constructorName);
             }
+            else
+            {
+                script = PopBytes(Runtime, "contractScript");
+
+                var temp = System.Text.Encoding.UTF8.GetBytes(constructorName);
+                var constructorIndex = script.SearchBytes(temp);
+                hasConstructor = constructorIndex >= 0;
+            }
+
+
+            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractAddress, script);
+            Runtime.Expect(success, $"deployment of {contractName} failed");
+
+            if (hasConstructor)
+            {
+                Runtime.CallContext(contractName, constructorName, owner);
+            }
+
+            Runtime.Notify(EventKind.ContractDeploy, owner, contractName);
 
             return ExecutionState.Running;
         }

@@ -11,12 +11,9 @@ using Phantasma.Storage;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Contracts.Native;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
-using Phantasma.Contracts;
-using Phantasma.Contracts.Extra;
 
 namespace Phantasma.Blockchain
 {
@@ -242,7 +239,7 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
-            var contract = this.GetContractByName(storage, name);
+            var contract = this.GetContractByName(name);
             if (contract != null)
             {
                 return contract.Address;
@@ -264,7 +261,7 @@ namespace Phantasma.Blockchain
 
             if (address.IsSystem)
             {
-                var contract = this.GetContractByAddress(storage, address);
+                var contract = this.GetContractByAddress(address);
                 if (contract != null)
                 {
                     return contract.Name;
@@ -304,11 +301,11 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CONTRACTS
-        public SmartContract GetContractByName(StorageContext storage, string contractName)
+        public SmartContract GetContractByName(string contractName)
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
             var address = SmartContract.GetAddressForName(contractName);
-            var result = GetContractByAddress(storage, address);
+            var result = GetContractByAddress(address);
 
             return result;
         }
@@ -321,7 +318,8 @@ namespace Phantasma.Blockchain
             _contractMap[addr] = typeof(T);
         }
 
-        public SmartContract GetContractByAddress(StorageContext storage, Address contractAdress)
+        // only works for native contracts!!
+        public SmartContract GetContractByAddress(Address contractAdress)
         {
             if (_contractMap == null)
             {
@@ -982,7 +980,6 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, owner.Address, SwapContractName);
             sb.CallInterop(deployInterop, owner.Address, InteropContractName);
             sb.CallInterop(deployInterop, owner.Address, StakeContractName);
-            sb.CallInterop(deployInterop, owner.Address, InteropContractName);
             sb.CallInterop(deployInterop, owner.Address, StorageContractName);
             sb.CallInterop(deployInterop, owner.Address, RelayContractName);
             sb.CallInterop(deployInterop, owner.Address, RankingContractName);
@@ -1562,10 +1559,15 @@ namespace Phantasma.Blockchain
             storage.Put(key, bytes);
         }*/
 
-        public bool ContractExists(StorageContext storage, string name)
+        public static bool IsNativeContract(string name)
         {
             NativeContractKind kind;
-            if (Enum.TryParse<NativeContractKind>(name, true, out kind))
+            return Enum.TryParse<NativeContractKind>(name, true, out kind);
+        }
+
+        public bool ContractExists(StorageContext storage, string name)
+        {
+            if (IsNativeContract(name))
             {
                 return true;
             }

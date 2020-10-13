@@ -11,7 +11,6 @@ using Phantasma.Simulator;
 using Phantasma.VM.Utils;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.CodeGen.Assembler;
-using Phantasma.Contracts.Native;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
 using Phantasma.Core.Types;

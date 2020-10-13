@@ -1,6 +1,6 @@
 ﻿using Phantasma.Domain;
 
-namespace Phantasma.Contracts.Native
+namespace Phantasma.Blockchain.Contracts
 {
     public sealed class SaleContract : NativeContract
     {

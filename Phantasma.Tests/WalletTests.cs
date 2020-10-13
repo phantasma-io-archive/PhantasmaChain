@@ -1,13 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Phantasma.Tests
 {

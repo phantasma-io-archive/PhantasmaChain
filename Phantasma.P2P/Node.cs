@@ -9,11 +9,10 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Numerics;
 using Phantasma.Blockchain;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Network.P2P.Messages;
-using Phantasma.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
-using Phantasma.Blockchain;
 using System.Threading;
 
 namespace Phantasma.Network.P2P
