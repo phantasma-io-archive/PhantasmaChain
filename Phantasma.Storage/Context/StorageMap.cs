@@ -190,5 +190,22 @@ namespace Phantasma.Storage.Context
             return values.ToArray();
         }
 
+        // TODO optimize this
+        public static void Clear(this StorageMap map)
+        {
+            var keys = new List<byte[]>();
+            map.Context.Visit((key, value) =>
+            {
+                keys.Add(key);
+            }, (uint)map.Count(), map.BaseKey);
+           
+            foreach (var key in keys)
+            {
+                map.Context.Delete(ElementKey(map.BaseKey, key));
+            }
+
+            map.Context.Put(CountKey(map.BaseKey), 0);
+        }
+
     }
 }
