@@ -27,6 +27,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Notify", Runtime_Notify);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
+            vm.RegisterMethod("Runtime.GetBalance", Runtime_GetBalance);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
             vm.RegisterMethod("Runtime.TransferBalance", Runtime_TransferBalance);
             vm.RegisterMethod("Runtime.MintTokens", Runtime_MintTokens);
@@ -567,45 +568,52 @@ namespace Phantasma.Blockchain
             return temp.AsByteArray();
         }
 
-        private static ExecutionState Runtime_TransferTokens(RuntimeVM Runtime)
+        private static ExecutionState Runtime_GetBalance(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 4);
+            ExpectStackSize(vm, 2);
 
-            VMObject temp;
+            var source = PopAddress(vm);
+            var symbol = PopString(vm, "symbol");
 
-            var source = PopAddress(Runtime);
-            var destination = PopAddress(Runtime);
+            var balance = vm.GetBalance(symbol, source);
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            var result = new VMObject();
+            result.SetValue(balance);
+            vm.Stack.Push(result);
+            
+            return ExecutionState.Running;
+        }
 
-            var amount = PopNumber(Runtime, "amount");
+        private static ExecutionState Runtime_TransferTokens(RuntimeVM vm)
+        {
+            ExpectStackSize(vm, 4);
 
-            Runtime.TransferTokens(symbol, source, destination, amount);
+            var source = PopAddress(vm);
+            var destination = PopAddress(vm);
+
+            var symbol = PopString(vm, "symbol");
+            var amount = PopNumber(vm, "amount");
+
+            vm.TransferTokens(symbol, source, destination, amount);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_TransferBalance(RuntimeVM Runtime)
+        private static ExecutionState Runtime_TransferBalance(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            ExpectStackSize(vm, 3);
 
-            VMObject temp;
+            var source = PopAddress(vm);
+            var destination = PopAddress(vm);
 
-            var source = PopAddress(Runtime);
-            var destination = PopAddress(Runtime);
+            var symbol = PopString(vm, "symbol");
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            var token = vm.GetToken(symbol);
+            vm.Expect(token.IsFungible(), "must be fungible");
 
-            var token = Runtime.GetToken(symbol);
-            Runtime.Expect(token.IsFungible(), "must be fungible");
+            var amount = vm.GetBalance(symbol, source);
 
-            var amount = Runtime.GetBalance(symbol, source);
-
-            Runtime.TransferTokens(symbol, source, destination, amount);
+            vm.TransferTokens(symbol, source, destination, amount);
 
             return ExecutionState.Running;
         }
@@ -643,52 +651,44 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_MintTokens(RuntimeVM Runtime)
+        private static ExecutionState Runtime_MintTokens(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 4);
+            ExpectStackSize(vm, 4);
 
-            VMObject temp;
+            var source = PopAddress(vm);
+            var destination = PopAddress(vm);
 
-            var source = PopAddress(Runtime);
-            var destination = PopAddress(Runtime);
+            var symbol = PopString(vm, "symbol");
+            var amount = PopNumber(vm, "amount");
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
-
-            var amount = PopNumber(Runtime, "amount");
-
-            if (Runtime.Nexus.HasGenesis)
+            if (vm.Nexus.HasGenesis)
             {
-                Runtime.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
+                vm.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
             }
 
-            Runtime.MintTokens(symbol, source, destination, amount);
+            vm.MintTokens(symbol, source, destination, amount);
 
             return ExecutionState.Running;
         }
 
 
-        private static ExecutionState Runtime_BurnTokens(RuntimeVM Runtime)
+        private static ExecutionState Runtime_BurnTokens(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            ExpectStackSize(vm, 3);
 
             VMObject temp;
 
-            var source = PopAddress(Runtime);
+            var source = PopAddress(vm);
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            var symbol = PopString(vm, "symbol");
+            var amount = PopNumber(vm, "amount");
 
-            var amount = PopNumber(Runtime, "amount");
-
-            if (Runtime.Nexus.HasGenesis)
+            if (vm.Nexus.HasGenesis)
             {
-                Runtime.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
+                vm.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
             }
 
-            Runtime.BurnTokens(symbol, source, amount);
+            vm.BurnTokens(symbol, source, amount);
 
             return ExecutionState.Running;
         }
