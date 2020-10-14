@@ -89,6 +89,18 @@ namespace Phantasma.Storage.Context
             }
         }
 
+        public static void SetRaw(this StorageMap map, byte[] key, byte[] bytes)
+        {
+            bool exists = map.ContainsKey(key);
+            map.Context.Put(ElementKey(map.BaseKey, key), bytes);
+
+            if (!exists)
+            {
+                var size = map.Count() + 1;
+                map.Context.Put(CountKey(map.BaseKey), size);
+            }
+        }
+
         public static V Get<K, V>(this StorageMap map, K key)
         {
             if (map.ContainsKey(key))
@@ -116,6 +128,17 @@ namespace Phantasma.Storage.Context
             }
 
             return default(V);
+        }
+
+        public static byte[] GetRaw(this StorageMap map, byte[] key)
+        {
+            if (map.ContainsKey(key))
+            {
+                var bytes = map.Context.Get(ElementKey(map.BaseKey, key));
+                return bytes;
+            }
+
+            return null;
         }
 
         public static void Remove<K>(this StorageMap map, K key)

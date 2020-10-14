@@ -11,6 +11,7 @@ using Phantasma.Storage;
 using System.Diagnostics;
 using System.Linq;
 using Phantasma.Core.Utils;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain
 {
@@ -51,6 +52,12 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
             vm.RegisterMethod("Data.Delete", Data_Delete);
+
+            vm.RegisterMethod("Map.Get", Map_Get);
+            vm.RegisterMethod("Map.Set", Map_Set);
+            vm.RegisterMethod("Map.Remove", Map_Remove);
+            vm.RegisterMethod("Map.Count", Map_Count);
+            vm.RegisterMethod("Map.Clear", Map_Clear);
 
             vm.RegisterMethod("Oracle.Read", Oracle_Read);
             vm.RegisterMethod("Oracle.Price", Oracle_Price);
@@ -372,6 +379,89 @@ namespace Phantasma.Blockchain
             vm.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
 
             vm.Storage.Delete(key);
+
+            return ExecutionState.Running;
+        }
+        #endregion
+
+        #region MAP
+        private static ExecutionState Map_Get(RuntimeVM vm)
+        {
+            var mapKey = PopBytes(vm, "mapKey");
+            vm.Expect(mapKey.Length > 0, "invalid map key");
+
+            var entryKey = PopBytes(vm, "entryKey");
+            vm.Expect(entryKey.Length > 0, "invalid entry key");
+
+            var type_obj = vm.Stack.Pop();
+            var vmType = type_obj.AsEnum<VMType>();
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            var value_bytes = map.GetRaw(entryKey);
+
+            var val = new VMObject();
+            val.SetValue(value_bytes, vmType);
+            vm.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Map_Set(RuntimeVM vm)
+        {
+            var mapKey = PopBytes(vm, "mapKey");
+            vm.Expect(mapKey.Length > 0, "invalid map key");
+
+            var entryKey = PopBytes(vm, "entryKey");
+            vm.Expect(entryKey.Length > 0, "invalid entry key");
+
+            var value = vm.Stack.Pop();
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            var value_bytes = value.AsByteArray();
+
+            map.SetRaw(entryKey, value_bytes);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Map_Remove(RuntimeVM vm)
+        {
+            var mapKey = PopBytes(vm, "mapKey");
+            vm.Expect(mapKey.Length > 0, "invalid map key");
+
+            var entryKey = PopBytes(vm, "entryKey");
+            vm.Expect(entryKey.Length > 0, "invalid entry key");
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            map.Remove<byte[]>(entryKey);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Map_Clear(RuntimeVM vm)
+        {
+            var mapKey = PopBytes(vm, "mapKey");
+            vm.Expect(mapKey.Length > 0, "invalid map key");
+
+            var map = new StorageMap(mapKey, vm.Storage);
+            map.Clear();
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Map_Count(RuntimeVM vm)
+        {
+            var mapKey = PopBytes(vm, "mapKey");
+            vm.Expect(mapKey.Length > 0, "invalid map key");
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            var count = map.Count();
+            var val = VMObject.FromObject(count);
+            vm.Stack.Push(val);
 
             return ExecutionState.Running;
         }

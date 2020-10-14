@@ -126,6 +126,10 @@ namespace Phantasma.Blockchain
                 switch (methodNamespace)
                 {
                     case "Runtime":
+                    case "Data":
+                    case "Map":
+                    case "List":
+                    case "Set":
                         gasCost = 50;
                         break;
 
@@ -139,7 +143,6 @@ namespace Phantasma.Blockchain
                         break;
 
                     case "Leaderboard":
-                    case "Data":
                         gasCost = 100;
                         break;
 
