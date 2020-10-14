@@ -313,7 +313,59 @@ namespace Phantasma.VM
 
                 default:
                     {
-                        throw new Exception("Invalid cast");
+                        throw new Exception("Cannot set value for vmtype: " + type);
+                    }
+            }
+
+            return this;
+        }
+
+        public VMObject SetDefaultValue(VMType type)
+        {
+            this.Type = type;
+            this._localSize = 1; // TODO fixme
+
+            switch (type)
+            {
+                case VMType.Bytes:
+                    {
+                        this.Data = new byte[0];
+                        break;
+                    }
+
+                case VMType.Number:
+                    {
+                        this.Data = new BigInteger(0);
+                        break;
+                    }
+
+                case VMType.String:
+                    {
+                        this.Data = "";
+                        break;
+                    }
+
+                case VMType.Enum:
+                    {
+                        this.Data = (uint)0;
+                        break;
+                    }
+
+                case VMType.Timestamp:
+                    {
+                        this.Data = new Timestamp(0);
+                        break;
+                    }
+
+                case VMType.Bool:
+                    {
+                        this.Data = false;
+                        break;
+                    }
+
+                default:
+                    {
+                        throw new Exception("Cannot init default value for vmtype: " + type);
                     }
             }
 
