@@ -304,7 +304,7 @@ namespace Phantasma.Tests
             Assert.IsFalse(registerName(testUser, targetName + "!"));
             Assert.IsTrue(registerName(testUser, targetName));
 
-            var currentName = nexus.LookUpAddressName(nexus.RootStorage, testUser.Address);
+            var currentName = nexus.RootChain.LookUpAddressName(nexus.RootStorage, testUser.Address);
             Assert.IsTrue(currentName == targetName);
 
             var someAddress = nexus.LookUpName(nexus.RootStorage, targetName);

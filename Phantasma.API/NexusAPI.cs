@@ -641,7 +641,7 @@ namespace Phantasma.API
             var result = new AccountResult();
             var address = Address.FromText(account);
             result.address = address.Text;
-            result.name = Nexus.LookUpAddressName(Nexus.RootStorage, address);
+            result.name = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, address);
 
             var stake = Nexus.GetStakeFromAddress(Nexus.RootStorage, address);
 
