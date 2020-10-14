@@ -79,11 +79,12 @@ namespace Phantasma.Blockchain
         private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
         {
             var type = VMObject.GetVMType(typeof(IN));
-            var input = vm.Stack.Pop().AsType(type);
+            var rawInput = vm.Stack.Pop();
+            var convertedInput = rawInput.AsType(type);
 
             try
             {
-                OUT obj = loader((IN)input);
+                OUT obj = loader((IN)convertedInput);
                 var temp = new VMObject();
                 temp.SetValue(obj);
                 vm.Stack.Push(temp);
@@ -100,13 +101,19 @@ namespace Phantasma.Blockchain
         {
             return Constructor_Object<byte[], Address>(vm, bytes =>
             {
-                if (bytes.Length == 0)
+                if (bytes == null || bytes.Length == 0)
                 {
                     return Address.Null;
                 }
 
-                Throw.If(bytes == null || bytes.Length != Address.LengthInBytes, "cannot build Address from invalid data");
-                return Address.FromBytes(bytes);
+                var addressData = bytes;
+                if (addressData.Length == Address.LengthInBytes + 1)
+                {
+                    addressData = addressData.Skip(1).ToArray(); // HACK this is to work around sometimes addresses being passed around in Serializable format...
+                }
+
+                Throw.If(addressData.Length != Address.LengthInBytes, "cannot build Address from invalid data");
+                return Address.FromBytes(addressData);
             });
         }
 
@@ -362,7 +369,8 @@ namespace Phantasma.Blockchain
             var key = PopBytes(vm, "key");
             vm.Expect(key.Length > 0, "invalid key");
 
-            var val = vm.Stack.Pop().AsByteArray();
+            var obj = vm.Stack.Pop();
+            var val = obj.AsByteArray();
 
             vm.Expect(key.Length > 0, "invalid key");
 
@@ -370,6 +378,9 @@ namespace Phantasma.Blockchain
             vm.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
 
             vm.Storage.Put(key, val);
+
+            var temp = vm.Storage.Get(key);
+            vm.Expect(temp.Length == val.Length, "storage write corruption");
 
             return ExecutionState.Running;
         }
