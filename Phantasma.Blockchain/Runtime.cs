@@ -134,10 +134,12 @@ namespace Phantasma.Blockchain
                         break;
 
                     case "Organization":
+                    case "Oracle":
                         gasCost = 200;
                         break;
 
                     case "Leaderboard":
+                    case "Data":
                         gasCost = 100;
                         break;
 

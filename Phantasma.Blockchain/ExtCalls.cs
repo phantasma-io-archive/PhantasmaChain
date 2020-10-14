@@ -150,19 +150,13 @@ namespace Phantasma.Blockchain
 
         #region ORACLES
         // TODO proper exceptions
-        private static ExecutionState Oracle_Read(RuntimeVM Runtime)
+        private static ExecutionState Oracle_Read(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 1);
+            ExpectStackSize(vm, 1);
 
-            var temp = Runtime.Stack.Pop();
-            if (temp.Type != VMType.String)
-            {
-                return ExecutionState.Fault;
-            }
+            var url = PopString(vm, "url");
 
-            var url = temp.AsString();
-
-            if (Runtime.Oracle == null)
+            if (vm.Oracle == null)
             {
                 return ExecutionState.Fault;
             }
@@ -173,35 +167,17 @@ namespace Phantasma.Blockchain
                 return ExecutionState.Fault;
             }
 
-            var result = Runtime.Oracle.Read<byte[]>(Runtime.Time,/*vm.Transaction.Hash, */url);
+            var result = vm.Oracle.Read<byte[]>(vm.Time,/*vm.Transaction.Hash, */url);
+            vm.Stack.Push(VMObject.FromObject(result));
 
             return ExecutionState.Running;
-        }
-
-        private static void ExpectStackSize(RuntimeVM vm, int minSize)
-        {
-            if (vm.Stack.Count < minSize)
-            {
-                var callingFrame = new StackFrame(1);
-                var method = callingFrame.GetMethod();
-
-                throw new VMException(vm, $"not enough arguments in stack, expected {minSize} @ {method}");
-            }
         }
 
         private static ExecutionState Oracle_Price(RuntimeVM vm)
         {
             ExpectStackSize(vm, 1);
 
-            VMObject temp;
-
-            temp = vm.Stack.Pop();
-            if (temp.Type != VMType.String)
-            {
-                return ExecutionState.Fault;
-            }
-
-            var symbol = temp.AsString();
+            var symbol = PopString(vm, "price");
 
             var price = vm.GetTokenPrice(symbol);
 
@@ -214,31 +190,9 @@ namespace Phantasma.Blockchain
         {
             ExpectStackSize(vm, 3);
 
-            VMObject temp;
-
-            temp = vm.Stack.Pop();
-            if (temp.Type != VMType.Number)
-            {
-                return ExecutionState.Fault;
-            }
-
-            var amount = temp.AsNumber();
-
-            temp = vm.Stack.Pop();
-            if (temp.Type != VMType.String)
-            {
-                return ExecutionState.Fault;
-            }
-
-            var quoteSymbol = temp.AsString();
-
-            temp = vm.Stack.Pop();
-            if (temp.Type != VMType.String)
-            {
-                return ExecutionState.Fault;
-            }
-
-            var baseSymbol = temp.AsString();
+            var amount = PopNumber(vm, "amount");
+            var quoteSymbol = PopString(vm, "quoteSymbol");
+            var baseSymbol = PopString(vm, "baseSymbol");
 
             var price = vm.GetTokenQuote(baseSymbol, quoteSymbol, amount);
 
@@ -423,6 +377,18 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
         #endregion
+
+
+        private static void ExpectStackSize(RuntimeVM vm, int minSize)
+        {
+            if (vm.Stack.Count < minSize)
+            {
+                var callingFrame = new StackFrame(1);
+                var method = callingFrame.GetMethod();
+
+                throw new VMException(vm, $"not enough arguments in stack, expected {minSize} @ {method}");
+            }
+        }
 
         private static Address PopAddress(RuntimeVM vm)
         {
