@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Performance;
 using Phantasma.Numerics;
@@ -318,6 +319,8 @@ namespace Phantasma.VM
                             if (len > 0)
                             {
                                 var bytes = ReadBytes(len);
+                                var exceptionMessage = Encoding.UTF8.GetString(bytes);
+                                throw new VMException(frame.VM, exceptionMessage);
                             }
 
                             SetState(ExecutionState.Fault);
