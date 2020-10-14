@@ -16,7 +16,7 @@ namespace Phantasma.Blockchain.Contracts
         {
         }
 
-        public void CreateLeaderboard(Address from, string name, BigInteger size, BigInteger period)
+        public void CreateLeaderboard(Address from, string name, BigInteger size)
         {
             Runtime.Expect(size >= 5, "size invalid");
             Runtime.Expect(size <= 1000, "size too large");
@@ -24,11 +24,6 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(!from.IsInterop, "address cannot be interop");
 
             Runtime.Expect(!_leaderboards.ContainsKey<string>(name), "leaderboard already exists");
-
-            if (period != 0)
-            {
-                Runtime.Expect(period >= 60 * 30, "period invalid");
-            }
 
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(ValidationUtils.IsValidIdentifier(name), "invalid name");
@@ -38,7 +33,6 @@ namespace Phantasma.Blockchain.Contracts
                 name = name,
                 owner = from,
                 size = size,
-                period = period,
                 round = 0,
             };
             _leaderboards.Set<string, Leaderboard>(name, leaderboard);
@@ -76,7 +70,8 @@ namespace Phantasma.Blockchain.Contracts
 
             return rows.All<LeaderboardRow>();
         }
-        public BigInteger GetScore(Address target, string name)
+
+        public BigInteger GetScoreByAddress(string name, Address target)
         {
             Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
             var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
@@ -84,7 +79,7 @@ namespace Phantasma.Blockchain.Contracts
             var rows = _rows.Get<string, StorageList>(name);
             var count = rows.Count();
 
-            for (int i=0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 var entry = rows.Get<LeaderboardRow>(i);
                 if (entry.address == target)
@@ -94,6 +89,49 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return 0;
+        }
+
+        public BigInteger GetScoreByIndex(string name, BigInteger index)
+        {
+            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+
+            var rows = _rows.Get<string, StorageList>(name);
+            var count = rows.Count();
+
+            if (index < 0 || index >= count)
+            {
+                return 0;
+            }
+
+            var entry = rows.Get<LeaderboardRow>(index);
+            return entry.score;
+        }
+
+        public Address GetAddressByIndex(string name, BigInteger index)
+        {
+            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+
+            var rows = _rows.Get<string, StorageList>(name);
+            var count = rows.Count();
+
+            if (index < 0 || index >= count)
+            {
+                return Address.Null;
+            }
+
+            var entry = rows.Get<LeaderboardRow>(index);
+            return entry.address;
+        }
+
+        public BigInteger GetSize(string name)
+        {
+            Runtime.Expect(_leaderboards.ContainsKey<string>(name), "invalid leaderboard");
+            var leaderboard = _leaderboards.Get<string, Leaderboard>(name);
+
+            var rows = _rows.Get<string, StorageList>(name);
+            return rows.Count();
         }
 
         public void InsertScore(Address from, Address target, string name, BigInteger score)

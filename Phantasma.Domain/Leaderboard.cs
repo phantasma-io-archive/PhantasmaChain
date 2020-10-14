@@ -14,7 +14,6 @@ namespace Phantasma.Domain
         public string name;
         public Address owner;
         public BigInteger size;
-        public BigInteger period;
         public BigInteger round;
     }
 
