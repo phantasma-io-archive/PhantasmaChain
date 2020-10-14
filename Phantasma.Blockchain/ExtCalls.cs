@@ -99,7 +99,12 @@ namespace Phantasma.Blockchain
         {
             return Constructor_Object<byte[], Address>(vm, bytes =>
             {
-                Throw.If(bytes == null || bytes.Length != Address.LengthInBytes, "invalid key");
+                if (bytes.Length == 0)
+                {
+                    return Address.Null;
+                }
+
+                Throw.If(bytes == null || bytes.Length != Address.LengthInBytes, "cannot build Address from invalid data");
                 return Address.FromBytes(bytes);
             });
         }
@@ -108,7 +113,7 @@ namespace Phantasma.Blockchain
         {
             return Constructor_Object<byte[], Hash>(vm, bytes =>
             {
-                Throw.If(bytes == null || bytes.Length != Hash.Length, "invalid hash");
+                Throw.If(bytes == null || bytes.Length != Hash.Length, "cannot build Hash from invalid data");
                 return new Hash(bytes);
             });
         }
@@ -425,7 +430,8 @@ namespace Phantasma.Blockchain
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
-            var entryKey = PopBytes(vm, "entryKey");
+            var entry_obj = vm.Stack.Pop();
+            var entryKey = entry_obj.AsByteArray();
             vm.Expect(entryKey.Length > 0, "invalid entry key");
 
             var value = vm.Stack.Pop();
@@ -446,7 +452,8 @@ namespace Phantasma.Blockchain
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
-            var entryKey = PopBytes(vm, "entryKey");
+            var entry_obj = vm.Stack.Pop();
+            var entryKey = entry_obj.AsByteArray();
             vm.Expect(entryKey.Length > 0, "invalid entry key");
 
             var map = new StorageMap(mapKey, vm.Storage);
