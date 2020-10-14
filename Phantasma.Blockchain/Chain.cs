@@ -188,7 +188,6 @@ namespace Phantasma.Blockchain
                         throw new BlockGenerationException(e.Message);
                     }
 
-                    Console.WriteLine(e);
                     throw new InvalidTransactionException(tx.Hash, e.Message);
                 }
 

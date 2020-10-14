@@ -326,53 +326,52 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Data_Get(RuntimeVM runtime)
+        private static ExecutionState Data_Get(RuntimeVM vm)
         {
-            var key = runtime.Stack.Pop();
-            var key_bytes = key.AsByteArray();
+            var key = PopBytes(vm, "key");
+            vm.Expect(key.Length > 0, "invalid key");
 
-            runtime.Expect(key_bytes.Length > 0, "invalid key");
-
-            var type_obj = runtime.Stack.Pop();
+            var type_obj = vm.Stack.Pop();
             var vmType = type_obj.AsEnum<VMType>();
 
-            var value_bytes = runtime.Storage.Get(key_bytes);
+            var value_bytes = vm.Storage.Get(key);
             var val = new VMObject();
             val.SetValue(value_bytes, vmType);
-            runtime.Stack.Push(val);
+            vm.Stack.Push(val);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Data_Set(RuntimeVM runtime)
+        private static ExecutionState Data_Set(RuntimeVM vm)
         {
-            var key = runtime.Stack.Pop();
-            var key_bytes = key.AsByteArray();
+            ExpectStackSize(vm, 2);
 
-            var val = runtime.Stack.Pop();
-            var val_bytes = val.AsByteArray();
+            var key = PopBytes(vm, "key");
+            vm.Expect(key.Length > 0, "invalid key");
 
-            runtime.Expect(key_bytes.Length > 0, "invalid key");
+            var val = vm.Stack.Pop().AsByteArray();
 
-            var firstChar = (char)key_bytes[0];
-            runtime.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+            vm.Expect(key.Length > 0, "invalid key");
 
-            runtime.Storage.Put(key_bytes, val_bytes);
+            var firstChar = (char)key[0];
+            vm.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+
+            vm.Storage.Put(key, val);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Data_Delete(RuntimeVM runtime)
+        private static ExecutionState Data_Delete(RuntimeVM vm)
         {
-            var key = runtime.Stack.Pop();
-            var key_bytes = key.AsByteArray();
+            var key = PopBytes(vm, "key");
+            vm.Expect(key.Length > 0, "invalid key");
 
-            runtime.Expect(key_bytes.Length > 0, "invalid key");
+            vm.Expect(key.Length > 0, "invalid key");
 
-            var firstChar = (char)key_bytes[0];
-            runtime.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+            var firstChar = (char)key[0];
+            vm.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
 
-            runtime.Storage.Delete(key_bytes);
+            vm.Storage.Delete(key);
 
             return ExecutionState.Running;
         }
