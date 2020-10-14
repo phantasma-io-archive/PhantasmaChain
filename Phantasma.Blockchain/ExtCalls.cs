@@ -387,10 +387,13 @@ namespace Phantasma.Blockchain
         #region MAP
         private static ExecutionState Map_Get(RuntimeVM vm)
         {
+            ExpectStackSize(vm, 3);
+
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
-            var entryKey = PopBytes(vm, "entryKey");
+            var entry_obj = vm.Stack.Pop();
+            var entryKey = entry_obj.AsByteArray();
             vm.Expect(entryKey.Length > 0, "invalid entry key");
 
             var type_obj = vm.Stack.Pop();
@@ -401,7 +404,15 @@ namespace Phantasma.Blockchain
             var value_bytes = map.GetRaw(entryKey);
 
             var val = new VMObject();
-            val.SetValue(value_bytes, vmType);
+
+            if (value_bytes == null)
+            {
+                val.SetDefaultValue(vmType);
+            }
+            else
+            {
+                val.SetValue(value_bytes, vmType);
+            }
             vm.Stack.Push(val);
 
             return ExecutionState.Running;
@@ -409,6 +420,8 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Set(RuntimeVM vm)
         {
+            ExpectStackSize(vm, 3);
+
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
@@ -428,6 +441,8 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Remove(RuntimeVM vm)
         {
+            ExpectStackSize(vm, 2);
+
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
@@ -443,6 +458,8 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Clear(RuntimeVM vm)
         {
+            ExpectStackSize(vm, 1);
+
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
@@ -454,6 +471,8 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Count(RuntimeVM vm)
         {
+            ExpectStackSize(vm, 1);
+
             var mapKey = PopBytes(vm, "mapKey");
             vm.Expect(mapKey.Length > 0, "invalid map key");
 
