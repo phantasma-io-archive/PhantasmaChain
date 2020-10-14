@@ -216,11 +216,20 @@ namespace Phantasma.Blockchain
 
             this.EntryAddress = CurrentContext.Address;
             CurrentContext = context;
+
+            _activeAddresses.Push(context.Address);
+
             var temp = context.Execute(this.CurrentFrame, this.Stack);
             Expect(temp == ExecutionState.Halt, "expected call success");
 
             CurrentContext = previousContext;
             this.EntryAddress = previousCaller;
+
+            var temp2 = _activeAddresses.Pop();
+            if (temp2 != context.Address)
+            {
+                throw new VMException(this, "runtimeVM implementation bug detected: address stack");
+            }
 
             if (this.Stack.Count > 0)
             {
@@ -571,11 +580,6 @@ namespace Phantasma.Blockchain
                 return false;
             }
 
-            if (address == this.EntryAddress)
-            {
-                return true;
-            }
-
             using (var m = new ProfileMarker("validatedWitnesses.Contains"))
             if (validatedWitnesses.Contains(address))
             {
@@ -584,6 +588,14 @@ namespace Phantasma.Blockchain
 
             if (address.IsSystem)
             {
+                foreach (var activeAddress in this.ActiveAddresses)
+                {
+                    if (activeAddress == address)
+                    {
+                        return true;
+                    }
+                }
+
                 var org = Nexus.GetOrganizationByAddress(RootStorage, address);
                 if (org != null)
                 {

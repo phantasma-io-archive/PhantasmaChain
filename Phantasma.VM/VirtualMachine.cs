@@ -109,6 +109,9 @@ namespace Phantasma.VM
         public readonly ExecutionContext entryContext;
         public ExecutionContext CurrentContext { get; protected set; }
 
+        protected Stack<Address> _activeAddresses = new Stack<Address>();
+        public IEnumerable<Address> ActiveAddresses => _activeAddresses;
+
         private Dictionary<string, ExecutionContext> _contextMap = new Dictionary<string, ExecutionContext>();
 
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
@@ -119,6 +122,8 @@ namespace Phantasma.VM
             Throw.IfNull(script, nameof(script));
 
             this.EntryAddress = Address.FromHash(script);
+            this._activeAddresses.Push(EntryAddress);
+
             this.entryContext = new ScriptContext("entry", script);
             RegisterContext("entry", this.entryContext); // TODO this should be a constant
 
@@ -202,7 +207,18 @@ namespace Phantasma.VM
             {
                 this.CurrentContext = context;
                 PushFrame(context, instructionPointer, DefaultRegisterCount);
-                return context.Execute(this.CurrentFrame, this.Stack);
+
+                _activeAddresses.Push(context.Address);
+
+                var result = context.Execute(this.CurrentFrame, this.Stack);
+                
+                var temp = _activeAddresses.Pop();
+                if (temp != context.Address)
+                {
+                    throw new VMException(this, "VM implementation bug detected: address stack");
+                }
+
+                return result;
             }
         }
         #endregion
