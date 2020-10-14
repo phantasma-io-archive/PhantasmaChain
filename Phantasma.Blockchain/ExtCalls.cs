@@ -860,7 +860,7 @@ namespace Phantasma.Blockchain
 
                 script = new byte[] { (byte)Opcode.RET };
 
-                var contractInstance = Runtime.Nexus.GetContractByAddress(contractAddress);
+                var contractInstance = Runtime.Nexus.GetNativeContractByAddress(contractAddress);
                 abi = contractInstance.ABI;
                 hasConstructor = contractInstance.HasInternalMethod(constructorName);
             }
@@ -877,7 +877,7 @@ namespace Phantasma.Blockchain
             }
 
 
-            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractAddress, script, abi);
+            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractName, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
             if (hasConstructor)

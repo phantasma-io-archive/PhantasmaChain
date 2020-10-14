@@ -62,7 +62,7 @@ namespace Phantasma.Blockchain
         {
             var contractList = new StorageList(GetContractListKey(), storage);
             var addresses = contractList.All<Address>();
-            return addresses.Select(x => Nexus.GetContractByAddress(x)).ToArray();
+            return addresses.Select(x => Nexus.GetNativeContractByAddress(x)).ToArray();
         }
 
         public override string ToString()
@@ -570,7 +570,7 @@ namespace Phantasma.Blockchain
             return storage.Has(key);
         }
 
-        public bool DeployContractScript(StorageContext storage, Address contractAddress, byte[] script, ContractInterface abi)
+        public bool DeployContractScript(StorageContext storage, string name, Address contractAddress, byte[] script, ContractInterface abi)
         {
             var scriptKey = GetContractKey(contractAddress, "script");
             if (storage.Has(scriptKey))
@@ -584,10 +584,29 @@ namespace Phantasma.Blockchain
             var abiKey = GetContractKey(contractAddress, "abi");
             storage.Put(abiKey, abiBytes);
 
+            var nameBytes = Encoding.ASCII.GetBytes(name);
+            var nameKey = GetContractKey(contractAddress, "name");
+            storage.Put(nameKey, nameBytes);
+
             var contractList = new StorageList(GetContractListKey(), storage);
             contractList.Add<Address>(contractAddress);                       
 
             return true;
+        }
+
+        public SmartContract GetContractByAddress(StorageContext storage, Address address)
+        {
+            var nameKey = GetContractKey(address, "name");
+
+            if (storage.Has(nameKey))
+            {
+                var nameBytes = storage.Get(nameKey);
+
+                var name = Encoding.ASCII.GetString(nameBytes);
+                return GetContractByName(storage, name);
+            }
+
+            return Nexus.GetNativeContractByAddress(address);
         }
 
         public SmartContract GetContractByName(StorageContext storage, string name)
@@ -612,6 +631,7 @@ namespace Phantasma.Blockchain
 
             return new CustomContract(name, script, abi);
         }
+
         #endregion
 
         private BigInteger GetBlockHeight()
@@ -909,5 +929,36 @@ namespace Phantasma.Blockchain
             }
         }
         #endregion
+
+        public string LookUpAddressName(StorageContext storage, Address address)
+        {
+            if (address.IsSystem)
+            {
+                var contract = this.GetContractByAddress(storage, address);
+                if (contract != null)
+                {
+                    return contract.Name;
+                }
+                else
+                {
+                    var tempChain = Nexus.GetChainByAddress(address);
+                    if (tempChain != null)
+                    {
+                        return tempChain.Name;
+                    }
+
+                    var org = Nexus.GetOrganizationByAddress(storage, address);
+                    if (org != null)
+                    {
+                        return org.ID;
+                    }
+
+                    return ValidationUtils.ANONYMOUS;
+                }
+            }
+
+            return Nexus.RootChain.InvokeContract(storage, Nexus.AccountContractName, nameof(AccountContract.LookUpAddress), address).AsString();
+        }
+
     }
 }

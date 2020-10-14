@@ -255,38 +255,6 @@ namespace Phantasma.Blockchain
             return chain.InvokeContract(storage, Nexus.AccountContractName, nameof(AccountContract.LookUpName), name).AsAddress();
         }
 
-        public string LookUpAddressName(StorageContext storage, Address address)
-        {
-            var chain = RootChain;
-
-            if (address.IsSystem)
-            {
-                var contract = this.GetContractByAddress(address);
-                if (contract != null)
-                {
-                    return contract.Name;
-                }
-                else
-                {
-                    var tempChain = this.GetChainByAddress(address);
-                    if (tempChain != null)
-                    {
-                        return tempChain.Name;
-                    }
-
-                    var org = this.GetOrganizationByAddress(storage, address);
-                    if (org != null)
-                    {
-                        return org.ID;
-                    }
-
-                    return ValidationUtils.ANONYMOUS;
-                }
-            }
-
-            return chain.InvokeContract(storage, Nexus.AccountContractName, nameof(AccountContract.LookUpAddress), address).AsString();
-        }
-
         public byte[] LookUpAddressScript(StorageContext storage, Address address)
         {
             var chain = RootChain;
@@ -305,7 +273,7 @@ namespace Phantasma.Blockchain
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
             var address = SmartContract.GetAddressForName(contractName);
-            var result = GetContractByAddress(address);
+            var result = GetNativeContractByAddress(address);
 
             return result;
         }
@@ -319,7 +287,7 @@ namespace Phantasma.Blockchain
         }
 
         // only works for native contracts!!
-        public NativeContract GetContractByAddress(Address contractAdress)
+        public NativeContract GetNativeContractByAddress(Address contractAdress)
         {
             if (_contractMap == null)
             {
@@ -820,7 +788,7 @@ namespace Phantasma.Blockchain
 
             if (destination.IsSystem)
             {
-                var destName = this.LookUpAddressName(Runtime.RootStorage, destination);
+                var destName = Runtime.Chain.LookUpAddressName(Runtime.Storage, destination);
                 Runtime.Expect(destName != ValidationUtils.ANONYMOUS, "anonymous system address as destination");
             }
 

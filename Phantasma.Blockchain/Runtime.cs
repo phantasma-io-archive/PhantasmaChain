@@ -490,7 +490,7 @@ namespace Phantasma.Blockchain
 
             if (address.IsSystem)
             {
-                var contract = Nexus.GetContractByAddress(address);
+                var contract = Nexus.GetNativeContractByAddress(address);
                 if (contract != null)
                 {
                     var triggerName = trigger.ToString();
@@ -771,7 +771,7 @@ namespace Phantasma.Blockchain
 
         public string GetAddressName(Address from)
         {
-            return Nexus.LookUpAddressName(this.RootStorage, from);
+            return Chain.LookUpAddressName(this.RootStorage, from);
         }
 
         public Event[] GetTransactionEvents(Hash transactionHash)
