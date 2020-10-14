@@ -19,12 +19,15 @@ namespace Phantasma.VM
 
         private ExecutionState _state;
 
+        private Opcode opcode;
+
         public ScriptContext(string name, byte[] script)
         {
             this._name = name;
             this._state = ExecutionState.Running;
             this.Script = script;
             this.InstructionPointer = 0;
+            this.opcode = Opcode.NOP;
         }
 
         public override ExecutionState Execute(ExecutionFrame frame, Stack<VMObject> stack)
@@ -110,9 +113,9 @@ namespace Phantasma.VM
         }
         #endregion
 
-        private void Expect(bool assertion)
+        private void Expect(bool assertion, string error)
         {
-            Throw.If(!assertion, "Assertion failed");
+            Throw.If(!assertion, $"Script execution failed: {error} @ {opcode} : {InstructionPointer}");
         }
 
         private void SetState(ExecutionState state)
@@ -124,7 +127,7 @@ namespace Phantasma.VM
         {
             try
             {
-                var opcode = (Opcode)Read8();
+                opcode = (Opcode)Read8();
 
                 frame.VM.ValidateOpcode(opcode);
 
@@ -141,8 +144,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             frame.Registers[dst] = frame.Registers[src];
                             break;
@@ -154,8 +157,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             frame.Registers[dst].Copy(frame.Registers[src]);
                             break;
@@ -168,7 +171,7 @@ namespace Phantasma.VM
                             var type = (VMType)Read8();
                             var len = (int)ReadVar(0xFFFF);
 
-                            Expect(dst < frame.Registers.Length);
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var bytes = ReadBytes(len);
                             frame.Registers[dst].SetValue(bytes, type);
@@ -183,8 +186,8 @@ namespace Phantasma.VM
                             var dst = Read8();
                             var type = (VMType)Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[src];
                             val = VMObject.CastTo(val, type);
@@ -197,7 +200,7 @@ namespace Phantasma.VM
                     case Opcode.PUSH:   
                         {
                             var src = Read8();
-                            Expect(src < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
 
                             var val = frame.Registers[src];
 
@@ -212,8 +215,8 @@ namespace Phantasma.VM
                         {
                             var dst = Read8();
 
-                            Expect(stack.Count > 0);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(stack.Count > 0, "stack is empty");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             frame.Registers[dst] = stack.Pop();
                             break;
@@ -225,8 +228,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var temp = frame.Registers[src];
                             frame.Registers[src] = frame.Registers[dst];
@@ -241,9 +244,9 @@ namespace Phantasma.VM
                             var count = Read8();
                             var ofs = Read16();
 
-                            Expect(ofs < this.Script.Length);
-                            Expect(count >= 1);
-                            Expect(count <= VirtualMachine.MaxRegisterCount);
+                            Expect(ofs < this.Script.Length, "invalid jump offset");
+                            Expect(count >= 1, "at least 1 register required");
+                            Expect(count <= VirtualMachine.MaxRegisterCount, "invalid register allocs");
 
                             frame.VM.PushFrame(this, InstructionPointer, count);
 
@@ -256,7 +259,7 @@ namespace Phantasma.VM
                         using (var m = new ProfileMarker("EXTCALL"))
                         {
                             var src = Read8();
-                            Expect(src < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
 
                             var method = frame.Registers[src].AsString();
                             
@@ -284,7 +287,7 @@ namespace Phantasma.VM
                             else
                             {
                                 var src = Read8();
-                                Expect(src < frame.Registers.Length);
+                                Expect(src < frame.Registers.Length, "invalid src register");
 
                                 shouldJump = frame.Registers[src].AsBool();
 
@@ -296,8 +299,8 @@ namespace Phantasma.VM
 
                             var newPos = (short)Read16();
 
-                            Expect(newPos >= 0);
-                            Expect(newPos < this.Script.Length);
+                            Expect(newPos >= 0, "jump offset can't be negative value");
+                            Expect(newPos < this.Script.Length, "trying to jump outside of script bounds");
 
                             if (shouldJump)
                             {
@@ -352,9 +355,9 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
 
-                            Expect(srcA < frame.Registers.Length);
-                            Expect(srcB < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(srcA < frame.Registers.Length, "invalid srcA register");
+                            Expect(srcB < frame.Registers.Length, "invalid srcB register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var A = frame.Registers[srcA];
                             var B = frame.Registers[srcB];
@@ -410,11 +413,11 @@ namespace Phantasma.VM
                             var dst = Read8();
                             var len = (int)ReadVar(0xFFFF);
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var src_array = frame.Registers[src].AsByteArray();
-                            Expect(len <= src_array.Length);
+                            Expect(len <= src_array.Length, "invalid length");
 
                             var result = new byte[len];
 
@@ -431,11 +434,11 @@ namespace Phantasma.VM
                             var dst = Read8();
                             var len = (int)ReadVar(0xFFFF);
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var src_array = frame.Registers[src].AsByteArray();
-                            Expect(len <= src_array.Length);
+                            Expect(len <= src_array.Length, "invalid length register");
 
                             var ofs = src_array.Length - len;
 
@@ -452,8 +455,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var src_array = frame.Registers[src].AsByteArray();
                             frame.Registers[dst].SetValue(src_array.Length);
@@ -466,8 +469,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[src];
                             int count;
@@ -494,8 +497,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[src].AsBool();
 
@@ -512,9 +515,9 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
 
-                            Expect(srcA < frame.Registers.Length);
-                            Expect(srcB < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(srcA < frame.Registers.Length, "invalid srcA register");
+                            Expect(srcB < frame.Registers.Length, "invalid srcB register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var a = frame.Registers[srcA].AsBool();
                             var b = frame.Registers[srcB].AsBool();
@@ -543,9 +546,9 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
 
-                            Expect(srcA < frame.Registers.Length);
-                            Expect(srcB < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(srcA < frame.Registers.Length, "invalid srcA register");
+                            Expect(srcB < frame.Registers.Length, "invalid srcB register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var a = frame.Registers[srcA];
                             var b = frame.Registers[srcB];
@@ -566,9 +569,9 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
 
-                            Expect(srcA < frame.Registers.Length);
-                            Expect(srcB < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(srcA < frame.Registers.Length, "invalid srcA register");
+                            Expect(srcB < frame.Registers.Length, "invalid srcB register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var a = frame.Registers[srcA].AsNumber();
                             var b = frame.Registers[srcB].AsNumber();
@@ -595,7 +598,7 @@ namespace Phantasma.VM
                     case Opcode.INC:
                         {
                             var dst = Read8();
-                            Expect(dst < frame.Registers.Length);
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[dst].AsNumber();
                             frame.Registers[dst].SetValue(val + 1);
@@ -607,7 +610,7 @@ namespace Phantasma.VM
                     case Opcode.DEC:
                         {
                             var dst = Read8();
-                            Expect(dst < frame.Registers.Length);
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[dst].AsNumber();
                             frame.Registers[dst].SetValue(val - 1);
@@ -621,8 +624,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[src].AsNumber();
 
@@ -643,8 +646,8 @@ namespace Phantasma.VM
                         {
                             var src = Read8();
                             var dst = Read8();
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[src].AsNumber();
                             frame.Registers[dst].SetValue(-val);
@@ -657,8 +660,8 @@ namespace Phantasma.VM
                         {
                             var src = Read8();
                             var dst = Read8();
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var val = frame.Registers[src].AsNumber();
                             frame.Registers[dst].SetValue(val < 0 ? -val : val);
@@ -681,9 +684,9 @@ namespace Phantasma.VM
                             var srcB = Read8();
                             var dst = Read8();
 
-                            Expect(srcA < frame.Registers.Length);
-                            Expect(srcB < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(srcA < frame.Registers.Length, "invalid srcA register");
+                            Expect(srcB < frame.Registers.Length, "invalid srcB register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var a = frame.Registers[srcA].AsNumber();
                             var b = frame.Registers[srcB].AsNumber();
@@ -719,9 +722,9 @@ namespace Phantasma.VM
                             var dst = Read8();
                             var keyReg = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
-                            Expect(keyReg < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
+                            Expect(keyReg < frame.Registers.Length, "invalid key register");
 
                             var key = frame.Registers[keyReg];
                             var value = frame.Registers[src];
@@ -738,9 +741,9 @@ namespace Phantasma.VM
                             var dst = Read8();
                             var keyReg = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
-                            Expect(keyReg < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
+                            Expect(keyReg < frame.Registers.Length, "invalid key register");
 
                             var key = frame.Registers[keyReg];
                             var val = frame.Registers[src].GetKey(key);
@@ -754,7 +757,7 @@ namespace Phantasma.VM
                     case Opcode.THIS:
                         {
                             var dst = Read8();
-                            Expect(dst < frame.Registers.Length);
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             frame.Registers[dst].SetValue(this);
 
@@ -768,8 +771,8 @@ namespace Phantasma.VM
                             var src = Read8();
                             var dst = Read8();
 
-                            Expect(src < frame.Registers.Length);
-                            Expect(dst < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var contextName = frame.Registers[src].AsString();
 
@@ -790,7 +793,7 @@ namespace Phantasma.VM
                         using (var m = new ProfileMarker("SWITCH"))
                         {
                             var src = Read8();
-                            Expect(src < frame.Registers.Length);
+                            Expect(src < frame.Registers.Length, "invalid src register");
 
                             var context = frame.Registers[src].AsInterop<ExecutionContext>();
 
