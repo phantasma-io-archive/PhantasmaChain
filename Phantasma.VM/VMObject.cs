@@ -8,6 +8,7 @@ using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Storage.Utils;
 using Phantasma.Storage;
+using System.Linq;
 
 namespace Phantasma.VM
 {
@@ -196,6 +197,18 @@ namespace Phantasma.VM
                         var time = AsTimestamp();
                         var bytes = BitConverter.GetBytes(time.Value);
                         return bytes;
+                    }
+
+                case VMType.Object:
+                    {
+                        var serializable = Data as ISerializable;
+                        if (serializable != null)
+                        {
+                            var bytes = serializable.Serialize().Skip(1).ToArray();
+                            return bytes;
+                        }
+
+                        throw new Exception("Complex object type can't be");
                     }
 
                 default:
