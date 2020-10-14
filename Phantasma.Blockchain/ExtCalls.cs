@@ -19,10 +19,12 @@ namespace Phantasma.Blockchain
         // naming scheme should be "namespace.methodName" for methods, and "type()" for constructors
         internal static void RegisterWithRuntime(RuntimeVM vm)
         {
-            vm.RegisterMethod("Runtime.Log", Runtime_Log);
-            vm.RegisterMethod("Runtime.Event", Runtime_Event);
+            vm.RegisterMethod("Runtime.TransactionHash", Runtime_TransactionHash);
+            vm.RegisterMethod("Runtime.Time", Runtime_Time);
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
+            vm.RegisterMethod("Runtime.Log", Runtime_Log);
+            vm.RegisterMethod("Runtime.Notify", Runtime_Notify);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
             vm.RegisterMethod("Runtime.TransferBalance", Runtime_TransferBalance);
@@ -136,7 +138,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_Event(RuntimeVM vm)
+        private static ExecutionState Runtime_Notify(RuntimeVM vm)
         {
             var bytes = vm.Stack.Pop().AsByteArray();
             var address = vm.Stack.Pop().AsInterop<Address>();
@@ -279,6 +281,35 @@ namespace Phantasma.Blockchain
 
         #endregion
 
+        private static ExecutionState Runtime_Time(RuntimeVM vm)
+        {
+            var result = new VMObject();
+            result.SetValue(vm.Time);
+            vm.Stack.Push(result);
+            return ExecutionState.Running;
+        }
+
+
+        private static ExecutionState Runtime_TransactionHash(RuntimeVM vm)
+        {
+            try
+            {
+                var tx = vm.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                var result = new VMObject();
+                result.SetValue(tx.Hash);
+                vm.Stack.Push(result);
+            }
+            catch (Exception e)
+            {
+                throw new VMException(vm, e.Message);
+            }
+
+            return ExecutionState.Running;
+        }
+
+
         private static ExecutionState Runtime_IsWitness(RuntimeVM vm)
         {
             try
@@ -326,6 +357,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        #region DATA
         // returns the key for a field from a contract
         private static ExecutionState Data_Field(RuntimeVM runtime)
         {
@@ -390,6 +422,7 @@ namespace Phantasma.Blockchain
 
             return ExecutionState.Running;
         }
+        #endregion
 
         private static Address PopAddress(RuntimeVM vm)
         {

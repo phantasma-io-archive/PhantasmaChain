@@ -137,6 +137,10 @@ namespace Phantasma.Blockchain
                         gasCost = 200;
                         break;
 
+                    case "Leaderboard":
+                        gasCost = 100;
+                        break;
+
                     default:
                         Expect(false, "invalid extcall namespace: " + methodNamespace);
                         gasCost = 0;
