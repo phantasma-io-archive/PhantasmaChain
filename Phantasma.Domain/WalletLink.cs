@@ -105,6 +105,8 @@ namespace Phantasma.Domain
 
         protected abstract void InvokeScript(byte[] script, int id, Action<byte[], string> callback);
 
+        protected abstract void SignData(byte[] data, SignatureKind kind, int id, Action<string, string> callback);
+
         protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
