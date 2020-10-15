@@ -64,6 +64,12 @@ namespace Phantasma.Domain
             public string hash;
         }
 
+        public struct Signature : IAPIResult
+        {
+            public string signature;
+            public string random;
+        }
+
         private Random rnd = new Random();
 
         private Dictionary<string, string> authTokens = new Dictionary<string, string>();
@@ -218,6 +224,42 @@ namespace Phantasma.Domain
                             success = true;
                         }
 
+                        break;
+                    }
+
+                case "signData":
+                    {
+                        root = ValidateRequest(args);
+                        if (root == null)
+                        {
+                            if (args.Length == 5)
+                            {
+                                var data = Base16.Decode(args[3]);
+                                var signatureKind = (SignatureKind) Enum.Parse(typeof(SignatureKind), args[4], true);
+
+                                SignData(data, signatureKind, id, (signature, random, txError) => {
+                                    if (signature != null)
+                                    {
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Signature() { signature = signature, random = random });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = txError });
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
+
+                                return;
+                            }
+                            else
+                            {
+                                root = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 7" });
+                            }
+
+                        }
                         break;
                     }
 
