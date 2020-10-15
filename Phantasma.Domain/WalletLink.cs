@@ -105,7 +105,8 @@ namespace Phantasma.Domain
 
         protected abstract void InvokeScript(byte[] script, int id, Action<byte[], string> callback);
 
-        protected abstract void SignData(byte[] data, SignatureKind kind, int id, Action<string, string> callback);
+        // NOTE for security, signData should not be usable as a way of signing transaction. That way the wallet is responsible for appending random bytes to the message, and return those in callback
+        protected abstract void SignData(byte[] data, SignatureKind kind, int id, Action<string, string, string> callback);
 
         protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
 
