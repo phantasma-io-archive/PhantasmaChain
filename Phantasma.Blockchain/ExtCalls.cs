@@ -859,8 +859,6 @@ namespace Phantasma.Blockchain
             byte[] script;
             ContractInterface abi;
 
-            bool hasConstructor;
-            var constructorName = "Initialize";
 
             if (Nexus.IsNativeContract(contractName))
             {
@@ -873,7 +871,6 @@ namespace Phantasma.Blockchain
 
                 var contractInstance = Runtime.Nexus.GetNativeContractByAddress(contractAddress);
                 abi = contractInstance.ABI;
-                hasConstructor = contractInstance.HasInternalMethod(constructorName);
             }
             else
             {
@@ -881,17 +878,15 @@ namespace Phantasma.Blockchain
 
                 var abiBytes = PopBytes(Runtime, "contractABI");
                 abi = ContractInterface.Unserialize(abiBytes);
-
-                var temp = System.Text.Encoding.UTF8.GetBytes(constructorName);
-                var constructorIndex = script.SearchBytes(temp);
-                hasConstructor = constructorIndex >= 0;
             }
-
 
             var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractName, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
-            if (hasConstructor)
+            var constructorName = "Initialize";
+            var constructor = abi.FindMethod(constructorName);
+
+            if (constructor != null)
             {
                 Runtime.CallContext(contractName, constructorName, owner);
             }
