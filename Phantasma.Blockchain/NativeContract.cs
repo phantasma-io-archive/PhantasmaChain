@@ -180,7 +180,7 @@ namespace Phantasma.Blockchain
                 if (isValid)
                 {
                     _methodTable[methodName] = srcMethod;
-                    var method = new ContractMethod(methodName, returnType, parameters.ToArray());
+                    var method = new ContractMethod(methodName, returnType, -1, parameters.ToArray());
                     methods.Add(method);
                 }
             }

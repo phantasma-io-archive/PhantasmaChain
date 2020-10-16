@@ -1,4 +1,5 @@
-﻿using Phantasma.VM.Utils;
+﻿using Phantasma.VM;
+using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,14 +9,19 @@ namespace Phantasma.CodeGen.Assembler
 {
     public static class AssemblerUtils
     {
+        public static byte[] BuildScript(string asm)
+        {
+            var lines = asm.Split('\n');
+            return BuildScript(lines);
+        }
 
         public static byte[] BuildScript(IEnumerable<string> lines)
         {
-            Dictionary<uint, int> offsets;
-            return BuildScriptWithOffsets(lines, out offsets);
+            DebugInfo debugInfo;
+            return BuildScript(lines, null, out debugInfo);
         }
 
-        public static byte[] BuildScriptWithOffsets(IEnumerable<string> lines, out Dictionary<uint, int> offsets)
+        public static byte[] BuildScript(IEnumerable<string> lines, string fileName, out DebugInfo debugInfo)
         {
             Semanteme[] semantemes = null;
             try
@@ -31,14 +37,24 @@ namespace Phantasma.CodeGen.Assembler
             Semanteme tmp;
             byte[] script;
 
-            offsets = new Dictionary<uint, int>();
+            var debugRanges = new List<DebugRange>();
+
             try
             {
                 foreach (var entry in semantemes)
                 {
-                    offsets[entry.LineNumber] = sb.CurrentSize;
+                    var startOffset = sb.CurrentSize;
+                    
                     tmp = entry;
                     entry.Process(sb);
+
+                    var endOffset = sb.CurrentSize;
+
+                    if (endOffset > startOffset) { 
+                        endOffset--; 
+                    }
+
+                    debugRanges.Add(new DebugRange(entry.LineNumber, startOffset, endOffset));
                 }
                 script = sb.ToScript();
             }
@@ -47,11 +63,26 @@ namespace Phantasma.CodeGen.Assembler
                 throw new Exception("Error assembling the script: " + e.ToString());
             }
 
+            if (fileName != null)
+            {
+                debugInfo = new DebugInfo(fileName, debugRanges);
+            }
+            else
+            {
+                debugInfo = null;
+            }
+
             return script;
         }
 
-        public static IEnumerable<string> CommentOffsets(IEnumerable<string> lines, Dictionary<uint, int> offsets)
+        public static IEnumerable<string> CommentOffsets(IEnumerable<string> lines, DebugInfo debugInfo)
         {
+            var offsets = new Dictionary<uint, int>();
+            foreach (var range in debugInfo.Ranges)
+            {
+                offsets[range.SourceLine] = range.StartOffset;
+            }
+
             uint lineNumber = 0;
             var output = new List<string>();
             foreach (var line in lines)

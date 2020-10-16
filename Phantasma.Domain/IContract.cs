@@ -171,10 +171,12 @@ namespace Phantasma.Domain
         public readonly string name;
         public readonly VMType returnType;
         public readonly ContractParameter[] parameters;
+        public readonly int offset;
 
-        public ContractMethod(string name, VMType returnType, params ContractParameter[] parameters)
+        public ContractMethod(string name, VMType returnType, int offset, params ContractParameter[] parameters)
         {
             this.name = name;
+            this.offset = offset;
             this.returnType = returnType;
             this.parameters = parameters;
         }
@@ -188,6 +190,7 @@ namespace Phantasma.Domain
         {
             var name = reader.ReadVarString();
             var returnType = (VMType)reader.ReadByte();
+            var offset = reader.ReadInt32();
             var len = reader.ReadByte();
             var parameters = new ContractParameter[len];
             for (int i = 0; i < len; i++)
@@ -197,13 +200,14 @@ namespace Phantasma.Domain
                 parameters[i] = new ContractParameter(pName, pVMType);
             }
 
-            return new ContractMethod(name, returnType, parameters);
+            return new ContractMethod(name, returnType, offset, parameters);
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.WriteVarString(name);
             writer.Write((byte)returnType);
+            writer.Write((int)offset);
             writer.Write((byte)parameters.Length);
             foreach (var entry in parameters)
             {
