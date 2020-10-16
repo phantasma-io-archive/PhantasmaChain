@@ -19,6 +19,11 @@ namespace Phantasma.VM
             StartOffset = startOffset;
             EndOffset = endOffset;
         }
+
+        public override string ToString()
+        {
+            return $"Line {SourceLine} => {StartOffset} : {EndOffset}";
+        }
     }
 
     public class DebugInfo
@@ -30,6 +35,34 @@ namespace Phantasma.VM
         {
             FileName = fileName;
             Ranges = ranges.ToArray();
+        }
+
+        // TODO optimize this with a binary search
+        public int FindLine(int offset)
+        {
+            foreach (var range in Ranges)
+            {
+                if (offset >= range.StartOffset && offset <= range.EndOffset)
+                {
+                    return (int)range.SourceLine;
+                }
+            }
+
+            return -1;
+        }
+
+        // TODO optimize this with a binary search
+        public int FindOffset(int line)
+        {
+            foreach (var range in Ranges)
+            {
+                if (range.SourceLine == line)
+                {
+                    return (int)range.StartOffset;
+                }
+            }
+
+            return -1;
         }
 
         public void Serialize(BinaryWriter writer)

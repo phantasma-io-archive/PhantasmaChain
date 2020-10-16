@@ -79,9 +79,12 @@ namespace Phantasma.Blockchain
                 
                 if (custom != null)
                 {
-                    stack.Push(stackObj);
+                    if (method.offset < 0)
+                    {
+                        throw new VMException(frame.VM, $"VM context call failed: abi contains invalid offset for {method.name}");
+                    }
 
-                    var context = new ScriptContext(Contract.Name, custom.Script);
+                    var context = new ScriptContext(Contract.Name, custom.Script, (uint)method.offset);
                     result = context.Execute(frame, stack);
                 }
                 else

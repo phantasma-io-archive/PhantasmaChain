@@ -22,12 +22,12 @@ namespace Phantasma.VM
 
         private Opcode opcode;
 
-        public ScriptContext(string name, byte[] script)
+        public ScriptContext(string name, byte[] script, uint offset = 0)
         {
             this._name = name;
             this._state = ExecutionState.Running;
             this.Script = script;
-            this.InstructionPointer = 0;
+            this.InstructionPointer = offset;
             this.opcode = Opcode.NOP;
         }
 

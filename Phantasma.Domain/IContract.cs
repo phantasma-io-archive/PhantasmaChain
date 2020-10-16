@@ -171,7 +171,7 @@ namespace Phantasma.Domain
         public readonly string name;
         public readonly VMType returnType;
         public readonly ContractParameter[] parameters;
-        public readonly int offset;
+        public int offset;
 
         public ContractMethod(string name, VMType returnType, int offset, params ContractParameter[] parameters)
         {

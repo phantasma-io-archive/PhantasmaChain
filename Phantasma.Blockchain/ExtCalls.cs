@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using Phantasma.Core.Utils;
 using Phantasma.Storage.Context;
+using System.Collections.Generic;
 
 namespace Phantasma.Blockchain
 {
@@ -878,8 +879,16 @@ namespace Phantasma.Blockchain
 
                 var abiBytes = PopBytes(Runtime, "contractABI");
                 abi = ContractInterface.Unserialize(abiBytes);
-            }
 
+                var offsets = new HashSet<int>();
+                foreach (var method in abi.Methods)
+                {
+                    Runtime.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
+                    Runtime.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
+                    offsets.Add(method.offset);
+                }
+            }
+           
             var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractName, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
