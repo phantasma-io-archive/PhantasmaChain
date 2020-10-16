@@ -18,6 +18,8 @@ namespace Phantasma.VM.Utils
         private Dictionary<int, string> _jumpLocations = new Dictionary<int, string>();
         private Dictionary<string, int> _labelLocations = new Dictionary<string, int>();
 
+        public int CurrentSize => (int)writer.BaseStream.Position;
+
         public ScriptBuilder()
         {
             this.stream = new MemoryStream();
