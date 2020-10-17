@@ -322,18 +322,9 @@ namespace Phantasma.Blockchain
                         lock (_pending)
                         {
                             _pending.Remove(e.Hash);
+                            Mempool.RegisterRejectionReason(e.Hash, e.Message);
                         }
 
-                        var errorMessage = "MintBlock() exception caught:\n" + e.Message;
-                        var inner = e.InnerException;
-                        while (inner != null)
-                        {
-                            errorMessage += "\n---> " + inner.Message + "\n\n" + inner.StackTrace;
-                            inner = inner.InnerException;
-                        }
-                        errorMessage += "\n\n" + e.StackTrace;
-
-                        Mempool.RegisterRejectionReason(e.Hash, errorMessage);
                         Mempool.OnTransactionFailed?.Invoke(e.Hash);
                         continue;
                     }
