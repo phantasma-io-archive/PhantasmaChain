@@ -50,7 +50,6 @@ namespace Phantasma.Blockchain
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
-            vm.RegisterMethod("Data.Field", Data_Field);
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
             vm.RegisterMethod("Data.Delete", Data_Delete);
@@ -333,24 +332,13 @@ namespace Phantasma.Blockchain
         }
 
         #region DATA
-        // returns the key for a field from a contract
-        private static ExecutionState Data_Field(RuntimeVM runtime)
-        {
-            var contract = PopString(runtime, "contract");
-            var field = PopString(runtime, "contract");
-            var key_bytes = SmartContract.GetKeyForField(contract, field, false);
-
-            var val = new VMObject();
-            val.SetValue(key_bytes, VMType.Bytes);
-            runtime.Stack.Push(val);
-
-            return ExecutionState.Running;
-        }
-
         private static ExecutionState Data_Get(RuntimeVM vm)
         {
-            var key = PopBytes(vm, "key");
-            vm.Expect(key.Length > 0, "invalid key");
+            ExpectStackSize(vm, 4);
+
+            var contractName = PopString(vm, "contract");
+            var field = PopString(vm, "field");
+            var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var type_obj = vm.Stack.Pop();
             var vmType = type_obj.AsEnum<VMType>();
@@ -367,8 +355,11 @@ namespace Phantasma.Blockchain
         {
             ExpectStackSize(vm, 2);
 
-            var key = PopBytes(vm, "key");
-            vm.Expect(key.Length > 0, "invalid key");
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = PopString(vm, "field");
+            var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var obj = vm.Stack.Pop();
             var val = obj.AsByteArray();
@@ -388,8 +379,13 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Data_Delete(RuntimeVM vm)
         {
-            var key = PopBytes(vm, "key");
-            vm.Expect(key.Length > 0, "invalid key");
+            ExpectStackSize(vm, 1);
+
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = PopString(vm, "field");
+            var key = SmartContract.GetKeyForField(contractName, field, false);
 
             vm.Expect(key.Length > 0, "invalid key");
 
@@ -405,10 +401,11 @@ namespace Phantasma.Blockchain
         #region MAP
         private static ExecutionState Map_Get(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 3);
+            ExpectStackSize(vm, 4);
 
-            var mapKey = PopBytes(vm, "mapKey");
-            vm.Expect(mapKey.Length > 0, "invalid map key");
+            var contractName = PopString(vm, "contract");
+            var field = PopString(vm, "field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var entry_obj = vm.Stack.Pop();
             var entryKey = entry_obj.AsByteArray();
@@ -440,8 +437,11 @@ namespace Phantasma.Blockchain
         {
             ExpectStackSize(vm, 3);
 
-            var mapKey = PopBytes(vm, "mapKey");
-            vm.Expect(mapKey.Length > 0, "invalid map key");
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = PopString(vm, "field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var entry_obj = vm.Stack.Pop();
             var entryKey = entry_obj.AsByteArray();
@@ -462,8 +462,11 @@ namespace Phantasma.Blockchain
         {
             ExpectStackSize(vm, 2);
 
-            var mapKey = PopBytes(vm, "mapKey");
-            vm.Expect(mapKey.Length > 0, "invalid map key");
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = PopString(vm, "field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var entry_obj = vm.Stack.Pop();
             var entryKey = entry_obj.AsByteArray();
@@ -480,8 +483,11 @@ namespace Phantasma.Blockchain
         {
             ExpectStackSize(vm, 1);
 
-            var mapKey = PopBytes(vm, "mapKey");
-            vm.Expect(mapKey.Length > 0, "invalid map key");
+            // for security reasons we don't accept the caller to specify a contract name
+            var contractName = vm.CurrentContext.Name;
+
+            var field = PopString(vm, "field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var map = new StorageMap(mapKey, vm.Storage);
             map.Clear();
@@ -491,10 +497,11 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Count(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 1);
+            ExpectStackSize(vm, 2);
 
-            var mapKey = PopBytes(vm, "mapKey");
-            vm.Expect(mapKey.Length > 0, "invalid map key");
+            var contractName = PopString(vm, "contract");
+            var field = PopString(vm, "field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var map = new StorageMap(mapKey, vm.Storage);
 
@@ -897,7 +904,7 @@ namespace Phantasma.Blockchain
 
             if (constructor != null)
             {
-                Runtime.CallContext(contractName, constructorName, owner);
+                Runtime.CallContext(0, contractName, constructorName, owner);
             }
 
             Runtime.Notify(EventKind.ContractDeploy, owner, contractName);
