@@ -62,7 +62,7 @@ namespace Phantasma.Blockchain
         {
             var contractList = new StorageList(GetContractListKey(), storage);
             var addresses = contractList.All<Address>();
-            return addresses.Select(x => Nexus.GetNativeContractByAddress(x)).ToArray();
+            return addresses.Select(x => this.GetContractByAddress(storage, x)).ToArray();
         }
 
         public override string ToString()
