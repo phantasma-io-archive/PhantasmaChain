@@ -560,7 +560,7 @@ namespace Phantasma.API
         private ChainResult FillChain(Chain chain)
         {
             Throw.IfNull(chain, nameof(chain));
-
+            
             var parentName = Nexus.GetParentChainByName(chain.Name);
             var orgName = Nexus.GetChainOrganization(chain.Name);
 
@@ -597,12 +597,17 @@ namespace Phantasma.API
             return null;
         }
 
-        private ABIContractResult FillABI(string name, ContractInterface abi)
+        private ContractResult FillContract(string name, SmartContract contract)
         {
-            return new ABIContractResult
+            var customContract = contract as CustomContract;
+            var scriptBytes = customContract != null ? customContract.Script : new byte[0];
+
+            return new ContractResult
             {
                 name = name,
-                methods = abi.Methods.Select(x => new ABIMethodResult()
+                script = Base16.Encode(scriptBytes),
+                address = contract.Address.Text,
+                methods = contract.ABI.Methods.Select(x => new ABIMethodResult()
                 {
                     name = x.name,
                     returnType = x.returnType.ToString(),
@@ -1584,8 +1589,8 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(ABIContractResult), "Returns the ABI interface of specific contract.", false, 300)]
-        public IAPIResult GetABI([APIParameter("Chain address or name where the contract is deployed", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
+        [APIInfo(typeof(ContractResult), "Returns the ABI interface of specific contract.", false, 300)]
+        public IAPIResult GetContract([APIParameter("Chain address or name where the contract is deployed", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
         {
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
@@ -1604,7 +1609,7 @@ namespace Phantasma.API
             }
 
             var contract = chain.GetContractByName(chain.Storage, contractName);
-            return FillABI(contractName, contract.ABI);
+            return FillContract(contractName, contract);
         }
 
         [APIInfo(typeof(PeerResult[]), "Returns list of known peers.", false, 30)]

@@ -389,10 +389,16 @@ namespace Phantasma.API
         public ABIParameterResult[] parameters;
     }
 
-    public struct ABIContractResult : IAPIResult
+    public struct ContractResult : IAPIResult
     {
         [APIDescription("Name of contract")]
         public string name;
+
+        [APIDescription("Address of contract")]
+        public string address;
+
+        [APIDescription("Script bytes, in hex format")]
+        public string script;
 
         [APIDescription("List of methods")]
         public ABIMethodResult[] methods;
