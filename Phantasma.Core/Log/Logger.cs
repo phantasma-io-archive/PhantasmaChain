@@ -61,17 +61,12 @@ namespace Phantasma.Core.Log
 
         public void Success(string msg)
         {
-            if (this.Level < LogEntryKind.Sucess)
+            if (this.Level < LogEntryKind.Success)
             {
                 return;
             }
 
-            Write(LogEntryKind.Sucess, msg);
-        }
-
-        public void Shell(string msg)
-        {
-            Write(LogEntryKind.Shell, msg);
+            Write(LogEntryKind.Success, msg);
         }
 
         public void Exception(Exception ex)

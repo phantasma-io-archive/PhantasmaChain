@@ -7,10 +7,9 @@
     {
         None,
         Message,
-        Sucess,
+        Success,
         Warning,
         Error,
         Debug,
-        Shell,
     }
 }
