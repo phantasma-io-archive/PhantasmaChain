@@ -201,7 +201,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public VMObject CallContext(string contextName, string methodName, params object[] args)
+        public VMObject CallContext(uint jumpOffset, string contextName, string methodName, params object[] args)
         {
             var previousContext = CurrentContext;
             var previousCaller = this.EntryAddress;
@@ -217,18 +217,14 @@ namespace Phantasma.Blockchain
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
-            BigInteger savedGas = this.UsedGas;
-
-            this.EntryAddress = CurrentContext.Address;
-            CurrentContext = context;
+            this.PushFrame(context, jumpOffset, VirtualMachine.DefaultRegisterCount);
 
             _activeAddresses.Push(context.Address);
 
             var temp = context.Execute(this.CurrentFrame, this.Stack);
             Expect(temp == ExecutionState.Halt, "expected call success");
 
-            CurrentContext = previousContext;
-            this.EntryAddress = previousCaller;
+            this.PopFrame();
 
             var temp2 = _activeAddresses.Pop();
             if (temp2 != context.Address)
@@ -496,7 +492,7 @@ namespace Phantasma.Blockchain
                     var triggerName = trigger.ToString();
                     if (contract.HasInternalMethod(triggerName))
                     {
-                        CallContext(contract.Name, triggerName, args);
+                        CallContext(0, contract.Name, triggerName, args);
                     }
                 }
 
@@ -1188,7 +1184,7 @@ namespace Phantasma.Blockchain
             if (destination.IsInterop)
             {
                 Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
-                Runtime.CallContext("interop", "WithdrawTokens", source, destination, symbol, amount);
+                Runtime.CallContext(NativeContractKind.Interop, "WithdrawTokens", source, destination, symbol, amount);
                 return;
             }
 

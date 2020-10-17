@@ -79,7 +79,7 @@ namespace Phantasma.Domain
         void Throw(string description);
         void Expect(bool condition, string description);
         void Notify(EventKind kind, Address address, byte[] data);
-        VMObject CallContext(string contextName, string methodName, params object[] args);
+        VMObject CallContext(uint jumpOffset, string contextName, string methodName, params object[] args);
 
         Address LookUpName(string name);
         bool HasAddressScript(Address from);

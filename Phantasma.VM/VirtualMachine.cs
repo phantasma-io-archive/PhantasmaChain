@@ -107,7 +107,7 @@ namespace Phantasma.VM
         public Address EntryAddress { get; protected set; }
 
         public readonly ExecutionContext entryContext;
-        public ExecutionContext CurrentContext { get; protected set; }
+        public ExecutionContext CurrentContext { get; private set; }
 
         protected Stack<Address> _activeAddresses = new Stack<Address>();
         public IEnumerable<Address> ActiveAddresses => _activeAddresses;
@@ -146,14 +146,14 @@ namespace Phantasma.VM
         #region FRAMES
 
         // instructionPointer is the location to jump after the frame is popped!
-        internal void PushFrame(ExecutionContext context, uint instructionPointer,  int registerCount)
+        public void PushFrame(ExecutionContext context, uint instructionPointer,  int registerCount)
         {
             var frame = new ExecutionFrame(this, instructionPointer, context, registerCount);
             frames.Push(frame);
             this.CurrentFrame = frame;
         }
 
-        internal uint PopFrame()
+        public uint PopFrame()
         {
             Throw.If(frames.Count < 2, "Not enough frames available");
 
@@ -161,7 +161,7 @@ namespace Phantasma.VM
             var instructionPointer = CurrentFrame.Offset;
 
             this.CurrentFrame = frames.Peek();
-            this.CurrentContext = CurrentFrame.Context;
+            SetCurrentContext(CurrentFrame.Context);
 
             return instructionPointer;
         }
@@ -176,6 +176,11 @@ namespace Phantasma.VM
             frames.Push(temp);
 
             return result;
+        }
+
+        protected void SetCurrentContext(ExecutionContext context)
+        {
+            this.CurrentContext = context;
         }
 
         internal ExecutionContext FindContext(string contextName)
@@ -205,7 +210,7 @@ namespace Phantasma.VM
         {
             using (var m = new ProfileMarker("SwitchContext"))
             {
-                this.CurrentContext = context;
+                SetCurrentContext(context);
                 PushFrame(context, instructionPointer, DefaultRegisterCount);
 
                 _activeAddresses.Push(context.Address);

@@ -378,7 +378,7 @@ namespace Phantasma.Blockchain.Contracts
                 var name = Runtime.GetAddressName(from);
                 if (name != ValidationUtils.ANONYMOUS)
                 {
-                    Runtime.CallContext("account", "UnregisterName", from);
+                    Runtime.CallContext(NativeContractKind.Account, "UnregisterName", from);
                 }
             }
             else
@@ -663,7 +663,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public BigInteger GetStorageStake(Address address)
         {
-            var usedStorageSize = Runtime.CallContext("storage", "GetUsedSpace", address).AsNumber();
+            var usedStorageSize = Runtime.CallContext( NativeContractKind.Storage, "GetUsedSpace", address).AsNumber();
             var usedStake = usedStorageSize * UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
 
             var kilobytesPerStake = (int)Runtime.GetGovernanceValue(StorageContract.KilobytesPerStakeTag);

@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(HasValue(name), "invalid value name in SetValue");
 
             var pollName = ConsensusContract.SystemPoll + name;
-            var hasConsensus = Runtime.CallContext("consensus", "HasConsensus", pollName, value).AsBool();
+            var hasConsensus = Runtime.CallContext(NativeContractKind.Consensus, "HasConsensus", pollName, value).AsBool();
             Runtime.Expect(hasConsensus, "consensus not reached");
 
             var previous = _valueMap.Get<string, BigInteger>(name);

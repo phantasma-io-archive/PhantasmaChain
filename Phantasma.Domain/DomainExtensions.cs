@@ -80,7 +80,7 @@ namespace Phantasma.Domain
 
         public static VMObject CallContext(this IRuntime runtime, NativeContractKind nativeContract, string methodName, params object[] args)
         {
-            return runtime.CallContext(nativeContract.GetName(), methodName, args);
+            return runtime.CallContext(0, nativeContract.GetName(), methodName, args);
         }
 
         public static IContract GetContract(this IRuntime runtime, NativeContractKind nativeContract)
