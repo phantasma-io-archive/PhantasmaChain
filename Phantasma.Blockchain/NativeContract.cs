@@ -131,10 +131,8 @@ namespace Phantasma.Blockchain
         {
             var type = this.GetType();
 
-            var srcMethods = type.GetMethods(BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance);
+            var srcMethods = type.GetMethods(BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             var methods = new List<ContractMethod>();
-
-            var ignore = new HashSet<string>(new string[] { "ToString", "GetType", "Equals", "GetHashCode", "CallMethod", "SetTransaction" });
 
             foreach (var srcMethod in srcMethods)
             {
@@ -142,12 +140,13 @@ namespace Phantasma.Blockchain
                 var srcParams = srcMethod.GetParameters();
 
                 var methodName = srcMethod.Name;
+
                 if (methodName.StartsWith("get_"))
                 {
                     methodName = methodName.Substring(4);
                 }
 
-                if (ignore.Contains(methodName))
+                if (methodName == "Kind")
                 {
                     continue;
                 }
