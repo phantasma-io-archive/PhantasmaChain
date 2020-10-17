@@ -73,7 +73,7 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
-        public BigInteger GetRateV1(string fromSymbol, string toSymbol, BigInteger amount)
+        private BigInteger GetRateV1(string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
@@ -105,7 +105,7 @@ namespace Phantasma.Blockchain.Contracts
             return rate;
         }
 
-        public BigInteger GetRateV2(string fromSymbol, string toSymbol, BigInteger amount)
+        private BigInteger GetRateV2(string fromSymbol, string toSymbol, BigInteger amount)
         {
             Runtime.Expect(fromSymbol != toSymbol, "invalid pair");
 
@@ -214,7 +214,7 @@ namespace Phantasma.Blockchain.Contracts
 
         }
 
-        public void SwapFeeV2(Address from, string fromSymbol, BigInteger feeAmount)
+        private void SwapFeeV2(Address from, string fromSymbol, BigInteger feeAmount)
         {
             var feeSymbol = DomainSettings.FuelTokenSymbol;
 
@@ -262,7 +262,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(finalFeeBalance >= feeAmount, $"something went wrong in swapfee finalFeeBalance: {finalFeeBalance} feeAmount: {feeAmount}");
         }
 
-        public void SwapFeeV1(Address from, string fromSymbol, BigInteger feeAmount)
+        private void SwapFeeV1(Address from, string fromSymbol, BigInteger feeAmount)
         {
             var toSymbol = DomainSettings.FuelTokenSymbol;
             var amount = GetRate(toSymbol, fromSymbol, feeAmount);
