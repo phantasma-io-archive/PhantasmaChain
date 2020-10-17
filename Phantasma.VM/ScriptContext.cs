@@ -522,23 +522,69 @@ namespace Phantasma.VM
                             Expect(srcB < frame.Registers.Length, "invalid srcB register");
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
-                            var a = frame.Registers[srcA].AsBool();
-                            var b = frame.Registers[srcB].AsBool();
+                            var valA = frame.Registers[srcA];
+                            var valB = frame.Registers[srcB];
 
-                            bool result;
-                            switch (opcode)
+                            switch (valA.Type)
                             {
-                                case Opcode.AND: result = (a && b); break;
-                                case Opcode.OR: result = (a || b); break;
-                                case Opcode.XOR: result = (a ^ b); break;
-                                default:
+                                case VMType.Bool:
                                     {
-                                        SetState(ExecutionState.Fault);
-                                        return;
+                                        Expect(valB.Type == VMType.Bool, $"expected {valA.Type} for logical op");
+
+                                        var a = valA.AsBool();
+                                        var b = valB.AsBool();
+
+                                        bool result;
+                                        switch (opcode)
+                                        {
+                                            case Opcode.AND: result = (a && b); break;
+                                            case Opcode.OR: result = (a || b); break;
+                                            case Opcode.XOR: result = (a ^ b); break;
+                                            default:
+                                                {
+                                                    SetState(ExecutionState.Fault);
+                                                    return;
+                                                }
+                                        }
+
+                                        frame.Registers[dst].SetValue(result);
+                                        break;
                                     }
+
+                                case VMType.Number:
+                                    {
+                                        Expect(valB.Type == VMType.Number, $"expected {valA.Type} for logical op");
+
+                                        var numA = valA.AsNumber();
+                                        var numB = valB.AsNumber();
+
+                                        Expect(numA.GetBitLength() <= 64, "too many bits");
+                                        Expect(numB.GetBitLength() <= 64, "too many bits");
+
+                                        var a = (long)numA;
+                                        var b = (long)numB;
+
+                                        BigInteger result;
+                                        switch (opcode)
+                                        {
+                                            case Opcode.AND: result = (a & b); break;
+                                            case Opcode.OR: result = (a | b); break;
+                                            case Opcode.XOR: result = (a ^ b); break;
+                                            default:
+                                                {
+                                                    SetState(ExecutionState.Fault);
+                                                    return;
+                                                }
+                                        }
+
+                                        frame.Registers[dst].SetValue(result);
+                                        break;
+                                    }
+
+                                default:
+                                    throw new VMException(frame.VM, "logical op unsupported for type " + valA.Type);
                             }
 
-                            frame.Registers[dst].SetValue(result);
                             break;
                         }
 
