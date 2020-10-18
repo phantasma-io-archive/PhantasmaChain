@@ -19,10 +19,14 @@ namespace Phantasma.Blockchain.Contracts
         public override NativeContractKind Kind => NativeContractKind.Storage;
 
         public const string KilobytesPerStakeTag = "storage.stake.kb";
+        public const string FreeStoragePerContractTag = "storage.contract.kb";
 
         public const int DefaultForeignSpacedPercent = 20;
 
+        public const int MaxKeySize = 256;
+
         internal StorageMap _storageMap; //<string, Collection<StorageEntry>>
+        internal StorageMap _dataQuotas; //<Address, BigInteger>
 
         public StorageContract() : base()
         {
@@ -31,10 +35,10 @@ namespace Phantasma.Blockchain.Contracts
         public BigInteger CalculateStorageSizeForStake(BigInteger stakeAmount)
         {
             var kilobytesPerStake = (int)Runtime.GetGovernanceValue(StorageContract.KilobytesPerStakeTag);
-            var availableSize = stakeAmount * kilobytesPerStake * 1024;
-            availableSize /= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
+            var totalSize = stakeAmount * kilobytesPerStake * 1024;
+            totalSize /= UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals);
 
-            return availableSize;
+            return totalSize;
         }
 
         // this is an helper method to upload smaller files...
@@ -133,7 +137,25 @@ namespace Phantasma.Blockchain.Contracts
                 usedSize += Hash.Length;
             }
 
+            var usedQuota = _dataQuotas.Get<Address, BigInteger>(from);
+            usedSize += usedQuota;
+
             return usedSize;
+        }
+
+        public BigInteger GetAvailableSpace(Address from)
+        {
+            var stakedAmount = Runtime.GetStake(from);
+            var totalSize = CalculateStorageSizeForStake(stakedAmount);
+
+            if (from.IsSystem)
+            {
+                totalSize += Runtime.GetGovernanceValue(FreeStoragePerContractTag);
+            }
+
+            var usedSize = GetUsedSpace(from);
+            Runtime.Expect(usedSize <= totalSize, "error in storage size calculation");
+            return totalSize - usedSize;
         }
 
         public StorageEntry[] GetFiles(Address from)
@@ -142,6 +164,52 @@ namespace Phantasma.Blockchain.Contracts
             var list = _storageMap.Get<Address, StorageList>(from);
             return list.All<StorageEntry>();
         }
+
+        private void ValidateKey(byte[] key)
+        {
+            Runtime.Expect(key.Length > 0 && key.Length <= MaxKeySize, "invalid key");
+
+            var firstChar = (char)key[0];
+            Runtime.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+        }
+
+        public void WriteData(Address target, byte[] key, byte[] value)
+        {
+            ValidateKey(key);
+
+            var writeSize = value.Length + key.Length;
+
+            var availableSize = GetAvailableSpace(target);
+            Runtime.Expect(availableSize >= writeSize, $"not enough storage space available");
+
+            Runtime.Storage.Put(key, value);
+
+            var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
+            usedQuota += writeSize;
+            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+            var temp = Runtime.Storage.Get(key);
+            Runtime.Expect(temp.Length == value.Length, "storage write corruption");
+        }
+
+        public void DeleteData(Address target, byte[] key)
+        {
+            ValidateKey(key);
+
+            Runtime.Expect(Runtime.Storage.Has(key), "key does not exist");
+
+            var value = Runtime.Storage.Get(key);
+            var deleteSize = value.Length + key.Length;
+
+            Runtime.Storage.Delete(key);
+
+            var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
+            usedQuota -= deleteSize;
+            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+            Runtime.Expect(usedQuota >= 0, "storage delete corruption");
+        }
+
         public static BigInteger CalculateRequiredSize(string fileName, BigInteger contentSize) => contentSize + Hash.Length + fileName.Length;
     }
 }

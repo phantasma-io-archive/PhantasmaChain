@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.IO;
-using Phantasma.Blockchain.Contracts;
+using System.Diagnostics;
+using System.Linq;
 using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;
@@ -8,11 +9,9 @@ using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.Domain;
 using Phantasma.Storage;
-using System.Diagnostics;
-using System.Linq;
-using Phantasma.Core.Utils;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -337,6 +336,8 @@ namespace Phantasma.Blockchain
             ExpectStackSize(vm, 4);
 
             var contractName = PopString(vm, "contract");
+            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
+
             var field = PopString(vm, "field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
@@ -357,22 +358,16 @@ namespace Phantasma.Blockchain
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
+            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = PopString(vm, "field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var obj = vm.Stack.Pop();
-            var val = obj.AsByteArray();
+            var valBytes = obj.AsByteArray();
 
-            vm.Expect(key.Length > 0, "invalid key");
-
-            var firstChar = (char)key[0];
-            vm.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
-
-            vm.Storage.Put(key, val);
-
-            var temp = vm.Storage.Get(key);
-            vm.Expect(temp.Length == val.Length, "storage write corruption");
+            var contractAddress = SmartContract.GetAddressForName(contractName);
+            vm.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, key, valBytes);
 
             return ExecutionState.Running;
         }
@@ -387,12 +382,8 @@ namespace Phantasma.Blockchain
             var field = PopString(vm, "field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
-            vm.Expect(key.Length > 0, "invalid key");
-
-            var firstChar = (char)key[0];
-            vm.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
-
-            vm.Storage.Delete(key);
+            var contractAddress = SmartContract.GetAddressForName(contractName);
+            vm.CallContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, key);
 
             return ExecutionState.Running;
         }

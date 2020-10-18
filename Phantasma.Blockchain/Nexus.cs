@@ -1177,6 +1177,15 @@ namespace Phantasma.Blockchain
                              new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 10000},
                          })
                      },
+                     
+                     {
+                         StorageContract.FreeStoragePerContractTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             1024, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 0},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 1024 * 512},
+                         })
+                     },
 
                      {
                          Nexus.FuelPerContractDeployTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
