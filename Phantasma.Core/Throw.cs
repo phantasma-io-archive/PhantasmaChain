@@ -212,12 +212,22 @@ namespace Phantasma.Core
         public static Exception ExpandInnerExceptions(this Exception ex)
         {
             var safeguard = 0;
+
             while (ex is TargetInvocationException)
             {
                 ex = ((TargetInvocationException)ex).InnerException;
                 safeguard++;
 
-                if (safeguard == 100)
+                if (safeguard >= 100)
+                    break;
+            }
+
+            while (ex.InnerException != null)
+            {
+                safeguard++;
+                ex = ex.InnerException;
+
+                if (safeguard >= 100)
                     break;
             }
 
