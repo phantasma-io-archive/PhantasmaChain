@@ -195,7 +195,7 @@ namespace Phantasma.Tests
         {
             var test = CreateAPI();
 
-            var result = (ABIContractResult)test.api.GetABI(test.nexus.RootChain.Name, "exchange");
+            var result = (ContractResult)test.api.GetContract(test.nexus.RootChain.Name, "exchange");
 
             var methodCount = typeof(ExchangeContract).GetMethods();
 
@@ -220,7 +220,7 @@ namespace Phantasma.Tests
         {
             var test = CreateAPI();
 
-            var result = (ABIContractResult)test.api.GetABI(test.nexus.RootChain.Name, "exchange");
+            var result = (ContractResult)test.api.GetContract(test.nexus.RootChain.Name, "exchange");
 
             var methodCount = typeof(ExchangeContract).GetMethods();
 

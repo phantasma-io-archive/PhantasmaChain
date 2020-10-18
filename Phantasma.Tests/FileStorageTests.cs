@@ -87,8 +87,8 @@ namespace Phantasma.Tests
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
             Assert.IsTrue(usedSpace == contentSize + headerSize);
 
-            Assert.IsTrue(simulator.Nexus.ArchiveExists(contentMerkle.Root));
-            var archive = simulator.Nexus.GetArchive(contentMerkle.Root);
+            Assert.IsTrue(simulator.Nexus.ArchiveExists(simulator.Nexus.RootStorage, contentMerkle.Root));
+            var archive = simulator.Nexus.GetArchive(simulator.Nexus.RootStorage, contentMerkle.Root);
             for (int i=0; i<archive.BlockCount; i++)
             {
                 int ofs = (int)(i * Archive.BlockSize);
@@ -1009,9 +1009,7 @@ namespace Phantasma.Tests
             var evt = evts.Where(x => x.Kind == EventKind.FileCreate).FirstOrDefault();
             var entry = evt.GetContent<StorageEntry>();
 
-            Assert.IsTrue(entry.Creator == testUser.Address);
-
-            var archive = nexus.GetArchive(entry.Hash);
+            var archive = nexus.GetArchive(nexus.RootStorage, entry.Hash);
             Assert.IsTrue(archive != null);
 
             var readBytes = nexus.ReadArchiveBlock(archive, 0);
