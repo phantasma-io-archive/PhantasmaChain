@@ -245,39 +245,45 @@ namespace Phantasma.Cryptography
 
         public static Address FromText(string text)
         {
-            if (_textToAddressCache.ContainsKey(text))
+            Address addr;
+
+            lock (_textToAddressCache)
             {
-                return _textToAddressCache[text];
+                if (_textToAddressCache.ContainsKey(text))
+                {
+                    return _textToAddressCache[text];
+                }
+
+                var prefix = text[0];
+
+                text = text.Substring(1);
+                var bytes = Base58.Decode(text);
+
+                Throw.If(bytes.Length != LengthInBytes, "Invalid address data");
+
+                addr = new Address(bytes);
+
+                switch (prefix)
+                {
+                    case 'P':
+                        Throw.If(addr.Kind != AddressKind.User, "address should be user");
+                        break;
+
+                    case 'S':
+                        Throw.If(addr.Kind != AddressKind.System, "address should be system");
+                        break;
+
+                    case 'X':
+                        Throw.If(addr.Kind < AddressKind.Interop, "address should be interop");
+                        break;
+
+                    default:
+                        throw new Exception("invalid address prefix: " + prefix);
+                }
+
+                _textToAddressCache[text] = addr;
             }
 
-            var prefix = text[0];
-
-            text = text.Substring(1);
-            var bytes = Base58.Decode(text);
-
-            Throw.If(bytes.Length != LengthInBytes, "Invalid address data");
-
-            var addr = new Address(bytes);
-
-            switch (prefix)
-            {
-                case 'P':
-                    Throw.If(addr.Kind != AddressKind.User, "address should be user");
-                    break;
-
-                case 'S':
-                    Throw.If(addr.Kind != AddressKind.System, "address should be system");
-                    break;
-
-                case 'X':
-                    Throw.If(addr.Kind < AddressKind.Interop, "address should be interop");
-                    break;
-
-                default:
-                    throw new Exception("invalid address prefix: " + prefix);
-            }
-
-            _textToAddressCache[text] = addr;
             return addr;
         }
 
