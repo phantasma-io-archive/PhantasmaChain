@@ -44,6 +44,7 @@ namespace Phantasma.Domain
         Hash GetTokenPlatformHash(string symbol, IPlatform platform);
         IFeed GetFeed(string name);
         IContract GetContract(string name);
+        Address GetContractOwner(Address address);
 
         IPlatform GetPlatformByName(string name);
         IPlatform GetPlatformByIndex(int index);

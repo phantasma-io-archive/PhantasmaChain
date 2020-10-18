@@ -1508,6 +1508,11 @@ namespace Phantasma.Blockchain
             return this.Time;
         }
 
+        public Address GetContractOwner(Address address)
+        {
+            return this.Chain.GetContractOwner(this.Storage, address);
+        }
+
         public bool HasGenesis => Nexus.HasGenesis;
         public string NexusName => Nexus.Name;
         public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);

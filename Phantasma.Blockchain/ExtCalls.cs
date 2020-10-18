@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
@@ -903,7 +903,7 @@ namespace Phantasma.Blockchain
                 Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
             }
 
-            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractName, contractAddress, script, abi);
+            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, from, contractName, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
             var constructorName = "Initialize";

@@ -178,10 +178,7 @@ namespace Phantasma.Blockchain
                 }
                 catch (Exception e)
                 {
-                    if (e.InnerException != null)
-                    {
-                        e = e.InnerException;
-                    }
+                    e = e.ExpandInnerExceptions();
 
                     if (tx == null)
                     {
@@ -570,7 +567,7 @@ namespace Phantasma.Blockchain
             return storage.Has(key);
         }
 
-        public bool DeployContractScript(StorageContext storage, string name, Address contractAddress, byte[] script, ContractInterface abi)
+        public bool DeployContractScript(StorageContext storage, Address contractOwner, string name, Address contractAddress, byte[] script, ContractInterface abi)
         {
             var scriptKey = GetContractKey(contractAddress, "script");
             if (storage.Has(scriptKey))
@@ -579,6 +576,10 @@ namespace Phantasma.Blockchain
             }
 
             storage.Put(scriptKey, script);
+
+            var ownerBytes = contractOwner.ToByteArray();
+            var ownerKey = GetContractKey(contractAddress, "owner");
+            storage.Put(ownerKey, ownerBytes);
 
             var abiBytes = abi.ToByteArray();
             var abiKey = GetContractKey(contractAddress, "abi");
@@ -630,6 +631,21 @@ namespace Phantasma.Blockchain
             var abi = ContractInterface.Unserialize(abiBytes);
 
             return new CustomContract(name, script, abi);
+        }
+
+        public Address GetContractOwner(StorageContext storage, Address contractAddress)
+        {
+            if (contractAddress.IsSystem)
+            {
+                var ownerKey = GetContractKey(contractAddress, "owner");
+                var bytes = storage.Get(ownerKey);
+                if (bytes != null)
+                {
+                    return Address.FromBytes(bytes);
+                }
+            }
+
+            return Address.Null;
         }
 
         #endregion
