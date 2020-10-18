@@ -41,6 +41,7 @@ namespace Phantasma.Blockchain
         public const string RankingContractName = "ranking";
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
+        public const string FuelPerContractDeployTag = "nexus.contract.cost";
 
         public readonly string Name;
 
@@ -1172,6 +1173,16 @@ namespace Phantasma.Blockchain
                          {
                              new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 1},
                              new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 10000},
+                         })
+                     },
+
+                     {
+
+                         Nexus.FuelPerContractDeployTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             UnitConversion.ToBigInteger(10, DomainSettings.FiatTokenDecimals), new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 0},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = UnitConversion.ToBigInteger(1000, DomainSettings.FiatTokenDecimals)},
                          })
                      },
                  }),

@@ -846,16 +846,16 @@ namespace Phantasma.Blockchain
 
             ExpectStackSize(Runtime, 1);
 
-            var owner = PopAddress(Runtime);
-            Runtime.Expect(owner.IsUser, "address must be user");
+            var from = PopAddress(Runtime);
+            Runtime.Expect(from.IsUser, "address must be user");
 
             if (Runtime.Nexus.HasGenesis)
             {
                 //Runtime.Expect(org != DomainSettings.ValidatorsOrganizationName, "cannot deploy contract via this organization");
-                Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+                Runtime.Expect(Runtime.IsStakeMaster(from), "needs to be master");
             }
 
-            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
             var contractName = PopString(Runtime, "contractName");
 
@@ -872,7 +872,7 @@ namespace Phantasma.Blockchain
             {
                 if (contractName == "validator" && Runtime.GenesisAddress == Address.Null)
                 {
-                    Runtime.Nexus.Initialize(owner);
+                    Runtime.Nexus.Initialize(from);
                 }
 
                 script = new byte[] { (byte)Opcode.RET };
@@ -894,8 +894,15 @@ namespace Phantasma.Blockchain
                     Runtime.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
                     offsets.Add(method.offset);
                 }
+
+                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerContractDeployTag);
+                // governance value is in usd fiat, here convert from fiat to fuel amount
+                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
+
+                // burn the "cost" tokens
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
             }
-           
+
             var success = Runtime.Chain.DeployContractScript(Runtime.Storage, contractName, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
@@ -904,10 +911,10 @@ namespace Phantasma.Blockchain
 
             if (constructor != null)
             {
-                Runtime.CallContext(0, contractName, constructorName, owner);
+                Runtime.CallContext(0, contractName, constructorName, from);
             }
 
-            Runtime.Notify(EventKind.ContractDeploy, owner, contractName);
+            Runtime.Notify(EventKind.ContractDeploy, from, contractName);
 
             return ExecutionState.Running;
         }
