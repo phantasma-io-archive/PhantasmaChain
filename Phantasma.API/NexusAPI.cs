@@ -1535,7 +1535,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid hash" };
             }
 
-            var archive = Nexus.GetArchive(hash);
+            var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
             {
                 return new ErrorResult() { error = "archive not found" };
@@ -1562,7 +1562,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid hash" };
             }
 
-            var archive = Nexus.GetArchive(hash);
+            var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
             {
                 return new ErrorResult() { error = "archive not found" };
