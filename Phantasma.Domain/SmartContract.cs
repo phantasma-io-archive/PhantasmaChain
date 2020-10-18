@@ -11,6 +11,8 @@ namespace Phantasma.Domain
     {
         public const int SecondsInDay = 86400;
 
+        public const string ConstructorName = "Initialize";
+
         public ContractInterface ABI { get; protected set; }
         public abstract string Name { get; }
 

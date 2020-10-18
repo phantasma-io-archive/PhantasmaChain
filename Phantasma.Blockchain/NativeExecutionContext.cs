@@ -4,6 +4,7 @@ using Phantasma.VM;
 using Phantasma.Core.Performance;
 using System;
 using System.Collections.Generic;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -32,6 +33,29 @@ namespace Phantasma.Blockchain
 
             var stackObj = stack.Pop();
             var methodName = stackObj.AsString();
+            
+            var runtime = (RuntimeVM)frame.VM;
+
+
+            if (methodName == SmartContract.ConstructorName && runtime.HasGenesis)
+            {
+                BigInteger usedQuota;
+                
+                if (Nexus.IsNativeContract(Contract.Name)) 
+                {
+                    usedQuota = 1024; // does not matter what number, just than its greater than 0
+                }
+                else
+                {
+                    usedQuota = runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedDataQuota), this.Contract.Address).AsNumber();
+                }
+
+                if (usedQuota > 0)
+                {
+                    throw new VMException(frame.VM, $"VM nativecall failed: constructor can only be called once");
+                }
+            }
+
             var method = this.Contract.ABI.FindMethod(methodName);
 
             if (method == null)
@@ -43,8 +67,6 @@ namespace Phantasma.Blockchain
             {
                 throw new VMException(frame.VM, $"VM nativecall failed: calling method {methodName} with {stack.Count} arguments instead of {method.parameters.Length}");
             }
-
-            var runtime = (RuntimeVM)frame.VM;
 
             ExecutionState result;
 

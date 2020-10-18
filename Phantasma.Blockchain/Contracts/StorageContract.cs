@@ -4,6 +4,7 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
+using System.Xml.XPath;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -137,7 +138,7 @@ namespace Phantasma.Blockchain.Contracts
                 usedSize += Hash.Length;
             }
 
-            var usedQuota = _dataQuotas.Get<Address, BigInteger>(from);
+            var usedQuota = GetUsedDataQuota(from);
             usedSize += usedQuota;
 
             return usedSize;
@@ -171,6 +172,12 @@ namespace Phantasma.Blockchain.Contracts
 
             var firstChar = (char)key[0];
             Runtime.Expect(firstChar != '.', "permission denied"); // NOTE link correct PEPE here
+        }
+
+        public BigInteger GetUsedDataQuota(Address address)
+        {
+            var result = _dataQuotas.Get<Address, BigInteger>(address);
+            return result;
         }
 
         public void WriteData(Address target, byte[] key, byte[] value)

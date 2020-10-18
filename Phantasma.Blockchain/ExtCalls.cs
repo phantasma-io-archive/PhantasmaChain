@@ -12,6 +12,7 @@ using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts;
+using System.Text;
 
 namespace Phantasma.Blockchain
 {
@@ -858,8 +859,8 @@ namespace Phantasma.Blockchain
             byte[] script;
             ContractInterface abi;
 
-
-            if (Nexus.IsNativeContract(contractName))
+            bool isNative = Nexus.IsNativeContract(contractName);
+            if (isNative)
             {
                 if (contractName == "validator" && Runtime.GenesisAddress == Address.Null)
                 {
@@ -897,12 +898,11 @@ namespace Phantasma.Blockchain
             var success = Runtime.Chain.DeployContractScript(Runtime.Storage, from, contractName, contractAddress, script, abi);
             Runtime.Expect(success, $"deployment of {contractName} failed");
 
-            var constructorName = "Initialize";
-            var constructor = abi.FindMethod(constructorName);
+            var constructor = abi.FindMethod(SmartContract.ConstructorName);
 
             if (constructor != null)
             {
-                Runtime.CallContext(0, contractName, constructorName, from);
+                Runtime.CallContext(0, contractName, SmartContract.ConstructorName, from);
             }
 
             Runtime.Notify(EventKind.ContractDeploy, from, contractName);
