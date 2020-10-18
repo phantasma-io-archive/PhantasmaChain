@@ -967,8 +967,8 @@ namespace Phantasma.Blockchain
             sb.MintTokens(DomainSettings.StakingTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(2863626, DomainSettings.StakingTokenDecimals));
             sb.MintTokens(DomainSettings.FuelTokenSymbol, owner.Address, owner.Address, UnitConversion.ToBigInteger(1000000, DomainSettings.FuelTokenDecimals));
             // requires staking token to be created previously
-            sb.CallContract(Nexus.StakeContractName, "Stake", owner.Address, StakeContract.DefaultMasterThreshold);
-            sb.CallContract(Nexus.StakeContractName, "Claim", owner.Address, owner.Address);
+            sb.CallContract(NativeContractKind.Stake, nameof(StakeContract.Stake), owner.Address, StakeContract.DefaultMasterThreshold);
+            sb.CallContract(NativeContractKind.Stake, nameof(StakeContract.Claim), owner.Address, owner.Address);
 
             sb.Emit(VM.Opcode.RET);
 
@@ -1012,7 +1012,7 @@ namespace Phantasma.Blockchain
                 var initial = entry.Value.Key;
                 var constraints = entry.Value.Value;
                 var bytes = Serialization.Serialize(constraints);
-                sb.CallContract(Nexus.GovernanceContractName, "CreateValue", name, initial, bytes);
+                sb.CallContract(NativeContractKind.Governance, nameof(GovernanceContract.CreateValue), name, initial, bytes);
             }
             //SpendGas(owner.Address).
             var script = sb.EndScript();
@@ -1027,9 +1027,9 @@ namespace Phantasma.Blockchain
             var script = ScriptUtils.
                 BeginScript().
                 //AllowGas(owner.Address, Address.Null, 1, 9999).
-                CallContract("validator", "SetValidator", owner.Address, new BigInteger(0), ValidatorType.Primary).
-                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals)).
-                CallContract(Nexus.SwapContractName, "DepositTokens", owner.Address, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals)).
+                CallContract(NativeContractKind.Validator, nameof(ValidatorContract.SetValidator), owner.Address, new BigInteger(0), ValidatorType.Primary).
+                CallContract(NativeContractKind.Swap, nameof(SwapContract.DepositTokens), owner.Address, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals)).
+                CallContract(NativeContractKind.Swap, nameof(SwapContract.DepositTokens), owner.Address, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(100, DomainSettings.FuelTokenDecimals)).
                 //SpendGas(owner.Address).
                 EndScript();
 

@@ -1,6 +1,8 @@
 ﻿using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
+using Phantasma.Domain;
+using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
@@ -8,12 +10,12 @@ namespace Phantasma.Blockchain
     {
         public static ScriptBuilder AllowGas(this ScriptBuilder sb, Address from, Address to, BigInteger gasPrice, BigInteger gasLimit)
         {
-            return sb.CallContract(Nexus.GasContractName, "AllowGas", from, to, gasPrice, gasLimit);
+            return sb.CallContract(NativeContractKind.Gas, nameof(GasContract.AllowGas), from, to, gasPrice, gasLimit);
         }
 
         public static ScriptBuilder SpendGas(this ScriptBuilder sb, Address address)
         {
-            return sb.CallContract(Nexus.GasContractName, "SpendGas", address);
+            return sb.CallContract(NativeContractKind.Gas, nameof(GasContract.SpendGas), address);
         }
 
         public static ScriptBuilder MintTokens(this ScriptBuilder sb, string tokenSymbol, Address from, Address target, BigInteger amount)
@@ -64,6 +66,11 @@ namespace Phantasma.Blockchain
         public static ScriptBuilder CrossTransferNFT(this ScriptBuilder sb, Address destinationChain, string tokenSymbol, Address from, string to, BigInteger tokenId)
         {
             return sb.CallInterop("Runtime.SendToken", destinationChain, from, to, tokenSymbol, tokenId);
+        }
+
+        public static ScriptBuilder CallContract(this ScriptBuilder sb, NativeContractKind contractKind, string method, params object[] args)
+        {
+            return sb.CallContract(contractKind.ToString().ToLower(), method, args);
         }
     }
 }
