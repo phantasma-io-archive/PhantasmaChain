@@ -945,6 +945,15 @@ namespace Phantasma.Blockchain
             Runtime.Expect(Runtime.IsStakeMaster(from), "needs to be master");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerTokenDeployTag);
+                // governance value is in usd fiat, here convert from fiat to fuel amount
+                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
+                // burn the "cost" tokens
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
+            }
+
             Nexus.CreateToken(RootStorage, symbol, name, maxSupply, decimals, flags, script);
             Runtime.Notify(EventKind.TokenCreate, from, symbol);
         }
