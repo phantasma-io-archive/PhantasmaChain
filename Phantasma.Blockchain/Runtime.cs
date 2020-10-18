@@ -612,6 +612,12 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
+                    var owner = GetContractOwner(address);
+                    if (owner != Address.Null && owner != address)
+                    {
+                        return IsWitness(owner);
+                    }
+
                     return address == CurrentContext.Address;
                 }
             }
