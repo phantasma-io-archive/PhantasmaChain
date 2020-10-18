@@ -68,6 +68,18 @@ namespace Phantasma.Blockchain
             writer.WriteByteArray(Key);
         }
 
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    SerializeData(writer);
+                }
+                return stream.ToArray();
+            }
+        }
+
         public void UnserializeData(BinaryReader reader)
         {
             MerkleTree = MerkleTree.Unserialize(reader);
@@ -84,5 +96,17 @@ namespace Phantasma.Blockchain
             archive.UnserializeData(reader);
             return archive;
         }
+
+        public static Archive Unserialize(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    return Unserialize(reader);
+                }
+            }
+        }
+
     }
 }

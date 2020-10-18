@@ -716,22 +716,22 @@ namespace Phantasma.Blockchain
 
         public bool ArchiveExists(Hash hash)
         {
-            return Nexus.ArchiveExists(hash);
+            return Nexus.ArchiveExists(this.RootStorage, hash);
         }
 
         public IArchive GetArchive(Hash hash)
         {
-            return Nexus.GetArchive(hash);
+            return Nexus.GetArchive(this.RootStorage, hash);
         }
 
         public bool DeleteArchive(Hash hash)
         {
-            var archive = Nexus.GetArchive(hash);
+            var archive = Nexus.GetArchive(this.RootStorage, hash);
             if (archive == null)
             {
                 return false;
             }
-            return Nexus.DeleteArchive(archive);
+            return Nexus.DeleteArchive(this.RootStorage, archive);
         }
 
         public bool ChainExists(string name)
@@ -1037,7 +1037,7 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
 
-        public IArchive CreateArchive(Address creator, Address owner, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
             // TODO validation
             return Nexus.CreateArchive(this.RootStorage, merkleTree, size, flags, key);

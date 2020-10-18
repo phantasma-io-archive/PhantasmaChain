@@ -25,6 +25,9 @@ namespace Phantasma.Blockchain
         private string ChainParentNameKey => ".chain.parent.";
         private string ChainChildrenBlockKey => ".chain.children.";
 
+        private string ChainArchivesKey => ".chain.archives.";
+
+
         public const string GasContractName = "gas";
         public const string BlockContractName = "block";
         public const string StakeContractName = "stake";
@@ -59,7 +62,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        private KeyValueStore<Hash, Archive> _archiveEntries;
         private KeyValueStore<Hash, byte[]> _archiveContents;
 
         public bool HasGenesis { get; private set; }
@@ -106,7 +108,6 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            _archiveEntries = new KeyValueStore<Hash, Archive>(CreateKeyStoreAdapter("archives"));
             _archiveContents = new KeyValueStore<Hash, byte[]>(CreateKeyStoreAdapter("contents"));
 
             _logger = logger;
@@ -1338,19 +1339,31 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region STORAGE
-        public Archive GetArchive(Hash hash)
+
+        private StorageMap GetArchiveMap(StorageContext storage)
         {
-            if (_archiveEntries.ContainsKey(hash))
+            var map = new StorageMap(ChainArchivesKey, storage);
+            return map;
+        }
+
+        public Archive GetArchive(StorageContext storage, Hash hash)
+        {
+            var map = GetArchiveMap(storage);
+
+            if (map.ContainsKey(hash))
             {
-                return _archiveEntries.Get(hash);
+                var bytes = map.Get<Hash, byte[]>(hash);
+                var archive = Archive.Unserialize(bytes);
+                return archive;
             }
 
             return null;
         }
 
-        public bool ArchiveExists(Hash hash)
+        public bool ArchiveExists(StorageContext storage, Hash hash)
         {
-            return _archiveEntries.ContainsKey(hash);
+            var map = GetArchiveMap(storage);
+            return map.ContainsKey(hash);
         }
 
         public bool IsArchiveComplete(Archive archive)
@@ -1368,7 +1381,7 @@ namespace Phantasma.Blockchain
 
         public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
         {
-            var archive = GetArchive(merkleTree.Root);
+            var archive = GetArchive(storage, merkleTree.Root);
             if (archive != null)
             {
                 if (archive.Size != size || archive.Flags != flags)
@@ -1381,12 +1394,15 @@ namespace Phantasma.Blockchain
 
             archive = new Archive(merkleTree, size, flags, key);
             var archiveHash = merkleTree.Root;
-            _archiveEntries.Set(archiveHash, archive);
+
+            var map = GetArchiveMap(storage);
+            var bytes = archive.ToByteArray();
+            map.Set<Hash, byte[]>(archiveHash, bytes);
 
             return archive;
         }
 
-        public bool DeleteArchive(Archive archive)
+        public bool DeleteArchive(StorageContext storage, Archive archive)
         {
             Throw.IfNull(archive, nameof(archive));
 
@@ -1399,7 +1415,8 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            _archiveEntries.Remove(archive.Hash);
+            var map = GetArchiveMap(storage);
+            map.Remove(archive.Hash);
 
             return true;
         }
