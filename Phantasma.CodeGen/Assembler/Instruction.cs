@@ -488,6 +488,10 @@ namespace Phantasma.CodeGen.Assembler
                         var type = Arguments[2].AsType();
                         sb.Emit(Opcode.CAST, new byte[] { srcReg, dstReg, type });
                     }
+                    else
+                    {
+                        throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
+                    }
                 }
                 else
                 {
