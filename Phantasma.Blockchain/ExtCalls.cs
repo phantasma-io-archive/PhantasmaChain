@@ -154,7 +154,7 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_Log(RuntimeVM vm)
         {
             var text = vm.Stack.Pop().AsString();
-            Console.WriteLine(text); // TODO fixme
+            vm.Log(text);
             return ExecutionState.Running;
         }
 

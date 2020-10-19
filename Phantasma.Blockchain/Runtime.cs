@@ -1431,7 +1431,7 @@ namespace Phantasma.Blockchain
         public void Log(string description)
         {
             var Runtime = this;
-            Runtime.Expect(NexusName != "mainnet", "logs not allowed on this nexus");
+            //Runtime.Expect(NexusName != "mainnet", "logs not allowed on this nexus");
             Runtime.Expect(!string.IsNullOrEmpty(description), "invalid log string");
             Runtime.Expect(description.Length <= 256, "log string too large");
             Runtime.ConsumeGas(1000);
