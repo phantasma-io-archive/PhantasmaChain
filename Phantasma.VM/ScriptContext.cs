@@ -737,30 +737,44 @@ namespace Phantasma.VM
                             Expect(srcB < frame.Registers.Length, "invalid srcB register");
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
-                            var a = frame.Registers[srcA].AsNumber();
-                            var b = frame.Registers[srcB].AsNumber();
-
-                            BigInteger result;
-
-                            switch (opcode)
+                            if (opcode == Opcode.ADD && frame.Registers[srcA].Type == VMType.String)
                             {
-                                case Opcode.ADD: result = a + b; break;
-                                case Opcode.SUB: result = a - b; break;
-                                case Opcode.MUL: result = a * b; break;
-                                case Opcode.DIV: result = a / b; break;
-                                case Opcode.MOD: result = a % b; break;
-                                case Opcode.SHR: result = a >> (int)b; break;
-                                case Opcode.SHL: result = a << (int)b; break;
-                                case Opcode.MIN: result = a < b ? a : b; break;
-                                case Opcode.MAX: result = a > b ? a : b; break;
-                                default:
-                                    {
-                                        SetState(ExecutionState.Fault);
-                                        return;
-                                    }
+                                Expect(frame.Registers[srcB].Type == VMType.String, "invalid string as right operand");
+
+                                var a = frame.Registers[srcA].AsString();
+                                var b = frame.Registers[srcB].AsString();
+
+                                var result = a + b;
+                                frame.Registers[dst].SetValue(result);
+                            }
+                            else
+                            {
+                                var a = frame.Registers[srcA].AsNumber();
+                                var b = frame.Registers[srcB].AsNumber();
+
+                                BigInteger result;
+
+                                switch (opcode)
+                                {
+                                    case Opcode.ADD: result = a + b; break;
+                                    case Opcode.SUB: result = a - b; break;
+                                    case Opcode.MUL: result = a * b; break;
+                                    case Opcode.DIV: result = a / b; break;
+                                    case Opcode.MOD: result = a % b; break;
+                                    case Opcode.SHR: result = a >> (int)b; break;
+                                    case Opcode.SHL: result = a << (int)b; break;
+                                    case Opcode.MIN: result = a < b ? a : b; break;
+                                    case Opcode.MAX: result = a > b ? a : b; break;
+                                    default:
+                                        {
+                                            SetState(ExecutionState.Fault);
+                                            return;
+                                        }
+                                }
+
+                                frame.Registers[dst].SetValue(result);
                             }
 
-                            frame.Registers[dst].SetValue(result);
                             break;
                         }
 
