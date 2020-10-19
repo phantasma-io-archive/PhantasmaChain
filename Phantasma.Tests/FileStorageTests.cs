@@ -153,7 +153,7 @@ namespace Phantasma.Tests
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
                     .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
-            System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
+            //System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
