@@ -334,7 +334,7 @@ namespace Phantasma.Blockchain
         #region DATA
         private static ExecutionState Data_Get(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 4);
+            ExpectStackSize(vm, 3);
 
             var contractName = PopString(vm, "contract");
             vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
