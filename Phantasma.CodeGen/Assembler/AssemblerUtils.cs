@@ -23,7 +23,7 @@ namespace Phantasma.CodeGen.Assembler
 
         public static byte[] BuildScript(IEnumerable<string> lines, string fileName, out DebugInfo debugInfo)
         {
-            Semanteme[] semantemes = null;
+            Semanteme[] semantemes;
             try
             {
                 semantemes = Semanteme.ProcessLines(lines).ToArray();

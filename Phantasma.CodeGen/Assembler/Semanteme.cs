@@ -56,8 +56,11 @@ namespace Phantasma.CodeGen.Assembler
                 index = pline.IndexOf("//", StringComparison.Ordinal);
                 if (index >= 0) pline = pline.Substring(0, index);
                 pline = pline.Trim();
+
                 index = pline.IndexOf(':');
-                if (index >= 0)
+                var strIndex = pline.IndexOf(ArgumentUtils.STRING_PREFIX);
+
+                if (index >= 0 && (index<strIndex || strIndex<0))
                 {
                     yield return new Label(lineNumber, pline.Substring(0, index).AsLabel());
                     pline = pline.Substring(index + 1).Trim();
