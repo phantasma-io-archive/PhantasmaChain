@@ -82,7 +82,7 @@ namespace Phantasma.Tests
             var symbol = DomainSettings.FuelTokenSymbol;
             Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, symbol));
             var token = nexus.GetTokenInfo(nexus.RootStorage, symbol);
-            Assert.IsTrue(token.MaxSupply > 0);
+            Assert.IsTrue(token.MaxSupply == 0);
 
             var supply = nexus.RootChain.GetTokenSupply(rootChain.Storage, symbol);
             Assert.IsTrue(supply > 0);
