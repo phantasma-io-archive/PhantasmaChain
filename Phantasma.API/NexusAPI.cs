@@ -1071,11 +1071,22 @@ namespace Phantasma.API
             var oracle = Nexus.GetOracleReader();
             var vm = new RuntimeVM(-1, script, chain, Timestamp.Now, null, changeSet, oracle, true);
 
-            var state = vm.Execute();
+            vm.ThrowOnFault = true;
 
-            if (state != ExecutionState.Halt)
+            string error = null;
+            ExecutionState state = ExecutionState.Fault;
+            try
             {
-                return new ErrorResult { error = $"Execution failed, state:{state}" };
+                state = vm.Execute();
+            }
+            catch (Exception e)
+            {
+                error = e.Message;
+            }
+
+            if (error != null)
+            {
+                return new ErrorResult { error = $"Execution failed: {error}"};
             }
 
             var results = new Stack<string>();
