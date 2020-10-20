@@ -261,7 +261,7 @@ namespace Phantasma.VM
 
         public T AsInterop<T>() 
         {
-            Throw.If(this.Type != VMType.Object, "Invalid cast");
+            Throw.If(this.Type != VMType.Object, $"Invalid cast: expected object, got {this.Type}");
             Throw.IfNot(this.Data is T, "invalid interop type");
 
             return (T)Data;
