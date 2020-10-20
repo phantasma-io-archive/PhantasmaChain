@@ -50,6 +50,7 @@ namespace Phantasma.Domain
             public string address;
             public string name;
             public string avatar;
+            public string nexus;
             public Balance[] balances;
             public File[] files;
         }
