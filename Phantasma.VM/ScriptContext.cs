@@ -35,7 +35,7 @@ namespace Phantasma.VM
         {
             while (_state == ExecutionState.Running)
             {
-                this.Step(frame, stack);
+                this.Step(ref frame, stack);
             }
 
             return _state;
@@ -44,7 +44,7 @@ namespace Phantasma.VM
         #region IO 
         private byte Read8()
         {
-            Throw.If(InstructionPointer >= this.Script.Length, "Outside of range");
+            Throw.If(InstructionPointer >= this.Script.Length, $"Outside of script range => {InstructionPointer} / {this.Script.Length}");
 
             var result = this.Script[InstructionPointer];
             InstructionPointer++;
@@ -124,7 +124,7 @@ namespace Phantasma.VM
             this._state = state;
         }
 
-        public void Step(ExecutionFrame frame, Stack<VMObject> stack)
+        public void Step(ref ExecutionFrame frame, Stack<VMObject> stack)
         {
             try
             {
@@ -250,6 +250,7 @@ namespace Phantasma.VM
                             Expect(count <= VirtualMachine.MaxRegisterCount, "invalid register allocs");
 
                             frame.VM.PushFrame(this, InstructionPointer, count);
+                            frame = frame.VM.CurrentFrame;
 
                             InstructionPointer = ofs;
                             break;
@@ -334,10 +335,10 @@ namespace Phantasma.VM
                             {
                                 var temp = frame.VM.PeekFrame();
 
-                                if (temp.Context == this)
+                                if (temp.Context.Name == this.Name)
                                 {
                                     InstructionPointer = frame.VM.PopFrame();
-                                    //Expect(InstructionPointer == this.Script.Length);
+                                    frame = frame.VM.CurrentFrame;
                                 }
                                 else
                                 { 
@@ -822,7 +823,7 @@ namespace Phantasma.VM
                             var dst = Read8();
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
-                            frame.Registers[dst].SetValue(this);
+                            frame.Registers[dst].SetValue(this.Name);
 
                             break;
                         }
