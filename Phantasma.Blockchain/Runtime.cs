@@ -26,6 +26,9 @@ namespace Phantasma.Blockchain
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
 
+        public string CurrentContextName => CurrentContext.Name;
+        public string PreviousContextName => PreviousContext.Name;
+
         public Address FeeTargetAddress { get; private set; }
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }

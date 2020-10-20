@@ -99,6 +99,8 @@ namespace Phantasma.VM
         public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
         public const int MaxRegisterCount = 32;
 
+        public readonly static string EntryContext = "entry";
+
         public bool ThrowOnFault = false;
 
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
@@ -108,6 +110,7 @@ namespace Phantasma.VM
 
         public readonly ExecutionContext entryContext;
         public ExecutionContext CurrentContext { get; private set; }
+        public ExecutionContext PreviousContext { get; private set; }
 
         protected Stack<Address> _activeAddresses = new Stack<Address>();
         public IEnumerable<Address> ActiveAddresses => _activeAddresses;
@@ -124,8 +127,10 @@ namespace Phantasma.VM
             this.EntryAddress = Address.FromHash(script);
             this._activeAddresses.Push(EntryAddress);
 
-            this.entryContext = new ScriptContext("entry", script);
-            RegisterContext("entry", this.entryContext); // TODO this should be a constant
+            this.entryContext = new ScriptContext(EntryContext, script);
+            RegisterContext(EntryContext, this.entryContext); // TODO this should be a constant
+
+            PreviousContext = entryContext;
 
             this.entryScript = script;
         }
@@ -157,7 +162,7 @@ namespace Phantasma.VM
         {
             Throw.If(frames.Count < 2, "Not enough frames available");
 
-            frames.Pop();
+            var oldFrame = frames.Pop();
             var instructionPointer = CurrentFrame.Offset;
 
             this.CurrentFrame = frames.Peek();
@@ -210,13 +215,17 @@ namespace Phantasma.VM
         {
             using (var m = new ProfileMarker("SwitchContext"))
             {
+                var tempContext = PreviousContext;
+                PreviousContext = CurrentContext;
                 SetCurrentContext(context);
                 PushFrame(context, instructionPointer, DefaultRegisterCount);
 
                 _activeAddresses.Push(context.Address);
 
                 var result = context.Execute(this.CurrentFrame, this.Stack);
-                
+
+                PreviousContext = tempContext;
+
                 var temp = _activeAddresses.Pop();
                 if (temp != context.Address)
                 {

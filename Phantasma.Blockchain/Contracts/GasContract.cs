@@ -4,6 +4,7 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using Phantasma.Core.Performance;
+using Phantasma.VM;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -42,6 +43,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             Runtime.Expect(from.IsUser, "must be a user address");
+            Runtime.Expect(Runtime.PreviousContextName == VirtualMachine.EntryContext, "must be entry context");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(target.IsSystem, "destination must be system address");
 
@@ -108,6 +110,15 @@ namespace Phantasma.Blockchain.Contracts
 
         public void SpendGas(Address from)
         {
+            if (Runtime.IsReadOnlyMode())
+            {
+                return;
+            }
+
+            Runtime.Expect(Runtime.PreviousContextName == VirtualMachine.EntryContext, "must be entry context");
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
+
             //TODO_FIX_TX
             //if (Runtime.Chain.Height > 120000)
             if (Runtime.ProtocolVersion >= 3)
@@ -123,15 +134,6 @@ namespace Phantasma.Blockchain.Contracts
 
         private void SpendGasV1(Address from)
         {
-            if (Runtime.IsReadOnlyMode())
-            {
-                return;
-            }
-
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
-
             var availableAmount = _allowanceMap.Get<Address, BigInteger>(from);
 
             var spentGas = Runtime.UsedGas;
@@ -214,15 +216,6 @@ namespace Phantasma.Blockchain.Contracts
 
         private void SpendGasV2(Address from)
         {
-            if (Runtime.IsReadOnlyMode())
-            {
-                return;
-            }
-
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-
-            Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
-
             var availableAmount = _allowanceMap.Get<Address, BigInteger>(from);
 
             var spentGas = Runtime.UsedGas;
