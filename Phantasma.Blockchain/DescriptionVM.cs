@@ -1,4 +1,4 @@
-﻿using Phantasma.Blockchain.Tokens;
+﻿using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.VM;
 using System;
@@ -8,9 +8,9 @@ namespace Phantasma.Blockchain
 {
     public class DescriptionVM : VirtualMachine
     {
-        private Func<string, TokenInfo> tokenFetcher;
+        private Func<string, IToken> tokenFetcher;
 
-        public DescriptionVM(byte[] script, Func<string, TokenInfo> tokenFetcher) : base(script)
+        public DescriptionVM(byte[] script, Func<string, IToken> tokenFetcher) : base(script)
         {
             this.tokenFetcher = tokenFetcher;
         }
