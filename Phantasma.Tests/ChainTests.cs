@@ -69,7 +69,7 @@ namespace Phantasma.Tests
             var nexus = new Nexus("simnet", null, null);
             nexus.SetOracleReader(new OracleSimulator(nexus));
 
-            Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now));
+            Assert.IsTrue(nexus.CreateGenesisBlock(owner, DateTime.Now, 1));
 
             var genesisHash = nexus.GetGenesisHash(nexus.RootStorage);
             Assert.IsTrue(genesisHash != Hash.Null);

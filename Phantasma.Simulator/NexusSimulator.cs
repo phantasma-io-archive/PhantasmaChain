@@ -72,7 +72,7 @@ namespace Phantasma.Simulator
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 3))
                 {
                     throw new ChainException("Genesis block failure");
                 }

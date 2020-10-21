@@ -1065,7 +1065,7 @@ namespace Phantasma.Blockchain
             SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), storage);
         }
 
-        public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp)
+        public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)
         {
             if (HasGenesis)
             {
@@ -1081,7 +1081,7 @@ namespace Phantasma.Blockchain
                  new Dictionary<string, KeyValuePair<BigInteger, ChainConstraint[]>>() {
                      {
                          NexusProtocolVersionTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
-                             1, new ChainConstraint[]
+                             version, new ChainConstraint[]
                          {
                              new ChainConstraint() { Kind = ConstraintKind.MustIncrease}
                          })
