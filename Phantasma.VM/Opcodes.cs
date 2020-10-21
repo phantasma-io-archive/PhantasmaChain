@@ -65,5 +65,6 @@ namespace Phantasma.VM
         // array
         PUT,
         GET, // lookups a key and copies a reference into register
+        CLEAR, // clears a register
     }
 }

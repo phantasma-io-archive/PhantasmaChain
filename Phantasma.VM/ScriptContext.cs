@@ -818,6 +818,18 @@ namespace Phantasma.VM
                         }
 
                     // args: byte dest_reg
+                    case Opcode.CLEAR:
+                        {
+                            var dst = Read8();
+
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
+
+                            frame.Registers[dst] = new VMObject();
+
+                            break;
+                        }
+
+                    // args: byte dest_reg
                     case Opcode.THIS:
                         {
                             var dst = Read8();
