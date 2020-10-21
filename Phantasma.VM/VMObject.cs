@@ -93,7 +93,7 @@ namespace Phantasma.VM
                     {
                         if (this.Type != VMType.Number)
                         {
-                            throw new Exception("Invalid cast");
+                            throw new Exception($"Invalid cast: expected number, got {this.Type}");
                         }
 
                         return (BigInteger)Data;
@@ -105,7 +105,7 @@ namespace Phantasma.VM
         {
             if (this.Type != VMType.Timestamp)
             {
-                throw new Exception("Invalid cast");
+                throw new Exception($"Invalid cast: expected timestamp, got {this.Type}");
             }
 
             return (Timestamp)Data;
@@ -179,7 +179,7 @@ namespace Phantasma.VM
                     return date.ToString(TimeFormat);
 
                 default:
-                    throw new Exception("Invalid cast");
+                    throw new Exception($"Invalid cast: expected string, got {this.Type}");
             }
         }
 
@@ -225,7 +225,7 @@ namespace Phantasma.VM
 
                 default:
                     {
-                        throw new Exception("Invalid cast");
+                        throw new Exception($"Invalid cast: expected bytes, got {this.Type}");
                     }
             }           
         }
@@ -253,19 +253,18 @@ namespace Phantasma.VM
                             return (Address)Data;
                         }
 
-                        throw new Exception("Invalid cast");
+                        break;
                     }
-
-                default:
-                    throw new Exception("Invalid cast");
             }
+
+            throw new Exception($"Invalid cast: expected address, got {this.Type}");
         }
 
         public bool AsBool()
         {
             if (this.Type != VMType.Bool)
             {
-                throw new Exception("Invalid cast");
+                throw new Exception($"Invalid cast: expected bool, got {this.Type}");
             }
 
             return (bool)Data;
@@ -403,7 +402,7 @@ namespace Phantasma.VM
         public VMObject SetValue(object val)
         {
             var type = val.GetType();
-            Throw.If(!type.IsStructOrClass(), "invalid cast");
+            Throw.If(!type.IsStructOrClass(), $"Invalid cast: expected struct or class, got {type.Name}");
             this.Type = VMType.Object;
             this.Data = val;
             this._localSize = 4;
@@ -483,7 +482,7 @@ namespace Phantasma.VM
         {
             if (this.Type != VMType.Struct)
             {
-                throw new Exception("Invalid cast");
+                throw new Exception($"Invalid cast: expected struct, got {this.Type}");
             }
 
             var children = GetChildren();
