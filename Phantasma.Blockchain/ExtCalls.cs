@@ -687,10 +687,7 @@ namespace Phantasma.Blockchain
         {
             ExpectStackSize(vm, 3);
 
-            VMObject temp;
-
-            var source = PopAddress(vm);
-
+            var target = PopAddress(vm);
             var symbol = PopString(vm, "symbol");
             var amount = PopNumber(vm, "amount");
 
@@ -699,7 +696,7 @@ namespace Phantasma.Blockchain
                 vm.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
             }
 
-            vm.BurnTokens(symbol, source, amount);
+            vm.BurnTokens(symbol, target, amount);
 
             return ExecutionState.Running;
         }
