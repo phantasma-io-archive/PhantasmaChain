@@ -691,11 +691,6 @@ namespace Phantasma.Blockchain
             var symbol = PopString(vm, "symbol");
             var amount = PopNumber(vm, "amount");
 
-            if (vm.Nexus.HasGenesis)
-            {
-                vm.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
-            }
-
             vm.BurnTokens(symbol, target, amount);
 
             return ExecutionState.Running;
