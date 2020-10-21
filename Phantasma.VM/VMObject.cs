@@ -157,7 +157,19 @@ namespace Phantasma.VM
                     return ((uint)Data).ToString();
 
                 case VMType.Object:
-                    return "Interop:" + Data.GetType().Name;
+                    {
+                        if (Data is Address)
+                        {
+                            return ((Address)Data).Text;
+                        }
+
+                        if (Data is Hash)
+                        {
+                            return ((Hash)Data).ToString();
+                        }
+
+                        return "Interop:" + Data.GetType().Name;
+                    }
 
                 case VMType.Bool:
                     return ((bool)Data) ? "true" : "false";
