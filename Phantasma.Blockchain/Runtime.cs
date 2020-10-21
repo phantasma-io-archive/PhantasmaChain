@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text;
 using Phantasma.VM;
@@ -340,26 +339,6 @@ namespace Phantasma.Blockchain
 
             var evt = new Event(kind, address, contract, bytes);
             _events.Add(evt);
-        }
-
-        public void Expect(bool condition, string description)
-        {
-            if (condition)
-            {
-                return;
-            }
-
-            var callingFrame = new StackFrame(1);
-            var method = callingFrame.GetMethod();
-
-#if DEBUG
-            if (this.Transaction != null)
-                description += $", tx: {this.Transaction.Hash}";
-            else
-#endif
-            description = $"{description} @ {method.Name}";
-
-            throw new VMException(this, description);
         }
 
         #region GAS

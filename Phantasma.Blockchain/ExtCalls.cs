@@ -163,7 +163,7 @@ namespace Phantasma.Blockchain
             vm.Expect(vm.CurrentContextName != VirtualMachine.EntryContext, "cannot notify in current context");
 
             var kind = vm.Stack.Pop().AsEnum<EventKind>();
-            var address = PopAddress(vm);
+            var address = vm.PopAddress();
             var obj = vm.Stack.Pop();
 
             var bytes = obj.Serialize();
@@ -176,9 +176,9 @@ namespace Phantasma.Blockchain
         // TODO proper exceptions
         private static ExecutionState Oracle_Read(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 1);
+            vm.ExpectStackSize(1);
 
-            var url = PopString(vm, "url");
+            var url = vm.PopString("url");
 
             if (vm.Oracle == null)
             {
@@ -199,9 +199,9 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Oracle_Price(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 1);
+            vm.ExpectStackSize(1);
 
-            var symbol = PopString(vm, "price");
+            var symbol = vm.PopString("price");
 
             var price = vm.GetTokenPrice(symbol);
 
@@ -212,11 +212,11 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Oracle_Quote(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 3);
+            vm.ExpectStackSize(3);
 
-            var amount = PopNumber(vm, "amount");
-            var quoteSymbol = PopString(vm, "quoteSymbol");
-            var baseSymbol = PopString(vm, "baseSymbol");
+            var amount = vm.PopNumber("amount");
+            var quoteSymbol = vm.PopString("quoteSymbol");
+            var baseSymbol = vm.PopString("baseSymbol");
 
             var price = vm.GetTokenQuote(baseSymbol, quoteSymbol, amount);
 
@@ -295,9 +295,9 @@ namespace Phantasma.Blockchain
                 var tx = vm.Transaction;
                 Throw.IfNull(tx, nameof(tx));
 
-                ExpectStackSize(vm, 1);
+                vm.ExpectStackSize(1);
 
-                var address = PopAddress(vm);
+                var address = vm.PopAddress();
                 //var success = tx.IsSignedBy(address);
                 // TODO check if this was just a bug or there was a real reason 
                 var success = vm.IsWitness(address);
@@ -338,12 +338,12 @@ namespace Phantasma.Blockchain
         #region DATA
         private static ExecutionState Data_Get(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 3);
+            vm.ExpectStackSize(3);
 
-            var contractName = PopString(vm, "contract");
+            var contractName = vm.PopString("contract");
             vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
-            var field = PopString(vm, "field");
+            var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var type_obj = vm.Stack.Pop();
@@ -359,13 +359,13 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Data_Set(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 2);
+            vm.ExpectStackSize(2);
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
             vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
-            var field = PopString(vm, "field");
+            var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var obj = vm.Stack.Pop();
@@ -379,12 +379,12 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Data_Delete(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 1);
+            vm.ExpectStackSize(1);
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
 
-            var field = PopString(vm, "field");
+            var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var contractAddress = SmartContract.GetAddressForName(contractName);
@@ -397,10 +397,10 @@ namespace Phantasma.Blockchain
         #region MAP
         private static ExecutionState Map_Get(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 4);
+            vm.ExpectStackSize(4);
 
-            var contractName = PopString(vm, "contract");
-            var field = PopString(vm, "field");
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var entry_obj = vm.Stack.Pop();
@@ -431,12 +431,12 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Set(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 3);
+            vm.ExpectStackSize(3);
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
 
-            var field = PopString(vm, "field");
+            var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var entry_obj = vm.Stack.Pop();
@@ -456,12 +456,12 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Remove(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 2);
+            vm.ExpectStackSize(2);
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
 
-            var field = PopString(vm, "field");
+            var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var entry_obj = vm.Stack.Pop();
@@ -477,12 +477,12 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Clear(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 1);
+            vm.ExpectStackSize(1);
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
 
-            var field = PopString(vm, "field");
+            var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var map = new StorageMap(mapKey, vm.Storage);
@@ -493,10 +493,10 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Map_Count(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 2);
+            vm.ExpectStackSize(2);
 
-            var contractName = PopString(vm, "contract");
-            var field = PopString(vm, "field");
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
             var map = new StorageMap(mapKey, vm.Storage);
@@ -509,86 +509,12 @@ namespace Phantasma.Blockchain
         }
         #endregion
 
-
-        private static void ExpectStackSize(RuntimeVM vm, int minSize)
-        {
-            if (vm.Stack.Count < minSize)
-            {
-                var callingFrame = new StackFrame(1);
-                var method = callingFrame.GetMethod();
-
-                throw new VMException(vm, $"not enough arguments in stack, expected {minSize} @ {method}");
-            }
-        }
-
-        private static Address PopAddress(RuntimeVM vm)
-        {
-            var temp = vm.Stack.Pop();
-            if (temp.Type == VMType.String)
-            {
-                var text = temp.AsString();
-                //TODO_FIX_TX
-                //if (Address.IsValidAddress(text) && vm.Chain.Height > 65932)
-                if (Address.IsValidAddress(text) && vm.ProtocolVersion >= 2)
-                {
-                    return Address.FromText(text);
-                }
-                return vm.Nexus.LookUpName(vm.Storage, text);
-            }
-            else
-            if (temp.Type == VMType.Bytes)
-            {
-                var bytes = temp.AsByteArray();
-                var addr = Serialization.Unserialize<Address>(bytes);
-                return addr;
-            }
-            else
-            {
-                var addr = temp.AsInterop<Address>();
-                return addr;
-            }
-        }
-
-        private static BigInteger PopNumber(RuntimeVM vm, string ArgumentName)
-        {
-            var temp = vm.Stack.Pop();
-
-            if (temp.Type == VMType.String)
-            {
-                vm.Expect(BigInteger.IsParsable(temp.AsString()), $"expected number for {ArgumentName}");
-            }
-            else
-            {
-                vm.Expect(temp.Type == VMType.Number, $"expected number for {ArgumentName}");
-            }
-
-            return temp.AsNumber();
-        }
-
-        private static string PopString(RuntimeVM vm, string ArgumentName)
-        {
-            var temp = vm.Stack.Pop();
-
-            vm.Expect(temp.Type == VMType.String, $"expected string for {ArgumentName}");
-
-            return temp.AsString();
-        }
-
-        private static byte[] PopBytes(RuntimeVM vm, string ArgumentName)
-        {
-            var temp = vm.Stack.Pop();
-
-            vm.Expect(temp.Type == VMType.Bytes, $"expected bytes for {ArgumentName}");
-
-            return temp.AsByteArray();
-        }
-
         private static ExecutionState Runtime_GetBalance(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 2);
+            vm.ExpectStackSize(2);
 
-            var source = PopAddress(vm);
-            var symbol = PopString(vm, "symbol");
+            var source = vm.PopAddress();
+            var symbol = vm.PopString("symbol");
 
             var balance = vm.GetBalance(symbol, source);
 
@@ -601,13 +527,13 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TransferTokens(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 4);
+            vm.ExpectStackSize(4);
 
-            var source = PopAddress(vm);
-            var destination = PopAddress(vm);
+            var source = vm.PopAddress();
+            var destination = vm.PopAddress();
 
-            var symbol = PopString(vm, "symbol");
-            var amount = PopNumber(vm, "amount");
+            var symbol = vm.PopString("symbol");
+            var amount = vm.PopNumber("amount");
 
             vm.TransferTokens(symbol, source, destination, amount);
 
@@ -616,12 +542,12 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TransferBalance(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 3);
+            vm.ExpectStackSize(3);
 
-            var source = PopAddress(vm);
-            var destination = PopAddress(vm);
+            var source = vm.PopAddress();
+            var destination = vm.PopAddress();
 
-            var symbol = PopString(vm, "symbol");
+            var symbol = vm.PopString("symbol");
 
             var token = vm.GetToken(symbol);
             vm.Expect(token.IsFungible(), "must be fungible");
@@ -633,34 +559,34 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_SwapTokens(RuntimeVM Runtime)
+        private static ExecutionState Runtime_SwapTokens(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 5);
+            vm.ExpectStackSize(5);
 
             VMObject temp;
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for target chain");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for target chain");
             var targetChain = temp.AsString();
 
-            var source = PopAddress(Runtime);
-            var destination = PopAddress(Runtime);
+            var source = vm.PopAddress();
+            var destination = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            var value = PopNumber(Runtime, "amount");
+            var value = vm.PopNumber("amount");
 
-            var token = Runtime.GetToken(symbol);
+            var token = vm.GetToken(symbol);
             if (token.IsFungible())
             {
-                Runtime.SwapTokens(Runtime.Chain.Name, source, targetChain, destination, symbol, value, null, null);
+                vm.SwapTokens(vm.Chain.Name, source, targetChain, destination, symbol, value, null, null);
             }
             else
             {
-                var nft = Runtime.ReadToken(symbol, value);
-                Runtime.SwapTokens(Runtime.Chain.Name, source, targetChain, destination, symbol, value, nft.ROM, nft.ROM);
+                var nft = vm.ReadToken(symbol, value);
+                vm.SwapTokens(vm.Chain.Name, source, targetChain, destination, symbol, value, nft.ROM, nft.ROM);
             }
 
             return ExecutionState.Running;
@@ -668,13 +594,13 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_MintTokens(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 4);
+            vm.ExpectStackSize(4);
 
-            var source = PopAddress(vm);
-            var destination = PopAddress(vm);
+            var source = vm.PopAddress();
+            var destination = vm.PopAddress();
 
-            var symbol = PopString(vm, "symbol");
-            var amount = PopNumber(vm, "amount");
+            var symbol = vm.PopString("symbol");
+            var amount = vm.PopNumber("amount");
 
             if (vm.Nexus.HasGenesis)
             {
@@ -689,99 +615,99 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_BurnTokens(RuntimeVM vm)
         {
-            ExpectStackSize(vm, 3);
+            vm.ExpectStackSize(3);
 
-            var target = PopAddress(vm);
-            var symbol = PopString(vm, "symbol");
-            var amount = PopNumber(vm, "amount");
+            var target = vm.PopAddress();
+            var symbol = vm.PopString("symbol");
+            var amount = vm.PopNumber("amount");
 
             vm.BurnTokens(symbol, target, amount);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_TransferToken(RuntimeVM Runtime)
+        private static ExecutionState Runtime_TransferToken(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 4);
+            vm.ExpectStackSize(4);
             
             VMObject temp;
 
-            var source = PopAddress(Runtime);
-            var destination = PopAddress(Runtime);
+            var source = vm.PopAddress();
+            var destination = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            var tokenID = PopNumber(Runtime, "token ID");
+            var tokenID = vm.PopNumber("token ID");
 
-            Runtime.TransferToken(symbol, source, destination, tokenID);
+            vm.TransferToken(symbol, source, destination, tokenID);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_MintToken(RuntimeVM Runtime)
+        private static ExecutionState Runtime_MintToken(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 4);
+            vm.ExpectStackSize(4);
 
             VMObject temp;
 
-            var source = PopAddress(Runtime);
-            var destination = PopAddress(Runtime);
+            var source = vm.PopAddress();
+            var destination = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for rom");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for rom");
             var rom = temp.AsByteArray();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
             var ram = temp.AsByteArray();
 
-            var tokenID = Runtime.MintToken(symbol, source, destination, rom, ram);
+            var tokenID = vm.MintToken(symbol, source, destination, rom, ram);
 
             var result = new VMObject();
             result.SetValue(tokenID);
-            Runtime.Stack.Push(result);
+            vm.Stack.Push(result);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_BurnToken(RuntimeVM Runtime)
+        private static ExecutionState Runtime_BurnToken(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            vm.ExpectStackSize(3);
 
             VMObject temp;
 
-            var source = PopAddress(Runtime);
+            var source = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            var tokenID = PopNumber(Runtime, "token ID");
+            var tokenID = vm.PopNumber("token ID");
 
-            Runtime.BurnToken(symbol, source, tokenID);
+            vm.BurnToken(symbol, source, tokenID);
 
             return ExecutionState.Running;
         }
 
-        private static TokenContent Runtime_ReadTokenInternal(RuntimeVM Runtime)
+        private static TokenContent Runtime_ReadTokenInternal(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 2);
+            vm.ExpectStackSize(2);
 
             VMObject temp;
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            var tokenID = PopNumber(Runtime, "token ID");
+            var tokenID = vm.PopNumber("token ID");
 
-            return Runtime.ReadToken(symbol, tokenID);
+            return vm.ReadToken(symbol, tokenID);
         }
 
         private static ExecutionState Runtime_ReadToken(RuntimeVM Runtime)
@@ -806,51 +732,51 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_WriteToken(RuntimeVM Runtime)
+        private static ExecutionState Runtime_WriteToken(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            vm.ExpectStackSize(3);
 
             VMObject temp;
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            var tokenID = PopNumber(Runtime, "token ID");
+            var tokenID = vm.PopNumber("token ID");
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
             var ram = temp.AsByteArray();
 
-            Runtime.WriteToken(symbol, tokenID, ram);
+            vm.WriteToken(symbol, tokenID, ram);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_DeployContract(RuntimeVM Runtime)
+        private static ExecutionState Runtime_DeployContract(RuntimeVM vm)
         {
-            var tx = Runtime.Transaction;
+            var tx = vm.Transaction;
             Throw.IfNull(tx, nameof(tx));
 
-            ExpectStackSize(Runtime, 1);
+            vm.ExpectStackSize(1);
 
-            var from = PopAddress(Runtime);
-            Runtime.Expect(from.IsUser, "address must be user");
+            var from = vm.PopAddress();
+            vm.Expect(from.IsUser, "address must be user");
 
-            if (Runtime.Nexus.HasGenesis)
+            if (vm.Nexus.HasGenesis)
             {
                 //Runtime.Expect(org != DomainSettings.ValidatorsOrganizationName, "cannot deploy contract via this organization");
-                Runtime.Expect(Runtime.IsStakeMaster(from), "needs to be master");
+                vm.Expect(vm.IsStakeMaster(from), "needs to be master");
             }
 
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            vm.Expect(vm.IsWitness(from), "invalid witness");
 
-            var contractName = PopString(Runtime, "contractName");
+            var contractName = vm.PopString("contractName");
 
             var contractAddress = SmartContract.GetAddressForName(contractName);
-            var deployed = Runtime.Chain.IsContractDeployed(Runtime.Storage, contractAddress);
+            var deployed = vm.Chain.IsContractDeployed(vm.Storage, contractAddress);
 
-            Runtime.Expect(!deployed, $"{contractName} is already deployed");
+            vm.Expect(!deployed, $"{contractName} is already deployed");
 
             byte[] script;
             ContractInterface abi;
@@ -858,81 +784,81 @@ namespace Phantasma.Blockchain
             bool isNative = Nexus.IsNativeContract(contractName);
             if (isNative)
             {
-                if (contractName == "validator" && Runtime.GenesisAddress == Address.Null)
+                if (contractName == "validator" && vm.GenesisAddress == Address.Null)
                 {
-                    Runtime.Nexus.Initialize(from);
+                    vm.Nexus.Initialize(from);
                 }
 
                 script = new byte[] { (byte)Opcode.RET };
 
-                var contractInstance = Runtime.Nexus.GetNativeContractByAddress(contractAddress);
+                var contractInstance = vm.Nexus.GetNativeContractByAddress(contractAddress);
                 abi = contractInstance.ABI;
             }
             else
             {
-                script = PopBytes(Runtime, "contractScript");
+                script = vm.PopBytes("contractScript");
 
-                var abiBytes = PopBytes(Runtime, "contractABI");
+                var abiBytes = vm.PopBytes("contractABI");
                 abi = ContractInterface.Unserialize(abiBytes);
 
                 var offsets = new HashSet<int>();
                 foreach (var method in abi.Methods)
                 {
-                    Runtime.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
-                    Runtime.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
+                    vm.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
+                    vm.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
                     offsets.Add(method.offset);
                 }
 
-                var fuelCost = Runtime.GetGovernanceValue(Nexus.FuelPerContractDeployTag);
+                var fuelCost = vm.GetGovernanceValue(Nexus.FuelPerContractDeployTag);
                 // governance value is in usd fiat, here convert from fiat to fuel amount
-                fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
+                fuelCost = vm.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
 
                 // burn the "cost" tokens
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
+                vm.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
             }
 
-            var success = Runtime.Chain.DeployContractScript(Runtime.Storage, from, contractName, contractAddress, script, abi);
-            Runtime.Expect(success, $"deployment of {contractName} failed");
+            var success = vm.Chain.DeployContractScript(vm.Storage, from, contractName, contractAddress, script, abi);
+            vm.Expect(success, $"deployment of {contractName} failed");
 
             var constructor = abi.FindMethod(SmartContract.ConstructorName);
 
             if (constructor != null)
             {
-                Runtime.CallContext(0, contractName, SmartContract.ConstructorName, from);
+                vm.CallContext(0, contractName, SmartContract.ConstructorName, from);
             }
 
-            Runtime.Notify(EventKind.ContractDeploy, from, contractName);
+            vm.Notify(EventKind.ContractDeploy, from, contractName);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_NexusInit(RuntimeVM Runtime)
+        private static ExecutionState Runtime_NexusInit(RuntimeVM vm)
         {
-            Runtime.Expect(Runtime.Chain == null || Runtime.Chain.Height == 0, "nexus already initialized");
+            vm.Expect(vm.Chain == null || vm.Chain.Height == 0, "nexus already initialized");
 
-            ExpectStackSize(Runtime, 1);
+            vm.ExpectStackSize(1);
 
-            var owner = PopAddress(Runtime);
+            var owner = vm.PopAddress();
 
-            Runtime.Nexus.Initialize(owner);
+            vm.Nexus.Initialize(owner);
 
             return ExecutionState.Running;
         }
         
-        private static ExecutionState Runtime_CreateToken(RuntimeVM Runtime)
+        private static ExecutionState Runtime_CreateToken(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 7);
+            vm.ExpectStackSize(7);
 
             VMObject temp;
 
-            var source = PopAddress(Runtime);
+            var source = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for name");
             var name = temp.AsString();
 
             /*
@@ -944,142 +870,117 @@ namespace Phantasma.Blockchain
             Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
             var hash = Serialization.Unserialize<Hash>(temp.AsByteArray());*/
 
-            var maxSupply = PopNumber(Runtime, "maxSupply");
+            var maxSupply = vm.PopNumber("maxSupply");
 
-            var decimals = (int)PopNumber(Runtime, "decimals");
+            var decimals = (int)vm.PopNumber("decimals");
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Enum, "expected enum for flags");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.Enum, "expected enum for flags");
             var flags = temp.AsEnum<TokenFlags>();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
             var script = temp.AsByteArray();
 
-            Runtime.CreateToken(source, symbol, name, maxSupply, decimals, flags, script);
+            vm.CreateToken(source, symbol, name, maxSupply, decimals, flags, script);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreateChain(RuntimeVM Runtime)
+        private static ExecutionState Runtime_CreateChain(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            vm.ExpectStackSize(3);
 
             VMObject temp;
 
-            var source = PopAddress(Runtime);
+            var source = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for organization");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for organization");
             var org = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for name");
             var name = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for parent");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for parent");
             var parentName = temp.AsString();
 
-            Runtime.CreateChain(source, org, name, parentName);
+            vm.CreateChain(source, org, name, parentName);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreatePlatform(RuntimeVM Runtime)
+        private static ExecutionState Runtime_CreatePlatform(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            vm.ExpectStackSize(3);
 
             VMObject temp;
 
-            var source = PopAddress(Runtime);
+            var source = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for name");
             var name = temp.AsString();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for pubaddress");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for pubaddress");
             var externalAddress = temp.AsString();
 
-            var interopAddress = PopAddress(Runtime);
+            var interopAddress = vm.PopAddress();
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
+            temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
             var symbol = temp.AsString();
 
-            var target = Runtime.CreatePlatform(source, name, externalAddress, interopAddress, symbol);
+            var target = vm.CreatePlatform(source, name, externalAddress, interopAddress, symbol);
 
             var result = new VMObject();
             result.SetValue(target);
-            Runtime.Stack.Push(result);
+            vm.Stack.Push(result);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_SetTokenPlatformHash(RuntimeVM Runtime)
+        private static ExecutionState Runtime_SetTokenPlatformHash(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            vm.ExpectStackSize(3);
 
-            VMObject temp;
+            var symbol = vm.PopString("symbol");
+            var platform = vm.PopString("platform");
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            var bytes = vm.PopBytes("hash");
+            var hash = new Hash(bytes.Skip(1).ToArray());
 
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for platform");
-            var platform = temp.AsString();
-
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
-            var hash = new Hash(temp.AsByteArray().Skip(1).ToArray());
-
-            Runtime.SetTokenPlatformHash(symbol, platform, hash);
+            vm.SetTokenPlatformHash(symbol, platform, hash);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreateOrganization(RuntimeVM Runtime)
+        private static ExecutionState Runtime_CreateOrganization(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 4);
+            vm.ExpectStackSize(4);
 
-            VMObject temp;
+            var source = vm.PopAddress();
+            var ID = vm.PopString("id");
+            var name = vm.PopString("name");
+            var script = vm.PopBytes("script");
 
-            var source = PopAddress(Runtime);
-
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for ID");
-            var ID = temp.AsString();
-
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
-            var name = temp.AsString();
-
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
-            var script = temp.AsByteArray();
-
-            Runtime.CreateOrganization(source, ID, name, script);
+            vm.CreateOrganization(source, ID, name, script);
 
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Organization_AddMember(RuntimeVM Runtime)
+        private static ExecutionState Organization_AddMember(RuntimeVM vm)
         {
-            ExpectStackSize(Runtime, 3);
+            vm.ExpectStackSize(3);
 
-            VMObject temp;
+            var source = vm.PopAddress();
+            var name = vm.PopString("name");
+            var target = vm.PopAddress();
 
-            var source = PopAddress(Runtime);
-
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for name");
-            var name = temp.AsString();
-
-            var target = PopAddress(Runtime);
-
-            Runtime.AddMember(name, source, target);
+            vm.AddMember(name, source, target);
 
             return ExecutionState.Running;
         }

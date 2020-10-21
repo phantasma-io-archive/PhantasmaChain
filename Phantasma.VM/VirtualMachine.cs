@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using System;
 using System.Linq;
 using System.IO;
+using System.Diagnostics;
 
 namespace Phantasma.VM
 {
@@ -243,5 +244,21 @@ namespace Phantasma.VM
         }
 
         public abstract void DumpData(List<string> lines);
+
+        public void Expect(bool condition, string description)
+        {
+            if (condition)
+            {
+                return;
+            }
+
+            var callingFrame = new StackFrame(1);
+            var method = callingFrame.GetMethod();
+
+            description = $"{description} @ {method.Name}";
+
+            throw new VMException(this, description);
+        }
+
     }
 }

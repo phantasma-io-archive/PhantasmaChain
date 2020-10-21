@@ -16,7 +16,7 @@ namespace Phantasma.Blockchain.Tokens
         public int Decimals { get; private set; }
         public byte[] Script { get; private set; }
 
-        internal TokenInfo(string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        public TokenInfo(string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             this.Symbol = symbol;
             this.Name = name;
