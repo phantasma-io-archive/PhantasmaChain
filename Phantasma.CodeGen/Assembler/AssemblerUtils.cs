@@ -26,7 +26,7 @@ namespace Phantasma.CodeGen.Assembler
             Semanteme[] semantemes;
             try
             {
-                semantemes = Semanteme.ProcessLines(lines).ToArray();
+                semantemes = Semanteme.ProcessLines(lines);
             }
             catch (Exception e)
             {

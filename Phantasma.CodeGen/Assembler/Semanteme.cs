@@ -19,23 +19,33 @@ namespace Phantasma.CodeGen.Assembler
             this.LineNumber = lineNumber;
         }
 
-        public static IEnumerable<Semanteme> ProcessLines(IEnumerable<string> lines)
+        public static Semanteme[] ProcessLines(IEnumerable<string> lines)
         {
             ArgumentUtils.ClearAlias();
+
+
+            var semantemes = new List<Semanteme>();
 
             bool isInComment = false;
             uint lineNumber = 0;
             foreach (string line in lines)
             {
                 string pline = line;
+                
                 ++lineNumber;
                 int index;
+
+                index = pline.IndexOf("//", StringComparison.Ordinal);
+                if (index >= 0) pline = pline.Substring(0, index);
+                pline = pline.Trim();
+
                 if (isInComment)
                 {
                     index = pline.IndexOf("*/", StringComparison.Ordinal);
                     if (index == -1) continue;
                     pline = pline.Substring(index + 2);
                 }
+
                 index = 0;
                 while (true)
                 {
@@ -53,27 +63,27 @@ namespace Phantasma.CodeGen.Assembler
                         break;
                     }
                 }
-                index = pline.IndexOf("//", StringComparison.Ordinal);
-                if (index >= 0) pline = pline.Substring(0, index);
-                pline = pline.Trim();
 
                 index = pline.IndexOf(':');
                 var strIndex = pline.IndexOf(ArgumentUtils.STRING_PREFIX);
 
                 if (index >= 0 && (index<strIndex || strIndex<0))
                 {
-                    yield return new Label(lineNumber, pline.Substring(0, index).AsLabel());
+                    semantemes.Add(new Label(lineNumber, pline.Substring(0, index).AsLabel()));
                     pline = pline.Substring(index + 1).Trim();
                 }
+
                 if (!string.IsNullOrEmpty(pline))
                 {
                     //string[] words = pline.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
                     string[] words = SplitWords(pline);
                     var name = words[0];
                     var args = words.Skip(1).ToArray();
-                    yield return new Instruction(lineNumber, name, args);
+                    semantemes.Add(new Instruction(lineNumber, name, args));
                 }
             }
+
+            return semantemes.ToArray();
         }
 
         private static string[] SplitWords(string line)
