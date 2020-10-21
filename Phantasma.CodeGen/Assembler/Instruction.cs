@@ -52,6 +52,7 @@ namespace Phantasma.CodeGen.Assembler
                     case Opcode.POP:
                     case Opcode.INC:
                     case Opcode.DEC:
+                    case Opcode.CLEAR:
                         Process1Reg(sb);
                         break;
 
