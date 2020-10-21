@@ -622,7 +622,7 @@ namespace Phantasma.API
                     name = x.name,
                     returnType = x.returnType.ToString(),
                     value = x.value,
-                    description = x.description,
+                    description = Base16.Encode(x.description),
                 }).ToArray()
             };
         }
