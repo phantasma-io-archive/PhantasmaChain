@@ -262,12 +262,19 @@ namespace Phantasma.VM
 
         public bool AsBool()
         {
-            if (this.Type != VMType.Bool)
+            switch (this.Type)
             {
-                throw new Exception($"Invalid cast: expected bool, got {this.Type}");
-            }
+                case VMType.Bool: return (bool)Data;
 
-            return (bool)Data;
+                case VMType.Number:
+                    {
+                        var val = this.AsNumber();
+                        return val != 0;
+                    }
+
+                default:
+                    throw new Exception($"Invalid cast: expected bool, got {this.Type}");
+            }
         }
 
         public T AsInterop<T>() 
