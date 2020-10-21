@@ -389,6 +389,20 @@ namespace Phantasma.API
         public ABIParameterResult[] parameters;
     }
 
+    public struct ABIEventResult : IAPIResult
+    {
+        [APIDescription("Value of event")]
+        public int value;
+
+        [APIDescription("Name of event")]
+        public string name;
+
+        public string returnType;
+
+        [APIDescription("Description of event")]
+        public string description;
+    }
+
     public struct ContractResult : IAPIResult
     {
         [APIDescription("Name of contract")]
@@ -402,6 +416,9 @@ namespace Phantasma.API
 
         [APIDescription("List of methods")]
         public ABIMethodResult[] methods;
+
+        [APIDescription("List of events")]
+        public ABIEventResult[] events;
     }
 
     public struct ChannelResult : IAPIResult

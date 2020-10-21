@@ -10,6 +10,7 @@ using System.IO;
 using Phantasma.Domain;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -184,7 +185,7 @@ namespace Phantasma.Blockchain
                 }
             }
 
-            this.ABI = new ContractInterface(methods);
+            this.ABI = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
         }
 
         public bool HasInternalMethod(string methodName)

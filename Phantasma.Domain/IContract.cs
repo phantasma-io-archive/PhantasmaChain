@@ -2,6 +2,7 @@
 using Phantasma.VM;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Phantasma.Domain
 {
@@ -39,6 +40,9 @@ namespace Phantasma.Domain
         private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>();
         public IEnumerable<ContractMethod> Methods => _methods.Values;
 
+        private List<ContractEvent> _events = new List<ContractEvent>();
+        public IEnumerable<ContractEvent> Events => _events;
+
         public ContractMethod this[string name]
         {
             get
@@ -47,12 +51,14 @@ namespace Phantasma.Domain
             }
         }
 
-        public ContractInterface(IEnumerable<ContractMethod> methods)
+        public ContractInterface(IEnumerable<ContractMethod> methods, IEnumerable<ContractEvent> events)
         {
             foreach (var entry in methods)
             {
                 _methods[entry.name] = entry;
             }
+
+            this._events = events.ToList();
         }
 
         public ContractMethod FindMethod(string name)
@@ -60,6 +66,19 @@ namespace Phantasma.Domain
             if (_methods.ContainsKey(name))
             {
                 return _methods[name];
+            }
+
+            return null;
+        }
+
+        public ContractEvent FindEvent(byte value)
+        {
+            foreach (var evt in _events)
+            {
+                if (evt.value == value)
+                {
+                    return evt;
+                }
             }
 
             return null;
@@ -117,7 +136,16 @@ namespace Phantasma.Domain
                 methods[i] = ContractMethod.Unserialize(reader);
             }
 
-            return new ContractInterface(methods);
+
+            len = reader.ReadByte();
+            var events = new ContractEvent[len];
+            for (int i = 0; i < len; i++)
+            {
+                events[i] = ContractEvent.Unserialize(reader);
+            }
+
+
+            return new ContractInterface(methods, events);
         }
 
         public static ContractInterface Unserialize(byte[] bytes)
@@ -166,6 +194,46 @@ namespace Phantasma.Domain
         }
     }
 
+    public class ContractEvent
+    {
+        public readonly byte value;
+        public readonly string name;
+        public readonly VMType returnType;
+        public readonly string description;
+
+        public ContractEvent(byte value, string name, VMType returnType, string description)
+        {
+            this.value = value;
+            this.name = name;
+            this.returnType = returnType;
+            this.description = description;
+        }
+
+        public override string ToString()
+        {
+            return $"{name} : {returnType} => {value}";
+        }
+
+        public static ContractEvent Unserialize(BinaryReader reader)
+        {
+            var value = reader.ReadByte();
+            var name = reader.ReadVarString();
+            var returnType = (VMType)reader.ReadByte();
+            var description = reader.ReadString();
+
+            return new ContractEvent(value, name, returnType, description);
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.Write((byte)value);
+            writer.WriteVarString(name);
+            writer.Write((byte)returnType);
+            writer.WriteVarString(description);
+
+        }
+    }
+
     public class ContractMethod
     {
         public readonly string name;
@@ -183,7 +251,7 @@ namespace Phantasma.Domain
 
         public override string ToString()
         {
-            return $"{name} => {returnType}";
+            return $"{name} : {returnType}";
         }
 
         public static ContractMethod Unserialize(BinaryReader reader)

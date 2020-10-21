@@ -616,6 +616,13 @@ namespace Phantasma.API
                         name = y.name,
                         type = y.type.ToString()
                     }).ToArray()
+                }).ToArray(),
+                events = contract.ABI.Events.Select(x => new ABIEventResult()
+                {
+                    name = x.name,
+                    returnType = x.returnType.ToString(),
+                    value = x.value,
+                    description = x.description,
                 }).ToArray()
             };
         }
