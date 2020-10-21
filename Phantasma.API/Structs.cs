@@ -399,7 +399,7 @@ namespace Phantasma.API
 
         public string returnType;
 
-        [APIDescription("Description of event")]
+        [APIDescription("Description script (base16 encoded)")]
         public string description;
     }
 

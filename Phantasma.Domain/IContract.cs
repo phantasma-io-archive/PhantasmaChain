@@ -136,7 +136,6 @@ namespace Phantasma.Domain
                 methods[i] = ContractMethod.Unserialize(reader);
             }
 
-
             len = reader.ReadByte();
             var events = new ContractEvent[len];
             for (int i = 0; i < len; i++)
@@ -165,6 +164,12 @@ namespace Phantasma.Domain
             foreach (var method in _methods.Values)
             {
                 method.Serialize(writer);
+            }
+
+            writer.Write((byte)_events.Count);
+            foreach (var evt in _events)
+            {
+                evt.Serialize(writer);
             }
         }
 
@@ -199,9 +204,9 @@ namespace Phantasma.Domain
         public readonly byte value;
         public readonly string name;
         public readonly VMType returnType;
-        public readonly string description;
+        public readonly byte[] description;
 
-        public ContractEvent(byte value, string name, VMType returnType, string description)
+        public ContractEvent(byte value, string name, VMType returnType, byte[] description)
         {
             this.value = value;
             this.name = name;
@@ -219,7 +224,7 @@ namespace Phantasma.Domain
             var value = reader.ReadByte();
             var name = reader.ReadVarString();
             var returnType = (VMType)reader.ReadByte();
-            var description = reader.ReadString();
+            var description = reader.ReadByteArray();
 
             return new ContractEvent(value, name, returnType, description);
         }
@@ -229,7 +234,7 @@ namespace Phantasma.Domain
             writer.Write((byte)value);
             writer.WriteVarString(name);
             writer.Write((byte)returnType);
-            writer.WriteVarString(description);
+            writer.WriteByteArray(description);
 
         }
     }
