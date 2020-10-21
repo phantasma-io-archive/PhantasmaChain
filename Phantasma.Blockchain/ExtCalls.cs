@@ -160,9 +160,13 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_Notify(RuntimeVM vm)
         {
-            var bytes = vm.Stack.Pop().AsByteArray();
-            var address = vm.Stack.Pop().AsInterop<Address>();
+            vm.Expect(vm.CurrentContextName != VirtualMachine.EntryContext, "cannot notify in current context");
+
             var kind = vm.Stack.Pop().AsEnum<EventKind>();
+            var address = PopAddress(vm);
+            var obj = vm.Stack.Pop();
+
+            var bytes = obj.Serialize();
 
             vm.Notify(kind, address, bytes);
             return ExecutionState.Running;
