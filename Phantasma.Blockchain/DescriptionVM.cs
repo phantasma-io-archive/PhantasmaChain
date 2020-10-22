@@ -12,6 +12,17 @@ namespace Phantasma.Blockchain
     {
         public DescriptionVM(byte[] script) : base(script)
         {
+            RegisterMethod("ABI()", ExtCalls.Constructor_ABI);
+            RegisterMethod("Address()", ExtCalls.Constructor_Address);
+            RegisterMethod("Hash()", ExtCalls.Constructor_Hash);
+            RegisterMethod("Timestamp()", ExtCalls.Constructor_Timestamp);
+        }
+
+        private Dictionary<string, Func<VirtualMachine, ExecutionState>> handlers = new Dictionary<string, Func<VirtualMachine, ExecutionState>>();
+
+        internal void RegisterMethod(string name, Func<VirtualMachine, ExecutionState> handler)
+        {
+            handlers[name] = handler;
         }
 
         public abstract IToken FetchToken(string symbol);
@@ -23,13 +34,13 @@ namespace Phantasma.Blockchain
             // do nothing
         }
 
-        private static readonly string OutputTag = "Output.";
+        private static readonly string FormatInteropTag = "Format.";
 
         public override ExecutionState ExecuteInterop(string method)
         {
-            if (method.StartsWith(OutputTag))
+            if (method.StartsWith(FormatInteropTag))
             {
-                method = method.Substring(OutputTag.Length);
+                method = method.Substring(FormatInteropTag.Length);
                 switch (method)
                 {
                     case "Decimals":
@@ -80,9 +91,15 @@ namespace Phantasma.Blockchain
                         }
 
                     default:
-                        throw new VMException(this, $"unknown interop: {OutputTag}{method}");
+                        throw new VMException(this, $"unknown interop: {FormatInteropTag}{method}");
 
                 }
+            }
+
+            if (handlers.ContainsKey(method))
+            {
+                var interop = handlers[method];
+                return interop(this);
             }
 
             throw new VMException(this, "unknown interop: " + method);

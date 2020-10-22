@@ -76,7 +76,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Timestamp()", Constructor_Timestamp);          
         }
 
-        private static ExecutionState Constructor_Object<IN,OUT>(RuntimeVM vm, Func<IN, OUT> loader) 
+        private static ExecutionState Constructor_Object<IN,OUT>(VirtualMachine vm, Func<IN, OUT> loader) 
         {
             var type = VMObject.GetVMType(typeof(IN));
             var rawInput = vm.Stack.Pop();
@@ -97,7 +97,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Constructor_Address(RuntimeVM vm)
+        public static ExecutionState Constructor_Address(VirtualMachine vm)
         {
             return Constructor_Object<byte[], Address>(vm, bytes =>
             {
@@ -117,7 +117,7 @@ namespace Phantasma.Blockchain
             });
         }
 
-        private static ExecutionState Constructor_Hash(RuntimeVM vm)
+        public static ExecutionState Constructor_Hash(VirtualMachine vm)
         {
             return Constructor_Object<byte[], Hash>(vm, bytes =>
             {
@@ -126,7 +126,7 @@ namespace Phantasma.Blockchain
             });
         }
 
-        private static ExecutionState Constructor_Timestamp(RuntimeVM vm)
+        public static ExecutionState Constructor_Timestamp(VirtualMachine vm)
         {
             return Constructor_Object<BigInteger, Timestamp>(vm, val =>
             {
@@ -135,7 +135,7 @@ namespace Phantasma.Blockchain
             });
         }
 
-        private static ExecutionState Constructor_ABI(RuntimeVM vm)
+        public static ExecutionState Constructor_ABI(VirtualMachine vm)
         {
             return Constructor_Object<byte[], ContractInterface>(vm, bytes =>
             {
