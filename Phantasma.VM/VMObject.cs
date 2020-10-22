@@ -445,6 +445,14 @@ namespace Phantasma.VM
             return this;
         }
 
+        public VMObject SetValue(byte[] val)
+        {
+            this.Type = VMType.Bytes;
+            this.Data = val;
+            this._localSize = val.Length;
+            return this;
+        }
+
         public VMObject SetValue(Enum val)
         {
             this.Type = VMType.Enum;
