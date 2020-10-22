@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -149,6 +149,7 @@ namespace Phantasma.VM
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             frame.Registers[dst] = frame.Registers[src];
+                            frame.Registers[src] = new VMObject();
                             break;
                         }
 
