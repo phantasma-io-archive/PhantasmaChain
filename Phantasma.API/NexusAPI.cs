@@ -510,7 +510,7 @@ namespace Phantasma.API
                 address = evt.Address.Text,
                 contract = evt.Contract,
                 data = evt.Data.Encode(),
-                kind = evt.Kind.ToString()
+                kind = evt.Kind >= EventKind.Custom ? ((byte)evt.Kind).ToString() : evt.Kind.ToString()
             };
         }
 
