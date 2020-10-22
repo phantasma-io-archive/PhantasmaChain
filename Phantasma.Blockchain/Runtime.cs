@@ -112,58 +112,15 @@ namespace Phantasma.Blockchain
 
         public override ExecutionState ExecuteInterop(string method)
         {
-            BigInteger gasCost;
+            var result = base.ExecuteInterop(method);
 
-            // construtor
-            if (method.EndsWith("()"))
+            if (result == ExecutionState.Running)
             {
-                gasCost = 10;
-            }
-            else
-            {
-                int dotPos = method.IndexOf('.');
-                Expect(dotPos > 0, "extcall is missing namespace");
-
-                var methodNamespace = method.Substring(0, dotPos);
-                switch (methodNamespace)
+                if (handlers.ContainsKey(method))
                 {
-                    case "Runtime":
-                    case "Data":
-                    case "Map":
-                    case "List":
-                    case "Set":
-                        gasCost = 50;
-                        break;
-
-                    case "Nexus":
-                        gasCost = 1000;
-                        break;
-
-                    case "Organization":
-                    case "Oracle":
-                        gasCost = 200;
-                        break;
-
-                    case "Leaderboard":
-                        gasCost = 100;
-                        break;
-
-                    default:
-                        Expect(false, "invalid extcall namespace: " + methodNamespace);
-                        gasCost = 0;
-                        break;
+                    using (var m = new ProfileMarker(method))
+                        return handlers[method](this);
                 }
-            }
-
-            if (gasCost > 0)
-            {
-                ConsumeGas(gasCost);
-            }
-
-            if (handlers.ContainsKey(method))
-            {
-                using (var m = new ProfileMarker(method))
-                    return handlers[method](this);
             }
 
             return ExecutionState.Fault;
