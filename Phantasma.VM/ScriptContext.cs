@@ -1,11 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Performance;
 using Phantasma.Numerics;
+using Phantasma.Storage;
 
 namespace Phantasma.VM
 {
@@ -886,6 +888,28 @@ namespace Phantasma.VM
                                 throw new VMException(frame.VM, $"VM switch instruction failed: execution state did not halt");
                             }
 
+                            break;
+                        }
+
+                    // args: byte src_reg dst_reg
+                    case Opcode.UNPACK:
+                        using (var m = new ProfileMarker("SWITCH"))
+                        {
+                            var src = Read8();
+                            var dst = Read8();
+
+                            Expect(src < frame.Registers.Length, "invalid src register");
+                            Expect(dst < frame.Registers.Length, "invalid dst register");
+
+                            var bytes = frame.Registers[src].AsByteArray();
+                            frame.Registers[dst] = new VMObject();
+                            using (var stream = new MemoryStream(bytes))
+                            {
+                                using (var reader = new BinaryReader(stream))
+                                {
+                                    frame.Registers[dst].UnserializeData(reader);
+                                }
+                            }
                             break;
                         }
 

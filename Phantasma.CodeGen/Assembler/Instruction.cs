@@ -66,6 +66,7 @@ namespace Phantasma.CodeGen.Assembler
                     case Opcode.ABS:
                     case Opcode.COPY:
                     case Opcode.MOVE:
+                    case Opcode.UNPACK:
                         Process2Reg(sb);
                         break;
 
