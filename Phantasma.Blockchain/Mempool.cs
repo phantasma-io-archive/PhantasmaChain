@@ -314,13 +314,13 @@ namespace Phantasma.Blockchain
                             }
                         }
 
-                        if (index >= 0)
-                        {
-                            transactions.RemoveAt(index);
-                        }
-
                         lock (_pending)
                         {
+                            if (index >= 0)
+                            {
+                                transactions.RemoveAt(index);
+                            }
+
                             _pending.Remove(e.Hash);
                             Mempool.RegisterRejectionReason(e.Hash, e.Message);
                         }
@@ -594,7 +594,7 @@ namespace Phantasma.Blockchain
             return chainPool.Discard(tx.Hash);
         }
 
-        public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason)
+        public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason, bool retry = true)
         {
             lock (_rejections)
             {
@@ -622,6 +622,11 @@ namespace Phantasma.Blockchain
             if (Nexus.FindTransactionByHash(hash) != null)
             {
                 return MempoolTransactionStatus.Pending;
+            }
+
+            if (retry)
+            {
+                return GetTransactionStatus(hash, out reason, false);
             }
 
             return MempoolTransactionStatus.Unknown;
