@@ -425,11 +425,11 @@ namespace Phantasma.Blockchain
 
             if (address.IsSystem)
             {
-                var contract = Nexus.GetNativeContractByAddress(address);
+                var contract = Chain.GetContractByAddress(this.Storage, address);
                 if (contract != null)
                 {
                     var triggerName = trigger.ToString();
-                    if (contract.HasInternalMethod(triggerName))
+                    if (contract.ABI.HasMethod(triggerName))
                     {
                         CallContext(0, contract.Name, triggerName, args);
                     }

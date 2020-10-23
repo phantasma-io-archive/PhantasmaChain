@@ -61,6 +61,11 @@ namespace Phantasma.Domain
             this._events = events.ToList();
         }
 
+        public bool HasMethod(string name)
+        {
+            return _methods.ContainsKey(name);
+        }
+
         public ContractMethod FindMethod(string name)
         {
             if (_methods.ContainsKey(name))
