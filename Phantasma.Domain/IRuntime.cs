@@ -122,7 +122,7 @@ namespace Phantasma.Domain
         void SetTokenPlatformHash(string symbol, string platform, Hash hash);
         void CreateChain(Address creator, string organization, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
-        IArchive CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
+        IArchive CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] encryptionPublicKey);
 
         BigInteger CreatePlatform(Address from, string name, string externalAddress, Address interopAddress, string fuelSymbol);
 

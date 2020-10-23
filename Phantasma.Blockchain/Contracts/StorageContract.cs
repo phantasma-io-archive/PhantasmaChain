@@ -43,22 +43,22 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         // this is an helper method to upload smaller files...
-        public void UploadData(Address target, string fileName, byte[] data, ArchiveFlags flags, byte[] key)
+        public void UploadSmallFile(Address target, string fileName, byte[] data, ArchiveFlags flags, byte[] encryptionPublicKey)
         {
             BigInteger fileSize = data.Length;
             Runtime.Expect(fileSize <= MerkleTree.ChunkSize, "data too big");
 
             var merkle = new MerkleTree(data);
             var serializedMerkle = Serialization.Serialize(merkle);
-            UploadFile(target, fileName, fileSize, serializedMerkle, flags, key);
+            UploadFile(target, fileName, fileSize, serializedMerkle, flags, encryptionPublicKey);
 
-            var archive = Runtime.CreateArchive(merkle, fileSize, flags, key);
+            var archive = Runtime.CreateArchive(merkle, fileSize, flags, encryptionPublicKey);
             Runtime.Expect(archive != null, "failed to create archive");
 
             Runtime.Expect(Runtime.WriteArchive(archive, 0, data), "failed to write archive content");
         }
 
-        public void UploadFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, ArchiveFlags flags, byte[] key)
+        public void UploadFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, ArchiveFlags flags, byte[] encryptionPublicKey)
         {
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(target.IsUser, "destination address must be user address");
@@ -75,7 +75,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(targetAvailableSize >= requiredSize, "target account does not have available space");
 
             var hashes = MerkleTree.FromBytes(contentMerkle);
-            Runtime.CreateArchive(hashes, fileSize, flags, key);
+            Runtime.CreateArchive(hashes, fileSize, flags, encryptionPublicKey);
 
             var newEntry = new StorageEntry()
             {

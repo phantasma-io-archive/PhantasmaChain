@@ -78,9 +78,9 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Constructor_Object<IN,OUT>(VirtualMachine vm, Func<IN, OUT> loader) 
         {
-            var type = VMObject.GetVMType(typeof(IN));
             var rawInput = vm.Stack.Pop();
-            var convertedInput = rawInput.AsType(type);
+            var inputType = VMObject.GetVMType(typeof(IN));
+            var convertedInput = rawInput.AsType(inputType);
 
             try
             {
