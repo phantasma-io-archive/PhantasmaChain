@@ -438,7 +438,8 @@ namespace Phantasma.API
 
         private TokenContent ReadNFT(string symbol, BigInteger tokenID, Chain chain)
         {
-            return chain.ReadToken(chain.Storage, symbol, tokenID);
+            var tokenKey = Nexus.GetKeyForNFT(symbol, tokenID);
+            return chain.Storage.Get<TokenContent>(tokenKey);
         }
 
         private AuctionResult FillAuction(MarketAuction auction, Chain chain)

@@ -14,6 +14,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -869,10 +870,11 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region NFT
-        internal byte[] GetKeyForNFT(string symbol)
+
+        public byte[] GetKeyForNFT(string symbol, BigInteger tokenID)
         {
-            var str = $".nft." + symbol;
-            return Encoding.UTF8.GetBytes(str);
+            var tokenKey = SmartContract.GetKeyForField(symbol, tokenID.ToString(), true);
+            return tokenKey;
         }
 
         internal BigInteger CreateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram)
@@ -880,16 +882,30 @@ namespace Phantasma.Blockchain
             Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
             Runtime.Expect(ram != null, "invalid nft ram");
 
-            var key = GetKeyForNFT(symbol);
-            var nftMap = new StorageMap(key, Runtime.Storage);
+            var mintKey = SmartContract.GetKeyForField(symbol, "mintID", true);
 
-            var tokenID = Hash.FromBytes(rom);
-            Runtime.Expect(!nftMap.ContainsKey<Hash>(tokenID), "nft with same hash already exists");
+            BigInteger tokenID;
 
-            var mintID = nftMap.Count() + 1; // starts counting on 1, not on 0
+            if (Runtime.RootStorage.Has(mintKey))
+            {
+                tokenID = Runtime.RootStorage.Get<BigInteger>(mintKey);
+                tokenID++;
+            }
+            else
+            {
+                tokenID = 1;
+            }
 
-            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram);
-            nftMap.Set<Hash, TokenContent>(tokenID, content);
+            var content = new TokenContent(tokenID, chainName, targetAddress, rom, ram);
+
+            var token = Runtime.GetToken(symbol);
+            var contractAddress = token.GetContractAddress();
+
+            var tokenKey = GetKeyForNFT(symbol, tokenID);
+
+            var bytes = content.ToByteArray();
+            Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+
             return tokenID;
         }
 
@@ -903,18 +919,21 @@ namespace Phantasma.Blockchain
         {
             Runtime.Expect(ram != null && ram.Length < TokenContent.MaxRAMSize, "invalid nft ram update");
 
-            var key = GetKeyForNFT(symbol);
-            var nftMap = new StorageMap(key, Runtime.Storage);
+            var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Hash tokenHash = tokenID;
-            if (nftMap.ContainsKey<Hash>(tokenHash))
+            if (Runtime.RootStorage.Has(tokenKey))
             {
-                var content = nftMap.Get<Hash, TokenContent>(tokenHash);
+                var content = Runtime.RootStorage.Get<TokenContent>(tokenKey);
 
-                Runtime.Expect(rom.SequenceEqual(content.ROM), "invalid nft rom");
+                Runtime.Expect(rom.CompareBytes(content.ROM), "rom does not match original value");
 
                 content = new TokenContent(content.MintID, chainName, owner, content.ROM, ram);
-                nftMap.Set<Hash, TokenContent>(tokenHash, content);
+
+                var token = Runtime.GetToken(symbol);
+                var contractAddress = token.GetContractAddress();
+
+                var bytes = content.ToByteArray();
+                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
             }
             else
             {
@@ -926,13 +945,11 @@ namespace Phantasma.Blockchain
 
         public TokenContent ReadNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
-            var key = GetKeyForNFT(symbol);
-            var nftMap = new StorageMap(key, Runtime.Storage);
+            var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Hash tokenHash = tokenID;
-            Runtime.Expect(nftMap.ContainsKey<Hash>(tokenHash), "nft does not exists");
+            Runtime.Expect(Runtime.RootStorage.Has(tokenKey), "nft does not exists");
 
-            return nftMap.Get<Hash, TokenContent>(tokenHash);
+            return Runtime.Storage.Get<TokenContent>(tokenKey);
         }
         #endregion
 

@@ -91,6 +91,28 @@ namespace Phantasma.Domain
             RAM = reader.ReadByteArray();
             RAM = RAM ?? new byte[0];
         }
+
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    SerializeData(writer);
+                }
+
+                return stream.ToArray();
+            }
+        }
+    }
+
+
+    public static class TokenUtils
+    {
+        public static Address GetContractAddress(this IToken token)
+        {
+            return SmartContract.GetAddressForName(token.Symbol);
+        }
     }
 
 }
