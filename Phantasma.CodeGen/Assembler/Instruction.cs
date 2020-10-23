@@ -53,6 +53,7 @@ namespace Phantasma.CodeGen.Assembler
                     case Opcode.INC:
                     case Opcode.DEC:
                     case Opcode.CLEAR:
+                    case Opcode.THROW:
                         Process1Reg(sb);
                         break;
 
@@ -122,10 +123,6 @@ namespace Phantasma.CodeGen.Assembler
 
                     case Opcode.RET:
                         ProcessReturn(sb);
-                        break;
-
-                    case Opcode.THROW:
-                        ProcessThrow(sb);
                         break;
 
                     case Opcode.JMPIF:
@@ -531,43 +528,5 @@ namespace Phantasma.CodeGen.Assembler
                 throw new CompilerException(LineNumber, ERR_INCORRECT_NUMBER);
             }
         }
-
-        private void ProcessThrow(ScriptBuilder sb)
-        {
-            if (Arguments.Length == 0)
-            {
-                sb.Emit(this._opcode.Value);
-                sb.EmitVarBytes(0);
-            }
-            else
-            if (Arguments.Length == 1)
-            {
-                if (Arguments[0].IsBytes())
-                {
-                    var bytes = Arguments[0].AsBytes();
-                    sb.Emit(this._opcode.Value);
-                    sb.EmitVarBytes(bytes.Length);
-                    sb.EmitRaw(bytes);
-                }
-                else
-                if (Arguments[0].IsString())
-                {
-                    var str = Arguments[0].AsString();
-                    var bytes = System.Text.Encoding.UTF8.GetBytes(str);
-                    sb.Emit(this._opcode.Value);
-                    sb.EmitVarBytes(bytes.Length);
-                    sb.EmitRaw(bytes);
-                }
-                else
-                {
-                    throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
-                }
-            }
-            else
-            {
-                throw new CompilerException(LineNumber, ERR_INCORRECT_NUMBER);
-            }
-        }
-
     }
 }

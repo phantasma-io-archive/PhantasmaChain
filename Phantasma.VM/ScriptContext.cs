@@ -318,17 +318,14 @@ namespace Phantasma.VM
                     // args: var length, var bytes
                     case Opcode.THROW:
                         {
-                            var len = (int)ReadVar(1024);
+                            var src = Read8();
 
-                            if (len > 0)
-                            {
-                                var bytes = ReadBytes(len);
-                                var exceptionMessage = Encoding.UTF8.GetString(bytes);
-                                throw new VMException(frame.VM, exceptionMessage);
-                            }
+                            Expect(src < frame.Registers.Length, "invalid exception register");
 
-                            SetState(ExecutionState.Fault);
-                            return;
+                            var exception = frame.Registers[src];
+                            var exceptionMessage = exception.AsString();
+
+                            throw new VMException(frame.VM, exceptionMessage);
                         }
 
                     // args: none

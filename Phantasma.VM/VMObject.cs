@@ -64,6 +64,7 @@ namespace Phantasma.VM
         public VMObject()
         {
             this.Type = VMType.None;
+            this.Data = null;
         }
 
         public BigInteger AsNumber()
