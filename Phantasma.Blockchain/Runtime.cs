@@ -982,10 +982,10 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
 
-        public IArchive CreateArchive(MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(MerkleTree merkleTree, string name, BigInteger size, Timestamp time, ArchiveFlags flags, byte[] key)
         {
             // TODO validation
-            return Nexus.CreateArchive(this.RootStorage, merkleTree, size, flags, key);
+            return Nexus.CreateArchive(this.RootStorage, merkleTree, name, size, time, flags, key);
         }
 
         public bool WriteArchive(IArchive archive, int blockIndex, byte[] content)

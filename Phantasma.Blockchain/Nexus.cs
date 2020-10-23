@@ -1389,7 +1389,7 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, string name, BigInteger size, Timestamp time, ArchiveFlags flags, byte[] key)
         {
             var archive = GetArchive(storage, merkleTree.Root);
             if (archive != null)
@@ -1402,7 +1402,7 @@ namespace Phantasma.Blockchain
                 return archive;
             }
 
-            archive = new Archive(merkleTree, size, flags, key);
+            archive = new Archive(merkleTree, name, size, time, flags, key);
             var archiveHash = merkleTree.Root;
 
             var map = GetArchiveMap(storage);

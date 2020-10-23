@@ -4,17 +4,9 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
-using System.Xml.XPath;
 
 namespace Phantasma.Blockchain.Contracts
 {
-    public struct StorageEntry
-    {
-        public string Name;
-        public Hash Hash;
-        public Timestamp Date;
-    }
-
     public sealed class StorageContract : NativeContract
     {
         public override NativeContractKind Kind => NativeContractKind.Storage;
@@ -26,7 +18,7 @@ namespace Phantasma.Blockchain.Contracts
 
         public const int MaxKeySize = 256;
 
-        internal StorageMap _storageMap; //<string, Collection<StorageEntry>>
+        internal StorageMap _storageMap; //<Address, Collection<StorageEntry>>
         internal StorageMap _dataQuotas; //<Address, BigInteger>
 
         public StorageContract() : base()
@@ -52,8 +44,8 @@ namespace Phantasma.Blockchain.Contracts
             var serializedMerkle = Serialization.Serialize(merkle);
             UploadFile(target, fileName, fileSize, serializedMerkle, flags, encryptionPublicKey);
 
-            var archive = Runtime.CreateArchive(merkle, fileSize, flags, encryptionPublicKey);
-            Runtime.Expect(archive != null, "failed to create archive");
+            var archive = Runtime.GetArchive(merkle.Root);
+            Runtime.Expect(archive != null, "failed to find newly created archive");
 
             Runtime.Expect(Runtime.WriteArchive(archive, 0, data), "failed to write archive content");
         }
@@ -74,48 +66,40 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(targetAvailableSize >= requiredSize, "target account does not have available space");
 
-            var hashes = MerkleTree.FromBytes(contentMerkle);
-            Runtime.CreateArchive(hashes, fileSize, flags, encryptionPublicKey);
-
-            var newEntry = new StorageEntry()
-            {
-                Name = fileName,
-                Hash = hashes.Root,
-                Date = Runtime.Time,
-            };
+            var merkleTree = MerkleTree.FromBytes(contentMerkle);
+            Runtime.CreateArchive(merkleTree, fileName, fileSize, Runtime.Time, flags, encryptionPublicKey);
 
             var list = _storageMap.Get<Address, StorageList>(target);
-            list.Add<StorageEntry>(newEntry);
+            list.Add<Hash>(merkleTree.Root);
 
-            Runtime.Notify(EventKind.FileCreate, target, newEntry);
+            Runtime.Notify(EventKind.FileCreate, target, merkleTree.Root);
         }
 
-        public void DeleteFile(Address from, string name)
+        public void DeleteFile(Address from, Hash targetHash)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             //Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
 
             var list = _storageMap.Get<Address, StorageList>(from);
-            var count = list.Count();
+
             int targetIndex = -1;
-            Hash targetHash = Hash.Null;
+            var count = list.Count();
             for (int i = 0; i < count; i++)
             {
-                var entry = list.Get<StorageEntry>(i);
-                if (entry.Name == name)
+                var entry = list.Get<Hash>(i);
+                if (entry == targetHash)
                 {
                     targetIndex = i;
-                    targetHash = entry.Hash;
                     break;
                 }
             }
 
-            Runtime.Expect(targetIndex >= 0, "file not found");
+            Runtime.Expect(targetIndex >= 0, "archive not found");
 
             Runtime.Expect(Runtime.DeleteArchive(targetHash), "deletion failed");
 
-            list.RemoveAt<StorageEntry>(targetIndex);
-            Runtime.Notify(EventKind.FileDelete, from, name);
+            list.RemoveAt<Hash>(targetIndex);
+            Runtime.Notify(EventKind.FileDelete, from, targetHash);
         }
 
         public BigInteger GetUsedSpace(Address from)
@@ -125,17 +109,15 @@ namespace Phantasma.Blockchain.Contracts
             //    return 0;
             //}
 
-            var list = GetFiles(from);
+            var hashes = GetFiles(from);
             BigInteger usedSize = 0;
-            var count = list.Length;
+            var count = hashes.Length;
             for (int i = 0; i < count; i++)
             {
-                var entry = list[i];
-                var archive = Runtime.GetArchive(entry.Hash);
+                var hash = hashes[i];
+                var archive = Runtime.GetArchive(hash);
                 Runtime.Expect(archive != null, "missing archive");
                 usedSize += archive.Size;
-                usedSize += entry.Name.Length;
-                usedSize += Hash.Length;
             }
 
             var usedQuota = GetUsedDataQuota(from);
@@ -159,11 +141,11 @@ namespace Phantasma.Blockchain.Contracts
             return totalSize - usedSize;
         }
 
-        public StorageEntry[] GetFiles(Address from)
+        public Hash[] GetFiles(Address from)
         {
             //Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
             var list = _storageMap.Get<Address, StorageList>(from);
-            return list.All<StorageEntry>();
+            return list.All<Hash>();
         }
 
         private void ValidateKey(byte[] key)

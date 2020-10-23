@@ -61,7 +61,7 @@ namespace Phantasma.API
         public string[] organizations;
     }
 
-    public struct StakeResult: IAPIResult
+    public struct StakeResult : IAPIResult
     {
         [APIDescription("Amount of staked SOUL")]
         public string amount;
@@ -71,6 +71,18 @@ namespace Phantasma.API
 
         [APIDescription("Amount of claimable KCAL")]
         public string unclaimed;
+    }
+
+    public struct StorageResult : IAPIResult
+    {
+        [APIDescription("Amount of available storage bytes")]
+        public int available;
+
+        [APIDescription("Amount of used storage bytes")]
+        public int used;
+
+        [APIDescription("List of stored files")]
+        public ArchiveResult[] archives;
     }
 
     public struct AccountResult : IAPIResult
@@ -89,6 +101,9 @@ namespace Phantasma.API
 
         [APIDescription("Validator role")]
         public string validator;
+
+        [APIDescription("Info about storage if available")]
+        public StorageResult storage;
 
         public BalanceResult[] balances;
 
@@ -351,8 +366,14 @@ namespace Phantasma.API
 
     public struct ArchiveResult : IAPIResult
     {
+        [APIDescription("File name")]
+        public string name;
+
         [APIDescription("Archive hash")]
         public string hash;
+
+        [APIDescription("Time of creation")]
+        public uint time;
 
         [APIDescription("Size of archive in bytes")]
         public uint size;

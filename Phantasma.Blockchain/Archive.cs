@@ -5,22 +5,10 @@ using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using Phantasma.Numerics;
 using Phantasma.Domain;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain
 {
-    // TODO support this
-    public struct ArchiveMetadata
-    {
-        public readonly string Key;
-        public readonly string Value;
-
-        public ArchiveMetadata(string key, string value)
-        {
-            Key = key;
-            Value = value;
-        }
-    }
-
     public class Archive: IArchive, ISerializable
     {
         public static readonly uint BlockSize = MerkleTree.ChunkSize;
@@ -29,10 +17,14 @@ namespace Phantasma.Blockchain
 
         public MerkleTree MerkleTree { get; private set; }
         public BigInteger Size { get; private set; }
+        public Timestamp Time { get; private set; }
+
         public ArchiveFlags Flags { get; private set; }
         public byte[] Key { get; private set; }
 
         public BigInteger BlockCount => this.GetBlockCount();
+
+        public string Name { get; private set; }
 
         public IEnumerable<Hash> Blocks
         {
@@ -47,10 +39,12 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Archive(MerkleTree tree, BigInteger size, ArchiveFlags flags, byte[] key)
+        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, ArchiveFlags flags, byte[] key)
         {
             this.MerkleTree = tree;
+            this.Name = name;
             this.Size = size;
+            this.Time = time;
             this.Flags = flags;
             this.Key = key;
         }
@@ -63,7 +57,9 @@ namespace Phantasma.Blockchain
         public void SerializeData(BinaryWriter writer)
         {
             MerkleTree.SerializeData(writer);
+            writer.WriteVarString(Name);
             writer.WriteBigInteger(Size);
+            writer.Write(Time.Value);
             writer.Write((byte)Flags);
             writer.WriteByteArray(Key);
         }
@@ -83,7 +79,9 @@ namespace Phantasma.Blockchain
         public void UnserializeData(BinaryReader reader)
         {
             MerkleTree = MerkleTree.Unserialize(reader);
+            Name = reader.ReadVarString();
             Size = reader.ReadBigInteger();
+            Time = new Timestamp(reader.ReadUInt32());
             Flags = (ArchiveFlags) reader.ReadByte();
 
             Key = reader.ReadByteArray();

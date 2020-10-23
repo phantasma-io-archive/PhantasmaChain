@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using System;
 
@@ -29,7 +30,9 @@ namespace Phantasma.Domain
     {
         ArchiveFlags Flags { get;  }
         MerkleTree MerkleTree { get; }
+        string Name { get; }
         BigInteger Size { get; }
+        Timestamp Time{ get; }
         byte[] Key { get; }
     }
 

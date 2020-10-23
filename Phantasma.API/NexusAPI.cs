@@ -639,6 +639,42 @@ namespace Phantasma.API
                 script = Base16.Encode(receipt.message.script ?? new byte[0])
             };
         }
+
+        private ArchiveResult FillArchive(Archive archive)
+        {
+            return new ArchiveResult()
+            {
+                hash = archive.Hash.ToString(),
+                name = archive.Name,
+                time = archive.Time.Value,
+                size = (uint)archive.Size,
+                flags = archive.Flags.ToString(),
+                key = Base16.Encode(archive.Key),
+                blockCount = (int)archive.BlockCount,
+                metadata = new string[0]// archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
+            };
+        }
+
+        private StorageResult FillStorage(Address address)
+        {
+            var storage = new StorageResult();
+
+            storage.used = (int)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetUsedSpace), address).AsNumber();
+            storage.available = (int)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetAvailableSpace), address).AsNumber();
+
+            if (storage.used > 0)
+            {
+                var files = (Hash[]) Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetFiles), address).ToObject();
+                storage.archives = files.Select(x => FillArchive(Nexus.GetArchive(Nexus.RootStorage, x))).ToArray();
+            }
+            else
+            {
+                storage.archives = new ArchiveResult[0];
+            }
+
+
+            return storage;
+        }
         #endregion
 
         [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.", false, 10)]
@@ -667,6 +703,8 @@ namespace Phantasma.API
             {
                 result.stakes = new StakeResult() { amount = "0", time = 0, unclaimed = "0" };
             }
+
+            result.storage = FillStorage(address);
 
             // deprecated
             result.stake = result.stakes.amount;
@@ -1559,15 +1597,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "archive not found" };
             }
 
-            return new ArchiveResult()
-            {
-                hash = hashText,
-                size = (uint)archive.Size,
-                flags = archive.Flags.ToString(),
-                key = Base16.Encode(archive.Key),
-                blockCount = (int)archive.BlockCount,
-                metadata = new string[0]// archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
-            };
+            return FillArchive(archive);
         }
 
         [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false)]
