@@ -86,5 +86,28 @@ namespace Phantasma.Core.Utils
             return -1;
         }
 
+        public static bool CompareBytes(this byte[] left, byte[] right)
+        {
+            if (left == null || right == null)
+            {
+                return left == right;
+            }
+
+            if (left.Length != right.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < left.Length; i++)
+            {
+                if (left[i] != right[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
     }
 }
