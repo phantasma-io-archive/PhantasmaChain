@@ -665,13 +665,36 @@ namespace Phantasma.API
             if (storage.used > 0)
             {
                 var files = (Hash[]) Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetFiles), address).ToObject();
-                storage.archives = files.Select(x => FillArchive(Nexus.GetArchive(Nexus.RootStorage, x))).ToArray();
+
+                Hash avatarHash = Hash.Null;
+                storage.archives = files.Select(x => {
+                    var result = FillArchive(Nexus.GetArchive(Nexus.RootStorage, x));
+
+                    if (result.name == "avatar")
+                    {
+                        avatarHash = x;
+                    }
+
+                    return result;
+                }).ToArray();
+
+                if (avatarHash != Hash.Null)
+                {
+                    var avatarArchive = Nexus.GetArchive(Nexus.RootStorage, avatarHash);
+
+                    var avatarData = Nexus.ReadArchiveBlock(avatarArchive, 0);
+                    storage.avatar = Encoding.ASCII.GetString(avatarData);
+                }
             }
             else
             {
                 storage.archives = new ArchiveResult[0];
             }
 
+            if (storage.avatar == null)
+            {
+                storage.avatar = DefaultAvatar.Data;
+            }
 
             return storage;
         }

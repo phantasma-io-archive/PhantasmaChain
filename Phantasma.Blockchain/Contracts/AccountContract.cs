@@ -192,6 +192,6 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return Address.Null;
-        }
+        }       
     }
 }

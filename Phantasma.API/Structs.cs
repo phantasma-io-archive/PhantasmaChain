@@ -81,6 +81,9 @@ namespace Phantasma.API
         [APIDescription("Amount of used storage bytes")]
         public int used;
 
+        [APIDescription("Avatar data")]
+        public string avatar;
+
         [APIDescription("List of stored files")]
         public ArchiveResult[] archives;
     }
