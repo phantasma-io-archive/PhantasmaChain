@@ -387,6 +387,9 @@ namespace Phantasma.API
         [APIDescription("Number of blocks")]
         public int blockCount;
 
+        [APIDescription("Missing block indices")]
+        public int[] missingBlocks;
+
         [APIDescription("List of addresses who own the file")]
         public string[] owners;
     }

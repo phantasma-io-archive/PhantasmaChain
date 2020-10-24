@@ -31,7 +31,11 @@ namespace Phantasma.Blockchain
         public IEnumerable<Address> Owners => _owners;
         public int OwnerCount => _owners.Count;
 
-        public IEnumerable<Hash> Blocks
+        private List<int> _missingBlocks = new List<int>();
+        public IEnumerable<int> MissingBlockIndices => _missingBlocks;
+        public int MissingBlockCount => _missingBlocks.Count;
+
+        public IEnumerable<Hash> BlockHashes
         {
             get
             {
@@ -70,6 +74,11 @@ namespace Phantasma.Blockchain
             {
                 writer.WriteAddress(_owners[i]);
             }
+            writer.WriteVarInt(_missingBlocks.Count);
+            for (int i = 0; i < _missingBlocks.Count; i++)
+            {
+                writer.Write(_missingBlocks[i]);
+            }
         }
 
         public byte[] ToByteArray()
@@ -100,6 +109,14 @@ namespace Phantasma.Blockchain
                 var addr = reader.ReadAddress();
                 _owners.Add(addr);
             }
+
+            var missingBlockCount = (int)reader.ReadVarInt();
+            _missingBlocks.Clear();
+            for (int i = 0; i < missingBlockCount; i++)
+            {
+                var blockIndex = reader.ReadInt32();
+                _missingBlocks.Add(blockIndex);
+            }
         }
 
         public static Archive Unserialize(BinaryReader reader)
@@ -122,7 +139,7 @@ namespace Phantasma.Blockchain
 
         public void AddOwner(Address address)
         {
-            Throw.If(!IsOwner(address), "not an owner of the archive");
+            Throw.If(IsOwner(address), "already an owner of the archive");
             _owners.Add(address);
         }
 
@@ -137,5 +154,12 @@ namespace Phantasma.Blockchain
             return _owners.Contains(address);
         }
 
+        public void AddMissingBlock(int blockIndex)
+        {
+            Throw.If(blockIndex < 0 || blockIndex >= BlockCount, "invalid block index");
+            Throw.If(!_missingBlocks.Contains(blockIndex), "block index wasnt missing");
+
+            _missingBlocks.Remove(blockIndex);
+        }
     }
 }

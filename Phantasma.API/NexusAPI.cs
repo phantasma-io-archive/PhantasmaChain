@@ -651,6 +651,7 @@ namespace Phantasma.API
                 size = (uint)archive.Size,                
                 key = Base16.Encode(archive.EncryptionKey),
                 blockCount = (int)archive.BlockCount,
+                missingBlocks = archive.MissingBlockIndices.ToArray(),
                 owners = archive.Owners.Select(x => x.Text).ToArray()
             };
         }

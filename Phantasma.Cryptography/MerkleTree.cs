@@ -151,6 +151,18 @@ namespace Phantasma.Cryptography
             }
         }
 
+        public byte[] ToByteArray()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    this.SerializeData(writer);
+                }
+                return stream.ToArray();
+            }
+        }
+
         public void UnserializeData(BinaryReader reader)
         {
             _maxDepthLeafCount = (uint)reader.ReadVarInt();
@@ -174,12 +186,24 @@ namespace Phantasma.Cryptography
                 }
             }
         }
-
+        
         public static MerkleTree Unserialize(BinaryReader reader)
         {
             var tree = new MerkleTree();
             tree.UnserializeData(reader);
             return tree;
         }
+
+        public static uint GetChunkCountForSize(uint size)
+        {
+            var result = size / ChunkSize;
+            if (size % ChunkSize > 0)
+            {
+                result++;
+            }
+
+            return result;
+        }
+
     }
 }

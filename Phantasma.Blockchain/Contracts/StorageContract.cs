@@ -34,23 +34,7 @@ namespace Phantasma.Blockchain.Contracts
             return totalSize;
         }
 
-        // this is an helper method to upload smaller files...
-        public void UploadSmallFile(Address target, string fileName, byte[] data, byte[] encryptionPublicKey)
-        {
-            BigInteger fileSize = data.Length;
-            Runtime.Expect(fileSize <= MerkleTree.ChunkSize, "data too big");
-
-            var merkle = new MerkleTree(data);
-            var serializedMerkle = Serialization.Serialize(merkle);
-            UploadFile(target, fileName, fileSize, serializedMerkle, encryptionPublicKey);
-
-            var archive = Runtime.GetArchive(merkle.Root);
-            Runtime.Expect(archive != null, "failed to find newly created archive");
-
-            Runtime.Expect(Runtime.WriteArchive(archive, 0, data), "failed to write archive content");
-        }
-
-        public void UploadFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, byte[] encryptionPublicKey)
+        public void CreateFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, byte[] encryptionPublicKey)
         {
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(target.IsUser, "destination address must be user address");
@@ -80,7 +64,10 @@ namespace Phantasma.Blockchain.Contracts
 
             var archive = Runtime.GetArchive(hash);
             Runtime.Expect(archive != null, "archive does not exist");
-            Runtime.Expect(!archive.IsOwner(target), "target already owns this archive");
+            if (archive.IsOwner(target))
+            {
+                return;
+            }
 
             BigInteger requiredSize = archive.Size;
 

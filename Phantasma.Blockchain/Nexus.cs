@@ -1478,12 +1478,21 @@ namespace Phantasma.Blockchain
             Throw.If(blockIndex < 0 || blockIndex >= archive.BlockCount, "invalid block index");
 
             var hash = MerkleTree.CalculateBlockHash(content);
+
+            if (_archiveContents.ContainsKey(hash))
+            {
+                return;
+            }
+
             if (!archive.MerkleTree.VerifyContent(hash, blockIndex))
             {
                 throw new ArchiveException("Block content mismatch");
             }
 
             _archiveContents.Set(hash, content);
+
+            archive.AddMissingBlock(blockIndex);
+            ModifyArchive(RootStorage, archive);
         }
 
         public byte[] ReadArchiveBlock(Archive archive, int blockIndex)
@@ -1492,7 +1501,13 @@ namespace Phantasma.Blockchain
             Throw.If(blockIndex < 0 || blockIndex >= archive.BlockCount, "invalid block index");
 
             var hash = archive.MerkleTree.GetHash(blockIndex);
-            return _archiveContents.Get(hash);
+
+            if (_archiveContents.ContainsKey(hash))
+            {
+                return _archiveContents.Get(hash);
+            }
+
+            return null;
         }
 
         public void AddOwnerToArchive(StorageContext storage, Archive archive, Address owner)
