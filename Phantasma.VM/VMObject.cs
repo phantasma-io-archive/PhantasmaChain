@@ -239,9 +239,14 @@ namespace Phantasma.VM
                     {
                         var temp = (byte[])Data;
 
+                        if (temp.Length == Address.LengthInBytes +1)
+                        {
+                            temp = temp.Skip(1).ToArray(); // TODO there might be better way to do this
+                        }
+
                         if (temp.Length != Address.LengthInBytes)
                         {
-                            throw new Exception("Invalid address size");
+                            throw new Exception($"Invalid address size, expected {Address.LengthInBytes} got {temp.Length}");
                         }
 
                         return Address.FromBytes(temp);
