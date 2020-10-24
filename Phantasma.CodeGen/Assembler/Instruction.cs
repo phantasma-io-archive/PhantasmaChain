@@ -138,6 +138,10 @@ namespace Phantasma.CodeGen.Assembler
                         ProcessCall(sb);
                         break;
 
+                    case Opcode.DEBUG:
+                        sb.Emit(Opcode.DEBUG);
+                        break;
+
                     case Opcode.NOP:
                         break;
 

@@ -910,6 +910,11 @@ namespace Phantasma.VM
                             break;
                         }
 
+                    case Opcode.DEBUG:
+                        {
+                            break; // put here a breakpoint for debugging
+                        }
+
                     default:
                         {
                             throw new VMException(frame.VM, $"Unknown VM opcode: {(int)opcode}");
