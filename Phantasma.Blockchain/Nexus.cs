@@ -913,8 +913,14 @@ namespace Phantasma.Blockchain
 
         internal void DestroyNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
-            var nft = ReadNFT(Runtime, symbol, tokenID);
-            WriteNFT(Runtime, symbol, tokenID, nft.CurrentChain, Address.Null, nft.ROM, nft.RAM, true);
+            var tokenKey = GetKeyForNFT(symbol, tokenID);
+
+            Runtime.Expect(Runtime.RootStorage.Has(tokenKey), "nft does not exists");
+
+            var token = Runtime.GetToken(symbol);
+            var contractAddress = token.GetContractAddress();
+
+            Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
         }
 
         internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, bool mustExist)
