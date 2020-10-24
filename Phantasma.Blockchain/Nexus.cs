@@ -896,14 +896,17 @@ namespace Phantasma.Blockchain
                 mintID = 1;
             }
 
+            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram);
+
+            var tokenKey = GetKeyForNFT(symbol, content.TokenID);
+            Runtime.Expect(!Runtime.Storage.Has(tokenKey), "duplicated nft");
+
+
             Runtime.RootStorage.Put<BigInteger>(mintKey, mintID);
 
-            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram);
 
             var token = Runtime.GetToken(symbol);
             var contractAddress = token.GetContractAddress();
-
-            var tokenKey = GetKeyForNFT(symbol, content.TokenID);
 
             var bytes = content.ToByteArray();
             Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
