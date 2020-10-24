@@ -117,6 +117,8 @@ namespace Phantasma.Domain
 
         protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
 
+        protected abstract void WriteArchive(Hash hash, int blockIndex, byte[] data, Action<bool, string> callback);
+
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
             var args = cmd.Split(',');
@@ -257,7 +259,7 @@ namespace Phantasma.Domain
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 7" });
+                                root = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 5" });
                             }
 
                         }
@@ -316,7 +318,7 @@ namespace Phantasma.Domain
                                     if (invokeResult != null)
                                     {
                                         success = true;
-                                        root = APIUtils.FromAPIResult(new Invocation() {  result = Base16.Encode(invokeResult) });
+                                        root = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
                                     }
                                     else
                                     {
@@ -331,6 +333,43 @@ namespace Phantasma.Domain
                             else
                             {
                                 root = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 4" });
+                            }
+
+                        }
+                        break;
+                    }
+
+                case "writeArchive":
+                    {
+                        root = ValidateRequest(args);
+                        if (root == null)
+                        {
+                            if (args.Length == 6)
+                            {
+                                var archiveHash = Hash.Parse(args[1]);
+                                var blockIndex = int.Parse(args[2]);
+                                var bytes = Base16.Decode(args[3]);
+
+                                WriteArchive(archiveHash, blockIndex, bytes, (result, error) =>
+                                {
+                                    if (result)
+                                    {
+                                        success = true;
+                                        root = APIUtils.FromAPIResult(new Transaction() { hash = archiveHash.ToString() });
+                                    }
+                                    else
+                                    {
+                                        root = APIUtils.FromAPIResult(new Error() { message = error });
+                                    }
+
+                                    callback(id, root, success);
+                                    _isPendingRequest = false;
+                                });
+                                return;
+                            }
+                            else
+                            {
+                                root = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 6" });
                             }
 
                         }
