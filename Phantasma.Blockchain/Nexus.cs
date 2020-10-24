@@ -884,31 +884,31 @@ namespace Phantasma.Blockchain
 
             var mintKey = SmartContract.GetKeyForField(symbol, "mintID", true);
 
-            BigInteger tokenID;
+            BigInteger mintID;
 
             if (Runtime.RootStorage.Has(mintKey))
             {
-                tokenID = Runtime.RootStorage.Get<BigInteger>(mintKey);
-                tokenID++;
+                mintID = Runtime.RootStorage.Get<BigInteger>(mintKey);
+                mintID++;
             }
             else
             {
-                tokenID = 1;
+                mintID = 1;
             }
 
-            Runtime.RootStorage.Put<BigInteger>(mintKey, tokenID);
+            Runtime.RootStorage.Put<BigInteger>(mintKey, mintID);
 
-            var content = new TokenContent(tokenID, chainName, targetAddress, rom, ram);
+            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram);
 
             var token = Runtime.GetToken(symbol);
             var contractAddress = token.GetContractAddress();
 
-            var tokenKey = GetKeyForNFT(symbol, tokenID);
+            var tokenKey = GetKeyForNFT(symbol, content.TokenID);
 
             var bytes = content.ToByteArray();
             Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
 
-            return tokenID;
+            return content.TokenID;
         }
 
         internal void DestroyNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)

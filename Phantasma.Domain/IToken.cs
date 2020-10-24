@@ -60,6 +60,7 @@ namespace Phantasma.Domain
             CurrentOwner = currentOwner;
             this.ROM = ROM;
             this.RAM = RAM;
+            this.TokenID = Hash.FromBytes(ROM);
         }
 
         public string CurrentChain { get; private set; }
@@ -68,6 +69,8 @@ namespace Phantasma.Domain
         public byte[] RAM { get; private set; }
 
         public BigInteger MintID { get; private set; }
+
+        public BigInteger TokenID { get; private set; }
 
         public void SerializeData(BinaryWriter writer)
         {
