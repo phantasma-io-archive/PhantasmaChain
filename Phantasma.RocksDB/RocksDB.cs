@@ -24,14 +24,14 @@ namespace Phantasma.RocksDB
             this.path = Path.GetDirectoryName(fileName);
             this.logger = logger;
 
-            logger.Message("FileName: " + fileName);
-
             if (!path.EndsWith("/"))
             {
                 path += '/';
             }
 
-	        this._db = RocksDbStore.Instance(logger, path);
+            //logger.Message($"RocksDB partition path: {fileName}");
+
+            this._db = RocksDbStore.Instance(logger, path);
 
             // Create partition if it doesn't exist already
             try
