@@ -953,11 +953,16 @@ namespace Phantasma.Blockchain
 
         public TokenContent ReadNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
+            return ReadNFT(Runtime.RootStorage, symbol, tokenID);
+        }
+
+        public TokenContent ReadNFT(StorageContext storage, string symbol, BigInteger tokenID)
+        {
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Runtime.Expect(Runtime.RootStorage.Has(tokenKey), "nft does not exists");
+            Throw.If(storage.Has(tokenKey), "nft does not exists");
 
-            return Runtime.Storage.Get<TokenContent>(tokenKey);
+            return storage.Get<TokenContent>(tokenKey);
         }
         #endregion
 
@@ -1414,32 +1419,33 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, string name, BigInteger size, Timestamp time, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, byte[] encryptionKey)
         {
             var archive = GetArchive(storage, merkleTree.Root);
-            if (archive != null)
-            {
-                if (archive.Size != size || archive.Flags != flags)
-                {
-                    return null; // TODO proper handle this
-                }
+            Throw.If(archive != null, "archive already exists");
 
-                return archive;
-            }
-
-            archive = new Archive(merkleTree, name, size, time, flags, key);
+            archive = new Archive(merkleTree, name, size, time, encryptionKey);
             var archiveHash = merkleTree.Root;
 
-            var map = GetArchiveMap(storage);
-            var bytes = archive.ToByteArray();
-            map.Set<Hash, byte[]>(archiveHash, bytes);
+            AddOwnerToArchive(storage, archive, owner);
+
+            // ModifyArchive(storage, archive); => not necessary, addOwner already calls this
 
             return archive;
+        }
+
+        private void ModifyArchive(StorageContext storage, Archive archive)
+        {
+            var map = GetArchiveMap(storage);
+            var bytes = archive.ToByteArray();
+            map.Set<Hash, byte[]>(archive.Hash, bytes);
         }
 
         public bool DeleteArchive(StorageContext storage, Archive archive)
         {
             Throw.IfNull(archive, nameof(archive));
+
+            Throw.If(archive.OwnerCount > 0, "can't delete archive, still has owners");
 
             for (int i = 0; i < archive.BlockCount; i++)
             {
@@ -1487,6 +1493,26 @@ namespace Phantasma.Blockchain
 
             var hash = archive.MerkleTree.GetHash(blockIndex);
             return _archiveContents.Get(hash);
+        }
+
+        public void AddOwnerToArchive(StorageContext storage, Archive archive, Address owner)
+        {
+            archive.AddOwner(owner);
+            ModifyArchive(storage, archive);
+        }
+
+        public void RemoveOwnerFromArchive(StorageContext storage, Archive archive, Address owner)
+        {
+            archive.RemoveOwner(owner);
+
+            if (archive.OwnerCount <= 0)
+            {
+                DeleteArchive(storage, archive);
+            }
+            else
+            {
+                ModifyArchive(storage, archive);
+            }
         }
 
         #endregion

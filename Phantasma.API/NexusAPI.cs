@@ -648,11 +648,10 @@ namespace Phantasma.API
                 hash = archive.Hash.ToString(),
                 name = archive.Name,
                 time = archive.Time.Value,
-                size = (uint)archive.Size,
-                flags = archive.Flags.ToString(),
-                key = Base16.Encode(archive.Key),
+                size = (uint)archive.Size,                
+                key = Base16.Encode(archive.EncryptionKey),
                 blockCount = (int)archive.BlockCount,
-                metadata = new string[0]// archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
+                owners = archive.Owners.Select(x => x.Text).ToArray()
             };
         }
 

@@ -57,6 +57,8 @@ namespace Phantasma.Domain
         ContractUpgrade = 47,
         Log = 48,
         Inflation = 49,
+        OwnerAdded = 50,
+        OwnerRemoved = 51,
         Custom = 64,
     }
 

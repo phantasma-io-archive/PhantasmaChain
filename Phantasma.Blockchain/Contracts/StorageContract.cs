@@ -35,14 +35,14 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         // this is an helper method to upload smaller files...
-        public void UploadSmallFile(Address target, string fileName, byte[] data, ArchiveFlags flags, byte[] encryptionPublicKey)
+        public void UploadSmallFile(Address target, string fileName, byte[] data, byte[] encryptionPublicKey)
         {
             BigInteger fileSize = data.Length;
             Runtime.Expect(fileSize <= MerkleTree.ChunkSize, "data too big");
 
             var merkle = new MerkleTree(data);
             var serializedMerkle = Serialization.Serialize(merkle);
-            UploadFile(target, fileName, fileSize, serializedMerkle, flags, encryptionPublicKey);
+            UploadFile(target, fileName, fileSize, serializedMerkle, encryptionPublicKey);
 
             var archive = Runtime.GetArchive(merkle.Root);
             Runtime.Expect(archive != null, "failed to find newly created archive");
@@ -50,14 +50,39 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.WriteArchive(archive, 0, data), "failed to write archive content");
         }
 
-        public void UploadFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, ArchiveFlags flags, byte[] encryptionPublicKey)
+        public void UploadFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, byte[] encryptionPublicKey)
         {
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(target.IsUser, "destination address must be user address");
             Runtime.Expect(fileSize >= DomainSettings.ArchiveMinSize, "file too small");
             Runtime.Expect(fileSize <= DomainSettings.ArchiveMaxSize, "file too big");
 
-            BigInteger requiredSize = CalculateRequiredSize(fileName, fileSize);
+            var merkleTree = MerkleTree.FromBytes(contentMerkle);
+            var archive = Runtime.GetArchive(merkleTree.Root);
+            if (archive == null)
+            {
+                archive = Runtime.CreateArchive(merkleTree, target, fileName, fileSize, Runtime.Time, encryptionPublicKey);
+            }
+
+            AddFile(target, archive.Hash);
+        }
+
+        public bool HasFile(Address target, Hash hash)
+        {
+            var archive = Runtime.GetArchive(hash);
+            return archive.IsOwner(target);
+        }
+
+        public void AddFile(Address target, Hash hash)
+        {
+            Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
+            Runtime.Expect(target.IsUser, "destination address must be user address");
+
+            var archive = Runtime.GetArchive(hash);
+            Runtime.Expect(archive != null, "archive does not exist");
+            Runtime.Expect(!archive.IsOwner(target), "target already owns this archive");
+
+            BigInteger requiredSize = archive.Size;
 
             var targetUsedSize = GetUsedSpace(target);
             var targetStakedAmount = Runtime.GetStake(target);
@@ -66,19 +91,15 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(targetAvailableSize >= requiredSize, "target account does not have available space");
 
-            var merkleTree = MerkleTree.FromBytes(contentMerkle);
-            Runtime.CreateArchive(merkleTree, fileName, fileSize, Runtime.Time, flags, encryptionPublicKey);
+            Runtime.AddOwnerToArchive(hash, target);
 
             var list = _storageMap.Get<Address, StorageList>(target);
-            list.Add<Hash>(merkleTree.Root);
-
-            Runtime.Notify(EventKind.FileCreate, target, merkleTree.Root);
+            list.Add<Hash>(hash);
         }
 
         public void DeleteFile(Address from, Hash targetHash)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
-            //Runtime.Expect(_storageMap.ContainsKey<Address>(from), "no files available for address");
 
             var list = _storageMap.Get<Address, StorageList>(from);
 
@@ -96,10 +117,8 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(targetIndex >= 0, "archive not found");
 
-            Runtime.Expect(Runtime.DeleteArchive(targetHash), "deletion failed");
-
+            Runtime.Expect(Runtime.RemoveOwnerFromArchive(targetHash, from), "owner removal failed");
             list.RemoveAt<Hash>(targetIndex);
-            Runtime.Notify(EventKind.FileDelete, from, targetHash);
         }
 
         public BigInteger GetUsedSpace(Address from)

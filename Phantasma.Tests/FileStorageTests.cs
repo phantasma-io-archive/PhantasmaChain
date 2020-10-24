@@ -78,7 +78,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
 
             //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
@@ -151,7 +151,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             //System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
             simulator.EndBlock();
@@ -211,7 +211,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -290,7 +290,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -385,7 +385,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -407,7 +407,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -429,7 +429,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -493,7 +493,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -522,7 +522,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -606,7 +606,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUserA.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
@@ -621,7 +621,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUserB.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
@@ -683,7 +683,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -778,7 +778,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize * 2, contentMerkle, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             })
@@ -843,7 +843,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -867,7 +867,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -930,7 +930,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, contentMerkle, new byte[0]).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -947,7 +947,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "UploadFile", testUser.Address, filename, contentSize, content, new byte[0]).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -997,7 +997,7 @@ namespace Phantasma.Tests
             ScriptUtils.
                   BeginScript().
                   AllowGas(testUser.Address, Address.Null, 1, 9999).
-                  CallContract("storage", "UploadData", testUser.Address, "test.txt", textFile, ArchiveFlags.None, key).
+                  CallContract("storage", "UploadData", testUser.Address, "test.txt", textFile, key).
                   SpendGas(testUser.Address).
                   EndScript()
             );
@@ -1007,9 +1007,9 @@ namespace Phantasma.Tests
             Assert.IsTrue(evts.Length > 0);
 
             var evt = evts.Where(x => x.Kind == EventKind.FileCreate).FirstOrDefault();
-            var entry = evt.GetContent<StorageEntry>();
+            var hash = evt.GetContent<Hash>();
 
-            var archive = nexus.GetArchive(nexus.RootStorage, entry.Hash);
+            var archive = nexus.GetArchive(nexus.RootStorage, hash);
             Assert.IsTrue(archive != null);
 
             var readBytes = nexus.ReadArchiveBlock(archive, 0);

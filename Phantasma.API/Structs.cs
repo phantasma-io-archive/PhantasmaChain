@@ -381,17 +381,14 @@ namespace Phantasma.API
         [APIDescription("Size of archive in bytes")]
         public uint size;
 
-        [APIDescription("Archive flags")]
-        public string flags;
-
         [APIDescription("Encryption public key")]
         public string key;
 
         [APIDescription("Number of blocks")]
         public int blockCount;
 
-        [APIDescription("Metadata")]
-        public string[] metadata;
+        [APIDescription("List of addresses who own the file")]
+        public string[] owners;
     }
 
     public struct ABIParameterResult : IAPIResult

@@ -920,7 +920,7 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.RootChain.ReadToken(nexus.RootStorage, symbol, tokenId);
+            var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) && nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
@@ -984,7 +984,7 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.RootChain.ReadToken(nexus.RootStorage, symbol, tokenId);
+            var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) || nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
@@ -1053,7 +1053,7 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.RootChain.ReadToken(nexus.RootStorage, symbol, tokenId);
+            var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) || nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
@@ -1072,7 +1072,7 @@ namespace Phantasma.Tests
 
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
-            nft = nexus.RootChain.ReadToken(nexus.RootStorage, symbol, tokenId);
+            nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) || nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
         }
@@ -1137,7 +1137,7 @@ namespace Phantasma.Tests
 
             //verify that the present nft is the same we actually tried to create
             var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.RootChain.ReadToken(nexus.RootStorage, symbol, tokenId);
+            var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) || nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
@@ -1170,7 +1170,7 @@ namespace Phantasma.Tests
 
             //verify that the transfered nft is the same we actually tried to create
             tokenId = ownedTokenList.ElementAt(0);
-            nft = nexus.RootChain.ReadToken(nexus.RootStorage, symbol, tokenId);
+            nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) || nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
         }

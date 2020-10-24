@@ -679,6 +679,46 @@ namespace Phantasma.Blockchain
             return Nexus.DeleteArchive(this.RootStorage, archive);
         }
 
+        public bool AddOwnerToArchive(Hash hash, Address address)
+        {
+            var archive = Nexus.GetArchive(this.RootStorage, hash);
+            if (archive == null)
+            {
+                return false;
+            }
+
+            Nexus.AddOwnerToArchive(this.RootStorage, archive, address);
+
+            var Runtime = this;
+            Runtime.Notify(EventKind.OwnerAdded, address, hash);
+
+            return true;
+        }
+
+        public bool RemoveOwnerFromArchive(Hash hash, Address address)
+        {
+            var archive = Nexus.GetArchive(this.RootStorage, hash);
+            if (archive == null)
+            {
+                return false;
+            }
+
+            Nexus.RemoveOwnerFromArchive(this.RootStorage, archive, address);
+
+            var Runtime = this;
+
+            if (archive.OwnerCount == 0)
+            {
+                Runtime.Notify(EventKind.FileDelete, address, hash);
+            }
+            else
+            {
+                Runtime.Notify(EventKind.OwnerRemoved, address, hash);
+            }
+
+            return true;
+        }
+
         public bool ChainExists(string name)
         {
             return Nexus.ChainExists(this.RootStorage, name);
@@ -982,10 +1022,15 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
 
-        public IArchive CreateArchive(MerkleTree merkleTree, string name, BigInteger size, Timestamp time, ArchiveFlags flags, byte[] key)
+        public IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, byte[] encryptionKey)
         {
             // TODO validation
-            return Nexus.CreateArchive(this.RootStorage, merkleTree, name, size, time, flags, key);
+            var archive = Nexus.CreateArchive(this.RootStorage, merkleTree, owner, name, size, time, encryptionKey);
+
+            var Runtime = this;
+            Runtime.Notify(EventKind.FileCreate, owner, archive.Hash);
+
+            return archive;
         }
 
         public bool WriteArchive(IArchive archive, int blockIndex, byte[] content)

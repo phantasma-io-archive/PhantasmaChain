@@ -6,6 +6,7 @@ using Phantasma.Storage.Utils;
 using Phantasma.Numerics;
 using Phantasma.Domain;
 using Phantasma.Core.Types;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain
 {
@@ -13,18 +14,22 @@ namespace Phantasma.Blockchain
     {
         public static readonly uint BlockSize = MerkleTree.ChunkSize;
 
+        public string Name { get; private set; }
+
         public Hash Hash => MerkleTree.Root;
 
         public MerkleTree MerkleTree { get; private set; }
         public BigInteger Size { get; private set; }
         public Timestamp Time { get; private set; }
 
-        public ArchiveFlags Flags { get; private set; }
-        public byte[] Key { get; private set; }
+        public byte[] EncryptionKey { get; private set; }
 
         public BigInteger BlockCount => this.GetBlockCount();
 
-        public string Name { get; private set; }
+
+        private List<Address> _owners = new List<Address>();
+        public IEnumerable<Address> Owners => _owners;
+        public int OwnerCount => _owners.Count;
 
         public IEnumerable<Hash> Blocks
         {
@@ -39,14 +44,13 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, ArchiveFlags flags, byte[] key)
+        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, byte[] encryptionKey)
         {
             this.MerkleTree = tree;
             this.Name = name;
             this.Size = size;
             this.Time = time;
-            this.Flags = flags;
-            this.Key = key;
+            this.EncryptionKey = encryptionKey;
         }
 
         public Archive()
@@ -60,8 +64,12 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(Name);
             writer.WriteBigInteger(Size);
             writer.Write(Time.Value);
-            writer.Write((byte)Flags);
-            writer.WriteByteArray(Key);
+            writer.WriteByteArray(EncryptionKey);
+            writer.WriteVarInt(_owners.Count);
+            for (int i = 0; i < _owners.Count; i++)
+            {
+                writer.WriteAddress(_owners[i]);
+            }
         }
 
         public byte[] ToByteArray()
@@ -82,10 +90,16 @@ namespace Phantasma.Blockchain
             Name = reader.ReadVarString();
             Size = reader.ReadBigInteger();
             Time = new Timestamp(reader.ReadUInt32());
-            Flags = (ArchiveFlags) reader.ReadByte();
+            EncryptionKey = reader.ReadByteArray();
+            EncryptionKey = EncryptionKey ?? new byte[0];
 
-            Key = reader.ReadByteArray();
-            Key = Key ?? new byte[0];
+            var ownerCount = (int)reader.ReadVarInt();
+            _owners.Clear();
+            for (int i = 0; i < ownerCount; i++)
+            {
+                var addr = reader.ReadAddress();
+                _owners.Add(addr);
+            }
         }
 
         public static Archive Unserialize(BinaryReader reader)
@@ -104,6 +118,23 @@ namespace Phantasma.Blockchain
                     return Unserialize(reader);
                 }
             }
+        }
+
+        public void AddOwner(Address address)
+        {
+            Throw.If(!IsOwner(address), "not an owner of the archive");
+            _owners.Add(address);
+        }
+
+        public void RemoveOwner(Address address)
+        {
+            Throw.If(!IsOwner(address), "not an owner of the archive");
+            _owners.Remove(address);
+        }
+
+        public bool IsOwner(Address address)
+        {
+            return _owners.Contains(address);
         }
 
     }
