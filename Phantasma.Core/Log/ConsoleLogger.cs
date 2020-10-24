@@ -6,8 +6,15 @@ namespace Phantasma.Core.Log
     {
         private static object _lock = new object();
 
+        public static bool AppendTimestamp = false;
+
         public override void Write(LogEntryKind kind, string msg)
         {
+            if (AppendTimestamp)
+            {
+                msg = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + msg;
+            }
+
             lock (_lock)
             {
                 var color = Console.ForegroundColor;
@@ -20,7 +27,7 @@ namespace Phantasma.Core.Log
                     case LogEntryKind.Debug: Console.ForegroundColor = ConsoleColor.Cyan; break;
                     default: return;
                 }
-                Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " +msg);
+                Console.WriteLine(msg);
                 Console.ForegroundColor = color;
             }
         }
