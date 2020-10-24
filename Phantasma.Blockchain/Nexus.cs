@@ -896,6 +896,8 @@ namespace Phantasma.Blockchain
                 tokenID = 1;
             }
 
+            Runtime.RootStorage.Put<BigInteger>(mintKey, tokenID);
+
             var content = new TokenContent(tokenID, chainName, targetAddress, rom, ram);
 
             var token = Runtime.GetToken(symbol);
