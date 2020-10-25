@@ -1138,7 +1138,8 @@ namespace Phantasma.API
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var oracle = Nexus.GetOracleReader();
-            var vm = new RuntimeVM(-1, script, chain, Timestamp.Now, null, changeSet, oracle, true);
+            uint offset = 0;
+            var vm = new RuntimeVM(-1, script, offset, chain, Timestamp.Now, null, changeSet, oracle, true);
 
             vm.ThrowOnFault = true;
 

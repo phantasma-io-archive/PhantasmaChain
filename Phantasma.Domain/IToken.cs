@@ -30,6 +30,7 @@ namespace Phantasma.Domain
         BigInteger MaxSupply { get;  }
         int Decimals { get; }
         byte[] Script { get; }
+        ContractInterface ABI { get; }
     }
 
     public struct PackedNFTData

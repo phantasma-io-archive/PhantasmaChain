@@ -42,7 +42,7 @@ namespace Phantasma.Tests
             }
         }
 
-        public TestVM(byte[] script) : base(script)
+        public TestVM(byte[] script, uint offset) : base(script, offset)
         {
             RegisterDefaultInterops();
             RegisterContextLoader(ContextLoader);
@@ -243,7 +243,7 @@ namespace Phantasma.Tests
             var source = PhantasmaKeys.Generate();
             var script = ScriptUtils.BeginScript().CallInterop("Upper", "hello").EndScript();
 
-            var vm = new TestVM(script);
+            var vm = new TestVM(script, 0);
             vm.RegisterDefaultInterops();
             var state = vm.Execute();
             Assert.IsTrue(state == ExecutionState.Halt);

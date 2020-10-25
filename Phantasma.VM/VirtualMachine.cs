@@ -121,14 +121,14 @@ namespace Phantasma.VM
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame CurrentFrame { get; protected set; }
 
-        public VirtualMachine(byte[] script)
+        public VirtualMachine(byte[] script, uint offset)
         {
             Throw.IfNull(script, nameof(script));
 
             this.EntryAddress = Address.FromHash(script);
             this._activeAddresses.Push(EntryAddress);
 
-            this.entryContext = new ScriptContext(EntryContext, script);
+            this.entryContext = new ScriptContext(EntryContext, script, offset);
             RegisterContext(EntryContext, this.entryContext); // TODO this should be a constant
 
             PreviousContext = entryContext;

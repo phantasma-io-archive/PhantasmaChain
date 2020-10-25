@@ -601,9 +601,14 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal void CreateToken(StorageContext storage, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        internal void CreateToken(StorageContext storage, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
         {
-            var tokenInfo = new TokenInfo(symbol, name, maxSupply, decimals, flags, script);
+            if (abi == null)
+            {
+                abi = new ContractInterface();
+            }
+
+            var tokenInfo = new TokenInfo(symbol, name, maxSupply, decimals, flags, script, abi);
             EditToken(storage, symbol, tokenInfo);
 
             // add to persistent list of tokens

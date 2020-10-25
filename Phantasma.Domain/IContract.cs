@@ -1,4 +1,5 @@
-﻿using Phantasma.Storage.Utils;
+﻿using Phantasma.Storage;
+using Phantasma.Storage.Utils;
 using Phantasma.VM;
 using System.Collections.Generic;
 using System.IO;
@@ -35,13 +36,15 @@ namespace Phantasma.Domain
         Sale,
     }
 
-    public sealed class ContractInterface
+    public sealed class ContractInterface: ISerializable
     {
         private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>();
         public IEnumerable<ContractMethod> Methods => _methods.Values;
+        public int MethodCount => _methods.Count;
 
-        private List<ContractEvent> _events = new List<ContractEvent>();
+        private ContractEvent[] _events;
         public IEnumerable<ContractEvent> Events => _events;
+        public int EventCount => _events.Length;
 
         public ContractMethod this[string name]
         {
@@ -58,7 +61,12 @@ namespace Phantasma.Domain
                 _methods[entry.name] = entry;
             }
 
-            this._events = events.ToList();
+            this._events = events.ToArray();
+        }
+
+        public ContractInterface()
+        {
+            this._events = new ContractEvent[0];
         }
 
         public bool HasMethod(string name)
@@ -132,27 +140,32 @@ namespace Phantasma.Domain
             return true;
         }
 
-        public static ContractInterface Unserialize(BinaryReader reader)
+        public void UnserializeData(BinaryReader reader)
         {
             var len = reader.ReadByte();
-            var methods = new ContractMethod[len];
+            _methods.Clear();
             for (int i = 0; i < len; i++)
             {
-                methods[i] = ContractMethod.Unserialize(reader);
+                var method  = ContractMethod.Unserialize(reader);
+                _methods[method.name] = method;
             }
 
             len = reader.ReadByte();
-            var events = new ContractEvent[len];
+            this._events = new ContractEvent[len];
             for (int i = 0; i < len; i++)
             {
-                events[i] = ContractEvent.Unserialize(reader);
+                _events[i] = ContractEvent.Unserialize(reader);
             }
-
-
-            return new ContractInterface(methods, events);
         }
 
-        public static ContractInterface Unserialize(byte[] bytes)
+        public static ContractInterface Unserialize(BinaryReader reader)
+        {
+            var result = new ContractInterface();
+            result.UnserializeData(reader);
+            return result;
+        }
+
+        public static ContractInterface FromBytes(byte[] bytes)
         {
             using (var stream = new MemoryStream(bytes))
             {
@@ -163,7 +176,7 @@ namespace Phantasma.Domain
             }
         }
 
-        public void Serialize(BinaryWriter writer)
+        public void SerializeData(BinaryWriter writer)
         {
             writer.Write((byte)_methods.Count);
             foreach (var method in _methods.Values)
@@ -171,7 +184,7 @@ namespace Phantasma.Domain
                 method.Serialize(writer);
             }
 
-            writer.Write((byte)_events.Count);
+            writer.Write((byte)_events.Length);
             foreach (var evt in _events)
             {
                 evt.Serialize(writer);
@@ -184,7 +197,7 @@ namespace Phantasma.Domain
             {
                 using (var writer = new BinaryWriter(stream))
                 {
-                    Serialize(writer);
+                    SerializeData(writer);
                 }
 
                 return stream.ToArray();

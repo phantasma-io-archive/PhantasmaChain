@@ -24,7 +24,7 @@ namespace Phantasma.VM
 
         private Opcode opcode;
 
-        public ScriptContext(string name, byte[] script, uint offset = 0)
+        public ScriptContext(string name, byte[] script, uint offset)
         {
             this._name = name;
             this._state = ExecutionState.Running;

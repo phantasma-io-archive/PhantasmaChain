@@ -12,6 +12,7 @@ namespace Phantasma.Blockchain.Contracts
         internal StorageMap _addressMap; //<Address, string> 
         internal StorageMap _nameMap; //<string, Address> 
         internal StorageMap _scriptMap; //<Address, byte[]> 
+        internal StorageMap _abiMap; //<Address, byte[]> 
         internal StorageMap _metadata;
 
         public static readonly BigInteger RegistrationCost = UnitConversion.ToBigInteger(0.1m, DomainSettings.FuelTokenDecimals);
@@ -115,7 +116,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Notify(EventKind.AddressUnregister, target, name);
         }
 
-        public void RegisterScript(Address target, byte[] script)
+        public void RegisterScript(Address target, byte[] script, byte[] abiBytes)
         {
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.GenesisAddress, "address must not be genesis");
@@ -128,13 +129,21 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(!_scriptMap.ContainsKey(target), "address already has a script");
 
-            var witnessCheck = Runtime.InvokeTrigger(script, AccountTrigger.OnWitness.ToString(), target);
-            Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #1");
+            var contractABI = ContractInterface.FromBytes(abiBytes);
+            Runtime.Expect(contractABI.MethodCount > 0, "unexpected empty contract abi");
 
-            witnessCheck = Runtime.InvokeTrigger(script, AccountTrigger.OnWitness.ToString(), Address.Null);
-            Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #2");
+            var witnessTriggerName = AccountTrigger.OnWitness.ToString();
+            if (contractABI.HasMethod(witnessTriggerName))
+            {
+                var witnessCheck = Runtime.InvokeTrigger(script, contractABI, witnessTriggerName, target);
+                Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #1");
+
+                witnessCheck = Runtime.InvokeTrigger(script, contractABI, witnessTriggerName, Address.Null);
+                Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #2");
+            }
 
             _scriptMap.Set(target, script);
+            _abiMap.Set(target, abiBytes);
 
             // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
         }
@@ -172,6 +181,16 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return new byte[0];
+        }
+
+        public byte[] LookUpABI(Address target)
+        {
+            if (_abiMap.ContainsKey(target))
+            {
+                return _abiMap.Get<Address, byte[]>(target);
+            }
+
+            return null;
         }
 
         public Address LookUpName(string name)

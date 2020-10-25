@@ -24,7 +24,7 @@ namespace Phantasma.Domain
 
     public class GasMachine : VirtualMachine
     {
-        public GasMachine(byte[] script): base(script)
+        public GasMachine(byte[] script, uint offset): base(script, offset)
         {
             UsedGas = 0;
         }

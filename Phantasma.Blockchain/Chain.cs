@@ -300,9 +300,13 @@ namespace Phantasma.Blockchain
         {
             result = null;
 
+            uint offset = 0;
+
             RuntimeVM runtime;
             using (var m = new ProfileMarker("new RuntimeVM"))
-                runtime = new RuntimeVM(index, transaction.Script, this, time, transaction, changeSet, oracle, false);
+            {
+                runtime = new RuntimeVM(index, transaction.Script, offset, this, time, transaction, changeSet, oracle, false);
+            }
             runtime.MinimumFee = minimumFee;
             runtime.ThrowOnFault = true;
 
@@ -439,7 +443,8 @@ namespace Phantasma.Blockchain
         {
             var oracle = Nexus.GetOracleReader();
             var changeSet = new StorageChangeSetContext(storage);
-            var vm = new RuntimeVM(-1, script, this, time, null, changeSet, oracle, true);
+            uint offset = 0;
+            var vm = new RuntimeVM(-1, script, offset, this, time, null, changeSet, oracle, true);
 
             var state = vm.Execute();
 
@@ -614,7 +619,7 @@ namespace Phantasma.Blockchain
 
             var abiKey = GetContractKey(address, "abi");
             var abiBytes = storage.Get(abiKey);
-            var abi = ContractInterface.Unserialize(abiBytes);
+            var abi = ContractInterface.FromBytes(abiBytes);
 
             return new CustomContract(name, script, abi);
         }

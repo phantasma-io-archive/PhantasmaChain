@@ -49,7 +49,7 @@ namespace Phantasma.Blockchain
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
-        public RuntimeVM(int index, byte[] script, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script)
+        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script, offset)
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
@@ -417,10 +417,11 @@ namespace Phantasma.Blockchain
             {
 
                 //var accountScript = Nexus.LookUpAddressScript(RootStorage, address);
-                var accountScript = OptimizedAddressScriptLookup(address);
+                var accountABI = OptimizedAddressABILookup(address);
+                var accountScript = accountABI != null ? OptimizedAddressScriptLookup(address) : null;
 
                 //Expect(accountScript.SequenceEqual(accountScript2), "different account scripts");
-                return InvokeTrigger(accountScript, trigger.ToString(), args);
+                return InvokeTrigger(accountScript, accountABI, trigger.ToString(), args);
             }
 
             if (address.IsSystem)
@@ -431,7 +432,17 @@ namespace Phantasma.Blockchain
                     var triggerName = trigger.ToString();
                     if (contract.ABI.HasMethod(triggerName))
                     {
-                        CallContext(0, contract.Name, triggerName, args);
+                        var customContract = contract as CustomContract;
+                        if (customContract != null)
+                        {
+                            return InvokeTrigger(customContract.Script, contract.ABI, triggerName, args);
+                        }
+                        else
+                        if (contract is NativeContract)
+                        {
+                            CallContext(0, contract.Name, triggerName, args);
+                        }
+
                     }
                 }
 
@@ -454,20 +465,42 @@ namespace Phantasma.Blockchain
 
         }
 
-        public bool InvokeTriggerOnToken(TokenInfo token, TokenTrigger trigger, params object[] args)
+        private ContractInterface OptimizedAddressABILookup(Address target)
         {
-            return InvokeTrigger(token.Script, trigger.ToString(), args);
+            var abiMapKey = Encoding.UTF8.GetBytes($".{Nexus.AccountContractName}._abiMap");
+
+            var abiMap = new StorageMap(abiMapKey, RootStorage);
+
+            if (abiMap.ContainsKey(target))
+            {
+                var bytes = abiMap.Get<Address, byte[]>(target);
+                return ContractInterface.FromBytes(bytes);
+            }
+            else
+                return null;
+
         }
 
-        public bool InvokeTrigger(byte[] script, string triggerName, params object[] args)
+        public bool InvokeTriggerOnToken(IToken token, TokenTrigger trigger, params object[] args)
         {
-            if (script == null || script.Length == 0)
+            return InvokeTrigger(token.Script, token.ABI, trigger.ToString(), args);
+        }
+
+        public bool InvokeTrigger(byte[] script, ContractInterface abi, string triggerName, params object[] args)
+        {
+            if (script == null || script.Length == 0 || abi == null)
+            {
+                return true;
+            }
+
+            var method = abi.FindMethod(triggerName);
+            if (method == null || method.offset < 0)
             {
                 return true;
             }
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
-            var runtime = new RuntimeVM(-1, script, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true);
+            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true);
             runtime.ThrowOnFault = true;
 
             for (int i = args.Length - 1; i >= 0; i--)
@@ -475,7 +508,6 @@ namespace Phantasma.Blockchain
                 var obj = VMObject.FromObject(args[i]);
                 runtime.Stack.Push(obj);
             }
-            runtime.Stack.Push(VMObject.FromObject(triggerName));
 
             var state = runtime.Execute();
             // TODO catch VM exceptions?

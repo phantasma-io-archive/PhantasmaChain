@@ -799,7 +799,7 @@ namespace Phantasma.Blockchain
                 script = vm.PopBytes("contractScript");
 
                 var abiBytes = vm.PopBytes("contractABI");
-                abi = ContractInterface.Unserialize(abiBytes);
+                abi = ContractInterface.FromBytes(abiBytes);
 
                 var offsets = new HashSet<int>();
                 foreach (var method in abi.Methods)

@@ -292,29 +292,5 @@ namespace Phantasma.Domain
                 }
             }
         }
-
-        #region TRIGGERS
-        public static bool InvokeTriggerOnAccount(this IRuntime runtime, Address address, AccountTrigger trigger, params object[] args)
-        {
-            if (address.IsNull)
-            {
-                return false;
-            }
-
-            if (address.IsUser)
-            {
-                var accountScript = runtime.GetAddressScript(address);
-                return runtime.InvokeTrigger(accountScript, trigger.ToString(), args);
-            }
-
-            return true;
-        }
-
-        public static bool InvokeTriggerOnToken(this IRuntime runtime, IToken token, TokenTrigger trigger, params object[] args)
-        {
-            return runtime.InvokeTrigger(token.Script, trigger.ToString(), args);
-        }
-
-        #endregion
     }
 }
