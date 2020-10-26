@@ -42,7 +42,7 @@ namespace Phantasma.Tests
             }
         }
 
-        public TestVM(byte[] script, uint offset) : base(script, offset)
+        public TestVM(byte[] script, uint offset) : base(script, offset, null)
         {
             RegisterDefaultInterops();
             RegisterContextLoader(ContextLoader);
@@ -66,7 +66,7 @@ namespace Phantasma.Tests
 
                 var byteScript = BuildScript(scriptString);
 
-                contexts.Add(contextName, new ScriptContext("test", byteScript));
+                contexts.Add(contextName, new ScriptContext("test", byteScript, 0));
 
                 return contexts[contextName];
             }

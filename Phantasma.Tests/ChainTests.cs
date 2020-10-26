@@ -481,7 +481,7 @@ namespace Phantasma.Tests
             };
 
             // note the 0.1m passed here could be anything else. It's just used to calculate the actual fee
-            var vm = new GasMachine(genScript(0.1m));
+            var vm = new GasMachine(genScript(0.1m), 0, null);
             var result = vm.Execute();
             var usedGas = UnitConversion.ToDecimal((int)(vm.UsedGas * gasPrice), DomainSettings.FuelTokenDecimals);
 
@@ -542,7 +542,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, "NEO"));
 
             var context = new StorageChangeSetContext(nexus.RootStorage);
-            var runtime = new RuntimeVM(-1, new byte[0], nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
+            var runtime = new RuntimeVM(-1, new byte[0], 0, nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
 
             var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
             var price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);
@@ -1601,7 +1601,7 @@ namespace Phantasma.Tests
             .AllowGas(transcodedAddress, Address.Null, 9999, limit)
             .SpendGas(transcodedAddress).EndScript();
 
-            var vm = new GasMachine(script);
+            var vm = new GasMachine(script, 0, null);
             var result = vm.Execute();
             Assert.IsTrue(result == VM.ExecutionState.Halt);
             Assert.IsTrue(vm.UsedGas > 0);
