@@ -217,11 +217,15 @@ namespace Phantasma.Storage.Context
         public static void Clear(this StorageMap map)
         {
             var keys = new List<byte[]>();
+            var count = (uint)map.Count();
+
             map.Context.Visit((key, value) =>
             {
                 keys.Add(key);
-            }, (uint)map.Count(), map.BaseKey);
-           
+            }, count, map.BaseKey);
+
+            Throw.If(keys.Count != count, "map.clear failed to fetch all existing keys");
+
             foreach (var key in keys)
             {
                 map.Context.Delete(ElementKey(map.BaseKey, key));
