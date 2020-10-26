@@ -74,6 +74,8 @@ namespace Phantasma.VM.Utils
             table["Runtime.MintToken"] = 4;
             table["Runtime.BurnToken"] = 3;
 
+            table["Nexus.CreateToken"] = 7;
+
             table["gas.AllowGas"] = 4;
             table["gas.SpendGas"] = 1;
 
