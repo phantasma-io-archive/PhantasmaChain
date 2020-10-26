@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_Notify(RuntimeVM vm)
         {
-            vm.Expect(vm.CurrentContextName != VirtualMachine.EntryContext, "cannot notify in current context");
+            vm.Expect(vm.CurrentContextName != VirtualMachine.EntryContextName, "cannot notify in current context");
 
             var kind = vm.Stack.Pop().AsEnum<EventKind>();
             var address = vm.PopAddress();
@@ -383,6 +383,7 @@ namespace Phantasma.Blockchain
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
+            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = vm.PopString("field");
             var key = SmartContract.GetKeyForField(contractName, field, false);
@@ -435,6 +436,7 @@ namespace Phantasma.Blockchain
 
             // for security reasons we don't accept the caller to specify a contract name
             var contractName = vm.CurrentContext.Name;
+            vm.Expect(vm.ContractDeployed(contractName), $"contract {contractName} is not deployed");
 
             var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
@@ -796,6 +798,17 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                vm.Expect(ValidationUtils.IsValidIdentifier(contractName), "invalid contract name");
+
+                var isReserved = ValidationUtils.IsReservedIdentifier(contractName);
+
+                if (isReserved && vm.IsWitness(vm.GenesisAddress))
+                {
+                    isReserved = false;
+                }
+
+                vm.Expect(!isReserved, $"name '{contractName}' reserved by system");
+
                 script = vm.PopBytes("contractScript");
 
                 var abiBytes = vm.PopBytes("contractABI");

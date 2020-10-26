@@ -36,7 +36,7 @@ namespace Phantasma.VM
 
         private static readonly string TimeFormat = "MM/dd/yyyy HH:mm:ss";
 
-        internal Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
+        public Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
 
         public int Size
         {

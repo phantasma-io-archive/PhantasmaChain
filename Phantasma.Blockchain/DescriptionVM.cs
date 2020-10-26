@@ -10,7 +10,7 @@ namespace Phantasma.Blockchain
 {
     public abstract class DescriptionVM : VirtualMachine
     {
-        public DescriptionVM(byte[] script, uint offset) : base(script, offset)
+        public DescriptionVM(byte[] script, uint offset) : base(script, offset, null)
         {
             RegisterMethod("ABI()", ExtCalls.Constructor_ABI);
             RegisterMethod("Address()", ExtCalls.Constructor_Address);

@@ -8,7 +8,6 @@ using Phantasma.Core.Types;
 using Phantasma.Core.Performance;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Domain;
 
 namespace Phantasma.Blockchain
@@ -49,7 +48,7 @@ namespace Phantasma.Blockchain
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
-        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false) : base(script, offset)
+        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false, string contextName = null) : base(script, offset, contextName)
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
@@ -421,7 +420,7 @@ namespace Phantasma.Blockchain
                 var accountScript = accountABI != null ? OptimizedAddressScriptLookup(address) : null;
 
                 //Expect(accountScript.SequenceEqual(accountScript2), "different account scripts");
-                return InvokeTrigger(accountScript, accountABI, trigger.ToString(), args);
+                return this.InvokeTrigger(accountScript, NativeContractKind.Account, accountABI, trigger.ToString(), args);
             }
 
             if (address.IsSystem)
@@ -435,7 +434,7 @@ namespace Phantasma.Blockchain
                         var customContract = contract as CustomContract;
                         if (customContract != null)
                         {
-                            return InvokeTrigger(customContract.Script, contract.ABI, triggerName, args);
+                            return InvokeTrigger(customContract.Script, contract.Name, contract.ABI, triggerName, args);
                         }
                         else
                         if (contract is NativeContract)
@@ -483,10 +482,10 @@ namespace Phantasma.Blockchain
 
         public bool InvokeTriggerOnToken(IToken token, TokenTrigger trigger, params object[] args)
         {
-            return InvokeTrigger(token.Script, token.ABI, trigger.ToString(), args);
+            return InvokeTrigger(token.Script, token.Symbol, token.ABI, trigger.ToString(), args);
         }
 
-        public bool InvokeTrigger(byte[] script, ContractInterface abi, string triggerName, params object[] args)
+        public bool InvokeTrigger(byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args)
         {
             if (script == null || script.Length == 0 || abi == null)
             {
@@ -500,7 +499,7 @@ namespace Phantasma.Blockchain
             }
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
-            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true);
+            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true, contextName);
             runtime.ThrowOnFault = true;
 
             for (int i = args.Length - 1; i >= 0; i--)

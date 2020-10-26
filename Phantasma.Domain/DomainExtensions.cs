@@ -292,5 +292,10 @@ namespace Phantasma.Domain
                 }
             }
         }
+
+        public static bool InvokeTrigger(this IRuntime runtime, byte[] script, NativeContractKind contextName, ContractInterface abi, string triggerName, params object[] args)
+        {
+            return runtime.InvokeTrigger(script, contextName.ToString().ToLower(), abi, triggerName, args);
+        }
     }
 }

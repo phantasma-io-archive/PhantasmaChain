@@ -100,7 +100,7 @@ namespace Phantasma.VM
         public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
         public const int MaxRegisterCount = 32;
 
-        public readonly static string EntryContext = "entry";
+        public readonly static string EntryContextName = "entry";
 
         public bool ThrowOnFault = false;
 
@@ -121,15 +121,20 @@ namespace Phantasma.VM
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame CurrentFrame { get; protected set; }
 
-        public VirtualMachine(byte[] script, uint offset)
+        public VirtualMachine(byte[] script, uint offset, string contextName)
         {
             Throw.IfNull(script, nameof(script));
 
             this.EntryAddress = Address.FromHash(script);
             this._activeAddresses.Push(EntryAddress);
 
-            this.entryContext = new ScriptContext(EntryContext, script, offset);
-            RegisterContext(EntryContext, this.entryContext); // TODO this should be a constant
+            if (contextName == null)
+            {
+                contextName = EntryContextName;
+            }
+
+            this.entryContext = new ScriptContext(contextName, script, offset);
+            RegisterContext(EntryContextName, this.entryContext); // TODO this should be a constant
 
             PreviousContext = entryContext;
 
