@@ -1755,6 +1755,85 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
+        public void DeployCustomContract()
+        {
+            var owner = PhantasmaKeys.Generate();
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+            simulator.blockTimeSkip = TimeSpan.FromSeconds(5);
+
+            var testUser = PhantasmaKeys.Generate();
+
+            var fuelAmount = UnitConversion.ToBigInteger(10000, DomainSettings.FuelTokenDecimals);
+            var stakeAmount = UnitConversion.ToBigInteger(50000, DomainSettings.StakingTokenDecimals);
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, fuelAmount);
+            simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUser.Address, stakeAmount).
+                    SpendGas(testUser.Address).EndScript());
+            simulator.EndBlock();
+
+            string[] scriptString;
+
+            var methodName = "sum";
+
+            scriptString = new string[]
+            {
+                $"@{methodName}: NOP ",
+                $"pop r1",
+                $"pop r2",
+                $"add r1 r2 r3",
+                $"push r3",
+                $"@end: ret"
+            };
+
+            DebugInfo debugInfo;
+            Dictionary<string, int> labels;
+            var script = AssemblerUtils.BuildScript(scriptString, "test", out debugInfo, out labels);
+
+            var methods = new[]
+            {
+                new ContractMethod(methodName , VMType.Number, labels[methodName], new []{ new ContractParameter("a", VMType.Number), new ContractParameter("b", VMType.Number) })
+            };
+            var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
+            var abiBytes = abi.ToByteArray();
+
+            var contractName = "test";
+
+            // deploy it
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None,
+                () => ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallInterop("Runtime.DeployContract", testUser.Address, contractName, script, abiBytes)
+                    .SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            // send some funds to contract address
+            var contractAddress = SmartContract.GetAddressForName(contractName);
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, contractAddress, nexus.RootChain, DomainSettings.StakingTokenSymbol, stakeAmount);
+            simulator.EndBlock();
+
+
+            // now stake some SOUL on the contract address
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(testUser, ProofOfWork.None,
+                () => ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.Stake), contractAddress, UnitConversion.ToBigInteger(5, DomainSettings.StakingTokenDecimals))
+                    .SpendGas(testUser.Address)
+                    .EndScript());
+            simulator.EndBlock();
+        }
+
+        [TestMethod]
         public void DuplicateTransferTest()
         {
             var owner = PhantasmaKeys.Generate();
