@@ -18,10 +18,11 @@ namespace Phantasma.CodeGen.Assembler
         public static byte[] BuildScript(IEnumerable<string> lines)
         {
             DebugInfo debugInfo;
-            return BuildScript(lines, null, out debugInfo);
+            Dictionary<string, int> labels;
+            return BuildScript(lines, null, out debugInfo, out labels);
         }
 
-        public static byte[] BuildScript(IEnumerable<string> lines, string fileName, out DebugInfo debugInfo)
+        public static byte[] BuildScript(IEnumerable<string> lines, string fileName, out DebugInfo debugInfo, out Dictionary<string, int> labels)
         {
             Semanteme[] semantemes;
             try
@@ -56,7 +57,7 @@ namespace Phantasma.CodeGen.Assembler
 
                     debugRanges.Add(new DebugRange(entry.LineNumber, startOffset, endOffset));
                 }
-                script = sb.ToScript();
+                script = sb.ToScript(out labels);
             }
             catch (Exception e)
             {
