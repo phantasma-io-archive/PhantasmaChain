@@ -878,7 +878,12 @@ namespace Phantasma.Blockchain
 
         public byte[] GetKeyForNFT(string symbol, BigInteger tokenID)
         {
-            var tokenKey = SmartContract.GetKeyForField(symbol, tokenID.ToString(), true);
+            return GetKeyForNFT(symbol, tokenID.ToString());
+        }
+
+        public byte[] GetKeyForNFT(string symbol, string key)
+        {
+            var tokenKey = SmartContract.GetKeyForField(symbol, key, false);
             return tokenKey;
         }
 
@@ -887,7 +892,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
             Runtime.Expect(ram != null, "invalid nft ram");
 
-            var mintKey = SmartContract.GetKeyForField(symbol, "mintID", true);
+            var mintKey = GetKeyForNFT(symbol, "mintID");
 
             BigInteger mintID;
 
@@ -968,7 +973,7 @@ namespace Phantasma.Blockchain
         {
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            Throw.If(storage.Has(tokenKey), "nft does not exists");
+            Throw.If(!storage.Has(tokenKey), "nft does not exists");
 
             return storage.Get<TokenContent>(tokenKey);
         }

@@ -912,15 +912,14 @@ namespace Phantasma.Tests
             // obtain tokenID
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
-            var tokenID = ownedTokenList.First();
 
             // verify nft presence on the user post-mint
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
             //verify that the present nft is the same we actually tried to create
-            var tokenId = ownedTokenList.ElementAt(0);
-            var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
+            var tokenID = ownedTokenList.First();
+            var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenID);
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) && nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
