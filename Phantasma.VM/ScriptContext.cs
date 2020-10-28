@@ -791,6 +791,8 @@ namespace Phantasma.VM
                             Expect(keyReg < frame.Registers.Length, "invalid key register");
 
                             var key = frame.Registers[keyReg];
+                            Throw.If(key.Type == VMType.None, "invalid key type");
+
                             var value = frame.Registers[src];
 
                             frame.Registers[dst].SetKey(key, value);
@@ -810,6 +812,8 @@ namespace Phantasma.VM
                             Expect(keyReg < frame.Registers.Length, "invalid key register");
 
                             var key = frame.Registers[keyReg];
+                            Throw.If(key.Type == VMType.None, "invalid key type");
+
                             var val = frame.Registers[src].GetKey(key);
 
                             frame.Registers[dst] = val;
