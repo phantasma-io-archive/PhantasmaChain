@@ -110,7 +110,7 @@ namespace Phantasma.Simulator
             // only create all this stuff once
             if (!nexus.PlatformExists(nexus.RootStorage, neoPlatform))
             {
-                BeginBlock();
+                /*BeginBlock();
                 GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 {
                     return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
@@ -118,7 +118,7 @@ namespace Phantasma.Simulator
                     SpendGas(_owner.Address).
                     EndScript();
                 });
-                EndBlock();
+                EndBlock();*/
 
                 BeginBlock();
                 GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
@@ -463,7 +463,8 @@ namespace Phantasma.Simulator
                 "extcall \"Runtime.IsWitness\"",
                 "pop $result",
                 $"jmpif $result, @end",
-                $"throw",
+                $"load r0 \"invalid witness\"",
+                $"throw r0",
 
                 $"@end: ret"
                 };
