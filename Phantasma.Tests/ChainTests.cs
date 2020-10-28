@@ -15,6 +15,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
 using Phantasma.Core.Types;
 using Phantasma.VM;
+using System.Collections.Generic;
 
 namespace Phantasma.Tests
 {
@@ -1654,7 +1655,7 @@ namespace Phantasma.Tests
         }
 
         [TestMethod]
-        public void UnpaidGasExceptionTest()
+        public void DeployCustomAccountScript()
         {
             var owner = PhantasmaKeys.Generate();
             var nexus = new Nexus("simnet", null, null);
@@ -1681,67 +1682,36 @@ namespace Phantasma.Tests
 
             string[] scriptString;
 
-            var symbol = "DEBUGNFT";
-            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-
             string message = "customEvent";
             var addressStr = Base16.Encode(testUser.Address.ToByteArray());
 
+            var onMintTrigger = AccountTrigger.OnMint.ToString();
+            var onWitnessTrigger = AccountTrigger.OnWitness.ToString();
+
             scriptString = new string[]
             {
-                $"alias r1, $triggerSend",
-                $"alias r2, $triggerReceive",
-                $"alias r3, $triggerBurn",
                 $"alias r4, $triggerMint",
                 $"alias r5, $triggerWitness",
                 $"alias r6, $comparisonResult",
-                $"alias r7, $currentTrigger",
                 $"alias r8, $currentAddress",
                 $"alias r9, $sourceAddress",
 
-                $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
-                $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
-                $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
-                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
-                $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
-                $"pop $currentTrigger",
+                $"@{onWitnessTrigger}: NOP ",
                 $"pop $currentAddress",
-
-                $"equal $triggerWitness, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @witnessHandler",
-
-                $"equal $triggerSend, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @sendHandler",
-
-                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @receiveHandler",
-
-                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @burnHandler",
-
-                $"equal $triggerMint, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @mintHandler",
-
-                $"jmp @end",
-
-                $"@witnessHandler: ",
                 $"load r11 0x{addressStr}",
                 $"push r11",
-                $@"extcall ""Address()""",
+                "extcall \"Address()\"",
                 $"pop $sourceAddress",
                 $"equal $sourceAddress, $currentAddress, $comparisonResult",
                 $"jmpif $comparisonResult, @end",
-                $"throw",
+                $"load r0 \"something failed\"",
+                $"throw r0",
 
-                $"@sendHandler: jmp @end",
-
-                $"@receiveHandler: jmp @end",
-
-                $"@burnHandler: jmp @end",
-
-                $"@mintHandler: load r11 0x{addressStr}",
+                $"@{onMintTrigger}: NOP",
+                $"pop $currentAddress",
+                $"load r11 0x{addressStr}",
                 $"push r11",
-                $@"extcall ""Address()""",
+                $"extcall \"Address()\"",
                 $"pop r11",
 
                 $"load r10, {(int)EventKind.Custom}",
@@ -1750,17 +1720,35 @@ namespace Phantasma.Tests
                 $"push r10",
                 $"push r11",
                 $"push r12",
-                $@"extcall ""Runtime.Event""",
+                $"extcall \"Runtime.Event\"",
 
                 $"@end: ret"
             };
 
-            var script = AssemblerUtils.BuildScript(scriptString);
-            
+            DebugInfo debugInfo;
+            Dictionary<string, int> labels;
+            var script = AssemblerUtils.BuildScript(scriptString, "test", out debugInfo, out labels);
+
+            var triggerList = new[] { AccountTrigger.OnWitness, AccountTrigger.OnMint };
+
+            // here we fetch the jump offsets for each trigger
+            var triggerMap = new Dictionary<AccountTrigger, int>();
+            foreach (var trigger in triggerList)
+            {
+                var triggerName = trigger.ToString();
+                var offset = labels[triggerName];
+                triggerMap[trigger] = offset;
+            }
+
+            // now with that, we can build an usable contract interface that exposes those triggers as contract calls
+            var methods = AccountContract.GetTriggersForABI(triggerMap);
+            var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
+            var abiBytes = abi.ToByteArray();
+
             simulator.BeginBlock();
             simulator.GenerateCustomTransaction(testUser, ProofOfWork.None,
                 () => ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("account", "RegisterScript", testUser.Address, script)
+                    .CallContract("account", "RegisterScript", testUser.Address, script, abiBytes)
                     .SpendGas(testUser.Address)
                     .EndScript());
             simulator.EndBlock();

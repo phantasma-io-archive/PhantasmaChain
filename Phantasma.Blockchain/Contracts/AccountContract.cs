@@ -2,6 +2,7 @@
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -62,7 +63,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(target.IsUser, "must be user address");
             Runtime.Expect(target != Runtime.GenesisAddress, "address must not be genesis");
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
-          
+
             Runtime.Expect(_addressMap.ContainsKey(target), "address doest not have a name yet");
 
             var name = _addressMap.Get<Address, string>(target);
@@ -91,11 +92,11 @@ namespace Phantasma.Blockchain.Contracts
             var witnessTriggerName = AccountTrigger.OnWitness.ToString();
             if (contractABI.HasMethod(witnessTriggerName))
             {
-                var witnessCheck = Runtime.InvokeTrigger(script, NativeContractKind.Account, contractABI, witnessTriggerName, target);
-                Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #1");
+                var witnessCheck = Runtime.InvokeTrigger(script, NativeContractKind.Account, contractABI, witnessTriggerName, Address.Null);
+                Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #1");
 
-                witnessCheck = Runtime.InvokeTrigger(script, NativeContractKind.Account, contractABI, witnessTriggerName, Address.Null);
-                Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #2");
+                witnessCheck = Runtime.InvokeTrigger(script, NativeContractKind.Account, contractABI, witnessTriggerName, target);
+                Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #2");
             }
 
             _scriptMap.Set(target, script);
@@ -167,6 +168,52 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             return Address.Null;
-        }       
+        }
+
+        public static IEnumerable<ContractMethod> GetTriggersForABI(IEnumerable<AccountTrigger> triggers)
+        {
+            var entries = new Dictionary<AccountTrigger, int>();
+            foreach (var trigger in triggers)
+            {
+                entries[trigger] = 0;
+            }
+
+            return GetTriggersForABI(entries);
+        }
+            
+        public static IEnumerable<ContractMethod> GetTriggersForABI(Dictionary<AccountTrigger, int> triggers)
+        {
+            var result = new List<ContractMethod>();
+
+            foreach (var entry in triggers)
+            {
+                var trigger = entry.Key;
+                var offset = entry.Value;
+
+                switch (trigger)
+                {
+                    case AccountTrigger.OnWitness:
+                        result.Add(new ContractMethod(trigger.ToString(), VM.VMType.None, offset, new[] { new ContractParameter("from", VM.VMType.Object) }));
+                        break;
+
+                    case AccountTrigger.OnBurn:
+                    case AccountTrigger.OnMint:
+                    case AccountTrigger.OnReceive:
+                    case AccountTrigger.OnSend:
+                        result.Add(new ContractMethod(trigger.ToString(), VM.VMType.None, offset, new[] {
+                            new ContractParameter("from", VM.VMType.Object),
+                            new ContractParameter("to", VM.VMType.Object),
+                            new ContractParameter("symbol", VM.VMType.String),
+                            new ContractParameter("amount", VM.VMType.Number)
+                        }));
+                        break;
+
+                    default:
+                        throw new System.Exception("AddTriggerToABI: Unsupported trigger: " + trigger);
+                }
+            }
+
+            return result;
+        }
     }
 }

@@ -500,7 +500,8 @@ namespace Phantasma.Blockchain
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
             var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true, contextName);
-            runtime.ThrowOnFault = true;
+            
+            //runtime.ThrowOnFault = true; // enable only if debugging some issue...
 
             for (int i = args.Length - 1; i >= 0; i--)
             {
