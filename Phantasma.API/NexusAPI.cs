@@ -430,6 +430,7 @@ namespace Phantasma.API
                 maxSupply = tokenInfo.MaxSupply.ToString(),
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
+                address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,
                 /*platform = tokenInfo.Platform,
                 hash = tokenInfo.Hash.ToString(),*/
                 script = tokenInfo.Script.Encode()

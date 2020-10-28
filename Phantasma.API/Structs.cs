@@ -288,11 +288,8 @@ namespace Phantasma.API
         [APIDescription("Max amount of tokens that can be minted")]
         public string maxSupply;
 
-        [APIDescription("Platform of token")]
-        public string platform;
-
-        [APIDescription("Hash of token")]
-        public string hash;
+        [APIDescription("Address of token")]
+        public string address;
 
         public string flags;
 
