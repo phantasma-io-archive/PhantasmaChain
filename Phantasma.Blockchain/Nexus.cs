@@ -601,14 +601,14 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
-        internal void CreateToken(StorageContext storage, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
+        internal void CreateToken(StorageContext storage, string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
         {
             if (abi == null)
             {
                 abi = new ContractInterface();
             }
 
-            var tokenInfo = new TokenInfo(symbol, name, maxSupply, decimals, flags, script, abi);
+            var tokenInfo = new TokenInfo(symbol, name, owner, maxSupply, decimals, flags, script, abi);
             EditToken(storage, symbol, tokenInfo);
 
             // add to persistent list of tokens
@@ -1091,14 +1091,14 @@ namespace Phantasma.Blockchain
 
             var tokenScript = new byte[0];
             //UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals)
-            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript);
-            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript);
-            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript);
+            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, owner, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript);
+            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, owner, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
 
-            CreateToken(storage, "NEO", "NEO", UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
-            CreateToken(storage, "GAS", "GAS", UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
-            CreateToken(storage, "ETH", "Ethereum", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
-            CreateToken(storage, "DAI", "Dai Stablecoin", UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
+            CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
 
             SetTokenPlatformHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
@@ -2024,6 +2024,31 @@ namespace Phantasma.Blockchain
 
             var key = GetNexusKey($"{symbol}.{platform}.hash");
             return storage.Has(key);
+        }
+
+        internal Address GetContractOwner(Address contractAddress)
+        {
+            var storage = RootStorage;
+
+            var contract = GetNativeContractByAddress(contractAddress);
+            if (contract != null)
+            {
+                return this.GetGenesisAddress(storage);
+            }
+
+            var symbols = GetTokens(storage);
+            foreach (var symbol in symbols)
+            {
+                var tokenAddress = TokenUtils.GetContractAddress(symbol);
+                    
+                if (tokenAddress == contractAddress)
+                {
+                    var token = GetTokenInfo(storage, symbol);
+                    return token.Owner;
+                }
+            }
+
+            return Address.Null;
         }
     }
 }

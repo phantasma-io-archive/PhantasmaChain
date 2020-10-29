@@ -907,7 +907,7 @@ namespace Phantasma.Blockchain
             Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
         }
 
-        public void CreateToken(Address from, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
@@ -958,9 +958,9 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(decimals == 0, "indivisible token can't have decimals");
             }
 
-            Runtime.Expect(from.IsUser, "owner address must be user address");
-            Runtime.Expect(Runtime.IsStakeMaster(from), "needs to be master");
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            Runtime.Expect(owner.IsUser, "owner address must be user address");
+            Runtime.Expect(Runtime.IsStakeMaster(owner), "needs to be master");
+            Runtime.Expect(Runtime.IsWitness(owner), "invalid witness");
 
             if (Runtime.ProtocolVersion >= 4)
             {
@@ -968,11 +968,11 @@ namespace Phantasma.Blockchain
                 // governance value is in usd fiat, here convert from fiat to fuel amount
                 fuelCost = Runtime.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
                 // burn the "cost" tokens
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
             }
 
-            Nexus.CreateToken(RootStorage, symbol, name, maxSupply, decimals, flags, script);
-            Runtime.Notify(EventKind.TokenCreate, from, symbol);
+            Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script);
+            Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
 
         public void CreateChain(Address creator, string organization, string name, string parentName)

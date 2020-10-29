@@ -864,7 +864,7 @@ namespace Phantasma.Blockchain
 
             VMObject temp;
 
-            var source = vm.PopAddress();
+            var owner = vm.PopAddress();
 
             temp = vm.Stack.Pop();
             vm.Expect(temp.Type == VMType.String, "expected string for symbol");
@@ -873,15 +873,6 @@ namespace Phantasma.Blockchain
             temp = vm.Stack.Pop();
             vm.Expect(temp.Type == VMType.String, "expected string for name");
             var name = temp.AsString();
-
-            /*
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.String, "expected string for platform");
-            var platform = temp.AsString();
-
-            temp = Runtime.Stack.Pop();
-            Runtime.Expect(temp.Type == VMType.Bytes, "expected bytes for hash");
-            var hash = Serialization.Unserialize<Hash>(temp.AsByteArray());*/
 
             var maxSupply = vm.PopNumber("maxSupply");
 
@@ -895,7 +886,21 @@ namespace Phantasma.Blockchain
             vm.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
             var script = temp.AsByteArray();
 
-            vm.CreateToken(source, symbol, name, maxSupply, decimals, flags, script);
+            ContractInterface abi;
+
+            if (vm.ProtocolVersion >= 4)
+            {
+                temp = vm.Stack.Pop();
+                vm.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
+                var abiBytes = temp.AsByteArray();
+                abi = ContractInterface.FromBytes(abiBytes);
+            }
+            else
+            {
+                abi = new ContractInterface();
+            }
+
+            vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script);
 
             return ExecutionState.Running;
         }

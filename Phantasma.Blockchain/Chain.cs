@@ -634,6 +634,8 @@ namespace Phantasma.Blockchain
                 {
                     return Address.FromBytes(bytes);
                 }
+
+                return Nexus.GetContractOwner(contractAddress);
             }
 
             return Address.Null;

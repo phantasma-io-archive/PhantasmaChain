@@ -11,6 +11,7 @@ namespace Phantasma.Blockchain.Tokens
     {
         public string Symbol { get; private set; }
         public string Name { get; private set; }
+        public Address Owner { get; private set; }
         public TokenFlags Flags { get; private set; }
         public BigInteger MaxSupply { get; private set; }    
         public int Decimals { get; private set; }
@@ -18,10 +19,11 @@ namespace Phantasma.Blockchain.Tokens
 
         public ContractInterface ABI { get; private set; }
 
-        public TokenInfo(string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface ABI)
+        public TokenInfo(string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface ABI)
         {
             this.Symbol = symbol;
             this.Name = name;
+            this.Owner = owner;
             this.Flags = flags;
             this.Decimals = decimals;
             this.MaxSupply = maxSupply;
@@ -38,8 +40,7 @@ namespace Phantasma.Blockchain.Tokens
         {
             writer.WriteVarString(Symbol);
             writer.WriteVarString(Name);
-            /*writer.WriteVarString(Platform);
-            writer.WriteHash(Hash);*/
+            writer.WriteAddress(Owner);
             writer.Write((uint)Flags);
             writer.Write(Decimals);
             writer.WriteBigInteger(MaxSupply);
@@ -53,8 +54,7 @@ namespace Phantasma.Blockchain.Tokens
         {
             Symbol = reader.ReadVarString();
             Name = reader.ReadVarString();
-            /*Platform = reader.ReadVarString();
-            Hash = reader.ReadHash();*/
+            Owner = reader.ReadAddress();
             Flags = (TokenFlags)reader.ReadUInt32();
             Decimals = reader.ReadInt32();
             MaxSupply = reader.ReadBigInteger();

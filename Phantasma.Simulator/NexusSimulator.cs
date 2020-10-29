@@ -11,6 +11,7 @@ using Phantasma.Blockchain;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Domain;
+using Phantasma.VM;
 
 namespace Phantasma.Simulator
 {
@@ -72,7 +73,7 @@ namespace Phantasma.Simulator
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 3))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 4))
                 {
                     throw new ChainException("Genesis block failure");
                 }
@@ -439,44 +440,87 @@ namespace Phantasma.Simulator
 
         public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
         {
+            var version = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            Dictionary<string, int> labels = null;
+
             if (tokenScript == null)
             {
                 // small script that restricts minting of tokens to transactions where the owner is a witness
                 var addressStr = Base16.Encode(owner.Address.ToByteArray());
-                var scriptString = new string[] {
-                $"alias r1, $triggerMint",
-                $"alias r2, $currentTrigger",
-                $"alias r3, $result",
-                $"alias r4, $owner",
+                string[] scriptString;
 
-                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
-                $"pop $currentTrigger",
+                if (version >= 4)
+                {
+                    scriptString = new string[] {
+                    $"alias r3, $result",
+                    $"alias r4, $owner",
+                    $"@{AccountTrigger.OnMint}: nop",
+                    $"load $owner 0x{addressStr}",
+                    "push $owner",
+                    "extcall \"Address()\"",
+                    "extcall \"Runtime.IsWitness\"",
+                    "pop $result",
+                    $"jmpif $result, @end",
+                    $"load r0 \"invalid witness\"",
+                    $"throw r0",
 
-                $"equal $triggerMint, $currentTrigger, $result",
-                $"jmpif $result, @mintHandler",
-                $"jmp @end",
+                    $"@end: ret"
+                    };
+                }
+                else {
+                    scriptString = new string[] {
+                    $"alias r1, $triggerMint",
+                    $"alias r2, $currentTrigger",
+                    $"alias r3, $result",
+                    $"alias r4, $owner",
 
-                $"@mintHandler: nop",
-                $"load $owner 0x{addressStr}",
-                "push $owner",
-                "extcall \"Address()\"",
-                "extcall \"Runtime.IsWitness\"",
-                "pop $result",
-                $"jmpif $result, @end",
-                $"load r0 \"invalid witness\"",
-                $"throw r0",
+                    $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
+                    $"pop $currentTrigger",
 
-                $"@end: ret"
-                };
-                tokenScript = AssemblerUtils.BuildScript(scriptString);
+                    $"equal $triggerMint, $currentTrigger, $result",
+                    $"jmpif $result, @mintHandler",
+                    $"jmp @end",
+
+                    $"@mintHandler: nop",
+                    $"load $owner 0x{addressStr}",
+                    "push $owner",
+                    "extcall \"Address()\"",
+                    "extcall \"Runtime.IsWitness\"",
+                    "pop $result",
+                    $"jmpif $result, @end",
+                    $"load r0 \"invalid witness\"",
+                    $"throw r0",
+
+                    $"@end: ret"
+                    };
+                }
+                DebugInfo debugInfo;
+                tokenScript = AssemblerUtils.BuildScript(scriptString, "GenerateToken",  out debugInfo, out labels);
             }
 
-            var script = ScriptUtils.
+            var sb = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript).
-                SpendGas(owner.Address).
-                EndScript();
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999);
+
+            if (version >= 4)
+            {
+                var triggerMap = new Dictionary<AccountTrigger, int>();
+                triggerMap[AccountTrigger.OnMint] = labels[AccountTrigger.OnMint.ToString()];
+
+                var methods = AccountContract.GetTriggersForABI(triggerMap);
+                var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
+                var abiBytes = abi.ToByteArray();
+
+                sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript, abiBytes);
+            }
+            else
+            {
+                sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript);
+            }
+
+            sb.SpendGas(owner.Address);
+            
+            var script = sb.EndScript();
 
             var tx = MakeTransaction(owner, ProofOfWork.Minimal, Nexus.RootChain, script);
 

@@ -26,6 +26,7 @@ namespace Phantasma.Domain
     {
         string Name { get; }
         string Symbol { get; }
+        Address Owner { get; }
         TokenFlags Flags { get; }
         BigInteger MaxSupply { get;  }
         int Decimals { get; }
@@ -115,7 +116,12 @@ namespace Phantasma.Domain
     {
         public static Address GetContractAddress(this IToken token)
         {
-            return SmartContract.GetAddressForName(token.Symbol);
+            return GetContractAddress(token.Symbol);
+        }
+
+        public static Address GetContractAddress(string symbol)
+        {
+            return SmartContract.GetAddressForName(symbol);
         }
     }
 
