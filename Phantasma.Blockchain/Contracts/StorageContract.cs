@@ -172,7 +172,7 @@ namespace Phantasma.Blockchain.Contracts
         {
             ValidateKey(key);
 
-            var writeSize = value.Length + key.Length;
+            var writeSize = value.Length;
 
             var availableSize = GetAvailableSpace(target);
             Runtime.Expect(availableSize >= writeSize, $"not enough storage space available");
@@ -194,7 +194,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.Storage.Has(key), "key does not exist");
 
             var value = Runtime.Storage.Get(key);
-            var deleteSize = value.Length + key.Length;
+            var deleteSize = value.Length;
 
             Runtime.Storage.Delete(key);
 
