@@ -291,7 +291,7 @@ namespace Phantasma.Blockchain
         }
 
         // only works for native contracts!!
-        public NativeContract GetNativeContractByAddress(Address contractAdress)
+        public NativeContract GetNativeContractByAddress(Address contractAddress)
         {
             if (_contractMap == null)
             {
@@ -317,8 +317,8 @@ namespace Phantasma.Blockchain
                 RegisterContract<SaleContract>();
             }
 
-            if (_contractMap.ContainsKey(contractAdress)) {
-                var type = _contractMap[contractAdress];
+            if (_contractMap.ContainsKey(contractAddress)) {
+                var type = _contractMap[contractAddress];
                 return (NativeContract)Activator.CreateInstance(type);
             }
 

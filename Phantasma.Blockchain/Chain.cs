@@ -586,9 +586,9 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public SmartContract GetContractByAddress(StorageContext storage, Address address)
+        public SmartContract GetContractByAddress(StorageContext storage, Address contractAddress)
         {
-            var nameKey = GetContractKey(address, "name");
+            var nameKey = GetContractKey(contractAddress, "name");
 
             if (storage.Has(nameKey))
             {
@@ -598,7 +598,19 @@ namespace Phantasma.Blockchain
                 return GetContractByName(storage, name);
             }
 
-            return Nexus.GetNativeContractByAddress(address);
+            var symbols = Nexus.GetTokens(storage);
+            foreach (var symbol in symbols)
+            {
+                var tokenAddress = TokenUtils.GetContractAddress(symbol);
+
+                if (tokenAddress == contractAddress)
+                {
+                    var token = Nexus.GetTokenInfo(storage, symbol);
+                    return new CustomContract(token.Symbol, token.Script, token.ABI);
+                }
+            }
+
+            return Nexus.GetNativeContractByAddress(contractAddress);
         }
 
         public SmartContract GetContractByName(StorageContext storage, string name)
