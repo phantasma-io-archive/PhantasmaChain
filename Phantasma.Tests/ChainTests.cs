@@ -918,6 +918,12 @@ namespace Phantasma.Tests
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(ownedTokenList.Count() == 1, "How does the sender not have one now?");
 
+            // check used storage
+            var tokenAddress = TokenUtils.GetContractAddress(symbol);
+            var usedStorage = (int)nexus.RootChain.InvokeContract(nexus.RootChain.Storage, "storage", nameof(StorageContract.GetUsedSpace), tokenAddress).AsNumber();
+            var minExpectedSize = tokenROM.Length + tokenRAM.Length;
+            Assert.IsTrue(usedStorage >= minExpectedSize);
+
             //verify that the present nft is the same we actually tried to create
             var tokenID = ownedTokenList.First();
             var nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenID);
