@@ -431,8 +431,7 @@ namespace Phantasma.API
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,
-                /*platform = tokenInfo.Platform,
-                hash = tokenInfo.Hash.ToString(),*/
+                owner = tokenInfo.Owner.Text,
                 script = tokenInfo.Script.Encode()
             };
         }
