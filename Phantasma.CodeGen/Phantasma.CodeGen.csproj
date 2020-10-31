@@ -8,8 +8,8 @@
     <OldToolsVersion>Current</OldToolsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\PhantasmaChain\Phantasma.Core\Phantasma.Core.csproj" />
-    <ProjectReference Include="..\..\PhantasmaChain\Phantasma.VM\Phantasma.VM.csproj" />
+    <ProjectReference Include="..\PhantasmaChain\Phantasma.Core\Phantasma.Core.csproj" />
+    <ProjectReference Include="..\PhantasmaChain\Phantasma.VM\Phantasma.VM.csproj" />
     <ProjectReference Include="..\Phantasma.Domain\Phantasma.Domain.csproj" />
   </ItemGroup>
 </Project>
