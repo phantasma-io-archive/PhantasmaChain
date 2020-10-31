@@ -919,7 +919,14 @@ namespace Phantasma.Blockchain
             var contractAddress = token.GetContractAddress();
 
             var bytes = content.ToByteArray();
-            Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+            }
+            else
+            {
+                Runtime.RootStorage.Put(tokenKey, bytes);
+            }
 
             return content.TokenID;
         }
@@ -933,7 +940,14 @@ namespace Phantasma.Blockchain
             var token = Runtime.GetToken(symbol);
             var contractAddress = token.GetContractAddress();
 
-            Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
+            }
+            else
+            {
+                Runtime.RootStorage.Delete(tokenKey);
+            }
         }
 
         internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, bool mustExist)
@@ -954,7 +968,16 @@ namespace Phantasma.Blockchain
                 var contractAddress = token.GetContractAddress();
 
                 var bytes = content.ToByteArray();
-                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+
+                if (Runtime.ProtocolVersion >= 4)
+                {
+                    Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+                }
+                else
+                {
+                    Runtime.RootStorage.Put(tokenKey, bytes);
+                }
+
             }
             else
             {
