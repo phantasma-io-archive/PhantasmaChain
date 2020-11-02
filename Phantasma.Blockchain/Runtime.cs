@@ -175,6 +175,8 @@ namespace Phantasma.Blockchain
 
             this.Stack.Push(VMObject.FromObject(methodName));
 
+            SetCurrentContext(context);
+
             this.PushFrame(context, jumpOffset, VirtualMachine.DefaultRegisterCount);
 
             _activeAddresses.Push(context.Address);
