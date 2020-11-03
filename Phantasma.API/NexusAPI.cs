@@ -1918,7 +1918,7 @@ namespace Phantasma.API
 
                 if (destHash == Hash.Null)
                 {
-                    return new ErrorResult { error = "Swap failed" };
+                    return new ErrorResult { error = "Swap failed or destination hash is not yet available" };
                 }
                 else
                 {
