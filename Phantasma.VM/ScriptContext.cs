@@ -462,8 +462,34 @@ namespace Phantasma.VM
                             Expect(src < frame.Registers.Length, "invalid src register");
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
-                            var src_array = frame.Registers[src].AsByteArray();
-                            frame.Registers[dst].SetValue(src_array.Length);
+                            int size;
+
+                            var src_val = frame.Registers[src];
+                            
+                            switch (src_val.Type)
+                            {
+                                case VMType.String:
+                                    size = src_val.AsString().Length;
+                                    break;
+
+                                case VMType.Timestamp:
+                                case VMType.Number:
+                                case VMType.Enum:
+                                case VMType.Bool:
+                                    size = 1;
+                                    break;
+
+                                case VMType.None:
+                                    size = 0;
+                                    break;
+
+                                default:
+                                    var src_array= src_val.AsByteArray();
+                                    size = src_array.Length;
+                                    break;
+                            }
+                            
+                            frame.Registers[dst].SetValue(size);
                             break;
                         }
 
