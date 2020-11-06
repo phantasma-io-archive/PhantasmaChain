@@ -306,7 +306,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = BigInteger.FromSignedArray(val);
+                        this.Data = (val == null || val.Length==0) ? new BigInteger(0) : BigInteger.FromSignedArray(val);
                         break;
                     }
 
