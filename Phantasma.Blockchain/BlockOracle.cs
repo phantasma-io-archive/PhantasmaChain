@@ -70,6 +70,11 @@ namespace Phantasma.Blockchain
             throw new NotImplementedException();
         }
 
+        protected override InteropNFT PullPlatformNFT(string platformName, string symbol, Numerics.BigInteger tokenID)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override T PullData<T>(Timestamp time, string url)
         {
             throw new NotImplementedException();

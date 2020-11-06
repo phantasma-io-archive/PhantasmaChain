@@ -115,6 +115,7 @@ namespace Phantasma.Blockchain
         protected abstract BigInteger PullFee(Timestamp time, string platform);
         protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
+        protected abstract InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID);
         public abstract string GetCurrentHeight(string platformName, string chainName);
         public abstract void SetCurrentHeight(string platformName, string chainName, string height);
         public abstract List<InteropBlock> ReadAllBlocks(string platformName, string chainName);
@@ -142,6 +143,13 @@ namespace Phantasma.Blockchain
 
                 var platformName = args[0];
                 var chainName = args[1];
+
+                if (chainName == "nft")
+                {
+                    args = args.Skip(2).ToArray();
+                    content = (T)(object)ReadNFTOracle(platformName, args);
+                }
+                else
                 if (Nexus.PlatformExists(Nexus.RootStorage, platformName))
                 {
                     args = args.Skip(2).ToArray();
@@ -427,6 +435,30 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private InteropNFT ReadNFTOracle(string platformName, string[] input) 
+        {
+            if (input == null || input.Length != 2)
+            {
+                throw new OracleException("missing oracle input");
+            }
+
+            var symbol = input[0];
+            var tokenID = BigInteger.Parse(input[1]);
+
+            if (platformName == DomainSettings.PlatformName)
+            {
+                var nft = Nexus.ReadNFT(Nexus.RootStorage, symbol, tokenID);
+                var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
+
+                var name = $"{tokenInfo.Name} #{tokenID}";
+
+                // TODO proper fetch name + description + url
+                return new InteropNFT(name, "No description", "http://TODO");
+            }
+
+            return PullPlatformNFT(platformName, symbol, tokenID);
+        }
+        
         public InteropTransaction ReadTransaction(string platform, string chain, Hash hash)
         {
             var url = DomainExtensions.GetOracleTransactionURL(platform, chain, hash);

@@ -136,6 +136,11 @@ namespace Phantasma.Simulator
             price /= 1000m;
             return price;
         }
+
+        protected override InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 }

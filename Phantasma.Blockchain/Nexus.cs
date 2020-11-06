@@ -1006,6 +1006,12 @@ namespace Phantasma.Blockchain
 
             return storage.Get<TokenContent>(tokenKey);
         }
+
+        public bool HasNFT(StorageContext storage, string symbol, BigInteger tokenID)
+        {
+            var tokenKey = GetKeyForNFT(symbol, tokenID);
+            return storage.Has(tokenKey);
+        }
         #endregion
 
         #region GENESIS

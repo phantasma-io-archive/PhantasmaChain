@@ -146,6 +146,14 @@ namespace Phantasma.Domain
             return tx;
         }
 
+        public static InteropNFT ReadNFTFromOracle(this IRuntime runtime, string platform, string symbol, BigInteger tokenID)
+        {
+            var url = GetOracleNFTURL(platform, symbol, tokenID);
+            var bytes = runtime.ReadOracle(url);
+            var nft = Serialization.Unserialize<InteropNFT>(bytes);
+            return nft;
+        }
+
         public static BigInteger ReadFeeFromOracle(this IRuntime runtime, string platform)
         {
             var url = GetOracleFeeURL(platform);
@@ -176,6 +184,11 @@ namespace Phantasma.Domain
         public static string GetOracleBlockURL(string platform, string chain, BigInteger height)
         {
             return $"interop://{platform}/{chain}/block/{height}";
+        }
+
+        public static string GetOracleNFTURL(string platform, string symbol, BigInteger tokenID)
+        {
+            return $"interop://{platform}/nft/{symbol}/{tokenID}";
         }
 
         public static string GetOracleFeeURL(string platform)
