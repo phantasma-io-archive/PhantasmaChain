@@ -92,10 +92,10 @@ namespace Phantasma.Blockchain.Contracts
             var witnessTriggerName = AccountTrigger.OnWitness.ToString();
             if (contractABI.HasMethod(witnessTriggerName))
             {
-                var witnessCheck = Runtime.InvokeTrigger(script, NativeContractKind.Account, contractABI, witnessTriggerName, Address.Null);
+                var witnessCheck = Runtime.InvokeTrigger(false, script, NativeContractKind.Account, contractABI, witnessTriggerName, Address.Null);
                 Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #1");
 
-                witnessCheck = Runtime.InvokeTrigger(script, NativeContractKind.Account, contractABI, witnessTriggerName, target);
+                witnessCheck = Runtime.InvokeTrigger(false, script, NativeContractKind.Account, contractABI, witnessTriggerName, target);
                 Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #2");
             }
 

@@ -15,6 +15,7 @@ using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
+using Phantasma.VM;
 
 namespace Phantasma.Blockchain
 {
@@ -610,10 +611,8 @@ namespace Phantasma.Blockchain
         #region TOKENS
         internal void CreateToken(StorageContext storage, string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
         {
-            if (abi == null)
-            {
-                abi = new ContractInterface();
-            }
+            Throw.IfNull(script, nameof(script));
+            Throw.IfNull(abi, nameof(abi));
 
             var tokenInfo = new TokenInfo(symbol, name, owner, maxSupply, decimals, flags, script, abi);
             EditToken(storage, symbol, tokenInfo);
@@ -667,10 +666,10 @@ namespace Phantasma.Blockchain
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), "balance add failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, destination, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, tokenTrigger, source, destination, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, accountTrigger, source, destination, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, accountTrigger, source, destination, token.Symbol, amount), $"token {tokenTrigger} trigger failed");
 
             if (isSettlement)
             {
@@ -697,10 +696,10 @@ namespace Phantasma.Blockchain
             Runtime.Expect(ownerships.Add(Runtime.Storage, destination, tokenID), "ownership add failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnReceive : TokenTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, tokenTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, accountTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, accountTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed");
 
             using (var m = new ProfileMarker("Nexus.WriteNFT"))
                 WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, !isSettlement);
@@ -735,9 +734,9 @@ namespace Phantasma.Blockchain
             var balances = new BalanceSheet(token.Symbol);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, destination, token.Symbol, amount), "token trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn, source, destination, token.Symbol, amount), "token trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, destination, token.Symbol, amount), "account trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, source, isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn, source, destination, token.Symbol, amount), "account trigger failed");
 
             if (isSettlement)
             {
@@ -776,10 +775,10 @@ namespace Phantasma.Blockchain
             Runtime.Expect(ownerships.Remove(Runtime.Storage, source, tokenID), "ownership removal failed");
 
             var tokenTrigger = isSettlement ? TokenTrigger.OnSend : TokenTrigger.OnBurn;
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, tokenTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, tokenTrigger, source, destination, token.Symbol, tokenID), $"token {tokenTrigger} trigger failed: ");
 
             var accountTrigger = isSettlement ? AccountTrigger.OnSend : AccountTrigger.OnBurn;
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, accountTrigger, source, destination, token.Symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, source, accountTrigger, source, destination, token.Symbol, tokenID), $"accont {accountTrigger} trigger failed: ");
 
             if (isSettlement)
             {
@@ -812,11 +811,11 @@ namespace Phantasma.Blockchain
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");
             Runtime.Expect(balances.Add(Runtime.Storage, destination, amount), $"{token.Symbol} balance add failed to {destination.Text}");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, destination, token.Symbol, amount), "token onSend trigger failed");
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, source, destination, token.Symbol, amount), "token onReceive trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnSend, source, destination, token.Symbol, amount), "token onSend trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnReceive, source, destination, token.Symbol, amount), "token onReceive trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, destination, token.Symbol, amount), "account onSend trigger failed");
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, source, destination, token.Symbol, amount), "account onReceive trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, source, AccountTrigger.OnSend, source, destination, token.Symbol, amount), "account onSend trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, AccountTrigger.OnReceive, source, destination, token.Symbol, amount), "account onReceive trigger failed");
 
             if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
             {
@@ -853,13 +852,13 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(ownerships.Add(Runtime.Storage, destination, tokenID), "ownership add failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnSend, source, destination, token.Symbol, tokenID), "token send trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnSend, source, destination, token.Symbol, tokenID), "token send trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnToken(token, TokenTrigger.OnReceive, source, destination, token.Symbol, tokenID), "token receive trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, TokenTrigger.OnReceive, source, destination, token.Symbol, tokenID), "token receive trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(source, AccountTrigger.OnSend, source, destination, token.Symbol, tokenID), "account send trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, source, AccountTrigger.OnSend, source, destination, token.Symbol, tokenID), "account send trigger failed");
 
-            Runtime.Expect(Runtime.InvokeTriggerOnAccount(destination, AccountTrigger.OnReceive, source, destination, token.Symbol, tokenID), "account received trigger failed");
+            Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, AccountTrigger.OnReceive, source, destination, token.Symbol, tokenID), "account received trigger failed");
 
             WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, true);
 
@@ -1119,17 +1118,19 @@ namespace Phantasma.Blockchain
 
             storage.Put(GetNexusKey("owner"), owner);
 
-            var tokenScript = new byte[0];
-            //UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals)
-            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript);
-            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, owner, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript);
-            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, owner, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript);
+            var tokenScript = new byte[] { (byte)Opcode.RET };
+            var abi = new ContractInterface(Enumerable.Empty<ContractMethod>(), Enumerable.Empty<ContractEvent>());
 
-            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
-            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript);
-            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
-            CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript);
-            //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External);
+            //UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals)
+            CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript, abi);
+            CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, owner, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript, abi);
+            CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, owner, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript, abi);
+
+            CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
+            CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
+            CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
+            CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
+            //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, tokenScript, abi);
 
             SetTokenPlatformHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
             SetTokenPlatformHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);

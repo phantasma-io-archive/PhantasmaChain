@@ -299,6 +299,41 @@ namespace Phantasma.Blockchain
             _events.Add(evt);
         }
 
+        public bool IsMintingAddress(Address address, string symbol)
+        {
+            if (TokenExists(symbol))
+            {
+                var info = GetToken(symbol);
+
+                if (address == info.Owner)
+                {
+                    return true;
+                }
+                
+                if (info.Owner == this.GenesisAddress)
+                {
+                    if (address.IsSystem)
+                    {
+                        var contract = this.Chain.GetContractByAddress(this.Storage, address);
+                        var nativeContract = contract as NativeContract;
+                        if (nativeContract != null)
+                        {
+                            switch (nativeContract.Kind)
+                            {
+                                case NativeContractKind.Stake:
+                                    return true;
+
+                                default:
+                                    return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
         #region GAS
         public override ExecutionState ValidateOpcode(Opcode opcode)
         {
@@ -407,7 +442,7 @@ namespace Phantasma.Blockchain
         }
 
         #region TRIGGERS
-        public bool InvokeTriggerOnAccount(Address address, AccountTrigger trigger, params object[] args)
+        public bool InvokeTriggerOnAccount(bool allowThrow, Address address, AccountTrigger trigger, params object[] args)
         {
             if (address.IsNull)
             {
@@ -422,7 +457,7 @@ namespace Phantasma.Blockchain
                 var accountScript = accountABI != null ? OptimizedAddressScriptLookup(address) : null;
 
                 //Expect(accountScript.SequenceEqual(accountScript2), "different account scripts");
-                return this.InvokeTrigger(accountScript, NativeContractKind.Account, accountABI, trigger.ToString(), args);
+                return this.InvokeTrigger(allowThrow, accountScript, NativeContractKind.Account, accountABI, trigger.ToString(), args);
             }
 
             if (address.IsSystem)
@@ -436,7 +471,7 @@ namespace Phantasma.Blockchain
                         var customContract = contract as CustomContract;
                         if (customContract != null)
                         {
-                            return InvokeTrigger(customContract.Script, contract.Name, contract.ABI, triggerName, args);
+                            return InvokeTrigger(allowThrow, customContract.Script, contract.Name, contract.ABI, triggerName, args);
                         }
                         else
                         if (contract is NativeContract)
@@ -482,12 +517,12 @@ namespace Phantasma.Blockchain
 
         }
 
-        public bool InvokeTriggerOnToken(IToken token, TokenTrigger trigger, params object[] args)
+        public bool InvokeTriggerOnToken(bool allowThrow, IToken token, TokenTrigger trigger, params object[] args)
         {
-            return InvokeTrigger(token.Script, token.Symbol, token.ABI, trigger.ToString(), args);
+            return InvokeTrigger(allowThrow, token.Script, token.Symbol, token.ABI, trigger.ToString(), args);
         }
 
-        public bool InvokeTrigger(byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args)
+        public bool InvokeTrigger(bool allowThrow, byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args)
         {
             if (script == null || script.Length == 0 || abi == null)
             {
@@ -530,6 +565,12 @@ namespace Phantasma.Blockchain
             }
             else
             {
+                if (allowThrow)
+                {
+                    var vmException = runtime.Stack.Pop().AsString();
+                    throw new Exception($"{triggerName} trigger failed: {vmException}");
+                }
+
                 return false;
             }
         }
@@ -605,7 +646,7 @@ namespace Phantasma.Blockchain
             if (address.IsUser && Nexus.HasGenesis && OptimizedHasAddressScript(RootStorage, address))
             {
                 using (var m = new ProfileMarker("InvokeTriggerOnAccount"))
-                    accountResult = InvokeTriggerOnAccount(address, AccountTrigger.OnWitness, address);
+                    accountResult = InvokeTriggerOnAccount(false, address, AccountTrigger.OnWitness, address);
             }
             else
             {

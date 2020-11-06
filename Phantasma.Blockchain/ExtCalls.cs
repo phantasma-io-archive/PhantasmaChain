@@ -25,6 +25,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Time", Runtime_Time);
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
+            vm.RegisterMethod("Runtime.IsMinter", Runtime_IsMinter);
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Notify", Runtime_Notify);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
@@ -287,6 +288,31 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
+        private static ExecutionState Runtime_IsMinter(RuntimeVM vm)
+        {
+            try
+            {
+                var tx = vm.Transaction;
+                Throw.IfNull(tx, nameof(tx));
+
+                vm.ExpectStackSize(1);
+
+                var address = vm.PopAddress();
+                var symbol = vm.PopString("symbol");
+
+                bool success = vm.IsMintingAddress(address, symbol);
+
+                var result = new VMObject();
+                result.SetValue(success);
+                vm.Stack.Push(result);
+            }
+            catch (Exception e)
+            {
+                throw new VMException(vm, e.Message);
+            }
+
+            return ExecutionState.Running;
+        }
 
         private static ExecutionState Runtime_IsWitness(RuntimeVM vm)
         {
@@ -606,7 +632,8 @@ namespace Phantasma.Blockchain
 
             if (vm.Nexus.HasGenesis)
             {
-                vm.Expect(symbol != DomainSettings.FuelTokenSymbol && symbol != DomainSettings.StakingTokenSymbol, "cannot mint system tokens after genesis");
+                var isMinter = vm.IsMintingAddress(source, symbol);
+                vm.Expect(isMinter, $"{source} is not a valid minting address for {symbol}");
             }
 
             vm.MintTokens(symbol, source, destination, amount);

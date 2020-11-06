@@ -4,6 +4,7 @@ using Phantasma.Storage;
 using System.IO;
 using Phantasma.Storage.Utils;
 using Phantasma.Domain;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -21,6 +22,13 @@ namespace Phantasma.Blockchain.Tokens
 
         public TokenInfo(string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface ABI)
         {
+            Throw.IfNullOrEmpty(symbol, nameof(symbol));
+            Throw.IfNullOrEmpty(name, nameof(name));
+            Throw.If(owner.IsNull, "token owner can't be null address");
+            Throw.If(decimals < 0, "decimals can't be negative");
+            Throw.If(flags == TokenFlags.None, "token must have flags set");
+            Throw.If(script == null || script.Length == 0, "token script can't be empty");
+
             this.Symbol = symbol;
             this.Name = name;
             this.Owner = owner;
