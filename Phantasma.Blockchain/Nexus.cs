@@ -243,7 +243,7 @@ namespace Phantasma.Blockchain
                 return Address.Null;
             }
 
-            var contract = this.GetContractByName(name);
+            var contract = this.GetContractByName(storage, name);
             if (contract != null)
             {
                 return contract.Address;
@@ -273,9 +273,16 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region CONTRACTS
-        public SmartContract GetContractByName(string contractName)
+        public SmartContract GetContractByName(StorageContext storage, string contractName)
         {
             Throw.IfNullOrEmpty(contractName, nameof(contractName));
+
+            if (ValidationUtils.IsValidTicker(contractName))
+            {
+                var tokenInfo = GetTokenInfo(storage, contractName);
+                return new CustomContract(contractName, tokenInfo.Script, tokenInfo.ABI);
+            }
+
             var address = SmartContract.GetAddressForName(contractName);
             var result = GetNativeContractByAddress(address);
 

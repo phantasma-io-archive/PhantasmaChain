@@ -414,7 +414,7 @@ namespace Phantasma.Blockchain
 
         public VMObject InvokeContract(StorageContext storage, string contractName, string methodName, Timestamp time, params object[] args)
         {
-            var contract = Nexus.GetContractByName(contractName);
+            var contract = Nexus.GetContractByName(storage, contractName);
             Throw.IfNull(contract, nameof(contract));
 
             var script = ScriptUtils.BeginScript().CallContract(contractName, methodName, args).EndScript();
@@ -539,6 +539,11 @@ namespace Phantasma.Blockchain
 
         public bool IsContractDeployed(StorageContext storage, string name)
         {
+            if (ValidationUtils.IsValidTicker(name))
+            {
+                return Nexus.TokenExists(storage, name);
+            }
+
             return IsContractDeployed(storage, SmartContract.GetAddressForName(name));
         }
 
@@ -615,9 +620,9 @@ namespace Phantasma.Blockchain
 
         public SmartContract GetContractByName(StorageContext storage, string name)
         {
-            if (Nexus.IsNativeContract(name))
+            if (Nexus.IsNativeContract(name) || ValidationUtils.IsValidTicker(name))
             {
-                return Nexus.GetContractByName(name);
+                return Nexus.GetContractByName(storage, name);
             }
 
             var address = SmartContract.GetAddressForName(name);

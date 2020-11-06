@@ -127,7 +127,7 @@ namespace Phantasma.Domain
                 var c = name[index];
                 index++;
 
-                if (c >= 65 && c <= 90) continue; // lowercase allowed
+                if (c >= 65 && c <= 90) continue; // uppercase allowed
 
                 return false;
             }
