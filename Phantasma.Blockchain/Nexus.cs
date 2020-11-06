@@ -1125,7 +1125,7 @@ namespace Phantasma.Blockchain
             storage.Put(GetNexusKey("owner"), owner);
 
             var tokenScript = new byte[] { (byte)Opcode.RET };
-            var abi = new ContractInterface(Enumerable.Empty<ContractMethod>(), Enumerable.Empty<ContractEvent>());
+            var abi = ContractInterface.Empty;
 
             //UnitConversion.ToBigInteger(91136374, DomainSettings.StakingTokenDecimals)
             CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript, abi);

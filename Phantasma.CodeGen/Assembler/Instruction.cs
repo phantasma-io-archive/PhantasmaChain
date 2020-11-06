@@ -461,7 +461,6 @@ namespace Phantasma.CodeGen.Assembler
                 }
                 else
                 {
-                    Arguments[1].IsString();
                     throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
                 }
             }

@@ -38,6 +38,8 @@ namespace Phantasma.Domain
 
     public sealed class ContractInterface: ISerializable
     {
+        public static readonly ContractInterface Empty = new ContractInterface(Enumerable.Empty<ContractMethod>(), Enumerable.Empty<ContractEvent>());
+
         private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>();
         public IEnumerable<ContractMethod> Methods => _methods.Values;
         public int MethodCount => _methods.Count;
