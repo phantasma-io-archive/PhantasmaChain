@@ -709,6 +709,18 @@ namespace Phantasma.Blockchain
             return Nexus.TokenExists(RootStorage, symbol);
         }
 
+        public bool TokenIsFungible(string symbol)
+        {
+            if (TokenExists(symbol))
+            {
+                var token = GetToken(symbol);
+
+                return token.Flags.HasFlag(TokenFlags.Fungible);
+            }
+
+            return false;
+        }
+
         public bool NFTExists(string symbol, BigInteger tokenID)
         {
             return Nexus.HasNFT(RootStorage, symbol, tokenID);

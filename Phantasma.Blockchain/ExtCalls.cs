@@ -41,6 +41,8 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.ReadTokenROM", Runtime_ReadTokenROM);
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
+            vm.RegisterMethod("Runtime.TokenExists", Runtime_TokenExists);
+            vm.RegisterMethod("Runtime.TokenIsFungible", Runtime_TokenIsFungible);
 
             vm.RegisterMethod("Nexus.Init", Runtime_NexusInit);
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
@@ -778,6 +780,40 @@ namespace Phantasma.Blockchain
             var ram = temp.AsByteArray();
 
             vm.WriteToken(symbol, tokenID, ram);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_TokenExists(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            var success = vm.TokenExists(symbol);
+
+            var result = new VMObject();
+            result.SetValue(success);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_TokenIsFungible(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var temp = vm.Stack.Pop();
+            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
+            var symbol = temp.AsString();
+
+            var success = vm.TokenIsFungible(symbol);
+
+            var result = new VMObject();
+            result.SetValue(success);
+            vm.Stack.Push(result);
 
             return ExecutionState.Running;
         }
