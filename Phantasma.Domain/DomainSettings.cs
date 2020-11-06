@@ -18,7 +18,6 @@ namespace Phantasma.Domain
         OnBurn, // address, symbol, amount
         OnSend, // address, symbol, amount
         OnReceive, // address, symbol, amount
-        OnMetadata // address, symbol, key, value
     }
 
     public enum OrganizationTrigger
