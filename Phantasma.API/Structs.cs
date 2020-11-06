@@ -300,6 +300,12 @@ namespace Phantasma.API
         public string script;
     }
 
+    public struct TokenPropertyResult : IAPIResult
+    {
+        public string Key;
+        public string Value;
+    }
+
     public struct TokenDataResult : IAPIResult
     {
         [APIDescription("id of token")]
@@ -320,8 +326,7 @@ namespace Phantasma.API
         [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
 
-        [APIDescription("True if is being sold in market")]
-        public bool forSale;
+        public TokenPropertyResult[] properties;
     }
 
     public struct SendRawTxResult : IAPIResult

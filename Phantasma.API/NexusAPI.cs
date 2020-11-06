@@ -310,7 +310,7 @@ namespace Phantasma.API
                         }
 
                         // convert to json string
-                        var node = APIUtils.FromAPIResult(apiResult);
+                        var node = Domain.APIUtils.FromAPIResult(apiResult);
                         result = JSONWriter.WriteToString(node);
                     }
 
@@ -1399,8 +1399,16 @@ namespace Phantasma.API
             return result;
         }
 
+
+        // deprecated
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
         public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
+        {
+            return GetNFT(symbol, IDtext, false);
+        }
+
+        [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
+        public IAPIResult GetNFT([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("ID of token", "1")] string IDtext, bool extended)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
@@ -1415,20 +1423,19 @@ namespace Phantasma.API
 
             var info = ReadNFT(symbol, ID, Nexus.RootChain); // TODO support other chains
 
-            var chain = Nexus.GetChainByName(info.CurrentChain);
-            bool forSale;
+            var properties = new List<TokenPropertyResult>();
+            if (extended)
+            {
+                var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
 
-            if (chain != null && chain.IsContractDeployed(chain.Storage, "market"))
-            {
-                forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
-            }
-            else
-            {
-                forSale = false;
+                APIUtils.FetchProperty("name", tokenInfo, properties);
+                APIUtils.FetchProperty("description", tokenInfo, properties);
+                APIUtils.FetchProperty("imageURI", tokenInfo, properties);
             }
 
-            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
+            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), properties = properties.ToArray()};
         }
+
 
         [APIInfo(typeof(BalanceResult), "Returns the balance for a specific token and chain, given an address.", false, 5)]
         [APIFailCase("address is invalid", "43242342")]
