@@ -39,6 +39,13 @@ namespace Phantasma.VM.Utils
             return this;
         }
 
+        public ScriptBuilder EmitThrow(byte reg)
+        {
+            Emit(Opcode.THROW);
+            writer.Write((byte)reg);
+            return this;
+        }
+
         public ScriptBuilder EmitPush(byte reg)
         {
             Emit(Opcode.PUSH);
