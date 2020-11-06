@@ -84,14 +84,30 @@ namespace Phantasma.Core.Utils
 
         public string GetString(string key, string defaultVal = null)
         {
+            string result;
+
             if (entries.ContainsKey(key))
             {
-                return entries[key];
+                result = entries[key];
             }
-
+            else 
             if (defaultVal != null)
             {
-                return defaultVal;
+                result = defaultVal;
+            }
+            else
+            {
+                result = null;
+            }
+
+            if (result != null)
+            {
+                if (result.StartsWith("#"))
+                {
+                    throw new Exception("Unconfigured setting: " + key);
+                }
+
+                return result;
             }
 
             throw new Exception("Missing non-optional argument: " + key);
