@@ -963,7 +963,7 @@ namespace Phantasma.Blockchain
                 abi = new ContractInterface();
             }
 
-            vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script);
+            vm.CreateToken(owner, symbol, name, maxSupply, decimals, flags, script, abi);
 
             return ExecutionState.Running;
         }

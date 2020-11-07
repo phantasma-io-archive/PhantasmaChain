@@ -141,7 +141,7 @@ namespace Phantasma.Blockchain
                 else
                 if (PaidGas < UsedGas && Nexus.HasGenesis && !DelayPayment)
                 {
-                    throw new VMException(this, "VM unpaid gas");
+                    throw new VMException(this, $"VM unpaid gas {PaidGas}/{UsedGas}");
                 }
             }
 
@@ -967,7 +967,7 @@ namespace Phantasma.Blockchain
             Nexus.SetTokenPlatformHash(symbol, platform, hash, this.RootStorage);
         }
 
-        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script)
+        public void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
@@ -1031,7 +1031,7 @@ namespace Phantasma.Blockchain
                 Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
             }
 
-            Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script);
+            Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script, abi);
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
 

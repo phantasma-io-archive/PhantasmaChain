@@ -123,7 +123,7 @@ namespace Phantasma.Domain
         BigInteger[] GetOwnerships(string symbol, Address address);
         BigInteger GetTokenSupply(string symbol);
 
-        void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
+        void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi);
         void SetTokenPlatformHash(string symbol, string platform, Hash hash);
         void CreateChain(Address creator, string organization, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
