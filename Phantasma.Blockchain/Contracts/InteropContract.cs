@@ -179,7 +179,7 @@ namespace Phantasma.Blockchain.Contracts
 
                                 byte[] rom, ram;
 
-                                if (Runtime.ProtocolVersion >= 4 && token.Flags.HasFlag(TokenFlags.Fungible))
+                                if (Runtime.ProtocolVersion >= 4 && !token.Flags.HasFlag(TokenFlags.Fungible))
                                 {
                                     var nft = Runtime.ReadNFTFromOracle(platform, transfer.Symbol, transfer.Value);
                                     rom = Serialization.Serialize(nft);
