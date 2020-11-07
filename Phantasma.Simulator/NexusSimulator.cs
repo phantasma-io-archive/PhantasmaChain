@@ -438,10 +438,14 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
+        public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply,
+                int decimals, TokenFlags flags, byte[] tokenScript = null, Dictionary<string, int> labels = null)
         {
             var version = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-            Dictionary<string, int> labels = null;
+            if (labels == null)
+            {
+                labels = new Dictionary<string, int>();
+            }
 
             if (tokenScript == null)
             {
@@ -605,12 +609,11 @@ namespace Phantasma.Simulator
         {
             Throw.IfNull(parentchain, nameof(parentchain));
 
-            var sb = ScriptUtils.BeginScript().
+            var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreateChain", source.Address, organization, name, parentchain);
+                CallInterop("Nexus.CreateChain", source.Address, organization, name, parentchain).
+                SpendGas(source.Address).EndScript();
 
-            var script = sb.SpendGas(source.Address).
-                EndScript();
             var tx = MakeTransaction(source, ProofOfWork.Minimal, Nexus.RootChain, script);
             return tx;
         }

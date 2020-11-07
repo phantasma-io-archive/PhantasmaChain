@@ -28,7 +28,7 @@ namespace Phantasma.Blockchain
 
             if (stack.Count <= 0)
             {
-                throw new VMException(frame.VM, $"VM nativecall failed: method name not present in the VM stack");
+                throw new VMException(frame.VM, $"VM nativecall failed: method name not present in the VM stack {frame.Context.Name}");
             }
 
             var stackObj = stack.Pop();

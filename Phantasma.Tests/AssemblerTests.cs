@@ -10,11 +10,11 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.VM;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Simulator;
 using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
 using Phantasma.Domain;
+using Phantasma.Storage;
 
 namespace Phantasma.Tests
 {
@@ -47,7 +47,9 @@ namespace Phantasma.Tests
 
         private bool IsInvalidCast(Exception e)
         {
-            return e.Message.StartsWith("Cannot convert") || e.Message.StartsWith("Invalid cast");
+            return e.Message.StartsWith("Cannot convert") 
+                || e.Message.StartsWith("Invalid cast")
+                || e.Message.StartsWith("logical op unsupported");
         }
 
         [TestMethod]
@@ -63,9 +65,11 @@ namespace Phantasma.Tests
             var simulator = new NexusSimulator(nexus, owner, 1234);
 
             string message = "customEvent";
+            var methodName = "notify";
 
             scriptString = new string[]
             {
+                $"@{methodName}: NOP ",
                 $"load r11 0x{addressStr}",
                 $"push r11",
                 $@"extcall ""Address()""",
@@ -74,28 +78,59 @@ namespace Phantasma.Tests
                 $"load r10, {(int)EventKind.Custom}",
                 $@"load r12, ""{message}""",
 
-                $"push r10",
-                $"push r11",
                 $"push r12",
-                $@"extcall ""Runtime.Event""",
+                $"push r11",
+                $"push r10",
+                $@"extcall ""Runtime.Notify""",
+                @"ret",
             };
 
+            DebugInfo debugInfo;
+            Dictionary<string, int> labels;
+            var script = AssemblerUtils.BuildScript(scriptString, "test", out debugInfo, out labels);
+
+            var methods = new[]
+            {
+                new ContractMethod(methodName , VMType.None, labels[methodName], new ContractParameter[0])
+            };
+            var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
+            var abiBytes = abi.ToByteArray();
+
+            var contractName = "test";
+            simulator.BeginBlock();
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.None,
+                () => ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .CallInterop("Runtime.DeployContract", owner.Address, contractName, script, abiBytes)
+                    .SpendGas(owner.Address)
+                    .EndScript());
+            simulator.EndBlock();
+
+            scriptString = new string[]
+            {
+                $"load r1, \\\"test\\\"",
+                $"ctx r1, r2",
+                $"load r3, \\\"notify\\\"",
+                $"push r3",
+                $"switch r2",
+            };
+
+            script = AssemblerUtils.BuildScript(scriptString);
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, (() =>
-                ScriptUtils.BeginScript().
-                    AllowGas(owner.Address, Address.Null, 1, 9999).
-                    EmitRaw(AssemblerUtils.BuildScript(scriptString)).
-                    SpendGas(owner.Address).
-                    EndScript()));
+                ScriptUtils.BeginScript()
+                    .AllowGas(owner.Address, Address.Null, 1, 9999)
+                    .EmitRaw(script)
+                    .SpendGas(owner.Address)
+                    .EndScript()));
             simulator.EndBlock();
 
             var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
             Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
 
             var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
-            var eventMessage = Encoding.UTF8.GetString(eventData);
+            var eventMessage = (VMObject)Serialization.Unserialize(eventData, typeof(VMObject));
 
-            Assert.IsTrue(eventMessage == message);
+            Assert.IsTrue(eventMessage.AsString() == message);
         }
 
         [TestMethod]
@@ -141,7 +176,7 @@ namespace Phantasma.Tests
                 $"jmpif $comparisonResult, @burnHandler",
 
                 $"equal $triggerMint, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @mintHandler",
+                $"jmpif $comparisonResult, @OnMint",
 
                 $"ret",
 
@@ -149,15 +184,16 @@ namespace Phantasma.Tests
 
                 $"@receiveHandler: ret",
 
-                $"@burnHandler: throw",
+                $"@burnHandler: load r7 \"some exception\"",
+                $"throw r7",
 
-                $"@mintHandler: ret",
+                $"@OnMint: ret",
             };
 
-            var script = AssemblerUtils.BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString, null, out var debugInfo, out var labels);
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
+            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script, labels);
             var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
@@ -210,27 +246,30 @@ namespace Phantasma.Tests
                 $@"load $triggerMint, ""{TokenTrigger.OnMint}""",
                 $"pop $currentTrigger",
 
-                $"equal $triggerSend, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @sendHandler",
+                //$"equal $triggerSend, $currentTrigger, $comparisonResult",
+                //$"jmpif $comparisonResult, @sendHandler",
 
-                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @receiveHandler",
+                //$"equal $triggerReceive, $currentTrigger, $comparisonResult",
+                //$"jmpif $comparisonResult, @receiveHandler",
 
-                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @burnHandler",
+                //$"equal $triggerBurn, $currentTrigger, $comparisonResult",
+                //$"jmpif $comparisonResult, @burnHandler",
 
-                $"equal $triggerMint, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @mintHandler",
+                //$"equal $triggerMint, $currentTrigger, $comparisonResult",
+                //$"jmpif $comparisonResult, @OnMint",
 
                 $"jmp @return",
 
-                $"@sendHandler: throw",
+                $"@sendHandler: load r7 \"some exception\"",
+                $"throw r7",
 
-                $"@receiveHandler: throw",
+                $"@receiveHandler: load r7 \"some exception\"",
+                $"throw r7",
 
-                $"@burnHandler: throw",
+                $"@burnHandler: load r7 \"some exception\"",
+                $"throw r7",
 
-                $"@mintHandler: load r11 0x{addressStr}",
+                $"@OnMint: load r11 0x{addressStr}",
                 $"push r11",
                 $@"extcall ""Address()""",
                 $"pop r11",
@@ -238,21 +277,23 @@ namespace Phantasma.Tests
                 $"load r10, {(int)EventKind.Custom}",
                 $@"load r12, ""{message}""",
 
-                $"push r10",
-                $"push r11",
                 $"push r12",
-                $@"extcall ""Runtime.Event""",
+                $"push r11",
+                $"push r10",
+                $@"extcall ""Runtime.Notify""",
                 "ret",
 
                 $"@return: ret",
             };
 
-            var script = AssemblerUtils.BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString, null, out var debugInfo, out var labels);
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script);
+            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags, script, labels);
+            simulator.EndBlock();
+
+            simulator.BeginBlock();
             var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
-            //simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
@@ -263,14 +304,14 @@ namespace Phantasma.Tests
             Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
 
             var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
-            var eventMessage = Encoding.UTF8.GetString(eventData);
+            var eventMessage = (VMObject)Serialization.Unserialize(eventData, typeof(VMObject));
 
-            Assert.IsTrue(eventMessage == message);
+            Assert.IsTrue(eventMessage.AsString() == message);
 
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
-                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+                simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10000);
                 simulator.EndBlock();
             });
 
@@ -278,125 +319,125 @@ namespace Phantasma.Tests
             Assert.IsTrue(balance == 1000);
         }
 
-        [TestMethod]
-        public void AccountTriggers()
-        {
-            string[] scriptString;
+        //[TestMethod]
+        //public void AccountTriggers()
+        //{
+        //    string[] scriptString;
 
-            var owner = PhantasmaKeys.Generate();
-            var target = PhantasmaKeys.Generate();
-            var symbol = "TEST";
-            var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
-            var nexus = new Nexus("simnet", null, null);
-            nexus.SetOracleReader(new OracleSimulator(nexus));
-            var simulator = new NexusSimulator(nexus, owner, 1234);
-            var addressStr = Base16.Encode(target.Address.ToByteArray());
-            var isTrue = true;
-            string message = "customEvent";
+        //    var owner = PhantasmaKeys.Generate();
+        //    var target = PhantasmaKeys.Generate();
+        //    var symbol = "TEST";
+        //    var flags = TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Fungible | TokenFlags.Divisible;
+        //    var nexus = new Nexus("simnet", null, null);
+        //    nexus.SetOracleReader(new OracleSimulator(nexus));
+        //    var simulator = new NexusSimulator(nexus, owner, 1234);
+        //    var addressStr = Base16.Encode(target.Address.ToByteArray());
+        //    var isTrue = true;
+        //    string message = "customEvent";
 
-            scriptString = new string[]
-            {
-                $"alias r1, $triggerSend",
-                $"alias r2, $triggerReceive",
-                $"alias r3, $triggerBurn",
-                $"alias r4, $triggerMint",
-                $"alias r5, $currentTrigger",
-                $"alias r6, $comparisonResult",
-                $"alias r7, $triggerWitness",
-                $"alias r8, $currentAddress",
-                $"alias r9, $sourceAddress",
+        //    scriptString = new string[]
+        //    {
+        //        $"alias r1, $triggerSend",
+        //        $"alias r2, $triggerReceive",
+        //        $"alias r3, $triggerBurn",
+        //        $"alias r4, $triggerMint",
+        //        $"alias r5, $currentTrigger",
+        //        $"alias r6, $comparisonResult",
+        //        $"alias r7, $triggerWitness",
+        //        $"alias r8, $currentAddress",
+        //        $"alias r9, $sourceAddress",
 
-                $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
-                $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
-                $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
-                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
-                $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
-                $"pop $currentTrigger",
-                $"pop $currentAddress",
+        //        $@"load $triggerSend, ""{AccountTrigger.OnSend}""",
+        //        $@"load $triggerReceive, ""{AccountTrigger.OnReceive}""",
+        //        $@"load $triggerBurn, ""{AccountTrigger.OnBurn}""",
+        //        $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
+        //        $@"load $triggerWitness, ""{AccountTrigger.OnWitness}""",
+        //        $"pop $currentTrigger",
+        //        $"pop $currentAddress",
 
-                $"equal $triggerWitness, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @witnessHandler",
+        //        $"equal $triggerWitness, $currentTrigger, $comparisonResult",
+        //        $"jmpif $comparisonResult, @witnessHandler",
 
-                $"equal $triggerSend, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @sendHandler",
+        //        $"equal $triggerSend, $currentTrigger, $comparisonResult",
+        //        $"jmpif $comparisonResult, @sendHandler",
 
-                $"equal $triggerReceive, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @receiveHandler",
+        //        $"equal $triggerReceive, $currentTrigger, $comparisonResult",
+        //        $"jmpif $comparisonResult, @receiveHandler",
 
-                $"equal $triggerBurn, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @burnHandler",
+        //        $"equal $triggerBurn, $currentTrigger, $comparisonResult",
+        //        $"jmpif $comparisonResult, @burnHandler",
 
-                $"equal $triggerMint, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @mintHandler",
+        //        $"equal $triggerMint, $currentTrigger, $comparisonResult",
+        //        $"jmpif $comparisonResult, @mintHandler",
 
-                $"jmp @end",
+        //        $"jmp @end",
 
-                $"@witnessHandler: ",
-                $"load r11 0x{addressStr}",
-                $"push r11",
-                "extcall \"Address()\"",
-                $"pop $sourceAddress",
-                $"equal $sourceAddress, $currentAddress, $comparisonResult",
-                "jmpif $comparisonResult, @endWitness",
-                "throw",
-                
-                "jmp @end",
+        //        $"@witnessHandler: ",
+        //        $"load r11 0x{addressStr}",
+        //        $"push r11",
+        //        "extcall \"Address()\"",
+        //        $"pop $sourceAddress",
+        //        $"equal $sourceAddress, $currentAddress, $comparisonResult",
+        //        "jmpif $comparisonResult, @endWitness",
+        //        $"load r1 \"some exception\"",
+        //        $"throw r1",
+        //        
+        //        "jmp @end",
 
-                $"@sendHandler: jmp @end",
+        //        $"@sendHandler: jmp @end",
 
-                $"@receiveHandler: jmp @end",
+        //        $"@receiveHandler: jmp @end",
 
-                $"@burnHandler: jmp @end",
+        //        $"@burnHandler: jmp @end",
 
-                $"@mintHandler: load r11 0x{addressStr}",
-                $"push r11",
-                $@"extcall ""Address()""",
-                $"pop r11",
+        //        $"@mintHandler: load r11 0x{addressStr}",
+        //        $"push r11",
+        //        $@"extcall ""Address()""",
+        //        $"pop r11",
 
-                $"@endWitness: ret",
-                $"load r11 {isTrue}",
-                $"push r11",
+        //        $"@endWitness: ret",
+        //        $"load r11 {isTrue}",
+        //        $"push r11",
 
-                $"@end: ret"
-            };
+        //        $"@end: ret"
+        //    };
 
-            var script = AssemblerUtils.BuildScript(scriptString);
+        //    var script = AssemblerUtils.BuildScript(scriptString);
 
-            simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
-            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "SOUL", UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals));
-            simulator.GenerateCustomTransaction(target, ProofOfWork.None,
-                () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
-                    .CallContract("stake", "Stake", target.Address, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals))
-                    .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
-                    .EndScript());
-            simulator.EndBlock();
+        //    simulator.BeginBlock();
+        //    simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
+        //    simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "SOUL", UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals));
+        //    simulator.GenerateCustomTransaction(target, ProofOfWork.None,
+        //        () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
+        //            .CallContract("stake", "Stake", target.Address, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals))
+        //            .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
+        //            .EndScript());
+        //    simulator.EndBlock();
 
-            simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags);
-            simulator.EndBlock();
+        //    simulator.BeginBlock();
+        //    simulator.GenerateToken(owner, symbol, $"{symbol}Token", 1000000000, 3, flags);
+        //    simulator.EndBlock();
 
-            Assert.IsTrue(simulator.Nexus.TokenExists(simulator.Nexus.RootStorage, symbol));
+        //    Assert.IsTrue(simulator.Nexus.TokenExists(simulator.Nexus.RootStorage, symbol));
 
-            simulator.BeginBlock();
-            var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
-            simulator.EndBlock();
+        //    simulator.BeginBlock();
+        //    var tx = simulator.MintTokens(owner, owner.Address, symbol, 1000);
+        //    simulator.EndBlock();
 
-            var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
-            var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
-            Assert.IsTrue(balance == 1000);
+        //    var token = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, symbol);
+        //    var balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
+        //    Assert.IsTrue(balance == 1000);
 
-            // Why? Not sure why we except an exception here...
-            //Assert.ThrowsException<ChainException>(() =>
-            //{
-            //    simulator.BeginBlock();
-            //    simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
-            //    simulator.EndBlock();
-            //});
+        //    Assert.ThrowsException<VMException>(() =>
+        //    {
+        //        simulator.BeginBlock();
+        //        simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, symbol, 10);
+        //        simulator.EndBlock();
+        //    });
 
-            balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
-            Assert.IsTrue(balance == 1000);
-        }
+        //    balance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
+        //    Assert.IsTrue(balance == 1000);
+        //}
 
         [TestMethod]
         public void AccountTriggersEventPropagation()
@@ -448,7 +489,7 @@ namespace Phantasma.Tests
                 $"jmpif $comparisonResult, @burnHandler",
 
                 $"equal $triggerMint, $currentTrigger, $comparisonResult",
-                $"jmpif $comparisonResult, @mintHandler",
+                $"jmpif $comparisonResult, @OnMint",
 
                 $"jmp @end",
 
@@ -459,7 +500,8 @@ namespace Phantasma.Tests
                 $"pop $sourceAddress",
                 $"equal $sourceAddress, $currentAddress, $comparisonResult",
                 "jmpif $comparisonResult, @endWitness",
-                "throw",
+                $"load r1 \"some exception\"",
+                $"throw r1",
                 
                 "jmp @end",
 
@@ -469,7 +511,7 @@ namespace Phantasma.Tests
 
                 $"@burnHandler: jmp @end",
 
-                $"@mintHandler: load r11 0x{addressStr}",
+                $"@OnMint: load r11 0x{addressStr}",
                 $"push r11",
                 $@"extcall ""Address()""",
                 $"pop r11",
@@ -477,10 +519,10 @@ namespace Phantasma.Tests
                 $"load r10, {(int)EventKind.Custom}",
                 $@"load r12, ""{message}""",
 
-                $"push r10",
-                $"push r11",
                 $"push r12",
-                $@"extcall ""Runtime.Event""",
+                $"push r11",
+                $"push r10",
+                $@"extcall ""Runtime.Notify""",
 
                 $"@endWitness: ret",
                 $"load r11 {isTrue}",
@@ -489,15 +531,18 @@ namespace Phantasma.Tests
                 $"@end: ret"
             };
 
-            var script = AssemblerUtils.BuildScript(scriptString);
+            var script = AssemblerUtils.BuildScript(scriptString, null, out var something, out var labels);
+            var methods = new List<ContractMethod>();
+            methods.Add(new ContractMethod("OnMint", VMType.None, 205, new ContractParameter[0]));
+            var abi = new ContractInterface(methods, new List<ContractEvent>());
 
             simulator.BeginBlock();
-            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 100000);
+            simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "KCAL", 60000000000000);
             simulator.GenerateTransfer(owner, target.Address, simulator.Nexus.RootChain, "SOUL", UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals)*50000);
             simulator.GenerateCustomTransaction(target, ProofOfWork.None,
                 () => ScriptUtils.BeginScript().AllowGas(target.Address, Address.Null, 1, 9999)
                     .CallContract("stake", "Stake", target.Address, UnitConversion.GetUnitValue(DomainSettings.StakingTokenDecimals)*50000)
-                    .CallContract("account", "RegisterScript", target.Address, script).SpendGas(target.Address)
+                    .CallContract("account", "RegisterScript", target.Address, script, abi.ToByteArray()).SpendGas(target.Address)
                     .EndScript());
             simulator.EndBlock();
 
@@ -517,10 +562,9 @@ namespace Phantasma.Tests
             Assert.IsTrue(events.Count(x => x.Kind == EventKind.Custom) == 1);
 
             var eventData = events.First(x => x.Kind == EventKind.Custom).Data;
-            var eventMessage = Encoding.UTF8.GetString(eventData);
+            var eventMessage = (VMObject)Serialization.Unserialize(eventData, typeof(VMObject));
 
-            Assert.IsTrue(eventMessage == message);
-
+            Assert.IsTrue(eventMessage.AsString() == message);
             Assert.ThrowsException<ChainException>(() =>
             {
                 simulator.BeginBlock();
@@ -570,10 +614,11 @@ namespace Phantasma.Tests
 
                 Assert.IsTrue(vm.Stack.Count == 2);
 
-                var r1obj = vm.Stack.Pop().AsInterop<TestVM.DebugClass>();
-                var r2obj = vm.Stack.Pop().AsInterop<TestVM.DebugClass>();
+                var r1obj = vm.Stack.Pop();
+                var r2obj = vm.Stack.Pop();
 
-                Assert.IsTrue(ReferenceEquals(r1obj, r2obj));
+                Assert.IsTrue(r1obj.Type == VMType.None);
+                Assert.IsTrue(r2obj.Type == VMType.Object);
             }
         }
 
@@ -740,11 +785,13 @@ namespace Phantasma.Tests
 
             var scriptString = new string[]
             {
-                $@"load r1, {initVal}",
-                @"call @label",
+                $@"load r1 {initVal}",
                 @"push r1",
+                @"call @label",
                 @"ret",
-                $"@label: inc r1",
+                $"@label: pop r1",
+                @"inc r1",
+                $"push r1",
                 $"ret"
             };
 
@@ -873,12 +920,14 @@ namespace Phantasma.Tests
         public void Throw()
         {
             string[] scriptString;
-            TestVM vm;
+            TestVM vm = null;
 
             var args = new List<List<bool>>()
             {
                 new List<bool>() {true, true},
             };
+
+            var msg = "exception";
 
             for (int i = 0; i < args.Count; i++)
             {
@@ -890,19 +939,24 @@ namespace Phantasma.Tests
                 {
                     $"load r1, {r1}",
                     $"push r1",
-                    $"throw",
+                    $"load r1 \"some exception\"",
+                    $"throw r1",
                     $"not r1, r1",
                     $"pop r2",
                     $"push r1",
                     $"ret"
                 };
 
-                vm = ExecuteScriptIsolated(scriptString);
+                bool result = false;
+                Assert.ThrowsException<VMException>(() =>
+                {
+                    vm = ExecuteScriptIsolated(scriptString);
+                    Assert.IsTrue(vm.Stack.Count == 1);
+                    result = vm.Stack.Pop().AsBool();
+                    Assert.IsTrue(result == target, "Opcode JmpNot isn't working correctly");
+                });
 
-                Assert.IsTrue(vm.Stack.Count == 1);
 
-                var result = vm.Stack.Pop().AsBool();
-                Assert.IsTrue(result == target, "Opcode JmpNot isn't working correctly");
 
             }
         }
