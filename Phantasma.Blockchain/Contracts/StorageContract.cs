@@ -64,10 +64,7 @@ namespace Phantasma.Blockchain.Contracts
 
             var archive = Runtime.GetArchive(hash);
             Runtime.Expect(archive != null, "archive does not exist");
-            if (archive.IsOwner(target))
-            {
-                return;
-            }
+
 
             BigInteger requiredSize = archive.Size;
 
@@ -78,7 +75,10 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(targetAvailableSize >= requiredSize, "target account does not have available space");
 
-            Runtime.AddOwnerToArchive(hash, target);
+            if (!archive.IsOwner(target))
+            {
+                Runtime.AddOwnerToArchive(hash, target);
+            }
 
             var list = _storageMap.Get<Address, StorageList>(target);
             list.Add<Hash>(hash);
