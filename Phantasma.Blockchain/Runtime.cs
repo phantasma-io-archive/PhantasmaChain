@@ -709,13 +709,13 @@ namespace Phantasma.Blockchain
             return Nexus.TokenExists(RootStorage, symbol);
         }
 
-        public bool TokenIsFungible(string symbol)
+        public bool TokenHasFlag(string symbol, TokenFlags flag)
         {
             if (TokenExists(symbol))
             {
                 var token = GetToken(symbol);
 
-                return token.Flags.HasFlag(TokenFlags.Fungible);
+                return token.Flags.HasFlag(flag);
             }
 
             return false;
