@@ -162,6 +162,8 @@ namespace Phantasma.Blockchain
                     {
                         if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, minimumFee, out result, allowModify))
                         {
+                            // merge transaction oracle data 
+                            oracle.MergeTxData();
                             if (result != null)
                             {
                                 if (allowModify)
