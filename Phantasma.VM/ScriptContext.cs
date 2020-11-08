@@ -578,6 +578,30 @@ namespace Phantasma.VM
                                         break;
                                     }
 
+                                case VMType.Enum:
+                                    {
+                                        Expect(valB.Type == VMType.Enum, $"expected {valA.Type} for flag op");
+
+                                        var numA = valA.AsNumber();
+                                        var numB = valB.AsNumber();
+
+                                        Expect(numA.GetBitLength() <= 64, "too many bits");
+                                        Expect(numB.GetBitLength() <= 64, "too many bits");
+
+                                        var a = (long)numA;
+                                        var b = (long)numB;
+
+                                        if (opcode != Opcode.AND) {
+                                            SetState(ExecutionState.Fault);
+                                        }
+
+                                        bool result = (a & b) != 0;
+
+                                        frame.Registers[dst].SetValue(result);
+                                        break;
+
+                                    }
+
                                 case VMType.Number:
                                     {
                                         Expect(valB.Type == VMType.Number, $"expected {valA.Type} for logical op");
@@ -606,6 +630,7 @@ namespace Phantasma.VM
 
                                         frame.Registers[dst].SetValue(result);
                                         break;
+
                                     }
 
                                 default:
