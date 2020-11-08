@@ -4,6 +4,8 @@ using Phantasma.VM.Utils;
 using Phantasma.VM;
 using Phantasma.Cryptography;
 using System;
+using System.Runtime.InteropServices;
+using System.IO;
 
 namespace Phantasma.CodeGen.Assembler
 {
@@ -11,6 +13,7 @@ namespace Phantasma.CodeGen.Assembler
     {
         private const string ERR_INCORRECT_NUMBER = "incorrect number of arguments";
         private const string ERR_INVALID_ARGUMENT = "invalid argument";
+        private const string ERR_INVALID_TYPE = "invalid type";
         private const string ERR_INVALID_CONTRACT = "invalid contract";
         private const string ERR_UNKNOWN_CONTRACT = "unknown contract";
         private const string ERR_NOT_IMPLEMENTED = "not implemented";
@@ -431,7 +434,7 @@ namespace Phantasma.CodeGen.Assembler
 
         private void ProcessLoad(ScriptBuilder sb)
         {
-            if (Arguments.Length != 2)
+            if (Arguments.Length != 2 && Arguments.Length != 3)
             {
                 throw new CompilerException(LineNumber, ERR_INCORRECT_NUMBER);
             }
@@ -439,6 +442,16 @@ namespace Phantasma.CodeGen.Assembler
             if (Arguments[0].IsRegister())
             {
                 var reg = Arguments[0].AsRegister();
+
+                VMType type = VMType.None;
+
+                if (Arguments.Length == 3)
+                {
+                    if (!Enum.TryParse(Arguments[2], out type))
+                    {
+                        throw new CompilerException(LineNumber, ERR_INVALID_ARGUMENT);
+                    }
+                }
 
                 if (Arguments[1].IsBytes())
                 {
@@ -457,7 +470,36 @@ namespace Phantasma.CodeGen.Assembler
                 else
                 if (Arguments[1].IsNumber())
                 {
-                    sb.EmitLoad(reg, Arguments[1].AsNumber());
+                    if (type == VMType.Enum)
+                    {
+                        var num = (uint)Arguments[1].AsNumber();
+
+                        using (var stream = new MemoryStream())
+                        {
+
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write((byte)reg);
+                                writer.Write((byte)VMType.Enum);
+                                writer.Write((byte)4);
+
+                                var numBytes = BitConverter.GetBytes(num);
+                                writer.Write(numBytes);
+                            }
+
+                            var bytes = stream.ToArray();
+                            sb.Emit(Opcode.LOAD, bytes);
+                        }
+                    }
+                    else
+                    if (type != VMType.None)
+                    {
+                        throw new CompilerException(LineNumber, ERR_INVALID_TYPE);
+                    }
+                    else
+                    {
+                        sb.EmitLoad(reg, Arguments[1].AsNumber());
+                    }                    
                 }
                 else
                 {
