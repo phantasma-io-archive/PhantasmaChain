@@ -61,8 +61,6 @@ namespace Phantasma.Blockchain.Contracts
         // returns how many tokens would be obtained by trading from one type of another
         public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
         {
-            //TODO_FIX_TX
-            //if (Runtime.Chain.Height > 120000)
             if (Runtime.ProtocolVersion >= 3)
             {
                 return GetRateV2(fromSymbol, toSymbol, amount);
@@ -211,13 +209,11 @@ namespace Phantasma.Blockchain.Contracts
             {
                 SwapFeeV1(from, fromSymbol, feeAmount);
             }
-
         }
 
         private void SwapFeeV2(Address from, string fromSymbol, BigInteger feeAmount)
         {
             var feeSymbol = DomainSettings.FuelTokenSymbol;
-
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
             feeAmount -= feeBalance;
             if (feeAmount <= 0)

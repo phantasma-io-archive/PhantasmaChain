@@ -841,7 +841,16 @@ namespace Phantasma.Blockchain
             var contractAddress = SmartContract.GetAddressForName(contractName);
             var deployed = vm.Chain.IsContractDeployed(vm.Storage, contractAddress);
 
-            vm.Expect(!deployed, $"{contractName} is already deployed");
+            // TODO 
+            if (vm.ProtocolVersion >= 2)
+            {
+                vm.Expect(!deployed, $"{contractName} is already deployed");
+            }
+
+            if (deployed)
+            {
+                return ExecutionState.Running;
+            }
 
             byte[] script;
             ContractInterface abi;

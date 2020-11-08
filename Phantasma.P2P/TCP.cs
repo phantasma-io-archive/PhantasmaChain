@@ -20,7 +20,7 @@ namespace Phantasma.Network.P2P
         private static Endpoint MakeEndpoint(Socket socket)
         {
             var remoteIpEndPoint = socket.RemoteEndPoint as IPEndPoint;
-            return new Endpoint(PeerProtocol.TCP, remoteIpEndPoint.Address.ToString(), remoteIpEndPoint.Port);
+            return new Endpoint(PeerProtocol.TCP, remoteIpEndPoint.Address.MapToIPv4().ToString(), remoteIpEndPoint.Port);
         }
 
         public override Message Receive()

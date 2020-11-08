@@ -151,15 +151,31 @@ namespace Phantasma.Storage.Context
             }
         }
 
-        public static void Visit(this StorageMap map, Action<byte[],byte[]> visitor)
+        public static void Visit<K,V>(this StorageMap map, Action<K,V> visitor)
         {
-            var tempMap = (KeyStoreStorage)map.Context;
-            tempMap.Visit((key, value) =>
+            var countKey = CountKey(map.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
+            map.Context.Visit((key, value) =>
             {
-                byte[] newKey = new byte[key.Length - map.BaseKey.Length];
-                Buffer.BlockCopy(key, map.BaseKey.Length, newKey, 0, newKey.Length);
-                visitor(newKey, value);
-            });
+                if (!found && key.SequenceEqual(countKey))
+                {
+                    countKeyRun = true;
+                    found = true;
+                }
+
+                if (!countKeyRun)
+                {
+                    var k = Serialization.Unserialize<K>(key.Skip(map.BaseKey.Length).ToArray());
+                    var v = Serialization.Unserialize<V>(value);
+                    visitor(k, v);
+                }
+                else
+                {
+                    countKeyRun = false;
+                }
+            }, (uint)map.Count(), map.BaseKey);
         }
 
         public static V[] All<K,V>(this StorageMap map, K[] keys)
@@ -228,7 +244,7 @@ namespace Phantasma.Storage.Context
 
             foreach (var key in keys)
             {
-                map.Context.Delete(ElementKey(map.BaseKey, key));
+                map.Context.Delete(key);
             }
 
             map.Context.Put(CountKey(map.BaseKey), 0);

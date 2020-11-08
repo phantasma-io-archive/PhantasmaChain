@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain
 {
@@ -107,6 +108,7 @@ namespace Phantasma.Blockchain
         public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
 
         protected ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
+        protected ConcurrentDictionary<string, OracleEntry> _txEntries = new ConcurrentDictionary<string, OracleEntry>();
 
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 
@@ -138,8 +140,8 @@ namespace Phantasma.Blockchain
 
             if (url.StartsWith(interopTag))
             {
-                url = url.Substring(interopTag.Length);
-                var args = url.Split('/');
+                var tags = url.Substring(interopTag.Length);
+                var args = tags.Split('/');
 
                 var platformName = args[0];
                 var chainName = args[1];
@@ -163,22 +165,58 @@ namespace Phantasma.Blockchain
             else
             if (url.StartsWith(priceTag))
             {
-                url = url.Substring(priceTag.Length);
+                var baseSymbol = url.Substring(priceTag.Length);
 
-                if (url.Contains('/'))
+                if (baseSymbol.Contains('/'))
                 {
                     throw new OracleException("invalid oracle price request");
                 }
 
-                var baseSymbol = url;
+                BigInteger val = new BigInteger();
 
                 if (!Nexus.TokenExists(Nexus.RootStorage, baseSymbol))
                 {
                     throw new OracleException("unknown token: " + baseSymbol);
                 }
 
-                var price = PullPrice(time, baseSymbol);
-                var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
+                if (baseSymbol == DomainSettings.FuelTokenSymbol)
+                {
+
+                    var stakingURL = priceTag + DomainSettings.StakingTokenSymbol;
+                    decimal soulPriceDec = 0;
+                    if (_entries.ContainsKey(stakingURL))
+                    {
+                        BigInteger soulPriceBi;
+                        if (ProtocolVersion >= 3)
+                        {
+                            soulPriceBi = BigInteger.FromSignedArray(_entries[url].Content);
+                        }
+                        else
+                        {
+                            content = val.ToUnsignedByteArray() as T;
+                            soulPriceBi = BigInteger.FromUnsignedArray(_entries[url].Content, true);
+                        }
+
+                        soulPriceDec = UnitConversion.ToDecimal(soulPriceBi, DomainSettings.FiatTokenDecimals);
+                    }
+                    else
+                    {
+                        soulPriceDec = PullPrice(time, DomainSettings.StakingTokenSymbol);
+                        var soulPriceBi = UnitConversion.ToBigInteger(soulPriceDec, DomainSettings.FiatTokenDecimals);
+
+                        CacheOracleData<T>(url, (ProtocolVersion >= 3) 
+                                ? soulPriceBi.ToSignedByteArray() as T
+                                : soulPriceBi.ToUnsignedByteArray() as T);
+
+                    }
+
+                    val = UnitConversion.ToBigInteger(soulPriceDec/5, DomainSettings.FiatTokenDecimals);
+                }
+                else
+                {
+                    var price = PullPrice(time, baseSymbol);
+                    val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
+                }
 
                 if (ProtocolVersion >= 3)
                 {
@@ -192,14 +230,12 @@ namespace Phantasma.Blockchain
             else
             if (url.StartsWith(feeTag))
             {
-                url = url.Substring(feeTag.Length);
+                var platform = url.Substring(feeTag.Length);
 
-                if (url.Contains('/'))
+                if (platform.Contains('/'))
                 {
                     throw new OracleException("invalid oracle fee request");
                 }
-
-                var platform = url;
 
                 if (!Nexus.PlatformExists(Nexus.RootStorage, platform))
                 {
@@ -220,7 +256,14 @@ namespace Phantasma.Blockchain
             {
                 content = PullData<T>(time, url);
             }
+
+            CacheOracleData<T>(url, content);
         
+            return content;
+        }
+
+        private void CacheOracleData<T>(string url, T content)
+        {
             var value = Serialization.Serialize(content);
             if (value == null)
             {
@@ -228,12 +271,10 @@ namespace Phantasma.Blockchain
             }
 
             var entry = new OracleEntry(url, value);
-            lock (_entries)
+            lock (_txEntries)
             {
-                _entries[url] = entry;
+                _txEntries[url] = entry;
             }
-
-            return content;
         }
 
         private bool FindMatchingEvent(IEnumerable<Event> events, out Event output, Func<Event, bool> predicate)
@@ -469,6 +510,12 @@ namespace Phantasma.Blockchain
         public void Clear()
         {
             _entries.Clear();
+            _txEntries.Clear();
+        }
+
+        public void MergeTxData()
+        {
+            _entries.Merge(_txEntries);
         }
     }
 }

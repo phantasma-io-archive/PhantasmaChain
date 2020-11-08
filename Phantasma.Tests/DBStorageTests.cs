@@ -7,6 +7,9 @@ using Phantasma.RocksDB;
 using Phantasma.Storage;
 using System.Threading;
 using ConsoleLogger = Phantasma.Core.Log.ConsoleLogger;
+using System.Text;
+using Phantasma.Storage.Context;
+using Phantasma.Numerics;
 
 namespace Phantasma.Tests
 {
@@ -96,6 +99,90 @@ namespace Phantasma.Tests
             });
 
             Assert.IsTrue(keyList.Count == valueList.Count);
+        }
+
+        [TestMethod]
+        public void TestDBStorageMapClear()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMapKey2 = Encoding.UTF8.GetBytes($".test2._valueMap");
+
+            var testMap = new StorageMap(testMapKey, storage);
+            var testMap2 = new StorageMap(testMapKey2, storage);
+
+            testMap.Set("test1", "Value1");
+            testMap.Set("test2", "Value2");
+            testMap.Set("test3", "Value3");
+            testMap.Set("test4", "Value4");
+
+            testMap2.Set<BigInteger, string>(new BigInteger(1), "Value21");
+            testMap2.Set<BigInteger, string>(new BigInteger(2), "Value22");
+            testMap2.Set<BigInteger, string>(new BigInteger(3), "Value23");
+            testMap2.Set<BigInteger, string>(new BigInteger(4), "Value24");
+
+            var count = 0;
+            testMap.Visit<string, string>((key, value) => {
+                count++;
+            });
+
+            testMap2.Visit<BigInteger, string>((key, value) => {
+                count++;
+
+            });
+
+            Assert.AreEqual(count, (int)testMap.Count() + testMap2.Count());
+
+            testMap.Clear();
+            testMap2.Clear();
+
+            Assert.IsTrue(testMap.Count() == 0);
+            Assert.IsTrue(testMap2.Count() == 0);
+
+            Assert.IsNull(testMap.Get<string,string>("test1"));
+            Assert.IsNull(testMap.Get<string,string>("test2"));
+            Assert.IsNull(testMap.Get<string,string>("test3"));
+            Assert.IsNull(testMap.Get<string,string>("test4"));
+
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(1)));
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(2)));
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(3)));
+            Assert.IsNull(testMap2.Get<BigInteger,string>(new BigInteger(4)));
+        }
+
+        [TestMethod]
+        public void TestDBStorageVisitMap()
+        {
+            var storage = new KeyStoreStorage(CreateKeyStoreAdapterTest("test2"));
+
+            var testMapKey = Encoding.UTF8.GetBytes($".test._valueMap");
+            var testMapKey2 = Encoding.UTF8.GetBytes($".test2._valueMap");
+
+            var testMap = new StorageMap(testMapKey, storage);
+            var testMap2 = new StorageMap(testMapKey2, storage);
+
+            testMap.Set("test1", "Value1");
+            testMap.Set("test2", "Value2");
+            testMap.Set("test3", "Value3");
+            testMap.Set("test4", "Value4");
+
+            testMap2.Set<BigInteger, string>(new BigInteger(1), "Value21");
+            testMap2.Set<BigInteger, string>(new BigInteger(2), "Value22");
+            testMap2.Set<BigInteger, string>(new BigInteger(3), "Value23");
+            testMap2.Set<BigInteger, string>(new BigInteger(4), "Value24");
+
+            var count = 0;
+            testMap.Visit<string, string>((key, value) => {
+                count++;
+            });
+
+            testMap2.Visit<BigInteger, string>((key, value) => {
+                count++;
+
+            });
+
+            Assert.AreEqual(count, (int)testMap.Count() + testMap2.Count());
         }
 
         [TestMethod]
