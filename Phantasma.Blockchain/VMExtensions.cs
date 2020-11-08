@@ -22,6 +22,23 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public static T PopEnum<T>(this VirtualMachine vm, string ArgumentName) where T : struct, IConvertible
+        {
+            if (!typeof(T).IsEnum)
+            {
+                throw new ArgumentException("PopEnum: T must be an enumerated type");
+            }
+
+            var temp = vm.Stack.Pop();
+
+            if (temp.Type != VMType.Number)
+            {
+                vm.Expect(temp.Type == VMType.Enum, $"expected enum for {ArgumentName}");
+            }
+
+            return temp.AsEnum<T>();
+        }
+
         public static BigInteger PopNumber(this VirtualMachine vm, string ArgumentName)
         {
             var temp = vm.Stack.Pop();
