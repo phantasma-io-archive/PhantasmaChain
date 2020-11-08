@@ -90,6 +90,12 @@ namespace Phantasma.VM
                         return num;
                     }
 
+                case VMType.Enum:
+                    {
+                        var num = Convert.ToUInt32(Data);
+                        return num;
+                    }
+
                 default:
                     {
                         if (this.Type != VMType.Number)
@@ -205,6 +211,13 @@ namespace Phantasma.VM
                         return num.ToSignedByteArray();
                     }
 
+                case VMType.Enum:
+                    {
+                        var num = (uint)AsNumber();
+                        var bytes = BitConverter.GetBytes(num);
+                        return bytes;
+                    }
+
                 case VMType.Timestamp:
                     {
                         var time = AsTimestamp();
@@ -318,6 +331,7 @@ namespace Phantasma.VM
 
                 case VMType.Enum:
                     {
+                        // TODO this will fail if val is not exactly 4 bytes long. Add code here to autopad with zeros if necessary
                         this.Data = BitConverter.ToUInt32(val, 0);
                         break;
                     }
