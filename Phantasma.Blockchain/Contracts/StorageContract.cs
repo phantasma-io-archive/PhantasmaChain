@@ -43,12 +43,18 @@ namespace Phantasma.Blockchain.Contracts
 
             var merkleTree = MerkleTree.FromBytes(contentMerkle);
             var archive = Runtime.GetArchive(merkleTree.Root);
+
+            if (archive != null && archive.IsOwner(target))
+            {
+                return;
+            }
+
             if (archive == null)
             {
                 archive = Runtime.CreateArchive(merkleTree, target, fileName, fileSize, Runtime.Time, encryptionPublicKey);
             }
 
-            AddFile(target, archive.Hash);
+            AddFile(target, archive.Hash, archive);
         }
 
         public bool HasFile(Address target, Hash hash)
@@ -59,10 +65,19 @@ namespace Phantasma.Blockchain.Contracts
 
         public void AddFile(Address target, Hash hash)
         {
+            AddFile(target, hash, null);
+        }
+
+        private void AddFile(Address target, Hash hash, IArchive archive)
+        {
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(target.IsUser, "destination address must be user address");
 
-            var archive = Runtime.GetArchive(hash);
+            if (archive == null)
+            {
+                archive = Runtime.GetArchive(hash);
+            }
+
             Runtime.Expect(archive != null, "archive does not exist");
 
 
