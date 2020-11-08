@@ -42,7 +42,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
             vm.RegisterMethod("Runtime.TokenExists", Runtime_TokenExists);
-            vm.RegisterMethod("Runtime.TokenHasFlag", Runtime_TokenHasFlag);
+            vm.RegisterMethod("Runtime.GetTokenFlags", Runtime_TokenGetFlags);
 
             vm.RegisterMethod("Nexus.Init", Runtime_NexusInit);
             vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
@@ -801,17 +801,21 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_TokenHasFlag(RuntimeVM vm)
+        private static ExecutionState Runtime_TokenGetFlags(RuntimeVM vm)
         {
             vm.ExpectStackSize(2);
 
             var symbol = vm.PopString("symbol");
-            var flag = vm.PopEnum<TokenFlags>("flag");
 
-            var success = vm.TokenHasFlag(symbol, flag);
+            if (!vm.TokenExists(symbol))
+            {
+                return ExecutionState.Fault;
+            }
+
+            var token = vm.GetToken(symbol);
 
             var result = new VMObject();
-            result.SetValue(success);
+            result.SetValue(token.Flags);
             vm.Stack.Push(result);
 
             return ExecutionState.Running;

@@ -52,8 +52,7 @@ namespace Phantasma.Domain
         IPlatform GetPlatformByName(string name);
         IPlatform GetPlatformByIndex(int index);
 
-        bool TokenExists(string symbol);
-        bool TokenHasFlag(string symbol, TokenFlags flag);
+        bool TokenExists(string symbol);        
         bool NFTExists(string symbol, BigInteger tokenID);
         bool FeedExists(string name);
         bool PlatformExists(string name);
