@@ -62,7 +62,7 @@ namespace Phantasma.VM.Utils
         {
             var table = new Dictionary<string, int>();
             table["Runtime.Log"] = 1;
-            table["Runtime.Event"] = 3;
+            table["Runtime.Notify"] = 3;
             table["Runtime.IsWitness"] = 1;
             table["Runtime.IsTrigger"] = 0;
             table["Runtime.TransferBalance"] = 3;
