@@ -585,11 +585,11 @@ namespace Phantasma.VM
                                         var numA = valA.AsNumber();
                                         var numB = valB.AsNumber();
 
-                                        Expect(numA.GetBitLength() <= 64, "too many bits");
-                                        Expect(numB.GetBitLength() <= 64, "too many bits");
+                                        Expect(numA.GetBitLength() <= 32, "too many bits");
+                                        Expect(numB.GetBitLength() <= 32, "too many bits");
 
-                                        var a = (long)numA;
-                                        var b = (long)numB;
+                                        var a = (uint)numA;
+                                        var b = (uint)numB;
 
                                         if (opcode != Opcode.AND) {
                                             SetState(ExecutionState.Fault);
