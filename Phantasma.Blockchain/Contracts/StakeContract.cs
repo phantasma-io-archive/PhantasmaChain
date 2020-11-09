@@ -46,7 +46,6 @@ namespace Phantasma.Blockchain.Contracts
 
         private StorageMap _masterClaims; // <Address, Timestamp>
         private Timestamp _lastMasterClaim;
-        private BigInteger _masterClaimCount;
 
         private BigInteger _currentEnergyRatioDivisor;
 
@@ -220,8 +219,6 @@ namespace Phantasma.Blockchain.Contracts
 
         public void MasterClaim(Address from)
         {
-            Runtime.Expect(_masterClaimCount < 12 * 4, "no more claims available"); // 4 years
-
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(IsMaster(from), $"{from} is no SoulMaster");
 
@@ -269,7 +266,6 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(totalAmount == 0, $"{totalAmount} something failed");
 
             _lastMasterClaim = Runtime.Time;
-            _masterClaimCount++;
         }
 
         public void Stake(Address from, BigInteger stakeAmount)
