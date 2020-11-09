@@ -109,6 +109,63 @@ namespace Phantasma.VM.Utils
             return table;
         }
 
+        public static IEnumerable<string> ExtractContractNames(Disassembler disassembler)
+        {
+            var instructions = disassembler.Instructions.ToArray();
+            var result = new List<string>();
+
+            int index = 0;
+            var regs = new VMObject[16];
+            while (index < instructions.Length)
+            {
+                var instruction = instructions[index];
+
+                switch (instruction.Opcode)
+                {
+                    case Opcode.LOAD:
+                        {
+                            var dst = (byte)instruction.Args[0];
+                            var type = (VMType)instruction.Args[1];
+                            var bytes = (byte[])instruction.Args[2];
+
+                            regs[dst] = new VMObject();
+                            regs[dst].SetValue(bytes, type);
+
+                            break;
+                        }
+
+                    case Opcode.CTX:
+                        {
+                            var src = (byte)instruction.Args[0];
+                            var dst = (byte)instruction.Args[1];
+
+                            regs[dst] = new VMObject();
+                            regs[dst].Copy(regs[src]);
+                            break;
+                        }
+
+                    case Opcode.SWITCH:
+                        {
+                            var src = (byte)instruction.Args[0];
+
+                            var contractName = regs[src].AsString();
+                            result.Add(contractName);
+                            break;
+                        }
+                }
+
+                index++;
+            }
+
+            return result.Distinct();
+        }
+
+        public static IEnumerable<string> ExtractContractNames(byte[] script)
+        {
+            var disassembler = new Disassembler(script);
+            return ExtractContractNames(disassembler);
+        }
+
         public static IEnumerable<DisasmMethodCall> ExtractMethodCalls(Disassembler disassembler, Dictionary<string, int> methodArgumentCountTable)
         {
             var instructions = disassembler.Instructions.ToArray();
