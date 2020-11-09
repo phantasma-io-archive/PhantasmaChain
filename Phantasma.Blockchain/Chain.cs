@@ -562,7 +562,13 @@ namespace Phantasma.Blockchain
             }
 
             var key = GetContractKey(contractAddress, "script");
-            return storage.Has(key);
+            if (storage.Has(key))
+            {
+                return true;
+            }
+
+            var token = Nexus.GetTokenInfo(storage, contractAddress);
+            return (token != null);
         }
 
         public bool DeployContractScript(StorageContext storage, Address contractOwner, string name, Address contractAddress, byte[] script, ContractInterface abi)
@@ -654,7 +660,11 @@ namespace Phantasma.Blockchain
                     return Address.FromBytes(bytes);
                 }
 
-                return Nexus.GetContractOwner(contractAddress);
+                var token = Nexus.GetTokenInfo(storage, contractAddress);
+                if (token != null)
+                {
+                    return token.Owner;
+                }
             }
 
             return Address.Null;

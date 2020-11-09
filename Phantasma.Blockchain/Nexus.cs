@@ -2063,29 +2063,44 @@ namespace Phantasma.Blockchain
             return storage.Has(key);
         }
 
-        internal Address GetContractOwner(Address contractAddress)
+        internal IToken GetTokenInfo(StorageContext storage, Address contractAddress)
         {
-            var storage = RootStorage;
-
-            var contract = GetNativeContractByAddress(contractAddress);
-            if (contract != null)
-            {
-                return this.GetGenesisAddress(storage);
-            }
-
             var symbols = GetTokens(storage);
             foreach (var symbol in symbols)
             {
                 var tokenAddress = TokenUtils.GetContractAddress(symbol);
-                    
+
                 if (tokenAddress == contractAddress)
                 {
                     var token = GetTokenInfo(storage, symbol);
-                    return token.Owner;
+                    return token;
                 }
             }
 
-            return Address.Null;
+            return null;
+        }
+
+        public CustomContract GetTokenContract(StorageContext storage, string symbol)
+        {
+            if (TokenExists(storage, symbol))
+            {
+                var token = GetTokenInfo(storage, symbol);
+
+                return new CustomContract(symbol, token.Script, token.ABI);
+            }
+
+            return null;
+        }
+
+        public CustomContract GetTokenContract(StorageContext storage, Address contractAddress)
+        {
+            var token = GetTokenInfo(storage, contractAddress);
+            if (token != null)
+            {
+                return new CustomContract(token.Symbol, token.Script, token.ABI);
+            }
+
+            return null;
         }
     }
 }
