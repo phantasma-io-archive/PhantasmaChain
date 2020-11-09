@@ -873,7 +873,14 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                vm.Expect(ValidationUtils.IsValidIdentifier(contractName), "invalid contract name");
+                if (ValidationUtils.IsValidTicker(contractName))
+                {
+                    throw new VMException(vm, "use createToken instead for this kind of contract");
+                }
+                else
+                {
+                    vm.Expect(ValidationUtils.IsValidIdentifier(contractName), "invalid contract name");
+                }
 
                 var isReserved = ValidationUtils.IsReservedIdentifier(contractName);
 
