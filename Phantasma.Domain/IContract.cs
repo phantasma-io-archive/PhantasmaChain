@@ -101,6 +101,22 @@ namespace Phantasma.Domain
         }
 
         /// <summary>
+        /// Checks if this ABI implements a specific event
+        /// </summary>
+        public bool Implements(ContractEvent evt)
+        {
+            foreach (var entry in this.Events)
+            {
+                if (entry.name == evt.name && entry.value == evt.value && entry.returnType == evt.returnType)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Checks if this ABI implements a specific method
         /// </summary>
         public bool Implements(ContractMethod method)
@@ -135,6 +151,14 @@ namespace Phantasma.Domain
             foreach (var method in other.Methods)
             {
                 if (!this.Implements(method))
+                {
+                    return false;
+                }
+            }
+
+            foreach (var evt in other.Events)
+            {
+                if (!this.Implements(evt))
                 {
                     return false;
                 }

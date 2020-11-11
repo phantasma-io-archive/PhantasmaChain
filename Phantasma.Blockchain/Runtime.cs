@@ -9,7 +9,6 @@ using Phantasma.Core.Performance;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
-using System.Collections;
 
 namespace Phantasma.Blockchain
 {
@@ -443,11 +442,11 @@ namespace Phantasma.Blockchain
         }
 
         #region TRIGGERS
-        public bool InvokeTriggerOnAccount(bool allowThrow, Address address, AccountTrigger trigger, params object[] args)
+        public TriggerResult InvokeTriggerOnAccount(bool allowThrow, Address address, AccountTrigger trigger, params object[] args)
         {
             if (address.IsNull)
             {
-                return false;
+                return TriggerResult.Failure;
             }
 
             if (address.IsUser)
@@ -477,16 +476,31 @@ namespace Phantasma.Blockchain
                         else
                         if (contract is NativeContract)
                         {
-                            CallContext(0, contract.Name, triggerName, args);
+                            try
+                            {
+                                CallContext(0, contract.Name, triggerName, args);
+                                return TriggerResult.Success;
+                            }
+                            catch (Exception e)
+                            {
+                                if (allowThrow)
+                                {
+                                    throw e;
+                                }
+
+                                return TriggerResult.Failure;
+                            }
                         }
 
                     }
                 }
-
-                return true;
+                else
+                {
+                    return TriggerResult.Missing;
+                }
             }
 
-            return true;
+            return TriggerResult.Missing;
         }
 
         private byte[] OptimizedAddressScriptLookup(Address target)
@@ -518,22 +532,22 @@ namespace Phantasma.Blockchain
 
         }
 
-        public bool InvokeTriggerOnToken(bool allowThrow, IToken token, TokenTrigger trigger, params object[] args)
+        public TriggerResult InvokeTriggerOnToken(bool allowThrow, IToken token, TokenTrigger trigger, params object[] args)
         {
             return InvokeTrigger(allowThrow, token.Script, token.Symbol, token.ABI, trigger.ToString(), args);
         }
 
-        public bool InvokeTrigger(bool allowThrow, byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args)
+        public TriggerResult InvokeTrigger(bool allowThrow, byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args)
         {
             if (script == null || script.Length == 0 || abi == null)
             {
-                return true;
+                return TriggerResult.Missing;
             }
 
             var method = abi.FindMethod(triggerName);
             if (method == null || method.offset < 0)
             {
-                return true;
+                return TriggerResult.Missing;
             }
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
@@ -562,7 +576,7 @@ namespace Phantasma.Blockchain
                     this.Notify(evt.Kind, evt.Address, evt.Data);
                 }
 
-                return true;
+                return TriggerResult.Success;
             }
             else
             {
@@ -572,7 +586,7 @@ namespace Phantasma.Blockchain
                     throw new Exception($"{triggerName} trigger failed: {vmException}");
                 }
 
-                return false;
+                return TriggerResult.Failure;
             }
         }
         #endregion
@@ -647,7 +661,7 @@ namespace Phantasma.Blockchain
             if (address.IsUser && Nexus.HasGenesis && OptimizedHasAddressScript(RootStorage, address))
             {
                 using (var m = new ProfileMarker("InvokeTriggerOnAccount"))
-                    accountResult = InvokeTriggerOnAccount(false, address, AccountTrigger.OnWitness, address);
+                    accountResult = InvokeTriggerOnAccount(false, address, AccountTrigger.OnWitness, address) != TriggerResult.Failure;
             }
             else
             {

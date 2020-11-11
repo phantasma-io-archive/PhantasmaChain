@@ -3,6 +3,13 @@ using Phantasma.Numerics;
 
 namespace Phantasma.Domain
 {
+    public enum TriggerResult
+    {
+        Failure,
+        Missing,
+        Success,
+    }
+
     public enum AccountTrigger
     {
         OnMint, // address, symbol, amount
@@ -10,6 +17,7 @@ namespace Phantasma.Domain
         OnSend, // address, symbol, amount
         OnReceive, // address, symbol, amount
         OnWitness, // address
+        OnUpgrade, // address
     }
 
     public enum TokenTrigger

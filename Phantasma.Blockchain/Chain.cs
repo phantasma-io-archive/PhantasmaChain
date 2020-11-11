@@ -649,6 +649,28 @@ namespace Phantasma.Blockchain
             return new CustomContract(name, script, abi);
         }
 
+        public void UpgradeContract(StorageContext storage, string name, byte[] script, ContractInterface abi)
+        {
+            if (Nexus.IsNativeContract(name) || ValidationUtils.IsValidTicker(name))
+            {
+                throw new ChainException($"Cannot upgrade this type of contract: {name}");
+            }
+
+            if (!IsContractDeployed(storage, name))
+            {
+                throw new ChainException($"Cannot upgrade non-existing contract: {name}");
+            }
+
+            var address = SmartContract.GetAddressForName(name);
+
+            var scriptKey = GetContractKey(address, "script");
+            storage.Put(scriptKey, script);
+
+            var abiKey = GetContractKey(address, "abi");
+            var abiBytes = abi.ToByteArray();
+            storage.Put(abiBytes, abiBytes);
+        }
+
         public Address GetContractOwner(StorageContext storage, Address contractAddress)
         {
             if (contractAddress.IsSystem)

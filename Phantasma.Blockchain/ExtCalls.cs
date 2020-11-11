@@ -29,6 +29,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Log", Runtime_Log);
             vm.RegisterMethod("Runtime.Notify", Runtime_Notify);
             vm.RegisterMethod("Runtime.DeployContract", Runtime_DeployContract);
+            vm.RegisterMethod("Runtime.UpgradeContract", Runtime_UpgradeContract);
             vm.RegisterMethod("Runtime.GetBalance", Runtime_GetBalance);
             vm.RegisterMethod("Runtime.TransferTokens", Runtime_TransferTokens);
             vm.RegisterMethod("Runtime.TransferBalance", Runtime_TransferBalance);
@@ -849,7 +850,7 @@ namespace Phantasma.Blockchain
             {
                 vm.Expect(!deployed, $"{contractName} is already deployed");
             }
-
+            else
             if (deployed)
             {
                 return ExecutionState.Running;
@@ -905,24 +906,89 @@ namespace Phantasma.Blockchain
             }
 
             // ABI validation
-            var offsets = new HashSet<int>();
-            var names = new HashSet<string>();
-            foreach (var method in abi.Methods)
+            ValidateABI(vm, contractName, abi, isNative);
+
+            var success = vm.Chain.DeployContractScript(vm.Storage, from, contractName, contractAddress, script, abi);
+            vm.Expect(success, $"deployment of {contractName} failed");
+
+            var constructor = abi.FindMethod(SmartContract.ConstructorName);
+
+            if (constructor != null)
             {
-                vm.Expect(ValidationUtils.IsValidMethod(method.name, method.returnType), "invalid method: " + method.name);
-                var normalizedName = method.name.ToLower();
-                vm.Expect(!names.Contains(normalizedName), $"duplicated method name in {contractName}: {normalizedName}");
-
-                names.Add(normalizedName);
-
-                if (!isNative)
-                {
-                    vm.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
-                    vm.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
-                    offsets.Add(method.offset);
-                }
+                vm.CallContext(0, contractName, SmartContract.ConstructorName, from);
             }
 
+            vm.Notify(EventKind.ContractDeploy, from, contractName);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_UpgradeContract(RuntimeVM vm)
+        {
+            var tx = vm.Transaction;
+            Throw.IfNull(tx, nameof(tx));
+
+            vm.ExpectStackSize(1);
+
+            var from = vm.PopAddress();
+            vm.Expect(from.IsUser, "address must be user");
+
+            vm.Expect(vm.IsStakeMaster(from), "needs to be master");
+
+            vm.Expect(vm.IsWitness(from), "invalid witness");
+
+            var contractName = vm.PopString("contractName");
+
+            var contractAddress = SmartContract.GetAddressForName(contractName);
+            var deployed = vm.Chain.IsContractDeployed(vm.Storage, contractAddress);
+
+            vm.Expect(deployed, $"{contractName} does not exist");
+
+            byte[] script;
+            ContractInterface abi;
+
+            bool isNative = Nexus.IsNativeContract(contractName);
+            vm.Expect(!isNative, "cannot upgrade native contract");
+
+            bool isToken = ValidationUtils.IsValidTicker(contractName);
+
+            script = vm.PopBytes("contractScript");
+
+            var abiBytes = vm.PopBytes("contractABI");
+            abi = ContractInterface.FromBytes(abiBytes);
+
+            var fuelCost = vm.GetGovernanceValue(Nexus.FuelPerContractDeployTag);
+            // governance value is in usd fiat, here convert from fiat to fuel amount
+            fuelCost = vm.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
+
+            // burn the "cost" tokens
+            vm.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
+
+            // ABI validation
+            ValidateABI(vm, contractName, abi, isNative);
+
+            SmartContract oldContract;
+            if (isToken)
+            {
+                oldContract = vm.Nexus.GetTokenContract(vm.Storage, contractName);
+            }
+            else
+            {
+                oldContract = vm.Chain.GetContractByName(vm.Storage, contractName);
+            }
+
+            vm.Expect(oldContract != null, "could not fetch previous contract");
+            vm.Expect(abi.Implements(oldContract.ABI), "new abi does not implement all methods of previous abi");
+            vm.Expect(vm.InvokeTrigger(false, script, contractName, abi, AccountTrigger.OnUpgrade.ToString(), from) == TriggerResult.Success, "OnUpgrade trigger failed");
+
+            if (isToken)
+            {
+                vm.Nexus.UpgradeTokenContract(vm.RootStorage, contractName, script, abi);
+            }
+            else
+            {
+                vm.Chain.UpgradeContract(vm.Storage, contractName, script, abi);
+            }
 
             var success = vm.Chain.DeployContractScript(vm.Storage, from, contractName, contractAddress, script, abi);
             vm.Expect(success, $"deployment of {contractName} failed");
@@ -1095,6 +1161,27 @@ namespace Phantasma.Blockchain
             vm.AddMember(name, source, target);
 
             return ExecutionState.Running;
+        }
+
+        private static void ValidateABI(RuntimeVM vm, string contractName, ContractInterface abi, bool isNative)
+        {
+            var offsets = new HashSet<int>();
+            var names = new HashSet<string>();
+            foreach (var method in abi.Methods)
+            {
+                vm.Expect(ValidationUtils.IsValidMethod(method.name, method.returnType), "invalid method: " + method.name);
+                var normalizedName = method.name.ToLower();
+                vm.Expect(!names.Contains(normalizedName), $"duplicated method name in {contractName}: {normalizedName}");
+
+                names.Add(normalizedName);
+
+                if (!isNative)
+                {
+                    vm.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
+                    vm.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
+                    offsets.Add(method.offset);
+                }
+            }
         }
     }
 }

@@ -115,7 +115,7 @@ namespace Phantasma.Domain
         BigInteger GenerateUID();
         BigInteger GenerateRandomNumber();
 
-        bool InvokeTrigger(bool allowThrow, byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args);
+        TriggerResult InvokeTrigger(bool allowThrow, byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args);
 
         bool IsWitness(Address address);
 
