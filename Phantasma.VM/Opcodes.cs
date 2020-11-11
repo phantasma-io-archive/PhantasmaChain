@@ -56,9 +56,9 @@ namespace Phantasma.VM
         SHR,
         MIN,
         MAX,
+        POW,
 
         // context
-        THIS,
         CTX,
         SWITCH,
 

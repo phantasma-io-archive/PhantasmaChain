@@ -93,6 +93,7 @@ namespace Phantasma.CodeGen.Assembler
                     case Opcode.SHR:
                     case Opcode.MIN:
                     case Opcode.MAX:
+                    case Opcode.POW:
                     case Opcode.PUT:
                     case Opcode.GET:
                         Process3Reg(sb);

@@ -158,7 +158,6 @@ namespace Phantasma.VM
                     // args: byte reg
                     case Opcode.INC:
                     case Opcode.DEC:
-                    case Opcode.THIS:
                     case Opcode.SWITCH:
                         {
                             var dst = Read8();
@@ -176,6 +175,7 @@ namespace Phantasma.VM
                     case Opcode.SHL:
                     case Opcode.MIN:
                     case Opcode.MAX:
+                    case Opcode.POW:
                     case Opcode.PUT:
                     case Opcode.GET:
                         {

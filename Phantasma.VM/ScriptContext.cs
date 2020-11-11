@@ -780,6 +780,7 @@ namespace Phantasma.VM
                     case Opcode.SHL:
                     case Opcode.MIN:
                     case Opcode.MAX:
+                    case Opcode.POW:
                         {
                             var srcA = Read8();
                             var srcB = Read8();
@@ -817,6 +818,7 @@ namespace Phantasma.VM
                                     case Opcode.SHL: result = a << (int)b; break;
                                     case Opcode.MIN: result = a < b ? a : b; break;
                                     case Opcode.MAX: result = a > b ? a : b; break;
+                                    case Opcode.POW: result = BigInteger.Pow(a, b); break;
                                     default:
                                         {
                                             SetState(ExecutionState.Fault);
@@ -880,17 +882,6 @@ namespace Phantasma.VM
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             frame.Registers[dst] = new VMObject();
-
-                            break;
-                        }
-
-                    // args: byte dest_reg
-                    case Opcode.THIS:
-                        {
-                            var dst = Read8();
-                            Expect(dst < frame.Registers.Length, "invalid dst register");
-
-                            frame.Registers[dst].SetValue(this.Name);
 
                             break;
                         }
