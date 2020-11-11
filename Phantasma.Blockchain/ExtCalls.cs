@@ -990,17 +990,7 @@ namespace Phantasma.Blockchain
                 vm.Chain.UpgradeContract(vm.Storage, contractName, script, abi);
             }
 
-            var success = vm.Chain.DeployContractScript(vm.Storage, from, contractName, contractAddress, script, abi);
-            vm.Expect(success, $"deployment of {contractName} failed");
-
-            var constructor = abi.FindMethod(SmartContract.ConstructorName);
-
-            if (constructor != null)
-            {
-                vm.CallContext(0, contractName, SmartContract.ConstructorName, from);
-            }
-
-            vm.Notify(EventKind.ContractDeploy, from, contractName);
+            vm.Notify(EventKind.ContractUpgrade, from, contractName);
 
             return ExecutionState.Running;
         }
