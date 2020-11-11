@@ -199,6 +199,7 @@ namespace Phantasma.Blockchain.Contracts
                 switch (trigger)
                 {
                     case AccountTrigger.OnWitness:
+                    case AccountTrigger.OnUpgrade:
                         result.Add(new ContractMethod(trigger.ToString(), VM.VMType.None, offset, new[] { new ContractParameter("from", VM.VMType.Object) }));
                         break;
 
