@@ -39,9 +39,6 @@ namespace Phantasma.Blockchain
         public bool DelayPayment { get; private set; }
         public readonly bool readOnlyMode;
 
-        private bool randomized;
-        private BigInteger seed;
-
         public BigInteger MinimumFee;
 
         private readonly StorageChangeSetContext changeSet;
@@ -65,14 +62,14 @@ namespace Phantasma.Blockchain
             this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
             this.DelayPayment = delayPayment;
 
+            this._randomSeed = 0;
+
             this.Time = time;
             this.Chain = chain;
             this.Transaction = transaction;
             this.Oracle = oracle;
             this.changeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
-
-            this.randomized = false;
 
             this.FeeTargetAddress = Address.Null;
 
@@ -401,36 +398,39 @@ namespace Phantasma.Blockchain
         public static readonly uint RND_A = 16807;
         public static readonly uint RND_M = 2147483647;
 
+        private BigInteger _randomSeed;
+
         // returns a next random number
         public BigInteger GenerateRandomNumber()
         {
-            if (!randomized)
+            if (_randomSeed == 0 && this.Transaction != null)
             {
-                // calculates first initial pseudo random number seed
-                byte[] bytes = Transaction != null ? Transaction.Hash.ToByteArray() : new byte[32];
-
-                for (int i = 0; i < this.entryScript.Length; i++)
-                {
-                    var index = i % bytes.Length;
-                    bytes[index] ^= entryScript[i];
-                }
-
-                var time = System.BitConverter.GetBytes(Time.Value);
-
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    bytes[i] ^= time[i % time.Length];
-                }
-
-                seed = BigInteger.FromUnsignedArray(bytes, true);
-                randomized = true;
-            }
-            else
-            {
-                seed = ((RND_A * seed) % RND_M);
+                InitRandomSeed(this.Transaction.Hash);
             }
 
-            return seed;
+            _randomSeed = ((RND_A * _randomSeed) % RND_M);
+            return _randomSeed;
+        }
+
+        public void InitRandomSeed(BigInteger seed)
+        {
+            // calculates first initial pseudo random number seed
+            byte[] bytes = seed.ToSignedByteArray();
+
+            for (int i = 0; i < this.entryScript.Length; i++)
+            {
+                var index = i % bytes.Length;
+                bytes[index] ^= entryScript[i];
+            }
+
+            var time = System.BitConverter.GetBytes(Time.Value);
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] ^= time[i % time.Length];
+            }
+
+            _randomSeed = BigInteger.FromUnsignedArray(bytes, true);
         }
         #endregion
 
