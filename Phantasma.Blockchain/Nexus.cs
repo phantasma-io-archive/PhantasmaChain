@@ -1142,7 +1142,7 @@ namespace Phantasma.Blockchain
             SetTokenPlatformHash("NEO", "neo", Hash.FromUnpaddedHex("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"), storage);
             SetTokenPlatformHash("GAS", "neo", Hash.FromUnpaddedHex("602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"), storage);
             SetTokenPlatformHash("ETH", "ethereum", Hash.FromString("ETH"), storage);
-            SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("89d24a6b4ccb1b6faa2625fe562bdd9a23260359"), storage);
+            SetTokenPlatformHash("DAI", "ethereum", Hash.FromUnpaddedHex("6b175474e89094c44da98b954eedeac495271d0f"), storage);
         }
 
         public bool CreateGenesisBlock(PhantasmaKeys owner, Timestamp timestamp, int version)
