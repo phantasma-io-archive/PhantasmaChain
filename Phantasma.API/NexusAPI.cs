@@ -1637,7 +1637,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false)]
-        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, int blockIndex, [APIParameter("Block content bytes, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockContent)
+        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex, [APIParameter("Block content bytes, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockContent)
         {
             Hash hash;
 
@@ -1665,6 +1665,41 @@ namespace Phantasma.API
                 return new SingleResult()
                 {
                     value = true
+                };
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+        }
+
+        [APIInfo(typeof(string), "Reads given archive block.", false)]
+        public IAPIResult ReadArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex)
+        {
+            Hash hash;
+
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult() { error = "invalid hash" };
+            }
+
+            var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
+            if (archive == null)
+            {
+                return new ErrorResult() { error = "archive not found" };
+            }
+
+            if (blockIndex < 0 || blockIndex >= archive.BlockCount)
+            {
+                return new ErrorResult() { error = "invalid block index" };
+            }
+
+            try
+            {
+                var bytes = Nexus.ReadArchiveBlock(archive, blockIndex);
+                return new SingleResult()
+                {
+                    value = Base16.Encode(bytes)
                 };
             }
             catch (Exception e)

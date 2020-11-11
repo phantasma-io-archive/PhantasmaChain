@@ -205,5 +205,16 @@ namespace Phantasma.Cryptography
             return result;
         }
 
+        public static uint GetChunkCountForSize(BigInteger size)
+        {
+            var result = size / ChunkSize;
+            if (size % ChunkSize > 0)
+            {
+                result++;
+            }
+
+            return uint.Parse(result.ToString());
+        }
+
     }
 }

@@ -48,13 +48,14 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, byte[] encryptionKey)
+        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, byte[] encryptionKey, List<int> missingBlocks)
         {
             this.MerkleTree = tree;
             this.Name = name;
             this.Size = size;
             this.Time = time;
             this.EncryptionKey = encryptionKey;
+            this._missingBlocks = missingBlocks;
         }
 
         public Archive()
