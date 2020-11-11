@@ -405,14 +405,14 @@ namespace Phantasma.Blockchain
         {
             if (_randomSeed == 0 && this.Transaction != null)
             {
-                InitRandomSeed(this.Transaction.Hash);
+                SetRandomSeed(this.Transaction.Hash);
             }
 
             _randomSeed = ((RND_A * _randomSeed) % RND_M);
             return _randomSeed;
         }
 
-        public void InitRandomSeed(BigInteger seed)
+        public void SetRandomSeed(BigInteger seed)
         {
             // calculates first initial pseudo random number seed
             byte[] bytes = seed.ToSignedByteArray();

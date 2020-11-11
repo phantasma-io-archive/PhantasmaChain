@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransactionHash", Runtime_TransactionHash);
             vm.RegisterMethod("Runtime.Time", Runtime_Time);
             vm.RegisterMethod("Runtime.Random", Runtime_Random);
-            vm.RegisterMethod("Runtime.InitSeed", Runtime_InitSeed);
+            vm.RegisterMethod("Runtime.SetSeed", Runtime_SetSeed);
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
             vm.RegisterMethod("Runtime.IsTrigger", Runtime_IsTrigger);
             vm.RegisterMethod("Runtime.IsMinter", Runtime_IsMinter);
@@ -337,13 +337,13 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_InitSeed(RuntimeVM vm)
+        private static ExecutionState Runtime_SetSeed(RuntimeVM vm)
         {
             vm.ExpectStackSize(1);
 
             var seed = vm.PopNumber("seed");
 
-            vm.InitRandomSeed(seed);
+            vm.SetRandomSeed(seed);
             return ExecutionState.Running;
         }
 
