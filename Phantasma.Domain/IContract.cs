@@ -1,6 +1,7 @@
 ﻿using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using Phantasma.VM;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,7 +41,7 @@ namespace Phantasma.Domain
     {
         public static readonly ContractInterface Empty = new ContractInterface(Enumerable.Empty<ContractMethod>(), Enumerable.Empty<ContractEvent>());
 
-        private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>();
+        private Dictionary<string, ContractMethod> _methods = new Dictionary<string, ContractMethod>(StringComparer.OrdinalIgnoreCase);
         public IEnumerable<ContractMethod> Methods => _methods.Values;
         public int MethodCount => _methods.Count;
 
@@ -272,6 +273,31 @@ namespace Phantasma.Domain
             this.offset = offset;
             this.returnType = returnType;
             this.parameters = parameters;
+        }
+
+        public bool IsProperty()
+        {
+            if (name.Length >= 4 && name.StartsWith("get") && char.IsUpper(name[3]))
+            {
+                return true;
+            }
+
+            if (name.Length >= 3 && name.StartsWith("is") && char.IsUpper(name[2]))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsTrigger()
+        {
+            if (name.Length >= 3 && name.StartsWith("on") && char.IsUpper(name[2]))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public override string ToString()

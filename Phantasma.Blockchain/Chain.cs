@@ -410,7 +410,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"contract {contract.Name} not deployed on {Name} chain");
             }
 
-            var context = new NativeExecutionContext(contract);
+            var context = new ChainExecutionContext(contract);
             return context;
         }
 

@@ -9,6 +9,7 @@ using Phantasma.Core.Performance;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
+using System.Collections;
 
 namespace Phantasma.Blockchain
 {
@@ -107,7 +108,7 @@ namespace Phantasma.Blockchain
             handlers[name] = handler;
         }
 
-        private Dictionary<string, Func<RuntimeVM, ExecutionState>> handlers = new Dictionary<string, Func<RuntimeVM, ExecutionState>>();
+        private Dictionary<string, Func<RuntimeVM, ExecutionState>> handlers = new Dictionary<string, Func<RuntimeVM, ExecutionState>>(StringComparer.OrdinalIgnoreCase);
 
         public override ExecutionState ExecuteInterop(string method)
         {

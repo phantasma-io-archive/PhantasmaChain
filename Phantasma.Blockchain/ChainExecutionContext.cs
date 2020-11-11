@@ -8,13 +8,13 @@ using Phantasma.Blockchain.Contracts;
 
 namespace Phantasma.Blockchain
 {
-    public class NativeExecutionContext : ExecutionContext
+    public class ChainExecutionContext : ExecutionContext
     {
         public readonly SmartContract Contract;
 
         public override string Name => Contract.Name;
 
-        public NativeExecutionContext(SmartContract contract)
+        public ChainExecutionContext(SmartContract contract)
         {
             this.Contract = contract;
         }
@@ -36,8 +36,7 @@ namespace Phantasma.Blockchain
             
             var runtime = (RuntimeVM)frame.VM;
 
-
-            if (methodName == SmartContract.ConstructorName && runtime.HasGenesis)
+            if (methodName.Equals(SmartContract.ConstructorName, StringComparison.OrdinalIgnoreCase) && runtime.HasGenesis)
             {
                 BigInteger usedQuota;
                 

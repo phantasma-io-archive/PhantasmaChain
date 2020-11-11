@@ -1428,9 +1428,13 @@ namespace Phantasma.API
             {
                 var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
 
-                APIUtils.FetchProperty("name", tokenInfo, properties);
-                APIUtils.FetchProperty("description", tokenInfo, properties);
-                APIUtils.FetchProperty("imageURI", tokenInfo, properties);
+                foreach (var method in tokenInfo.ABI.Methods)
+                {
+                    if (method.IsProperty())
+                    {
+                        APIUtils.FetchProperty(method.name, tokenInfo, properties);
+                    }
+                }
             }
 
             return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), properties = properties.ToArray()};

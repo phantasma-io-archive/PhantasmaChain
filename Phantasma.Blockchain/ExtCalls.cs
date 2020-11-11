@@ -896,14 +896,6 @@ namespace Phantasma.Blockchain
                 var abiBytes = vm.PopBytes("contractABI");
                 abi = ContractInterface.FromBytes(abiBytes);
 
-                var offsets = new HashSet<int>();
-                foreach (var method in abi.Methods)
-                {
-                    vm.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
-                    vm.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
-                    offsets.Add(method.offset);
-                }
-
                 var fuelCost = vm.GetGovernanceValue(Nexus.FuelPerContractDeployTag);
                 // governance value is in usd fiat, here convert from fiat to fuel amount
                 fuelCost = vm.GetTokenQuote(DomainSettings.FiatTokenSymbol, DomainSettings.FuelTokenSymbol, fuelCost);
@@ -911,6 +903,26 @@ namespace Phantasma.Blockchain
                 // burn the "cost" tokens
                 vm.BurnTokens(DomainSettings.FuelTokenSymbol, from, fuelCost);
             }
+
+            // ABI validation
+            var offsets = new HashSet<int>();
+            var names = new HashSet<string>();
+            foreach (var method in abi.Methods)
+            {
+                vm.Expect(ValidationUtils.IsValidMethod(method.name, method.returnType), "invalid method: " + method.name);
+                var normalizedName = method.name.ToLower();
+                vm.Expect(!names.Contains(normalizedName), $"duplicated method name in {contractName}: {normalizedName}");
+
+                names.Add(normalizedName);
+
+                if (!isNative)
+                {
+                    vm.Expect(method.offset >= 0, $"invalid offset in {contractName} contract abi for method {method.name}");
+                    vm.Expect(!offsets.Contains(method.offset), $"duplicated offset in {contractName} contract abi for method {method.name}");
+                    offsets.Add(method.offset);
+                }
+            }
+
 
             var success = vm.Chain.DeployContractScript(vm.Storage, from, contractName, contractAddress, script, abi);
             vm.Expect(success, $"deployment of {contractName} failed");
