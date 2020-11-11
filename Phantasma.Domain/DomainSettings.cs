@@ -26,12 +26,14 @@ namespace Phantasma.Domain
         OnBurn, // address, symbol, amount
         OnSend, // address, symbol, amount
         OnReceive, // address, symbol, amount
+        OnUpgrade, // address
     }
 
     public enum OrganizationTrigger
     {
         OnAdd, // address
         OnRemove, // address
+        OnUpgrade, // address
     }
 
     public static class DomainSettings
