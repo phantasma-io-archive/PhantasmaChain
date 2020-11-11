@@ -137,7 +137,7 @@ namespace Phantasma.Domain
 
         public static bool IsValidMethod(string methodName, VMType returnType)
         {
-            if (string.IsNullOrEmpty(methodName) || methodName.Length < 4)
+            if (string.IsNullOrEmpty(methodName) || methodName.Length < 3)
             {
                 return false;
             }
