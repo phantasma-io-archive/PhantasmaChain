@@ -213,7 +213,7 @@ namespace Phantasma.Cryptography
                 result++;
             }
 
-            return uint.Parse(result.ToString());
+            return (uint)result;
         }
 
     }
