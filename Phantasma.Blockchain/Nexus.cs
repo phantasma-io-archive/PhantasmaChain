@@ -1474,7 +1474,8 @@ namespace Phantasma.Blockchain
             var archive = GetArchive(storage, merkleTree.Root);
             Throw.If(archive != null, "archive already exists");
 
-            archive = new Archive(merkleTree, name, size, time, encryptionKey);
+            archive = new Archive(merkleTree, name, size, time, encryptionKey,
+                Enumerable.Range(0, (int)MerkleTree.GetChunkCountForSize(size)).ToList());
             var archiveHash = merkleTree.Root;
 
             AddOwnerToArchive(storage, archive, owner);
