@@ -1637,7 +1637,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false)]
-        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex, [APIParameter("Block content bytes, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockContent)
+        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex, [APIParameter("Block content bytes, in Base64", "QmFzZTY0IGVuY29kZWQgdGV4dA==")] string blockContent)
         {
             Hash hash;
 
@@ -1657,7 +1657,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid block index" };
             }
 
-            var bytes = Base16.Decode(blockContent);
+            var bytes = Convert.FromBase64String(blockContent);
 
             try
             {
@@ -1699,7 +1699,7 @@ namespace Phantasma.API
                 var bytes = Nexus.ReadArchiveBlock(archive, blockIndex);
                 return new SingleResult()
                 {
-                    value = Base16.Encode(bytes)
+                    value = Convert.ToBase64String(bytes)
                 };
             }
             catch (Exception e)
