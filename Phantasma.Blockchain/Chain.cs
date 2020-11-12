@@ -274,7 +274,6 @@ namespace Phantasma.Blockchain
             }
 
             var oracle = Nexus.GetOracleReader();
-            oracle.Clear();
 
             block.CleanUp();
 
@@ -292,6 +291,7 @@ namespace Phantasma.Blockchain
             if (oracle.Entries.Any())
             {
                 block.MergeOracle(oracle);
+                oracle.Clear();
             }
 
             return changeSet;
