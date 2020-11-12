@@ -1,5 +1,4 @@
-﻿using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Storage.Context;
 
@@ -27,6 +26,11 @@ namespace Phantasma.Blockchain.Contracts
             var targetDomain = GetUserDomain(target);
             Runtime.Expect(!string.IsNullOrEmpty(targetDomain), $"{target} not associated with any domain");
             Runtime.Expect(ownedDomain == targetDomain, $"{target} is associated with different domain: {targetDomain}");
+
+            var archive = Runtime.GetArchive(archiveHash);
+            Runtime.Expect(archive != null, $"mail archive does not exist: {archiveHash}");
+
+            Runtime.Expect(archive.EncryptionAddress == from, "mail archive not properly encrypted");
 
             Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.AddFile), from, target, archiveHash);
         }
