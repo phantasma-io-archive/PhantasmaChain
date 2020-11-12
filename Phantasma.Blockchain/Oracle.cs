@@ -515,7 +515,11 @@ namespace Phantasma.Blockchain
 
         public void MergeTxData()
         {
-            _entries.Merge(_txEntries);
+            if (_txEntries.Count > 0)
+            {
+                _entries.Merge(_txEntries);
+                _txEntries.Clear();
+            }
         }
     }
 }
