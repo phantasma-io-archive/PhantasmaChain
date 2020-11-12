@@ -199,6 +199,11 @@ namespace Phantasma.VM
                         return (byte[])Data;
                     }
 
+                case VMType.Bool:
+                    {
+                        return new byte[] { (byte)(((bool)Data) ? 1: 0)};
+                    }
+
                 case VMType.String:
                     {
                         var str = AsString();
@@ -281,6 +286,15 @@ namespace Phantasma.VM
 
         public bool AsBool()
         {
+            if (this.Type == VMType.Bytes)
+            {
+                var bytes = (byte[])Data;
+                if (bytes.Length == 1)
+                {
+                    return bytes[0] != 0;
+                }
+            }
+
             switch (this.Type)
             {
                 case VMType.Bool: return (bool)Data;
