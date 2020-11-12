@@ -59,6 +59,8 @@ namespace Phantasma.Domain
         Inflation = 49,
         OwnerAdded = 50,
         OwnerRemoved = 51,
+        DomainCreate = 52,
+        DomainDelete = 53,
         Custom = 64,
     }
 

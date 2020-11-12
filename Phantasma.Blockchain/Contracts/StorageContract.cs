@@ -55,7 +55,7 @@ namespace Phantasma.Blockchain.Contracts
                 archive = Runtime.CreateArchive(merkleTree, target, fileName, fileSize, Runtime.Time, encryptionAddress);
             }
 
-            AddFile(target, target, archive.Hash, archive);
+            AddFile(target, target, archive);
         }
 
         public bool HasFile(Address target, Hash hash)
@@ -64,27 +64,19 @@ namespace Phantasma.Blockchain.Contracts
             return archive.IsOwner(target);
         }
 
-        public void AddFile(Address from, Address target, Hash hash)
+        public void AddFile(Address from, Address target, Hash archiveHash)
         {
-            AddFile(from, target, hash, null);
+            var archive = Runtime.GetArchive(archiveHash);
+            AddFile(from, target, archive);
         }
 
-        private void AddFile(Address from, Address target, Hash hash, IArchive archive)
+        private void AddFile(Address from, Address target, IArchive archive)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            if (from != target)
-            {
-                var permissions = _permissionMap.Get<Address, StorageList>(target);
-                Runtime.Expect(permissions.Contains<Address>(from), $"permissions missing for {from} to add file to {target}");
-            }
+            Runtime.Expect(HasPermission(from, target), $"permissions missing for {from} to add file to {target}");
 
             Runtime.Expect(target.IsUser, "destination address must be user address");
-
-            if (archive == null)
-            {
-                archive = Runtime.GetArchive(hash);
-            }
 
             Runtime.Expect(archive != null, "archive does not exist");
 
@@ -100,11 +92,11 @@ namespace Phantasma.Blockchain.Contracts
 
             if (!archive.IsOwner(target))
             {
-                Runtime.AddOwnerToArchive(hash, target);
+                Runtime.AddOwnerToArchive(archive.Hash, target);
             }
 
             var list = _storageMap.Get<Address, StorageList>(target);
-            list.Add<Hash>(hash);
+            list.Add<Hash>(archive.Hash);
         }
 
         public void DeleteFile(Address from, Hash targetHash)
@@ -131,32 +123,65 @@ namespace Phantasma.Blockchain.Contracts
             list.RemoveAt<Hash>(targetIndex);
         }
 
-        public void AddPermission(Address from, Address target)
+        // Checks if external address has permission to add files to target address
+        public bool HasPermission(Address external, Address target)
         {
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            if (external == target)
+            {
+                return true;
+            }
 
-            Runtime.Expect(from != target, "target must be different");
-
-            var permissions = _permissionMap.Get<Address, StorageList>(from);
-            Runtime.Expect(!permissions.Contains<Address>(target), $"permission already exists");
-
-            permissions.Add<Address>(target);
-
-            Runtime.Notify(EventKind.AddressLink, from, target);
+            var permissions = _permissionMap.Get<Address, StorageList>(target);
+            return permissions.Contains<Address>(external);
         }
 
-        public void DeletePermission(Address from, Address target)
+        public void AddPermission(Address from, Address externalAddr)
         {
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
 
-            Runtime.Expect(from != target, "target must be different");
+            Runtime.Expect(from != externalAddr, "target must be different");
 
             var permissions = _permissionMap.Get<Address, StorageList>(from);
-            Runtime.Expect(permissions.Contains<Address>(target), $"permission does not exist");
+            Runtime.Expect(!permissions.Contains<Address>(externalAddr), $"permission already exists");
 
-            permissions.Remove<Address>(target);
+            permissions.Add<Address>(externalAddr);
 
-            Runtime.Notify(EventKind.AddressUnlink, from, target);
+            Runtime.Notify(EventKind.AddressLink, from, externalAddr);
+        }
+
+        public void DeletePermission(Address from, Address externalAddr)
+        {
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Runtime.Expect(from != externalAddr, "target must be different");
+
+            var permissions = _permissionMap.Get<Address, StorageList>(from);
+            Runtime.Expect(permissions.Contains<Address>(externalAddr), $"permission does not exist");
+
+            permissions.Remove<Address>(externalAddr);
+
+            Runtime.Notify(EventKind.AddressUnlink, from, externalAddr);
+        }
+
+        public void MigratePermission(Address target, Address oldAddr, Address newAddr)
+        {
+            Runtime.Expect(Runtime.IsWitness(oldAddr), "invalid witness");
+
+            var permissions = _permissionMap.Get<Address, StorageList>(target);
+
+            if (target != oldAddr)
+            {
+                Runtime.Expect(HasPermission(oldAddr, target), $"not permissions from {oldAddr} for target {target}");
+                permissions.Remove<Address>(oldAddr);
+                Runtime.Notify(EventKind.AddressUnlink, target, oldAddr);
+            }
+
+            if (newAddr != target)
+            {
+                Runtime.Expect(!HasPermission(newAddr, target), $"{newAddr} already has permissions for target {target}");
+                permissions.Add<Address>(newAddr);
+                Runtime.Notify(EventKind.AddressLink, target, newAddr);
+            }
         }
 
         public BigInteger GetUsedSpace(Address from)
