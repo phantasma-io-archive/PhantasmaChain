@@ -840,7 +840,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TokenGetDecimals(RuntimeVM vm)
         {
-            vm.ExpectStackSize(2);
+            vm.ExpectStackSize(1);
 
             var symbol = vm.PopString("symbol");
 
@@ -860,7 +860,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_TokenGetFlags(RuntimeVM vm)
         {
-            vm.ExpectStackSize(2);
+            vm.ExpectStackSize(1);
 
             var symbol = vm.PopString("symbol");
 
