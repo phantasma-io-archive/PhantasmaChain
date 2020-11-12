@@ -11,22 +11,22 @@ namespace Phantasma.Blockchain
         public readonly static ChainTask Null = null;
 
         public BigInteger ID { get; private set; }
-        public bool state { get; private set; }
-        public Address payer { get; private set; }
-        public string contractName { get; private set; }
-        public uint offset { get; private set; }
-        public uint frequency { get; private set; }
-        public TaskFrequencyMode mode { get; private set; }
+        public bool State { get; private set; }
+        public Address Owner { get; private set; }
+        public string ContextName { get; private set; }
+        public uint Offset { get; private set; }
+        public uint Frequency { get; private set; }
+        public TaskFrequencyMode Mode { get; private set; }
 
         public ChainTask(BigInteger ID, Address payer, string contractName, uint offset, uint frequency, TaskFrequencyMode mode, bool state)
         {
             this.ID = ID;
-            this.payer = payer;
-            this.contractName = contractName;
-            this.offset = offset;
-            this.frequency = frequency;
-            this.mode = mode;
-            this.state = state;
+            this.Owner = payer;
+            this.ContextName = contractName;
+            this.Offset = offset;
+            this.Frequency = frequency;
+            this.Mode = mode;
+            this.State = state;
         }
 
         public byte[] ToByteArray()
@@ -35,11 +35,11 @@ namespace Phantasma.Blockchain
             {
                 using (var writer = new BinaryWriter(stream))
                 {
-                    writer.WriteAddress(payer);
-                    writer.WriteVarString(contractName);
-                    writer.WriteVarInt(offset);
-                    writer.WriteVarInt(frequency);
-                    writer.Write((byte)mode);
+                    writer.WriteAddress(Owner);
+                    writer.WriteVarString(ContextName);
+                    writer.WriteVarInt(Offset);
+                    writer.WriteVarInt(Frequency);
+                    writer.Write((byte)Mode);
                 }
 
                 return stream.ToArray();

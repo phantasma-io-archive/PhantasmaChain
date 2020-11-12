@@ -13,12 +13,12 @@ namespace Phantasma.Domain
     public interface ITask
     {
         BigInteger ID { get; }
-        bool state { get; }
-        Address payer { get; }
-        string contractName { get; }
-        uint offset { get; }
-        uint frequency { get; }
-        TaskFrequencyMode mode { get; }
+        bool State { get; }
+        Address Owner { get; }
+        string ContextName { get; }
+        uint Offset { get; }
+        uint Frequency { get; }
+        TaskFrequencyMode Mode { get; }
     }
 
 }

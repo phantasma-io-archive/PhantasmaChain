@@ -670,8 +670,20 @@ namespace Phantasma.Blockchain
             }
             else
             {
-                using (var m = new ProfileMarker("Transaction.IsSignedBy"))
-                    accountResult = this.Transaction.IsSignedBy(address);
+                if (this.Transaction != null)
+                {
+                    using (var m = new ProfileMarker("Transaction.IsSignedBy"))
+                        accountResult = this.Transaction.IsSignedBy(address);
+                }
+                else
+                if (this.CurrentTask != null)
+                {
+                    accountResult = address == this.CurrentTask.Owner && this.CurrentContextName == this.CurrentTask.ContextName;
+                }
+                else
+                {
+                    throw new ChainException("IsWitness is being called from some weird context, possible bug?");
+                }
             }
 
             // workaround for supporting txs done in older nodes
@@ -1650,7 +1662,7 @@ namespace Phantasma.Blockchain
             vm.Expect(task != null, "invalid task");
             vm.Expect(this.Chain.StopTask(this.Storage, task.ID), "failed to stop task");
 
-            this.Notify(EventKind.TaskStop, task.payer, task.ID);
+            this.Notify(EventKind.TaskStop, task.Owner, task.ID);
         }
 
         public ITask GetTask(BigInteger taskID)

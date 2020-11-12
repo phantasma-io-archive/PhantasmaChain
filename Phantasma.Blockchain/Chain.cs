@@ -955,17 +955,17 @@ namespace Phantasma.Blockchain
 
         private bool ProcessPendingTask(Block block, OracleReader oracle, BigInteger minimumFee, StorageChangeSetContext changeSet, bool allowModify, ChainTask task)
         {
-            if (task.mode != TaskFrequencyMode.None)
+            if (task.Mode != TaskFrequencyMode.None)
             {
                 var taskKey = GetTaskKey(task.ID, "task_run");
                 BigInteger lastRun = changeSet.Has(taskKey) ? changeSet.Get<BigInteger>(taskKey) : 0;
 
-                switch (task.mode)
+                switch (task.Mode)
                 {
                     case TaskFrequencyMode.Blocks:
                         {
                             var diff = block.Height - lastRun;
-                            if (diff < task.frequency)
+                            if (diff < task.Frequency)
                             {
                                 return true; // skip execution for now
                             }
@@ -975,7 +975,7 @@ namespace Phantasma.Blockchain
                     case TaskFrequencyMode.Time:
                         {
                             var diff = block.Timestamp.Value - lastRun;
-                            if (diff < task.frequency)
+                            if (diff < task.Frequency)
                             {
                                 return true; // skip execution for now
                             }
