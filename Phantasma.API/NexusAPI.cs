@@ -649,7 +649,7 @@ namespace Phantasma.API
                 name = archive.Name,
                 time = archive.Time.Value,
                 size = (uint)archive.Size,                
-                key = Base16.Encode(archive.EncryptionKey),
+                key = archive.EncryptionAddress.Text,
                 blockCount = (int)archive.BlockCount,
                 missingBlocks = archive.MissingBlockIndices.ToArray(),
                 owners = archive.Owners.Select(x => x.Text).ToArray()

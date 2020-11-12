@@ -1117,10 +1117,10 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
 
-        public IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, byte[] encryptionKey)
+        public IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, Address encryptionAddress)
         {
             // TODO validation
-            var archive = Nexus.CreateArchive(this.RootStorage, merkleTree, owner, name, size, time, encryptionKey);
+            var archive = Nexus.CreateArchive(this.RootStorage, merkleTree, owner, name, size, time, encryptionAddress);
 
             var Runtime = this;
             Runtime.Notify(EventKind.FileCreate, owner, archive.Hash);

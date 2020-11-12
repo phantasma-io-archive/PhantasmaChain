@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain
         public BigInteger Size { get; private set; }
         public Timestamp Time { get; private set; }
 
-        public byte[] EncryptionKey { get; private set; }
+        public Address EncryptionAddress { get; private set; }
 
         public BigInteger BlockCount => this.GetBlockCount();
 
@@ -48,13 +48,13 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, byte[] encryptionKey, List<int> missingBlocks)
+        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, Address encryptionAddress, List<int> missingBlocks)
         {
             this.MerkleTree = tree;
             this.Name = name;
             this.Size = size;
             this.Time = time;
-            this.EncryptionKey = encryptionKey;
+            this.EncryptionAddress = encryptionAddress;
             this._missingBlocks = missingBlocks;
         }
 
@@ -69,7 +69,7 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(Name);
             writer.WriteBigInteger(Size);
             writer.Write(Time.Value);
-            writer.WriteByteArray(EncryptionKey);
+            writer.WriteAddress(EncryptionAddress);
             writer.WriteVarInt(_owners.Count);
             for (int i = 0; i < _owners.Count; i++)
             {
@@ -100,8 +100,7 @@ namespace Phantasma.Blockchain
             Name = reader.ReadVarString();
             Size = reader.ReadBigInteger();
             Time = new Timestamp(reader.ReadUInt32());
-            EncryptionKey = reader.ReadByteArray();
-            EncryptionKey = EncryptionKey ?? new byte[0];
+            EncryptionAddress = reader.ReadAddress();
 
             var ownerCount = (int)reader.ReadVarInt();
             _owners.Clear();

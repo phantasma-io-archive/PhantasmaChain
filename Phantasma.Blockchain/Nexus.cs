@@ -1469,12 +1469,12 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, byte[] encryptionKey)
+        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, Address encryptionAddress)
         {
             var archive = GetArchive(storage, merkleTree.Root);
             Throw.If(archive != null, "archive already exists");
 
-            archive = new Archive(merkleTree, name, size, time, encryptionKey,
+            archive = new Archive(merkleTree, name, size, time, encryptionAddress,
                 Enumerable.Range(0, (int)MerkleTree.GetChunkCountForSize(size)).ToList());
             var archiveHash = merkleTree.Root;
 

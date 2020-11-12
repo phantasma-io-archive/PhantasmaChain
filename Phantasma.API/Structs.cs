@@ -386,7 +386,7 @@ namespace Phantasma.API
         [APIDescription("Size of archive in bytes")]
         public uint size;
 
-        [APIDescription("Encryption public key")]
+        [APIDescription("Encryption address")]
         public string key;
 
         [APIDescription("Number of blocks")]

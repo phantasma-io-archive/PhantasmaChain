@@ -11,7 +11,7 @@ namespace Phantasma.Domain
         Hash Hash { get; }
         BigInteger Size { get; }
         Timestamp Time{ get; }
-        byte[] EncryptionKey { get; }
+        Address EncryptionAddress { get; }
 
         bool IsOwner(Address address);
     }

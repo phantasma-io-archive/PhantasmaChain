@@ -13,14 +13,14 @@ namespace Phantasma.Cryptography
 {
     public static class CryptoExtensions
     {
-        /*public static byte[] AES256Decrypt(this byte[] block, byte[] key)
+        public static byte[] AES256Decrypt(this byte[] block, byte[] key)
         {
-            using (var aes = Aes.Create())
+            using (var aes = NetCrypto.Aes.Create())
             {
                 aes.Key = key;
-                aes.Mode = CipherMode.ECB;
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor())
+                aes.Mode = NetCrypto.CipherMode.ECB;
+                aes.Padding = NetCrypto.PaddingMode.None;
+                using (var decryptor = aes.CreateDecryptor())
                 {
                     return decryptor.TransformFinalBlock(block, 0, block.Length);
                 }
@@ -29,18 +29,19 @@ namespace Phantasma.Cryptography
 
         public static byte[] AES256Encrypt(this byte[] block, byte[] key)
         {
-            using (Aes aes = Aes.Create())
+            using (var aes = NetCrypto.Aes.Create())
             {
                 aes.Key = key;
-                aes.Mode = CipherMode.ECB;
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor())
+                aes.Mode = NetCrypto.CipherMode.ECB;
+                aes.Padding = NetCrypto.PaddingMode.None;
+                using (var encryptor = aes.CreateEncryptor())
                 {
                     return encryptor.TransformFinalBlock(block, 0, block.Length);
                 }
             }
         }
 
+        /*
         public static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
         {
             if (data == null || key == null || iv == null) throw new ArgumentNullException();
