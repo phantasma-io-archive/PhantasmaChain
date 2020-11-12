@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Diagnostics;
 using System.Linq;
@@ -1043,37 +1043,25 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(7);
 
-            VMObject temp;
 
             var owner = vm.PopAddress();
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for name");
-            var name = temp.AsString();
-
+            var symbol = vm.PopString("symbol");
+            var name = vm.PopString("name");
             var maxSupply = vm.PopNumber("maxSupply");
-
             var decimals = (int)vm.PopNumber("decimals");
 
-            temp = vm.Stack.Pop();
+            var temp = vm.Stack.Pop();
             vm.Expect(temp.Type == VMType.Enum, "expected enum for flags");
             var flags = temp.AsEnum<TokenFlags>();
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
-            var script = temp.AsByteArray();
+            var script = vm.PopBytes("script");
 
             ContractInterface abi;
 
             if (vm.ProtocolVersion >= 4)
             {
-                temp = vm.Stack.Pop();
-                vm.Expect(temp.Type == VMType.Bytes, "expected bytes for script");
-                var abiBytes = temp.AsByteArray();
+                var abiBytes = vm.PopBytes("abi bytes");
                 abi = ContractInterface.FromBytes(abiBytes);
             }
             else
@@ -1088,23 +1076,12 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreateChain(RuntimeVM vm)
         {
-            vm.ExpectStackSize(3);
-
-            VMObject temp;
+            vm.ExpectStackSize(4);
 
             var source = vm.PopAddress();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for organization");
-            var org = temp.AsString();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for name");
-            var name = temp.AsString();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for parent");
-            var parentName = temp.AsString();
+            var org = vm.PopString("organization");
+            var name = vm.PopString("name");
+            var parentName = vm.PopString("parent");
 
             vm.CreateChain(source, org, name, parentName);
 
@@ -1113,25 +1090,13 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreatePlatform(RuntimeVM vm)
         {
-            vm.ExpectStackSize(3);
-
-            VMObject temp;
+            vm.ExpectStackSize(5);
 
             var source = vm.PopAddress();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for name");
-            var name = temp.AsString();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for pubaddress");
-            var externalAddress = temp.AsString();
-
+            var name = vm.PopString("name");
+            var externalAddress = vm.PopString("external address");
             var interopAddress = vm.PopAddress();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            var symbol = vm.PopString("symbol");
 
             var target = vm.CreatePlatform(source, name, externalAddress, interopAddress, symbol);
 
