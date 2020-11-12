@@ -44,6 +44,7 @@ namespace Phantasma.Blockchain
         public const string PrivacyContractName = "privacy";
         public const string RelayContractName = "relay";
         public const string RankingContractName = "ranking";
+        public const string MailContractName = "mail";
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
         public const string FuelPerContractDeployTag = "nexus.contract.cost";
@@ -1033,9 +1034,9 @@ namespace Phantasma.Blockchain
             sb.CallInterop(deployInterop, owner.Address, RelayContractName);
             sb.CallInterop(deployInterop, owner.Address, RankingContractName);
             sb.CallInterop(deployInterop, owner.Address, PrivacyContractName);
+            sb.CallInterop(deployInterop, owner.Address, MailContractName);
             sb.CallInterop(deployInterop, owner.Address, "friends");
             sb.CallInterop(deployInterop, owner.Address, "market");
-            sb.CallInterop(deployInterop, owner.Address, "mail");
             sb.CallInterop(deployInterop, owner.Address, "sale");
 
             var orgInterop = "Nexus.CreateOrganization";
@@ -1135,7 +1136,7 @@ namespace Phantasma.Blockchain
             CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
             CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
             CreateToken(storage, "ETH", "Ethereum", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
-            CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
+            //CreateToken(storage, "DAI", "Dai Stablecoin", owner, UnitConversion.ToBigInteger(0, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Foreign, tokenScript, abi);
             //GenerateToken(_owner, "EOS", "EOS", "EOS", UnitConversion.ToBigInteger(1006245120, 18), 18, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Divisible | TokenFlags.External, tokenScript, abi);
 
             SetTokenPlatformHash(DomainSettings.StakingTokenSymbol, "neo", Hash.FromUnpaddedHex("ed07cffad18f1308db51920d99a2af60ac66a7b3"), storage);
