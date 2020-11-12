@@ -5,7 +5,7 @@ namespace Phantasma.Domain
 {
     public enum TaskFrequencyMode
     {
-        None,
+        Always,
         Time,
         Blocks,
     }

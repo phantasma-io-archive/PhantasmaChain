@@ -1640,7 +1640,7 @@ namespace Phantasma.Blockchain
             vm.Expect(contract is CustomContract, "contract used for task must be custom");
             vm.Expect(contract.ABI.Implements(method), "contract abi does not implement method: " + method.name);
 
-            if (mode != TaskFrequencyMode.None) 
+            if (mode != TaskFrequencyMode.Always) 
             {
                 vm.Expect(frequency > 0, "invalid frequency");
             }
