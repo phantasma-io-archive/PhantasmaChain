@@ -1209,9 +1209,9 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(1);
 
-            var from = vm.PopAddress();
             var contractName = vm.PopString("contract");
             var methodBytes = vm.PopBytes("method bytes");
+            var from = vm.PopAddress();
             var frequency = (int)vm.PopNumber("frequency");
             var mode = vm.PopEnum<TaskFrequencyMode>("mode");
 
