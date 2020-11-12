@@ -439,7 +439,7 @@ namespace Phantasma.Simulator
         }
 
         public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply,
-                int decimals, TokenFlags flags, byte[] tokenScript = null, Dictionary<string, int> labels = null)
+                int decimals, TokenFlags flags, byte[] tokenScript = null, Dictionary<string, int> labels = null, IEnumerable<ContractMethod> customMethods = null)
         {
             var version = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
             if (labels == null)
@@ -509,9 +509,20 @@ namespace Phantasma.Simulator
             if (version >= 4)
             {
                 var triggerMap = new Dictionary<AccountTrigger, int>();
-                triggerMap[AccountTrigger.OnMint] = labels[AccountTrigger.OnMint.ToString()];
+
+                var onMintLabel = AccountTrigger.OnMint.ToString();
+                if (labels.ContainsKey(onMintLabel))
+                {
+                    triggerMap[AccountTrigger.OnMint] = labels[onMintLabel];
+                }
 
                 var methods = AccountContract.GetTriggersForABI(triggerMap);
+
+                if (customMethods != null)
+                {
+                    methods = methods.Concat(customMethods);
+                }
+
                 var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
                 var abiBytes = abi.ToByteArray();
 

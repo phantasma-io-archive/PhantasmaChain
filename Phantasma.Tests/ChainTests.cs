@@ -16,6 +16,7 @@ using Phantasma.Domain;
 using Phantasma.Core.Types;
 using Phantasma.VM;
 using System.Collections.Generic;
+using Phantasma.Storage;
 
 namespace Phantasma.Tests
 {
@@ -163,9 +164,23 @@ namespace Phantasma.Tests
             var accountChain = nexus.GetChainByName("account");
             var symbol = "BLA";
 
+            var tokenAsm = new string[]
+            {
+                "LOAD r1 42",
+                "PUSH r1",
+                "RET"
+            };
+
+            var tokenScript = AssemblerUtils.BuildScript(tokenAsm);
+
+            var methods = new ContractMethod[]
+            {
+                new ContractMethod("mycall", VMType.Number, 0, new ContractParameter[0])
+            };
+
             var tokenSupply = UnitConversion.ToBigInteger(10000, 18);
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible);
+            simulator.GenerateToken(owner, symbol, "BlaToken", tokenSupply, 18, TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite | TokenFlags.Divisible, tokenScript, null, methods);
             simulator.MintTokens(owner, owner.Address, symbol, tokenSupply);
             simulator.EndBlock();
 
@@ -191,6 +206,26 @@ namespace Phantasma.Tests
             var newBalance = nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, token, owner.Address);
 
             Assert.IsTrue(transferBalance + newBalance == oldBalance);
+
+            Assert.IsTrue(nexus.RootChain.IsContractDeployed(nexus.RootChain.Storage, symbol));
+
+            // try call token contract method
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(owner, ProofOfWork.None, () =>
+            {
+                return new ScriptBuilder()
+                .AllowGas(owner.Address, Address.Null, simulator.MinimumFee, 999)
+                .CallContract(symbol, "mycall")
+                .SpendGas(owner.Address)
+                .EndScript();
+            });
+            var block = simulator.EndBlock().First();
+
+            var callResultBytes = block.GetResultForTransaction(tx.Hash);
+            var callResult = Serialization.Unserialize<VMObject>(callResultBytes);
+            var num = callResult.AsNumber();
+
+            Assert.IsTrue(num == 42);
         }
 
         [TestMethod]
