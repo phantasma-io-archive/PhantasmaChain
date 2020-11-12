@@ -163,7 +163,7 @@ namespace Phantasma.Blockchain
                 {
                     using (var m = new ProfileMarker("ExecuteTransaction"))
                     {
-                        if (ExecuteTransaction(txIndex, tx, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
+                        if (ExecuteTransaction(txIndex, tx, tx.Script, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
                         {
                             // merge transaction oracle data 
                             oracle.MergeTxData();
@@ -301,9 +301,9 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        private bool ExecuteTransaction(int index, Transaction transaction, Timestamp time, StorageChangeSetContext changeSet
+        private bool ExecuteTransaction(int index, Transaction transaction, byte[] script, Timestamp time, StorageChangeSetContext changeSet
                 , Action<Hash, Event> onNotify, OracleReader oracle, ITask task, BigInteger minimumFee, out VMObject result, bool allowModify = true)
-        {
+        { 
             result = null;
 
             uint offset = 0;
@@ -311,7 +311,7 @@ namespace Phantasma.Blockchain
             RuntimeVM runtime;
             using (var m = new ProfileMarker("new RuntimeVM"))
             {
-                runtime = new RuntimeVM(index, transaction.Script, offset, this, time, transaction, changeSet, oracle, task, false);
+                runtime = new RuntimeVM(index, script, offset, this, time, transaction, changeSet, oracle, task, false);
             }
             runtime.MinimumFee = minimumFee;
             runtime.ThrowOnFault = true;
@@ -874,7 +874,7 @@ namespace Phantasma.Blockchain
             return key;
         }
 
-        public ITask StartTask(StorageContext storage, Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode)
+        public ITask StartTask(StorageContext storage, Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit)
         {
             if (!IsContractDeployed(storage, contractName))
             {
@@ -882,7 +882,7 @@ namespace Phantasma.Blockchain
             }
 
             var taskID = GenerateUID(storage);
-            var task = new ChainTask(taskID, from, contractName, (uint)method.offset, (uint)frequency, mode, true);
+            var task = new ChainTask(taskID, from, contractName, method.name, (uint)frequency, mode, gasLimit, true);
 
             var taskKey = GetTaskKey(taskID, "task_info");
 
@@ -986,8 +986,14 @@ namespace Phantasma.Blockchain
 
             using (var m = new ProfileMarker("ExecuteTask"))
             {
+                var taskScript = new ScriptBuilder()
+                    .AllowGas(task.Owner, Address.Null, minimumFee, task.GasLimit)
+                    .CallContract(task.ContextName, task.Method)
+                    .SpendGas(task.Owner)
+                    .EndScript();
+
                 VMObject result;
-                if (ExecuteTransaction(-1, null, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out result, allowModify))
+                if (ExecuteTransaction(-1, null, taskScript, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out result, allowModify))
                 {
                     // merge transaction oracle data 
                     oracle.MergeTxData();

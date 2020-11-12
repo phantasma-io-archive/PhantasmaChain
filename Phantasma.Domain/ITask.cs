@@ -16,9 +16,10 @@ namespace Phantasma.Domain
         bool State { get; }
         Address Owner { get; }
         string ContextName { get; }
-        uint Offset { get; }
+        string Method { get; }
         uint Frequency { get; }
         TaskFrequencyMode Mode { get; }
+        BigInteger GasLimit { get; }
     }
 
 }

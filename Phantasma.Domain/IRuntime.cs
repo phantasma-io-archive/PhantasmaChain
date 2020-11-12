@@ -152,7 +152,7 @@ namespace Phantasma.Domain
 
         byte[] ReadOracle(string URL);
 
-        ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode);
+        ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit);
         void StopTask(ITask task);
         ITask GetTask(BigInteger taskID);
     }

@@ -14,18 +14,20 @@ namespace Phantasma.Blockchain
         public bool State { get; private set; }
         public Address Owner { get; private set; }
         public string ContextName { get; private set; }
-        public uint Offset { get; private set; }
+        public string Method { get; private set; }
         public uint Frequency { get; private set; }
         public TaskFrequencyMode Mode { get; private set; }
+        public BigInteger GasLimit { get; private set; }
 
-        public ChainTask(BigInteger ID, Address payer, string contractName, uint offset, uint frequency, TaskFrequencyMode mode, bool state)
+        public ChainTask(BigInteger ID, Address payer, string contractName, string method, uint frequency, TaskFrequencyMode mode, BigInteger gasLimit, bool state)
         {
             this.ID = ID;
             this.Owner = payer;
             this.ContextName = contractName;
-            this.Offset = offset;
+            this.Method = method;
             this.Frequency = frequency;
             this.Mode = mode;
+            this.GasLimit = gasLimit;
             this.State = state;
         }
 
@@ -37,9 +39,10 @@ namespace Phantasma.Blockchain
                 {
                     writer.WriteAddress(Owner);
                     writer.WriteVarString(ContextName);
-                    writer.WriteVarInt(Offset);
+                    writer.WriteVarString(Method);
                     writer.WriteVarInt(Frequency);
                     writer.Write((byte)Mode);
+                    writer.WriteBigInteger(GasLimit);
                 }
 
                 return stream.ToArray();
@@ -54,11 +57,12 @@ namespace Phantasma.Blockchain
                 {
                     var payer = reader.ReadAddress();
                     var contractName = reader.ReadVarString();
-                    var offset = (uint)reader.ReadVarInt();
+                    var method = reader.ReadVarString();
                     var frequency = (uint) reader.ReadVarInt();
                     var mode = (TaskFrequencyMode)reader.ReadByte();
+                    var gasLimit = reader.ReadBigInteger();
 
-                    return new ChainTask(taskID, payer, contractName, offset, frequency, mode, true);
+                    return new ChainTask(taskID, payer, contractName, method, frequency, mode, gasLimit, true);
                 }
             }
         }

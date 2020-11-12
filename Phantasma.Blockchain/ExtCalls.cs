@@ -1214,10 +1214,11 @@ namespace Phantasma.Blockchain
             var from = vm.PopAddress();
             var frequency = (int)vm.PopNumber("frequency");
             var mode = vm.PopEnum<TaskFrequencyMode>("mode");
+            var gasLimit = vm.PopNumber("gas limit");
 
             var method = ContractMethod.FromBytes(methodBytes);
 
-            var task = vm.StartTask(from, contractName, method, frequency, mode);
+            var task = vm.StartTask(from, contractName, method, frequency, mode, gasLimit);
 
             var result = new VMObject();
             result.SetValue(task.ID);
