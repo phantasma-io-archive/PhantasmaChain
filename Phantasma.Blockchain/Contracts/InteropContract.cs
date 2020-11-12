@@ -282,7 +282,7 @@ namespace Phantasma.Blockchain.Contracts
             var feeBalance = Runtime.GetBalance(feeSymbol, from);
             if (feeBalance < feeAmount)
             {
-                Runtime.CallContext(NativeContractKind.Swap, "SwapReverse", from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
+                Runtime.CallNativeContext(NativeContractKind.Swap, "SwapReverse", from, DomainSettings.FuelTokenSymbol, feeSymbol, feeAmount);
 
                 feeBalance = Runtime.GetBalance(feeSymbol, from);
                 Runtime.Expect(feeBalance >= feeAmount, $"missing {feeSymbol} for interop swap");

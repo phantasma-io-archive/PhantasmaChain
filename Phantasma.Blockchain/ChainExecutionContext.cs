@@ -46,7 +46,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    usedQuota = runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedDataQuota), this.Contract.Address).AsNumber();
+                    usedQuota = runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.GetUsedDataQuota), this.Contract.Address).AsNumber();
                 }
 
                 if (usedQuota > 0)

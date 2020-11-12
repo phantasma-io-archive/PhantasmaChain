@@ -311,7 +311,7 @@ namespace Phantasma.Blockchain.Contracts
 
             if (poll.organization == DomainSettings.StakersOrganizationName)
             {
-                votingPower = Runtime.CallContext(NativeContractKind.Stake, nameof(StakeContract.GetAddressVotingPower), from).AsNumber();
+                votingPower = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetAddressVotingPower), from).AsNumber();
             }
             else
             {

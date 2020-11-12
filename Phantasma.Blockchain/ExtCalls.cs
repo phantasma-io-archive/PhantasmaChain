@@ -436,7 +436,7 @@ namespace Phantasma.Blockchain
             var valBytes = obj.AsByteArray();
 
             var contractAddress = SmartContract.GetAddressForName(contractName);
-            vm.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, key, valBytes);
+            vm.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, key, valBytes);
 
             return ExecutionState.Running;
         }
@@ -453,7 +453,7 @@ namespace Phantasma.Blockchain
             var key = SmartContract.GetKeyForField(contractName, field, false);
 
             var contractAddress = SmartContract.GetAddressForName(contractName);
-            vm.CallContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, key);
+            vm.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, key);
 
             return ExecutionState.Running;
         }
@@ -950,7 +950,7 @@ namespace Phantasma.Blockchain
 
             if (constructor != null)
             {
-                vm.CallContext(0, contractName, SmartContract.ConstructorName, from);
+                vm.CallContext(contractName, constructor, from);
             }
 
             vm.Notify(EventKind.ContractDeploy, from, contractName);

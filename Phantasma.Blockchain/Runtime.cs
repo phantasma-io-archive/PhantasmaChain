@@ -160,7 +160,7 @@ namespace Phantasma.Blockchain
             return null;
         }
 
-        public VMObject CallContext(uint jumpOffset, string contextName, string methodName, params object[] args)
+        public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
             var previousContext = CurrentContext;
             var previousCaller = this.EntryAddress;
@@ -477,12 +477,13 @@ namespace Phantasma.Blockchain
                         {
                             return InvokeTrigger(allowThrow, customContract.Script, contract.Name, contract.ABI, triggerName, args);
                         }
-                        else
-                        if (contract is NativeContract)
+
+                        var native = contract as NativeContract;
+                        if (native != null)
                         {
                             try
-                            {
-                                CallContext(0, contract.Name, triggerName, args);
+                            {                                
+                                this.CallNativeContext(native.Kind,  triggerName, args);
                                 return TriggerResult.Success;
                             }
                             catch (Exception e)
@@ -1039,6 +1040,14 @@ namespace Phantasma.Blockchain
             }
 
             Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script, abi);
+
+            var constructor = abi.FindMethod(SmartContract.ConstructorName);
+
+            if (constructor != null)
+            {
+                Runtime.CallContext(symbol, constructor, owner);
+            }
+
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
 
@@ -1282,7 +1291,7 @@ namespace Phantasma.Blockchain
             if (destination.IsInterop)
             {
                 Runtime.Expect(Runtime.Chain.IsRoot, "interop transfers only allowed in main chain");
-                Runtime.CallContext(NativeContractKind.Interop, "WithdrawTokens", source, destination, symbol, amount);
+                Runtime.CallNativeContext(NativeContractKind.Interop, "WithdrawTokens", source, destination, symbol, amount);
                 return;
             }
 

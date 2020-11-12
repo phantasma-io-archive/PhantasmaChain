@@ -32,7 +32,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(archive.EncryptionAddress == from, "mail archive not properly encrypted");
 
-            Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.AddFile), from, target, archiveHash);
+            Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.AddFile), from, target, archiveHash);
         }
 
         #region domains
@@ -84,7 +84,7 @@ namespace Phantasma.Blockchain.Contracts
             var users = GetDomainUsers(domainName);
             foreach (var user in users)
             {
-                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.MigratePermission), user, from, target);
+                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.MigratePermission), user, from, target);
             }
 
             Runtime.Notify(EventKind.AddressMigration, from, target);

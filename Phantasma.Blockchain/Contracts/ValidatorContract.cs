@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Contracts
             var expectedType = index < GetMaxPrimaryValidators() ? ValidatorType.Primary : ValidatorType.Secondary;
             Runtime.Expect(type == expectedType, "unexpected validator type");
 
-            var requiredStake = Runtime.CallContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterThreshold), target).AsNumber();
+            var requiredStake = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterThreshold), target).AsNumber();
             var stakedAmount = Runtime.GetStake(target);
 
             Runtime.Expect(stakedAmount >= requiredStake, "not enough stake");
@@ -203,7 +203,7 @@ namespace Phantasma.Blockchain.Contracts
                     if (primaryValidators > 1)
                     {
                         var pollName = ConsensusContract.SystemPoll + ValidatorPollTag;
-                        var obtainedRank = Runtime.CallContext(NativeContractKind.Consensus, "GetRank", pollName, target).AsNumber();
+                        var obtainedRank = Runtime.CallNativeContext(NativeContractKind.Consensus, "GetRank", pollName, target).AsNumber();
                         Runtime.Expect(obtainedRank >= 0, "no consensus for electing this address");
                         Runtime.Expect(obtainedRank == index, "this address was elected at a different index");
                     }
@@ -300,7 +300,7 @@ namespace Phantasma.Blockchain.Contracts
             var entry = _validators.Get<BigInteger, ValidatorEntry>(index);
             Runtime.Expect(entry.type == ValidatorType.Primary || entry.type == ValidatorType.Secondary, "not active validator");
 
-            Runtime.CallContext(NativeContractKind.Stake, "Migrate", from, to);
+            Runtime.CallNativeContext(NativeContractKind.Stake, "Migrate", from, to);
 
             entry.address = to;
             _validators.Set<BigInteger, ValidatorEntry>(index, entry);

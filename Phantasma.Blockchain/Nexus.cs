@@ -928,7 +928,7 @@ namespace Phantasma.Blockchain
             var bytes = content.ToByteArray();
             if (Runtime.ProtocolVersion >= 4)
             {
-                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
             }
             else
             {
@@ -949,7 +949,7 @@ namespace Phantasma.Blockchain
 
             if (Runtime.ProtocolVersion >= 4)
             {
-                Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
+                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
             }
             else
             {
@@ -978,7 +978,7 @@ namespace Phantasma.Blockchain
 
                 if (Runtime.ProtocolVersion >= 4)
                 {
-                    Runtime.CallContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
+                    Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
                 }
                 else
                 {

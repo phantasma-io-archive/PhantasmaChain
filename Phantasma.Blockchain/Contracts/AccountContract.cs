@@ -87,21 +87,28 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(!_scriptMap.ContainsKey(target), "address already has a script");
 
-            var contractABI = ContractInterface.FromBytes(abiBytes);
-            Runtime.Expect(contractABI.MethodCount > 0, "unexpected empty contract abi");
+            var abi = ContractInterface.FromBytes(abiBytes);
+            Runtime.Expect(abi.MethodCount > 0, "unexpected empty contract abi");
 
             var witnessTriggerName = AccountTrigger.OnWitness.ToString();
-            if (contractABI.HasMethod(witnessTriggerName))
+            if (abi.HasMethod(witnessTriggerName))
             {
-                var witnessCheck = Runtime.InvokeTrigger(false, script, NativeContractKind.Account, contractABI, witnessTriggerName, Address.Null) != TriggerResult.Failure;
+                var witnessCheck = Runtime.InvokeTrigger(false, script, NativeContractKind.Account, abi, witnessTriggerName, Address.Null) != TriggerResult.Failure;
                 Runtime.Expect(!witnessCheck, "script does not handle OnWitness correctly, case #1");
 
-                witnessCheck = Runtime.InvokeTrigger(false, script, NativeContractKind.Account, contractABI, witnessTriggerName, target) != TriggerResult.Failure;
+                witnessCheck = Runtime.InvokeTrigger(false, script, NativeContractKind.Account, abi, witnessTriggerName, target) != TriggerResult.Failure;
                 Runtime.Expect(witnessCheck, "script does not handle OnWitness correctly, case #2");
             }
 
             _scriptMap.Set(target, script);
             _abiMap.Set(target, abiBytes);
+
+            var constructor = abi.FindMethod(SmartContract.ConstructorName);
+
+            if (constructor != null)
+            {
+                Runtime.CallContext(target.Text, constructor, target);
+            }
 
             // TODO? Runtime.Notify(EventKind.AddressRegister, target, script);
         }

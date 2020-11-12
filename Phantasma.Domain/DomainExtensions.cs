@@ -78,11 +78,6 @@ namespace Phantasma.Domain
             return runtime.GetBlockByHeight(runtime.Chain.Height);
         }
 
-        public static VMObject CallContext(this IRuntime runtime, NativeContractKind nativeContract, string methodName, params object[] args)
-        {
-            return runtime.CallContext(0, nativeContract.GetName(), methodName, args);
-        }
-
         public static IContract GetContract(this IRuntime runtime, NativeContractKind nativeContract)
         {
             return runtime.GetContract(nativeContract.GetName());
@@ -305,10 +300,28 @@ namespace Phantasma.Domain
                 }
             }
         }
-
         public static TriggerResult InvokeTrigger(this IRuntime runtime, bool allowThrow, byte[] script, NativeContractKind contextName, ContractInterface abi, string triggerName, params object[] args)
         {
             return runtime.InvokeTrigger(allowThrow, script, contextName.ToString().ToLower(), abi, triggerName, args);
+        }
+
+        public static VMObject CallContext(this IRuntime runtime, string contextName, ContractMethod method, params object[] args)
+        {
+            runtime.Expect(method != null, "trying to call null method for context: " + contextName);
+
+            NativeContractKind nativeKind;
+            if (Enum.TryParse<NativeContractKind>(contextName, true, out nativeKind))
+            {
+                return runtime.CallContext(contextName, 0, method.name, args);
+            }
+
+            runtime.Expect(method.offset >= 0, "invalid offset for method: " + method.name);
+            return runtime.CallContext(contextName, (uint)method.offset, method.name, args);
+        }
+
+        public static VMObject CallNativeContext(this IRuntime runtime, NativeContractKind nativeContract, string methodName, params object[] args)
+        {
+            return runtime.CallContext(nativeContract.GetName(), 0, methodName, args);
         }
     }
 }
