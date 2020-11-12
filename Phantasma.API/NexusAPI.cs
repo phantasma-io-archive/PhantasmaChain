@@ -660,8 +660,8 @@ namespace Phantasma.API
         {
             var storage = new StorageResult();
 
-            storage.used = (int)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetUsedSpace), address).AsNumber();
-            storage.available = (int)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetAvailableSpace), address).AsNumber();
+            storage.used = (uint)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetUsedSpace), address).AsNumber();
+            storage.available = (uint)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetAvailableSpace), address).AsNumber();
 
             if (storage.used > 0)
             {

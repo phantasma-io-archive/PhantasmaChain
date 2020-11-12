@@ -76,10 +76,10 @@ namespace Phantasma.API
     public struct StorageResult : IAPIResult
     {
         [APIDescription("Amount of available storage bytes")]
-        public int available;
+        public uint available;
 
         [APIDescription("Amount of used storage bytes")]
-        public int used;
+        public uint used;
 
         [APIDescription("Avatar data")]
         public string avatar;
