@@ -40,12 +40,15 @@ namespace Phantasma.Blockchain
         public readonly bool readOnlyMode;
 
         public BigInteger MinimumFee;
+        
+        public ITask CurrentTask { get; private set; }
+
 
         private readonly StorageChangeSetContext changeSet;
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
-        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, bool readOnlyMode, bool delayPayment = false, string contextName = null) : base(script, offset, contextName)
+        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, ITask currentTask, bool readOnlyMode, bool delayPayment = false, string contextName = null) : base(script, offset, contextName)
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
@@ -60,6 +63,7 @@ namespace Phantasma.Blockchain
             this.PaidGas = 0;
             this.GasTarget = chain.Address;
             this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
+            this.CurrentTask = currentTask;
             this.DelayPayment = delayPayment;
 
             this._randomSeed = 0;
@@ -551,7 +555,7 @@ namespace Phantasma.Blockchain
             }
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
-            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, false, true, contextName);
+            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName);
             
             //runtime.ThrowOnFault = true; // enable only if debugging some issue...
 
@@ -1596,6 +1600,63 @@ namespace Phantasma.Blockchain
         public Address GetContractOwner(Address address)
         {
             return this.Chain.GetContractOwner(this.Storage, address);
+        }
+
+        public ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode)
+        {
+            var vm = this;
+
+            vm.Expect(ValidationUtils.IsValidIdentifier(contractName), "invalid contract name");
+            vm.Expect(method.offset >= 0, "invalid method offset");
+
+            vm.Expect(method.returnType == VMType.Bool, "method used in task must have bool as return type");
+
+            var contract = this.Chain.GetContractByName(this.Storage, contractName);
+            vm.Expect(contract != null, "contract not found: " + contractName);
+
+            vm.Expect(contract is CustomContract, "contract used for task must be custom");
+            vm.Expect(contract.ABI.Implements(method), "contract abi does not implement method: " + method.name);
+
+            if (mode != TaskFrequencyMode.None) 
+            {
+                vm.Expect(frequency > 0, "invalid frequency");
+            }
+            else
+            {
+                vm.Expect(frequency == 0, "invalid frequency");
+            }
+
+            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, mode);
+            vm.Expect(result != null, "could not start task");
+
+            this.Notify(EventKind.TaskStart, from, result.ID);
+
+            return result;
+        }
+
+        public void StopTask(ITask task)
+        {
+            var vm = this;
+
+            vm.Expect(task != null, "invalid task");
+            vm.Expect(this.Chain.StopTask(this.Storage, task.ID), "failed to stop task");
+
+            this.Notify(EventKind.TaskStop, task.payer, task.ID);
+        }
+
+        public ITask GetTask(BigInteger taskID)
+        {
+            if (taskID <= 0)
+            {
+                return null;
+            }
+
+            if (CurrentTask != null && CurrentTask.ID == taskID)
+            {
+                return CurrentTask;
+            }
+
+            return this.Chain.GetTask(this.Storage, taskID);
         }
 
         public bool HasGenesis => Nexus.HasGenesis;

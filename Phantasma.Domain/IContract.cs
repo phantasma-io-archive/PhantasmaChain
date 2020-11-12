@@ -329,6 +329,17 @@ namespace Phantasma.Domain
             return $"{name} : {returnType}";
         }
 
+        public static ContractMethod FromBytes(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    return Unserialize(reader);
+                }
+            }
+        }
+
         public static ContractMethod Unserialize(BinaryReader reader)
         {
             var name = reader.ReadVarString();

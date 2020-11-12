@@ -543,7 +543,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, "NEO"));
 
             var context = new StorageChangeSetContext(nexus.RootStorage);
-            var runtime = new RuntimeVM(-1, new byte[0], 0, nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), true);
+            var runtime = new RuntimeVM(-1, new byte[0], 0, nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), ChainTask.Null, true);
 
             var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
             var price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);

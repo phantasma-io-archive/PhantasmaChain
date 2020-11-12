@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Diagnostics;
 using System.Linq;
@@ -55,6 +55,11 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Nexus.SetTokenPlatformHash", Runtime_SetTokenPlatformHash);
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
+
+            vm.RegisterMethod("Task.Start", Task_Start);
+            vm.RegisterMethod("Task.Stop", Task_Stop);
+            vm.RegisterMethod("Task.Get", Task_Get);
+            vm.RegisterMethod("Task.Current", Task_Current);
 
             vm.RegisterMethod("Data.Get", Data_Get);
             vm.RegisterMethod("Data.Set", Data_Set);
@@ -272,7 +277,6 @@ namespace Phantasma.Blockchain
             vm.Stack.Push(result);
             return ExecutionState.Running;
         }
-
 
         private static ExecutionState Runtime_TransactionHash(RuntimeVM vm)
         {
@@ -1043,18 +1047,13 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(7);
 
-
             var owner = vm.PopAddress();
 
             var symbol = vm.PopString("symbol");
             var name = vm.PopString("name");
             var maxSupply = vm.PopNumber("maxSupply");
             var decimals = (int)vm.PopNumber("decimals");
-
-            var temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Enum, "expected enum for flags");
-            var flags = temp.AsEnum<TokenFlags>();
-
+            var flags = vm.PopEnum<TokenFlags>("flags");
             var script = vm.PopBytes("script");
 
             ContractInterface abi;
@@ -1169,5 +1168,63 @@ namespace Phantasma.Blockchain
                 }
             }
         }
+
+        private static ExecutionState Task_Current(RuntimeVM vm)
+        {
+            var result = new VMObject();
+            result.SetValue(vm.CurrentTask);
+            vm.Stack.Push(result);
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Task_Get(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var taskID = vm.PopNumber("task");
+            var task = (ChainTask)vm.GetTask(taskID);
+
+            var result = new VMObject();
+            result.SetValue(task);
+            vm.Stack.Push(result);
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Task_Stop(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            vm.Expect(vm.CurrentTask == null, "cannot stop task from within a task");
+
+            var taskID = vm.PopNumber("task");
+            var task = vm.GetTask(taskID);
+            vm.Expect(task != null, "task not found");
+
+            vm.StopTask(task);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Task_Start(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(1);
+
+            var from = vm.PopAddress();
+            var contractName = vm.PopString("contract");
+            var methodBytes = vm.PopBytes("method bytes");
+            var frequency = (int)vm.PopNumber("frequency");
+            var mode = vm.PopEnum<TaskFrequencyMode>("mode");
+
+            var method = ContractMethod.FromBytes(methodBytes);
+
+            var task = vm.StartTask(from, contractName, method, frequency, mode);
+
+            var result = new VMObject();
+            result.SetValue(task.ID);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
     }
 }

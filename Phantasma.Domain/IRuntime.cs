@@ -15,6 +15,8 @@ namespace Phantasma.Domain
         bool IsTrigger { get; }
         int TransactionIndex { get; }
 
+        ITask CurrentTask { get; }
+
         Address GasTarget { get; }
         BigInteger UsedGas { get; }
         BigInteger GasPrice { get; }
@@ -149,5 +151,9 @@ namespace Phantasma.Domain
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
 
         byte[] ReadOracle(string URL);
+
+        ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode);
+        void StopTask(ITask task);
+        ITask GetTask(BigInteger taskID);
     }
 }

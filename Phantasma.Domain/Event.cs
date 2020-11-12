@@ -61,6 +61,8 @@ namespace Phantasma.Domain
         OwnerRemoved = 51,
         DomainCreate = 52,
         DomainDelete = 53,
+        TaskStart = 54,
+        TaskStop = 55,
         Custom = 64,
     }
 
