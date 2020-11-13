@@ -73,6 +73,7 @@ namespace Phantasma.VM.Utils
             table["Runtime.TransferToken"] = 4;
             table["Runtime.MintToken"] = 4;
             table["Runtime.BurnToken"] = 3;
+            table["Runtime.InfuseToken"] = 5;
 
             table["Nexus.CreateToken"] = 7;
 
