@@ -85,12 +85,12 @@ namespace Phantasma.Blockchain
             */
 
             vm.RegisterMethod("ABI()", Constructor_ABI);
-            vm.RegisterMethod("Address()", Constructor_Address);
+            vm.RegisterMethod("Address()", Constructor_AddressV2);
             vm.RegisterMethod("Hash()", Constructor_Hash);
-            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);          
+            vm.RegisterMethod("Timestamp()", Constructor_Timestamp);
         }
 
-        private static ExecutionState Constructor_Object<IN,OUT>(VirtualMachine vm, Func<IN, OUT> loader) 
+        private static ExecutionState Constructor_Object<IN, OUT>(VirtualMachine vm, Func<IN, OUT> loader)
         {
             var rawInput = vm.Stack.Pop();
             var inputType = VMObject.GetVMType(typeof(IN));
@@ -129,6 +129,15 @@ namespace Phantasma.Blockchain
                 Throw.If(addressData.Length != Address.LengthInBytes, "cannot build Address from invalid data");
                 return Address.FromBytes(addressData);
             });
+        }
+
+        public static ExecutionState Constructor_AddressV2(RuntimeVM vm)
+        {
+            var addr = vm.PopAddress();
+            var temp = new VMObject();
+            temp.SetValue(addr);
+            vm.Stack.Push(temp);
+            return ExecutionState.Running;
         }
 
         public static ExecutionState Constructor_Hash(VirtualMachine vm)

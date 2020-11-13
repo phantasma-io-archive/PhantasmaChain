@@ -1,11 +1,12 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -76,29 +77,47 @@ namespace Phantasma.Blockchain
         public static Address PopAddress(this RuntimeVM vm)
         {
             var temp = vm.Stack.Pop();
-            if (temp.Type == VMType.String)
+
+            switch (temp.Type)
             {
-                var text = temp.AsString();
-                //TODO_FIX_TX
-                //if (Address.IsValidAddress(text) && vm.Chain.Height > 65932)
-                if (Address.IsValidAddress(text) && vm.ProtocolVersion >= 2)
-                {
-                    return Address.FromText(text);
-                }
-                return vm.Nexus.LookUpName(vm.Storage, text);
+                case VMType.String:
+                    {
+                        var text = temp.AsString();
+                        if (Address.IsValidAddress(text) && vm.ProtocolVersion >= 2)
+                        {
+                            return Address.FromText(text);
+                        }
+                        return vm.Nexus.LookUpName(vm.Storage, text);
+                    }
+
+                case VMType.Bytes:
+                    {
+                        var bytes = temp.AsByteArray();
+
+                        if (bytes == null || bytes.Length == 0)
+                        {
+                            return Address.Null;
+                        }
+
+                        var addressData = bytes;
+                        if (addressData.Length == Address.LengthInBytes + 1)
+                        {
+                            // HACK this is to work around sometimes addresses being passed around in Serializable format...
+                            var addr = Serialization.Unserialize<Address>(bytes);
+                            return addr;
+                        }
+
+                        Throw.If(addressData.Length != Address.LengthInBytes, "cannot build Address from invalid data");
+                        return Address.FromBytes(addressData);
+                    }
+
+                default:
+                    {
+                        var addr = temp.AsInterop<Address>();
+                        return addr;
+                    }
             }
-            else
-            if (temp.Type == VMType.Bytes)
-            {
-                var bytes = temp.AsByteArray();
-                var addr = Serialization.Unserialize<Address>(bytes);
-                return addr;
-            }
-            else
-            {
-                var addr = temp.AsInterop<Address>();
-                return addr;
-            }
+
         }
 
     }
