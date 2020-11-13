@@ -177,21 +177,17 @@ namespace Phantasma.Blockchain.Contracts
 
                                 Runtime.Expect(transfer.interopAddress.IsUser, "invalid destination address");
 
-                                byte[] rom, ram;
+                                Runtime.SwapTokens(platform, transfer.sourceAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value);
+
 
                                 if (Runtime.ProtocolVersion >= 4 && !token.Flags.HasFlag(TokenFlags.Fungible))
                                 {
-                                    var nft = Runtime.ReadNFTFromOracle(platform, transfer.Symbol, transfer.Value);
-                                    rom = Serialization.Serialize(nft);
-                                    ram = new byte[0];
-                                }
-                                else
-                                {
-                                    rom = null;
-                                    ram = null;
-                                }
+                                    var externalNft = Runtime.ReadNFTFromOracle(platform, transfer.Symbol, transfer.Value);
+                                    var ram = Serialization.Serialize(externalNft);
 
-                                Runtime.SwapTokens(platform, transfer.sourceAddress, Runtime.Chain.Name, transfer.interopAddress, transfer.Symbol, transfer.Value, rom, ram);
+                                    var localNft = Runtime.ReadToken(transfer.Symbol, transfer.Value);
+                                    Runtime.WriteToken(transfer.Symbol, transfer.Value, ram);
+                                }
 
                                 swapCount++;
                             }
@@ -290,21 +286,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.TransferTokens(feeSymbol, from, this.Address, feeAmount);
 
-            byte[] rom, ram;
-
-            if (Runtime.ProtocolVersion >= 4 && !transferTokenInfo.Flags.HasFlag(TokenFlags.Fungible))
-            {
-                var nft = Runtime.ReadToken(symbol, value);
-                rom = nft.ROM;
-                ram = nft.RAM;
-            }
-            else
-            {
-                rom = null;
-                ram = null;
-            }
-
-            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, to, symbol, value, rom, ram);
+            Runtime.SwapTokens(Runtime.Chain.Name, from, platform.Name, to, symbol, value);
 
             var withdraw = new InteropWithdraw()
             {

@@ -51,15 +51,7 @@ namespace Phantasma.Blockchain.Contracts
             }
             */
 
-            if (tokenInfo.IsFungible())
-            {
-                Runtime.SwapTokens(sourceChain.Name, sourceAddress, Runtime.Chain.Name, targetAddress, symbol, value, null, null);
-            }
-            else
-            {
-                var nft = Serialization.Unserialize<PackedNFTData>(data);                 
-                Runtime.SwapTokens(sourceChain.Name, sourceAddress, Runtime.Chain.Name, targetAddress, symbol, value, nft.ROM, nft.RAM);
-            }
+            Runtime.SwapTokens(sourceChain.Name, sourceAddress, Runtime.Chain.Name, targetAddress, symbol, value);
         }
 
         public void SettleTransaction(Address sourceChainAddress, Hash hash)

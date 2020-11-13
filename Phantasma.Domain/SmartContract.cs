@@ -44,7 +44,7 @@ namespace Phantasma.Domain
 
         public static Address GetAddressForNative(NativeContractKind kind)
         {
-            return GetAddressForName(kind.GetName());
+            return GetAddressForName(kind.GetContractName());
         }
 
         public static Address GetAddressForName(string name)

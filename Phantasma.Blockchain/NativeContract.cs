@@ -21,7 +21,7 @@ namespace Phantasma.Blockchain
 
     public abstract class NativeContract : SmartContract
     {
-        public override string Name => Kind.GetName();
+        public override string Name => Kind.GetContractName();
 
         public abstract NativeContractKind Kind { get; }
 

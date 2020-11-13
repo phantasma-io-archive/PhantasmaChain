@@ -1,5 +1,4 @@
-﻿using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM;
@@ -80,7 +79,7 @@ namespace Phantasma.Domain
 
         public static IContract GetContract(this IRuntime runtime, NativeContractKind nativeContract)
         {
-            return runtime.GetContract(nativeContract.GetName());
+            return runtime.GetContract(nativeContract.GetContractName());
         }
 
         public static Address GetContractAddress(this IRuntime runtime, string contractName)
@@ -90,10 +89,10 @@ namespace Phantasma.Domain
 
         public static Address GetContractAddress(this IRuntime runtime, NativeContractKind nativeContract)
         {
-            return Address.FromHash(nativeContract.GetName());
+            return Address.FromHash(nativeContract.GetContractName());
         }
 
-        public static string GetName(this NativeContractKind nativeContract)
+        public static string GetContractName(this NativeContractKind nativeContract)
         {
             return nativeContract.ToString().ToLower();
         }
@@ -321,7 +320,7 @@ namespace Phantasma.Domain
 
         public static VMObject CallNativeContext(this IRuntime runtime, NativeContractKind nativeContract, string methodName, params object[] args)
         {
-            return runtime.CallContext(nativeContract.GetName(), 0, methodName, args);
+            return runtime.CallContext(nativeContract.GetContractName(), 0, methodName, args);
         }
     }
 }

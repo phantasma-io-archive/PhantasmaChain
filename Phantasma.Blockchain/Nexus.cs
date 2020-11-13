@@ -618,6 +618,11 @@ namespace Phantasma.Blockchain
             var tokenInfo = new TokenInfo(symbol, name, owner, maxSupply, decimals, flags, script, abi);
             EditToken(storage, symbol, tokenInfo);
 
+            if (!flags.HasFlag(TokenFlags.Fungible) && maxSupply > 0)
+            {
+                CreateSeries(storage, tokenInfo, 0, maxSupply);
+            }
+
             // add to persistent list of tokens
             var tokenList = this.GetSystemList(TokenTag, storage);
             tokenList.Add(symbol);
@@ -684,7 +689,7 @@ namespace Phantasma.Blockchain
         }
 
         // NFT version
-        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address destination, string sourceChain, BigInteger tokenID, byte[] rom, byte[] ram)
+        internal void MintToken(RuntimeVM Runtime, IToken token, Address source, Address destination, string sourceChain, BigInteger tokenID)
         {
             Runtime.Expect(!token.IsFungible(), "cant be fungible");
 
@@ -702,8 +707,9 @@ namespace Phantasma.Blockchain
             var accountTrigger = isSettlement ? AccountTrigger.OnReceive : AccountTrigger.OnMint;
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, accountTrigger, source, destination, token.Symbol, tokenID) != TriggerResult.Failure, $"token {tokenTrigger} trigger failed");
 
+            var nft = ReadNFT(Runtime, token.Symbol, tokenID);
             using (var m = new ProfileMarker("Nexus.WriteNFT"))
-                WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, null, !isSettlement);
+                WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, nft.SeriesID, nft.Infusion, !isSettlement);
 
             using (var m = new ProfileMarker("Runtime.Notify"))
             if (isSettlement)
@@ -851,7 +857,7 @@ namespace Phantasma.Blockchain
                 infusion[index] = new TokenInfusion(infuseToken.Symbol, value + temp.Value);
             }
 
-            WriteNFT(Runtime, token.Symbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, nft.RAM, infusion, true);
+            WriteNFT(Runtime, token.Symbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, nft.RAM, nft.SeriesID, infusion, true);
         }
 
         internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount, bool isInfusion = false)
@@ -922,7 +928,7 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, AccountTrigger.OnReceive, source, destination, token.Symbol, tokenID) != TriggerResult.Failure, "account received trigger failed");
 
-            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, nft.Infusion, true);
+            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, nft.SeriesID, nft.Infusion, true);
 
             if (destination.IsSystem && (destination == Runtime.CurrentContext.Address || isInfusion))
             {
@@ -955,12 +961,56 @@ namespace Phantasma.Blockchain
             return tokenKey;
         }
 
-        internal BigInteger CreateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram)
+        internal void CreateSeries(StorageContext storage, IToken token, BigInteger seriesID, BigInteger maxSupply)
+        {
+            if (token.IsFungible())
+            {
+                throw new ChainException($"Can't create series for fungible token");
+            }
+
+            var key = GetKeyForNFT(token.Symbol, $"supply{seriesID}");
+
+            if (storage.Has(key))
+            {
+                throw new ChainException($"Series {seriesID} of token {token.Symbol} already exist");
+            }
+
+            if (maxSupply < 1)
+            {
+                throw new ChainException($"Token series supply must be 1 or more");
+            }
+
+            storage.Put<BigInteger>(key, maxSupply);
+        }
+
+        internal BigInteger GetSeriesSupply(StorageContext storage, IToken token, BigInteger seriesID)
+        {
+            var key = GetKeyForNFT(token.Symbol, $"supply{seriesID}");
+
+            if (storage.Has(key))
+            {
+                return storage.Get<BigInteger>(key);
+            }
+
+            return 0;
+        }
+
+        internal BigInteger CreateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram, BigInteger seriesID)
         {
             Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
             Runtime.Expect(ram != null, "invalid nft ram");
 
-            var mintKey = GetKeyForNFT(symbol, "mintID");
+            Runtime.Expect(seriesID >= 0, "invalid series ID");
+
+            var mintKey = GetKeyForNFT(symbol, $"mint{seriesID}");
+
+            if (seriesID > 0)
+            {
+                var prevSeries = seriesID - 1;
+                var prevMintKey = GetKeyForNFT(symbol, $"mint{prevSeries}");
+
+                Runtime.Expect(Runtime.RootStorage.Has(prevMintKey), "unexpected nft serieID");
+            }
 
             BigInteger mintID;
 
@@ -974,16 +1024,25 @@ namespace Phantasma.Blockchain
                 mintID = 1;
             }
 
-            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram, null);
+            var token = Runtime.GetToken(symbol);
+            var seriesSupply = GetSeriesSupply(Runtime.RootStorage, token, seriesID);
+
+            if (seriesSupply > 0)
+            {
+                Runtime.Expect(mintID < seriesSupply, $"{symbol} series {seriesID} reached max supply already");
+            }
+            else
+            {
+                Runtime.Expect(!token.IsCapped(), $"{symbol} series {seriesID} max supply is not defined yet");
+            }
+
+            var content = new TokenContent(seriesID, mintID, chainName, targetAddress, rom, ram, null);
 
             var tokenKey = GetKeyForNFT(symbol, content.TokenID);
             Runtime.Expect(!Runtime.Storage.Has(tokenKey), "duplicated nft");
 
-
             Runtime.RootStorage.Put<BigInteger>(mintKey, mintID);
 
-
-            var token = Runtime.GetToken(symbol);
             var contractAddress = token.GetContractAddress();
 
             var bytes = content.ToByteArray();
@@ -1033,7 +1092,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, IEnumerable<TokenInfusion> infusion, bool mustExist)
+        internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, BigInteger seriesID, IEnumerable<TokenInfusion> infusion, bool mustExist)
         {
             Runtime.Expect(ram != null && ram.Length < TokenContent.MaxRAMSize, "invalid nft ram update");
 
@@ -1045,7 +1104,7 @@ namespace Phantasma.Blockchain
 
                 Runtime.Expect(rom.CompareBytes(content.ROM), "rom does not match original value");
 
-                content = new TokenContent(content.MintID, chainName, owner, content.ROM, ram, infusion);
+                content = new TokenContent(content.SeriesID, content.MintID, chainName, owner, content.ROM, ram, infusion);
 
                 var token = Runtime.GetToken(symbol);
                 var contractAddress = token.GetContractAddress();
@@ -1064,7 +1123,7 @@ namespace Phantasma.Blockchain
             else
             {
                 Runtime.Expect(!mustExist, "nft does not exist");
-                var genID = CreateNFT(Runtime, symbol, chainName, owner, rom, ram);
+                var genID = CreateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
                 Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
         }

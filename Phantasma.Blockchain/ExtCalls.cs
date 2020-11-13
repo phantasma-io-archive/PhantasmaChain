@@ -45,6 +45,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.ReadTokenROM", Runtime_ReadTokenROM);
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
+            vm.RegisterMethod("Runtime.CreateTokenSeries", Runtime_CreateTokenSeries);
             vm.RegisterMethod("Runtime.TokenExists", Runtime_TokenExists);
             vm.RegisterMethod("Runtime.GetTokenDecimals", Runtime_TokenGetDecimals);
             vm.RegisterMethod("Runtime.GetTokenFlags", Runtime_TokenGetFlags);
@@ -651,16 +652,7 @@ namespace Phantasma.Blockchain
 
             var value = vm.PopNumber("amount");
 
-            var token = vm.GetToken(symbol);
-            if (token.IsFungible())
-            {
-                vm.SwapTokens(vm.Chain.Name, source, targetChain, destination, symbol, value, null, null);
-            }
-            else
-            {
-                var nft = vm.ReadToken(symbol, value);
-                vm.SwapTokens(vm.Chain.Name, source, targetChain, destination, symbol, value, nft.ROM, nft.ROM);
-            }
+            vm.SwapTokens(vm.Chain.Name, source, targetChain, destination, symbol, value);
 
             return ExecutionState.Running;
         }
@@ -724,24 +716,26 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(4);
 
-            VMObject temp;
-
             var source = vm.PopAddress();
             var destination = vm.PopAddress();
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
+            var symbol = vm.PopString("symbol");
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for rom");
-            var rom = temp.AsByteArray();
+            var rom = vm.PopBytes("rom");
+            var ram = vm.PopBytes("ram");
 
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.Bytes, "expected bytes for ram");
-            var ram = temp.AsByteArray();
+            BigInteger seriesID;
 
-            var tokenID = vm.MintToken(symbol, source, destination, rom, ram);
+            if (vm.ProtocolVersion >= 4)
+            {
+                seriesID = vm.PopNumber("series");
+            }
+            else
+            {
+                seriesID = 0;
+            }
+
+            var tokenID = vm.MintToken(symbol, source, destination, rom, ram, seriesID);
 
             var result = new VMObject();
             result.SetValue(tokenID);
@@ -832,6 +826,20 @@ namespace Phantasma.Blockchain
             var ram = temp.AsByteArray();
 
             vm.WriteToken(symbol, tokenID, ram);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_CreateTokenSeries(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(3);
+
+            var from = vm.PopAddress();
+            var symbol = vm.PopString("symbol");
+            var seriesID = vm.PopNumber("series ID");
+            var maxSupply = vm.PopNumber("max supply");
+            
+            vm.CreateTokenSeries(symbol, from, seriesID, maxSupply);
 
             return ExecutionState.Running;
         }

@@ -166,7 +166,7 @@ namespace Phantasma.Tests
             // Mint a new CoolToken 
             var simulator = test.simulator;
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(test.owner, testUser.Address, symbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(test.owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
             simulator.EndBlock();
 
             // obtain tokenID

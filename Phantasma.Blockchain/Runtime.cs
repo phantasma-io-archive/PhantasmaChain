@@ -87,6 +87,8 @@ namespace Phantasma.Blockchain
                 this.ParentChain = null;
             }
 
+            this.ProtocolVersion = Nexus.GetGovernanceValue(this.RootStorage, Nexus.NexusProtocolVersionTag);
+
             ExtCalls.RegisterWithRuntime(this);
         }
 
@@ -1225,7 +1227,7 @@ namespace Phantasma.Blockchain
                 Nexus.MintTokens(this, token, from, target, Chain.Name, amount);
         }
 
-        public BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram)
+        public BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram, BigInteger seriesID)
         {
             var Runtime = this;
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
@@ -1243,11 +1245,11 @@ namespace Phantasma.Blockchain
 
             BigInteger tokenID;
             using (var m = new ProfileMarker("Nexus.CreateNFT"))
-                tokenID = Nexus.CreateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram);
+                tokenID = Nexus.CreateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram, seriesID);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             using (var m = new ProfileMarker("Nexus.MintToken"))
-                Nexus.MintToken(this, token, from, target, Chain.Name, tokenID, rom, ram);
+                Nexus.MintToken(this, token, from, target, Chain.Name, tokenID);
 
             return tokenID;
         }
@@ -1300,6 +1302,27 @@ namespace Phantasma.Blockchain
             Nexus.InfuseToken(this, token, from, tokenID, infuseToken, value);
         }
 
+        public void CreateTokenSeries(string symbol, Address from, BigInteger seriesID, BigInteger maxSupply)
+        {
+            var Runtime = this;
+
+            Runtime.Expect(seriesID >= 0, "invalid series ID");
+            Runtime.Expect(maxSupply > 0, "invalid max supply");
+
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
+
+            var token = Runtime.GetToken(symbol);
+            Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
+
+            // TODO this should be a token trigger instead
+            Runtime.Expect(from == token.Owner, "not permissions for this address"); 
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            Nexus.CreateSeries(this.RootStorage, token, seriesID, maxSupply);
+        }
+
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
         {
             var Runtime = this;
@@ -1348,7 +1371,7 @@ namespace Phantasma.Blockchain
             Nexus.TransferToken(this, token, source, destination, tokenID);
         }
 
-        public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value, byte[] rom, byte[] ram)
+        public void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value)
         {
             var Runtime = this;
 
@@ -1357,17 +1380,6 @@ namespace Phantasma.Blockchain
 
             var token = Runtime.GetToken(symbol);
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "must be transferable token");
-
-            if (token.IsFungible())
-            {
-                Runtime.Expect(rom == null, "fungible tokens cant have rom");
-                Runtime.Expect(ram == null, "fungible tokens cant have ram");
-            }
-            else
-            {
-                Runtime.Expect(rom != null & rom.Length > 0, "nft rom is missing");
-                Runtime.Expect(ram != null, "nft ram is missing");
-            }
 
             if (PlatformExists(sourceChain))
             {
@@ -1379,7 +1391,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
+                    Nexus.MintToken(this, token, from, to, sourceChain, value);
                 }
             }
             else
@@ -1438,7 +1450,7 @@ namespace Phantasma.Blockchain
                 }
                 else
                 {
-                    Nexus.MintToken(this, token, from, to, sourceChain, value, rom, ram);
+                    Nexus.MintToken(this, token, from, to, sourceChain, value);
                 }
             }
             else
@@ -1450,7 +1462,7 @@ namespace Phantasma.Blockchain
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             var nft = ReadToken(tokenSymbol, tokenID);
-            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.Infusion, true);
+            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.SeriesID, nft.Infusion, true);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)
@@ -1709,7 +1721,7 @@ namespace Phantasma.Blockchain
 
         public bool HasGenesis => Nexus.HasGenesis;
         public string NexusName => Nexus.Name;
-        public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+        public BigInteger ProtocolVersion { get; private set; }
         public Address GenesisAddress => Nexus.GetGenesisAddress(RootStorage);
         public Hash GenesisHash => Nexus.GetGenesisHash(RootStorage);
     }

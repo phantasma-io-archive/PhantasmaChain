@@ -707,13 +707,13 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction MintNonFungibleToken(PhantasmaKeys owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction MintNonFungibleToken(PhantasmaKeys owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram, BigInteger seriesID)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.MintToken", owner.Address, destination, tokenSymbol, rom, ram).  
+                CallInterop("Runtime.MintToken", owner.Address, destination, tokenSymbol, rom, ram, seriesID).  
                 SpendGas(owner.Address).
                 EndScript();
 

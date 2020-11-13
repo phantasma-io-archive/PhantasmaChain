@@ -142,14 +142,15 @@ namespace Phantasma.Domain
         void MintTokens(string symbol, Address from, Address target, BigInteger amount);
         void BurnTokens(string symbol, Address from, BigInteger amount);
         void TransferTokens(string symbol, Address source, Address destination, BigInteger amount);
-        void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value, byte[] rom, byte[] ram);
+        void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value);
 
-        BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram);
+        BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram, BigInteger seriesID);
         void BurnToken(string symbol, Address from, BigInteger tokenID);
         void InfuseToken(string symbol, Address from, BigInteger tokenID, string infuseSymbol, BigInteger value);
         void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
+        void CreateTokenSeries(string tokenSymbol, Address from, BigInteger seriesID, BigInteger maxSupply);
 
         byte[] ReadOracle(string URL);
 
