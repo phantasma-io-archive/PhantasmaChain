@@ -41,6 +41,8 @@ namespace Phantasma.Blockchain.Contracts
         private StorageMap _claimMap; // <Address, List<EnergyClaim>>
         private StorageMap _leftoverMap; // <Address, BigInteger>
 
+        private StorageMap _masterAgeMap; // <Address, Timestamp>
+
         private StorageMap _proxyStakersMap; // <Address, List<EnergyProxy>>
         private StorageMap _proxyReceiversMap; // <Address, List<Address>>
 
@@ -129,6 +131,16 @@ namespace Phantasma.Blockchain.Contracts
         public Timestamp GetMasterClaimDate(BigInteger claimDistance)
         {
             return GetMasterClaimDateFromReference(claimDistance, default(Timestamp));
+        }
+
+        public Timestamp GetMasterAge(Address target)
+        {
+            if (_masterAgeMap.ContainsKey<Address>(target))
+            {
+                return _masterAgeMap.Get<Address, Timestamp>(target);
+            }
+
+            return new Timestamp(0);
         }
 
         public Timestamp GetMasterClaimDateFromReference(BigInteger claimDistance, Timestamp referenceTime)
@@ -324,6 +336,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 Runtime.AddMember(DomainSettings.MastersOrganizationName, this.Address, from);
                 _masterClaims.Set<Address, Timestamp>(from, nextClaim);
+
+                _masterAgeMap.Set<Address, Timestamp>(from, Runtime.Time);
             }
         }
 
@@ -393,6 +407,11 @@ namespace Phantasma.Blockchain.Contracts
                 if (_masterClaims.ContainsKey<Address>(from))
                 {
                     _masterClaims.Remove<Address>(from);
+                }
+
+                if (_masterAgeMap.ContainsKey<Address>(from))
+                {
+                    _masterAgeMap.Remove<Address>(from);
                 }
             }
 
