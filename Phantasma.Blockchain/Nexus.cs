@@ -753,13 +753,17 @@ namespace Phantasma.Blockchain
         // NFT version
         internal void BurnToken(RuntimeVM Runtime, IToken token, Address source, Address destination, string targetChain, BigInteger tokenID)
         {
-            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "can't be fungible");
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), $"{token.Symbol} can't be fungible");
 
             var isSettlement = targetChain != Runtime.Chain.Name;
 
             var nft = Runtime.ReadToken(token.Symbol, tokenID);
             Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
+
+            Runtime.Expect(nft.CurrentOwner == source, $"{source} is not the owner of {token.Symbol} #{tokenID}");
+
+            Runtime.Expect(source != DomainSettings.InfusionAddress, $"{token.Symbol} #{tokenID} is currently infused");
 
             var chain = RootChain;
             var supply = new SupplySheet(token.Symbol, chain, this);
@@ -801,6 +805,11 @@ namespace Phantasma.Blockchain
             var nft = Runtime.ReadToken(token.Symbol, tokenID);
             Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
+
+            if (token.Symbol == infuseToken.Symbol)
+            {
+                Runtime.Expect(value != tokenID, "cannot infuse token into itself");
+            }
 
             var target = DomainSettings.InfusionAddress;
 
