@@ -1437,7 +1437,9 @@ namespace Phantasma.API
                 }
             }
 
-            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), properties = properties.ToArray()};
+            var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
+
+            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), infusion = infusion, properties = properties.ToArray()};
         }
 
 

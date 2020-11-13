@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
@@ -21,6 +22,18 @@ namespace Phantasma.Domain
         Fiat = 1 << 6,
         Foreign = 1 << 7,
         Burnable = 1 << 8,
+    }
+
+    public struct TokenInfusion
+    {
+        public readonly string Symbol;
+        public readonly BigInteger Value;
+
+        public TokenInfusion(string symbol, BigInteger value)
+        {
+            Symbol = symbol;
+            Value = value;
+        }
     }
 
     public interface IToken
@@ -56,7 +69,7 @@ namespace Phantasma.Domain
         public static readonly int MaxROMSize = 256;
         public static readonly int MaxRAMSize = 256;
 
-        public TokenContent(BigInteger mintID, string currentChain, Address currentOwner, byte[] ROM, byte[] RAM) : this()
+        public TokenContent(BigInteger mintID, string currentChain, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion) : this()
         {
             this.MintID = mintID;
             CurrentChain = currentChain;
@@ -64,6 +77,7 @@ namespace Phantasma.Domain
             this.ROM = ROM;
             this.RAM = RAM;
             this.TokenID = Hash.FromBytes(ROM);
+            this.Infusion = infusion != null ? infusion.ToArray(): new TokenInfusion[0];
         }
 
         public string CurrentChain { get; private set; }
@@ -75,6 +89,8 @@ namespace Phantasma.Domain
 
         public BigInteger TokenID { get; private set; }
 
+        public TokenInfusion[] Infusion { get; private set; }
+
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteBigInteger(MintID);
@@ -82,6 +98,12 @@ namespace Phantasma.Domain
             writer.WriteAddress(CurrentOwner);
             writer.WriteByteArray(ROM);
             writer.WriteByteArray(RAM);
+            writer.WriteVarInt(Infusion.Length);
+            foreach (var entry in Infusion)
+            {
+                writer.WriteVarString(entry.Symbol);
+                writer.WriteBigInteger(entry.Value);
+            }
         }
 
         public void UnserializeData(BinaryReader reader)
@@ -96,6 +118,15 @@ namespace Phantasma.Domain
 
             RAM = reader.ReadByteArray();
             RAM = RAM ?? new byte[0];
+
+            var infusionCount = (int)reader.ReadVarInt();
+            this.Infusion = new TokenInfusion[infusionCount];
+            for (int i = 0; i < infusionCount; i++)
+            {
+                var symbol = reader.ReadVarString();
+                var value = reader.ReadBigInteger();
+                Infusion[i] = new TokenInfusion(symbol, value);
+            }
         }
 
         public byte[] ToByteArray()

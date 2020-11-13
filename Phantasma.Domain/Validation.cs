@@ -50,6 +50,11 @@ namespace Phantasma.Domain
 
         public static bool IsReservedIdentifier(string name)
         {
+            if (name == DomainSettings.InfusionName)
+            {
+                return true;
+            }
+
             //System.Console.WriteLine("Trying to register: " + name);
             bool isReserved = false;
             for (int i = 0; i < prefixNames.Length; i++)

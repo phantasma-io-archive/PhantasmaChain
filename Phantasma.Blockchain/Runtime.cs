@@ -1272,12 +1272,32 @@ namespace Phantasma.Blockchain
             var Runtime = this;
             Runtime.Expect(IsWitness(target), "invalid witness");
 
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
             var token = Runtime.GetToken(symbol);
             Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
             Runtime.Expect(token.IsBurnable(), "token must be burnable");
 
             Nexus.BurnToken(this, token, target, target, Chain.Name, tokenID);
+        }
+
+        public void InfuseToken(string symbol, Address from, BigInteger tokenID, string infuseSymbol, BigInteger value)
+        {
+            var Runtime = this;
+            Runtime.Expect(IsWitness(from), "invalid witness");
+
+            Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
+
+            Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");
+
+            var token = Runtime.GetToken(symbol);
+            Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
+            Runtime.Expect(token.IsBurnable(), "token must be burnable");
+
+            var infuseToken = Runtime.GetToken(infuseSymbol);
+
+            Nexus.InfuseToken(this, token, from, tokenID, infuseToken, value);
         }
 
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
@@ -1430,7 +1450,7 @@ namespace Phantasma.Blockchain
         public void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram)
         {
             var nft = ReadToken(tokenSymbol, tokenID);
-            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, true);
+            Nexus.WriteNFT(this, tokenSymbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, ram, nft.Infusion, true);
         }
 
         public TokenContent ReadToken(string tokenSymbol, BigInteger tokenID)

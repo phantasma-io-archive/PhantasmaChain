@@ -990,9 +990,10 @@ namespace Phantasma.Tests
             simulator.GenerateToken(owner, symbol, "CoolToken", 0, 0, TokenFlags.Burnable);
             simulator.EndBlock();
 
-            // Send some SOUL to the test user (required for gas used in "burn" transaction)
+            // Send some KCAL and SOUL to the test user (required for gas used in "burn" transaction)
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, chain, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.FuelTokenDecimals));
+            simulator.GenerateTransfer(owner, testUser.Address, chain, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals));
             simulator.EndBlock();
 
             var token = simulator.Nexus.GetTokenInfo(nexus.RootStorage, symbol);
@@ -1029,6 +1030,29 @@ namespace Phantasma.Tests
             Assert.IsTrue(nft.ROM.SequenceEqual(tokenROM) || nft.RAM.SequenceEqual(tokenRAM),
                 "And why is this NFT different than expected? Not the same data");
 
+            Assert.IsTrue(nft.Infusion.Length == 0); // nothing should be infused yet
+
+            var infuseSymbol = DomainSettings.StakingTokenSymbol;
+            var infuseAmount = UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
+
+            var prevBalance = nexus.RootChain.GetTokenBalance(nexus.RootChain.Storage, infuseSymbol, testUser.Address);
+
+            // Infuse some KCAL to the CoolToken
+            simulator.BeginBlock();
+            simulator.InfuseNonFungibleToken(testUser, symbol, tokenId, infuseSymbol, infuseAmount);
+            simulator.EndBlock();
+
+            nft = nexus.ReadNFT(nexus.RootStorage, symbol, tokenId);
+            Assert.IsTrue(nft.Infusion.Length == 1); // should have something infused now
+
+            var infusedBalance = nexus.RootChain.GetTokenBalance(nexus.RootChain.Storage, infuseSymbol, DomainSettings.InfusionAddress);
+            Assert.IsTrue(infusedBalance == infuseAmount); // should match
+
+            var curBalance = nexus.RootChain.GetTokenBalance(nexus.RootChain.Storage, infuseSymbol, testUser.Address);
+            Assert.IsTrue(curBalance + infusedBalance == prevBalance); // should match
+
+            prevBalance = curBalance;
+
             // burn the token
             simulator.BeginBlock();
             simulator.GenerateNftBurn(testUser, chain, symbol, tokenId);
@@ -1037,6 +1061,11 @@ namespace Phantasma.Tests
             //verify the user no longer has the token
             ownedTokenList = ownerships.Get(chain.Storage, testUser.Address);
             Assert.IsTrue(!ownedTokenList.Any(), "How does the user still have it post-burn?");
+
+            // verify that the user received the infused assets
+            curBalance = nexus.RootChain.GetTokenBalance(nexus.RootChain.Storage, infuseSymbol, testUser.Address);
+            Assert.IsTrue(curBalance == prevBalance + infusedBalance); // should match
+
         }
 
         [TestMethod]

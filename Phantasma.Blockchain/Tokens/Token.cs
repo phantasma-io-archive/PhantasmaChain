@@ -5,6 +5,9 @@ using System.IO;
 using Phantasma.Storage.Utils;
 using Phantasma.Domain;
 using Phantasma.Core;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -17,7 +20,6 @@ namespace Phantasma.Blockchain.Tokens
         public BigInteger MaxSupply { get; private set; }    
         public int Decimals { get; private set; }
         public byte[] Script { get; private set; }
-
         public ContractInterface ABI { get; private set; }
 
         public TokenInfo(string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface ABI)
@@ -36,7 +38,7 @@ namespace Phantasma.Blockchain.Tokens
             this.Decimals = decimals;
             this.MaxSupply = maxSupply;
             this.Script = script;
-            this.ABI = ABI;
+            this.ABI = ABI;            
         }
 
         public override string ToString()

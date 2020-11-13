@@ -326,6 +326,8 @@ namespace Phantasma.API
         [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
 
+        public TokenPropertyResult[] infusion;
+
         public TokenPropertyResult[] properties;
     }
 

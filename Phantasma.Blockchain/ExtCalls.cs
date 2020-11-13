@@ -41,6 +41,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransferToken", Runtime_TransferToken);
             vm.RegisterMethod("Runtime.MintToken", Runtime_MintToken);
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
+            vm.RegisterMethod("Runtime.InfuseToken", Runtime_InfuseToken);
             vm.RegisterMethod("Runtime.ReadTokenROM", Runtime_ReadTokenROM);
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
@@ -753,17 +754,26 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(3);
 
-            VMObject temp;
-
             var source = vm.PopAddress();
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
-
+            var symbol = vm.PopString("symbol");
             var tokenID = vm.PopNumber("token ID");
 
             vm.BurnToken(symbol, source, tokenID);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_InfuseToken(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(5);
+
+            var source = vm.PopAddress();
+            var targetSymbol = vm.PopString("target symbol");
+            var tokenID = vm.PopNumber("token ID");
+            var infuseSymbol = vm.PopString("infuse symbol");
+            var value = vm.PopNumber("value");
+
+            vm.InfuseToken(targetSymbol, source, tokenID, infuseSymbol, value);
 
             return ExecutionState.Running;
         }

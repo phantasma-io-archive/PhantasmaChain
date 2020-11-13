@@ -146,6 +146,7 @@ namespace Phantasma.Domain
 
         BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram);
         void BurnToken(string symbol, Address from, BigInteger tokenID);
+        void InfuseToken(string symbol, Address from, BigInteger tokenID, string infuseSymbol, BigInteger value);
         void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);

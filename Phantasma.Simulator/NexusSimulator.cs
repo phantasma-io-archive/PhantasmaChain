@@ -721,6 +721,20 @@ namespace Phantasma.Simulator
             return tx;
         }
 
+        public Transaction InfuseNonFungibleToken(PhantasmaKeys owner, string tokenSymbol, BigInteger tokenID, string infuseSymbol, BigInteger value)
+        {
+            var chain = Nexus.RootChain;
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
+                CallInterop("Runtime.InfuseToken", owner.Address, tokenSymbol, tokenID, infuseSymbol, value).
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = MakeTransaction(owner, ProofOfWork.None, chain, script);
+            return tx;
+        }
+
         public Transaction GenerateSetTokenMetadata(PhantasmaKeys source, string tokenSymbol, string key, string value)
         {
             var chain = Nexus.RootChain;

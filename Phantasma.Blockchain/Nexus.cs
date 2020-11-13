@@ -703,7 +703,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, accountTrigger, source, destination, token.Symbol, tokenID) != TriggerResult.Failure, $"token {tokenTrigger} trigger failed");
 
             using (var m = new ProfileMarker("Nexus.WriteNFT"))
-                WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, !isSettlement);
+                WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, rom, ram, null, !isSettlement);
 
             using (var m = new ProfileMarker("Runtime.Notify"))
             if (isSettlement)
@@ -768,8 +768,9 @@ namespace Phantasma.Blockchain
 
             if (!isSettlement)
             {
+                Runtime.Expect(source == destination, "source and destination must match when burning");
                 Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
-                DestroyNFT(Runtime, token.Symbol, tokenID);
+                DestroyNFT(Runtime, token.Symbol, tokenID, source);
             }
 
             var ownerships = new OwnershipSheet(token.Symbol);
@@ -793,7 +794,58 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount)
+        internal void InfuseToken(RuntimeVM Runtime, IToken token, Address from, BigInteger tokenID, IToken infuseToken, BigInteger value)
+        {
+            Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "can't be fungible");
+
+            var nft = Runtime.ReadToken(token.Symbol, tokenID);
+            Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
+            Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
+
+            var target = DomainSettings.InfusionAddress;
+
+            var tokenTrigger = TokenTrigger.OnInfuse;
+            Runtime.Expect(Runtime.InvokeTriggerOnToken(true, token, tokenTrigger, from, target, infuseToken.Symbol, value) != TriggerResult.Failure, $"token {tokenTrigger} trigger failed: ");
+
+            if (infuseToken.IsFungible())
+            {
+                this.TransferTokens(Runtime, infuseToken, from, target, value, true);
+            }
+            else
+            {
+                this.TransferToken(Runtime, infuseToken, from, target, value, true);
+            }
+
+            int index = -1;
+
+            if (infuseToken.IsFungible())
+            {
+                for (int i = 0; i < nft.Infusion.Length; i++)
+                {
+                    if (nft.Infusion[i].Symbol == infuseToken.Symbol)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+            }
+
+            var infusion = nft.Infusion.ToList();
+
+            if (index < 0)
+            {
+                infusion.Add(new TokenInfusion(infuseToken.Symbol, value));
+            }
+            else
+            {
+                var temp = nft.Infusion[index];
+                infusion[index] = new TokenInfusion(infuseToken.Symbol, value + temp.Value);
+            }
+
+            WriteNFT(Runtime, token.Symbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, nft.RAM, infusion, true);
+        }
+
+        internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount, bool isInfusion = false)
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "Not transferable");
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible");
@@ -818,12 +870,12 @@ namespace Phantasma.Blockchain
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, source, AccountTrigger.OnSend, source, destination, token.Symbol, amount) != TriggerResult.Failure, "account onSend trigger failed");
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, AccountTrigger.OnReceive, source, destination, token.Symbol, amount) != TriggerResult.Failure, "account onReceive trigger failed");
 
-            if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
+            if (destination.IsSystem && (destination == Runtime.CurrentContext.Address || isInfusion))
             {
                 Runtime.Notify(EventKind.TokenStake, source, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
             else
-            if (source.IsSystem && source == Runtime.CurrentContext.Address)
+            if (source.IsSystem && (source == Runtime.CurrentContext.Address || isInfusion))
             {
                 Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, amount, Runtime.Chain.Name));
             }
@@ -834,7 +886,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void TransferToken(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger tokenID)
+        internal void TransferToken(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger tokenID, bool isInfusion = false)
         {
             Runtime.Expect(token.Flags.HasFlag(TokenFlags.Transferable), "Not transferable");
             Runtime.Expect(!token.Flags.HasFlag(TokenFlags.Fungible), "Should be non-fungible");
@@ -861,14 +913,14 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(Runtime.InvokeTriggerOnAccount(true, destination, AccountTrigger.OnReceive, source, destination, token.Symbol, tokenID) != TriggerResult.Failure, "account received trigger failed");
 
-            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, true);
+            WriteNFT(Runtime, token.Symbol, tokenID, Runtime.Chain.Name, destination, nft.ROM, nft.RAM, nft.Infusion, true);
 
-            if (destination.IsSystem && destination == Runtime.CurrentContext.Address)
+            if (destination.IsSystem && (destination == Runtime.CurrentContext.Address || isInfusion))
             {
                 Runtime.Notify(EventKind.TokenStake, source, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
             else
-            if (source.IsSystem && source == Runtime.CurrentContext.Address)
+            if (source.IsSystem && (source == Runtime.CurrentContext.Address || isInfusion))
             {
                 Runtime.Notify(EventKind.TokenClaim, destination, new TokenEventData(token.Symbol, tokenID, Runtime.Chain.Name));
             }
@@ -913,7 +965,7 @@ namespace Phantasma.Blockchain
                 mintID = 1;
             }
 
-            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram);
+            var content = new TokenContent(mintID, chainName, targetAddress, rom, ram, null);
 
             var tokenKey = GetKeyForNFT(symbol, content.TokenID);
             Runtime.Expect(!Runtime.Storage.Has(tokenKey), "duplicated nft");
@@ -938,14 +990,29 @@ namespace Phantasma.Blockchain
             return content.TokenID;
         }
 
-        internal void DestroyNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
+        internal void DestroyNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, Address target)
         {
-            var tokenKey = GetKeyForNFT(symbol, tokenID);
+            var infusionAddress = DomainSettings.InfusionAddress;
 
-            Runtime.Expect(Runtime.RootStorage.Has(tokenKey), "nft does not exists");
+            var tokenContent = ReadNFT(Runtime, symbol, tokenID);
+
+            foreach (var asset in tokenContent.Infusion)
+            {
+                var assetInfo = this.GetTokenInfo(Runtime.RootStorage, asset.Symbol);
+                if (assetInfo.IsFungible())
+                {
+                    this.TransferTokens(Runtime, assetInfo, infusionAddress, target, asset.Value, true);
+                }
+                else
+                {
+                    this.TransferToken(Runtime, assetInfo, infusionAddress, target, asset.Value, true);
+                }
+            }
 
             var token = Runtime.GetToken(symbol);
             var contractAddress = token.GetContractAddress();
+
+            var tokenKey = GetKeyForNFT(symbol, tokenID);
 
             if (Runtime.ProtocolVersion >= 4)
             {
@@ -957,7 +1024,7 @@ namespace Phantasma.Blockchain
             }
         }
 
-        internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, bool mustExist)
+        internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, IEnumerable<TokenInfusion> infusion, bool mustExist)
         {
             Runtime.Expect(ram != null && ram.Length < TokenContent.MaxRAMSize, "invalid nft ram update");
 
@@ -969,7 +1036,7 @@ namespace Phantasma.Blockchain
 
                 Runtime.Expect(rom.CompareBytes(content.ROM), "rom does not match original value");
 
-                content = new TokenContent(content.MintID, chainName, owner, content.ROM, ram);
+                content = new TokenContent(content.MintID, chainName, owner, content.ROM, ram, infusion);
 
                 var token = Runtime.GetToken(symbol);
                 var contractAddress = token.GetContractAddress();
@@ -984,7 +1051,6 @@ namespace Phantasma.Blockchain
                 {
                     Runtime.RootStorage.Put(tokenKey, bytes);
                 }
-
             }
             else
             {

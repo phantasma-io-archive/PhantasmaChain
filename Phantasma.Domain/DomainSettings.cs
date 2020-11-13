@@ -26,6 +26,7 @@ namespace Phantasma.Domain
         OnBurn, // address, symbol, amount
         OnSend, // address, symbol, amount
         OnReceive, // address, symbol, amount
+        OnInfuse, // address, symbol, amount
         OnUpgrade, // address
     }
 
@@ -66,5 +67,8 @@ namespace Phantasma.Domain
         public static readonly int ArchiveMinSize = 64; // in bytes
         public static readonly int ArchiveMaxSize = 104857600; //100mb
         public static readonly uint ArchiveBlockSize = MerkleTree.ChunkSize;
+
+        public static readonly string InfusionName = "infusion";
+        public static readonly Address InfusionAddress = SmartContract.GetAddressForName(InfusionName);
     }
 }

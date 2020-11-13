@@ -363,6 +363,12 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public BigInteger GetTokenBalance(StorageContext storage, string symbol, Address address)
+        {
+            var token = Nexus.GetTokenInfo(storage, symbol);
+            return GetTokenBalance(storage, token, address);
+        }
+
         public BigInteger GetTokenSupply(StorageContext storage, string symbol)
         {
             var supplies = new SupplySheet(symbol, this, Nexus);
@@ -1140,6 +1146,11 @@ namespace Phantasma.Blockchain
         {
             if (address.IsSystem)
             {
+                if (address == DomainSettings.InfusionAddress)
+                {
+                    return DomainSettings.InfusionName;
+                }
+
                 var contract = this.GetContractByAddress(storage, address);
                 if (contract != null)
                 {
