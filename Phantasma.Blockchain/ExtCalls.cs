@@ -414,6 +414,11 @@ namespace Phantasma.Blockchain
             var type_obj = vm.Stack.Pop();
             var vmType = type_obj.AsEnum<VMType>();
 
+            if (vmType == VMType.Object)
+            {
+                vmType = VMType.Bytes;
+            }
+
             var value_bytes = vm.Storage.Get(key);
             var val = new VMObject();
             val.SetValue(value_bytes, vmType);
