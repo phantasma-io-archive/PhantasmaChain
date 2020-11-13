@@ -311,6 +311,9 @@ namespace Phantasma.API
         [APIDescription("id of token")]
         public string ID;
 
+        [APIDescription("series id of token")]
+        public string series;
+
         [APIDescription("mint number of token")]
         public string mint;
 
