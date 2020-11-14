@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 
 namespace Phantasma.Domain
@@ -37,6 +38,18 @@ namespace Phantasma.Domain
         OnUpgrade, // address
     }
 
+    public struct StakeReward
+    {
+        public readonly Address staker;
+        public readonly Timestamp date;
+
+        public StakeReward(Address staker, Timestamp date)
+        {
+            this.staker = staker;
+            this.date = date;
+        }
+    }       
+
     public static class DomainSettings
     {
         public const int MAX_TOKEN_DECIMALS = 18;
@@ -52,6 +65,9 @@ namespace Phantasma.Domain
         public const string FiatTokenSymbol = "USD";
         public const string FiatTokenName = "Dollars";
         public const int FiatTokenDecimals = 8;
+
+        public const string RewardTokenSymbol = "CROWN";
+        public const string RewardTokenName = "Phantasma Crown";
 
         public const string RootChainName = "main";
 

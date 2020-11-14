@@ -5,6 +5,8 @@ using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using Phantasma.Core.Performance;
 using Phantasma.VM;
+using System.Collections.Generic;
+using Phantasma.Storage;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -29,6 +31,8 @@ namespace Phantasma.Blockchain.Contracts
 
         internal StorageMap _allowanceMap; //<Address, BigInteger>
         internal StorageMap _allowanceTargets; //<Address, Address>
+
+        internal BigInteger _rewardAccum;
 
         public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
         {
@@ -74,9 +78,16 @@ namespace Phantasma.Blockchain.Contracts
         }
 
         private Timestamp _lastInflation;
+        private bool _inflationReady;
         
-        private void ApplyInflation()
+        public void ApplyInflation(Address from)
         {
+            Runtime.Expect(_inflationReady, "inflation not ready");
+
+            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+
+            Runtime.Expect(Runtime.IsRootChain(), "only on root chain");
+
             var currentSupply = Runtime.GetTokenSupply(DomainSettings.StakingTokenSymbol);
 
             var minExpectedSupply = UnitConversion.ToBigInteger(100000000, DomainSettings.StakingTokenDecimals);
@@ -86,26 +97,70 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             // NOTE this gives an approximate inflation of 3% per year (0.75% per season)
-            var mintAmount = currentSupply / 133;
-            Runtime.Expect(mintAmount > 0, "invalid inflation amount");
+            var inflationAmount = currentSupply / 133;
+            BigInteger mintedAmount = 0;
+
+            Runtime.Expect(inflationAmount > 0, "invalid inflation amount");
+            
+            var masterOrg = Runtime.GetOrganization(DomainSettings.MastersOrganizationName);
+            var masters = masterOrg.GetMembers();
+            
+            var rewardList = new List<Address>();
+            foreach (var addr in masters)
+            {
+                var masterAge = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterAge), addr).AsTimestamp();
+
+                if (masterAge <= _lastInflation)
+                {
+                    rewardList.Add(addr);
+                }
+            }
+
+            if (rewardList.Count > 0)
+            {
+                var rewardAmount = inflationAmount / 10;
+
+                var rewardStake = rewardAmount / rewardList.Count;
+                rewardAmount = rewardList.Count * rewardStake; // eliminate leftovers
+
+                var rewardFuel = _rewardAccum / rewardList.Count;
+
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, this.Address, rewardAmount);
+
+                foreach (var addr in rewardList)
+                {
+                    var reward = new StakeReward(addr, Runtime.Time);
+                    var rom = Serialization.Serialize(reward);
+                    var tokenID = Runtime.MintToken(DomainSettings.RewardTokenSymbol, this.Address, addr, rom, new byte[0], 0);
+                    Runtime.InfuseToken(DomainSettings.RewardTokenSymbol, this.Address, tokenID, DomainSettings.FuelTokenSymbol, rewardFuel);
+                    Runtime.InfuseToken(DomainSettings.RewardTokenSymbol, this.Address, tokenID, DomainSettings.StakingTokenSymbol, rewardStake);
+                }
+
+                _rewardAccum -= rewardList.Count * rewardFuel;
+                Runtime.Expect(_rewardAccum >= 0, "invalid reward leftover");
+
+                inflationAmount -= rewardAmount;
+            }
+
 
             var phantomOrg = Runtime.GetOrganization(DomainSettings.PhantomForceOrganizationName);
             if (phantomOrg != null)
             {
-                var phantomFunding = mintAmount / 3;
+                var phantomFunding = inflationAmount / 3;
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, phantomOrg.Address, phantomFunding);
-                mintAmount -= phantomFunding;
+                inflationAmount -= phantomFunding;
             }
 
             var bpOrg = Runtime.GetOrganization(DomainSettings.ValidatorsOrganizationName);
             if (bpOrg != null)
             {
-                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, mintAmount);
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, bpOrg.Address, inflationAmount);
             }
 
-            Runtime.Notify(EventKind.Inflation, this.Address, DomainSettings.StakingTokenSymbol);
+            Runtime.Notify(EventKind.Inflation, from, new TokenEventData(DomainSettings.StakingTokenSymbol, mintedAmount, Runtime.Chain.Name));
 
             _lastInflation = Runtime.Time;
+            _inflationReady = false;
         }
 
         public void SpendGas(Address from)
@@ -166,19 +221,28 @@ namespace Phantasma.Blockchain.Contracts
                 spentGas -= burnGas;
             }
 
-            if (!targetAddress.IsNull)
-            {
-                targetGas = spentGas / 2; // 50% for dapps
-            }
-            else
-            {
-                targetGas = 0;
-            }
+            targetGas = spentGas / 2; // 50% for dapps (or reward accum if dapp not specified)
 
             if (targetGas > 0)
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, targetAddress, targetPayment);
+
+                if (targetAddress.IsNull)
+                {
+                    if (Runtime.Chain.Height % 2 == 0)
+                    {
+                        Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, SmartContract.GetAddressForNative(NativeContractKind.Swap), targetPayment);
+                    }
+                    else
+                    {
+                        _rewardAccum += targetPayment;
+                        Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, targetPayment);
+                    }
+                }
+                else
+                {
+                    Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, targetAddress, targetPayment);
+                }
                 spentGas -= targetGas;
             }
 
@@ -201,14 +265,16 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     var genesisTime = Runtime.GetGenesisTime();
                     _lastInflation = genesisTime;
+                    _inflationReady = false;
                 }
                 else
+                if (!_inflationReady)
                 {
                     var infDiff = Runtime.Time - _lastInflation;
                     var inflationPeriod = SecondsInDay * 90;
                     if (infDiff >= inflationPeriod)
                     {
-                        ApplyInflation();
+                        _inflationReady = true;
                     }
                 }
             }
@@ -251,19 +317,27 @@ namespace Phantasma.Blockchain.Contracts
                 spentGas -= burnGas;
             }
 
-            if (!targetAddress.IsNull)
-            {
-                targetGas = spentGas / 2; // 50% for dapps
-            }
-            else
-            {
-                targetGas = 0;
-            }
+            targetGas = spentGas / 2; // 50% for dapps (or reward accum if dapp not specified)
 
-            if (targetGas > 0 && targetAddress != this.Address)
+            if (targetGas > 0)
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
-                Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment);
+
+                if (targetAddress.IsNull)
+                {
+                    if (Runtime.Chain.Height % 2 == 0)
+                    {
+                        Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, SmartContract.GetAddressForNative(NativeContractKind.Swap), targetPayment);
+                    }
+                    else
+                    {
+                        _rewardAccum += targetPayment;
+                    }
+                }
+                else
+                {
+                    Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, targetAddress, targetPayment);
+                }
                 spentGas -= targetGas;
             }
 
@@ -288,12 +362,13 @@ namespace Phantasma.Blockchain.Contracts
                     _lastInflation = genesisTime;
                 }
                 else
+                if (!_inflationReady)
                 {
                     var infDiff = Runtime.Time - _lastInflation;
                     var inflationPeriod = SecondsInDay * 90;
                     if (infDiff >= inflationPeriod)
                     {
-                        ApplyInflation();
+                        _inflationReady = true;
                     }
                 }
             }

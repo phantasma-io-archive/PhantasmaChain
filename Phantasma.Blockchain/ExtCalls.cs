@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.IO;
-using System.Diagnostics;
 using System.Linq;
 using Phantasma.Cryptography;
 using Phantasma.Core;
@@ -12,7 +11,6 @@ using Phantasma.Storage;
 using Phantasma.Storage.Context;
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts;
-using System.Text;
 
 namespace Phantasma.Blockchain
 {
@@ -43,6 +41,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.BurnToken", Runtime_BurnToken);
             vm.RegisterMethod("Runtime.InfuseToken", Runtime_InfuseToken);
             vm.RegisterMethod("Runtime.ReadTokenROM", Runtime_ReadTokenROM);
+            vm.RegisterMethod("Runtime.ReadTokenRAM", Runtime_ReadTokenRAM);
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
             vm.RegisterMethod("Runtime.CreateTokenSeries", Runtime_CreateTokenSeries);
@@ -796,7 +795,49 @@ namespace Phantasma.Blockchain
             return vm.ReadToken(symbol, tokenID);
         }
 
-        private static ExecutionState Runtime_ReadToken(RuntimeVM Runtime)
+        private static ExecutionState Runtime_ReadToken(RuntimeVM vm)
+        {
+            if (vm.ProtocolVersion < 4)
+            {
+                return Runtime_ReadTokenRAM(vm);
+            }
+
+            var content = Runtime_ReadTokenInternal(vm);
+
+            var fieldList = vm.PopString("fields").Split(',');
+
+            var result = new VMObject();
+
+            var fields = new Dictionary<VMObject, VMObject>();
+            foreach (var field in fieldList)
+            {
+                object obj;
+
+                switch (field)
+                {
+                    case "Chain": obj = content.CurrentChain; break;
+                    case "Owner": obj = content.CurrentOwner.Text; break;
+                    case "ROM": obj = content.ROM; break;
+                    case "RAM": obj = content.RAM; break;
+                    case "TokenID": obj = content.TokenID; break;
+                    case "SeriesID": obj = content.SeriesID; break;
+                    case "MintID": obj = content.MintID; break;
+
+                    default:
+                        throw new VMException(vm, "unknown nft field: " + field);
+                }
+
+                var key = VMObject.FromObject(field);
+                fields[key] = VMObject.FromObject(obj);
+            }
+            
+            result.SetValue(fields);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+         
+        private static ExecutionState Runtime_ReadTokenRAM(RuntimeVM Runtime)
         {
             var content = Runtime_ReadTokenInternal(Runtime);
 
@@ -806,7 +847,7 @@ namespace Phantasma.Blockchain
 
             return ExecutionState.Running;
         }
-        
+
         private static ExecutionState Runtime_ReadTokenROM(RuntimeVM Runtime)
         {
             var content = Runtime_ReadTokenInternal(Runtime);

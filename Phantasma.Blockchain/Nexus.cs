@@ -30,21 +30,21 @@ namespace Phantasma.Blockchain
         private string ChainArchivesKey => ".chain.archives.";
 
 
-        public const string GasContractName = "gas";
-        public const string BlockContractName = "block";
-        public const string StakeContractName = "stake";
-        public const string SwapContractName = "swap";
-        public const string AccountContractName = "account";
-        public const string ConsensusContractName = "consensus";
-        public const string GovernanceContractName = "governance";
-        public const string StorageContractName = "storage";
-        public const string ValidatorContractName = "validator";
-        public const string InteropContractName = "interop";
-        public const string ExchangeContractName = "exchange";
-        public const string PrivacyContractName = "privacy";
-        public const string RelayContractName = "relay";
-        public const string RankingContractName = "ranking";
-        public const string MailContractName = "mail";
+        public readonly static string GasContractName = NativeContractKind.Gas.GetContractName();
+        public readonly static string BlockContractName = NativeContractKind.Block.GetContractName();
+        public readonly static string StakeContractName = NativeContractKind.Stake.GetContractName();
+        public readonly static string SwapContractName = NativeContractKind.Swap.GetContractName();
+        public readonly static string AccountContractName = NativeContractKind.Account.GetContractName();
+        public readonly static string ConsensusContractName = NativeContractKind.Consensus.GetContractName();
+        public readonly static string GovernanceContractName = NativeContractKind.Governance.GetContractName();
+        public readonly static string StorageContractName = NativeContractKind.Storage.GetContractName();
+        public readonly static string ValidatorContractName = NativeContractKind.Validator.GetContractName();
+        public readonly static string InteropContractName = NativeContractKind.Interop.GetContractName();
+        public readonly static string ExchangeContractName = NativeContractKind.Exchange.GetContractName();
+        public readonly static string PrivacyContractName = NativeContractKind.Privacy.GetContractName();
+        public readonly static string RelayContractName = NativeContractKind.Relay.GetContractName();
+        public readonly static string RankingContractName = NativeContractKind.Ranking.GetContractName();
+        public readonly static string MailContractName = NativeContractKind.Mail.GetContractName();
 
         public const string NexusProtocolVersionTag = "nexus.protocol.version";
         public const string FuelPerContractDeployTag = "nexus.contract.cost";
@@ -324,7 +324,7 @@ namespace Phantasma.Blockchain
                 RegisterContract<MailContract>();
                 RegisterContract<PrivacyContract>();
                 RegisterContract<SaleContract>();
-            }
+           }
 
             if (_contractMap.ContainsKey(contractAddress)) {
                 var type = _contractMap[contractAddress];
@@ -1266,6 +1266,7 @@ namespace Phantasma.Blockchain
             CreateToken(storage, DomainSettings.StakingTokenSymbol, DomainSettings.StakingTokenName, owner, 0, DomainSettings.StakingTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Stakable /*| TokenFlags.Foreign*/, tokenScript, abi);
             CreateToken(storage, DomainSettings.FuelTokenSymbol, DomainSettings.FuelTokenName, owner, 0, DomainSettings.FuelTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Burnable | TokenFlags.Fuel, tokenScript, abi);
             CreateToken(storage, DomainSettings.FiatTokenSymbol, DomainSettings.FiatTokenName, owner, 0, DomainSettings.FiatTokenDecimals, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Fiat, tokenScript, abi);
+            CreateToken(storage, DomainSettings.RewardTokenSymbol, DomainSettings.RewardTokenName, owner, 0, 0, TokenFlags.Transferable | TokenFlags.Burnable, tokenScript, abi);
 
             CreateToken(storage, "NEO", "NEO", owner, UnitConversion.ToBigInteger(100000000, 0), 0, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);
             CreateToken(storage, "GAS", "GAS", owner, UnitConversion.ToBigInteger(100000000, 8), 8, TokenFlags.Fungible | TokenFlags.Transferable | TokenFlags.Divisible | TokenFlags.Finite | TokenFlags.Foreign, tokenScript, abi);

@@ -82,16 +82,6 @@ namespace Phantasma.Domain
             return runtime.GetContract(nativeContract.GetContractName());
         }
 
-        public static Address GetContractAddress(this IRuntime runtime, string contractName)
-        {
-            return Address.FromHash(contractName);
-        }
-
-        public static Address GetContractAddress(this IRuntime runtime, NativeContractKind nativeContract)
-        {
-            return Address.FromHash(nativeContract.GetContractName());
-        }
-
         public static string GetContractName(this NativeContractKind nativeContract)
         {
             return nativeContract.ToString().ToLower();
