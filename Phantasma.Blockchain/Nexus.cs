@@ -610,6 +610,7 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region TOKENS
+
         internal void CreateToken(StorageContext storage, string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
         {
             Throw.IfNull(script, nameof(script));
@@ -618,9 +619,27 @@ namespace Phantasma.Blockchain
             var tokenInfo = new TokenInfo(symbol, name, owner, maxSupply, decimals, flags, script, abi);
             EditToken(storage, symbol, tokenInfo);
 
-            if (!flags.HasFlag(TokenFlags.Fungible) && maxSupply > 0)
+            if (symbol == "TTRS")  // support for 22series tokens with a dummy script that conforms to the standard
             {
-                CreateSeries(storage, tokenInfo, 0, maxSupply);
+                byte[] nftScript;
+                ContractInterface nftABI = NFTUtils.GetNFTStandard();
+
+                var url = "https://www.22series.com/part_info?id=*";
+                NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
+
+                CreateSeries(storage, tokenInfo, 0, maxSupply, nftScript, nftABI);
+            }
+            else
+            if (symbol == DomainSettings.RewardTokenSymbol)  
+            {
+                byte[] nftScript;
+                ContractInterface nftABI = NFTUtils.GetNFTStandard();
+
+                var jsonUrl = "https://phantasma.io/crown/*";
+                var imgUrl = "https://phantasma.io/img/crown.png";
+                NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
+
+                CreateSeries(storage, tokenInfo, 0, maxSupply, nftScript, nftABI);
             }
 
             // add to persistent list of tokens
@@ -961,75 +980,77 @@ namespace Phantasma.Blockchain
             return tokenKey;
         }
 
-        internal void CreateSeries(StorageContext storage, IToken token, BigInteger seriesID, BigInteger maxSupply)
+        internal void CreateSeries(StorageContext storage, IToken token, BigInteger seriesID, BigInteger maxSupply, byte[] script, ContractInterface abi)
         {
             if (token.IsFungible())
             {
                 throw new ChainException($"Can't create series for fungible token");
             }
 
-            var key = GetKeyForNFT(token.Symbol, $"supply{seriesID}");
+            var key = GetTokenSeriesKey(token.Symbol, seriesID);
 
             if (storage.Has(key))
             {
                 throw new ChainException($"Series {seriesID} of token {token.Symbol} already exist");
             }
 
-            if (maxSupply < 1)
+            if (token.IsCapped() && maxSupply < 1)
             {
                 throw new ChainException($"Token series supply must be 1 or more");
             }
 
-            storage.Put<BigInteger>(key, maxSupply);
+            var nftStandard = NFTUtils.GetNFTStandard();
+
+            if (!abi.Implements(nftStandard))
+            {
+                throw new ChainException($"Token series abi does not implement the NFT standard");
+            }
+
+            var series = new TokenSeries(0, maxSupply, script, abi);
+            WriteTokenSeries(storage, token.Symbol, seriesID, series);
         }
 
-        internal BigInteger GetSeriesSupply(StorageContext storage, IToken token, BigInteger seriesID)
+        private byte[] GetTokenSeriesKey(string symbol, BigInteger seriesID)
         {
-            var key = GetKeyForNFT(token.Symbol, $"supply{seriesID}");
+            return GetKeyForNFT(symbol, $"serie{seriesID}");
+        }
+
+        public TokenSeries GetTokenSeries(StorageContext storage, string symbol, BigInteger seriesID)
+        {
+            var key = GetTokenSeriesKey(symbol, seriesID);
 
             if (storage.Has(key))
             {
-                return storage.Get<BigInteger>(key);
+                return storage.Get<TokenSeries>(key);
             }
 
-            return 0;
+            return null;
         }
 
-        internal BigInteger CreateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram, BigInteger seriesID)
+        private void WriteTokenSeries(StorageContext storage, string symbol, BigInteger seriesID, TokenSeries series)
+        {
+            var key = GetTokenSeriesKey(symbol, seriesID);
+            storage.Put<TokenSeries>(key, series);
+        }
+
+        internal BigInteger GenerateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram, BigInteger seriesID)
         {
             Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
             Runtime.Expect(ram != null, "invalid nft ram");
 
             Runtime.Expect(seriesID >= 0, "invalid series ID");
 
-            var mintKey = GetKeyForNFT(symbol, $"mint{seriesID}");
+            var series = GetTokenSeries(Runtime.RootStorage, symbol, seriesID);
+            Runtime.Expect(series != null, $"{symbol} series {seriesID} does not exist");
 
-            if (seriesID > 0)
-            {
-                var prevSeries = seriesID - 1;
-                var prevMintKey = GetKeyForNFT(symbol, $"mint{prevSeries}");
-
-                Runtime.Expect(Runtime.RootStorage.Has(prevMintKey), "unexpected nft serieID");
-            }
-
-            BigInteger mintID;
-
-            if (Runtime.RootStorage.Has(mintKey))
-            {
-                mintID = Runtime.RootStorage.Get<BigInteger>(mintKey);
-                mintID++;
-            }
-            else
-            {
-                mintID = 1;
-            }
+            BigInteger mintID = series.GenerateMintID();
+            WriteTokenSeries(Runtime.RootStorage, symbol, seriesID, series);
 
             var token = Runtime.GetToken(symbol);
-            var seriesSupply = GetSeriesSupply(Runtime.RootStorage, token, seriesID);
 
-            if (seriesSupply > 0)
+            if (series.MaxSupply > 0)
             {
-                Runtime.Expect(mintID < seriesSupply, $"{symbol} series {seriesID} reached max supply already");
+                Runtime.Expect(mintID < series.MaxSupply, $"{symbol} series {seriesID} reached max supply already");
             }
             else
             {
@@ -1040,8 +1061,6 @@ namespace Phantasma.Blockchain
 
             var tokenKey = GetKeyForNFT(symbol, content.TokenID);
             Runtime.Expect(!Runtime.Storage.Has(tokenKey), "duplicated nft");
-
-            Runtime.RootStorage.Put<BigInteger>(mintKey, mintID);
 
             var contractAddress = token.GetContractAddress();
 
@@ -1123,7 +1142,7 @@ namespace Phantasma.Blockchain
             else
             {
                 Runtime.Expect(!mustExist, "nft does not exist");
-                var genID = CreateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
+                var genID = GenerateNFT(Runtime, symbol, chainName, owner, rom, ram, seriesID);
                 Runtime.Expect(genID == tokenID, "failed to regenerate NFT");
             }
         }

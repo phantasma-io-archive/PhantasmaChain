@@ -1245,7 +1245,7 @@ namespace Phantasma.Blockchain
 
             BigInteger tokenID;
             using (var m = new ProfileMarker("Nexus.CreateNFT"))
-                tokenID = Nexus.CreateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram, seriesID);
+                tokenID = Nexus.GenerateNFT(this, symbol, Runtime.Chain.Name, target, rom, ram, seriesID);
             Runtime.Expect(tokenID > 0, "invalid tokenID");
 
             using (var m = new ProfileMarker("Nexus.MintToken"))
@@ -1302,7 +1302,7 @@ namespace Phantasma.Blockchain
             Nexus.InfuseToken(this, token, from, tokenID, infuseToken, value);
         }
 
-        public void CreateTokenSeries(string symbol, Address from, BigInteger seriesID, BigInteger maxSupply)
+        public void CreateTokenSeries(string symbol, Address from, BigInteger seriesID, BigInteger maxSupply, byte[] script, ContractInterface abi)
         {
             var Runtime = this;
 
@@ -1320,7 +1320,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(from == token.Owner, "not permissions for this address"); 
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Nexus.CreateSeries(this.RootStorage, token, seriesID, maxSupply);
+            Nexus.CreateSeries(this.RootStorage, token, seriesID, maxSupply, script, abi);
         }
 
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)

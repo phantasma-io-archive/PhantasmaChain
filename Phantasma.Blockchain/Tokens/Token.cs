@@ -5,12 +5,56 @@ using System.IO;
 using Phantasma.Storage.Utils;
 using Phantasma.Domain;
 using Phantasma.Core;
-using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Phantasma.Blockchain.Tokens
 {
+    public class TokenSeries : ISerializable
+    {
+        public BigInteger MintCount { get; private set; }
+        public BigInteger MaxSupply { get; private set; }
+        public byte[] Script { get; private set; }
+        public ContractInterface ABI { get; private set; }
+
+        public TokenSeries(BigInteger mintCount, BigInteger maxSupply, byte[] script, ContractInterface ABI)
+        {
+            MintCount = mintCount;
+            MaxSupply = maxSupply;
+            Script = script;
+            this.ABI = ABI;
+        }
+
+        public TokenSeries() // required for ISerializable
+        {
+            // do nothing
+        }
+
+        public BigInteger GenerateMintID()
+        {
+            this.MintCount = MintCount + 1;
+            return MintCount;
+        }
+
+        public void SerializeData(BinaryWriter writer)
+        {
+            writer.WriteBigInteger(MintCount);
+            writer.WriteBigInteger(MaxSupply);
+            writer.WriteByteArray(Script);
+
+            var bytes = ABI.ToByteArray();
+            writer.WriteByteArray(bytes);
+        }
+
+        public void UnserializeData(BinaryReader reader)
+        {
+            this.MintCount = reader.ReadBigInteger();
+            this.MaxSupply = reader.ReadBigInteger();
+            this.Script = reader.ReadByteArray();
+
+            var bytes = reader.ReadByteArray();
+            this.ABI = ContractInterface.FromBytes(bytes);
+        }
+    }
+
     public struct TokenInfo : IToken, ISerializable
     {
         public string Symbol { get; private set; }

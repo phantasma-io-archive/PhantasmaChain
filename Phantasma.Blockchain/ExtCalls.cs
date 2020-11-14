@@ -882,14 +882,18 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_CreateTokenSeries(RuntimeVM vm)
         {
-            vm.ExpectStackSize(3);
+            vm.ExpectStackSize(5);
 
             var from = vm.PopAddress();
             var symbol = vm.PopString("symbol");
             var seriesID = vm.PopNumber("series ID");
             var maxSupply = vm.PopNumber("max supply");
-            
-            vm.CreateTokenSeries(symbol, from, seriesID, maxSupply);
+            var script = vm.PopBytes("script");
+            var abiBytes = vm.PopBytes("abi bytes");
+
+            var abi = ContractInterface.FromBytes(abiBytes);
+
+            vm.CreateTokenSeries(symbol, from, seriesID, maxSupply, script, abi);
 
             return ExecutionState.Running;
         }
