@@ -31,7 +31,7 @@ namespace Phantasma.API
             if (tokenInfo.ABI.HasMethod(propertyName))
             {
                 var result = ExecuteScript(tokenInfo.Script, tokenInfo.ABI, propertyName);
-                properties.Add(new TokenPropertyResult() { Key = propertyName, Value = result.ToString() });
+                properties.Add(new TokenPropertyResult() { Key = propertyName, Value = result.AsString() });
             }
         }
     }
