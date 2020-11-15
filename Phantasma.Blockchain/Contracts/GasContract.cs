@@ -54,6 +54,11 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(price > 0, "price must be positive amount");
             Runtime.Expect(limit > 0, "limit must be positive amount");
 
+            if (target.IsNull)
+            {
+                target = Runtime.Chain.Address;
+            }
+
             var maxAmount = price * limit;
 
             using (var m = new ProfileMarker("_allowanceMap"))
@@ -227,7 +232,7 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
 
-                if (targetAddress.IsNull)
+                if (targetAddress == Runtime.Chain.Address)
                 {
                     if (Runtime.Chain.Height % 2 == 0)
                     {
@@ -323,7 +328,7 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var targetPayment = targetGas * Runtime.GasPrice;
 
-                if (targetAddress.IsNull)
+                if (targetAddress == Runtime.Chain.Address)
                 {
                     if (Runtime.Chain.Height % 2 == 0)
                     {
