@@ -153,7 +153,7 @@ namespace Phantasma.Blockchain
 
             var changeSet = new StorageChangeSetContext(this.Storage);
 
-            ProcessPendingTasks(block, oracle, minimumFee, changeSet, allowModify);
+            transactions = ProcessPendingTasks(block, oracle, minimumFee, changeSet, allowModify).Concat(transactions);
 
             int txIndex = 0;
             foreach (var tx in transactions)
@@ -163,7 +163,7 @@ namespace Phantasma.Blockchain
                 {
                     using (var m = new ProfileMarker("ExecuteTransaction"))
                     {
-                        if (ExecuteTransaction(txIndex, tx, tx.Script, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
+                        if (ExecuteTransaction(txIndex, tx, tx.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
                         {
                             // merge transaction oracle data 
                             oracle.MergeTxData();
@@ -195,6 +195,31 @@ namespace Phantasma.Blockchain
                 }
 
                 txIndex++;
+            }
+
+            if (this.IsRoot)
+            {
+                var contract = new GasContract();
+                contract.LoadFromStorage(changeSet);
+                if (contract._inflationReady)
+                {
+                    var script = new ScriptBuilder()
+                        .AllowGas(block.Validator, Address.Null, minimumFee, 9999)
+                        .CallContract(NativeContractKind.Gas, nameof(GasContract.ApplyInflation), block.Validator)
+                        .SpendGas(block.Validator)
+                        .EndScript();
+
+                    var transaction = new Transaction(this.Nexus.Name, this.Name, script, block.Timestamp.Value + 1, "SYSTEM");
+
+                    VMObject vmResult;
+
+                    if (!ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, ChainTask.Null, minimumFee, out vmResult, allowModify))
+                    {
+                        throw new ChainException("failed to execute inflation transaction");
+                    }
+
+                    transactions = transactions.Concat(new Transaction[] { transaction});
+                }
             }
 
             // Only check protocol version if block is created on this node, no need to check if it's a non validator node.
@@ -301,7 +326,7 @@ namespace Phantasma.Blockchain
             return changeSet;
         }
 
-        private bool ExecuteTransaction(int index, Transaction transaction, byte[] script, Timestamp time, StorageChangeSetContext changeSet
+        private bool ExecuteTransaction(int index, Transaction transaction, byte[] script, Address validator, Timestamp time, StorageChangeSetContext changeSet
                 , Action<Hash, Event> onNotify, OracleReader oracle, ITask task, BigInteger minimumFee, out VMObject result, bool allowModify = true)
         { 
             result = null;
@@ -311,7 +336,7 @@ namespace Phantasma.Blockchain
             RuntimeVM runtime;
             using (var m = new ProfileMarker("new RuntimeVM"))
             {
-                runtime = new RuntimeVM(index, script, offset, this, time, transaction, changeSet, oracle, task, false);
+                runtime = new RuntimeVM(index, script, offset, this, validator, time, transaction, changeSet, oracle, task, false);
             }
             runtime.MinimumFee = minimumFee;
             runtime.ThrowOnFault = true;
@@ -455,7 +480,7 @@ namespace Phantasma.Blockchain
             var oracle = Nexus.GetOracleReader();
             var changeSet = new StorageChangeSetContext(storage);
             uint offset = 0;
-            var vm = new RuntimeVM(-1, script, offset, this, time, null, changeSet, oracle, ChainTask.Null, true);
+            var vm = new RuntimeVM(-1, script, offset, this, Address.Null, time, null, changeSet, oracle, ChainTask.Null, true);
 
             var state = vm.Execute();
 
@@ -937,10 +962,12 @@ namespace Phantasma.Blockchain
 
         }
 
-        private void ProcessPendingTasks(Block block, OracleReader oracle, BigInteger minimumFee, StorageChangeSetContext changeSet, bool allowModify)
+        private IEnumerable<Transaction> ProcessPendingTasks(Block block, OracleReader oracle, BigInteger minimumFee, StorageChangeSetContext changeSet, bool allowModify)
         {
             var taskList = new StorageList(TaskListTag, changeSet);
             var taskCount = taskList.Count();
+
+            List<Transaction> transactions = null;
 
             int i = 0;
             while (i < taskCount)
@@ -948,7 +975,10 @@ namespace Phantasma.Blockchain
                 var taskID = taskList.Get<BigInteger>(i);
                 var task = GetTask(changeSet, taskID);
 
-                if (ProcessPendingTask(block, oracle, minimumFee, changeSet, allowModify, task)) 
+                Transaction tx;
+
+                var taskResult = ProcessPendingTask(block, oracle, minimumFee, changeSet, allowModify, task, out tx);
+                if (taskResult == TaskResult.Running) 
                 {
                     i++;
                 }
@@ -956,11 +986,30 @@ namespace Phantasma.Blockchain
                 {
                     taskList.RemoveAt<BigInteger>(i);
                 }
+
+                if (tx != null)
+                {
+                    if (transactions == null)
+                    {
+                        transactions = new List<Transaction>();
+                    }
+
+                    transactions.Add(tx);
+                }
             }
+
+            if (transactions != null)
+            {
+                return transactions;
+            }
+
+            return Enumerable.Empty<Transaction>();
         }
 
-        private bool ProcessPendingTask(Block block, OracleReader oracle, BigInteger minimumFee, StorageChangeSetContext changeSet, bool allowModify, ChainTask task)
+        private TaskResult ProcessPendingTask(Block block, OracleReader oracle, BigInteger minimumFee, StorageChangeSetContext changeSet, bool allowModify, ChainTask task, out Transaction transaction)
         {
+            transaction = null;
+
             if (task.Mode != TaskFrequencyMode.Always)
             {
                 var taskKey = GetTaskKey(task.ID, "task_run");
@@ -973,7 +1022,7 @@ namespace Phantasma.Blockchain
                             var diff = block.Height - lastRun;
                             if (diff < task.Frequency)
                             {
-                                return true; // skip execution for now
+                                return TaskResult.Skipped; // skip execution for now
                             }
                             break;
                         }
@@ -983,7 +1032,7 @@ namespace Phantasma.Blockchain
                             var diff = block.Timestamp.Value - lastRun;
                             if (diff < task.Frequency)
                             {
-                                return true; // skip execution for now
+                                return TaskResult.Skipped; // skip execution for now
                             }
                             break;
                         }
@@ -998,18 +1047,25 @@ namespace Phantasma.Blockchain
                     .SpendGas(task.Owner)
                     .EndScript();
 
-                VMObject result;
-                if (ExecuteTransaction(-1, null, taskScript, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out result, allowModify))
+                transaction = new Transaction(this.Nexus.Name, this.Name, taskScript, block.Timestamp.Value + 1, "TASK");
+
+                VMObject vmResult;
+
+                if (ExecuteTransaction(-1, transaction, transaction.Script, block.Validator, block.Timestamp, changeSet, block.Notify, oracle, task, minimumFee, out vmResult, allowModify))
                 {
                     // merge transaction oracle data 
                     oracle.MergeTxData();
 
-                    var shouldStop = result.AsBool();
-                    return shouldStop;
+                    var resultBytes = Serialization.Serialize(vmResult);
+                    block.SetResultForHash(transaction.Hash, resultBytes);
+
+                    var shouldStop = vmResult.AsBool();
+                    return shouldStop ? TaskResult.Halted : TaskResult.Running;
                 }
                 else
                 {
-                    return false;
+                    transaction = null;
+                    return TaskResult.Crashed;
                 }
             }
         }
@@ -1067,7 +1123,7 @@ namespace Phantasma.Blockchain
             return Nexus.GetGenesisAddress(rootStorage);
         }
 
-        public void CloseBlock(Block block, StorageContext storage)
+        public void CloseBlock(Block block, StorageChangeSetContext storage)
         {
             var rootStorage = this.IsRoot ? storage : Nexus.RootStorage;
 

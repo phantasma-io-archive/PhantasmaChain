@@ -27,10 +27,10 @@ namespace Phantasma.Blockchain
         public string CurrentContextName => CurrentContext.Name;
         public string PreviousContextName => PreviousContext.Name;
 
-        public Address FeeTargetAddress { get; private set; }
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
+
 
         private bool gasPaymentInProgress = false;
 
@@ -40,7 +40,9 @@ namespace Phantasma.Blockchain
         public readonly bool readOnlyMode;
 
         public BigInteger MinimumFee;
-        
+
+        public Address Validator { get; private set; }
+
         public ITask CurrentTask { get; private set; }
 
 
@@ -48,7 +50,7 @@ namespace Phantasma.Blockchain
 
         internal StorageContext RootStorage => this.IsRootChain() ? this.Storage : Nexus.RootStorage;
 
-        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, ITask currentTask, bool readOnlyMode, bool delayPayment = false, string contextName = null) : base(script, offset, contextName)
+        public RuntimeVM(int index, byte[] script, uint offset, Chain chain, Address validator, Timestamp time, Transaction transaction, StorageChangeSetContext changeSet, OracleReader oracle, ITask currentTask, bool readOnlyMode, bool delayPayment = false, string contextName = null) : base(script, offset, contextName)
         {
             Core.Throw.IfNull(chain, nameof(chain));
             Core.Throw.IfNull(changeSet, nameof(changeSet));
@@ -65,6 +67,7 @@ namespace Phantasma.Blockchain
             this.MaxGas = 10000;  // a minimum amount required for allowing calls to Gas contract etc
             this.CurrentTask = currentTask;
             this.DelayPayment = delayPayment;
+            this.Validator = validator;
 
             this._randomSeed = 0;
 
@@ -74,8 +77,6 @@ namespace Phantasma.Blockchain
             this.Oracle = oracle;
             this.changeSet = changeSet;
             this.readOnlyMode = readOnlyMode;
-
-            this.FeeTargetAddress = Address.Null;
 
             if (this.Chain != null && !Chain.IsRoot)
             {
@@ -241,11 +242,6 @@ namespace Phantasma.Blockchain
 
                             var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
                             this.PaidGas += gasInfo.amount;
-
-                            if (address != this.Chain.Address)
-                            {
-                                this.FeeTargetAddress = address;
-                            }
                         }
                         break;
                     }
@@ -558,7 +554,7 @@ namespace Phantasma.Blockchain
             }
 
             var leftOverGas = (uint)(this.MaxGas - this.UsedGas);
-            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName);
+            var runtime = new RuntimeVM(-1, script, (uint)method.offset, this.Chain, this.Validator, this.Time, this.Transaction, this.changeSet, this.Oracle, ChainTask.Null, false, true, contextName);
             
             //runtime.ThrowOnFault = true; // enable only if debugging some issue...
 
@@ -665,6 +661,11 @@ namespace Phantasma.Blockchain
 
             bool accountResult;
 
+            if (address == this.Validator && this.TransactionIndex < 0)
+            {
+                accountResult = true;
+            }
+            else
             if (address.IsUser && Nexus.HasGenesis && OptimizedHasAddressScript(RootStorage, address))
             {
                 using (var m = new ProfileMarker("InvokeTriggerOnAccount"))

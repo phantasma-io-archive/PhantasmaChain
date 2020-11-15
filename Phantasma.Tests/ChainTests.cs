@@ -432,7 +432,7 @@ namespace Phantasma.Tests
             var symbol = "COOL";
 
             simulator.BeginBlock();
-            simulator.GenerateToken(owner, symbol, "CoolToken", 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible);
+            simulator.GenerateToken(owner, symbol, "CoolToken", 1000000, 0, TokenFlags.Burnable | TokenFlags.Transferable | TokenFlags.Fungible | TokenFlags.Finite);
             simulator.MintTokens(owner, testUserA.Address, symbol, 100000);
             simulator.EndBlock();
 
@@ -578,7 +578,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(nexus.TokenExists(nexus.RootStorage, "NEO"));
 
             var context = new StorageChangeSetContext(nexus.RootStorage);
-            var runtime = new RuntimeVM(-1, new byte[0], 0, nexus.RootChain, Timestamp.Now, null, context, new OracleSimulator(nexus), ChainTask.Null, true);
+            var runtime = new RuntimeVM(-1, new byte[0], 0, nexus.RootChain, Address.Null, Timestamp.Now, null, context, new OracleSimulator(nexus), ChainTask.Null, true);
 
             var temp = runtime.GetTokenQuote("NEO", "KCAL", 1);
             var price = UnitConversion.ToDecimal(temp, DomainSettings.FuelTokenDecimals);

@@ -34,6 +34,9 @@ namespace Phantasma.Blockchain.Contracts
 
         internal BigInteger _rewardAccum;
 
+        internal Timestamp _lastInflation;
+        internal bool _inflationReady;
+
         public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
         {
             if (Runtime.IsReadOnlyMode())
@@ -81,15 +84,12 @@ namespace Phantasma.Blockchain.Contracts
             using (var m = new ProfileMarker("Runtime.Notify"))
                 Runtime.Notify(EventKind.GasEscrow, from, new GasEventData(target, price, limit));
         }
-
-        private Timestamp _lastInflation;
-        private bool _inflationReady;
         
         public void ApplyInflation(Address from)
         {
             Runtime.Expect(_inflationReady, "inflation not ready");
 
-            Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
+            Runtime.Expect(Runtime.TransactionIndex == -1, "invalid transaction index");
 
             Runtime.Expect(Runtime.IsRootChain(), "only on root chain");
 

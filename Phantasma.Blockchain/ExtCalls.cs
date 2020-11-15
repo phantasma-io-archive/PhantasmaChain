@@ -22,6 +22,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TransactionHash", Runtime_TransactionHash);
             vm.RegisterMethod("Runtime.Time", Runtime_Time);
             vm.RegisterMethod("Runtime.GasTarget", Runtime_GasTarget);
+            vm.RegisterMethod("Runtime.Validator", Runtime_Validator);
             vm.RegisterMethod("Runtime.Random", Runtime_Random);            
             vm.RegisterMethod("Runtime.SetSeed", Runtime_SetSeed);
             vm.RegisterMethod("Runtime.IsWitness", Runtime_IsWitness);
@@ -337,12 +338,22 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_GasTarget(RuntimeVM vm)
         {
-            if (vm.GasTarget.IsNull) {
+            if (vm.GasTarget.IsNull)
+            {
                 new VMException(vm, "Gas target is now available yet");
             }
 
             var result = new VMObject();
             result.SetValue(vm.GasTarget);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_Validator(RuntimeVM vm)
+        {
+            var result = new VMObject();
+            result.SetValue(vm.Validator);
             vm.Stack.Push(result);
 
             return ExecutionState.Running;

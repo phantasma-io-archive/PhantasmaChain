@@ -32,8 +32,7 @@ namespace Phantasma.Blockchain
             BuildMethodTable();
         }
 
-        // here we auto-initialize any fields from storage
-        public void LoadRuntimeData(IRuntime runtime)
+        public void SetRuntime(IRuntime runtime)
         {
             if (this.Runtime != null && this.Runtime != runtime)
             {
@@ -41,7 +40,11 @@ namespace Phantasma.Blockchain
             }
 
             this.Runtime = runtime;
+        }
 
+        // here we auto-initialize any fields from storage
+        public void LoadFromStorage(StorageContext storage)
+        { 
             var contractType = this.GetType();
             FieldInfo[] fields = contractType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -52,7 +55,7 @@ namespace Phantasma.Blockchain
                 var isStorageField = typeof(IStorageCollection).IsAssignableFrom(field.FieldType);
                 if (isStorageField)
                 {
-                    var args = new object[] { baseKey, (StorageContext)runtime.Storage };
+                    var args = new object[] { baseKey, storage };
                     var obj = Activator.CreateInstance(field.FieldType, args);
 
                     field.SetValue(this, obj);
@@ -63,9 +66,9 @@ namespace Phantasma.Blockchain
                 {
                     ISerializable obj;
 
-                    if (runtime.Storage.Has(baseKey))
+                    if (storage.Has(baseKey))
                     {
-                        var bytes = runtime.Storage.Get(baseKey);
+                        var bytes = storage.Get(baseKey);
                         obj = (ISerializable)Activator.CreateInstance(field.FieldType);
                         using (var stream = new MemoryStream(bytes))
                         {
@@ -80,9 +83,9 @@ namespace Phantasma.Blockchain
                     }
                 }
 
-                if (runtime.Storage.Has(baseKey))
+                if (storage.Has(baseKey))
                 {
-                    var obj = runtime.Storage.Get(baseKey, field.FieldType);
+                    var obj = storage.Get(baseKey, field.FieldType);
                     field.SetValue(this, obj);
                     continue;
                 }
@@ -90,7 +93,7 @@ namespace Phantasma.Blockchain
         }
 
         // here we persist any modifed fields back to storage
-        public void UnloadRuntimeData()
+        public void SaveChangesToStorage()
         {
             Throw.IfNull(this.Runtime, nameof(Runtime));
 

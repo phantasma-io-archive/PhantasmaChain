@@ -10,6 +10,14 @@ namespace Phantasma.Domain
         Blocks,
     }
 
+    public enum TaskResult
+    {
+        Running,
+        Halted,
+        Crashed,
+        Skipped,
+    }
+
     public interface ITask
     {
         BigInteger ID { get; }

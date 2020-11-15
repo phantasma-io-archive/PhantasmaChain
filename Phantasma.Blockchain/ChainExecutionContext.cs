@@ -83,9 +83,11 @@ namespace Phantasma.Blockchain
                 {
                     try
                     {            
-                        native.LoadRuntimeData(runtime);
+                        native.SetRuntime(runtime);
+                        native.LoadFromStorage(runtime.Storage);
+
                         result = InternalCall(native, method, frame, stack);
-                        native.UnloadRuntimeData();
+                        native.SaveChangesToStorage();
                      
                     }
                     catch (ArgumentException ex)

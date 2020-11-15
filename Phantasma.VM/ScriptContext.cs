@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Text;
 using Phantasma.Core;
 using Phantasma.Core.Performance;
 using Phantasma.Numerics;
-using Phantasma.Storage;
 
 namespace Phantasma.VM
 {
     public class ScriptContext : ExecutionContext
     {
+        public static readonly byte[] EmptyScript = new byte[] { (byte)Opcode.RET };
+
         public byte[] Script { get; private set; }
         public override string Name => _name;
 
