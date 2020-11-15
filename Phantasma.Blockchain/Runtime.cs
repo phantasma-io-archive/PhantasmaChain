@@ -9,6 +9,7 @@ using Phantasma.Core.Performance;
 using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Blockchain
 {
@@ -1145,10 +1146,10 @@ namespace Phantasma.Blockchain
             Runtime.Notify(EventKind.OrganizationCreate, from, ID);
         }
 
-        public IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, Address encryptionAddress)
+        public IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, IArchiveEncryption encryption)
         {
             // TODO validation
-            var archive = Nexus.CreateArchive(this.RootStorage, merkleTree, owner, name, size, time, encryptionAddress);
+            var archive = Nexus.CreateArchive(this.RootStorage, merkleTree, owner, name, size, time, encryption);
 
             var Runtime = this;
             Runtime.Notify(EventKind.FileCreate, owner, archive.Hash);

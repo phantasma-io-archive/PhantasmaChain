@@ -16,6 +16,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Domain;
 using Phantasma.Core.Utils;
 using Phantasma.VM;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Blockchain
 {
@@ -1624,12 +1625,12 @@ namespace Phantasma.Blockchain
             return true;
         }
 
-        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, Address encryptionAddress)
+        public IArchive CreateArchive(StorageContext storage, MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, IArchiveEncryption encryption)
         {
             var archive = GetArchive(storage, merkleTree.Root);
             Throw.If(archive != null, "archive already exists");
 
-            archive = new Archive(merkleTree, name, size, time, encryptionAddress,
+            archive = new Archive(merkleTree, name, size, time, encryption,
                 Enumerable.Range(0, (int)MerkleTree.GetChunkCountForSize(size)).ToList());
             var archiveHash = merkleTree.Root;
 

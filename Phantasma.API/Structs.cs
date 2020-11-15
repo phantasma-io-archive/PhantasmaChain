@@ -392,7 +392,7 @@ namespace Phantasma.API
         public uint size;
 
         [APIDescription("Encryption address")]
-        public string key;
+        public string encryption;
 
         [APIDescription("Number of blocks")]
         public int blockCount;

@@ -40,10 +40,10 @@ namespace Phantasma.Cryptography
             }
         }
 
-        public static byte[] Encrypt(string text, byte[] localPrivateKeyBytes, byte[] remotePublicKeyBytes)
+        public static byte[] Encrypt(byte[] input, byte[] localPrivateKeyBytes, byte[] remotePublicKeyBytes)
         {
             var secret = GetSharedSecret(localPrivateKeyBytes, remotePublicKeyBytes);
-            return Encrypt(text, secret);
+            return Encrypt(input, secret);
         }
 
         public static string Decrypt(byte[] input, byte[] localPrivateKeyBytes, byte[] remotePublicKeyBytes)
@@ -52,7 +52,7 @@ namespace Phantasma.Cryptography
             return Decrypt(input, secret);
         }
 
-        public static byte[] Encrypt(string text, byte[] key)
+        public static byte[] Encrypt(byte[] input, byte[] key)
         {
             byte[] iv = new byte[16];
             AesEngine engine = new AesEngine();
@@ -61,10 +61,9 @@ namespace Phantasma.Cryptography
             KeyParameter keyParam = new KeyParameter(key);
             ParametersWithIV keyParamWithIV = new ParametersWithIV(keyParam, iv, 0, 16);
 
-            var inputBytes = Encoding.UTF8.GetBytes(text);
             cipher.Init(true, keyParamWithIV);
-            byte[] outputBytes = new byte[cipher.GetOutputSize(inputBytes.Length)];
-            int length = cipher.ProcessBytes(inputBytes, outputBytes, 0);
+            byte[] outputBytes = new byte[cipher.GetOutputSize(input.Length)];
+            int length = cipher.ProcessBytes(input, outputBytes, 0);
             cipher.DoFinal(outputBytes, length); //Do the final block
             return outputBytes;
         }
