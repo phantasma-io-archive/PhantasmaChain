@@ -75,6 +75,24 @@ namespace Phantasma.Blockchain.Tokens
             Throw.If(flags == TokenFlags.None, "token must have flags set");
             Throw.If(script == null || script.Length == 0, "token script can't be empty");
 
+            Throw.If(maxSupply < 0, "negative supply");
+            Throw.If(maxSupply == 0 && flags.HasFlag(TokenFlags.Finite), "finite requires a supply");
+            Throw.If(maxSupply > 0 && !flags.HasFlag(TokenFlags.Finite), "infinite requires no supply");
+
+            if (!flags.HasFlag(TokenFlags.Fungible))
+            {
+                Throw.If(flags.HasFlag(TokenFlags.Divisible), "non-fungible token must be indivisible");
+            }
+
+            if (flags.HasFlag(TokenFlags.Divisible))
+            {
+                Throw.If(decimals <= 0, "divisible token must have decimals");
+            }
+            else
+            {
+                Throw.If(decimals > 0, "indivisible token can't have decimals");
+            }
+
             this.Symbol = symbol;
             this.Name = name;
             this.Owner = owner;
