@@ -44,17 +44,17 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.ReadTokenRAM", Runtime_ReadTokenRAM);
             vm.RegisterMethod("Runtime.ReadToken", Runtime_ReadToken);
             vm.RegisterMethod("Runtime.WriteToken", Runtime_WriteToken);
-            vm.RegisterMethod("Runtime.CreateTokenSeries", Runtime_CreateTokenSeries);
             vm.RegisterMethod("Runtime.TokenExists", Runtime_TokenExists);
             vm.RegisterMethod("Runtime.GetTokenDecimals", Runtime_TokenGetDecimals);
             vm.RegisterMethod("Runtime.GetTokenFlags", Runtime_TokenGetFlags);
 
-            vm.RegisterMethod("Nexus.Init", Runtime_NexusInit);
-            vm.RegisterMethod("Nexus.CreateToken", Runtime_CreateToken);
-            vm.RegisterMethod("Nexus.CreateChain", Runtime_CreateChain);
-            vm.RegisterMethod("Nexus.CreatePlatform", Runtime_CreatePlatform);
-            vm.RegisterMethod("Nexus.CreateOrganization", Runtime_CreateOrganization);
-            vm.RegisterMethod("Nexus.SetTokenPlatformHash", Runtime_SetTokenPlatformHash);
+            vm.RegisterMethod("Nexus.Init", Nexus_Init);
+            vm.RegisterMethod("Nexus.CreateToken", Nexus_CreateToken);
+            vm.RegisterMethod("Nexus.CreateTokenSeries", Nexus_CreateTokenSeries);
+            vm.RegisterMethod("Nexus.CreateChain", Nexus_CreateChain);
+            vm.RegisterMethod("Nexus.CreatePlatform", Nexus_CreatePlatform);
+            vm.RegisterMethod("Nexus.CreateOrganization", Nexus_CreateOrganization);
+            vm.RegisterMethod("Nexus.SetTokenPlatformHash", Nexus_SetTokenPlatformHash);
 
             vm.RegisterMethod("Organization.AddMember", Organization_AddMember);
 
@@ -880,7 +880,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreateTokenSeries(RuntimeVM vm)
+        private static ExecutionState Nexus_CreateTokenSeries(RuntimeVM vm)
         {
             vm.ExpectStackSize(5);
 
@@ -1128,7 +1128,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_NexusInit(RuntimeVM vm)
+        private static ExecutionState Nexus_Init(RuntimeVM vm)
         {
             vm.Expect(vm.Chain == null || vm.Chain.Height == 0, "nexus already initialized");
 
@@ -1141,7 +1141,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
         
-        private static ExecutionState Runtime_CreateToken(RuntimeVM vm)
+        private static ExecutionState Nexus_CreateToken(RuntimeVM vm)
         {
             vm.ExpectStackSize(7);
 
@@ -1171,7 +1171,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreateChain(RuntimeVM vm)
+        private static ExecutionState Nexus_CreateChain(RuntimeVM vm)
         {
             vm.ExpectStackSize(4);
 
@@ -1185,7 +1185,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreatePlatform(RuntimeVM vm)
+        private static ExecutionState Nexus_CreatePlatform(RuntimeVM vm)
         {
             vm.ExpectStackSize(5);
 
@@ -1204,7 +1204,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_SetTokenPlatformHash(RuntimeVM vm)
+        private static ExecutionState Nexus_SetTokenPlatformHash(RuntimeVM vm)
         {
             vm.ExpectStackSize(3);
 
@@ -1219,7 +1219,7 @@ namespace Phantasma.Blockchain
             return ExecutionState.Running;
         }
 
-        private static ExecutionState Runtime_CreateOrganization(RuntimeVM vm)
+        private static ExecutionState Nexus_CreateOrganization(RuntimeVM vm)
         {
             vm.ExpectStackSize(4);
 

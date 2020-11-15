@@ -1307,8 +1307,7 @@ namespace Phantasma.Blockchain
             var Runtime = this;
 
             Runtime.Expect(seriesID >= 0, "invalid series ID");
-            Runtime.Expect(maxSupply > 0, "invalid max supply");
-
+            
             Runtime.Expect(Runtime.IsRootChain(), "must be root chain");
 
             Runtime.Expect(Runtime.TokenExists(symbol), "invalid token");

@@ -201,7 +201,7 @@ namespace Phantasma.Blockchain
             if (allowModify)
             {
                 var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-                if (block.Protocol != expectedProtocol)
+                if (block.Protocol !=   expectedProtocol)
                 {
                     throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
                 }

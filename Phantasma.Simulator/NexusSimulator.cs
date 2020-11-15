@@ -12,6 +12,7 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Domain;
 using Phantasma.VM;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Simulator
 {
@@ -531,6 +532,14 @@ namespace Phantasma.Simulator
             else
             {
                 sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript);
+            }
+
+            if (!flags.HasFlag(TokenFlags.Fungible))
+            {
+                ContractInterface nftABI;
+                byte[] nftScript;
+                NFTUtils.GenerateNFTDummyScript(symbol, name, name, "http://simulator/nft/*", "http://simulator/img/*", out nftScript, out nftABI);
+                sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(0), totalSupply, nftScript, nftABI.ToByteArray());
             }
 
             sb.SpendGas(owner.Address);
