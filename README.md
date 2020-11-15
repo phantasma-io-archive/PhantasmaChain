@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">      
-  <a href="https://travis-ci.org/phantasma-io/PhantasmaChain">
-    <img src="https://travis-ci.org/phantasma-io/PhantasmaChain.svg?branch=master">
+  <a href="https://github.com/phantasma-io/PhantasmaChain/workflows/.NET%20Core/badge.svg?branch=master">
+    <img src="https://github.com/phantasma-io/PhantasmaChain/workflows/.NET%20Core/badge.svg">
   </a>
   <a href="https://github.com/phantasma-io/PhantasmaChain/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
