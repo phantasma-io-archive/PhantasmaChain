@@ -8,7 +8,7 @@ using Phantasma.Domain;
 using Phantasma.Core.Types;
 using Phantasma.Core;
 
-namespace Phantasma.Blockchain
+namespace Phantasma.Blockchain.Storage
 {
     public class Archive: IArchive, ISerializable
     {
@@ -22,7 +22,7 @@ namespace Phantasma.Blockchain
         public BigInteger Size { get; private set; }
         public Timestamp Time { get; private set; }
 
-        public Address EncryptionAddress { get; private set; }
+        public IArchiveEncryption Encryption { get; private set; }
 
         public BigInteger BlockCount => this.GetBlockCount();
 
@@ -48,13 +48,13 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, Address encryptionAddress, List<int> missingBlocks)
+        public Archive(MerkleTree tree, string name, BigInteger size, Timestamp time, IArchiveEncryption encryption, List<int> missingBlocks)
         {
             this.MerkleTree = tree;
             this.Name = name;
             this.Size = size;
             this.Time = time;
-            this.EncryptionAddress = encryptionAddress;
+            this.Encryption = encryption;
             this._missingBlocks = missingBlocks;
         }
 
@@ -69,7 +69,7 @@ namespace Phantasma.Blockchain
             writer.WriteVarString(Name);
             writer.WriteBigInteger(Size);
             writer.Write(Time.Value);
-            writer.WriteAddress(EncryptionAddress);
+            writer.WriteArchiveEncryption(Encryption);
             writer.WriteVarInt(_owners.Count);
             for (int i = 0; i < _owners.Count; i++)
             {
@@ -100,7 +100,7 @@ namespace Phantasma.Blockchain
             Name = reader.ReadVarString();
             Size = reader.ReadBigInteger();
             Time = new Timestamp(reader.ReadUInt32());
-            EncryptionAddress = reader.ReadAddress();
+            Encryption = reader.ReadArchiveEncryption();
 
             var ownerCount = (int)reader.ReadVarInt();
             _owners.Clear();

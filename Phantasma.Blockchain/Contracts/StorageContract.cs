@@ -1,3 +1,4 @@
+using Phantasma.Blockchain.Storage;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
@@ -35,7 +36,7 @@ namespace Phantasma.Blockchain.Contracts
             return totalSize;
         }
 
-        public void CreateFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, Address encryptionAddress)
+        public void CreateFile(Address target, string fileName, BigInteger fileSize, byte[] contentMerkle, byte[] encryptionContent)
         {
             Runtime.Expect(Runtime.IsWitness(target), "invalid witness");
             Runtime.Expect(target.IsUser, "destination address must be user address");
@@ -52,7 +53,8 @@ namespace Phantasma.Blockchain.Contracts
 
             if (archive == null)
             {
-                archive = Runtime.CreateArchive(merkleTree, target, fileName, fileSize, Runtime.Time, encryptionAddress);
+                var encryption = ArchiveExtensions.ReadArchiveEncryption(encryptionContent);
+                archive = Runtime.CreateArchive(merkleTree, target, fileName, fileSize, Runtime.Time, encryption);
             }
 
             AddFile(target, target, archive);

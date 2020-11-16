@@ -147,6 +147,10 @@ namespace Phantasma.Blockchain.Contracts
                 inflationAmount -= rewardAmount;
             }
 
+            var refillAmount = inflationAmount / 50;
+            var cosmicAddress = SmartContract.GetAddressForNative(NativeContractKind.Swap);
+            Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, cosmicAddress, refillAmount);
+            inflationAmount -= refillAmount;
 
             var phantomOrg = Runtime.GetOrganization(DomainSettings.PhantomForceOrganizationName);
             if (phantomOrg != null)
@@ -179,8 +183,6 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
 
-            //TODO_FIX_TX
-            //if (Runtime.Chain.Height > 120000)
             if (Runtime.ProtocolVersion >= 3)
             {
                 SpendGasV2(from);
@@ -234,15 +236,8 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (targetAddress == Runtime.Chain.Address)
                 {
-                    if (Runtime.Chain.Height % 2 == 0)
-                    {
-                        Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, SmartContract.GetAddressForNative(NativeContractKind.Swap), targetPayment);
-                    }
-                    else
-                    {
-                        _rewardAccum += targetPayment;
-                        Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, targetPayment);
-                    }
+                    _rewardAccum += targetPayment;
+                    Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, targetPayment);
                 }
                 else
                 {
@@ -330,14 +325,7 @@ namespace Phantasma.Blockchain.Contracts
 
                 if (targetAddress == Runtime.Chain.Address)
                 {
-                    if (Runtime.Chain.Height % 2 == 0)
-                    {
-                        Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, this.Address, SmartContract.GetAddressForNative(NativeContractKind.Swap), targetPayment);
-                    }
-                    else
-                    {
-                        _rewardAccum += targetPayment;
-                    }
+                    _rewardAccum += targetPayment;
                 }
                 else
                 {

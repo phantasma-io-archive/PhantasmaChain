@@ -18,6 +18,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
 using LunarLabs.Parser.JSON;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.API
 {
@@ -649,7 +650,7 @@ namespace Phantasma.API
                 name = archive.Name,
                 time = archive.Time.Value,
                 size = (uint)archive.Size,                
-                key = archive.EncryptionAddress.Text,
+                encryption = Base16.Encode(archive.Encryption.ToBytes()),
                 blockCount = (int)archive.BlockCount,
                 missingBlocks = archive.MissingBlockIndices.ToArray(),
                 owners = archive.Owners.Select(x => x.Text).ToArray()

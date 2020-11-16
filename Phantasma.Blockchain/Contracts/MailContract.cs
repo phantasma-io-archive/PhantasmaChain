@@ -1,4 +1,5 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Blockchain.Storage;
+using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Storage.Context;
 
@@ -30,7 +31,11 @@ namespace Phantasma.Blockchain.Contracts
             var archive = Runtime.GetArchive(archiveHash);
             Runtime.Expect(archive != null, $"mail archive does not exist: {archiveHash}");
 
-            Runtime.Expect(archive.EncryptionAddress == from, "mail archive not properly encrypted");
+            var encryption = archive.Encryption as SharedArchiveEncryption;
+            Runtime.Expect(encryption != null, "mail archive using unsupported encryption mode");
+
+            Runtime.Expect(encryption.Source == from, "mail archive not encrypted with correct source");
+            Runtime.Expect(encryption.Destination == target, "mail archive not encrypted with correct destination");
 
             Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.AddFile), from, target, archiveHash);
         }
