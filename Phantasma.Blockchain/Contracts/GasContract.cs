@@ -34,7 +34,7 @@ namespace Phantasma.Blockchain.Contracts
 
         internal BigInteger _rewardAccum;
 
-        internal Timestamp _lastInflation;
+        internal Timestamp _lastInflationDate;
         internal bool _inflationReady;
 
         public void AllowGas(Address from, Address target, BigInteger price, BigInteger limit)
@@ -44,9 +44,9 @@ namespace Phantasma.Blockchain.Contracts
                 return;
             }
 
-            if (_lastInflation == 0)
+            if (_lastInflationDate == 0)
             {
-                _lastInflation = Runtime.Time;
+                _lastInflationDate = Runtime.Time;
             }
 
             Runtime.Expect(from.IsUser, "must be a user address");
@@ -113,9 +113,9 @@ namespace Phantasma.Blockchain.Contracts
             var rewardList = new List<Address>();
             foreach (var addr in masters)
             {
-                var masterAge = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterAge), addr).AsTimestamp();
+                var masterDate = Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.GetMasterDate), addr).AsTimestamp();
 
-                if (masterAge <= _lastInflation)
+                if (masterDate <= _lastInflationDate)
                 {
                     rewardList.Add(addr);
                 }
@@ -168,7 +168,7 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Notify(EventKind.Inflation, from, new TokenEventData(DomainSettings.StakingTokenSymbol, mintedAmount, Runtime.Chain.Name));
 
-            _lastInflation = Runtime.Time;
+            _lastInflationDate = Runtime.Time;
             _inflationReady = false;
         }
 
@@ -261,16 +261,16 @@ namespace Phantasma.Blockchain.Contracts
 
             if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
             {
-                if (_lastInflation.Value == 0)
+                if (_lastInflationDate.Value == 0)
                 {
                     var genesisTime = Runtime.GetGenesisTime();
-                    _lastInflation = genesisTime;
+                    _lastInflationDate = genesisTime;
                     _inflationReady = false;
                 }
                 else
                 if (!_inflationReady)
                 {
-                    var infDiff = Runtime.Time - _lastInflation;
+                    var infDiff = Runtime.Time - _lastInflationDate;
                     var inflationPeriod = SecondsInDay * 90;
                     if (infDiff >= inflationPeriod)
                     {
@@ -349,15 +349,15 @@ namespace Phantasma.Blockchain.Contracts
 
             if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
             {
-                if (_lastInflation.Value == 0)
+                if (_lastInflationDate.Value == 0)
                 {
                     var genesisTime = Runtime.GetGenesisTime();
-                    _lastInflation = genesisTime;
+                    _lastInflationDate = genesisTime;
                 }
                 else
                 if (!_inflationReady)
                 {
-                    var infDiff = Runtime.Time - _lastInflation;
+                    var infDiff = Runtime.Time - _lastInflationDate;
                     var inflationPeriod = SecondsInDay * 90;
                     if (infDiff >= inflationPeriod)
                     {

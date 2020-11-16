@@ -133,7 +133,7 @@ namespace Phantasma.Blockchain.Contracts
             return GetMasterClaimDateFromReference(claimDistance, default(Timestamp));
         }
 
-        public Timestamp GetMasterAge(Address target)
+        public Timestamp GetMasterDate(Address target)
         {
             if (_masterAgeMap.ContainsKey<Address>(target))
             {
