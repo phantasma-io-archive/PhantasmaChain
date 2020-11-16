@@ -68,7 +68,7 @@ namespace Phantasma.Cryptography
             return outputBytes;
         }
 
-        public static string Decrypt(byte[] input, byte[] key)
+        public static byte[] Decrypt(byte[] input, byte[] key)
         {
             byte[] iv = new byte[16];
             AesEngine engine = new AesEngine();
@@ -78,10 +78,10 @@ namespace Phantasma.Cryptography
             ParametersWithIV keyParamWithIV = new ParametersWithIV(keyParam, iv, 0, 16);
 
             cipher.Init(false, keyParamWithIV);
-            byte[] comparisonBytes = new byte[cipher.GetOutputSize(input.Length)];
-            var length = cipher.ProcessBytes(input, comparisonBytes, 0);
-            cipher.DoFinal(comparisonBytes, length); //Do the final block       
-            return Encoding.UTF8.GetString(comparisonBytes);
+            byte[] outputBytes = new byte[cipher.GetOutputSize(input.Length)];
+            var length = cipher.ProcessBytes(input, outputBytes, 0);
+            cipher.DoFinal(outputBytes, length); //Do the final block       
+            return outputBytes;
         }
 
     }
