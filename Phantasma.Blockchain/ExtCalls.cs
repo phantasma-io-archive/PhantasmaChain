@@ -913,12 +913,13 @@ namespace Phantasma.Blockchain
             var symbol = vm.PopString("symbol");
             var seriesID = vm.PopNumber("series ID");
             var maxSupply = vm.PopNumber("max supply");
+            var mode = vm.PopEnum<TokenSeriesMode>("mode");
             var script = vm.PopBytes("script");
             var abiBytes = vm.PopBytes("abi bytes");
 
             var abi = ContractInterface.FromBytes(abiBytes);
 
-            vm.CreateTokenSeries(symbol, from, seriesID, maxSupply, script, abi);
+            vm.CreateTokenSeries(symbol, from, seriesID, maxSupply, mode, script, abi);
 
             return ExecutionState.Running;
         }

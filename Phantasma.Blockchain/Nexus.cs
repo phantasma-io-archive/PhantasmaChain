@@ -627,7 +627,7 @@ namespace Phantasma.Blockchain
                 var url = "https://www.22series.com/part_info?id=*";
                 NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"{symbol} #*", url, url, out nftScript, out nftABI);
 
-                CreateSeries(storage, tokenInfo, 0, maxSupply, nftScript, nftABI);
+                CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
             else
             if (symbol == DomainSettings.RewardTokenSymbol)  
@@ -639,7 +639,7 @@ namespace Phantasma.Blockchain
                 var imgUrl = "https://phantasma.io/img/crown.png";
                 NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
 
-                CreateSeries(storage, tokenInfo, 0, maxSupply, nftScript, nftABI);
+                CreateSeries(storage, tokenInfo, 0, maxSupply, TokenSeriesMode.Unique, nftScript, nftABI);
             }
 
             // add to persistent list of tokens
@@ -980,7 +980,7 @@ namespace Phantasma.Blockchain
             return tokenKey;
         }
 
-        internal void CreateSeries(StorageContext storage, IToken token, BigInteger seriesID, BigInteger maxSupply, byte[] script, ContractInterface abi)
+        internal void CreateSeries(StorageContext storage, IToken token, BigInteger seriesID, BigInteger maxSupply, TokenSeriesMode mode, byte[] script, ContractInterface abi)
         {
             if (token.IsFungible())
             {
@@ -1006,7 +1006,7 @@ namespace Phantasma.Blockchain
                 throw new ChainException($"Token series abi does not implement the NFT standard");
             }
 
-            var series = new TokenSeries(0, maxSupply, script, abi);
+            var series = new TokenSeries(0, maxSupply, mode, script, abi, null);
             WriteTokenSeries(storage, token.Symbol, seriesID, series);
         }
 
@@ -1044,6 +1044,22 @@ namespace Phantasma.Blockchain
             Runtime.Expect(series != null, $"{symbol} series {seriesID} does not exist");
 
             BigInteger mintID = series.GenerateMintID();
+            Runtime.Expect(mintID > 0, "invalid mintID generated");
+
+            if (series.Mode == TokenSeriesMode.Duplicated)
+            {
+                if (mintID > 1)
+                {
+                    Runtime.Expect(ByteArrayUtils.CompareBytes(rom, series.ROM), $"rom can't be unique in {symbol} series {seriesID}");
+                }
+                else
+                {
+                    series.SetROM(rom);
+                }
+
+                rom = new byte[0];
+            }
+
             WriteTokenSeries(Runtime.RootStorage, symbol, seriesID, series);
 
             var token = Runtime.GetToken(symbol);
@@ -1057,7 +1073,7 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(!token.IsCapped(), $"{symbol} series {seriesID} max supply is not defined yet");
             }
 
-            var content = new TokenContent(seriesID, mintID, chainName, targetAddress, rom, ram, null);
+            var content = new TokenContent(seriesID, mintID, chainName, targetAddress, rom, ram, null, series.Mode);
 
             var tokenKey = GetKeyForNFT(symbol, content.TokenID);
             Runtime.Expect(!Runtime.Storage.Has(tokenKey), "duplicated nft");
@@ -1123,7 +1139,10 @@ namespace Phantasma.Blockchain
 
                 Runtime.Expect(rom.CompareBytes(content.ROM), "rom does not match original value");
 
-                content = new TokenContent(content.SeriesID, content.MintID, chainName, owner, content.ROM, ram, infusion);
+                var series = GetTokenSeries(Runtime.RootStorage, symbol, content.SeriesID);
+                Runtime.Expect(series != null, $"could not find series {seriesID} for {symbol}");
+
+                content = new TokenContent(content.SeriesID, content.MintID, chainName, owner, content.ROM, ram, infusion, series.Mode);
 
                 var token = Runtime.GetToken(symbol);
                 var contractAddress = token.GetContractAddress();
@@ -1158,7 +1177,15 @@ namespace Phantasma.Blockchain
 
             Throw.If(!storage.Has(tokenKey), "nft does not exists");
 
-            return storage.Get<TokenContent>(tokenKey);
+            var content = storage.Get<TokenContent>(tokenKey);
+
+            var series = GetTokenSeries(storage, symbol, content.SeriesID);
+            if (series.Mode == TokenSeriesMode.Duplicated)
+            {
+                content = new TokenContent(content.SeriesID, content.MintID, content.CurrentChain, content.CurrentOwner, series.ROM, content.RAM, content.Infusion, series.Mode);
+            }
+
+            return content;
         }
 
         public bool HasNFT(StorageContext storage, string symbol, BigInteger tokenID)

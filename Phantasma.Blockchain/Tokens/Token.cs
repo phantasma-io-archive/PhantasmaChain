@@ -12,20 +12,29 @@ namespace Phantasma.Blockchain.Tokens
     {
         public BigInteger MintCount { get; private set; }
         public BigInteger MaxSupply { get; private set; }
+        public TokenSeriesMode Mode { get; private set; }
         public byte[] Script { get; private set; }
         public ContractInterface ABI { get; private set; }
+        public byte[] ROM{ get; private set; }
 
-        public TokenSeries(BigInteger mintCount, BigInteger maxSupply, byte[] script, ContractInterface ABI)
+        public TokenSeries(BigInteger mintCount, BigInteger maxSupply, TokenSeriesMode mode, byte[] script, ContractInterface ABI, byte[] ROM)
         {
             MintCount = mintCount;
             MaxSupply = maxSupply;
             Script = script;
             this.ABI = ABI;
+            SetROM(ROM);
         }
 
         public TokenSeries() // required for ISerializable
         {
             // do nothing
+        }
+
+
+        public void SetROM(byte[] ROM)
+        {
+            this.ROM = ROM != null ? ROM : new byte[0];
         }
 
         public BigInteger GenerateMintID()
@@ -38,20 +47,26 @@ namespace Phantasma.Blockchain.Tokens
         {
             writer.WriteBigInteger(MintCount);
             writer.WriteBigInteger(MaxSupply);
+            writer.Write((byte)Mode);
             writer.WriteByteArray(Script);
 
             var bytes = ABI.ToByteArray();
             writer.WriteByteArray(bytes);
+
+            writer.WriteByteArray(ROM);
         }
 
         public void UnserializeData(BinaryReader reader)
         {
             this.MintCount = reader.ReadBigInteger();
             this.MaxSupply = reader.ReadBigInteger();
+            this.Mode = (TokenSeriesMode)reader.ReadByte();
             this.Script = reader.ReadByteArray();
 
             var bytes = reader.ReadByteArray();
             this.ABI = ContractInterface.FromBytes(bytes);
+
+            this.ROM = reader.ReadByteArray();
         }
     }
 

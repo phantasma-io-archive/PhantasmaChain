@@ -1303,7 +1303,7 @@ namespace Phantasma.Blockchain
             Nexus.InfuseToken(this, token, from, tokenID, infuseToken, value);
         }
 
-        public void CreateTokenSeries(string symbol, Address from, BigInteger seriesID, BigInteger maxSupply, byte[] script, ContractInterface abi)
+        public void CreateTokenSeries(string symbol, Address from, BigInteger seriesID, BigInteger maxSupply, TokenSeriesMode mode, byte[] script, ContractInterface abi)
         {
             var Runtime = this;
 
@@ -1320,7 +1320,7 @@ namespace Phantasma.Blockchain
             Runtime.Expect(from == token.Owner, "not permissions for this address"); 
             Runtime.Expect(IsWitness(from), "invalid witness");
 
-            Nexus.CreateSeries(this.RootStorage, token, seriesID, maxSupply, script, abi);
+            Nexus.CreateSeries(this.RootStorage, token, seriesID, maxSupply, mode, script, abi);
         }
 
         public void TransferTokens(string symbol, Address source, Address destination, BigInteger amount)
