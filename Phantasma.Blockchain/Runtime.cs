@@ -32,9 +32,6 @@ namespace Phantasma.Blockchain
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
 
-
-        private bool gasPaymentInProgress = false;
-
         public int TransactionIndex { get; private set; }
         public Address GasTarget { get; private set; }
         public bool DelayPayment { get; private set; }
@@ -230,20 +227,10 @@ namespace Phantasma.Blockchain
                     {
                         Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
 
-                        if (address.IsNull)
-                        {
-                            Expect(gasPaymentInProgress, $"gas payment not in progress");
-                            this.gasPaymentInProgress = false;
-                            return; // this event should be ignored, it is mostly an hack
-                        }
-                        else
-                        {
-                            Expect(!gasPaymentInProgress, $"gas payment already in progress");
-                            this.gasPaymentInProgress = true;
+                        Expect(!address.IsNull, "invalid gas payment address");
+                        var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
+                        this.PaidGas += gasInfo.amount;
 
-                            var gasInfo = Serialization.Unserialize<GasEventData>(bytes);
-                            this.PaidGas += gasInfo.amount;
-                        }
                         break;
                     }
 
@@ -348,7 +335,7 @@ namespace Phantasma.Blockchain
 
         public override ExecutionState ConsumeGas(BigInteger gasCost)
         {
-            if (gasCost == 0 || gasPaymentInProgress)
+            if (gasCost == 0)
             {
                 return ExecutionState.Running;
             }

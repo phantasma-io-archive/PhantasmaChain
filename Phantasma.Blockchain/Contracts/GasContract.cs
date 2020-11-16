@@ -204,13 +204,6 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Expect(availableAmount >= requiredAmount, "gas allowance is not enough");
 
-            /*var token = this.Runtime.Nexus.FuelToken;
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
-            */
-
-            var leftoverAmount = availableAmount - requiredAmount;
-
             var targetAddress = _allowanceTargets.Get<Address, Address>(from);
             BigInteger targetGas;
 
@@ -257,27 +250,7 @@ namespace Phantasma.Blockchain.Contracts
             _allowanceMap.Remove(from);
             _allowanceTargets.Remove(from);
 
-            Runtime.Notify(EventKind.GasPayment, Address.Null, new GasEventData(targetAddress, Runtime.GasPrice, spentGas));
-
-            if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
-            {
-                if (_lastInflationDate.Value == 0)
-                {
-                    var genesisTime = Runtime.GetGenesisTime();
-                    _lastInflationDate = genesisTime;
-                    _inflationReady = false;
-                }
-                else
-                if (!_inflationReady)
-                {
-                    var infDiff = Runtime.Time - _lastInflationDate;
-                    var inflationPeriod = SecondsInDay * 90;
-                    if (infDiff >= inflationPeriod)
-                    {
-                        _inflationReady = true;
-                    }
-                }
-            }
+            CheckInflation();
         }
 
         private void SpendGasV2(Address from)
@@ -289,11 +262,6 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(requiredAmount > 0, $"{Runtime.GasPrice} {spentGas} gas fee must exist");
 
             Runtime.Expect(availableAmount >= requiredAmount, "gas allowance is not enough");
-
-            /*var token = this.Runtime.Nexus.FuelToken;
-            Runtime.Expect(token != null, "invalid token");
-            Runtime.Expect(token.Flags.HasFlag(TokenFlags.Fungible), "must be fungible token");
-            */
 
             var leftoverAmount = availableAmount - requiredAmount;
 
@@ -313,7 +281,18 @@ namespace Phantasma.Blockchain.Contracts
 
             if (burnGas > 0)
             {
-                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, this.Address, burnGas);
+                BigInteger burnAmount;
+                
+                if (Runtime.ProtocolVersion >= 4)
+                {
+                    burnAmount = burnGas * Runtime.GasPrice;
+                }
+                else
+                {
+                    burnAmount = burnGas;
+                }
+
+                Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, this.Address, burnAmount);
                 spentGas -= burnGas;
             }
 
@@ -345,8 +324,11 @@ namespace Phantasma.Blockchain.Contracts
             _allowanceMap.Remove(from);
             _allowanceTargets.Remove(from);
 
-            Runtime.Notify(EventKind.GasPayment, Address.Null, new GasEventData(targetAddress, Runtime.GasPrice, spentGas));
+            CheckInflation();
+        }
 
+        private void CheckInflation()
+        {
             if (Runtime.HasGenesis && Runtime.TransactionIndex == 0)
             {
                 if (_lastInflationDate.Value == 0)
