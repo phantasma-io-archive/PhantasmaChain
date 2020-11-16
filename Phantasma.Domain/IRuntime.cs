@@ -150,7 +150,7 @@ namespace Phantasma.Domain
         void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
-        void CreateTokenSeries(string tokenSymbol, Address from, BigInteger seriesID, BigInteger maxSupply, byte[] script, ContractInterface abi);
+        void CreateTokenSeries(string tokenSymbol, Address from, BigInteger seriesID, BigInteger maxSupply, TokenSeriesMode mode, byte[] script, ContractInterface abi);
 
         byte[] ReadOracle(string URL);
 

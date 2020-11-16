@@ -199,9 +199,8 @@ namespace Phantasma.Blockchain
 
             if (this.IsRoot)
             {
-                var contract = new GasContract();
-                contract.LoadFromStorage(changeSet);
-                if (contract._inflationReady)
+                var inflationReady = NativeContract.LoadFieldFromStorage<bool>(changeSet, NativeContractKind.Gas, nameof(GasContract._inflationReady));
+                if (inflationReady)
                 {
                     var script = new ScriptBuilder()
                         .AllowGas(block.Validator, Address.Null, minimumFee, 9999)

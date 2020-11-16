@@ -539,7 +539,7 @@ namespace Phantasma.Simulator
                 ContractInterface nftABI;
                 byte[] nftScript;
                 NFTUtils.GenerateNFTDummyScript(symbol, name, name, "http://simulator/nft/*", "http://simulator/img/*", out nftScript, out nftABI);
-                sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(0), totalSupply, nftScript, nftABI.ToByteArray());
+                sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(0), totalSupply, TokenSeriesMode.Unique, nftScript, nftABI.ToByteArray());
             }
 
             sb.SpendGas(owner.Address);

@@ -92,6 +92,18 @@ namespace Phantasma.Blockchain
             }
         }
 
+        public static T LoadFieldFromStorage<T>(StorageContext storage, NativeContractKind kind, string fieldName)
+        {
+            var contractName = kind.GetContractName();
+            var key = GetKeyForField(contractName, fieldName, true);
+            if (storage.Has(key))
+            {
+                return storage.Get<T>(key);
+            }
+
+            return default(T);
+        }
+
         // here we persist any modifed fields back to storage
         public void SaveChangesToStorage()
         {

@@ -36,6 +36,12 @@ namespace Phantasma.Domain
         }
     }
 
+    public enum TokenSeriesMode
+    {
+        Unique,
+        Duplicated
+    }
+
     public interface IToken
     {
         string Name { get; }
@@ -69,7 +75,7 @@ namespace Phantasma.Domain
         public static readonly int MaxROMSize = 256;
         public static readonly int MaxRAMSize = 256;
 
-        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion) : this()
+        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
         {
             this.SeriesID = seriesID;
             this.MintID = mintID;
@@ -77,7 +83,18 @@ namespace Phantasma.Domain
             CurrentOwner = currentOwner;
             this.ROM = ROM;
             this.RAM = RAM;
-            this.TokenID = Hash.FromBytes(ROM);
+
+            byte[] bytes;
+
+            switch (mode)
+            {
+                case TokenSeriesMode.Unique: bytes = ROM; break;
+                case TokenSeriesMode.Duplicated: bytes = ROM.Concat(seriesID.ToUnsignedByteArray()).Concat(mintID.ToUnsignedByteArray()).ToArray(); break;
+                default:
+                    throw new ChainException($"Generation of tokenID for Series with {mode} is not implemented");
+            }
+            
+            this.TokenID = Hash.FromBytes(bytes);
             this.Infusion = infusion != null ? infusion.ToArray(): new TokenInfusion[0];
         }
 
