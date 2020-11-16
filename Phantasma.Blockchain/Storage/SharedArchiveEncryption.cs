@@ -33,7 +33,7 @@ namespace Phantasma.Blockchain.Storage
                 throw new ChainException("decryption public address does not match");
             }
 
-            return DiffieHellman.Encrypt(chunk, keys.PrivateKey);
+            return DiffieHellman.Decrypt(chunk, keys.PrivateKey);
         }
 
         public void SerializeData(BinaryWriter writer)

@@ -46,7 +46,7 @@ namespace Phantasma.Cryptography
             return Encrypt(input, secret);
         }
 
-        public static string Decrypt(byte[] input, byte[] localPrivateKeyBytes, byte[] remotePublicKeyBytes)
+        public static byte[] Decrypt(byte[] input, byte[] localPrivateKeyBytes, byte[] remotePublicKeyBytes)
         {
             var secret = GetSharedSecret(localPrivateKeyBytes, remotePublicKeyBytes);
             return Decrypt(input, secret);
