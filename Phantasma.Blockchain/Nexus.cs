@@ -1038,7 +1038,6 @@ namespace Phantasma.Blockchain
 
         internal BigInteger GenerateNFT(RuntimeVM Runtime, string symbol, string chainName, Address targetAddress, byte[] rom, byte[] ram, BigInteger seriesID)
         {
-            Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
             Runtime.Expect(ram != null, "invalid nft ram");
 
             Runtime.Expect(seriesID >= 0, "invalid series ID");
@@ -1053,7 +1052,14 @@ namespace Phantasma.Blockchain
             {
                 if (mintID > 1)
                 {
-                    Runtime.Expect(ByteArrayUtils.CompareBytes(rom, series.ROM), $"rom can't be unique in {symbol} series {seriesID}");
+                    if (rom == null || rom.Length == 0)
+                    {
+                        rom = series.ROM;
+                    }
+                    else
+                    {
+                        Runtime.Expect(ByteArrayUtils.CompareBytes(rom, series.ROM), $"rom can't be unique in {symbol} series {seriesID}");
+                    }
                 }
                 else
                 {
@@ -1061,6 +1067,10 @@ namespace Phantasma.Blockchain
                 }
 
                 rom = new byte[0];
+            }
+            else
+            {
+                Runtime.Expect(rom != null && rom.Length > 0, "invalid nft rom");
             }
 
             WriteTokenSeries(Runtime.RootStorage, symbol, seriesID, series);
