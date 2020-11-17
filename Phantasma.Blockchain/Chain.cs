@@ -498,6 +498,7 @@ namespace Phantasma.Blockchain
             return result;
         }
 
+        // generates incremental ID (unique to this chain)
         public BigInteger GenerateUID(StorageContext storage)
         {
             var key = Encoding.ASCII.GetBytes("_uid");

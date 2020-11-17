@@ -957,23 +957,9 @@ namespace Phantasma.Blockchain
             return Nexus.GetStakeFromAddress(this.RootStorage, address);
         }
 
-        private static readonly byte[] uuidKey = System.Text.Encoding.UTF8.GetBytes(".uuid");
-
         public BigInteger GenerateUID()
-        {
-            BigInteger uuid;
-            if (Storage.Has(uuidKey))
-            {
-                uuid = Storage.Get<BigInteger>(uuidKey);
-                uuid += 1;
-            }
-            else
-            {
-                uuid = 1;
-            }
-
-            Storage.Put(uuidKey, uuid);
-            return uuid;
+        {            
+            return this.Chain.GenerateUID(this.Storage);
         }
 
         public BigInteger GetBalance(string symbol, Address address)
