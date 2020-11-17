@@ -75,10 +75,11 @@ namespace Phantasma.Domain
         public static readonly int MaxROMSize = 256;
         public static readonly int MaxRAMSize = 256;
 
-        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
+        public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address creator, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
         {
             this.SeriesID = seriesID;
             this.MintID = mintID;
+            this.Creator = creator;
             CurrentChain = currentChain;
             CurrentOwner = currentOwner;
             this.ROM = ROM;
@@ -100,6 +101,7 @@ namespace Phantasma.Domain
 
         public string CurrentChain { get; private set; }
         public Address CurrentOwner { get; private set; }
+        public Address Creator { get; private set; }
         public byte[] ROM { get; private set; }
         public byte[] RAM { get; private set; }
 
@@ -114,6 +116,7 @@ namespace Phantasma.Domain
         {
             writer.WriteBigInteger(SeriesID);
             writer.WriteBigInteger(MintID);
+            writer.WriteAddress(Creator);
             writer.WriteVarString(CurrentChain);
             writer.WriteAddress(CurrentOwner);
             writer.WriteByteArray(ROM);
@@ -130,6 +133,8 @@ namespace Phantasma.Domain
         {
             SeriesID = reader.ReadBigInteger();
             MintID = reader.ReadBigInteger();
+
+            Creator = reader.ReadAddress();
 
             CurrentChain = reader.ReadVarString();
             CurrentOwner = reader.ReadAddress();
@@ -161,6 +166,11 @@ namespace Phantasma.Domain
 
                 return stream.ToArray();
             }
+        }
+
+        public void ReplaceROM(byte[] newROM)
+        {
+            this.ROM = newROM;
         }
     }
 

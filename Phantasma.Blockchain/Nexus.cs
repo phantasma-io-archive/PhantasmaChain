@@ -1074,7 +1074,7 @@ namespace Phantasma.Blockchain
                 Runtime.Expect(!token.IsCapped(), $"{symbol} series {seriesID} max supply is not defined yet");
             }
 
-            var content = new TokenContent(seriesID, mintID, chainName, targetAddress, rom, ram, null, series.Mode);
+            var content = new TokenContent(seriesID, mintID, chainName, targetAddress, targetAddress, rom, ram, null, series.Mode);
 
             var tokenKey = GetKeyForNFT(symbol, content.TokenID);
             Runtime.Expect(!Runtime.Storage.Has(tokenKey), "duplicated nft");
@@ -1143,7 +1143,7 @@ namespace Phantasma.Blockchain
                 var series = GetTokenSeries(Runtime.RootStorage, symbol, content.SeriesID);
                 Runtime.Expect(series != null, $"could not find series {seriesID} for {symbol}");
 
-                content = new TokenContent(content.SeriesID, content.MintID, chainName, owner, content.ROM, ram, infusion, series.Mode);
+                content = new TokenContent(content.SeriesID, content.MintID, chainName, content.Creator, owner, content.ROM, ram, infusion, series.Mode);
 
                 var token = Runtime.GetToken(symbol);
                 var contractAddress = token.GetContractAddress();
@@ -1183,7 +1183,7 @@ namespace Phantasma.Blockchain
             var series = GetTokenSeries(storage, symbol, content.SeriesID);
             if (series.Mode == TokenSeriesMode.Duplicated)
             {
-                content = new TokenContent(content.SeriesID, content.MintID, content.CurrentChain, content.CurrentOwner, series.ROM, content.RAM, content.Infusion, series.Mode);
+                content.ReplaceROM(series.ROM);
             }
 
             return content;

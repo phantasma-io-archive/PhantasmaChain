@@ -323,6 +323,9 @@ namespace Phantasma.API
         [APIDescription("Address who currently owns the token")]
         public string ownerAddress;
 
+        [APIDescription("Address who minted the token")]
+        public string creatorAddress;
+
         [APIDescription("Writable data of token, hex encoded")]
         public string ram;
 
