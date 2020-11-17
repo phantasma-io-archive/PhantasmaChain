@@ -191,14 +191,6 @@ namespace Phantasma.Blockchain
             }
         }
 
-        public VMObject CallNFT(string symbol, BigInteger seriesID, ContractMethod method, params object[] args)
-        {
-            //var series = Nexus.GetTokenSeries(this.RootStorage, symbol, seriesID);
-            var contextName = $"{symbol}#{seriesID}";
-
-            return CallContext(contextName, (uint)method.offset, method.name, args);
-        }
-
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
             var previousContext = CurrentContext;

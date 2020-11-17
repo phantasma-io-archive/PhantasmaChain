@@ -294,6 +294,14 @@ namespace Phantasma.Domain
             return runtime.InvokeTrigger(allowThrow, script, contextName.ToString().ToLower(), abi, triggerName, args);
         }
 
+        public static VMObject CallNFT(this IRuntime runtime, string symbol, BigInteger seriesID, ContractMethod method, params object[] args)
+        {
+            //var series = Nexus.GetTokenSeries(this.RootStorage, symbol, seriesID);
+            var contextName = $"{symbol}#{seriesID}";
+
+            return runtime.CallContext(contextName, (uint)method.offset, method.name, args);
+        }
+
         public static VMObject CallContext(this IRuntime runtime, string contextName, ContractMethod method, params object[] args)
         {
             runtime.Expect(method != null, "trying to call null method for context: " + contextName);
