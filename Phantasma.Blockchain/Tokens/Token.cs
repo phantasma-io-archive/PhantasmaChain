@@ -8,7 +8,7 @@ using Phantasma.Core;
 
 namespace Phantasma.Blockchain.Tokens
 {
-    public class TokenSeries : ISerializable
+    public class TokenSeries : ITokenSeries
     {
         public BigInteger MintCount { get; private set; }
         public BigInteger MaxSupply { get; private set; }

@@ -68,6 +68,16 @@ namespace Phantasma.Domain
         }
     }
 
+    public interface ITokenSeries: ISerializable
+    {
+        BigInteger MintCount { get; }
+        BigInteger MaxSupply { get; }
+        TokenSeriesMode Mode { get; }
+        byte[] Script { get;  }
+        ContractInterface ABI { get; }
+        byte[] ROM { get; }
+    }
+
     public struct TokenContent : ISerializable
     {
         // sizes in bytes
