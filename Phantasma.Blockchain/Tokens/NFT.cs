@@ -49,7 +49,17 @@ namespace Phantasma.Blockchain.Tokens
                 else
                 {
                     sb.AppendLine("LOAD r1 \"" + left + "\"");
-                    sb.AppendLine("CAT r1 r0 r0");
+
+                    if (propName.Contains("*"))
+                    {
+                        sb.AppendLine("CAT r1 r0 r0");
+                    }
+                    else
+                    {
+                        sb.AppendLine("PUSH r1");
+                        sb.AppendLine("RET");
+                        return;
+                    }
                 }
             }
             else
@@ -86,6 +96,7 @@ namespace Phantasma.Blockchain.Tokens
             GenerateStringScript(sb, "getDescription", description);
             GenerateStringScript(sb, "getInfoURL", jsonURL);
             GenerateStringScript(sb, "getImageURL", imgURL);
+            GenerateStringScript(sb, "getTest", "Hello");
 
             var asm = sb.ToString().Split('\n');
 
@@ -96,6 +107,8 @@ namespace Phantasma.Blockchain.Tokens
             var standardABI = GetNFTStandard();
 
             var methods = standardABI.Methods.Select(x => new ContractMethod(x.name, x.returnType, labels[x.name], x.parameters));
+
+            methods = methods.Concat(new ContractMethod[] { new ContractMethod("getTest", VMType.String, labels["getTest"], new ContractParameter[] { new ContractParameter("tokenID", VMType.Number) }) });
 
             abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
         }

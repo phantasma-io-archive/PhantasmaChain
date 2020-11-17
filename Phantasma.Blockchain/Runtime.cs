@@ -10,6 +10,7 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -152,13 +153,50 @@ namespace Phantasma.Blockchain
 
         public override ExecutionContext LoadContext(string contextName)
         {
-            var contract = this.Chain.GetContractByName(this.Storage, contextName);
-            if (contract != null)
+            if (contextName.Contains("#"))
             {
-                return Chain.GetContractContext(this.changeSet, contract);
-            }
+                var split = contextName.Split('#');
+                if (split.Length != 2)
+                {
+                    return null;
+                }
 
-            return null;
+                var symbol = split[0];
+                BigInteger seriesID;
+
+                if (!BigInteger.TryParse(split[1], out seriesID))
+                {
+                    return null;
+                }
+
+                var series = Nexus.GetTokenSeries(this.RootStorage, symbol, seriesID);
+                if (series == null)
+                {
+                    throw new VMException(this, $"Could not find {symbol} series #{seriesID}");
+                }
+
+                var contract = new CustomContract(contextName, series.Script, series.ABI);
+                var context = new ChainExecutionContext(contract);
+                return context;
+            }
+            else
+            {
+                var contract = this.Chain.GetContractByName(this.Storage, contextName);
+                if (contract != null)
+                {
+                    return Chain.GetContractContext(this.changeSet, contract);
+                }
+
+                return null;
+            }
+        }
+
+        public VMObject CallNFT(string symbol, BigInteger seriesID, ContractMethod method, params object[] args)
+        {
+            //var series = Nexus.GetTokenSeries(this.RootStorage, symbol, seriesID);
+            var contextName = $"{symbol}#{seriesID}";
+
+            return CallContext(contextName, (uint)method.offset, method.name, args);
         }
 
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)

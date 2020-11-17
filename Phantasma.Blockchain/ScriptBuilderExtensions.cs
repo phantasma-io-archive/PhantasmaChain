@@ -72,5 +72,11 @@ namespace Phantasma.Blockchain
         {
             return sb.CallContract(contractKind.ToString().ToLower(), method, args);
         }
+
+        public static ScriptBuilder CallNFT(this ScriptBuilder sb, string symbol, BigInteger seriesID, string method, params object[] args)
+        {
+            var contractName = $"{symbol}#{seriesID}";
+            return sb.CallContract(contractName, method, args);
+        }
     }
 }
