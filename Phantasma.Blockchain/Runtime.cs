@@ -280,6 +280,9 @@ namespace Phantasma.Blockchain
                     }
 
                     break;
+                case EventKind.CrownRewards:
+                    Expect(contract == Nexus.GasContractName, $"event kind only in {Nexus.GasContractName} contract");
+                    break;
             }
 
             var evt = new Event(kind, address, contract, bytes);

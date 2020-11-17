@@ -63,6 +63,7 @@ namespace Phantasma.Domain
         DomainDelete = 53,
         TaskStart = 54,
         TaskStop = 55,
+        CrownRewards = 56,
         Custom = 64,
     }
 
