@@ -130,7 +130,13 @@ namespace Phantasma.Blockchain.Contracts
 
                 var rewardFuel = _rewardAccum / rewardList.Count;
 
+                var stakeAmount = UnitConversion.ToBigInteger(1, DomainSettings.StakingTokenDecimals);
+
                 Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, this.Address, rewardAmount);
+
+                var crownAddress = TokenUtils.GetContractAddress(DomainSettings.RewardTokenSymbol);
+                Runtime.MintTokens(DomainSettings.StakingTokenSymbol, this.Address, crownAddress, stakeAmount);
+                Runtime.CallNativeContext(NativeContractKind.Stake, nameof(StakeContract.Stake), crownAddress, stakeAmount);
 
                 foreach (var addr in rewardList)
                 {
@@ -145,6 +151,7 @@ namespace Phantasma.Blockchain.Contracts
                 Runtime.Expect(_rewardAccum >= 0, "invalid reward leftover");
 
                 inflationAmount -= rewardAmount;
+                inflationAmount -= stakeAmount;
             }
 
             var refillAmount = inflationAmount / 50;
