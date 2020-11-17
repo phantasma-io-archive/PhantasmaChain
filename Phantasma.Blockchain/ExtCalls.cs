@@ -69,6 +69,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Data.Set", Data_Set);
             vm.RegisterMethod("Data.Delete", Data_Delete);
 
+            vm.RegisterMethod("Map.Has", Map_Has);
             vm.RegisterMethod("Map.Get", Map_Get);
             vm.RegisterMethod("Map.Set", Map_Set);
             vm.RegisterMethod("Map.Remove", Map_Remove);
@@ -501,6 +502,32 @@ namespace Phantasma.Blockchain
         #endregion
 
         #region MAP
+        private static ExecutionState Map_Has(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(3);
+
+            var contractName = vm.PopString("contract");
+            var field = vm.PopString("field");
+            var mapKey = SmartContract.GetKeyForField(contractName, field, false);
+
+            var entryKey = vm.PopBytes("key");
+            vm.Expect(entryKey.Length > 0, "invalid entry key");
+
+            var type_obj = vm.Stack.Pop();
+            var vmType = type_obj.AsEnum<VMType>();
+
+            var map = new StorageMap(mapKey, vm.Storage);
+
+            var keyExists = map.ContainsKey(entryKey);
+
+            var val = new VMObject();
+            val.SetValue(keyExists);
+            vm.Stack.Push(val);
+
+            return ExecutionState.Running;
+        }
+
+
         private static ExecutionState Map_Get(RuntimeVM vm)
         {
             vm.ExpectStackSize(4);
@@ -509,8 +536,7 @@ namespace Phantasma.Blockchain
             var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
-            var entry_obj = vm.Stack.Pop();
-            var entryKey = entry_obj.AsByteArray();
+            var entryKey = vm.PopBytes("key");
             vm.Expect(entryKey.Length > 0, "invalid entry key");
 
             var type_obj = vm.Stack.Pop();
