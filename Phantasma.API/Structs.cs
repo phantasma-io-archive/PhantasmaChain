@@ -298,6 +298,23 @@ namespace Phantasma.API
 
         [APIDescription("Script attached to token, in hex")]
         public string script;
+
+        [APIDescription("Series info. NFT only")]
+        public TokenSeriesResult[] series;
+    }
+
+    public struct TokenSeriesResult : IAPIResult
+    {
+        public uint seriesID;
+
+        public string currentSupply;
+
+        public string maxSupply;
+
+        public string script;
+
+        [APIDescription("List of methods")]
+        public ABIMethodResult[] methods;
     }
 
     public struct TokenPropertyResult : IAPIResult

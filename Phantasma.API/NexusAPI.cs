@@ -423,6 +423,32 @@ namespace Phantasma.API
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
 
+            var seriesList = new List<TokenSeriesResult>();
+
+            if (!tokenInfo.IsFungible())
+            {
+                //  HACK wont work if token has non-sequential series
+                for (uint i=0; i<9999; i++)
+                {
+                    var series = Nexus.GetTokenSeries(Nexus.RootStorage, tokenSymbol, i);
+                    if (series != null)
+                    {
+                        seriesList.Add(new TokenSeriesResult()
+                        {
+                            seriesID = i,
+                            currentSupply = "0", // TODO
+                            maxSupply = series.MaxSupply.ToString(),
+                            script = Base16.Encode(series.Script),
+                            methods = FillMethods(series.ABI.Methods)
+                        });
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
             return new TokenResult
             {
                 symbol = tokenInfo.Symbol,
@@ -433,7 +459,8 @@ namespace Phantasma.API
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
                 address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,
                 owner = tokenInfo.Owner.Text,
-                script = tokenInfo.Script.Encode()
+                script = tokenInfo.Script.Encode(),
+                series = seriesList.ToArray()
             };
         }
 
@@ -599,6 +626,20 @@ namespace Phantasma.API
             return null;
         }
 
+        private ABIMethodResult[] FillMethods(IEnumerable<ContractMethod> methods)
+        {
+            return methods.Select(x => new ABIMethodResult()
+            {
+                name = x.name,
+                returnType = x.returnType.ToString(),
+                parameters = x.parameters.Select(y => new ABIParameterResult()
+                {
+                    name = y.name,
+                    type = y.type.ToString()
+                }).ToArray()
+            }).ToArray();
+        }
+
         private ContractResult FillContract(string name, SmartContract contract)
         {
             var customContract = contract as CustomContract;
@@ -609,16 +650,7 @@ namespace Phantasma.API
                 name = name,
                 script = Base16.Encode(scriptBytes),
                 address = contract.Address.Text,
-                methods = contract.ABI.Methods.Select(x => new ABIMethodResult()
-                {
-                    name = x.name,
-                    returnType = x.returnType.ToString(),
-                    parameters = x.parameters.Select(y => new ABIParameterResult()
-                    {
-                        name = y.name,
-                        type = y.type.ToString()
-                    }).ToArray()
-                }).ToArray(),
+                methods = FillMethods(contract.ABI.Methods),
                 events = contract.ABI.Events.Select(x => new ABIEventResult()
                 {
                     name = x.name,
