@@ -238,6 +238,7 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     _rewardAccum += targetPayment;
                     Runtime.TransferTokens(DomainSettings.FuelTokenSymbol, from, this.Address, targetPayment);
+                    Runtime.Notify(EventKind.CrownRewards, from, new TokenEventData(DomainSettings.FuelTokenSymbol, targetPayment, Runtime.Chain.Name));
                 }
                 else
                 {
@@ -312,7 +313,7 @@ namespace Phantasma.Blockchain.Contracts
                 if (targetAddress == Runtime.Chain.Address)
                 {
                     _rewardAccum += targetPayment;
-                    Runtime.Notify(EventKind.CrownRewards, from, new TokenEventData(DomainSettings.FuelTokenSymbol, targetGas * Runtime.GasPrice, Runtime.Chain.Name));
+                    Runtime.Notify(EventKind.CrownRewards, from, new TokenEventData(DomainSettings.FuelTokenSymbol, targetPayment, Runtime.Chain.Name));
                 }
                 else
                 {
