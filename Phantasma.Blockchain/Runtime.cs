@@ -1328,9 +1328,8 @@ namespace Phantasma.Blockchain
             var token = Runtime.GetToken(symbol);
             Runtime.Expect(!token.IsFungible(), "token must be non-fungible");
 
-            // TODO this should be a token trigger instead
-            Runtime.Expect(from == token.Owner, "not permissions for this address"); 
             Runtime.Expect(IsWitness(from), "invalid witness");
+            Runtime.Expect(InvokeTriggerOnToken(false, token, TokenTrigger.OnSeries, from) != TriggerResult.Failure, $"trigger {TokenTrigger.OnSeries} on token {symbol} failed for {from}"); 
 
             return Nexus.CreateSeries(this.RootStorage, token, seriesID, maxSupply, mode, script, abi);
         }

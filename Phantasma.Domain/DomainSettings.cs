@@ -29,6 +29,7 @@ namespace Phantasma.Domain
         OnReceive, // address, symbol, amount
         OnInfuse, // address, symbol, amount
         OnUpgrade, // address
+        OnSeries, // address
     }
 
     public enum OrganizationTrigger
