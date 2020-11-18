@@ -122,6 +122,16 @@ namespace Phantasma.Blockchain.Contracts
             }
         }
 
+        public void CancelSale(string symbol, BigInteger tokenID)
+        {
+            var auctionID = symbol + "." + tokenID;
+
+            Runtime.Expect(_auctionMap.ContainsKey<string>(auctionID), "invalid auction");
+            var auction = _auctionMap.Get<string, MarketAuction>(auctionID);
+
+            BuyToken(auction.Creator, symbol, tokenID);
+        }
+
         public MarketAuction[] GetAuctions()
         {
             var ids = _auctionIds.AllValues<string>();
