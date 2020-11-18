@@ -23,6 +23,7 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.Time", Runtime_Time);
             vm.RegisterMethod("Runtime.GasTarget", Runtime_GasTarget);
             vm.RegisterMethod("Runtime.Validator", Runtime_Validator);
+            vm.RegisterMethod("Runtime.Context", Runtime_Context);
             vm.RegisterMethod("Runtime.GenerateUID", Runtime_GenerateUID);
             vm.RegisterMethod("Runtime.Random", Runtime_Random);            
             vm.RegisterMethod("Runtime.SetSeed", Runtime_SetSeed);
@@ -356,6 +357,15 @@ namespace Phantasma.Blockchain
         {
             var result = new VMObject();
             result.SetValue(vm.Validator);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_Context(RuntimeVM vm)
+        {
+            var result = new VMObject();
+            result.SetValue(vm.CurrentContextName);
             vm.Stack.Push(result);
 
             return ExecutionState.Running;
