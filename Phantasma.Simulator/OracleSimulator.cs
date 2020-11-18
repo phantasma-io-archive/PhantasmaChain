@@ -117,6 +117,11 @@ namespace Phantasma.Simulator
             return Phantasma.Numerics.UnitConversion.ToBigInteger(0.1m, DomainSettings.FiatTokenDecimals);
         }
 
+        protected override byte VerifyDomainRecord(string identifier, string domain)
+        {
+            return (byte)1;
+        }
+
         protected override decimal PullPrice(Timestamp time, string baseSymbol)
         {
             // some dummy values, only really used in the test suite ...

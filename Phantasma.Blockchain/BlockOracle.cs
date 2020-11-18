@@ -35,6 +35,11 @@ namespace Phantasma.Blockchain
             return content;
         }
 
+        protected override byte VerifyDomainRecord(string identifier, string domain)
+        {
+            throw new NotImplementedException();
+        }
+
         public override List<InteropBlock> ReadAllBlocks(string platformName, string chainName)
         {
             throw new NotImplementedException();

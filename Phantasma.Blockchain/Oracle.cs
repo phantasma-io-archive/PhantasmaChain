@@ -105,6 +105,7 @@ namespace Phantasma.Blockchain
         public const string interopTag = "interop://";
         public const string priceTag = "price://";
         public const string feeTag = "fee://";
+        public const string domainTag = "domain://";
         public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
 
         protected ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
@@ -118,6 +119,7 @@ namespace Phantasma.Blockchain
         protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
         protected abstract InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID);
+        protected abstract byte VerifyDomainRecord(string identifier, string domain);
         public abstract string GetCurrentHeight(string platformName, string chainName);
         public abstract void SetCurrentHeight(string platformName, string chainName, string height);
         public abstract List<InteropBlock> ReadAllBlocks(string platformName, string chainName);
@@ -138,6 +140,17 @@ namespace Phantasma.Blockchain
 
             T content;
 
+            if (url.StartsWith(interopTag))
+            {
+                var tags = url.Substring(domainTag.Length);
+                var args = tags.Split('/');
+
+                var type = args[0];
+                var domain = args[1];
+                
+                content = VerifyDomainRecord(type, domain) as T;
+            }
+            else
             if (url.StartsWith(interopTag))
             {
                 var tags = url.Substring(interopTag.Length);
