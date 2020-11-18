@@ -8,6 +8,8 @@ namespace Phantasma.Blockchain.Storage
     public class PrivateArchiveEncryption : IArchiveEncryption
     {
         public Address Address { get; private set; }
+        private readonly int InitializationVectorSize = 16;
+        public byte[] InitializationVector { get; private set; }
 
         public PrivateArchiveEncryption(Address publicKey)
         {
@@ -27,7 +29,9 @@ namespace Phantasma.Blockchain.Storage
                 throw new ChainException("encryption public address does not match");
             }
 
-            return CryptoExtensions.AES256Encrypt(chunk, keys.PrivateKey);
+            InitializationVector = CryptoExtensions.AESGenerateIV(InitializationVectorSize);
+
+            return CryptoExtensions.AESGCMEncrypt(chunk, keys.PrivateKey, InitializationVector);
         }
 
         public byte[] Decrypt(byte[] chunk, PhantasmaKeys keys)
@@ -37,17 +41,19 @@ namespace Phantasma.Blockchain.Storage
                 throw new ChainException("decryption public address does not match");
             }
 
-            return CryptoExtensions.AES256Decrypt(chunk, keys.PrivateKey);
+            return CryptoExtensions.AESGCMDecrypt(chunk, keys.PrivateKey, InitializationVector);
         }
 
         public void SerializeData(BinaryWriter writer)
         {
             writer.WriteAddress(Address);
+            writer.Write(InitializationVector);
         }
 
         public void UnserializeData(BinaryReader reader)
         {
             this.Address = reader.ReadAddress();
+            this.InitializationVector = reader.ReadBytes(InitializationVectorSize);
         }
     }
 }

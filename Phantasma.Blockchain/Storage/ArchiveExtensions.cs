@@ -10,7 +10,7 @@ namespace Phantasma.Blockchain.Storage
 
         public static void WriteArchiveEncryption(this BinaryWriter writer, IArchiveEncryption encryption)
         {
-            if (encryption == null)
+            if (encryption == null || encryption.Mode == ArchiveEncryptionMode.None)
             {
                 writer.Write((byte)ArchiveEncryptionMode.None);
                 return;
@@ -24,7 +24,7 @@ namespace Phantasma.Blockchain.Storage
         {
             if (encryption == null || encryption.Mode == ArchiveEncryptionMode.None)
             {
-                return new byte[0];
+                return Uncompressed;
             }
 
             using (var stream = new MemoryStream())
