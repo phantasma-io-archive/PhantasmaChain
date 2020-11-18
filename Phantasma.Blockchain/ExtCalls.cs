@@ -887,6 +887,7 @@ namespace Phantasma.Blockchain
                 {
                     case "Chain": obj = content.CurrentChain; break;
                     case "Owner": obj = content.CurrentOwner.Text; break;
+                    case "Creator": obj = content.Creator.Text; break;
                     case "ROM": obj = content.ROM; break;
                     case "RAM": obj = content.RAM; break;
                     case "TokenID": obj = content.TokenID; break;
