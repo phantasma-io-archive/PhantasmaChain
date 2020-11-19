@@ -249,7 +249,7 @@ namespace Phantasma.Blockchain
                         Expect(gasInfo.price >= this.MinimumFee, "gas fee is too low");
                         this.MaxGas = gasInfo.amount;
                         this.GasPrice = gasInfo.price;
-                        this.GasTarget = address;
+                        this.GasTarget = gasInfo.address;
                         break;
                     }
 
