@@ -51,6 +51,8 @@ namespace Phantasma.Blockchain
             vm.RegisterMethod("Runtime.TokenExists", Runtime_TokenExists);
             vm.RegisterMethod("Runtime.GetTokenDecimals", Runtime_TokenGetDecimals);
             vm.RegisterMethod("Runtime.GetTokenFlags", Runtime_TokenGetFlags);
+            vm.RegisterMethod("Runtime.AESDecrypt", Runtime_AESDecrypt);
+            vm.RegisterMethod("Runtime.AESEncrypt", Runtime_AESEncrypt);
 
             vm.RegisterMethod("Nexus.Init", Nexus_Init);
             vm.RegisterMethod("Nexus.CreateToken", Nexus_CreateToken);
@@ -1206,6 +1208,38 @@ namespace Phantasma.Blockchain
             }
 
             vm.Notify(EventKind.ContractUpgrade, from, contractName);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_AESDecrypt(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            var data = vm.PopBytes("data");
+            var key = vm.PopBytes("key");
+
+            var decryptedData = CryptoExtensions.AES256Decrypt(data, key);
+
+            var result = new VMObject();
+            result.SetValue(decryptedData);
+            vm.Stack.Push(result);
+
+            return ExecutionState.Running;
+        }
+
+        private static ExecutionState Runtime_AESEncrypt(RuntimeVM vm)
+        {
+            vm.ExpectStackSize(2);
+
+            var data = vm.PopBytes("data");
+            var key = vm.PopBytes("key");
+
+            var encryptedData = CryptoExtensions.AES256Encrypt(data, key);
+
+            var result = new VMObject();
+            result.SetValue(encryptedData);
+            vm.Stack.Push(result);
 
             return ExecutionState.Running;
         }
