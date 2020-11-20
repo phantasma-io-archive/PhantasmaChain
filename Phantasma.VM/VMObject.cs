@@ -69,6 +69,11 @@ namespace Phantasma.VM
 
         public BigInteger AsNumber()
         {
+            if (this.Type == VMType.Object && (Data is Timestamp))
+            {
+                return ((Timestamp)Data).Value;
+            }
+
             switch (this.Type)
             {
                 case VMType.String:
