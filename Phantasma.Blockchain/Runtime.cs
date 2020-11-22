@@ -711,7 +711,8 @@ namespace Phantasma.Blockchain
             }
 
             // workaround for supporting txs done in older nodes
-            if (!accountResult && this.IsRootChain() && this.Chain.Height < 50000)
+            if (!accountResult && this.IsRootChain() && this.Chain.Height < 50000
+                    && this.NexusName == DomainSettings.NexusMainnet)
             {
                 accountResult = this.Transaction.IsSignedBy(this.GenesisAddress);
             }

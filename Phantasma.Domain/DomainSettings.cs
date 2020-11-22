@@ -59,6 +59,9 @@ namespace Phantasma.Domain
         public const string FuelTokenName = "Phantasma Energy";
         public const int FuelTokenDecimals = 10;
 
+        public const string NexusMainnet = "mainnet";
+        public const string NexusTestnet = "testnet";
+
         public const string StakingTokenSymbol = "SOUL";
         public const string StakingTokenName = "Phantasma Stake";
         public const int StakingTokenDecimals = 8;
