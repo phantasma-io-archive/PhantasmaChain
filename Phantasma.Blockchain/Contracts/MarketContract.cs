@@ -3,6 +3,7 @@ using Phantasma.Cryptography;
 using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage.Context;
+using Phantasma.VM;
 using System;
 
 namespace Phantasma.Blockchain.Contracts
@@ -104,7 +105,29 @@ namespace Phantasma.Blockchain.Contracts
                 var balance = Runtime.GetBalance(quoteToken.Symbol, from);
                 Runtime.Expect(balance >= auction.Price, $"not enough {quoteToken.Symbol} balance at {from.Text}");
 
-                Runtime.TransferTokens(quoteToken.Symbol, from, auction.Creator, auction.Price);
+                var finalAmount = auction.Price;
+
+                if (Runtime.ProtocolVersion >= 4)
+                {
+                    var nftSymbol = auction.BaseSymbol;
+                    var nftData = Runtime.ReadToken(nftSymbol, tokenID);
+                    var series = Runtime.GetTokenSeries(nftSymbol, nftData.SeriesID);
+
+                    var royaltyProperty = new ContractMethod("getRoyalty", VMType.Number, -1);
+
+                    if (series.ABI.Implements(royaltyProperty))
+                    {
+                        var nftRoyalty = Runtime.CallNFT(nftSymbol, nftData.SeriesID, royaltyProperty, tokenID).AsNumber();
+                        if (nftRoyalty > 50)
+                        {
+                            nftRoyalty = 50; // we don't allow more than 50% royalties fee
+                        }
+                        var royaltyFee = finalAmount * nftRoyalty / 100;
+                        Runtime.TransferTokens(quoteToken.Symbol, from, nftData.Creator, royaltyFee);
+                        finalAmount -= royaltyFee;
+                    }
+                }
+                Runtime.TransferTokens(quoteToken.Symbol, from, auction.Creator, finalAmount);
             }
 
             Runtime.TransferToken(baseToken.Symbol, this.Address, from, auction.TokenID);
