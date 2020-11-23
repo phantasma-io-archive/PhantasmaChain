@@ -221,11 +221,16 @@ namespace Phantasma.Blockchain
                 }
             }
 
+            if (block.Protocol > DomainSettings.LatestKnownProtocol)
+            {
+                throw new BlockGenerationException($"unexpected protocol number {block.Protocol}, maybe software update required?");
+            }
+
             // Only check protocol version if block is created on this node, no need to check if it's a non validator node.
             if (allowModify)
             {
                 var expectedProtocol = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
-                if (block.Protocol !=   expectedProtocol)
+                if (block.Protocol != expectedProtocol)
                 {
                     throw new BlockGenerationException($"invalid protocol number {block.Protocol}, expected protocol {expectedProtocol}");
                 }
