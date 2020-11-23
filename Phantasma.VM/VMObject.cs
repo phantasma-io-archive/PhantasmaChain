@@ -101,6 +101,12 @@ namespace Phantasma.VM
                         return num;
                     }
 
+                case VMType.Bool:
+                    {
+                        var val = (bool)Data;
+                        return val ? 1 : 0;
+                    }
+
                 default:
                     {
                         if (this.Type != VMType.Number)
@@ -235,6 +241,12 @@ namespace Phantasma.VM
                         return bytes;
                     }
 
+                case VMType.Struct:
+                    {
+                        var bytes = this.Serialize();
+                        return bytes;
+                    }
+
                 case VMType.Object:
                     {
                         var serializable = Data as ISerializable;
@@ -309,6 +321,11 @@ namespace Phantasma.VM
                         var val = this.AsNumber();
                         return val != 0;
                     }
+
+                /*case VMType.String:
+                    {
+                        return !(((string)this.Data).Equals("false", StringComparison.OrdinalIgnoreCase));
+                    }*/
 
                 default:
                     throw new Exception($"Invalid cast: expected bool, got {this.Type}");
@@ -707,78 +724,24 @@ namespace Phantasma.VM
                     }
 
                 case VMType.Bool:
-                    // TODO move this stuff to AsBool()
-                    switch (srcObj.Type)
                     {
-                        case VMType.Number:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(srcObj.AsNumber() != 0);
-                                return result;
-                            }
-
-                        case VMType.String:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(!(((string)srcObj.Data).Equals("false", StringComparison.OrdinalIgnoreCase)));
-                                return result;
-                            }
-
-                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
+                        var result = new VMObject();
+                        result.SetValue(srcObj.AsBool()); // TODO does this work for all types?
+                        return result;
                     }
 
                 case VMType.Bytes:
-                    switch (srcObj.Type)
                     {
-                        case VMType.Bool:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(new byte[] { (byte)(srcObj.AsBool() ? 1 : 0) }, VMType.Bytes);
-                                return result;
-                            }
-
-                        case VMType.String:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(Encoding.UTF8.GetBytes((string)srcObj.Data), VMType.Bytes);
-                                return result;
-                            }
-
-                        case VMType.Number:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(((BigInteger)srcObj.Data).ToSignedByteArray(), VMType.Bytes);
-                                return result;
-                            }
-
-                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
+                        var result = new VMObject();
+                        result.SetValue(srcObj.AsByteArray()); // TODO does this work for all types?
+                        return result;
                     }
 
                 case VMType.Number:
-                    switch (srcObj.Type)
                     {
-                        case VMType.Bool:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(srcObj.AsBool() ? 1 : 0);
-                                return result;
-                            }
-
-                        case VMType.String:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(BigInteger.Parse((string)srcObj.Data));
-                                return result;
-                            }
-
-                        case VMType.Bytes:
-                            {
-                                var result = new VMObject();
-                                result.SetValue(BigInteger.FromSignedArray((byte[])srcObj.Data));
-                                return result;
-                            }
-
-                        default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
+                        var result = new VMObject();
+                        result.SetValue(srcObj.AsNumber()); // TODO does this work for all types?
+                        return result;
                     }
 
                 case VMType.Struct:
