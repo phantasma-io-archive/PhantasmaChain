@@ -16,6 +16,14 @@ namespace Phantasma.Blockchain.Storage
 
         public ArchiveEncryptionMode Mode => ArchiveEncryptionMode.Shared;
 
+        public string EncryptName(string name, PhantasmaKeys keys)
+        {
+            throw new System.NotImplementedException();
+        }
+        public string DecryptName(string name, PhantasmaKeys keys)
+        {
+            throw new System.NotImplementedException();
+        }
         public byte[] Encrypt(byte[] chunk, PhantasmaKeys keys)
         {
             if (keys.Address != this.Source && keys.Address != this.Destination)

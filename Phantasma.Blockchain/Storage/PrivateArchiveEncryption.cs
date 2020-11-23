@@ -14,6 +14,7 @@ namespace Phantasma.Blockchain.Storage
         public PrivateArchiveEncryption(Address publicKey)
         {
             this.Address = publicKey;
+            this.InitializationVector = CryptoExtensions.AESGenerateIV(InitializationVectorSize);
         }
 
         public PrivateArchiveEncryption()
@@ -21,15 +22,31 @@ namespace Phantasma.Blockchain.Storage
         }
 
         public ArchiveEncryptionMode Mode => ArchiveEncryptionMode.Private;
-       
-        public byte[] Encrypt(byte[] chunk, PhantasmaKeys keys)
+
+        public string EncryptName(string name, PhantasmaKeys keys)
         {
             if (keys.Address != this.Address)
             {
                 throw new ChainException("encryption public address does not match");
             }
 
-            InitializationVector = CryptoExtensions.AESGenerateIV(InitializationVectorSize);
+            return Numerics.Base58.Encode(CryptoExtensions.AESGCMEncrypt(System.Text.Encoding.UTF8.GetBytes(name), keys.PrivateKey, InitializationVector));
+        }
+        public string DecryptName(string name, PhantasmaKeys keys)
+        {
+            if (keys.Address != this.Address)
+            {
+                throw new ChainException("encryption public address does not match");
+            }
+
+            return System.Text.Encoding.UTF8.GetString(CryptoExtensions.AESGCMDecrypt(Numerics.Base58.Decode(name), keys.PrivateKey, InitializationVector));
+        }
+        public byte[] Encrypt(byte[] chunk, PhantasmaKeys keys)
+        {
+            if (keys.Address != this.Address)
+            {
+                throw new ChainException("encryption public address does not match");
+            }
 
             return CryptoExtensions.AESGCMEncrypt(chunk, keys.PrivateKey, InitializationVector);
         }
