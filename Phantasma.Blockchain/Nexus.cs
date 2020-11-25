@@ -1150,10 +1150,22 @@ namespace Phantasma.Blockchain
             {
                 var content = Runtime.RootStorage.Get<TokenContent>(tokenKey);
 
-                Runtime.Expect(rom.CompareBytes(content.ROM), "rom does not match original value");
-
                 var series = GetTokenSeries(Runtime.RootStorage, symbol, content.SeriesID);
                 Runtime.Expect(series != null, $"could not find series {seriesID} for {symbol}");
+
+                switch (series.Mode)
+                {
+                    case TokenSeriesMode.Unique:
+                        Runtime.Expect(rom.CompareBytes(content.ROM), "rom does not match original value");
+                        break;
+
+                    case TokenSeriesMode.Duplicated:
+                        Runtime.Expect(rom.Length == 0 || rom.CompareBytes(series.ROM), "rom does not match original value");
+                        break;
+
+                    default:
+                        throw new ChainException("WriteNFT: unsupported series mode: " + series.Mode);
+                }
 
                 content = new TokenContent(content.SeriesID, content.MintID, chainName, content.Creator, owner, content.ROM, ram, infusion, series.Mode);
 
