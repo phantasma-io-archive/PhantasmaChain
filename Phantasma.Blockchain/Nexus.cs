@@ -1079,7 +1079,7 @@ namespace Phantasma.Blockchain
 
             if (series.MaxSupply > 0)
             {
-                Runtime.Expect(mintID < series.MaxSupply, $"{symbol} series {seriesID} reached max supply already");
+                Runtime.Expect(mintID <= series.MaxSupply, $"{symbol} series {seriesID} reached max supply already");
             }
             else
             {
