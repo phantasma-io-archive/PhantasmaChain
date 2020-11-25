@@ -21,6 +21,7 @@ namespace Phantasma.Blockchain.Tokens
         {
             MintCount = mintCount;
             MaxSupply = maxSupply;
+            Mode = mode;
             Script = script;
             this.ABI = ABI;
             SetROM(ROM);
