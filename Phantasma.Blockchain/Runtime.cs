@@ -1249,8 +1249,8 @@ namespace Phantasma.Blockchain
 
             Runtime.Expect(Runtime.IsRootChain(), "can only mint nft in root chain");
 
-            Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed");
-            Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed");
+            Runtime.Expect(rom.Length <= TokenContent.MaxROMSize, "ROM size exceeds maximum allowed, received: " + rom.Length + ", maximum: " + TokenContent.MaxROMSize);
+            Runtime.Expect(ram.Length <= TokenContent.MaxRAMSize, "RAM size exceeds maximum allowed, received: " + ram.Length + ", maximum: " + TokenContent.MaxRAMSize);
 
             BigInteger tokenID;
             using (var m = new ProfileMarker("Nexus.CreateNFT"))
