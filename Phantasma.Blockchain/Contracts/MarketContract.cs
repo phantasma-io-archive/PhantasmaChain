@@ -55,7 +55,7 @@ namespace Phantasma.Blockchain.Contracts
             Runtime.Expect(endDate > Runtime.Time, "invalid end date");
 
             var maxAllowedDate = Runtime.Time + TimeSpan.FromDays(30);
-            Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant");
+            Runtime.Expect(endDate <= maxAllowedDate, "end date is too distant, max: " + maxAllowedDate + ", received: " + endDate);
 
             Runtime.Expect(Runtime.TokenExists(quoteSymbol), "invalid quote token");
             var quoteToken = Runtime.GetToken(quoteSymbol);

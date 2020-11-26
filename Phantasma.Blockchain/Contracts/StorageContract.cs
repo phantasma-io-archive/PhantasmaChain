@@ -253,7 +253,7 @@ namespace Phantasma.Blockchain.Contracts
             var writeSize = value.Length;
 
             var availableSize = GetAvailableSpace(target);
-            Runtime.Expect(availableSize >= writeSize, $"not enough storage space available");
+            Runtime.Expect(availableSize >= writeSize, $"not enough storage space available: requires " + writeSize + ", only have: " + availableSize);
 
             Runtime.Storage.Put(key, value);
 
