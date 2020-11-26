@@ -82,8 +82,8 @@ namespace Phantasma.Domain
     {
         // sizes in bytes
         // TODO find optimal values for this
-        public static readonly int MaxROMSize = 256;
-        public static readonly int MaxRAMSize = 256;
+        public static readonly int MaxROMSize = 1024;
+        public static readonly int MaxRAMSize = 1024;
 
         public TokenContent(BigInteger seriesID, BigInteger mintID, string currentChain, Address creator, Address currentOwner, byte[] ROM, byte[] RAM,  IEnumerable<TokenInfusion> infusion, TokenSeriesMode mode) : this()
         {
