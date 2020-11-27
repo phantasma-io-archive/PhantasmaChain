@@ -944,14 +944,7 @@ namespace Phantasma.VM
                             Expect(dst < frame.Registers.Length, "invalid dst register");
 
                             var bytes = frame.Registers[src].AsByteArray();
-                            frame.Registers[dst] = new VMObject();
-                            using (var stream = new MemoryStream(bytes))
-                            {
-                                using (var reader = new BinaryReader(stream))
-                                {
-                                    frame.Registers[dst].UnserializeData(reader);
-                                }
-                            }
+                            frame.Registers[dst] = VMObject.FromBytes(bytes);
                             break;
                         }
 
