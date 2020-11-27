@@ -465,15 +465,9 @@ namespace Phantasma.API
             };
         }
 
-        private TokenContent ReadNFT(string symbol, BigInteger tokenID, Chain chain)
-        {
-            var tokenKey = Nexus.GetKeyForNFT(symbol, tokenID);
-            return chain.Storage.Get<TokenContent>(tokenKey);
-        }
-
         private AuctionResult FillAuction(MarketAuction auction, Chain chain)
         {
-            var nft = ReadNFT(auction.BaseSymbol, auction.TokenID, chain);
+            var nft = Nexus.ReadNFT(Nexus.RootStorage, auction.BaseSymbol, auction.TokenID);
 
             return new AuctionResult
             {
@@ -1455,7 +1449,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            var info = ReadNFT(symbol, ID, Nexus.RootChain); // TODO support other chains
+            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
 
             var properties = new List<TokenPropertyResult>();
             if (extended)
@@ -1643,7 +1637,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var info = ReadNFT(symbol, ID, chain);
+            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
 
             var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
             if (!forSale)
