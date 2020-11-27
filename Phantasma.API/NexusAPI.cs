@@ -1461,19 +1461,7 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            string propName = method.name;
-
-                            if (propName.StartsWith("is"))
-                            {
-                                propName = propName.Substring(2);
-                            }
-                            else
-                            if (propName.StartsWith("get"))
-                            {
-                                propName = propName.Substring(3);
-                            }
-
-                            APIUtils.FetchProperty(propName, series, properties);
+                            APIUtils.FetchProperty(method.name, series, properties);
                         }
                     }
 
