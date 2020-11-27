@@ -428,7 +428,7 @@ namespace Phantasma.API
             if (!tokenInfo.IsFungible())
             {
                 //  HACK wont work if token has non-sequential series
-                for (uint i=0; i<9999; i++)
+                for (uint i=1; i<9999; i++)
                 {
                     var series = Nexus.GetTokenSeries(Nexus.RootStorage, tokenSymbol, i);
                     if (series != null)
@@ -589,7 +589,7 @@ namespace Phantasma.API
         private ChainResult FillChain(Chain chain)
         {
             Throw.IfNull(chain, nameof(chain));
-            
+
             var parentName = Nexus.GetParentChainByName(chain.Name);
             var orgName = Nexus.GetChainOrganization(chain.Name);
 
@@ -681,7 +681,7 @@ namespace Phantasma.API
                 hash = archive.Hash.ToString(),
                 name = archive.Name,
                 time = archive.Time.Value,
-                size = (uint)archive.Size,                
+                size = (uint)archive.Size,
                 encryption = Base16.Encode(archive.Encryption.ToBytes()),
                 blockCount = (int)archive.BlockCount,
                 missingBlocks = archive.MissingBlockIndices.ToArray(),
