@@ -26,11 +26,11 @@ namespace Phantasma.API
             throw new Exception("Script execution failed for: " + method.name);
         }
 
-        internal static void FetchProperty(string propertyName, IToken tokenInfo, List<TokenPropertyResult> properties)
+        internal static void FetchProperty(string propertyName, ITokenSeries series, List<TokenPropertyResult> properties)
         {
-            if (tokenInfo.ABI.HasMethod(propertyName))
+            if (series.ABI.HasMethod(propertyName))
             {
-                var result = ExecuteScript(tokenInfo.Script, tokenInfo.ABI, propertyName);
+                var result = ExecuteScript(series.Script, series.ABI, propertyName);
                 properties.Add(new TokenPropertyResult() { Key = propertyName, Value = result.AsString() });
             }
         }

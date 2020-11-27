@@ -1454,27 +1454,31 @@ namespace Phantasma.API
             var properties = new List<TokenPropertyResult>();
             if (extended)
             {
-                var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
-
-                foreach (var method in tokenInfo.ABI.Methods)
+                var series = Nexus.GetTokenSeries(Nexus.RootStorage, symbol, info.SeriesID);
+                if (series != null)
                 {
-                    if (method.IsProperty())
+                    foreach (var method in series.ABI.Methods)
                     {
-                        string propName = method.name;
-
-                        if (propName.StartsWith("is"))
+                        if (method.IsProperty())
                         {
-                            propName = propName.Substring(2);
-                        }
-                        else
-                        if (propName.StartsWith("get"))
-                        {
-                            propName = propName.Substring(3);
-                        }
+                            string propName = method.name;
 
-                        APIUtils.FetchProperty(propName, tokenInfo, properties);
+                            if (propName.StartsWith("is"))
+                            {
+                                propName = propName.Substring(2);
+                            }
+                            else
+                            if (propName.StartsWith("get"))
+                            {
+                                propName = propName.Substring(3);
+                            }
+
+                            APIUtils.FetchProperty(propName, series, properties);
+                        }
                     }
+
                 }
+
             }
 
             var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
