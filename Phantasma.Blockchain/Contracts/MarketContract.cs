@@ -166,9 +166,10 @@ namespace Phantasma.Blockchain.Contracts
             return auctions;
         }
 
-        public bool HasAuction(BigInteger tokenID)
+        public bool HasAuction(string symbol, BigInteger tokenID)
         {
-            return _auctionMap.ContainsKey<BigInteger>(tokenID);
+            var auctionID = symbol + "." + tokenID;
+            return _auctionMap.ContainsKey<string>(auctionID);
         }
 
         public MarketAuction GetAuction(BigInteger tokenID)
