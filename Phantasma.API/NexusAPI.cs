@@ -1461,7 +1461,7 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            APIUtils.FetchProperty(method.name, series, properties);
+                            APIUtils.FetchProperty(method.name, series, ID, properties);
                         }
                     }
 

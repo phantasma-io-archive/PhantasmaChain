@@ -1,4 +1,5 @@
 ﻿using Phantasma.Domain;
+using Phantasma.Numerics;
 using Phantasma.VM;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ namespace Phantasma.API
 {
     public static class APIUtils
     {
-        public static VMObject ExecuteScript(byte[] script, ContractInterface abi, string methodName)
+        public static VMObject ExecuteScript(byte[] script, ContractInterface abi, string methodName, params object[] args)
         {
             var method = abi.FindMethod(methodName);
 
@@ -17,6 +18,13 @@ namespace Phantasma.API
             }
 
             var vm = new GasMachine(script, (uint)method.offset);
+
+            // TODO maybe this needs to be in inverted order?
+            foreach (var arg in args)
+            {
+                vm.Stack.Push(VMObject.FromObject(arg));
+            }
+
             var result = vm.Execute();
             if (result == ExecutionState.Halt)
             {
@@ -26,11 +34,11 @@ namespace Phantasma.API
             throw new Exception("Script execution failed for: " + method.name);
         }
 
-        internal static void FetchProperty(string methodName, ITokenSeries series, List<TokenPropertyResult> properties)
+        internal static void FetchProperty(string methodName, ITokenSeries series, BigInteger tokenID, List<TokenPropertyResult> properties)
         {
             if (series.ABI.HasMethod(methodName))
             {
-                var result = ExecuteScript(series.Script, series.ABI, methodName);
+                var result = ExecuteScript(series.Script, series.ABI, methodName, tokenID);
 
                 string propName = methodName;
 
