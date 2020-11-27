@@ -25,18 +25,18 @@ namespace Phantasma.VM
         Object
     }
 
-    public sealed class VMObject: ISerializable
+    public sealed class VMObject : ISerializable
     {
         public VMType Type { get; private set; }
         public bool IsEmpty => Data == null;
-       
+
         public object Data { get; private set; }
 
         private int _localSize = 0;
 
         private static readonly string TimeFormat = "MM/dd/yyyy HH:mm:ss";
 
-        public Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct? (Dictionary<VMObject, VMObject>)Data: null;
+        public Dictionary<VMObject, VMObject> GetChildren() => this.Type == VMType.Struct ? (Dictionary<VMObject, VMObject>)Data : null;
 
         public int Size
         {
@@ -142,7 +142,7 @@ namespace Phantasma.VM
             }
         }
 
-        public T AsEnum<T>() where T: struct, IConvertible
+        public T AsEnum<T>() where T : struct, IConvertible
         {
             if (!typeof(T).IsEnum)
             {
@@ -163,7 +163,7 @@ namespace Phantasma.VM
             switch (this.Type)
             {
                 case VMType.String:
-                        return (string)Data;
+                    return (string)Data;
 
                 case VMType.Number:
                     return ((BigInteger)Data).ToString();
@@ -212,7 +212,7 @@ namespace Phantasma.VM
 
                 case VMType.Bool:
                     {
-                        return new byte[] { (byte)(((bool)Data) ? 1: 0)};
+                        return new byte[] { (byte)(((bool)Data) ? 1 : 0) };
                     }
 
                 case VMType.String:
@@ -263,7 +263,7 @@ namespace Phantasma.VM
                     {
                         throw new Exception($"Invalid cast: expected bytes, got {this.Type}");
                     }
-            }           
+            }
         }
 
         public Address AsAddress()
@@ -274,7 +274,7 @@ namespace Phantasma.VM
                     {
                         var temp = (byte[])Data;
 
-                        if (temp.Length == Address.LengthInBytes +1)
+                        if (temp.Length == Address.LengthInBytes + 1)
                         {
                             temp = temp.Skip(1).ToArray(); // TODO there might be better way to do this
                         }
@@ -332,7 +332,7 @@ namespace Phantasma.VM
             }
         }
 
-        public T AsInterop<T>() 
+        public T AsInterop<T>()
         {
             Throw.If(this.Type != VMType.Object, $"Invalid cast: expected object, got {this.Type}");
             Throw.IfNot(this.Data is T, "invalid interop type");
@@ -355,7 +355,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = (val == null || val.Length==0) ? new BigInteger(0) : BigInteger.FromSignedArray(val);
+                        this.Data = (val == null || val.Length == 0) ? new BigInteger(0) : BigInteger.FromSignedArray(val);
                         break;
                     }
 
@@ -683,7 +683,7 @@ namespace Phantasma.VM
         {
             switch (this.Type)
             {
-                case VMType.None:return "Null";
+                case VMType.None: return "Null";
                 case VMType.Struct: return "[Struct]";
                 case VMType.Bytes: return $"[Bytes] => {Base16.Encode(((byte[])Data))}";
                 case VMType.Number: return $"[Number] => {((BigInteger)Data)}";
@@ -747,7 +747,7 @@ namespace Phantasma.VM
                 case VMType.Struct:
                     switch (srcObj.Type)
                     {
-                        case VMType.Object: return CastViaReflection(srcObj.Data, 0); 
+                        case VMType.Object: return CastViaReflection(srcObj.Data, 0);
 
                         default: throw new Exception($"invalid cast: {srcObj.Type} to {type}");
                     }
@@ -778,7 +778,7 @@ namespace Phantasma.VM
                 return VMType.Bytes;
             }
 
-            if (type == typeof(BigInteger) || type== typeof(int))
+            if (type == typeof(BigInteger) || type == typeof(int))
             {
                 return VMType.Number;
             }
@@ -790,10 +790,10 @@ namespace Phantasma.VM
 
             if (type.IsEnum)
             {
-                return VMType.Enum; 
+                return VMType.Enum;
             }
 
-            if (type.IsClass || type.IsValueType) 
+            if (type.IsClass || type.IsValueType)
             {
                 return VMType.Object;
             }
@@ -869,7 +869,7 @@ namespace Phantasma.VM
                     var elementType = type.GetElementType();
                     return this.ToArray(elementType);
                 }
-                else 
+                else
                 if (type.IsStructOrClass())
                 {
                     return this.ToStruct(type);
@@ -945,7 +945,7 @@ namespace Phantasma.VM
             foreach (var field in fields)
             {
                 var key = VMObject.FromObject(field.Name);
-                Throw.If(!dict.ContainsKey(key), "field not present in source struct: "+field.Name);
+                Throw.If(!dict.ContainsKey(key), "field not present in source struct: " + field.Name);
                 var val = dict[key].ToObject(field.FieldType);
 
                 // here we check if the types mismatch
@@ -989,7 +989,7 @@ namespace Phantasma.VM
                 var children = new Dictionary<VMObject, VMObject>();
 
                 var array = (Array)srcObj;
-                for (int i=0; i<array.Length; i++)
+                for (int i = 0; i < array.Length; i++)
                 {
                     var val = array.GetValue(i);
                     var key = new VMObject();
@@ -1081,6 +1081,19 @@ namespace Phantasma.VM
             else
             {
                 Serialization.Serialize(writer, this.Data);
+            }
+        }
+
+        public static VMObject FromBytes(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                using (var reader = new BinaryReader(stream))
+                {
+                    var result = new VMObject();
+                    result.UnserializeData(reader);
+                    return result;
+                }
             }
         }
 
