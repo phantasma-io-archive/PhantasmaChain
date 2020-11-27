@@ -113,7 +113,7 @@ namespace Phantasma.Blockchain.Contracts
                     var nftData = Runtime.ReadToken(nftSymbol, tokenID);
                     var series = Runtime.GetTokenSeries(nftSymbol, nftData.SeriesID);
 
-                    var royaltyProperty = new ContractMethod("getRoyalty", VMType.Number, -1);
+                    var royaltyProperty = new ContractMethod("getRoyalties", VMType.Number, -1);
 
                     if (series.ABI.Implements(royaltyProperty))
                     {
