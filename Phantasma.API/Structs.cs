@@ -310,6 +310,7 @@ namespace Phantasma.API
         public string currentSupply;
 
         public string maxSupply;
+        public TokenSeriesMode mode;
 
         public string script;
 

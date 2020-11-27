@@ -436,8 +436,9 @@ namespace Phantasma.API
                         seriesList.Add(new TokenSeriesResult()
                         {
                             seriesID = i,
-                            currentSupply = "0", // TODO
+                            currentSupply = series.MintCount.ToString(),
                             maxSupply = series.MaxSupply.ToString(),
+                            mode = series.Mode,
                             script = Base16.Encode(series.Script),
                             methods = FillMethods(series.ABI.Methods)
                         });
