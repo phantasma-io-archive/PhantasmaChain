@@ -418,7 +418,7 @@ namespace Phantasma.API
         }
 
         #region UTILS
-        private TokenResult FillToken(string tokenSymbol)
+        private TokenResult FillToken(string tokenSymbol, bool extended)
         {
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
@@ -440,7 +440,7 @@ namespace Phantasma.API
                             maxSupply = series.MaxSupply.ToString(),
                             mode = series.Mode,
                             script = Base16.Encode(series.Script),
-                            methods = FillMethods(series.ABI.Methods)
+                            methods = extended ?  FillMethods(series.ABI.Methods): new ABIMethodResult[0]
                         });
                     }
                     else
@@ -1301,14 +1301,14 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(NexusResult), "Returns info about the nexus.", false, 60)]
-        public IAPIResult GetNexus()
+        public IAPIResult GetNexus(bool extended = false)
         {
             var tokenList = new List<TokenResult>();
 
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
             foreach (var token in symbols)
             {
-                var entry = FillToken(token);
+                var entry = FillToken(token, extended);
                 tokenList.Add(entry);
             }
 
@@ -1399,14 +1399,14 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 300)]
-        public IAPIResult GetTokens()
+        public IAPIResult GetTokens(bool extended = false)
         {
             var tokenList = new List<object>();
 
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
             foreach (var token in symbols)
             {
-                var entry = FillToken(token);
+                var entry = FillToken(token, extended);
                 tokenList.Add(entry);
             }
 
@@ -1414,7 +1414,7 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, -1)]
-        public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol)
+        public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol, bool extended = false)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
@@ -1422,7 +1422,7 @@ namespace Phantasma.API
             }
 
             var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
-            var result = FillToken(symbol);
+            var result = FillToken(symbol, extended);
 
             return result;
         }
