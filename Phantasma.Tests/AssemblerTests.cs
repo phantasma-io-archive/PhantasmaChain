@@ -98,7 +98,7 @@ namespace Phantasma.Tests
 
             var contractName = "test";
             simulator.BeginBlock();
-            simulator.GenerateCustomTransaction(owner, ProofOfWork.None,
+            simulator.GenerateCustomTransaction(owner, ProofOfWork.Minimal,
                 () => ScriptUtils.BeginScript().AllowGas(owner.Address, Address.Null, 1, 9999)
                     .CallInterop("Runtime.DeployContract", owner.Address, contractName, script, abiBytes)
                     .SpendGas(owner.Address)
