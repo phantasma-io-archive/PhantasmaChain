@@ -428,7 +428,7 @@ namespace Phantasma.API
             if (!tokenInfo.IsFungible())
             {
                 //  HACK wont work if token has non-sequential series
-                for (uint i=1; i<9999; i++)
+                for (uint i=0; i<9999; i++)
                 {
                     var series = Nexus.GetTokenSeries(Nexus.RootStorage, tokenSymbol, i);
                     if (series != null)
@@ -445,7 +445,8 @@ namespace Phantasma.API
                     }
                     else
                     {
-                        break;
+                      // avoid break for CROWN & TTRS series 0
+                      if (i > 0)
                     }
                 }
             }
