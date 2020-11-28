@@ -612,7 +612,7 @@ namespace Phantasma.Blockchain
 
         #region TOKENS
 
-        internal void CreateToken(StorageContext storage, string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
+        internal IToken CreateToken(StorageContext storage, string symbol, string name, Address owner, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi = null)
         {
             Throw.IfNull(script, nameof(script));
             Throw.IfNull(abi, nameof(abi));
@@ -646,6 +646,8 @@ namespace Phantasma.Blockchain
             // add to persistent list of tokens
             var tokenList = this.GetSystemList(TokenTag, storage);
             tokenList.Add(symbol);
+
+            return tokenInfo;
         }
 
         private string GetTokenInfoKey(string symbol)
@@ -1276,6 +1278,7 @@ namespace Phantasma.Blockchain
             var script = sb.EndScript();
 
             var tx = new Transaction(this.Name, DomainSettings.RootChainName, script, Timestamp.Now + TimeSpan.FromDays(300));
+            tx.Mine(ProofOfWork.Minimal);
             tx.Sign(owner);
 
             return tx;
