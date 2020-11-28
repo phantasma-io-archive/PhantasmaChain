@@ -5,6 +5,7 @@ using Phantasma.Core.Performance;
 using System;
 using System.Collections.Generic;
 using Phantasma.Blockchain.Contracts;
+using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -106,6 +107,13 @@ namespace Phantasma.Blockchain
                     {
                         throw new VMException(frame.VM, $"VM context call failed: abi contains invalid offset for {method.name}");
                     }
+
+#if SUSHI_MODE
+                    var debugPath = @"C:\Code\Poltergeist\Builds\Windows\debug.asm";
+                    var disasm = new VM.Disassembler(custom.Script);
+                    var asm = string.Join("\n", disasm.Instructions.Select(x => x.ToString()));
+                    System.IO.File.WriteAllText(debugPath, asm);
+#endif
 
                     var context = new ScriptContext(Contract.Name, custom.Script, (uint)method.offset);
                     result = context.Execute(frame, stack);
