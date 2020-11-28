@@ -169,7 +169,7 @@ namespace Phantasma.VM
                     return ((BigInteger)Data).ToString();
 
                 case VMType.Bytes:
-                    return Base16.Encode((byte[])Data);
+                    return Encoding.UTF8.GetString((byte[])Data);
 
                 case VMType.Enum:
                     return ((uint)Data).ToString();
