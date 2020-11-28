@@ -96,7 +96,6 @@ namespace Phantasma.Blockchain.Tokens
             GenerateStringScript(sb, "getDescription", description);
             GenerateStringScript(sb, "getInfoURL", jsonURL);
             GenerateStringScript(sb, "getImageURL", imgURL);
-            GenerateStringScript(sb, "getTest", "Hello");
 
             var asm = sb.ToString().Split('\n');
 
@@ -107,8 +106,6 @@ namespace Phantasma.Blockchain.Tokens
             var standardABI = GetNFTStandard();
 
             var methods = standardABI.Methods.Select(x => new ContractMethod(x.name, x.returnType, labels[x.name], x.parameters));
-
-            methods = methods.Concat(new ContractMethod[] { new ContractMethod("getTest", VMType.String, labels["getTest"], new ContractParameter[] { new ContractParameter("tokenID", VMType.Number) }) });
 
             abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
         }

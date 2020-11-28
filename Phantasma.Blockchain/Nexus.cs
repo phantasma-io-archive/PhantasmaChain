@@ -636,7 +636,7 @@ namespace Phantasma.Blockchain
                 byte[] nftScript;
                 ContractInterface nftABI = NFTUtils.GetNFTStandard();
 
-                var jsonUrl = "https://phantasma.io/crown/*";
+                var jsonUrl = "https://phantasma.io/img/crown/*";
                 var imgUrl = "https://phantasma.io/img/crown.png";
                 NFTUtils.GenerateNFTDummyScript(symbol, $"{symbol} #*", $"Phantasma Reward", jsonUrl, imgUrl, out nftScript, out nftABI);
 
