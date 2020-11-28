@@ -968,10 +968,10 @@ namespace Phantasma.Tests
             var currentSupply = chain.GetTokenSupply(chain.Storage, symbol);
             Assert.IsTrue(currentSupply == 1, "why supply did not increase?");
 
-            var testScript = new ScriptBuilder().CallNFT(symbol, 0, "getTest", tokenID).EndScript();
+            var testScript = new ScriptBuilder().CallNFT(symbol, 0, "getName", tokenID).EndScript();
             var temp  = simulator.Nexus.RootChain.InvokeScript(simulator.Nexus.RootStorage, testScript);
             var testResult = temp.AsString();
-            Assert.IsTrue(testResult == "Hello");
+            Assert.IsTrue(testResult == "CoolToken");
         }
 
 
