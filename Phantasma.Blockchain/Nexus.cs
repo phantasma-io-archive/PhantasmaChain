@@ -981,6 +981,18 @@ namespace Phantasma.Blockchain
             return tokenKey;
         }
 
+        private StorageList GetSeriesList(StorageContext storage, string symbol)
+        {
+            var key = System.Text.Encoding.ASCII.GetBytes("series." + symbol);
+            return new StorageList(key, storage);
+        }
+
+        public BigInteger[] GetAllSeriesForToken(StorageContext storage, string symbol) 
+        {
+            var list = GetSeriesList(storage, symbol);
+            return list.All<BigInteger>();
+        }
+
         internal TokenSeries CreateSeries(StorageContext storage, IToken token, BigInteger seriesID, BigInteger maxSupply, TokenSeriesMode mode, byte[] script, ContractInterface abi)
         {
             if (token.IsFungible())
@@ -1009,6 +1021,9 @@ namespace Phantasma.Blockchain
 
             var series = new TokenSeries(0, maxSupply, mode, script, abi, null);
             WriteTokenSeries(storage, token.Symbol, seriesID, series);
+
+            var list = GetSeriesList(storage, token.Symbol);
+            list.Add(seriesID);
 
             return series;
         }

@@ -427,29 +427,22 @@ namespace Phantasma.API
 
             if (!tokenInfo.IsFungible())
             {
+                var seriesIDs = Nexus.GetAllSeriesForToken(Nexus.RootStorage, tokenSymbol);
                 //  HACK wont work if token has non-sequential series
-                for (uint i=0; i<9999; i++)
+                foreach (var ID in seriesIDs)
                 {
-                    var series = Nexus.GetTokenSeries(Nexus.RootStorage, tokenSymbol, i);
+                    var series = Nexus.GetTokenSeries(Nexus.RootStorage, tokenSymbol, ID);
                     if (series != null)
                     {
                         seriesList.Add(new TokenSeriesResult()
                         {
-                            seriesID = i,
+                            seriesID = (uint)ID,
                             currentSupply = series.MintCount.ToString(),
                             maxSupply = series.MaxSupply.ToString(),
                             mode = series.Mode,
                             script = Base16.Encode(series.Script),
                             methods = extended ?  FillMethods(series.ABI.Methods): new ABIMethodResult[0]
                         });
-                    }
-                    else
-                    {
-                      // avoid break for CROWN & TTRS series 0
-                      if (i > 0)
-                      {
-                        break;
-                      }
                     }
                 }
             }
