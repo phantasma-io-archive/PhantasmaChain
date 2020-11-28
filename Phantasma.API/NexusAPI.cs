@@ -447,6 +447,9 @@ namespace Phantasma.API
                     {
                       // avoid break for CROWN & TTRS series 0
                       if (i > 0)
+                      {
+                        break;
+                      }
                     }
                 }
             }
