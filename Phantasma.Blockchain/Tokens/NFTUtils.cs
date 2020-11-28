@@ -159,5 +159,26 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
+        public static void FetchProperty(string methodName, IToken token, Action<string, VMObject> callback)
+        {
+            if (token.ABI.HasMethod(methodName))
+            {
+                var result = ExecuteScript(token.Script, token.ABI, methodName);
+
+                string propName = methodName;
+
+                if (propName.StartsWith("is"))
+                {
+                    propName = propName.Substring(2);
+                }
+                else
+                if (propName.StartsWith("get"))
+                {
+                    propName = propName.Substring(3);
+                }
+
+                callback(propName, result);
+            }
+        }
     }
 }

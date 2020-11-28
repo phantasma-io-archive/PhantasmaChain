@@ -1062,7 +1062,7 @@ namespace Phantasma.Blockchain
                 Runtime.BurnTokens(DomainSettings.FuelTokenSymbol, owner, fuelCost);
             }
 
-            Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script, abi);
+            var token = Nexus.CreateToken(RootStorage, symbol, name, owner, maxSupply, decimals, flags, script, abi);
 
             var constructor = abi.FindMethod(SmartContract.ConstructorName);
 
@@ -1070,6 +1070,20 @@ namespace Phantasma.Blockchain
             {
                 Runtime.CallContext(symbol, constructor, owner);
             }
+
+            var getName = abi.FindMethod("getName");
+            if (getName != null)
+            {
+                Runtime.Expect(getName.returnType == VMType.String, "name property should be string");
+                Runtime.Expect(getName.parameters.Length == 0, "name property can't have parameters");
+
+                string fetchedName = string.Empty;
+                NFTUtils.FetchProperty(getName.name, token, (key, result) => { fetchedName = result.AsString();  });
+
+                Runtime.Expect(fetchedName == token.Name, "name property should return: " + token.Name);
+            }
+
+            // TODO validate other properties
 
             Runtime.Notify(EventKind.TokenCreate, owner, symbol);
         }
