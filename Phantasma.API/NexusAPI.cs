@@ -1458,7 +1458,10 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            APIUtils.FetchProperty(method.name, series, ID, properties);
+                            NFTUtils.FetchProperty(method.name, series, ID, (propName, propValue) =>
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
+                            });
                         }
                     }
 
