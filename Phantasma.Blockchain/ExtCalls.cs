@@ -866,12 +866,7 @@ namespace Phantasma.Blockchain
         {
             vm.ExpectStackSize(2);
 
-            VMObject temp;
-
-            temp = vm.Stack.Pop();
-            vm.Expect(temp.Type == VMType.String, "expected string for symbol");
-            var symbol = temp.AsString();
-
+            var symbol = vm.PopString("symbol");
             var tokenID = vm.PopNumber("token ID");
 
             return vm.ReadToken(symbol, tokenID);
