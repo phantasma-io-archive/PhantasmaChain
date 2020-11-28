@@ -70,6 +70,50 @@ namespace Phantasma.Cryptography
             return cipher.DoFinal(data);
         }
 
+        public static byte[] AESGCMDecrypt(byte[] data, byte[] key)
+        {
+            byte[] iv;
+            byte[] encryptedData;
+
+            using (var stream = new System.IO.MemoryStream(data))
+            {
+                using (var reader = new System.IO.BinaryReader(stream))
+                {
+                    iv = reader.ReadBytes(16);
+                    encryptedData = reader.ReadBytes(data.Length - 16);
+                }
+            }
+            
+            var keyParamWithIV = new Org.BouncyCastle.Crypto.Parameters.ParametersWithIV(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key), iv, 0, 16);
+
+            var cipher = Org.BouncyCastle.Security.CipherUtilities.GetCipher("AES/GCM/NoPadding");
+            cipher.Init(false, keyParamWithIV);
+
+            return cipher.DoFinal(encryptedData);
+        }
+
+        public static byte[] AESGCMEncrypt(byte[] data, byte[] key)
+        {
+            byte[] iv = AESGenerateIV(16);
+            var keyParamWithIV = new Org.BouncyCastle.Crypto.Parameters.ParametersWithIV(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key), iv, 0, 16);
+
+            var cipher = Org.BouncyCastle.Security.CipherUtilities.GetCipher("AES/GCM/NoPadding");
+            cipher.Init(true, keyParamWithIV);
+
+            var encryptedData = cipher.DoFinal(data);
+
+            using (var stream = new System.IO.MemoryStream())
+            {
+                using (var writer = new System.IO.BinaryWriter(stream))
+                {
+                    writer.Write(iv);
+                    writer.Write(encryptedData);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
         /*
         public static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
         {

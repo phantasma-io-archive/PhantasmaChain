@@ -1220,7 +1220,7 @@ namespace Phantasma.Blockchain
             var data = vm.PopBytes("data");
             var key = vm.PopBytes("key");
 
-            var decryptedData = CryptoExtensions.AES256Decrypt(data, key);
+            var decryptedData = CryptoExtensions.AESGCMDecrypt(data, key);
 
             var result = new VMObject();
             result.SetValue(decryptedData);
@@ -1236,7 +1236,7 @@ namespace Phantasma.Blockchain
             var data = vm.PopBytes("data");
             var key = vm.PopBytes("key");
 
-            var encryptedData = CryptoExtensions.AES256Encrypt(data, key);
+            var encryptedData = CryptoExtensions.AESGCMEncrypt(data, key);
 
             var result = new VMObject();
             result.SetValue(encryptedData);
