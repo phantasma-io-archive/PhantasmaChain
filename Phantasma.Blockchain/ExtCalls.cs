@@ -1044,6 +1044,9 @@ namespace Phantasma.Blockchain
             var tx = vm.Transaction;
             Throw.IfNull(tx, nameof(tx));
 
+            var pow = tx.Hash.GetDifficulty();
+            vm.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
+
             vm.ExpectStackSize(1);
 
             var from = vm.PopAddress();
@@ -1144,6 +1147,9 @@ namespace Phantasma.Blockchain
         {
             var tx = vm.Transaction;
             Throw.IfNull(tx, nameof(tx));
+
+            var pow = tx.Hash.GetDifficulty();
+            vm.Expect(pow >= (int)ProofOfWork.Minimal, "expected proof of work");
 
             vm.ExpectStackSize(1);
 
