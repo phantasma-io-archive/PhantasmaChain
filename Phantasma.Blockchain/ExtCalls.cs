@@ -892,14 +892,14 @@ namespace Phantasma.Blockchain
 
                 switch (field)
                 {
-                    case "Chain": obj = content.CurrentChain; break;
-                    case "Owner": obj = content.CurrentOwner.Text; break;
-                    case "Creator": obj = content.Creator.Text; break;
+                    case "chain": obj = content.CurrentChain; break;
+                    case "owner": obj = content.CurrentOwner.Text; break;
+                    case "creator": obj = content.Creator.Text; break;
                     case "ROM": obj = content.ROM; break;
                     case "RAM": obj = content.RAM; break;
-                    case "TokenID": obj = content.TokenID; break;
-                    case "SeriesID": obj = content.SeriesID; break;
-                    case "MintID": obj = content.MintID; break;
+                    case "tokenID": obj = content.TokenID; break;
+                    case "seriesID": obj = content.SeriesID; break;
+                    case "mintID": obj = content.MintID; break;
 
                     default:
                         throw new VMException(vm, "unknown nft field: " + field);
