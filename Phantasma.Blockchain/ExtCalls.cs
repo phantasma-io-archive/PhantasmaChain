@@ -541,7 +541,7 @@ namespace Phantasma.Blockchain
             var field = vm.PopString("field");
             var mapKey = SmartContract.GetKeyForField(contractName, field, false);
 
-            var entryKey = vm.PopBytes("key");
+            var entryKey = vm.Stack.Pop().AsByteArray();
             vm.Expect(entryKey.Length > 0, "invalid entry key");
 
             var type_obj = vm.Stack.Pop();

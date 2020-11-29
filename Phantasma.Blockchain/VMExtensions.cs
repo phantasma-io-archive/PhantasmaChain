@@ -60,7 +60,7 @@ namespace Phantasma.Blockchain
         {
             var temp = vm.Stack.Pop();
 
-            vm.Expect(temp.Type == VMType.String, $"expected string for {ArgumentName}");
+            vm.Expect(temp.Type == VMType.String, $"expected string for {ArgumentName} got {temp.Type}");
 
             return temp.AsString();
         }
