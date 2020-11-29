@@ -270,6 +270,16 @@ namespace Phantasma.VM
         {
             switch (this.Type)
             {
+                case VMType.String:
+                    {
+                        var temp = (string)Data;
+                        if (Address.IsValidAddress(temp))
+                        {
+                            return Address.FromText(temp);
+                        }
+                        break;
+                    }
+
                 case VMType.Bytes:
                     {
                         var temp = (byte[])Data;
