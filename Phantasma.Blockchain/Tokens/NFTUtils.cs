@@ -54,7 +54,7 @@ namespace Phantasma.Blockchain.Tokens
                 {
                     sb.AppendLine("LOAD r1 \"" + left + "\"");
 
-                    if (propName.Contains("*"))
+                    if (data.Contains("*"))
                     {
                         sb.AppendLine("CAT r1 r0 r0");
                     }
