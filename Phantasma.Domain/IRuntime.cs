@@ -31,7 +31,7 @@ namespace Phantasma.Domain
 
         bool HasGenesis { get; }
         string NexusName { get; }
-        BigInteger ProtocolVersion { get; }
+        uint ProtocolVersion { get; }
         Address GenesisAddress { get; }
         Hash GenesisHash { get; }
         Timestamp GetGenesisTime();

@@ -17,6 +17,7 @@ using Phantasma.Domain;
 using Phantasma.Core.Utils;
 using Phantasma.VM;
 using Phantasma.Blockchain.Storage;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Blockchain
 {
@@ -1113,6 +1114,7 @@ namespace Phantasma.Blockchain
             var bytes = content.ToByteArray();
             if (Runtime.ProtocolVersion >= 4)
             {
+                bytes = CompressionUtils.Compress(bytes);
                 Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
             }
             else
@@ -1165,7 +1167,7 @@ namespace Phantasma.Blockchain
 
             if (Runtime.RootStorage.Has(tokenKey))
             {
-                var content = Runtime.RootStorage.Get<TokenContent>(tokenKey);
+                var content = ReadNFTRaw(Runtime.RootStorage, tokenKey, Runtime.ProtocolVersion);
 
                 var series = GetTokenSeries(Runtime.RootStorage, symbol, content.SeriesID);
                 Runtime.Expect(series != null, $"could not find series {seriesID} for {symbol}");
@@ -1193,6 +1195,7 @@ namespace Phantasma.Blockchain
 
                 if (Runtime.ProtocolVersion >= 4)
                 {
+                    bytes = CompressionUtils.Compress(bytes);
                     Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
                 }
                 else
@@ -1210,16 +1213,35 @@ namespace Phantasma.Blockchain
 
         public TokenContent ReadNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID)
         {
-            return ReadNFT(Runtime.RootStorage, symbol, tokenID);
+            return ReadNFT(Runtime.RootStorage, symbol, tokenID, Runtime.ProtocolVersion);
         }
 
         public TokenContent ReadNFT(StorageContext storage, string symbol, BigInteger tokenID)
+        {
+            var protocol = this.GetProtocolVersion(storage);
+            return ReadNFT(storage, symbol, tokenID, protocol);
+        }
+
+        private TokenContent ReadNFTRaw(StorageContext storage, byte[] tokenKey, uint ProtocolVersion)
+        {
+            var bytes = storage.Get(tokenKey);
+
+            if (ProtocolVersion >= 4)
+            {
+                bytes = CompressionUtils.Decompress(bytes);
+            }
+
+            var content = Serialization.Unserialize<TokenContent>(bytes);
+            return content;
+        }
+
+        private TokenContent ReadNFT(StorageContext storage, string symbol, BigInteger tokenID, uint ProtocolVersion)
         {
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
             Throw.If(!storage.Has(tokenKey), "nft does not exists");
 
-            var content = storage.Get<TokenContent>(tokenKey);
+            var content = ReadNFTRaw(storage, tokenKey, ProtocolVersion);
 
             var series = GetTokenSeries(storage, symbol, content.SeriesID);
             if (series.Mode == TokenSeriesMode.Duplicated)
