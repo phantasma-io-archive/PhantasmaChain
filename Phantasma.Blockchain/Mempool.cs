@@ -275,7 +275,7 @@ namespace Phantasma.Blockchain
             var lastBlock = Chain.GetBlockByHash(lastBlockHash);
             var isFirstBlock = lastBlock == null;
 
-            var protocol = (uint)Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            var protocol = Nexus.GetProtocolVersion(Nexus.RootStorage);
 
             var minFee = Mempool.MinimumFee;
 

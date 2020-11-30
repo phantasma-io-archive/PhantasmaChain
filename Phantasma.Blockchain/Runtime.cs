@@ -87,7 +87,7 @@ namespace Phantasma.Blockchain
                 this.ParentChain = null;
             }
 
-            this.ProtocolVersion = Nexus.GetGovernanceValue(this.RootStorage, Nexus.NexusProtocolVersionTag);
+            this.ProtocolVersion = Nexus.GetProtocolVersion(this.RootStorage);
 
             ExtCalls.RegisterWithRuntime(this);
         }
@@ -1747,7 +1747,7 @@ namespace Phantasma.Blockchain
 
         public bool HasGenesis => Nexus.HasGenesis;
         public string NexusName => Nexus.Name;
-        public BigInteger ProtocolVersion { get; private set; }
+        public uint ProtocolVersion { get; private set; }
         public Address GenesisAddress => Nexus.GetGenesisAddress(RootStorage);
         public Hash GenesisHash => Nexus.GetGenesisHash(RootStorage);
     }

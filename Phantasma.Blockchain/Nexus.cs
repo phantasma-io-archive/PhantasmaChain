@@ -2344,5 +2344,10 @@ namespace Phantasma.Blockchain
 
             return null;
         }
+
+        public uint GetProtocolVersion(StorageContext storage)
+        {
+            return (uint)this.GetGovernanceValue(storage, Nexus.NexusProtocolVersionTag);
+        }
     }
 }
