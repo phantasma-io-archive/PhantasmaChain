@@ -1451,6 +1451,7 @@ namespace Phantasma.API
             var properties = new List<TokenPropertyResult>();
             if (extended)
             {
+                var chain = FindChainByInput("main");
                 var series = Nexus.GetTokenSeries(Nexus.RootStorage, symbol, info.SeriesID);
                 if (series != null)
                 {
@@ -1458,7 +1459,7 @@ namespace Phantasma.API
                     {
                         if (method.IsProperty())
                         {
-                            NFTUtils.FetchProperty(method.name, series, ID, (propName, propValue) =>
+                            NFTUtils.FetchProperty(chain, method.name, series, ID, (propName, propValue) =>
                             {
                                 properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
                             });

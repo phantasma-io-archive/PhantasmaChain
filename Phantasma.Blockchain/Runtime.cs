@@ -1071,17 +1071,17 @@ namespace Phantasma.Blockchain
                 Runtime.CallContext(symbol, constructor, owner);
             }
 
-            var getName = abi.FindMethod("getName");
-            if (getName != null)
-            {
-                Runtime.Expect(getName.returnType == VMType.String, "name property should be string");
-                Runtime.Expect(getName.parameters.Length == 0, "name property can't have parameters");
+            //var getName = abi.FindMethod("getName");
+            //if (getName != null)
+            //{
+            //    Runtime.Expect(getName.returnType == VMType.String, "name property should be string");
+            //    Runtime.Expect(getName.parameters.Length == 0, "name property can't have parameters");
 
-                string fetchedName = string.Empty;
-                NFTUtils.FetchProperty(getName.name, token, (key, result) => { fetchedName = result.AsString();  });
+            //    string fetchedName = string.Empty;
+            //    NFTUtils.FetchProperty(Chain, this, getName.name, token, (key, result) => { fetchedName = result.AsString();  });
 
-                Runtime.Expect(fetchedName == token.Name, "name property should return: " + token.Name);
-            }
+            //    Runtime.Expect(fetchedName == token.Name, "name property should return: " + token.Name);
+            //}
 
             // TODO validate other properties
 

@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 using Phantasma.Numerics;
+using Phantasma.Storage.Context;
+using Phantasma.Cryptography;
+using Phantasma.Core.Types;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -111,7 +114,7 @@ namespace Phantasma.Blockchain.Tokens
             abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
         }
 
-        private static VMObject ExecuteScript(byte[] script, ContractInterface abi, string methodName, params object[] args)
+        private static VMObject ExecuteScript(Chain chain, byte[] script, ContractInterface abi, string methodName, params object[] args)
         {
             var method = abi.FindMethod(methodName);
 
@@ -120,7 +123,11 @@ namespace Phantasma.Blockchain.Tokens
                 throw new Exception("ABI is missing: " + method.name);
             }
 
-            var vm = new GasMachine(script, (uint)method.offset);
+            var changeSet = new StorageChangeSetContext(chain.Storage);
+            var oracle = chain.Nexus.GetOracleReader();
+            var vm = new RuntimeVM(-1, script, (uint)method.offset, chain, Address.Null, Timestamp.Now, null, changeSet, oracle, ChainTask.Null, true);
+
+            //var vm = new GasMachine(script, (uint)method.offset);
 
             // TODO maybe this needs to be in inverted order?
             foreach (var arg in args)
@@ -137,11 +144,11 @@ namespace Phantasma.Blockchain.Tokens
             throw new Exception("Script execution failed for: " + method.name);
         }
 
-        public static void FetchProperty(string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
+        public static void FetchProperty(Chain chain, RuntimeVM vm, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
         {
             if (series.ABI.HasMethod(methodName))
             {
-                var result = ExecuteScript(series.Script, series.ABI, methodName, tokenID);
+                var result = ExecuteScript(chain, series.Script, series.ABI, methodName, tokenID);
 
                 string propName = methodName;
 
@@ -159,11 +166,11 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
-        public static void FetchProperty(string methodName, IToken token, Action<string, VMObject> callback)
+        public static void FetchProperty(Chain chain, RuntimeVM vm, string methodName, IToken token, Action<string, VMObject> callback)
         {
             if (token.ABI.HasMethod(methodName))
             {
-                var result = ExecuteScript(token.Script, token.ABI, methodName);
+                var result = ExecuteScript(chain, token.Script, token.ABI, methodName);
 
                 string propName = methodName;
 
