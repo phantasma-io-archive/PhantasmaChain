@@ -193,8 +193,8 @@ namespace Phantasma.VM
                     return ((bool)Data) ? "true" : "false";
 
                 case VMType.Timestamp:
-                    var date = (DateTime)(Timestamp)Data;
-                    return date.ToString(TimeFormat);
+                    var date = (Timestamp)Data;
+                    return date.Value.ToString();
 
                 default:
                     throw new Exception($"Invalid cast: expected string, got {this.Type}");
