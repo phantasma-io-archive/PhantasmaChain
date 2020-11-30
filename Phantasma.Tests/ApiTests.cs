@@ -184,7 +184,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(balance.symbol == symbol);
             Assert.IsTrue(balance.ids.Length == 1);
 
-            var info = (TokenDataResult)test.api.GetTokenData(symbol, balance.ids[0]);
+            var info = (TokenDataResult)test.api.GetNFT(symbol, balance.ids[0], true);
             Assert.IsTrue(info.ID == balance.ids[0]);
             var tokenStr = Base16.Encode(tokenROM);
             Assert.IsTrue(info.rom == tokenStr);
