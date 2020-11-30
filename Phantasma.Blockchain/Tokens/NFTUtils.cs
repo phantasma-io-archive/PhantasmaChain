@@ -144,7 +144,7 @@ namespace Phantasma.Blockchain.Tokens
             throw new Exception("Script execution failed for: " + method.name);
         }
 
-        public static void FetchProperty(Chain chain, RuntimeVM vm, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
+        public static void FetchProperty(Chain chain, string methodName, ITokenSeries series, BigInteger tokenID, Action<string, VMObject> callback)
         {
             if (series.ABI.HasMethod(methodName))
             {
@@ -166,7 +166,7 @@ namespace Phantasma.Blockchain.Tokens
             }
         }
 
-        public static void FetchProperty(Chain chain, RuntimeVM vm, string methodName, IToken token, Action<string, VMObject> callback)
+        public static void FetchProperty(Chain chain, string methodName, IToken token, Action<string, VMObject> callback)
         {
             if (token.ABI.HasMethod(methodName))
             {
