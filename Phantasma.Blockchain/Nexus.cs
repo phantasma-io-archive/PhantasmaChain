@@ -833,6 +833,7 @@ namespace Phantasma.Blockchain
 
             var nft = Runtime.ReadToken(token.Symbol, tokenID);
             Runtime.Expect(nft.CurrentOwner != Address.Null, "nft already destroyed");
+            Runtime.Expect(nft.CurrentOwner == from, "nft does not belong to " + from);
             Runtime.Expect(nft.CurrentChain == Runtime.Chain.Name, "not on this chain");
 
             if (token.Symbol == infuseToken.Symbol)
