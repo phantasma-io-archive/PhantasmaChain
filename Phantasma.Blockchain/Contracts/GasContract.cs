@@ -142,9 +142,10 @@ namespace Phantasma.Blockchain.Contracts
                 {
                     var reward = new StakeReward(addr, Runtime.Time);
                     var rom = Serialization.Serialize(reward);
-                    var tokenID = Runtime.MintToken(DomainSettings.RewardTokenSymbol, this.Address, addr, rom, new byte[0], 0);
+                    var tokenID = Runtime.MintToken(DomainSettings.RewardTokenSymbol, this.Address, this.Address, rom, new byte[0], 0);
                     Runtime.InfuseToken(DomainSettings.RewardTokenSymbol, this.Address, tokenID, DomainSettings.FuelTokenSymbol, rewardFuel);
                     Runtime.InfuseToken(DomainSettings.RewardTokenSymbol, this.Address, tokenID, DomainSettings.StakingTokenSymbol, rewardStake);
+                    Runtime.TransferToken(DomainSettings.RewardTokenSymbol, this.Address, addr, tokenID);
                 }
 
                 _rewardAccum -= rewardList.Count * rewardFuel;
