@@ -1113,9 +1113,10 @@ namespace Phantasma.Blockchain
             var contractAddress = token.GetContractAddress();
 
             var bytes = content.ToByteArray();
+            bytes = CompressionUtils.Compress(bytes);
+
             if (Runtime.ProtocolVersion >= 4)
             {
-                bytes = CompressionUtils.Compress(bytes);
                 Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
             }
             else
@@ -1193,10 +1194,10 @@ namespace Phantasma.Blockchain
                 var contractAddress = token.GetContractAddress();
 
                 var bytes = content.ToByteArray();
+                bytes = CompressionUtils.Compress(bytes);
 
                 if (Runtime.ProtocolVersion >= 4)
                 {
-                    bytes = CompressionUtils.Compress(bytes);
                     Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
                 }
                 else
@@ -1227,10 +1228,7 @@ namespace Phantasma.Blockchain
         {
             var bytes = storage.Get(tokenKey);
 
-            if (ProtocolVersion >= 4)
-            {
-                bytes = CompressionUtils.Decompress(bytes);
-            }
+            bytes = CompressionUtils.Decompress(bytes);
 
             var content = Serialization.Unserialize<TokenContent>(bytes);
             return content;
