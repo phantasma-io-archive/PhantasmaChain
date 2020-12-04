@@ -249,23 +249,30 @@ namespace Phantasma.Domain
                         {
                             if (args.Length == 5)
                             {
-                                var data = Base16.Decode(args[3]);
-                                var signatureKind = (SignatureKind) Enum.Parse(typeof(SignatureKind), args[4], true);
+                                var data = Base16.Decode(args[3], false);
+                                if (data == null)
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid input received" });
+                                }
+                                else
+                                {
+                                    var signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[4], true);
 
-                                SignData(data, signatureKind, id, (signature, random, txError) => {
-                                    if (signature != null)
-                                    {
-                                        success = true;
-                                        answer = APIUtils.FromAPIResult(new Signature() { signature = signature, random = random });
-                                    }
-                                    else
-                                    {
-                                        answer = APIUtils.FromAPIResult(new Error() { message = txError });
-                                    }
+                                    SignData(data, signatureKind, id, (signature, random, txError) => {
+                                        if (signature != null)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Signature() { signature = signature, random = random });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = txError });
+                                        }
 
-                                    callback(id, answer, success);
-                                    _isPendingRequest = false;
-                                });
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                }
 
                                 return;
                             }
@@ -287,23 +294,31 @@ namespace Phantasma.Domain
                             {
                                 var nexus = args[1];
                                 var chain = args[2];
-                                var script = Base16.Decode(args[3]);
-                                byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4]): null;
+                                var script = Base16.Decode(args[3], false);
 
-                                SignTransaction(nexus, chain, script, payload, id, (hash, txError) => { 
-                                    if (hash != Hash.Null)
-                                    {
-                                        success = true;
-                                        answer = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
-                                    }
-                                    else
-                                    {
-                                        answer = APIUtils.FromAPIResult(new Error() { message = txError });
-                                    }
+                                if (script == null)
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid script data" });
+                                }
+                                else
+                                {
+                                    byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4], false) : null;
 
-                                    callback(id, answer, success);
-                                    _isPendingRequest = false;
-                                });
+                                    SignTransaction(nexus, chain, script, payload, id, (hash, txError) => {
+                                        if (hash != Hash.Null)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = txError });
+                                        }
+
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                }
 
                                 return;
                             }
@@ -323,24 +338,31 @@ namespace Phantasma.Domain
                         {
                             if (args.Length == 4)
                             {
-                                var script = Base16.Decode(args[1]);
+                                var script = Base16.Decode(args[1], false);
 
-                                InvokeScript(script, id, (invokeResult, invokeError) =>
+                                if (script == null)
                                 {
-                                    if (invokeResult != null)
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid script data" });
+                                }
+                                else
+                                {
+                                    InvokeScript(script, id, (invokeResult, invokeError) =>
                                     {
-                                        success = true;
-                                        answer = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
-                                    }
-                                    else
-                                    {
-                                        answer = APIUtils.FromAPIResult(new Error() { message = invokeError });
-                                    }
+                                        if (invokeResult != null)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = invokeError });
+                                        }
 
-                                    callback(id, answer, success);
-                                    _isPendingRequest = false;
-                                });
-                                return;
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                    return;
+                                }
                             }
                             else
                             {
@@ -360,23 +382,31 @@ namespace Phantasma.Domain
                             {
                                 var archiveHash = Hash.Parse(args[1]);
                                 var blockIndex = int.Parse(args[2]);
-                                var bytes = Base16.Decode(args[3]);
+                                var bytes = Base16.Decode(args[3], false);
 
-                                WriteArchive(archiveHash, blockIndex, bytes, (result, error) =>
+                                if (bytes == null)
                                 {
-                                    if (result)
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid archive data"});
+                                }
+                                else
+                                {
+                                    WriteArchive(archiveHash, blockIndex, bytes, (result, error) =>
                                     {
-                                        success = true;
-                                        answer = APIUtils.FromAPIResult(new Transaction() { hash = archiveHash.ToString() });
-                                    }
-                                    else
-                                    {
-                                        answer = APIUtils.FromAPIResult(new Error() { message = error });
-                                    }
+                                        if (result)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Transaction() { hash = archiveHash.ToString() });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = error });
+                                        }
 
-                                    callback(id, answer, success);
-                                    _isPendingRequest = false;
-                                });
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                }
+
                                 return;
                             }
                             else
