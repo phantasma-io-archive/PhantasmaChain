@@ -13,5 +13,6 @@
     <ProjectReference Include="..\Phantasma.Numerics\Phantasma.Numerics.csproj" />
     <ProjectReference Include="..\Phantasma.Storage\Phantasma.Storage.csproj" />
     <ProjectReference Include="..\Phantasma.VM\Phantasma.VM.csproj" />
+    <ProjectReference Include="/home/merl/source/phantasma/PhantasmaRpcClient/Phantasma.RpcClient/Phantasma.RpcClient.csproj" />
   </ItemGroup>
 </Project>

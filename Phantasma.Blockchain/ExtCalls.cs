@@ -719,6 +719,10 @@ namespace Phantasma.Blockchain
             var amount = vm.GetBalance(symbol, source);
 
             vm.TransferTokens(symbol, source, destination, amount);
+            if (vm.ProtocolVersion >= 3)
+            {
+                System.Console.WriteLine($"DEBUG_TX3 v2 {vm.Transaction.Hash} transfer balance {symbol} {amount} {source} -> {destination}");
+            }
 
             return ExecutionState.Running;
         }

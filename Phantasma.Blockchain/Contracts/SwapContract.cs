@@ -3,9 +3,14 @@ using Phantasma.Domain;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using Phantasma.RpcClient.Client;
+using Phantasma.RpcClient;
 
 namespace Phantasma.Blockchain.Contracts
 {
@@ -61,10 +66,47 @@ namespace Phantasma.Blockchain.Contracts
         // returns how many tokens would be obtained by trading from one type of another
         public BigInteger GetRate(string fromSymbol, string toSymbol, BigInteger amount)
         {
+            Console.WriteLine("PROTOCOL:::::::::::::::::: " + Runtime.ProtocolVersion);
             if (Runtime.ProtocolVersion >= 3)
             {
-                return GetRateV2(fromSymbol, toSymbol, amount);
+                System.Console.WriteLine("GetRateV2 called befor");
+                var dict = GetSwapValues(Runtime.Transaction.Hash.ToString());
+                System.Console.WriteLine("GetRateV2 called after");
+                var rate = GetRateV2(fromSymbol, toSymbol, amount);
+                var success = dict.TryGetValue(toSymbol, out var oldRate);
+
+                if (success && (rate != oldRate) && (rate != (oldRate-1)))
+                {
+                    foreach(var a in dict)
+                    {
+                        System.Console.WriteLine($"key: {a.Key} val: {a.Value}");
+                    }
+
+                    //System.Console.WriteLine($"DEBUG_TX3 v2 {Runtime.Transaction.Hash} new: {rate} old: {oldRate} {fromSymbol}/{toSymbol}");
+                    //System.Console.WriteLine($"DEBUG_TX3 v2 {Runtime.Transaction.Hash} diff old - new: {oldRate - rate} diff new - old: {rate - oldRate} {fromSymbol}/{toSymbol}");
+                    int dec = 0;
+
+                    switch(toSymbol)
+                    {
+                        case "ETH":
+                            dec = 18;
+                            break;
+                        default:
+                            dec = 8;
+                            break;
+                    }
+
+                    decimal diff = UnitConversion.ToDecimal(oldRate - rate, dec);
+                    System.Console.WriteLine($"DEBUG_TX3 v2 {Runtime.Transaction.Hash} diff dec: {diff} {fromSymbol}/{toSymbol}");
+                    rate = oldRate-1;
+                }
+
+                return rate;
             }
+            //if (Runtime.ProtocolVersion >= 3)
+            //{
+            //    return GetRateV2(fromSymbol, toSymbol, amount);
+            //}
             else
             {
                 return GetRateV1(fromSymbol, toSymbol, amount);
@@ -342,6 +384,44 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.TransferTokens(fromSymbol, from, this.Address, amount);
             Runtime.TransferTokens(toSymbol, this.Address, from, total);
+            if (Runtime.ProtocolVersion >= 3)
+            {
+                System.Console.WriteLine($"DEBUG_TX3 v2 {Runtime.Transaction.Hash} transfer {fromSymbol}  {from} -> {this.Address} amount: {amount}");
+                System.Console.WriteLine($"DEBUG_TX3 v2 {Runtime.Transaction.Hash} transfer {toSymbol}  {this.Address} -> {from} amount: {amount}");
+            }
+        }
+
+        private Dictionary<string, BigInteger> GetSwapValues(string tx)
+        {
+            var phantasmaService = new PhantasmaRpcService(new Phantasma.RpcClient.Client.RpcClient(new Uri("http://207.246.126.126:7077/rpc"), httpClientHandler: new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            }));
+
+            System.Console.WriteLine("txx: " + tx);
+            var testTx = phantasmaService.GetTxByHash.SendRequestAsync(tx).Result;
+
+            var valdict = new Dictionary<string, BigInteger>();
+
+            if (testTx.Events == null)
+            {
+                Console.WriteLine($"no events for tx {tx}");
+                return valdict;
+            }
+            foreach (var x in testTx.Events)
+            {
+                System.Console.WriteLine("evt: " + x.EventKind); 
+            }
+
+            foreach (var evt in testTx.Events.Where(x => x.Contract == "swap"))
+            {
+                var evtR = new Event((EventKind)(int)evt.EventKind, Address.FromText(evt.EventAddress), evt.Contract, evt.Data.Decode());
+                var data = evtR.GetContent<TokenEventData>();
+                valdict.Add(data.Symbol, data.Value);
+            }
+
+            Console.WriteLine("valdict return");
+            return valdict;
         }
     }
 }

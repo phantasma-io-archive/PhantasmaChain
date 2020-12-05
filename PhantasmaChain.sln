@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Ethereum", "Phant
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Phantasma.Domain", "Phantasma.Domain\Phantasma.Domain.csproj", "{1E362F68-EF98-4B20-AB36-715B07521926}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhantasmaRpcClient", "/home/merl/source/phantasma/PhantasmaRpcClient/Phantasma.RpcClient/Phantasma.RpcClient.csproj", "{1E362F68-EF98-4B20-AB36-715B07521926}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
