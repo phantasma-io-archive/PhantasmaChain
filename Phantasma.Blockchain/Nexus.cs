@@ -883,7 +883,7 @@ namespace Phantasma.Blockchain
 
             WriteNFT(Runtime, token.Symbol, tokenID, nft.CurrentChain, nft.CurrentOwner, nft.ROM, nft.RAM, nft.SeriesID, infusion, true);
 
-            Runtime.Notify(EventKind.TokenInfusion, nft.CurrentOwner, new InfusionEventData(token.Symbol, tokenID, infuseToken.Symbol, value, nft.CurrentChain));
+            Runtime.Notify(EventKind.Infusion, nft.CurrentOwner, new InfusionEventData(token.Symbol, tokenID, infuseToken.Symbol, value, nft.CurrentChain));
         }
 
         internal void TransferTokens(RuntimeVM Runtime, IToken token, Address source, Address destination, BigInteger amount, bool isInfusion = false)

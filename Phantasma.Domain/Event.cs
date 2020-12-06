@@ -64,7 +64,7 @@ namespace Phantasma.Domain
         TaskStart = 54,
         TaskStop = 55,
         CrownRewards = 56,
-        TokenInfusion = 57,
+        Infusion = 57,
         Custom = 64,
     }
 
