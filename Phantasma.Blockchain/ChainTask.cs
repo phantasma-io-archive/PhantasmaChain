@@ -1,8 +1,8 @@
-﻿using Phantasma.Cryptography;
+﻿using System.IO;
+using System.Numerics;
+using Phantasma.Cryptography;
 using Phantasma.Domain;
-using Phantasma.Numerics;
 using Phantasma.Storage.Utils;
-using System.IO;
 
 namespace Phantasma.Blockchain
 {

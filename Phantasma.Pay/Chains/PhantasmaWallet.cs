@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
@@ -66,7 +67,7 @@ namespace Phantasma.Tests
         public void TestEndian()
         {
             var n = new BigInteger(100000000);
-            var bytes = n.ToUnsignedByteArray();
+            var bytes = n.ToByteArray();
             Assert.IsTrue(bytes.Length == 4);
             Assert.IsTrue(bytes[0] == 00);
             Assert.IsTrue(bytes[1] == 0xe1);

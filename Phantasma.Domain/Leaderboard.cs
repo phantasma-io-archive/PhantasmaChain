@@ -1,5 +1,5 @@
-﻿using Phantasma.Cryptography;
-using Phantasma.Numerics;
+﻿using System.Numerics;
+using Phantasma.Cryptography;
 
 namespace Phantasma.Domain
 {

@@ -1,12 +1,10 @@
-﻿using Phantasma.Core;
+﻿using System;
+using System.Numerics;
+using System.Diagnostics;
+using Phantasma.Core;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Phantasma.Blockchain
 {
@@ -46,7 +44,7 @@ namespace Phantasma.Blockchain
 
             if (temp.Type == VMType.String)
             {
-                vm.Expect(BigInteger.IsParsable(temp.AsString()), $"expected number for {ArgumentName}");
+                vm.Expect(temp.AsString().IsParsable(), $"expected number for {ArgumentName}");
             }
             else
             {

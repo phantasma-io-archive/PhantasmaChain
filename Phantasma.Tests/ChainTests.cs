@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
 using System.Linq;
+using System.Numerics;
 
 using Phantasma.Blockchain;
 using Phantasma.Storage.Context;

@@ -9,6 +9,7 @@ using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
 using System.Linq;
+using System.Numerics;
 using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.VM;

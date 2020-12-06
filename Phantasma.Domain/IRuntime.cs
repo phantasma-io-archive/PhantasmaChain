@@ -1,6 +1,6 @@
-﻿using Phantasma.Core.Types;
+﻿using System.Numerics;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using Phantasma.VM;
 

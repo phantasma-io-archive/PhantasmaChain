@@ -2,10 +2,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Phantasma.Numerics;
-using Phantasma.Core;
+using System.Numerics;
 using Phantasma.Core.Utils;
-using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 
 namespace Phantasma.Cryptography.Ring
@@ -48,7 +46,7 @@ namespace Phantasma.Cryptography.Ring
 
         public override bool Verify(byte[] message, IEnumerable<Address> addresses)
         {
-            var publicKeys = addresses.Select(x => BigInteger.FromSignedArray(x.ToByteArray().Skip(2).ToArray())).ToArray();
+            var publicKeys = addresses.Select(x => new BigInteger(x.ToByteArray().Skip(2).ToArray())).ToArray();
             return this.VerifySignature(message, publicKeys);
         }
 
@@ -75,7 +73,7 @@ namespace Phantasma.Cryptography.Ring
                 L.AddRange(prefix);
 
             foreach (var key in ints)
-                L.AddRange(key.ToSignedByteArray());
+                L.AddRange(key.ToByteArray());
 
             return L.ToArray();
         }
@@ -116,7 +114,7 @@ namespace Phantasma.Cryptography.Ring
         public static RingKeyPair GenerateKeyPair(PhantasmaKeys keyPair)
         {
             var mod = new Modular(GroupParameters.Prime);
-            var privateKey = BigInteger.FromUnsignedArray(keyPair.PrivateKey, true);
+            var privateKey = new BigInteger(keyPair.PrivateKey);
             var publicKey = mod.Pow(GroupParameters.Generator, privateKey);
             return new RingKeyPair(privateKey, publicKey);
         }

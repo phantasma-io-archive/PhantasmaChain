@@ -1,9 +1,9 @@
+using System.Text;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 using Phantasma.Core;
-using System.Text;
 
 namespace Phantasma.Domain
 {

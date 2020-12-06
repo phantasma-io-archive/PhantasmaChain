@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
-using Phantasma.Numerics;
-using Phantasma.Storage.Utils;
+using System.Numerics;
 
 namespace Phantasma.Storage.Context
 {
@@ -59,7 +58,7 @@ namespace Phantasma.Storage.Context
             return Serialization.Unserialize(bytes, type);
         }
 
-        public void Put(byte[] key, BigInteger value) { Put(key, value.ToSignedByteArray()); }
+        public void Put(byte[] key, BigInteger value) { Put(key, value.ToByteArray()); }
 
         public void Put<T>(byte[] key, T obj)
         {

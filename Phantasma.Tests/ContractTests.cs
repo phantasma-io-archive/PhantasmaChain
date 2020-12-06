@@ -1,6 +1,7 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using System.Numerics;
 using Phantasma.API;
 using Phantasma.VM.Utils;
 using Phantasma.Simulator;

@@ -1,6 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using NetCrypto = System.Security.Cryptography;
 using System.Text;
@@ -504,7 +505,7 @@ namespace Phantasma.Cryptography
             else
                 b[b.Length - 1] &= (byte)((1 << sizeInBits % 8) - 1);
 
-            return BigInteger.FromUnsignedArray(b, isPositive: true);
+            return new BigInteger(b);
         }
 
         public static BigInteger GenerateInteger(this HMACDRBG rng, BigInteger max, int securityParameter = 64)
@@ -512,11 +513,11 @@ namespace Phantasma.Cryptography
             // The simple modular method from the NIST SP800-90A recommendation
             Throw.If(securityParameter < 64, "Given security parameter, " + securityParameter + ", is too low.");
 
-            var bytesToRepresent = max.ToSignedByteArray().Length;
+            var bytesToRepresent = max.ToByteArray().Length;
             var bytes = new byte[bytesToRepresent + securityParameter / 8 + 1];
             rng.GetBytes(bytes);
             bytes[bytes.Length - 1] = 0;
-            return BigInteger.FromSignedArray(bytes) % max;
+            return new BigInteger(bytes) % max;
         }
 
         public static byte[] Hash256(byte[] message)

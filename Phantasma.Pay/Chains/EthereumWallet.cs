@@ -5,8 +5,9 @@ using Phantasma.Cryptography.ECC;
 using Phantasma.Cryptography.Hashing;
 using Phantasma.Numerics;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Collections.Generic;
 
 namespace Phantasma.Pay.Chains
 {

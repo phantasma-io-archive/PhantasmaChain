@@ -3,9 +3,9 @@ using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Numerics;
 using Phantasma.Blockchain;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 using Phantasma.Core;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.VM;
@@ -19,6 +19,7 @@ using Phantasma.Domain;
 using Phantasma.Core.Log;
 using LunarLabs.Parser.JSON;
 using Phantasma.Blockchain.Storage;
+using Phantasma.Numerics;
 
 namespace Phantasma.API
 {

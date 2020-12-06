@@ -1,8 +1,8 @@
 ﻿using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
+using System.Numerics;
 using Phantasma.Numerics;
-using NativeBigInt = System.Numerics.BigInteger; // hack to overcome Phantasma.Numerics.BigInteger
 using Phantasma.Storage;
 using Phantasma.Storage.Utils;
 using System;
@@ -115,7 +115,7 @@ namespace Phantasma.Blockchain
         protected abstract T PullData<T>(Timestamp time, string url);
         protected abstract decimal PullPrice(Timestamp time, string symbol);
         protected abstract BigInteger PullFee(Timestamp time, string platform);
-        protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
+        protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, BigInteger height = new BigInteger());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
         protected abstract InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID);
         public abstract string GetCurrentHeight(string platformName, string chainName);
@@ -187,15 +187,7 @@ namespace Phantasma.Blockchain
                     if (_entries.ContainsKey(stakingURL))
                     {
                         BigInteger soulPriceBi;
-                        if (ProtocolVersion >= 3)
-                        {
-                            soulPriceBi = BigInteger.FromSignedArray(_entries[url].Content);
-                        }
-                        else
-                        {
-                            content = val.ToUnsignedByteArray() as T;
-                            soulPriceBi = BigInteger.FromUnsignedArray(_entries[url].Content, true);
-                        }
+                        soulPriceBi = new BigInteger(_entries[url].Content);
 
                         soulPriceDec = UnitConversion.ToDecimal(soulPriceBi, DomainSettings.FiatTokenDecimals);
                     }
@@ -204,9 +196,7 @@ namespace Phantasma.Blockchain
                         soulPriceDec = PullPrice(time, DomainSettings.StakingTokenSymbol);
                         var soulPriceBi = UnitConversion.ToBigInteger(soulPriceDec, DomainSettings.FiatTokenDecimals);
 
-                        CacheOracleData<T>(url, (ProtocolVersion >= 3) 
-                                ? soulPriceBi.ToSignedByteArray() as T
-                                : soulPriceBi.ToUnsignedByteArray() as T);
+                        CacheOracleData<T>(url, soulPriceBi.ToByteArray() as T);
 
                     }
 
@@ -218,14 +208,7 @@ namespace Phantasma.Blockchain
                     val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
                 }
 
-                if (ProtocolVersion >= 3)
-                {
-                    content = val.ToSignedByteArray() as T;
-                }
-                else
-                {
-                    content = val.ToUnsignedByteArray() as T;
-                }
+                    content = val.ToByteArray() as T;
             }
             else
             if (url.StartsWith(feeTag))
@@ -243,14 +226,7 @@ namespace Phantasma.Blockchain
                 }
 
                 var val = PullFee(time, platform);
-                if (ProtocolVersion >= 3)
-                {
-                    content = val.ToSignedByteArray() as T;
-                }
-                else
-                {
-                    content = val.ToUnsignedByteArray() as T;
-                }
+                content = val.ToByteArray() as T;
             }
             else
             {
@@ -411,7 +387,7 @@ namespace Phantasma.Blockchain
                     {
                         Hash hash;
                         InteropBlock block;
-                        NativeBigInt height;
+                        BigInteger height;
                         // if it fails it might be block height
                         if (Hash.TryParse(input[1], out hash))
                         {
@@ -439,7 +415,7 @@ namespace Phantasma.Blockchain
                             return (block) as T;
                         }
                         //TODO
-                        else if (NativeBigInt.TryParse(input[1], out height))
+                        else if (BigInteger .TryParse(input[1], out height))
                         {
                             if (platformName == DomainSettings.PlatformName)
                             {

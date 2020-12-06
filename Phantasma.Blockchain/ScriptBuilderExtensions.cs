@@ -1,4 +1,4 @@
-﻿using Phantasma.Numerics;
+﻿using System.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.VM.Utils;
 using Phantasma.Domain;

@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Collections.Generic;
 
 using Phantasma.Cryptography;
@@ -82,7 +83,7 @@ namespace Phantasma.Tests
 
             var oracleEntries = new OracleEntry[]
             {
-                new OracleEntry("test", new BigInteger(123).AsByteArray()),
+                new OracleEntry("test", new BigInteger(123).ToByteArray()),
                 new OracleEntry("test2", Encoding.UTF8.GetBytes("hello world")),
             };
 

@@ -1,12 +1,12 @@
-﻿using Phantasma.Cryptography.ECC;
-using Phantasma.Neo.Cryptography;
-using Phantasma.Neo.Utils;
-using System;
-using Phantasma.Numerics;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Numerics;
+using System.Collections.Generic;
+using Phantasma.Cryptography.ECC;
+using Phantasma.Neo.Cryptography;
+using Phantasma.Neo.Utils;
 
 namespace Phantasma.Neo.Core
 {

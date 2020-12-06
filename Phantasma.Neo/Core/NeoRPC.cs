@@ -4,7 +4,6 @@ using Phantasma.Neo.Cryptography;
 using Phantasma.Neo.Utils;
 using System;
 using System.Numerics;
-using PBigInteger = Phantasma.Numerics.BigInteger;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -422,7 +421,7 @@ namespace Phantasma.Neo.Core
                             string txevent = "";
                             UInt160 source = UInt160.Zero;
                             UInt160 target = UInt160.Zero;
-                            PBigInteger amount = 0;
+                            BigInteger amount = 0;
                             var contract = notifications[j].GetString("contract"); 
 
                             if(states[0].GetString("type") == "ByteArray")
@@ -438,7 +437,7 @@ namespace Phantasma.Neo.Core
 
                             if (states[3].GetString("type") == "ByteArray")
                             {
-                                amount = PBigInteger.FromUnsignedArray(states[3].GetString("value").HexToBytes(), true); // needs to be Phantasma.Numerics.BigInteger for now.
+                                amount = new BigInteger(states[3].GetString("value").HexToBytes()); // needs to be Phantasma.Numerics.BigInteger for now.
                             }
                             appLogList.Add(new ApplicationLog(vmstate, contract, txevent, source, target, amount));
                         }
@@ -475,7 +474,7 @@ namespace Phantasma.Neo.Core
             return blockCount;
         }
 
-        public override List<Block> GetBlockRange(PBigInteger start, PBigInteger end)
+        public override List<Block> GetBlockRange(BigInteger start, BigInteger end)
         {
             List<Task<DataNode>> taskList = new List<Task<DataNode>>();
             List<Block> blockList = new List<Block>();

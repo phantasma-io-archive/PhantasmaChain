@@ -1,5 +1,6 @@
-using Phantasma.Numerics;
 using System.Text;
+using System.Numerics;
+using Phantasma.Numerics;
 
 namespace Phantasma.VM
 {
@@ -95,8 +96,7 @@ namespace Phantasma.VM
                                 break;
 
                             case VMType.Number:
-                                //TODO should not matter anymore with C# BigInteger 
-                                sb.Append(BigInteger.FromUnsignedArray(bytes, true));
+                                sb.Append(new BigInteger(bytes));
                                 break;
 
                             default:

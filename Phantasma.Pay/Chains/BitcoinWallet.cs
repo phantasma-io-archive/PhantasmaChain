@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Collections.Generic;
+using Phantasma.Numerics;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
 using Phantasma.Cryptography.ECC;
-using Phantasma.Numerics;
 
 namespace Phantasma.Pay.Chains
 {

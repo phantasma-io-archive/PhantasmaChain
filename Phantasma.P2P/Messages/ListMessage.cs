@@ -1,12 +1,11 @@
-﻿using Phantasma.Core;
-using Phantasma.Storage;
-using Phantasma.Cryptography;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using Phantasma.Storage.Utils;
-using Phantasma.Numerics;
+using System.Numerics;
+using System.Collections.Generic;
+using Phantasma.Core;
 using Phantasma.Blockchain;
+using Phantasma.Cryptography;
+using Phantasma.Storage.Utils;
 
 namespace Phantasma.Network.P2P.Messages
 {

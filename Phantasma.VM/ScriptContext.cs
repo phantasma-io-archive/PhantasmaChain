@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Numerics;
 using System.Diagnostics;
-using System.IO;
+using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Performance;
-using Phantasma.Numerics;
 
 namespace Phantasma.VM
 {
@@ -817,7 +816,7 @@ namespace Phantasma.VM
                                     case Opcode.SHL: result = a << (int)b; break;
                                     case Opcode.MIN: result = a < b ? a : b; break;
                                     case Opcode.MAX: result = a > b ? a : b; break;
-                                    case Opcode.POW: result = BigInteger.Pow(a, b); break;
+                                    case Opcode.POW: result = BigInteger.Pow(a, (int)b); break;
                                     default:
                                         {
                                             SetState(ExecutionState.Fault);

@@ -1,13 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Linq;
+using System.Numerics;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.VM;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Phantasma.Blockchain;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.VM.Utils;
 

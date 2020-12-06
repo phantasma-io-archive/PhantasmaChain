@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 using Phantasma.Core.Types;
 using Phantasma.Storage;
 using Phantasma.Core;

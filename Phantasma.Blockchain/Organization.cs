@@ -1,9 +1,7 @@
-﻿using System;
+﻿using System.Numerics;
 using System.Collections.Generic;
-using Phantasma.Blockchain.Contracts;
 using Phantasma.Cryptography;
 using Phantasma.Domain;
-using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain

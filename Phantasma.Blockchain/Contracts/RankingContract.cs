@@ -1,6 +1,6 @@
-﻿using Phantasma.Cryptography;
+﻿using System.Numerics;
+using Phantasma.Cryptography;
 using Phantasma.Domain;
-using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain.Contracts

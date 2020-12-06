@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using Phantasma.Cryptography;
-using Phantasma.Storage;
-using Phantasma.Storage.Utils;
-using Phantasma.Numerics;
-using Phantasma.Domain;
-using Phantasma.Core.Types;
+﻿using System.IO;
+using System.Numerics;
 using Phantasma.Core;
+using Phantasma.Domain;
+using Phantasma.Storage;
+using Phantasma.Core.Types;
+using Phantasma.Cryptography;
+using Phantasma.Storage.Utils;
+using System.Collections.Generic;
 
 namespace Phantasma.Blockchain.Storage
 {

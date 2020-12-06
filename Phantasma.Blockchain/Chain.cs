@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Linq;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
@@ -907,7 +908,7 @@ namespace Phantasma.Blockchain
         private byte[] GetTaskKey(BigInteger taskID, string field)
         {
             var bytes = Encoding.ASCII.GetBytes(field);
-            var key = ByteArrayUtils.ConcatBytes(bytes, taskID.ToUnsignedByteArray());
+            var key = ByteArrayUtils.ConcatBytes(bytes, taskID.ToByteArray());
             return key;
         }
 

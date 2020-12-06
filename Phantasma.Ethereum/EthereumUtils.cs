@@ -1,11 +1,10 @@
-﻿using LunarLabs.Parser;
-using Phantasma.Ethereum.Signer;
-using Phantasma.Core.Utils;
-using Phantasma.Numerics;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using System.Numerics;
 using System.Threading;
+using LunarLabs.Parser;
+using Phantasma.Numerics;
+using Phantasma.Core.Utils;
+using Phantasma.Ethereum.Signer;
 
 namespace Phantasma.Ethereum
 {

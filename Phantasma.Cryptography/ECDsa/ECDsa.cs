@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using Phantasma.Numerics;
+using System.Numerics;
 
 namespace Phantasma.Cryptography.ECC
 {
@@ -26,7 +26,7 @@ namespace Phantasma.Cryptography.ECC
         private static BigInteger CalculateE(BigInteger n, byte[] message)
         {
             int messageBitLength = message.Length * 8;
-            BigInteger trunc = BigInteger.FromSignedArray(message.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger trunc = new BigInteger(message.Reverse().Concat(new byte[1]).ToArray());
             if (n.GetBitLength() < messageBitLength)
             {
                 trunc >>= messageBitLength - n.GetBitLength();
@@ -38,7 +38,7 @@ namespace Phantasma.Cryptography.ECC
         {
             if (privateKey == null) throw new InvalidOperationException();
             BigInteger e = CalculateE(curve.N, message);
-            BigInteger d = BigInteger.FromSignedArray(privateKey.Reverse().Concat(new byte[1]).ToArray());
+            BigInteger d = new BigInteger(privateKey.Reverse().Concat(new byte[1]).ToArray());
             BigInteger r, s;
 
             do
@@ -73,8 +73,8 @@ namespace Phantasma.Cryptography.ECC
                 return null;
             }
 
-            var rBytes = r.ToSignedByteArray().Reverse().ToArray();
-            var sBytes = s.ToSignedByteArray().Reverse().ToArray();
+            var rBytes = r.ToByteArray().Reverse().ToArray();
+            var sBytes = s.ToByteArray().Reverse().ToArray();
 
             using (var stream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(stream))
@@ -146,8 +146,8 @@ namespace Phantasma.Cryptography.ECC
                     var lenS = reader.ReadByte();
                     var bytesS = reader.ReadBytes(lenS).Reverse().ToArray();
 
-                    var R = BigInteger.FromSignedArray(bytesR);
-                    var S = BigInteger.FromSignedArray(bytesS);
+                    var R = new BigInteger(bytesR);
+                    var S = new BigInteger(bytesS);
                     return VerifySignature(message, R, S, curve, publicKey);
                 }
             }

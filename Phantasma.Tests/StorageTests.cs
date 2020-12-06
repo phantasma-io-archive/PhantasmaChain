@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Numerics;
 using Phantasma.Core;

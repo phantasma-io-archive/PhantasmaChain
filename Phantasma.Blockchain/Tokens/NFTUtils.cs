@@ -1,10 +1,10 @@
-﻿using Phantasma.Domain;
-using Phantasma.VM;
+﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.Text;
-using System;
-using Phantasma.Numerics;
+using System.Numerics;
+using System.Collections.Generic;
+using Phantasma.VM;
+using Phantasma.Domain;
 using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;

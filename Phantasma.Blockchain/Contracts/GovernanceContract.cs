@@ -1,5 +1,5 @@
+using System.Numerics;
 using Phantasma.Domain;
-using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;
 

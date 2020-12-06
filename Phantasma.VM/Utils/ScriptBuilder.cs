@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Numerics;
 using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Storage;
-using Phantasma.Numerics;
 using Phantasma.Storage.Utils;
 
 namespace Phantasma.VM.Utils
@@ -90,7 +90,7 @@ namespace Phantasma.VM.Utils
 
         public ScriptBuilder EmitLoad(byte reg, BigInteger val)
         {
-            var bytes = val.ToSignedByteArray();
+            var bytes = val.ToByteArray();
             EmitLoad(reg, bytes, VMType.Number);
             return this;
         }

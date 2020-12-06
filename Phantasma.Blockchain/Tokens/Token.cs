@@ -1,7 +1,7 @@
-﻿using Phantasma.Numerics;
+﻿using System.IO;
+using System.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Storage;
-using System.IO;
 using Phantasma.Storage.Utils;
 using Phantasma.Domain;
 using Phantasma.Core;

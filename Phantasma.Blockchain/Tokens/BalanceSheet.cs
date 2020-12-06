@@ -1,8 +1,8 @@
+using System.Text;
+using System.Numerics;
 using Phantasma.Core.Utils;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
 using Phantasma.Storage.Context;
-using System.Text;
 
 namespace Phantasma.Blockchain.Tokens
 {
@@ -36,7 +36,7 @@ namespace Phantasma.Blockchain.Tokens
                 {
                     return 0;
                 }
-                return BigInteger.FromSignedArray(temp);
+                return new BigInteger(temp);
             }
         }
 

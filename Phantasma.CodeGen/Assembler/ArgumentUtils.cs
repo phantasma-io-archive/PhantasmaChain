@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Numerics;
 using System.Collections.Generic;
-using Phantasma.Numerics;
 using Phantasma.VM;
+using Phantasma.Numerics;
 
 namespace Phantasma.CodeGen.Assembler
 {

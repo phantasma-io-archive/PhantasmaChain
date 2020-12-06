@@ -1,10 +1,10 @@
-﻿using Phantasma.Numerics;
-using Phantasma.Core.Utils;
+﻿using System;
 using System.Text;
-using System;
-using Phantasma.Core;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
+using System.Numerics;
+using Phantasma.Core;
+using Phantasma.Core.Utils;
 
 namespace Phantasma.Storage.Context
 {
@@ -58,7 +58,7 @@ namespace Phantasma.Storage.Context
 
         public static BigInteger Count(this StorageMap map)
         {
-            return map.Context.Get(CountKey(map.BaseKey)).AsBigInteger();
+            return new BigInteger(map.Context.Get(CountKey(map.BaseKey)));
         }
 
         public static bool ContainsKey<K>(this StorageMap map, K key)

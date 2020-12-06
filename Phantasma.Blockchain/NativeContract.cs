@@ -1,16 +1,16 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Text;
+using System.Numerics;
 using System.Reflection;
 using System.Collections.Generic;
-using Phantasma.Core;
 using Phantasma.VM;
-using Phantasma.Storage.Context;
-using Phantasma.Storage;
-using System.IO;
+using Phantasma.Core;
 using Phantasma.Domain;
+using Phantasma.Storage;
 using Phantasma.Cryptography;
-using Phantasma.Numerics;
-using System.Linq;
+using Phantasma.Storage.Context;
 
 namespace Phantasma.Blockchain
 {
@@ -254,7 +254,7 @@ namespace Phantasma.Blockchain
 
                     if (receivedType == typeof(BigInteger))
                     {
-                        return ((BigInteger)arg).ToSignedByteArray();
+                        return ((BigInteger)arg).ToByteArray();
                     }
 
                     if (receivedType == typeof(Hash))

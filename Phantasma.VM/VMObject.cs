@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using System.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
@@ -91,7 +92,7 @@ namespace Phantasma.VM
                 case VMType.Bytes:
                     {
                         var bytes = (byte[])Data;
-                        var num = BigInteger.FromSignedArray(bytes);
+                        var num = new BigInteger(bytes);
                         return num;
                     }
 
@@ -224,7 +225,7 @@ namespace Phantasma.VM
                 case VMType.Number:
                     {
                         var num = AsNumber();
-                        return num.ToSignedByteArray();
+                        return num.ToByteArray();
                     }
 
                 case VMType.Enum:
@@ -365,7 +366,7 @@ namespace Phantasma.VM
 
                 case VMType.Number:
                     {
-                        this.Data = (val == null || val.Length == 0) ? new BigInteger(0) : BigInteger.FromSignedArray(val);
+                        this.Data = (val == null || val.Length == 0) ? new BigInteger(0) : new BigInteger(val);
                         break;
                     }
 
@@ -460,7 +461,7 @@ namespace Phantasma.VM
         {
             this.Type = VMType.Number;
             this.Data = val;
-            this._localSize = val.ToSignedByteArray().Length;
+            this._localSize = val.ToByteArray().Length;
             return this;
         }
 

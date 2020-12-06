@@ -1,7 +1,7 @@
-﻿using Phantasma.Numerics;
-using Phantasma.VM;
-using System;
+﻿using System;
+using System.Numerics;
 using System.Collections.Generic;
+using Phantasma.VM;
 
 namespace Phantasma.Domain
 {

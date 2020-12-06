@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Phantasma.Cryptography;
 using Phantasma.Core;
 using Phantasma.VM;
 using Phantasma.Core.Types;
-using Phantasma.Numerics;
 using Phantasma.Domain;
 using Phantasma.Storage;
 using Phantasma.Storage.Context;

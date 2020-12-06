@@ -1,8 +1,8 @@
-﻿using Phantasma.Core.Types;
+﻿using System;
+using System.Numerics;
 using System.Collections.Generic;
 using Phantasma.Domain;
-using NativeBigInt = System.Numerics.BigInteger;
-using System;
+using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 
 namespace Phantasma.Blockchain
@@ -50,12 +50,12 @@ namespace Phantasma.Blockchain
             throw new NotImplementedException();
         }
 
-        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt())
+        protected override InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, BigInteger height = new BigInteger())
         {
             throw new NotImplementedException();
         }
 
-        protected override Phantasma.Numerics.BigInteger PullFee(Timestamp time, string platform)
+        protected override BigInteger PullFee(Timestamp time, string platform)
         {
             throw new NotImplementedException();
         }
@@ -70,7 +70,7 @@ namespace Phantasma.Blockchain
             throw new NotImplementedException();
         }
 
-        protected override InteropNFT PullPlatformNFT(string platformName, string symbol, Numerics.BigInteger tokenID)
+        protected override InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID)
         {
             throw new NotImplementedException();
         }

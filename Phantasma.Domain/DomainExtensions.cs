@@ -1,8 +1,9 @@
-﻿using Phantasma.Cryptography;
+﻿using System;
+using System.Numerics;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM;
-using System;
 
 namespace Phantasma.Domain
 {
@@ -149,7 +150,7 @@ namespace Phantasma.Domain
             }
             else
             {
-                fee = BigInteger.FromUnsignedArray(bytes, true);
+                fee = new BigInteger(bytes);
             }
             //fee = BigInteger.FromUnsignedArray(bytes, true);
             return fee;

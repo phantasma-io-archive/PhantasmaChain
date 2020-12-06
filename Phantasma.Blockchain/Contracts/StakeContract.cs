@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using Phantasma.Storage.Context;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using Phantasma.Core;
-using Phantasma.Numerics;
 
 namespace Phantasma.Cryptography.ECC
 {
@@ -43,7 +43,7 @@ namespace Phantasma.Cryptography.ECC
 
         private static BigInteger[] FastLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
         {
-            int n = k.CalculateBitLength();
+            int n = k.GetBitLength();
             int s = k.GetLowestSetBit();
 
             //Debug.Assert(k.TestBit(s));
@@ -116,7 +116,7 @@ namespace Phantasma.Cryptography.ECC
                 BigInteger P;
                 do
                 {
-                    P = CryptoExtensions.NextBigInteger(curve.Q.CalculateBitLength());
+                    P = CryptoExtensions.NextBigInteger(curve.Q.GetBitLength());
                 }
                 while (P >= curve.Q || BigInteger.ModPow(P * P - fourQ, legendreExponent, curve.Q) != qMinusOne);
                 BigInteger[] result = FastLucasSequence(curve.Q, P, Q, k);
@@ -144,7 +144,7 @@ namespace Phantasma.Cryptography.ECC
 
         public byte[] ToByteArray()
         {
-            byte[] data = Value.ToSignedByteArray();
+            byte[] data = Value.ToByteArray();
             if (data.Length == 32)
                 return data.Reverse().ToArray();
             if (data.Length > 32)

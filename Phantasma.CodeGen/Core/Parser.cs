@@ -1,8 +1,8 @@
-﻿using Phantasma.CodeGen.Core.Nodes;
-using Phantasma.Numerics;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using System.Numerics;
+using System.Collections.Generic;
+using Phantasma.CodeGen.Core.Nodes;
 
 namespace Phantasma.CodeGen.Core
 {

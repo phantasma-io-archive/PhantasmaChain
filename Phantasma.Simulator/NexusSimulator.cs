@@ -1,6 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Collections.Generic;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;

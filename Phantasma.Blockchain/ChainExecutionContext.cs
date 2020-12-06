@@ -1,11 +1,10 @@
-﻿using Phantasma.Domain;
-using Phantasma.Numerics;
-using Phantasma.VM;
-using Phantasma.Core.Performance;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Numerics;
 using Phantasma.Blockchain.Contracts;
-using System.Linq;
+using Phantasma.VM;
+using Phantasma.Domain;
+using System.Collections.Generic;
+using Phantasma.Core.Performance;
 
 namespace Phantasma.Blockchain
 {

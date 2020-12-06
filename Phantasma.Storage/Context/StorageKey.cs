@@ -1,6 +1,7 @@
-using Phantasma.Numerics;
-using System.Collections.Generic;
+using System.Numerics;
 using System.Linq;
+using System.Collections.Generic;
+using Phantasma.Numerics;
 
 namespace Phantasma.Storage.Context
 {
@@ -126,7 +127,7 @@ namespace Phantasma.Storage.Context
                     int index = i + 1;
                     var first = key.Take(index - 1).Skip(1).ToArray();
 
-                    var num = BigInteger.FromSignedArray(first);
+                    var num = new BigInteger(first);
 
                     var name = $"[{num}]";
 
