@@ -1410,7 +1410,7 @@ namespace Phantasma.API
             return new ArrayResult() { values = tokenList.ToArray() };
         }
 
-        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, -1)]
+        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 120)]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol, bool extended = false)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
