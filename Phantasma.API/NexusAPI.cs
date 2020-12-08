@@ -1481,7 +1481,19 @@ namespace Phantasma.API
 
             var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
 
-            return new TokenDataResult() { chainName = info.CurrentChain, creatorAddress = info.Creator.Text, ownerAddress = info.CurrentOwner.Text, series = info.SeriesID.ToString(), mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), infusion = infusion, properties = properties.ToArray()};
+            return new TokenDataResult() { 
+                chainName = info.CurrentChain, 
+                creatorAddress = info.Creator.Text, 
+                ownerAddress = info.CurrentOwner.Text, 
+                series = info.SeriesID.ToString(), 
+                mint = info.MintID.ToString(), 
+                ID = ID.ToString(), 
+                rom = Base16.Encode(info.ROM), 
+                ram = Base16.Encode(info.RAM), 
+                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused": "active", 
+                infusion = infusion, 
+                properties = properties.ToArray()
+            };
         }
 
 
