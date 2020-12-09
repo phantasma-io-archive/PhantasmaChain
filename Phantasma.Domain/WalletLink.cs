@@ -249,14 +249,14 @@ namespace Phantasma.Domain
                         {
                             if (args.Length == 5)
                             {
-                                var data = Base16.Decode(args[3], false);
+                                var data = Base16.Decode(args[1], false);
                                 if (data == null)
                                 {
                                     answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid input received" });
                                 }
                                 else
                                 {
-                                    var signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[4], true);
+                                    var signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[2], true);
 
                                     SignData(data, signatureKind, id, (signature, random, txError) => {
                                         if (signature != null)
