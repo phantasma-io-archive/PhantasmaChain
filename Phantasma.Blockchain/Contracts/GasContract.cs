@@ -50,7 +50,7 @@ namespace Phantasma.Blockchain.Contracts
             }
 
             Runtime.Expect(from.IsUser, "must be a user address");
-            Runtime.Expect(Runtime.PreviousContextName == VirtualMachine.EntryContextName, "must be entry context");
+            Runtime.Expect(Runtime.PreviousContext.Name == VirtualMachine.EntryContextName, "must be entry context");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(target.IsSystem, "destination must be system address");
 
@@ -187,7 +187,7 @@ namespace Phantasma.Blockchain.Contracts
                 return;
             }
 
-            Runtime.Expect(Runtime.PreviousContextName == VirtualMachine.EntryContextName, "must be entry context");
+            Runtime.Expect(Runtime.PreviousContext.Name == VirtualMachine.EntryContextName, "must be entry context");
             Runtime.Expect(Runtime.IsWitness(from), "invalid witness");
             Runtime.Expect(_allowanceMap.ContainsKey(from), "no gas allowance found");
 

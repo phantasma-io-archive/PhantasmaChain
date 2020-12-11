@@ -26,9 +26,6 @@ namespace Phantasma.Blockchain
         private List<Event> _events = new List<Event>();
         public IEnumerable<Event> Events => _events;
 
-        public string CurrentContextName => CurrentContext.Name;
-        public string PreviousContextName => PreviousContext.Name;
-
         public BigInteger PaidGas { get; private set; }
         public BigInteger MaxGas { get; private set; }
         public BigInteger GasPrice { get; private set; }
@@ -193,9 +190,6 @@ namespace Phantasma.Blockchain
 
         public VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args)
         {
-            var previousContext = CurrentContext;
-            var previousCaller = this.EntryAddress;
-
             var context = LoadContext(contextName);
             Expect(context != null, "could not call context: " + contextName);
 
@@ -702,7 +696,7 @@ namespace Phantasma.Blockchain
                 else
                 if (this.CurrentTask != null)
                 {
-                    accountResult = address == this.CurrentTask.Owner && this.CurrentContextName == this.CurrentTask.ContextName;
+                    accountResult = address == this.CurrentTask.Owner && this.CurrentContext.Name == this.CurrentTask.ContextName;
                 }
                 else
                 {

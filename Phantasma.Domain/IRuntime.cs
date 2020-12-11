@@ -17,12 +17,12 @@ namespace Phantasma.Domain
 
         ITask CurrentTask { get; }
 
+        ExecutionContext CurrentContext { get; }
+        ExecutionContext PreviousContext { get; }
+
         Address GasTarget { get; }
         BigInteger UsedGas { get; }
         BigInteger GasPrice { get; }
-
-        string CurrentContextName { get; }
-        string PreviousContextName { get; }
 
         IBlock GetBlockByHash(Hash hash);
         IBlock GetBlockByHeight(BigInteger height);

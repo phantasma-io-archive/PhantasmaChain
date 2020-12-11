@@ -134,7 +134,7 @@ namespace Phantasma.VM
             }
 
             this.entryContext = new ScriptContext(contextName, script, offset);
-            RegisterContext(EntryContextName, this.entryContext); // TODO this should be a constant
+            RegisterContext(EntryContextName, this.entryContext);
 
             PreviousContext = entryContext;
 
@@ -191,6 +191,11 @@ namespace Phantasma.VM
 
         protected void SetCurrentContext(ExecutionContext context)
         {
+            if (context == null)
+            {
+                throw new VMException(this, "SetCurrentContext failed, context can't be null");
+            }
+
             this.CurrentContext = context;
         }
 
@@ -219,6 +224,11 @@ namespace Phantasma.VM
 
         internal ExecutionState SwitchContext(ExecutionContext context, uint instructionPointer)
         {
+            if (context == null)
+            {
+                throw new VMException(this, "SwitchContext failed, context can't be null");
+            }
+
             using (var m = new ProfileMarker("SwitchContext"))
             {
                 var tempContext = PreviousContext;

@@ -189,7 +189,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_Notify(RuntimeVM vm)
         {
-            vm.Expect(vm.CurrentContextName != VirtualMachine.EntryContextName, "cannot notify in current context");
+            vm.Expect(vm.CurrentContext.Name != VirtualMachine.EntryContextName, "cannot notify in current context");
 
             var kind = vm.Stack.Pop().AsEnum<EventKind>();
             var address = vm.PopAddress();
@@ -367,7 +367,7 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_Context(RuntimeVM vm)
         {
             var result = new VMObject();
-            result.SetValue(vm.CurrentContextName);
+            result.SetValue(vm.CurrentContext.Name);
             vm.Stack.Push(result);
 
             return ExecutionState.Running;
