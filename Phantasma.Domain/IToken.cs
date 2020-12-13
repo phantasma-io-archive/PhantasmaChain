@@ -126,6 +126,7 @@ namespace Phantasma.Domain
         {
             writer.WriteBigInteger(SeriesID);
             writer.WriteBigInteger(MintID);
+            writer.WriteBigInteger(TokenID);
             writer.WriteAddress(Creator);
             writer.WriteVarString(CurrentChain);
             writer.WriteAddress(CurrentOwner);
@@ -143,6 +144,7 @@ namespace Phantasma.Domain
         {
             SeriesID = reader.ReadBigInteger();
             MintID = reader.ReadBigInteger();
+            TokenID = reader.ReadBigInteger();
 
             Creator = reader.ReadAddress();
 
