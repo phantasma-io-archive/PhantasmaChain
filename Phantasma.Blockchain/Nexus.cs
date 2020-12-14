@@ -1250,6 +1250,8 @@ namespace Phantasma.Blockchain
                 content.ReplaceROM(series.ROM);
             }
 
+            content.UpdateTokenID(series.Mode);
+
             return content;
         }
 

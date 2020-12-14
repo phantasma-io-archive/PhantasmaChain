@@ -94,19 +94,9 @@ namespace Phantasma.Domain
             CurrentOwner = currentOwner;
             this.ROM = ROM;
             this.RAM = RAM;
-
-            byte[] bytes;
-
-            switch (mode)
-            {
-                case TokenSeriesMode.Unique: bytes = ROM; break;
-                case TokenSeriesMode.Duplicated: bytes = ROM.Concat(seriesID.ToUnsignedByteArray()).Concat(mintID.ToUnsignedByteArray()).ToArray(); break;
-                default:
-                    throw new ChainException($"Generation of tokenID for Series with {mode} is not implemented");
-            }
-            
-            this.TokenID = Hash.FromBytes(bytes);
             this.Infusion = infusion != null ? infusion.ToArray(): new TokenInfusion[0];
+
+            UpdateTokenID(mode);
         }
 
         public string CurrentChain { get; private set; }
@@ -126,7 +116,6 @@ namespace Phantasma.Domain
         {
             writer.WriteBigInteger(SeriesID);
             writer.WriteBigInteger(MintID);
-            writer.WriteBigInteger(TokenID);
             writer.WriteAddress(Creator);
             writer.WriteVarString(CurrentChain);
             writer.WriteAddress(CurrentOwner);
@@ -144,7 +133,6 @@ namespace Phantasma.Domain
         {
             SeriesID = reader.ReadBigInteger();
             MintID = reader.ReadBigInteger();
-            TokenID = reader.ReadBigInteger();
 
             Creator = reader.ReadAddress();
 
@@ -165,6 +153,21 @@ namespace Phantasma.Domain
                 var value = reader.ReadBigInteger();
                 Infusion[i] = new TokenInfusion(symbol, value);
             }
+        }
+
+        public void UpdateTokenID(TokenSeriesMode mode)
+        {
+            byte[] bytes;
+
+            switch (mode)
+            {
+                case TokenSeriesMode.Unique: bytes = ROM; break;
+                case TokenSeriesMode.Duplicated: bytes = ROM.Concat(SeriesID.ToUnsignedByteArray()).Concat(MintID.ToUnsignedByteArray()).ToArray(); break;
+                default:
+                    throw new ChainException($"Generation of tokenID for Series with {mode} is not implemented");
+            }
+
+            this.TokenID = Hash.FromBytes(bytes);
         }
 
         public byte[] ToByteArray()
