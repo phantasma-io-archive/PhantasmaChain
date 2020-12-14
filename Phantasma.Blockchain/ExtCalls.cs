@@ -869,7 +869,11 @@ namespace Phantasma.Blockchain
             var symbol = vm.PopString("symbol");
             var tokenID = vm.PopNumber("token ID");
 
-            return vm.ReadToken(symbol, tokenID);
+            var result = vm.ReadToken(symbol, tokenID);
+
+            vm.Expect(result.TokenID == tokenID, "retrived NFT content does not have proper tokenID");
+
+            return result;
         }
 
         private static ExecutionState Runtime_ReadToken(RuntimeVM vm)
