@@ -109,5 +109,31 @@ namespace Phantasma.VM
 
             return JSONWriter.WriteToString(node);
         }
+
+
+        public static DebugInfo FromFile(string fileName)
+        {
+            var json = File.ReadAllText(fileName);
+            var root = JSONReader.ReadFromString(json);
+            return FromJSON(root);
+        }
+
+        public static DebugInfo FromJSON(DataNode root)
+        {
+            var fileName = root.GetString("file_name");
+
+            root = root["ranges"];
+            var ranges = new List<DebugRange>();
+            foreach (var child in root.Children)
+            {
+                var sourceLine = child.GetUInt32("source_line");
+                var startOfs = child.GetInt32("start_ofs");
+                var endOfs = child.GetInt32("end_ofs");
+                var range = new DebugRange(sourceLine, startOfs, endOfs);
+                ranges.Add(range);
+            }
+
+            return new DebugInfo(fileName, ranges);
+        }
     }
 }
