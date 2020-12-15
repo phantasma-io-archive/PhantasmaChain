@@ -211,6 +211,11 @@ namespace Phantasma.Cryptography
             var thisBytes = this._bytes;
             var otherBytes = otherAddress._bytes;
 
+            if ((thisBytes == null) || (otherBytes == null))
+            {
+                return (thisBytes == null) == (otherBytes == null);
+            }
+
             if (thisBytes.Length != otherBytes.Length) // failsafe, should never happen
             {
                 return false;
