@@ -13,6 +13,7 @@ using Phantasma.CodeGen.Assembler;
 using Phantasma.Domain;
 using Phantasma.VM;
 using Phantasma.Blockchain.Tokens;
+using Phantasma.VM.Debug;
 
 namespace Phantasma.Simulator
 {

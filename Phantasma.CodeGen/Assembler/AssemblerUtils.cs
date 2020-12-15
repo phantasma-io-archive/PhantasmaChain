@@ -1,9 +1,7 @@
-﻿using Phantasma.VM;
+﻿using Phantasma.VM.Debug;
 using Phantasma.VM.Utils;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Phantasma.CodeGen.Assembler
 {

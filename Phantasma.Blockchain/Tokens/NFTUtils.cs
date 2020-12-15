@@ -8,6 +8,7 @@ using Phantasma.Numerics;
 using Phantasma.Storage.Context;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
+using Phantasma.VM.Debug;
 
 namespace Phantasma.Blockchain.Tokens
 {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Phantasma.Core;
 using Phantasma.Core.Performance;
 using Phantasma.Numerics;
@@ -129,6 +130,12 @@ namespace Phantasma.VM
         {
             try
             {
+                var debugger = VirtualMachine.Debugger;
+                if (debugger != null)
+                {
+                    debugger.OnStep(frame, stack);
+                }
+
                 opcode = (Opcode)Read8();
 
                 frame.VM.ValidateOpcode(opcode);

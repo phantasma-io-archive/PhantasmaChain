@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Diagnostics;
+using Phantasma.VM.Debug;
 
 namespace Phantasma.VM
 {
@@ -275,5 +276,8 @@ namespace Phantasma.VM
             throw new VMException(this, description);
         }
 
+        #region DEBUGGER
+        public static DebugHost Debugger { get; set; }
+        #endregion
     }
 }

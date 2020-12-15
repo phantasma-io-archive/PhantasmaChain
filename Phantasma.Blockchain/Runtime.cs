@@ -10,7 +10,6 @@ using Phantasma.Storage.Context;
 using Phantasma.Storage;
 using Phantasma.Domain;
 using Phantasma.Blockchain.Storage;
-using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Blockchain
 {
@@ -1592,6 +1591,11 @@ namespace Phantasma.Blockchain
             Runtime.Expect(description.Length <= 256, "log string too large");
             Runtime.ConsumeGas(1000);
             Runtime.Notify(EventKind.Log, this.EntryAddress, description);
+
+            if (VirtualMachine.Debugger != null)
+            {
+                VirtualMachine.Debugger.OnLog(description);
+            }
         }
 
         public void Throw(string description)

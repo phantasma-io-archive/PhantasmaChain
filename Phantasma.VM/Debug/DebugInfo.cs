@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Phantasma.VM
+namespace Phantasma.VM.Debug
 {
     public struct DebugRange
     {
