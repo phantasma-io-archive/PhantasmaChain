@@ -707,7 +707,7 @@ namespace Phantasma.VM
                 case VMType.String: return $"[String] => {((string)Data)}";
                 case VMType.Bool: return $"[Bool] => {((bool)Data)}";
                 case VMType.Enum: return $"[Enum] => {((uint)Data)}";
-                case VMType.Object: return $"[Object] => {Data.GetType().Name}";
+                case VMType.Object: return $"[Object] => {(Data == null? "null" : Data.GetType().Name)}";
                 default: return "Unknown";
             }
         }
