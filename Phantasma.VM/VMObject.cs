@@ -447,6 +447,12 @@ namespace Phantasma.VM
                         break;
                     }
 
+                case VMType.Object:
+                    {
+                        this.Data = null;
+                        break;
+                    }
+
                 default:
                     {
                         throw new Exception("Cannot init default value for vmtype: " + type);
