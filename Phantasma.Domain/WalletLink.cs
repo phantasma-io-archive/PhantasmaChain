@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using LunarLabs.Parser;
 using Phantasma.Core;
 using Phantasma.Core.Types;
@@ -27,6 +28,7 @@ namespace Phantasma.Domain
         public struct Authorization : IAPIResult
         {
             public string wallet;
+            public string nexus;
             public string dapp;
             public string token;
         }
@@ -52,7 +54,6 @@ namespace Phantasma.Domain
             public string address;
             public string name;
             public string avatar;
-            public string nexus;
             public Balance[] balances;
             public File[] files;
         }
@@ -80,13 +81,14 @@ namespace Phantasma.Domain
         protected abstract PhantasmaKeys Keys { get; }
         protected abstract WalletStatus Status { get; }
 
-        public string Name { get; private set; }
+        public abstract string Nexus { get; }
+
+        public abstract string Name { get; }
 
         private bool _isPendingRequest;
 
-        public WalletLink(string name)
+        public WalletLink()
         {
-            this.Name = name;
         }
 
         private DataNode ValidateRequest(string[] args)
@@ -117,7 +119,7 @@ namespace Phantasma.Domain
         // NOTE for security, signData should not be usable as a way of signing transaction. That way the wallet is responsible for appending random bytes to the message, and return those in callback
         protected abstract void SignData(byte[] data, SignatureKind kind, int id, Action<string, string, string> callback);
 
-        protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
+        protected abstract void SignTransaction(string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
 
         protected abstract void WriteArchive(Hash hash, int blockIndex, byte[] data, Action<bool, string> callback);
 
@@ -190,7 +192,7 @@ namespace Phantasma.Domain
                             {
                                 token = authTokens[dapp];
                                 success = true;
-                                answer = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
+                                answer = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, nexus = this.Nexus, dapp = dapp, token = token });
                             }
                             else
                             {
@@ -205,7 +207,7 @@ namespace Phantasma.Domain
                                         authTokens[dapp] = token;
 
                                         success = true;
-                                        answer = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
+                                        answer = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, nexus = this.Nexus, dapp = dapp, token = token });
                                     }
                                     else
                                     {
@@ -293,8 +295,21 @@ namespace Phantasma.Domain
                             if (args.Length == 7)
                             {
                                 var nexus = args[1];
-                                var chain = args[2];
-                                var script = Base16.Decode(args[3], false);
+                                if (nexus == this.Nexus)
+                                {
+                                    args = args.Skip(1).ToArray();
+                                }
+                                else
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid nexus: '{nexus}' expected '{this.Nexus}' instead" });
+                                    break;
+                                }
+                            }
+                                
+                            if (args.Length == 6)
+                            {
+                                var chain = args[1];
+                                var script = Base16.Decode(args[2], false);
 
                                 if (script == null)
                                 {
@@ -304,7 +319,7 @@ namespace Phantasma.Domain
                                 {
                                     byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4], false) : null;
 
-                                    SignTransaction(nexus, chain, script, payload, id, (hash, txError) => {
+                                    SignTransaction(chain, script, payload, id, (hash, txError) => {
                                         if (hash != Hash.Null)
                                         {
                                             success = true;
