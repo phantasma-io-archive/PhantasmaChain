@@ -1245,12 +1245,14 @@ namespace Phantasma.Blockchain
             var content = ReadNFTRaw(storage, tokenKey, ProtocolVersion);
 
             var series = GetTokenSeries(storage, symbol, content.SeriesID);
+
+            content.UpdateTokenID(series.Mode);
+
             if (series.Mode == TokenSeriesMode.Duplicated)
             {
                 content.ReplaceROM(series.ROM);
             }
 
-            content.UpdateTokenID(series.Mode);
 
             return content;
         }
