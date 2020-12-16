@@ -363,7 +363,7 @@ namespace Phantasma.API
         public bool acceptTransactions;
         public IEnumerable<APIEntry> Methods => _methods.Values;
 
-        private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>();
+        private readonly Dictionary<string, APIEntry> _methods = new Dictionary<string, APIEntry>(StringComparer.InvariantCultureIgnoreCase);
 
         private const int PaginationMaxResults = 99999;
 
@@ -397,7 +397,7 @@ namespace Phantasma.API
                 var temp = new APIEntry(this, entry);
                 if (temp.ReturnType != null)
                 {
-                    _methods[entry.Name.ToLower()] = temp;
+                    _methods[entry.Name] = temp;
                 }
             }
 
@@ -406,10 +406,9 @@ namespace Phantasma.API
 
         public string Execute(string methodName, object[] args)
         {
-            var uniformizedName = methodName.ToLower();
-            if (_methods.ContainsKey(uniformizedName))
+            if (_methods.ContainsKey(methodName))
             {
-                return _methods[uniformizedName].Execute(methodName, args);
+                return _methods[methodName].Execute(methodName, args);
             }
             else
             {
