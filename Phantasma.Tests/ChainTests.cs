@@ -17,6 +17,7 @@ using Phantasma.Core.Types;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Storage;
+using Phantasma.VM.Debug;
 
 namespace Phantasma.Tests
 {

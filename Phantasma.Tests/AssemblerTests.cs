@@ -15,6 +15,7 @@ using Phantasma.Storage.Context;
 using Phantasma.VM.Utils;
 using Phantasma.Domain;
 using Phantasma.Storage;
+using Phantasma.VM.Debug;
 
 namespace Phantasma.Tests
 {
