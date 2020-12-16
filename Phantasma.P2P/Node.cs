@@ -140,9 +140,13 @@ namespace Phantasma.Network.P2P
                     {
                         return IPAddress.Parse(webclient.DownloadString(service));
                     }
-                    catch { }
+                    catch
+                    { 
+                        Logger.Message($"Getting public ip from {service} failed!");
+                    }
                 }
             }
+
             return null;
         }
 
