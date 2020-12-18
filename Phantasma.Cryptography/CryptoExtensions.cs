@@ -13,34 +13,108 @@ namespace Phantasma.Cryptography
 {
     public static class CryptoExtensions
     {
-        /*public static byte[] AES256Decrypt(this byte[] block, byte[] key)
+        public static byte[] AES256Decrypt(this byte[] block, byte[] key, bool padding = false)
         {
-            using (var aes = Aes.Create())
+            using (var aes = NetCrypto.Aes.Create())
             {
                 aes.Key = key;
-                aes.Mode = CipherMode.ECB;
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform decryptor = aes.CreateDecryptor())
+                aes.Mode = NetCrypto.CipherMode.ECB;
+                aes.Padding = (padding) ? NetCrypto.PaddingMode.PKCS7: NetCrypto.PaddingMode.None;
+                using (var decryptor = aes.CreateDecryptor())
                 {
                     return decryptor.TransformFinalBlock(block, 0, block.Length);
                 }
             }
         }
 
-        public static byte[] AES256Encrypt(this byte[] block, byte[] key)
+        public static byte[] AES256Encrypt(this byte[] block, byte[] key, bool padding = false)
         {
-            using (Aes aes = Aes.Create())
+            using (var aes = NetCrypto.Aes.Create())
             {
                 aes.Key = key;
-                aes.Mode = CipherMode.ECB;
-                aes.Padding = PaddingMode.None;
-                using (ICryptoTransform encryptor = aes.CreateEncryptor())
+                aes.Mode = NetCrypto.CipherMode.ECB;
+                aes.Padding = (padding) ? NetCrypto.PaddingMode.PKCS7: NetCrypto.PaddingMode.None;
+                using (var encryptor = aes.CreateEncryptor())
                 {
                     return encryptor.TransformFinalBlock(block, 0, block.Length);
                 }
             }
         }
 
+        public static byte[] AESGenerateIV(int vectorSize)
+        {
+            var ivBytes = new byte[vectorSize];
+            var secRandom = new Org.BouncyCastle.Security.SecureRandom();
+            secRandom.NextBytes(ivBytes);
+
+            return ivBytes;
+        }
+
+        public static byte[] AESGCMDecrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            var keyParamWithIV = new Org.BouncyCastle.Crypto.Parameters.ParametersWithIV(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key), iv, 0, 16);
+
+            var cipher = Org.BouncyCastle.Security.CipherUtilities.GetCipher("AES/GCM/NoPadding");
+            cipher.Init(false, keyParamWithIV);
+
+            return cipher.DoFinal(data);
+        }
+
+        public static byte[] AESGCMEncrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            var keyParamWithIV = new Org.BouncyCastle.Crypto.Parameters.ParametersWithIV(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key), iv, 0, 16);
+
+            var cipher = Org.BouncyCastle.Security.CipherUtilities.GetCipher("AES/GCM/NoPadding");
+            cipher.Init(true, keyParamWithIV);
+
+            return cipher.DoFinal(data);
+        }
+
+        public static byte[] AESGCMDecrypt(byte[] data, byte[] key)
+        {
+            byte[] iv;
+            byte[] encryptedData;
+
+            using (var stream = new System.IO.MemoryStream(data))
+            {
+                using (var reader = new System.IO.BinaryReader(stream))
+                {
+                    iv = reader.ReadBytes(16);
+                    encryptedData = reader.ReadBytes(data.Length - 16);
+                }
+            }
+            
+            var keyParamWithIV = new Org.BouncyCastle.Crypto.Parameters.ParametersWithIV(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key), iv, 0, 16);
+
+            var cipher = Org.BouncyCastle.Security.CipherUtilities.GetCipher("AES/GCM/NoPadding");
+            cipher.Init(false, keyParamWithIV);
+
+            return cipher.DoFinal(encryptedData);
+        }
+
+        public static byte[] AESGCMEncrypt(byte[] data, byte[] key)
+        {
+            byte[] iv = AESGenerateIV(16);
+            var keyParamWithIV = new Org.BouncyCastle.Crypto.Parameters.ParametersWithIV(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key), iv, 0, 16);
+
+            var cipher = Org.BouncyCastle.Security.CipherUtilities.GetCipher("AES/GCM/NoPadding");
+            cipher.Init(true, keyParamWithIV);
+
+            var encryptedData = cipher.DoFinal(data);
+
+            using (var stream = new System.IO.MemoryStream())
+            {
+                using (var writer = new System.IO.BinaryWriter(stream))
+                {
+                    writer.Write(iv);
+                    writer.Write(encryptedData);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        /*
         public static byte[] AesDecrypt(this byte[] data, byte[] key, byte[] iv)
         {
             if (data == null || key == null || iv == null) throw new ArgumentNullException();

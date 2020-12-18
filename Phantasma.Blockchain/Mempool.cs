@@ -275,7 +275,7 @@ namespace Phantasma.Blockchain
             var lastBlock = Chain.GetBlockByHash(lastBlockHash);
             var isFirstBlock = lastBlock == null;
 
-            var protocol = (uint)Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            var protocol = Nexus.GetProtocolVersion(Nexus.RootStorage);
 
             var minFee = Mempool.MinimumFee;
 
@@ -314,26 +314,17 @@ namespace Phantasma.Blockchain
                             }
                         }
 
-                        if (index >= 0)
-                        {
-                            transactions.RemoveAt(index);
-                        }
-
                         lock (_pending)
                         {
+                            if (index >= 0)
+                            {
+                                transactions.RemoveAt(index);
+                            }
+
                             _pending.Remove(e.Hash);
+                            Mempool.RegisterRejectionReason(e.Hash, e.Message);
                         }
 
-                        var errorMessage = "MintBlock() exception caught:\n" + e.Message;
-                        var inner = e.InnerException;
-                        while (inner != null)
-                        {
-                            errorMessage += "\n---> " + inner.Message + "\n\n" + inner.StackTrace;
-                            inner = inner.InnerException;
-                        }
-                        errorMessage += "\n\n" + e.StackTrace;
-
-                        Mempool.RegisterRejectionReason(e.Hash, errorMessage);
                         Mempool.OnTransactionFailed?.Invoke(e.Hash);
                         continue;
                     }
@@ -603,7 +594,7 @@ namespace Phantasma.Blockchain
             return chainPool.Discard(tx.Hash);
         }
 
-        public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason)
+        public MempoolTransactionStatus GetTransactionStatus(Hash hash, out string reason, bool retry = true)
         {
             lock (_rejections)
             {
@@ -631,6 +622,11 @@ namespace Phantasma.Blockchain
             if (Nexus.FindTransactionByHash(hash) != null)
             {
                 return MempoolTransactionStatus.Pending;
+            }
+
+            if (retry)
+            {
+                return GetTransactionStatus(hash, out reason, false);
             }
 
             return MempoolTransactionStatus.Unknown;

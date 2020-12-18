@@ -5,6 +5,7 @@ using Phantasma.Cryptography;
 using System;
 using System.Linq;
 using System.IO;
+using System.Diagnostics;
 
 namespace Phantasma.VM
 {
@@ -99,6 +100,8 @@ namespace Phantasma.VM
         public const int DefaultRegisterCount = 32; // TODO temp hack, this should be 4
         public const int MaxRegisterCount = 32;
 
+        public readonly static string EntryContextName = "entry";
+
         public bool ThrowOnFault = false;
 
         public readonly Stack<VMObject> Stack = new Stack<VMObject>();
@@ -107,20 +110,33 @@ namespace Phantasma.VM
         public Address EntryAddress { get; protected set; }
 
         public readonly ExecutionContext entryContext;
-        public ExecutionContext CurrentContext { get; protected set; }
+        public ExecutionContext CurrentContext { get; private set; }
+        public ExecutionContext PreviousContext { get; private set; }
+
+        protected Stack<Address> _activeAddresses = new Stack<Address>();
+        public IEnumerable<Address> ActiveAddresses => _activeAddresses;
 
         private Dictionary<string, ExecutionContext> _contextMap = new Dictionary<string, ExecutionContext>();
 
         public readonly Stack<ExecutionFrame> frames = new Stack<ExecutionFrame>();
         public ExecutionFrame CurrentFrame { get; protected set; }
 
-        public VirtualMachine(byte[] script)
+        public VirtualMachine(byte[] script, uint offset, string contextName)
         {
             Throw.IfNull(script, nameof(script));
 
             this.EntryAddress = Address.FromHash(script);
-            this.entryContext = new ScriptContext("entry", script);
-            RegisterContext("entry", this.entryContext); // TODO this should be a constant
+            this._activeAddresses.Push(EntryAddress);
+
+            if (contextName == null)
+            {
+                contextName = EntryContextName;
+            }
+
+            this.entryContext = new ScriptContext(contextName, script, offset);
+            RegisterContext(EntryContextName, this.entryContext);
+
+            PreviousContext = entryContext;
 
             this.entryScript = script;
         }
@@ -141,22 +157,22 @@ namespace Phantasma.VM
         #region FRAMES
 
         // instructionPointer is the location to jump after the frame is popped!
-        internal void PushFrame(ExecutionContext context, uint instructionPointer,  int registerCount)
+        public void PushFrame(ExecutionContext context, uint instructionPointer,  int registerCount)
         {
             var frame = new ExecutionFrame(this, instructionPointer, context, registerCount);
             frames.Push(frame);
             this.CurrentFrame = frame;
         }
 
-        internal uint PopFrame()
+        public uint PopFrame()
         {
             Throw.If(frames.Count < 2, "Not enough frames available");
 
-            frames.Pop();
+            var oldFrame = frames.Pop();
             var instructionPointer = CurrentFrame.Offset;
 
             this.CurrentFrame = frames.Peek();
-            this.CurrentContext = CurrentFrame.Context;
+            SetCurrentContext(CurrentFrame.Context);
 
             return instructionPointer;
         }
@@ -171,6 +187,16 @@ namespace Phantasma.VM
             frames.Push(temp);
 
             return result;
+        }
+
+        protected void SetCurrentContext(ExecutionContext context)
+        {
+            if (context == null)
+            {
+                throw new VMException(this, "SetCurrentContext failed, context can't be null");
+            }
+
+            this.CurrentContext = context;
         }
 
         internal ExecutionContext FindContext(string contextName)
@@ -198,11 +224,31 @@ namespace Phantasma.VM
 
         internal ExecutionState SwitchContext(ExecutionContext context, uint instructionPointer)
         {
+            if (context == null)
+            {
+                throw new VMException(this, "SwitchContext failed, context can't be null");
+            }
+
             using (var m = new ProfileMarker("SwitchContext"))
             {
-                this.CurrentContext = context;
+                var tempContext = PreviousContext;
+                PreviousContext = CurrentContext;
+                SetCurrentContext(context);
                 PushFrame(context, instructionPointer, DefaultRegisterCount);
-                return context.Execute(this.CurrentFrame, this.Stack);
+
+                _activeAddresses.Push(context.Address);
+
+                var result = context.Execute(this.CurrentFrame, this.Stack);
+
+                PreviousContext = tempContext;
+
+                var temp = _activeAddresses.Pop();
+                if (temp != context.Address)
+                {
+                    throw new VMException(this, "VM implementation bug detected: address stack");
+                }
+
+                return result;
             }
         }
         #endregion
@@ -213,5 +259,21 @@ namespace Phantasma.VM
         }
 
         public abstract void DumpData(List<string> lines);
+
+        public void Expect(bool condition, string description)
+        {
+            if (condition)
+            {
+                return;
+            }
+
+            var callingFrame = new StackFrame(1);
+            var method = callingFrame.GetMethod();
+
+            description = $"{description} @ {method.Name}";
+
+            throw new VMException(this, description);
+        }
+
     }
 }

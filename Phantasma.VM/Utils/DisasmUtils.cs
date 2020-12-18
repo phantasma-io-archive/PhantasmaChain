@@ -62,7 +62,7 @@ namespace Phantasma.VM.Utils
         {
             var table = new Dictionary<string, int>();
             table["Runtime.Log"] = 1;
-            table["Runtime.Event"] = 3;
+            table["Runtime.Notify"] = 3;
             table["Runtime.IsWitness"] = 1;
             table["Runtime.IsTrigger"] = 0;
             table["Runtime.TransferBalance"] = 3;
@@ -73,12 +73,16 @@ namespace Phantasma.VM.Utils
             table["Runtime.TransferToken"] = 4;
             table["Runtime.MintToken"] = 4;
             table["Runtime.BurnToken"] = 3;
+            table["Runtime.InfuseToken"] = 5;
+
+            table["Nexus.CreateToken"] = 7;
 
             table["gas.AllowGas"] = 4;
             table["gas.SpendGas"] = 1;
 
             table["market.SellToken"] = 6;
             table["market.BuyToken"] = 3;
+            table["market.CancelSale"] = 2;
 
             table["swap.GetRate"] = 3;
             table["swap.DepositTokens"] = 3;
@@ -105,6 +109,63 @@ namespace Phantasma.VM.Utils
 
             // TODO add more here
             return table;
+        }
+
+        public static IEnumerable<string> ExtractContractNames(Disassembler disassembler)
+        {
+            var instructions = disassembler.Instructions.ToArray();
+            var result = new List<string>();
+
+            int index = 0;
+            var regs = new VMObject[16];
+            while (index < instructions.Length)
+            {
+                var instruction = instructions[index];
+
+                switch (instruction.Opcode)
+                {
+                    case Opcode.LOAD:
+                        {
+                            var dst = (byte)instruction.Args[0];
+                            var type = (VMType)instruction.Args[1];
+                            var bytes = (byte[])instruction.Args[2];
+
+                            regs[dst] = new VMObject();
+                            regs[dst].SetValue(bytes, type);
+
+                            break;
+                        }
+
+                    case Opcode.CTX:
+                        {
+                            var src = (byte)instruction.Args[0];
+                            var dst = (byte)instruction.Args[1];
+
+                            regs[dst] = new VMObject();
+                            regs[dst].Copy(regs[src]);
+                            break;
+                        }
+
+                    case Opcode.SWITCH:
+                        {
+                            var src = (byte)instruction.Args[0];
+
+                            var contractName = regs[src].AsString();
+                            result.Add(contractName);
+                            break;
+                        }
+                }
+
+                index++;
+            }
+
+            return result.Distinct();
+        }
+
+        public static IEnumerable<string> ExtractContractNames(byte[] script)
+        {
+            var disassembler = new Disassembler(script);
+            return ExtractContractNames(disassembler);
         }
 
         public static IEnumerable<DisasmMethodCall> ExtractMethodCalls(Disassembler disassembler, Dictionary<string, int> methodArgumentCountTable)

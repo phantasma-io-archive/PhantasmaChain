@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using Phantasma.API;
 using Phantasma.VM.Utils;
-using Phantasma.Contracts.Native;
 using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Core.Types;
@@ -13,10 +12,9 @@ using Phantasma.Numerics;
 using Phantasma.VM;
 using Phantasma.Storage;
 using Phantasma.Blockchain.Tokens;
-using Phantasma.Contracts.Extra;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
-using static Phantasma.Contracts.Native.StakeContract;
+using static Phantasma.Blockchain.Contracts.StakeContract;
 using static Phantasma.Domain.DomainSettings;
 using static Phantasma.Numerics.UnitConversion;
 
@@ -73,7 +71,7 @@ namespace Phantasma.Tests
 
             // Mint a new CoolToken 
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
             simulator.EndBlock();
 
             // obtain tokenID

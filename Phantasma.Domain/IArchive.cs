@@ -1,36 +1,36 @@
-﻿using Phantasma.Cryptography;
+﻿using Phantasma.Core.Types;
+using Phantasma.Cryptography;
 using Phantasma.Numerics;
-using System;
+using Phantasma.Storage;
 
 namespace Phantasma.Domain
 {
-    [Flags]
-    public enum ArchiveFlags
+    public enum ArchiveEncryptionMode
     {
-        None = 0x0,
-        Compressed = 0x1,
-        Encrypted = 0x2,
+        None,
+        Private,
+        Shared
     }
 
-    // TODO support this
-    public struct ArchiveMetadata
+    public interface IArchiveEncryption: ISerializable
     {
-        public readonly string Key;
-        public readonly string Value;
+        ArchiveEncryptionMode Mode { get; }
 
-        public ArchiveMetadata(string key, string value)
-        {
-            Key = key;
-            Value = value;
-        }
+        string EncryptName(string name, PhantasmaKeys keys);
+        string DecryptName(string name, PhantasmaKeys keys);
+        byte[] Encrypt(byte[] chunk, PhantasmaKeys keys);
+        byte[] Decrypt(byte[] chunk, PhantasmaKeys keys);
     }
 
     public interface IArchive
     {
-        ArchiveFlags Flags { get;  }
         MerkleTree MerkleTree { get; }
+        string Name { get; }
+        Hash Hash { get; }
         BigInteger Size { get; }
-        byte[] Key { get; }
+        Timestamp Time{ get; }
+        IArchiveEncryption Encryption { get; }
+        bool IsOwner(Address address);
     }
 
 }

@@ -89,6 +89,18 @@ namespace Phantasma.Storage.Context
             }
         }
 
+        public static void SetRaw(this StorageMap map, byte[] key, byte[] bytes)
+        {
+            bool exists = map.ContainsKey(key);
+            map.Context.Put(ElementKey(map.BaseKey, key), bytes);
+
+            if (!exists)
+            {
+                var size = map.Count() + 1;
+                map.Context.Put(CountKey(map.BaseKey), size);
+            }
+        }
+
         public static V Get<K, V>(this StorageMap map, K key)
         {
             if (map.ContainsKey(key))
@@ -118,6 +130,17 @@ namespace Phantasma.Storage.Context
             return default(V);
         }
 
+        public static byte[] GetRaw(this StorageMap map, byte[] key)
+        {
+            if (map.ContainsKey(key))
+            {
+                var bytes = map.Context.Get(ElementKey(map.BaseKey, key));
+                return bytes;
+            }
+
+            return null;
+        }
+
         public static void Remove<K>(this StorageMap map, K key)
         {
             if (map.ContainsKey(key))
@@ -128,15 +151,31 @@ namespace Phantasma.Storage.Context
             }
         }
 
-        public static void Visit(this StorageMap map, Action<byte[],byte[]> visitor)
+        public static void Visit<K,V>(this StorageMap map, Action<K,V> visitor)
         {
-            var tempMap = (KeyStoreStorage)map.Context;
-            tempMap.Visit((key, value) =>
+            var countKey = CountKey(map.BaseKey);
+            var found = false;
+            var countKeyRun = false;
+
+            map.Context.Visit((key, value) =>
             {
-                byte[] newKey = new byte[key.Length - map.BaseKey.Length];
-                Buffer.BlockCopy(key, map.BaseKey.Length, newKey, 0, newKey.Length);
-                visitor(newKey, value);
-            });
+                if (!found && key.SequenceEqual(countKey))
+                {
+                    countKeyRun = true;
+                    found = true;
+                }
+
+                if (!countKeyRun)
+                {
+                    var k = Serialization.Unserialize<K>(key.Skip(map.BaseKey.Length).ToArray());
+                    var v = Serialization.Unserialize<V>(value);
+                    visitor(k, v);
+                }
+                else
+                {
+                    countKeyRun = false;
+                }
+            }, (uint)map.Count(), map.BaseKey);
         }
 
         public static V[] All<K,V>(this StorageMap map, K[] keys)
@@ -188,6 +227,27 @@ namespace Phantasma.Storage.Context
             }, (uint)map.Count(), map.BaseKey);
 
             return values.ToArray();
+        }
+
+        // TODO optimize this
+        public static void Clear(this StorageMap map)
+        {
+            var keys = new List<byte[]>();
+            var count = (uint)map.Count();
+
+            map.Context.Visit((key, value) =>
+            {
+                keys.Add(key);
+            }, count, map.BaseKey);
+
+            Throw.If(keys.Count != count, "map.clear failed to fetch all existing keys");
+
+            foreach (var key in keys)
+            {
+                map.Context.Delete(key);
+            }
+
+            map.Context.Put(CountKey(map.BaseKey), 0);
         }
 
     }

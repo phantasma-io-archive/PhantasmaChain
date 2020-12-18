@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Phantasma.Core
 {
@@ -206,6 +207,31 @@ namespace Phantasma.Core
                     argumentValue,
                     $"Cannot be inside the range {startRange} to {endRange}");
             }
+        }
+
+        public static Exception ExpandInnerExceptions(this Exception ex)
+        {
+            var safeguard = 0;
+
+            while (ex is TargetInvocationException)
+            {
+                ex = ((TargetInvocationException)ex).InnerException;
+                safeguard++;
+
+                if (safeguard >= 100)
+                    break;
+            }
+
+            while (ex.InnerException != null)
+            {
+                safeguard++;
+                ex = ex.InnerException;
+
+                if (safeguard >= 100)
+                    break;
+            }
+
+            return ex;
         }
     }
 }

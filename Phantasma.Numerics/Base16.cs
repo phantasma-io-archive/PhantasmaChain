@@ -6,7 +6,7 @@ namespace Phantasma.Numerics
     {
         private const string hexAlphabet = "0123456789ABCDEF";
 
-        public static byte[] Decode(this string input)
+        public static byte[] Decode(this string input, bool allowExceptions = true)
         {
             if (input == null || input.Length == 0)
             {
@@ -15,25 +15,41 @@ namespace Phantasma.Numerics
 
             if (input.StartsWith("0x"))
             {
-                return input.Substring(2).Decode();
+                return input.Substring(2).Decode(allowExceptions);
             }
 
-            Throw.If(input.Length % 2 == 1, "string length must be even");
+            byte[] result = null;
 
-            byte[] result = new byte[input.Length / 2];
-
-            for (int i = 0; i < result.Length; i++)
+            if (input.Length % 2 == 0)
             {
-                var str = input.Substring(i * 2, 2).ToUpper();
-                int A = hexAlphabet.IndexOf(str[0]);
-                int B = hexAlphabet.IndexOf(str[1]);
+                result = new byte[input.Length / 2];
+                for (int i = 0; i < result.Length; i++)
+                {
+                    var str = input.Substring(i * 2, 2).ToUpper();
+                    int A = hexAlphabet.IndexOf(str[0]);
+                    int B = hexAlphabet.IndexOf(str[1]);
 
-                Throw.If(A < 0 || B < 0, "invalid character");
+                    if (A < 0 || B < 0)
+                    {
+                        result = null;
+                        break;
+                    }
 
-                result[i] = (byte)(A * 16 + B);
+                    result[i] = (byte)(A * 16 + B);
+                }
             }
 
-            return result;
+            if (result != null)            
+            {
+                return result;
+            }
+
+            if (allowExceptions)
+            {
+                throw new System.Exception("base16.Decode: invalid input");
+            }
+
+            return null;
         }
 
         // constant time hex conversion

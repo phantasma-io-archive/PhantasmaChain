@@ -2,16 +2,14 @@
 
 using Phantasma.API;
 using Phantasma.Blockchain;
+using Phantasma.Blockchain.Contracts;
+using Phantasma.Blockchain.Tokens;
 using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using System;
 using System.Linq;
-using Phantasma.Contracts.Native;
-using Phantasma.Core.Types;
 using Phantasma.Domain;
-using Phantasma.Blockchain.Tokens;
 using Phantasma.Storage;
 using Phantasma.VM;
 using Phantasma.Core.Log;
@@ -156,7 +154,7 @@ namespace Phantasma.Tests
 
             // Create the token CoolToken as an NFT
             test.simulator.BeginBlock();
-            test.simulator.GenerateToken(test.owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.None);
+            test.simulator.GenerateToken(test.owner, symbol, "CoolToken", 0, 0, Domain.TokenFlags.Transferable);
             test.simulator.EndBlock();
 
             var token = test.simulator.Nexus.GetTokenInfo(test.simulator.Nexus.RootStorage, symbol);
@@ -168,7 +166,7 @@ namespace Phantasma.Tests
             // Mint a new CoolToken 
             var simulator = test.simulator;
             simulator.BeginBlock();
-            simulator.MintNonFungibleToken(test.owner, testUser.Address, symbol, tokenROM, tokenRAM);
+            simulator.MintNonFungibleToken(test.owner, testUser.Address, symbol, tokenROM, tokenRAM, 0);
             simulator.EndBlock();
 
             // obtain tokenID
@@ -186,7 +184,7 @@ namespace Phantasma.Tests
             Assert.IsTrue(balance.symbol == symbol);
             Assert.IsTrue(balance.ids.Length == 1);
 
-            var info = (TokenDataResult)test.api.GetTokenData(symbol, balance.ids[0]);
+            var info = (TokenDataResult)test.api.GetNFT(symbol, balance.ids[0], true);
             Assert.IsTrue(info.ID == balance.ids[0]);
             var tokenStr = Base16.Encode(tokenROM);
             Assert.IsTrue(info.rom == tokenStr);
@@ -197,7 +195,7 @@ namespace Phantasma.Tests
         {
             var test = CreateAPI();
 
-            var result = (ABIContractResult)test.api.GetABI(test.nexus.RootChain.Name, "exchange");
+            var result = (ContractResult)test.api.GetContract(test.nexus.RootChain.Name, "exchange");
 
             var methodCount = typeof(ExchangeContract).GetMethods();
 
@@ -222,7 +220,7 @@ namespace Phantasma.Tests
         {
             var test = CreateAPI();
 
-            var result = (ABIContractResult)test.api.GetABI(test.nexus.RootChain.Name, "exchange");
+            var result = (ContractResult)test.api.GetContract(test.nexus.RootChain.Name, "exchange");
 
             var methodCount = typeof(ExchangeContract).GetMethods();
 

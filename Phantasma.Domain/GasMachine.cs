@@ -24,7 +24,7 @@ namespace Phantasma.Domain
 
     public class GasMachine : VirtualMachine
     {
-        public GasMachine(byte[] script): base(script)
+        public GasMachine(byte[] script, uint offset, string contextName = null) : base(script, offset, contextName)
         {
             UsedGas = 0;
         }
@@ -36,14 +36,62 @@ namespace Phantasma.Domain
             throw new NotImplementedException();
         }
 
-        public override ExecutionState ExecuteInterop(string method)
-        {
-            return ExecutionState.Running;
-       }
-
         public override ExecutionContext LoadContext(string contextName)
         {
             return new DummyExecutionContext(contextName);
+        }
+
+        public override ExecutionState ExecuteInterop(string method)
+        {
+            BigInteger gasCost;
+
+            // construtor
+            if (method.EndsWith("()"))
+            {
+                gasCost = 10;
+            }
+            else
+            {
+                int dotPos = method.IndexOf('.');
+                Expect(dotPos > 0, "extcall is missing namespace");
+
+                var methodNamespace = method.Substring(0, dotPos);
+                switch (methodNamespace)
+                {
+                    case "Runtime":
+                    case "Data":
+                    case "Map":
+                    case "List":
+                    case "Set":
+                        gasCost = 50;
+                        break;
+
+                    case "Nexus":
+                        gasCost = 1000;
+                        break;
+
+                    case "Organization":
+                    case "Oracle":
+                        gasCost = 200;
+                        break;
+
+                    case "Leaderboard":
+                        gasCost = 100;
+                        break;
+
+                    default:
+                        Expect(false, "invalid extcall namespace: " + methodNamespace);
+                        gasCost = 0;
+                        break;
+                }
+            }
+
+            if (gasCost > 0)
+            {
+                ConsumeGas(gasCost);
+            }
+
+            return ExecutionState.Running;
         }
 
         public virtual ExecutionState ConsumeGas(BigInteger gasCost)

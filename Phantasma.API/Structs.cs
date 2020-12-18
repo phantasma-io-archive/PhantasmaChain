@@ -61,7 +61,7 @@ namespace Phantasma.API
         public string[] organizations;
     }
 
-    public struct StakeResult: IAPIResult
+    public struct StakeResult : IAPIResult
     {
         [APIDescription("Amount of staked SOUL")]
         public string amount;
@@ -71,6 +71,21 @@ namespace Phantasma.API
 
         [APIDescription("Amount of claimable KCAL")]
         public string unclaimed;
+    }
+
+    public struct StorageResult : IAPIResult
+    {
+        [APIDescription("Amount of available storage bytes")]
+        public uint available;
+
+        [APIDescription("Amount of used storage bytes")]
+        public uint used;
+
+        [APIDescription("Avatar data")]
+        public string avatar;
+
+        [APIDescription("List of stored files")]
+        public ArchiveResult[] archives;
     }
 
     public struct AccountResult : IAPIResult
@@ -89,6 +104,9 @@ namespace Phantasma.API
 
         [APIDescription("Validator role")]
         public string validator;
+
+        [APIDescription("Info about storage if available")]
+        public StorageResult storage;
 
         public BalanceResult[] balances;
 
@@ -270,22 +288,49 @@ namespace Phantasma.API
         [APIDescription("Max amount of tokens that can be minted")]
         public string maxSupply;
 
-        [APIDescription("Platform of token")]
-        public string platform;
+        [APIDescription("Address of token contract")]
+        public string address;
 
-        [APIDescription("Hash of token")]
-        public string hash;
+        [APIDescription("Owner address")]
+        public string owner;
 
         public string flags;
 
         [APIDescription("Script attached to token, in hex")]
         public string script;
+
+        [APIDescription("Series info. NFT only")]
+        public TokenSeriesResult[] series;
+    }
+
+    public struct TokenSeriesResult : IAPIResult
+    {
+        public uint seriesID;
+
+        public string currentSupply;
+
+        public string maxSupply;
+        public TokenSeriesMode mode;
+
+        public string script;
+
+        [APIDescription("List of methods")]
+        public ABIMethodResult[] methods;
+    }
+
+    public struct TokenPropertyResult : IAPIResult
+    {
+        public string Key;
+        public string Value;
     }
 
     public struct TokenDataResult : IAPIResult
     {
         [APIDescription("id of token")]
         public string ID;
+
+        [APIDescription("series id of token")]
+        public string series;
 
         [APIDescription("mint number of token")]
         public string mint;
@@ -296,14 +341,21 @@ namespace Phantasma.API
         [APIDescription("Address who currently owns the token")]
         public string ownerAddress;
 
+        [APIDescription("Address who minted the token")]
+        public string creatorAddress;
+
         [APIDescription("Writable data of token, hex encoded")]
         public string ram;
 
         [APIDescription("Read-only data of token, hex encoded")]
         public string rom;
 
-        [APIDescription("True if is being sold in market")]
-        public bool forSale;
+        [APIDescription("Status of nft")]
+        public string status;
+
+        public TokenPropertyResult[] infusion;
+
+        public TokenPropertyResult[] properties;
     }
 
     public struct SendRawTxResult : IAPIResult
@@ -351,23 +403,29 @@ namespace Phantasma.API
 
     public struct ArchiveResult : IAPIResult
     {
+        [APIDescription("File name")]
+        public string name;
+
         [APIDescription("Archive hash")]
         public string hash;
+
+        [APIDescription("Time of creation")]
+        public uint time;
 
         [APIDescription("Size of archive in bytes")]
         public uint size;
 
-        [APIDescription("Archive flags")]
-        public string flags;
-
-        [APIDescription("Encryption public key")]
-        public string key;
+        [APIDescription("Encryption address")]
+        public string encryption;
 
         [APIDescription("Number of blocks")]
         public int blockCount;
 
-        [APIDescription("Metadata")]
-        public string[] metadata;
+        [APIDescription("Missing block indices")]
+        public int[] missingBlocks;
+
+        [APIDescription("List of addresses who own the file")]
+        public string[] owners;
     }
 
     public struct ABIParameterResult : IAPIResult
@@ -389,13 +447,36 @@ namespace Phantasma.API
         public ABIParameterResult[] parameters;
     }
 
-    public struct ABIContractResult : IAPIResult
+    public struct ABIEventResult : IAPIResult
+    {
+        [APIDescription("Value of event")]
+        public int value;
+
+        [APIDescription("Name of event")]
+        public string name;
+
+        public string returnType;
+
+        [APIDescription("Description script (base16 encoded)")]
+        public string description;
+    }
+
+    public struct ContractResult : IAPIResult
     {
         [APIDescription("Name of contract")]
         public string name;
 
+        [APIDescription("Address of contract")]
+        public string address;
+
+        [APIDescription("Script bytes, in hex format")]
+        public string script;
+
         [APIDescription("List of methods")]
         public ABIMethodResult[] methods;
+
+        [APIDescription("List of events")]
+        public ABIEventResult[] events;
     }
 
     public struct ChannelResult : IAPIResult

@@ -22,9 +22,20 @@ namespace Phantasma.Blockchain
         {
             T content = null;
 
+            Console.WriteLine("read url " + url);
+
+            string tag;
+            if (ProtocolVersion >= 4)
+            {
+                tag = url;
+            }
+            else
+            {
+                tag = url.Substring(url.IndexOf("//")+2);
+            }
+
             foreach(KeyValuePair<string, OracleEntry> entry in _entries)
             {
-                var tag = url.Substring(url.IndexOf("//")+2);
                 if (string.Equals(entry.Key, tag))
                 {
                     content = entry.Value.Content as T;
@@ -66,6 +77,11 @@ namespace Phantasma.Blockchain
         }
 
         protected override InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InteropNFT PullPlatformNFT(string platformName, string symbol, Numerics.BigInteger tokenID)
         {
             throw new NotImplementedException();
         }

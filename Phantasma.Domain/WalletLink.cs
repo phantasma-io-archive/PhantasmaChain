@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using LunarLabs.Parser;
+using Phantasma.Core;
 using Phantasma.Core.Types;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
@@ -16,6 +18,7 @@ namespace Phantasma.Domain
     public abstract class WalletLink
     {
         public const int WebSocketPort = 7090;
+        public const int LinkProtocol = 1;
 
         public struct Error : IAPIResult
         {
@@ -25,6 +28,7 @@ namespace Phantasma.Domain
         public struct Authorization : IAPIResult
         {
             public string wallet;
+            public string nexus;
             public string dapp;
             public string token;
         }
@@ -46,7 +50,7 @@ namespace Phantasma.Domain
 
         public struct Account : IAPIResult
         {
-            public string id;
+            public string alias;
             public string address;
             public string name;
             public string avatar;
@@ -64,6 +68,12 @@ namespace Phantasma.Domain
             public string hash;
         }
 
+        public struct Signature : IAPIResult
+        {
+            public string signature;
+            public string random;
+        }
+
         private Random rnd = new Random();
 
         private Dictionary<string, string> authTokens = new Dictionary<string, string>();
@@ -71,13 +81,14 @@ namespace Phantasma.Domain
         protected abstract PhantasmaKeys Keys { get; }
         protected abstract WalletStatus Status { get; }
 
-        public string Name { get; private set; }
+        public abstract string Nexus { get; }
+
+        public abstract string Name { get; }
 
         private bool _isPendingRequest;
 
-        public WalletLink(string name)
+        public WalletLink()
         {
-            this.Name = name;
         }
 
         private DataNode ValidateRequest(string[] args)
@@ -99,31 +110,38 @@ namespace Phantasma.Domain
             return APIUtils.FromAPIResult(new Error() { message = "Invalid or missing API token" });
         }
 
-        protected abstract void Authorize(string dapp, Action<bool, string> callback);
+        protected abstract void Authorize(string dapp, string token, Action<bool, string> callback);
 
         protected abstract Account GetAccount(); // TODO this one also maybe use callbacks later, but not neessary for now...
 
         protected abstract void InvokeScript(byte[] script, int id, Action<byte[], string> callback);
 
-        protected abstract void SignTransaction(string nexus, string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
+        // NOTE for security, signData should not be usable as a way of signing transaction. That way the wallet is responsible for appending random bytes to the message, and return those in callback
+        protected abstract void SignData(byte[] data, SignatureKind kind, int id, Action<string, string, string> callback);
+
+        protected abstract void SignTransaction(string chain, byte[] script, byte[] payload, int id, Action<Hash, string> callback);
+
+        protected abstract void WriteArchive(Hash hash, int blockIndex, byte[] data, Action<bool, string> callback);
 
         public void Execute(string cmd, Action<int, DataNode, bool> callback)
         {
             var args = cmd.Split(',');
 
-            DataNode root;
+            DataNode answer;
 
             int id = 0;
 
-            if (int.TryParse(args[0], out id))
+            if (!int.TryParse(args[0], out id))
             {
-
+                answer = APIUtils.FromAPIResult(new Error() { message = "Invalid request id" });
+                callback(id, answer, false);
+                return;
             }
 
             if (args.Length != 2)
             {
-                root = APIUtils.FromAPIResult(new Error() { message = "Malformed request" });
-                callback(id, root, false);
+                answer = APIUtils.FromAPIResult(new Error() { message = "Malformed request" });
+                callback(id, answer, false);
                 return;
             }
 
@@ -139,16 +157,16 @@ namespace Phantasma.Domain
                 var status = this.Status;
                 if (status != WalletStatus.Ready)
                 {
-                    root = APIUtils.FromAPIResult(new Error() { message = $"Wallet is {status}" });
-                    callback(id, root, false);
+                    answer = APIUtils.FromAPIResult(new Error() { message = $"Wallet is {status}" });
+                    callback(id, answer, false);
                     return;
                 }
             }
 
             if (_isPendingRequest)
             {
-                root = APIUtils.FromAPIResult(new Error() { message = $"A previouus request is still pending" });
-                callback(id, root, false);
+                answer = APIUtils.FromAPIResult(new Error() { message = $"A previous request is still pending" });
+                callback(id, answer, false);
                 return;
             }
 
@@ -156,6 +174,13 @@ namespace Phantasma.Domain
 
             switch (requestType)
             {
+                case "version":
+                    {
+                        answer = APIUtils.FromAPIResult(new Invocation() { result = LinkProtocol.ToString() });
+                        success = true;
+                        break;
+                    }
+
                 case "authorize":
                     {
                         if (args.Length == 2)
@@ -167,28 +192,29 @@ namespace Phantasma.Domain
                             {
                                 token = authTokens[dapp];
                                 success = true;
-                                root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
+                                answer = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, nexus = this.Nexus, dapp = dapp, token = token });
                             }
                             else
                             {
-                                this.Authorize(dapp, (authorized, error) =>
+                                var bytes = new byte[32];
+                                rnd.NextBytes(bytes);
+                                token = Base16.Encode(bytes);
+
+                                this.Authorize(dapp, token, (authorized, error) =>
                                 {
                                     if (authorized)
                                     {
-                                        var bytes = new byte[32];
-                                        rnd.NextBytes(bytes);
-                                        token = Base16.Encode(bytes);
                                         authTokens[dapp] = token;
 
                                         success = true;
-                                        root = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, dapp = dapp, token = token });
+                                        answer = APIUtils.FromAPIResult(new Authorization() { wallet = this.Name, nexus = this.Nexus, dapp = dapp, token = token });
                                     }
                                     else
                                     {
-                                        root = APIUtils.FromAPIResult(new Error() { message = error});
+                                        answer = APIUtils.FromAPIResult(new Error() { message = error});
                                     }
 
-                                    callback(id, root, success);
+                                    callback(id, answer, success);
                                     _isPendingRequest = false;
                                 });
 
@@ -198,7 +224,7 @@ namespace Phantasma.Domain
                         }
                         else
                         {
-                            root = APIUtils.FromAPIResult(new Error() { message = $"authorize: Invalid amount of arguments: {args.Length} instead of 2" });
+                            answer = APIUtils.FromAPIResult(new Error() { message = $"authorize: Invalid amount of arguments: {args.Length} instead of 2" });
                         }
 
                         break;
@@ -206,11 +232,11 @@ namespace Phantasma.Domain
 
                 case "getAccount":
                     {
-                        root = ValidateRequest(args);
-                        if (root == null)
+                        answer = ValidateRequest(args);
+                        if (answer == null)
                         {
                             var account = this.GetAccount();
-                            root = APIUtils.FromAPIResult(account);
+                            answer = APIUtils.FromAPIResult(account);
 
                             success = true;
                         }
@@ -218,38 +244,102 @@ namespace Phantasma.Domain
                         break;
                     }
 
-                case "signTx":
+                case "signData":
                     {
-                        root = ValidateRequest(args);
-                        if (root == null)
+                        answer = ValidateRequest(args);
+                        if (answer == null)
                         {
-                            if (args.Length == 7)
+                            if (args.Length == 5)
                             {
-                                var nexus = args[1];
-                                var chain = args[2];
-                                var script = Base16.Decode(args[3]);
-                                byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4]): null;
+                                var data = Base16.Decode(args[1], false);
+                                if (data == null)
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid input received" });
+                                }
+                                else
+                                {
+                                    var signatureKind = (SignatureKind)Enum.Parse(typeof(SignatureKind), args[2], true);
 
-                                SignTransaction(nexus, chain, script, payload, id, (hash, txError) => { 
-                                    if (hash != Hash.Null)
-                                    {
-                                        success = true;
-                                        root = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
-                                    }
-                                    else
-                                    {
-                                        root = APIUtils.FromAPIResult(new Error() { message = txError });
-                                    }
+                                    SignData(data, signatureKind, id, (signature, random, txError) => {
+                                        if (signature != null)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Signature() { signature = signature, random = random });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = txError });
+                                        }
 
-                                    callback(id, root, success);
-                                    _isPendingRequest = false;
-                                });
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                }
 
                                 return;
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 7" });
+                                answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 5" });
+                            }
+
+                        }
+                        break;
+                    }
+
+                case "signTx":
+                    {
+                        answer = ValidateRequest(args);
+                        if (answer == null)
+                        {
+                            if (args.Length == 7)
+                            {
+                                var nexus = args[1];
+                                if (nexus == this.Nexus)
+                                {
+                                    args = args.Skip(1).ToArray();
+                                }
+                                else
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid nexus: '{nexus}' expected '{this.Nexus}' instead" });
+                                    break;
+                                }
+                            }
+                                
+                            if (args.Length == 6)
+                            {
+                                var chain = args[1];
+                                var script = Base16.Decode(args[2], false);
+
+                                if (script == null)
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid script data" });
+                                }
+                                else
+                                {
+                                    byte[] payload = args[4].Length > 0 ? Base16.Decode(args[4], false) : null;
+
+                                    SignTransaction(chain, script, payload, id, (hash, txError) => {
+                                        if (hash != Hash.Null)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Transaction() { hash = hash.ToString() });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = txError });
+                                        }
+
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                }
+
+                                return;
+                            }
+                            else
+                            {
+                                answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid amount of arguments: {args.Length} instead of 7" });
                             }
 
                         }
@@ -258,33 +348,85 @@ namespace Phantasma.Domain
 
                 case "invokeScript":
                     {
-                        root = ValidateRequest(args);
-                        if (root == null)
+                        answer = ValidateRequest(args);
+                        if (answer == null)
                         {
                             if (args.Length == 4)
                             {
-                                var script = Base16.Decode(args[1]);
+                                var script = Base16.Decode(args[1], false);
 
-                                InvokeScript(script, id, (invokeResult, invokeError) =>
+                                if (script == null)
                                 {
-                                    if (invokeResult != null)
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"signTx: Invalid script data" });
+                                }
+                                else
+                                {
+                                    InvokeScript(script, id, (invokeResult, invokeError) =>
                                     {
-                                        success = true;
-                                        root = APIUtils.FromAPIResult(new Invocation() {  result = Base16.Encode(invokeResult) });
-                                    }
-                                    else
-                                    {
-                                        root = APIUtils.FromAPIResult(new Error() { message = invokeError });
-                                    }
+                                        if (invokeResult != null)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Invocation() { result = Base16.Encode(invokeResult) });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = invokeError });
+                                        }
 
-                                    callback(id, root, success);
-                                    _isPendingRequest = false;
-                                });
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                answer = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 4" });
+                            }
+
+                        }
+                        break;
+                    }
+
+                case "writeArchive":
+                    {
+                        answer = ValidateRequest(args);
+                        if (answer == null)
+                        {
+                            if (args.Length == 6)
+                            {
+                                var archiveHash = Hash.Parse(args[1]);
+                                var blockIndex = int.Parse(args[2]);
+                                var bytes = Base16.Decode(args[3], false);
+
+                                if (bytes == null)
+                                {
+                                    answer = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid archive data"});
+                                }
+                                else
+                                {
+                                    WriteArchive(archiveHash, blockIndex, bytes, (result, error) =>
+                                    {
+                                        if (result)
+                                        {
+                                            success = true;
+                                            answer = APIUtils.FromAPIResult(new Transaction() { hash = archiveHash.ToString() });
+                                        }
+                                        else
+                                        {
+                                            answer = APIUtils.FromAPIResult(new Error() { message = error });
+                                        }
+
+                                        callback(id, answer, success);
+                                        _isPendingRequest = false;
+                                    });
+                                }
+
                                 return;
                             }
                             else
                             {
-                                root = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 4" });
+                                answer = APIUtils.FromAPIResult(new Error() { message = $"invokeScript: Invalid amount of arguments: {args.Length} instead of 6" });
                             }
 
                         }
@@ -292,12 +434,22 @@ namespace Phantasma.Domain
                     }
 
                 default:
-                    root = APIUtils.FromAPIResult(new Error() { message = "Invalid request type" });
+                    answer = APIUtils.FromAPIResult(new Error() { message = "Invalid request type" });
                     break;
             }
 
-            callback(id, root, success);
+            callback(id, answer, success);
             _isPendingRequest = false;
+        }
+
+        public void Revoke(string dapp, string token)
+        {
+            Throw.If(!authTokens.ContainsKey(dapp), "unknown dapp");
+
+            var currentToken = authTokens[dapp];
+            Throw.If(currentToken != token, "invalid token");
+
+            authTokens.Remove(dapp);
         }
     }
 }

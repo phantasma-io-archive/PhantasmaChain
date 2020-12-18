@@ -69,6 +69,7 @@ namespace Phantasma.VM
                     case Opcode.POP:
                     case Opcode.PUSH:
                     case Opcode.EXTCALL:
+                    case Opcode.THROW:
                         {
                             var src = Read8();
                             temp.Args = new object[] { src };
@@ -101,25 +102,6 @@ namespace Phantasma.VM
                                 var newPos = (short)Read16();
                                 temp.Args = new object[] { src, newPos };
                             }
-                            break;
-                        }
-
-                    // args: var length, var bytes
-                    case Opcode.THROW:
-                        {
-                            var len = (int)ReadVar(1024);
-
-                            byte[] bytes;
-                            if (len > 0)
-                            {
-                                bytes = ReadBytes(len);
-                            }
-                            else
-                            {
-                                bytes = new byte[0];
-                            }
-
-                            temp.Args = new object[] { len, bytes };
                             break;
                         }
 
@@ -158,7 +140,6 @@ namespace Phantasma.VM
                     // args: byte reg
                     case Opcode.INC:
                     case Opcode.DEC:
-                    case Opcode.THIS:
                     case Opcode.SWITCH:
                         {
                             var dst = Read8();
@@ -176,6 +157,7 @@ namespace Phantasma.VM
                     case Opcode.SHL:
                     case Opcode.MIN:
                     case Opcode.MAX:
+                    case Opcode.POW:
                     case Opcode.PUT:
                     case Opcode.GET:
                         {

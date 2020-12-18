@@ -1,5 +1,4 @@
-﻿using Phantasma.Core.Types;
-using Phantasma.Cryptography;
+﻿using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM;
@@ -78,27 +77,12 @@ namespace Phantasma.Domain
             return runtime.GetBlockByHeight(runtime.Chain.Height);
         }
 
-        public static VMObject CallContext(this IRuntime runtime, NativeContractKind nativeContract, string methodName, params object[] args)
-        {
-            return runtime.CallContext(nativeContract.GetName(), methodName, args);
-        }
-
         public static IContract GetContract(this IRuntime runtime, NativeContractKind nativeContract)
         {
-            return runtime.GetContract(nativeContract.GetName());
+            return runtime.GetContract(nativeContract.GetContractName());
         }
 
-        public static Address GetContractAddress(this IRuntime runtime, string contractName)
-        {
-            return Address.FromHash(contractName);
-        }
-
-        public static Address GetContractAddress(this IRuntime runtime, NativeContractKind nativeContract)
-        {
-            return Address.FromHash(nativeContract.GetName());
-        }
-
-        public static string GetName(this NativeContractKind nativeContract)
+        public static string GetContractName(this NativeContractKind nativeContract)
         {
             return nativeContract.ToString().ToLower();
         }
@@ -146,20 +130,19 @@ namespace Phantasma.Domain
             return tx;
         }
 
+        public static InteropNFT ReadNFTFromOracle(this IRuntime runtime, string platform, string symbol, BigInteger tokenID)
+        {
+            var url = GetOracleNFTURL(platform, symbol, tokenID);
+            var bytes = runtime.ReadOracle(url);
+            var nft = Serialization.Unserialize<InteropNFT>(bytes);
+            return nft;
+        }
+
         public static BigInteger ReadFeeFromOracle(this IRuntime runtime, string platform)
         {
             var url = GetOracleFeeURL(platform);
             var bytes = runtime.ReadOracle(url);
-            BigInteger fee;
-            if (bytes == null)
-            {
-                fee = runtime.GetGovernanceValue("interop.fee");
-            }
-            else
-            {
-                fee = BigInteger.FromUnsignedArray(bytes, true);
-            }
-            //fee = BigInteger.FromUnsignedArray(bytes, true);
+            BigInteger fee = BigInteger.FromUnsignedArray(bytes, true);
             return fee;
         }
 
@@ -176,6 +159,11 @@ namespace Phantasma.Domain
         public static string GetOracleBlockURL(string platform, string chain, BigInteger height)
         {
             return $"interop://{platform}/{chain}/block/{height}";
+        }
+
+        public static string GetOracleNFTURL(string platform, string symbol, BigInteger tokenID)
+        {
+            return $"interop://{platform}/nft/{symbol}/{tokenID}";
         }
 
         public static string GetOracleFeeURL(string platform)
@@ -292,29 +280,36 @@ namespace Phantasma.Domain
                 }
             }
         }
-
-        #region TRIGGERS
-        public static bool InvokeTriggerOnAccount(this IRuntime runtime, Address address, AccountTrigger trigger, params object[] args)
+        public static TriggerResult InvokeTrigger(this IRuntime runtime, bool allowThrow, byte[] script, NativeContractKind contextName, ContractInterface abi, string triggerName, params object[] args)
         {
-            if (address.IsNull)
-            {
-                return false;
-            }
-
-            if (address.IsUser)
-            {
-                var accountScript = runtime.GetAddressScript(address);
-                return runtime.InvokeTrigger(accountScript, trigger.ToString(), args);
-            }
-
-            return true;
+            return runtime.InvokeTrigger(allowThrow, script, contextName.ToString().ToLower(), abi, triggerName, args);
         }
 
-        public static bool InvokeTriggerOnToken(this IRuntime runtime, IToken token, TokenTrigger trigger, params object[] args)
+        public static VMObject CallNFT(this IRuntime runtime, string symbol, BigInteger seriesID, ContractMethod method, params object[] args)
         {
-            return runtime.InvokeTrigger(token.Script, trigger.ToString(), args);
+            //var series = Nexus.GetTokenSeries(this.RootStorage, symbol, seriesID);
+            var contextName = $"{symbol}#{seriesID}";
+
+            return runtime.CallContext(contextName, (uint)method.offset, method.name, args);
         }
 
-        #endregion
+        public static VMObject CallContext(this IRuntime runtime, string contextName, ContractMethod method, params object[] args)
+        {
+            runtime.Expect(method != null, "trying to call null method for context: " + contextName);
+
+            NativeContractKind nativeKind;
+            if (Enum.TryParse<NativeContractKind>(contextName, true, out nativeKind))
+            {
+                return runtime.CallContext(contextName, 0, method.name, args);
+            }
+
+            runtime.Expect(method.offset >= 0, "invalid offset for method: " + method.name);
+            return runtime.CallContext(contextName, (uint)method.offset, method.name, args);
+        }
+
+        public static VMObject CallNativeContext(this IRuntime runtime, NativeContractKind nativeContract, string methodName, params object[] args)
+        {
+            return runtime.CallContext(nativeContract.GetContractName(), 0, methodName, args);
+        }
     }
 }

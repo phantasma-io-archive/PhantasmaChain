@@ -57,6 +57,14 @@ namespace Phantasma.Domain
         ContractUpgrade = 47,
         Log = 48,
         Inflation = 49,
+        OwnerAdded = 50,
+        OwnerRemoved = 51,
+        DomainCreate = 52,
+        DomainDelete = 53,
+        TaskStart = 54,
+        TaskStop = 55,
+        CrownRewards = 56,
+        Infusion = 57,
         Custom = 64,
     }
 
@@ -71,6 +79,24 @@ namespace Phantasma.Domain
             this.Symbol = symbol;
             this.Value = value;
             this.ChainName = chainName;
+        }
+    }
+
+    public struct InfusionEventData
+    {
+        public readonly string BaseSymbol;
+        public readonly BigInteger TokenID;
+        public readonly string InfusedSymbol;
+        public readonly BigInteger InfusedValue;
+        public readonly string ChainName;
+
+        public InfusionEventData(string baseSymbol, BigInteger tokenID, string infusedSymbol, BigInteger infusedValue, string chainName)
+        {
+            BaseSymbol = baseSymbol;
+            TokenID = tokenID;
+            InfusedSymbol = infusedSymbol;
+            InfusedValue = infusedValue;
+            ChainName = chainName;
         }
     }
 

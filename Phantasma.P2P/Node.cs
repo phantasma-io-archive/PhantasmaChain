@@ -9,11 +9,10 @@ using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Numerics;
 using Phantasma.Blockchain;
+using Phantasma.Blockchain.Contracts;
 using Phantasma.Network.P2P.Messages;
-using Phantasma.Contracts.Native;
 using Phantasma.Core.Utils;
 using Phantasma.Domain;
-using Phantasma.Blockchain;
 using System.Threading;
 
 namespace Phantasma.Network.P2P
@@ -83,6 +82,8 @@ namespace Phantasma.Network.P2P
         {
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
 
+            this.Logger = Logger.Init(log);
+
             this.Version = version;
             this.Nexus = nexus;
             this.Port = port;
@@ -104,11 +105,11 @@ namespace Phantasma.Network.P2P
                 this._mempool = null;
             }
 
-            // obtains the public IP of the node. This might not be the most sane way to do it...
-            this.PublicIP = new WebClient().DownloadString("http://icanhazip.com").Trim();
-            Throw.IfNullOrEmpty(PublicIP, nameof(PublicIP));
+            var ip = GetPublicIP();
 
-            this.Logger = Logger.Init(log);
+            Throw.IfNull(ip, nameof(ip));
+
+            this.PublicIP = ip.ToString();
 
             QueueEndpoints(seeds.Select(seed => ParseEndpoint(seed)));
 
@@ -117,6 +118,36 @@ namespace Phantasma.Network.P2P
 
             listener = new TcpListener(bindAddress, port);
             client = new TcpClient();
+        }
+
+        private IPAddress GetPublicIP()
+        {
+            List<string> services = new List<string>()
+            {
+                "https://ipv4.icanhazip.com",
+                "https://api.ipify.org",
+                "https://ipinfo.io/ip",
+                "https://checkip.amazonaws.com",
+                "https://wtfismyip.com/text",
+                "http://icanhazip.com"
+            };
+
+            using (var webclient = new WebClient())
+            {
+                foreach (var service in services)
+                {
+                    try
+                    {
+                        return IPAddress.Parse(webclient.DownloadString(service));
+                    }
+                    catch
+                    { 
+                        Logger.Message($"Getting public ip from {service} failed!");
+                    }
+                }
+            }
+
+            return null;
         }
 
         private void QueueEndpoints(IEnumerable<Endpoint> endpoints)
@@ -209,7 +240,6 @@ namespace Phantasma.Network.P2P
                     _lastPeerConnect = now;
                 }
             }
-
             return true;
         }
 
@@ -337,7 +367,7 @@ namespace Phantasma.Network.P2P
             {
                 socket = listener.EndAcceptSocket(ar);
             }
-            catch (ObjectDisposedException e)
+            catch
             {
                 return;
             }
@@ -359,7 +389,7 @@ namespace Phantasma.Network.P2P
             {
                 peer.Send(msg);
             }
-            catch (Exception e)
+            catch
             {
                 return false;
             }
@@ -372,6 +402,7 @@ namespace Phantasma.Network.P2P
             var peer = new TCPPeer(socket);
             lock (_peers)
             {
+                Logger.Debug("add Peer: " + peer.Endpoint);
                 _peers.Add(peer);
             }
 
@@ -409,14 +440,18 @@ namespace Phantasma.Network.P2P
                 }
             }
 
-            Logger.Debug("Disconnected from peer: " + peer.Endpoint);
+            Logger.Debug("Disconnected from peer2: " + peer.Endpoint);
+            lock (_peers)
+            {
+                var endpoint = new EndpointEntry(peer.Endpoint);
+                _knownEndpoints.Remove(endpoint);
+                Logger.Debug("endpoint removed ");
+                _peers.Remove(peer);
+                Logger.Debug("peer removed");
+            }
 
             socket.Close();
 
-            lock (_peers)
-            {
-                _peers.Remove(peer);
-            }
         }
 
         private bool HandleBlock(Chain chain, Block block , IList<Transaction> transactions)
@@ -605,6 +640,7 @@ namespace Phantasma.Network.P2P
                                         addedBlocks = HandleBlock(chain, block, transactions);
                                     }
                                 }
+                                //Thread.Sleep(10000);
                             }
                             // check if we have any cached blocks TODO: needs to be revisited when we have multiple chains
 

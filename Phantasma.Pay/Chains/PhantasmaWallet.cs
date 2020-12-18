@@ -42,18 +42,21 @@ namespace Phantasma.Pay.Chains
 
                 this.Name = root.GetString("name");
 
-                root = root.GetNode("balances");
-                foreach (var child in root.Children)
+                var balanceNode = root.GetNode("balances");
+                if (balanceNode != null)
                 {
-                    var symbol = child.GetString("symbol");
-                    var decimals = child.GetInt32("decimals");
-                    var chain = child.GetString("chain");
+                    foreach (var child in balanceNode.Children)
+                    {
+                        var symbol = child.GetString("symbol");
+                        var decimals = child.GetInt32("decimals");
+                        var chain = child.GetString("chain");
 
-                    var temp = child.GetString("amount");
-                    var n = BigInteger.Parse(temp);
-                    var amount = UnitConversion.ToDecimal(n, decimals);
+                        var temp = child.GetString("amount");
+                        var n = BigInteger.Parse(temp);
+                        var amount = UnitConversion.ToDecimal(n, decimals);
 
-                    _balances.Add(new WalletBalance(symbol, amount, chain));
+                        _balances.Add(new WalletBalance(symbol, amount, chain));
+                    }
                 }
 
                 callback(true);

@@ -6,11 +6,11 @@ using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.VM.Utils;
-using static Phantasma.Contracts.Native.StakeContract;
-using static Phantasma.Contracts.Native.StorageContract;
+using static Phantasma.Blockchain.Contracts.StakeContract;
+using static Phantasma.Blockchain.Contracts.StorageContract;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.Domain;
-using Phantasma.Contracts.Native;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.Tests
 {
@@ -79,23 +79,27 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
 
             //System.IO.File.WriteAllText(@"c:\code\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Console.WriteLine($"{usedSpace} / {contentSize}");
+            Assert.IsTrue(usedSpace == contentSize);
 
-            Assert.IsTrue(simulator.Nexus.ArchiveExists(contentMerkle.Root));
-            var archive = simulator.Nexus.GetArchive(contentMerkle.Root);
-            for (int i=0; i<archive.BlockCount; i++)
-            {
-                int ofs = (int)(i * Archive.BlockSize);
-                var blockContent = content.Skip(ofs).Take((int)Archive.BlockSize).ToArray();
-                simulator.Nexus.WriteArchiveBlock(archive, i, blockContent);
-            }
+            Assert.IsTrue(simulator.Nexus.ArchiveExists(simulator.Nexus.RootStorage, contentMerkle.Root));
+            var archive = simulator.Nexus.GetArchive(simulator.Nexus.RootStorage, contentMerkle.Root);
+
+            //TODO not sure what that part is for...
+            //for (int i=0; i<archive.BlockCount; i++)
+            //{
+            //    int ofs = (int)(i * archive.BlockSize);
+            //    Console.WriteLine("ofs: " + ofs);
+            //    var blockContent = content.Skip(ofs).Take((int)archive.BlockSize).ToArray();
+            //    simulator.Nexus.WriteArchiveBlock(archive, i, blockContent);
+            //}
         }
 
         [TestMethod]
@@ -152,14 +156,14 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
-            System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
+            //System.IO.File.WriteAllText(@"D:\Repos\bug_vm.txt", string.Join('\n', new VM.Disassembler(tx.Script).Instructions));
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
         }
 
         //upload a file for less than available space and perform partial unstake
@@ -212,13 +216,13 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
             //-----------
             //Time skip 1 day
@@ -291,13 +295,16 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
+            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+            var eventData = events.First(x => x.Kind == EventKind.FileCreate).Data;
+            var archiveHash = new Hash(eventData.Skip(1).ToArray());
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
             //-----------
             //Delete the file
@@ -305,7 +312,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "DeleteFile", testUser.Address, filename).
+                    .CallContract("storage", "DeleteFile", testUser.Address, archiveHash).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -386,15 +393,15 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
-            var oldSpace = contentSize + headerSize;
+            var oldSpace = contentSize;
             //----------
             //Upload another file: should succeed
 
@@ -408,15 +415,15 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == oldSpace + contentSize + headerSize);
+            Assert.IsTrue(usedSpace == oldSpace + contentSize);
 
-            oldSpace += contentSize + headerSize;
+            oldSpace += contentSize;
             //----------
             //Upload another file: should succeed
 
@@ -430,13 +437,13 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == oldSpace + contentSize + headerSize);
+            Assert.IsTrue(usedSpace == oldSpace + contentSize);
         }
 
         //reupload a file maintaining the same name after deleting the original one
@@ -494,15 +501,18 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
+            var events = simulator.Nexus.FindBlockByTransaction(tx).GetEventsForTransaction(tx.Hash);
+            var eventData = events.First(x => x.Kind == EventKind.FileCreate).Data;
+            var archiveHash = new Hash(eventData.Skip(1).ToArray());
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
-            var oldSpace = contentSize + headerSize;
+            var oldSpace = contentSize;
 
             //-----------
             //Delete the file
@@ -510,7 +520,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "DeleteFile", testUser.Address, filename).
+                    .CallContract("storage", "DeleteFile", testUser.Address, archiveHash).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -523,7 +533,7 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
@@ -607,13 +617,13 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserA.Address, testUserA.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUserA.Address).EndScript());
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUserA.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
             //----------
             //User B uploads the same file: should succeed
@@ -622,13 +632,92 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUserB, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUserB.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUserB.Address, testUserB.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUserB.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUserB.Address).EndScript());
             simulator.EndBlock();
 
             usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUserB.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
+        }
+
+        //upload a duplicate of an already uploaded file but by a different owner
+        [TestMethod]
+        public void UploadDuplicateFileSameOwner()
+        {
+            var owner = PhantasmaKeys.Generate();
+
+            var nexus = new Nexus("simnet", null, null);
+            nexus.SetOracleReader(new OracleSimulator(nexus));
+            var simulator = new NexusSimulator(nexus, owner, 1234);
+
+            var testUserA = PhantasmaKeys.Generate();
+
+            var accountBalance = MinimumValidStake * 100;
+
+            Transaction tx = null;
+
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, 100000000);
+            simulator.GenerateTransfer(owner, testUserA.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, accountBalance);
+            simulator.EndBlock();
+
+            var stakeToken = simulator.Nexus.GetTokenInfo(simulator.Nexus.RootStorage, DomainSettings.StakingTokenSymbol);
+
+            //-----------
+            //Perform a valid Stake call for userA
+            var stakeAmount = MinimumValidStake * 2;
+            var startingSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, stakeToken, testUserA.Address);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract(Nexus.StakeContractName, "Stake", testUserA.Address, stakeAmount).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            BigInteger stakedAmount = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, Nexus.StakeContractName, "GetStake", testUserA.Address).AsNumber();
+            Assert.IsTrue(stakedAmount == stakeAmount);
+
+            var finalSoulBalance = simulator.Nexus.RootChain.GetTokenBalance(simulator.Nexus.RootStorage, stakeToken, testUserA.Address);
+            Assert.IsTrue(stakeAmount == startingSoulBalance - finalSoulBalance);
+
+            var KilobytesPerStake = simulator.Nexus.GetGovernanceValue(simulator.Nexus.RootChain.Storage, StorageContract.KilobytesPerStakeTag);
+
+            //-----------
+            //User A uploads a file: should succeed
+            var filename = "notAVirus.exe";
+            var headerSize = CalculateRequiredSize(filename, 0);
+            var contentSize = (long)(stakeAmount / MinimumValidStake * KilobytesPerStake * 1024 / 2) - (long)headerSize;
+            var content = new byte[contentSize];
+
+            var contentMerkle = new MerkleTree(content);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "CreateFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUserA.Address).AsNumber();
+
+            Assert.IsTrue(usedSpace == contentSize);
+
+            //----------
+            //User B uploads the same file: should succeed
+            contentMerkle = new MerkleTree(content);
+
+            simulator.BeginBlock();
+            tx = simulator.GenerateCustomTransaction(testUserA, ProofOfWork.None, () =>
+                ScriptUtils.BeginScript().AllowGas(testUserA.Address, Address.Null, 1, 9999)
+                    .CallContract("storage", "CreateFile", testUserA.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
+                    SpendGas(testUserA.Address).EndScript());
+            simulator.EndBlock();
+
+            usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUserA.Address).AsNumber();
+
+            Assert.IsTrue(usedSpace == contentSize);
         }
         #endregion
 
@@ -684,13 +773,13 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
             var oldSpace = usedSpace;
 
@@ -779,7 +868,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize * 2, contentMerkle, ArchiveExtensions.Uncompressed).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             })
@@ -844,15 +933,15 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize);
 
-            var oldSpace = contentSize + headerSize;
+            var oldSpace = contentSize;
             //----------
             //Upload a file: should fail due to exceeding available storage capacity
 
@@ -868,7 +957,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -931,15 +1020,15 @@ namespace Phantasma.Tests
             simulator.BeginBlock();
             tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                    .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, contentMerkle, ArchiveFlags.None, new byte[0]).
+                    .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, contentMerkle, ArchiveExtensions.Uncompressed).
                     SpendGas(testUser.Address).EndScript());
             simulator.EndBlock();
 
             var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
 
-            Assert.IsTrue(usedSpace == contentSize + headerSize);
+            Assert.IsTrue(usedSpace == contentSize );
 
-            var oldSpace = contentSize + headerSize;
+            var oldSpace = contentSize;
 
             //----------
             //Upload a file with the same name: should fail
@@ -948,7 +1037,7 @@ namespace Phantasma.Tests
                 simulator.BeginBlock();
                 tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
                     ScriptUtils.BeginScript().AllowGas(testUser.Address, Address.Null, 1, 9999)
-                        .CallContract("storage", "UploadFile", testUser.Address, testUser.Address, filename, contentSize, content, ArchiveFlags.None, new byte[0]).
+                        .CallContract("storage", "CreateFile", testUser.Address, filename, contentSize, content, ArchiveExtensions.Uncompressed).
                         SpendGas(testUser.Address).EndScript());
                 simulator.EndBlock();
             });
@@ -991,34 +1080,21 @@ namespace Phantasma.Tests
 
             var testMsg = sb.ToString();
             var textFile = System.Text.Encoding.UTF8.GetBytes(testMsg);
-            var key = new byte[0];
+            var key = ArchiveExtensions.Uncompressed;
 
             simulator.BeginBlock();
             var tx = simulator.GenerateCustomTransaction(testUser, ProofOfWork.None, () =>
             ScriptUtils.
                   BeginScript().
                   AllowGas(testUser.Address, Address.Null, 1, 9999).
-                  CallContract("storage", "UploadData", testUser.Address, testUser.Address, "test.txt", textFile, ArchiveFlags.None, key).
+                  CallContract("storage", "WriteData", testUser.Address, "test.txt", textFile, key).
                   SpendGas(testUser.Address).
                   EndScript()
             );
             var block = simulator.EndBlock().FirstOrDefault();
 
-            var evts = block.GetEventsForTransaction(tx.Hash);
-            Assert.IsTrue(evts.Length > 0);
-
-            var evt = evts.Where(x => x.Kind == EventKind.FileCreate).FirstOrDefault();
-            var entry = evt.GetContent<StorageEntry>();
-
-            Assert.IsTrue(entry.Creator == testUser.Address);
-
-            var archive = nexus.GetArchive(entry.Hash);
-            Assert.IsTrue(archive != null);
-
-            var readBytes = nexus.ReadArchiveBlock(archive, 0);
-            var readMsg = System.Text.Encoding.UTF8.GetString(readBytes);
-            Assert.IsTrue(readMsg == testMsg);
+            var usedSpace = simulator.Nexus.RootChain.InvokeContract(simulator.Nexus.RootStorage, "storage", "GetUsedSpace", testUser.Address).AsNumber();
+            Assert.IsTrue(usedSpace == textFile.Length);
         }
-
     }
 }

@@ -15,6 +15,11 @@ namespace Phantasma.Domain
         bool IsTrigger { get; }
         int TransactionIndex { get; }
 
+        ITask CurrentTask { get; }
+
+        ExecutionContext CurrentContext { get; }
+        ExecutionContext PreviousContext { get; }
+
         Address GasTarget { get; }
         BigInteger UsedGas { get; }
         BigInteger GasPrice { get; }
@@ -26,7 +31,7 @@ namespace Phantasma.Domain
 
         bool HasGenesis { get; }
         string NexusName { get; }
-        BigInteger ProtocolVersion { get; }
+        uint ProtocolVersion { get; }
         Address GenesisAddress { get; }
         Hash GenesisHash { get; }
         Timestamp GetGenesisTime();
@@ -44,11 +49,13 @@ namespace Phantasma.Domain
         Hash GetTokenPlatformHash(string symbol, IPlatform platform);
         IFeed GetFeed(string name);
         IContract GetContract(string name);
+        Address GetContractOwner(Address address);
 
         IPlatform GetPlatformByName(string name);
         IPlatform GetPlatformByIndex(int index);
 
-        bool TokenExists(string symbol);
+        bool TokenExists(string symbol);        
+        bool NFTExists(string symbol, BigInteger tokenID);
         bool FeedExists(string name);
         bool PlatformExists(string name);
 
@@ -66,6 +73,10 @@ namespace Phantasma.Domain
         IArchive GetArchive(Hash hash);
         bool DeleteArchive(Hash hash);
 
+        bool AddOwnerToArchive(Hash hash, Address address);
+
+        bool RemoveOwnerFromArchive(Hash hash, Address address);
+
         bool WriteArchive(IArchive archive, int blockIndex, byte[] data);
 
         bool ChainExists(string name);
@@ -79,7 +90,7 @@ namespace Phantasma.Domain
         void Throw(string description);
         void Expect(bool condition, string description);
         void Notify(EventKind kind, Address address, byte[] data);
-        VMObject CallContext(string contextName, string methodName, params object[] args);
+        VMObject CallContext(string contextName, uint jumpOffset, string methodName, params object[] args);
 
         Address LookUpName(string name);
         bool HasAddressScript(Address from);
@@ -106,7 +117,7 @@ namespace Phantasma.Domain
         BigInteger GenerateUID();
         BigInteger GenerateRandomNumber();
 
-        bool InvokeTrigger(byte[] script, string triggerName, params object[] args);
+        TriggerResult InvokeTrigger(bool allowThrow, byte[] script, string contextName, ContractInterface abi, string triggerName, params object[] args);
 
         bool IsWitness(Address address);
 
@@ -114,11 +125,11 @@ namespace Phantasma.Domain
         BigInteger[] GetOwnerships(string symbol, Address address);
         BigInteger GetTokenSupply(string symbol);
 
-        void CreateToken(Address from, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script);
+        void CreateToken(Address owner, string symbol, string name, BigInteger maxSupply, int decimals, TokenFlags flags, byte[] script, ContractInterface abi);
         void SetTokenPlatformHash(string symbol, string platform, Hash hash);
         void CreateChain(Address creator, string organization, string name, string parentChain);
         void CreateFeed(Address owner, string name, FeedMode mode);
-        IArchive CreateArchive(Address creator, Address owner, MerkleTree merkleTree, BigInteger size, ArchiveFlags flags, byte[] key);
+        IArchive CreateArchive(MerkleTree merkleTree, Address owner, string name, BigInteger size, Timestamp time, IArchiveEncryption encryption);
 
         BigInteger CreatePlatform(Address from, string name, string externalAddress, Address interopAddress, string fuelSymbol);
 
@@ -131,14 +142,21 @@ namespace Phantasma.Domain
         void MintTokens(string symbol, Address from, Address target, BigInteger amount);
         void BurnTokens(string symbol, Address from, BigInteger amount);
         void TransferTokens(string symbol, Address source, Address destination, BigInteger amount);
-        void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value, byte[] rom, byte[] ram);
+        void SwapTokens(string sourceChain, Address from, string targetChain, Address to, string symbol, BigInteger value);
 
-        BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram);
+        BigInteger MintToken(string symbol, Address from, Address target, byte[] rom, byte[] ram, BigInteger seriesID);
         void BurnToken(string symbol, Address from, BigInteger tokenID);
+        void InfuseToken(string symbol, Address from, BigInteger tokenID, string infuseSymbol, BigInteger value);
         void TransferToken(string symbol, Address source, Address destination, BigInteger tokenID);
         void WriteToken(string tokenSymbol, BigInteger tokenID, byte[] ram);
         TokenContent ReadToken(string tokenSymbol, BigInteger tokenID);
+        ITokenSeries CreateTokenSeries(string tokenSymbol, Address from, BigInteger seriesID, BigInteger maxSupply, TokenSeriesMode mode, byte[] script, ContractInterface abi);
+        ITokenSeries GetTokenSeries(string symbol, BigInteger seriesID);
 
         byte[] ReadOracle(string URL);
+
+        ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit);
+        void StopTask(ITask task);
+        ITask GetTask(BigInteger taskID);
     }
 }

@@ -8,6 +8,7 @@ using Phantasma.Storage;
 using System.IO;
 using Phantasma.Storage.Utils;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Phantasma.Cryptography
 {
@@ -59,22 +60,33 @@ namespace Phantasma.Cryptography
         }
 
         private string _text;
+
+        private static Dictionary<byte[], string> _keyToTextCache = new Dictionary<byte[], string>(new ByteArrayComparer());
+
         public string Text
         {
             get
             {
                 if (string.IsNullOrEmpty(_text))
                 {
-                    char prefix;
-
-                    switch (Kind)
+                    if (_keyToTextCache.ContainsKey(_bytes))
                     {
-                        case AddressKind.User: prefix = 'P'; break;
-                        case AddressKind.Interop: prefix = 'X'; break;
-                        default: prefix = 'S'; break;
-
+                        _text = _keyToTextCache[_bytes];
                     }
-                    _text =  prefix + Base58.Encode(_bytes);
+                    else
+                    {
+                        char prefix;
+
+                        switch (Kind)
+                        {
+                            case AddressKind.User: prefix = 'P'; break;
+                            case AddressKind.Interop: prefix = 'X'; break;
+                            default: prefix = 'S'; break;
+
+                        }
+                        _text = prefix + Base58.Encode(_bytes);
+                        _keyToTextCache[_bytes] = _text;
+                    }
                 }
 
                 return _text;
@@ -199,6 +211,11 @@ namespace Phantasma.Cryptography
             var thisBytes = this._bytes;
             var otherBytes = otherAddress._bytes;
 
+            if ((thisBytes == null) || (otherBytes == null))
+            {
+                return (thisBytes == null) == (otherBytes == null);
+            }
+
             if (thisBytes.Length != otherBytes.Length) // failsafe, should never happen
             {
                 return false;
@@ -229,33 +246,47 @@ namespace Phantasma.Cryptography
             return keyPair.Address;
         }
 
+        private static Dictionary<string, Address> _textToAddressCache = new Dictionary<string, Address>();
+
         public static Address FromText(string text)
         {
-            var prefix = text[0];
+            Address addr;
 
-            text = text.Substring(1);
-            var bytes = Base58.Decode(text);
-
-            Throw.If(bytes.Length != LengthInBytes, "Invalid address data");
-
-            var addr = new Address(bytes);
-
-            switch (prefix)
+            lock (_textToAddressCache)
             {
-                case 'P':
-                    Throw.If(addr.Kind != AddressKind.User, "address should be user");
-                    break;
+                if (_textToAddressCache.ContainsKey(text))
+                {
+                    return _textToAddressCache[text];
+                }
 
-                case 'S':
-                    Throw.If(addr.Kind != AddressKind.System, "address should be system");
-                    break;
+                var prefix = text[0];
 
-                case 'X':
-                    Throw.If(addr.Kind < AddressKind.Interop, "address should be interop");
-                    break;
+                text = text.Substring(1);
+                var bytes = Base58.Decode(text);
 
-                default:
-                    throw new Exception("invalid address prefix: " + prefix);
+                Throw.If(bytes.Length != LengthInBytes, "Invalid address data");
+
+                addr = new Address(bytes);
+
+                switch (prefix)
+                {
+                    case 'P':
+                        Throw.If(addr.Kind != AddressKind.User, "address should be user");
+                        break;
+
+                    case 'S':
+                        Throw.If(addr.Kind != AddressKind.System, "address should be system");
+                        break;
+
+                    case 'X':
+                        Throw.If(addr.Kind < AddressKind.Interop, "address should be interop");
+                        break;
+
+                    default:
+                        throw new Exception("invalid address prefix: " + prefix);
+                }
+
+                _textToAddressCache[text] = addr;
             }
 
             return addr;

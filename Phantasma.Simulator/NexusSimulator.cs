@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Phantasma.Contracts.Native;
 using Phantasma.Core;
 using Phantasma.Core.Log;
 using Phantasma.Core.Types;
@@ -12,6 +11,8 @@ using Phantasma.Blockchain;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.CodeGen.Assembler;
 using Phantasma.Domain;
+using Phantasma.VM;
+using Phantasma.Blockchain.Tokens;
 
 namespace Phantasma.Simulator
 {
@@ -73,7 +74,7 @@ namespace Phantasma.Simulator
 
             if (!Nexus.HasGenesis)
             {
-                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime))
+                if (!Nexus.CreateGenesisBlock(_owner, CurrentTime, 4))
                 {
                     throw new ChainException("Genesis block failure");
                 }
@@ -111,15 +112,15 @@ namespace Phantasma.Simulator
             // only create all this stuff once
             if (!nexus.PlatformExists(nexus.RootStorage, neoPlatform))
             {
-                BeginBlock();
+                /*BeginBlock();
                 GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 {
                     return new ScriptBuilder().AllowGas(_owner.Address, Address.Null, 1, 99999).
-                    CallContract("governance", "SetValue", Nexus.NexusProtocolVersionTag, 3).
+                    CallContract(NativeContractKind.Governance, nameof(GovernanceContract.SetValue), Nexus.NexusProtocolVersionTag, 3).
                     SpendGas(_owner.Address).
                     EndScript();
                 });
-                EndBlock();
+                EndBlock();*/
 
                 BeginBlock();
                 GenerateCustomTransaction(_owner, 0, () => new ScriptBuilder().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999).
@@ -138,8 +139,8 @@ namespace Phantasma.Simulator
                     CallInterop("Nexus.CreateOrganization", _owner.Address, orgID, "Phantom Force", orgScript).
                     CallInterop("Organization.AddMember", _owner.Address, orgID, _owner.Address).
                     TransferTokens(DomainSettings.StakingTokenSymbol, _owner.Address, orgAddress, orgFunding).
-                    CallContract("swap", "SwapFee", orgAddress, DomainSettings.StakingTokenSymbol, 500000).
-                    CallContract("stake", "Stake", orgAddress, orgFunding - (5000)).
+                    CallContract(NativeContractKind.Swap, nameof(SwapContract.SwapFee), orgAddress, DomainSettings.StakingTokenSymbol, 500000).
+                    CallContract(NativeContractKind.Stake, nameof(StakeContract.Stake), orgAddress, orgFunding - (5000)).
                     SpendGas(_owner.Address).
                     EndScript();
                 });
@@ -250,7 +251,7 @@ namespace Phantasma.Simulator
             var readyNames = new List<Address>();
             foreach (var address in pendingNames)
             {
-                var currentName = Nexus.LookUpAddressName(Nexus.RootStorage, address);
+                var currentName = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, address);
                 if (currentName != ValidationUtils.ANONYMOUS)
                 {
                     readyNames.Add(address);
@@ -438,45 +439,112 @@ namespace Phantasma.Simulator
             return tx;
         }
 
-        public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply, int decimals, TokenFlags flags, byte[] tokenScript = null)
+        public Transaction GenerateToken(PhantasmaKeys owner, string symbol, string name, BigInteger totalSupply,
+                int decimals, TokenFlags flags, byte[] tokenScript = null, Dictionary<string, int> labels = null, IEnumerable<ContractMethod> customMethods = null)
         {
+            var version = Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
+            if (labels == null)
+            {
+                labels = new Dictionary<string, int>();
+            }
+
             if (tokenScript == null)
             {
                 // small script that restricts minting of tokens to transactions where the owner is a witness
                 var addressStr = Base16.Encode(owner.Address.ToByteArray());
-                var scriptString = new string[] {
-                $"alias r1, $triggerMint",
-                $"alias r2, $currentTrigger",
-                $"alias r3, $result",
-                $"alias r4, $owner",
+                string[] scriptString;
 
-                $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
-                $"pop $currentTrigger",
+                if (version >= 4)
+                {
+                    scriptString = new string[] {
+                    $"alias r3, $result",
+                    $"alias r4, $owner",
+                    $"@{AccountTrigger.OnMint}: nop",
+                    $"load $owner 0x{addressStr}",
+                    "push $owner",
+                    "extcall \"Address()\"",
+                    "extcall \"Runtime.IsWitness\"",
+                    "pop $result",
+                    $"jmpif $result, @end",
+                    $"load r0 \"invalid witness\"",
+                    $"throw r0",
 
-                $"equal $triggerMint, $currentTrigger, $result",
-                $"jmpif $result, @mintHandler",
-                $"jmp @end",
+                    $"@end: ret"
+                    };
+                }
+                else {
+                    scriptString = new string[] {
+                    $"alias r1, $triggerMint",
+                    $"alias r2, $currentTrigger",
+                    $"alias r3, $result",
+                    $"alias r4, $owner",
 
-                $"@mintHandler: nop",
-                $"load $owner 0x{addressStr}",
-                "push $owner",
-                "extcall \"Address()\"",
-                "extcall \"Runtime.IsWitness\"",
-                "pop $result",
-                $"jmpif $result, @end",
-                $"throw",
+                    $@"load $triggerMint, ""{AccountTrigger.OnMint}""",
+                    $"pop $currentTrigger",
 
-                $"@end: ret"
-                };
-                tokenScript = AssemblerUtils.BuildScript(scriptString);
+                    $"equal $triggerMint, $currentTrigger, $result",
+                    $"jmpif $result, @mintHandler",
+                    $"jmp @end",
+
+                    $"@mintHandler: nop",
+                    $"load $owner 0x{addressStr}",
+                    "push $owner",
+                    "extcall \"Address()\"",
+                    "extcall \"Runtime.IsWitness\"",
+                    "pop $result",
+                    $"jmpif $result, @end",
+                    $"load r0 \"invalid witness\"",
+                    $"throw r0",
+
+                    $"@end: ret"
+                    };
+                }
+                DebugInfo debugInfo;
+                tokenScript = AssemblerUtils.BuildScript(scriptString, "GenerateToken",  out debugInfo, out labels);
             }
 
-            var script = ScriptUtils.
+            var sb = ScriptUtils.
                 BeginScript().
-                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript).
-                SpendGas(owner.Address).
-                EndScript();
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999);
+
+            if (version >= 4)
+            {
+                var triggerMap = new Dictionary<AccountTrigger, int>();
+
+                var onMintLabel = AccountTrigger.OnMint.ToString();
+                if (labels.ContainsKey(onMintLabel))
+                {
+                    triggerMap[AccountTrigger.OnMint] = labels[onMintLabel];
+                }
+
+                var methods = AccountContract.GetTriggersForABI(triggerMap);
+
+                if (customMethods != null)
+                {
+                    methods = methods.Concat(customMethods);
+                }
+
+                var abi = new ContractInterface(methods, Enumerable.Empty<ContractEvent>());
+                var abiBytes = abi.ToByteArray();
+
+                sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript, abiBytes);
+            }
+            else
+            {
+                sb.CallInterop("Nexus.CreateToken", owner.Address, symbol, name, totalSupply, decimals, flags, tokenScript);
+            }
+
+            if (!flags.HasFlag(TokenFlags.Fungible))
+            {
+                ContractInterface nftABI;
+                byte[] nftScript;
+                NFTUtils.GenerateNFTDummyScript(symbol, name, name, "http://simulator/nft/*", "http://simulator/img/*", out nftScript, out nftABI);
+                sb.CallInterop("Nexus.CreateTokenSeries", owner.Address, symbol, new BigInteger(0), totalSupply, TokenSeriesMode.Unique, nftScript, nftABI.ToByteArray());
+            }
+
+            sb.SpendGas(owner.Address);
+            
+            var script = sb.EndScript();
 
             var tx = MakeTransaction(owner, ProofOfWork.Minimal, Nexus.RootChain, script);
 
@@ -539,7 +607,7 @@ namespace Phantasma.Simulator
         {
             var script = ScriptUtils.
                 BeginScript().
-                CallContract(Nexus.BlockContractName, "SettleTransaction", sourceChain.Address, transaction.Hash).
+                CallContract(NativeContractKind.Block, nameof(BlockContract.SettleTransaction), sourceChain.Address, transaction.Hash).
                 AllowGas(source.Address, Address.Null, MinimumFee, 800).
                 SpendGas(source.Address).
                 EndScript();
@@ -550,7 +618,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateAccountRegistration(PhantasmaKeys source, string name)
         {
             var sourceChain = this.Nexus.RootChain;
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("account", "RegisterName", source.Address, name).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(NativeContractKind.Account, nameof(AccountContract.RegisterName), source.Address, name).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.Minimal, sourceChain, script);
 
             pendingNames.Add(source.Address);
@@ -561,12 +629,11 @@ namespace Phantasma.Simulator
         {
             Throw.IfNull(parentchain, nameof(parentchain));
 
-            var sb = ScriptUtils.BeginScript().
+            var script = ScriptUtils.BeginScript().
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Nexus.CreateChain", source.Address, organization, name, parentchain);
+                CallInterop("Nexus.CreateChain", source.Address, organization, name, parentchain).
+                SpendGas(source.Address).EndScript();
 
-            var script = sb.SpendGas(source.Address).
-                EndScript();
             var tx = MakeTransaction(source, ProofOfWork.Minimal, Nexus.RootChain, script);
             return tx;
         }
@@ -619,7 +686,7 @@ namespace Phantasma.Simulator
         public Transaction GenerateSwap(PhantasmaKeys source, Chain chain, string fromSymbol, string toSymbol, BigInteger amount)
         {
             var script = ScriptUtils.BeginScript().
-                CallContract("swap", "SwapTokens", source.Address, fromSymbol, toSymbol, amount).
+                CallContract(NativeContractKind.Swap, nameof(SwapContract.SwapTokens), source.Address, fromSymbol, toSymbol, amount).
                 AllowGas(source.Address, Address.Null, MinimumFee, 9999).
                 SpendGas(source.Address).
                 EndScript();
@@ -644,18 +711,32 @@ namespace Phantasma.Simulator
         public Transaction GenerateNftSale(PhantasmaKeys source, Chain chain, string tokenSymbol, BigInteger tokenId, BigInteger price)
         {
             Timestamp endDate = this.CurrentTime + TimeSpan.FromDays(5);
-            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract("market", "SellToken", source.Address, tokenSymbol, DomainSettings.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
+            var script = ScriptUtils.BeginScript().AllowGas(source.Address, Address.Null, MinimumFee, 9999).CallContract(NativeContractKind.Market, nameof(MarketContract.SellToken), source.Address, tokenSymbol, DomainSettings.FuelTokenSymbol, tokenId, price, endDate).SpendGas(source.Address).EndScript();
             var tx = MakeTransaction(source, ProofOfWork.None, chain, script);
             return tx;
         }
 
-        public Transaction MintNonFungibleToken(PhantasmaKeys owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram)
+        public Transaction MintNonFungibleToken(PhantasmaKeys owner, Address destination, string tokenSymbol, byte[] rom, byte[] ram, BigInteger seriesID)
         {
             var chain = Nexus.RootChain;
             var script = ScriptUtils.
                 BeginScript().
                 AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
-                CallInterop("Runtime.MintToken", owner.Address, destination, tokenSymbol, rom, ram).  
+                CallInterop("Runtime.MintToken", owner.Address, destination, tokenSymbol, rom, ram, seriesID).  
+                SpendGas(owner.Address).
+                EndScript();
+
+            var tx = MakeTransaction(owner, ProofOfWork.None, chain, script);
+            return tx;
+        }
+
+        public Transaction InfuseNonFungibleToken(PhantasmaKeys owner, string tokenSymbol, BigInteger tokenID, string infuseSymbol, BigInteger value)
+        {
+            var chain = Nexus.RootChain;
+            var script = ScriptUtils.
+                BeginScript().
+                AllowGas(owner.Address, Address.Null, MinimumFee, 9999).
+                CallInterop("Runtime.InfuseToken", owner.Address, tokenSymbol, tokenID, infuseSymbol, value).
                 SpendGas(owner.Address).
                 EndScript();
 
@@ -840,7 +921,7 @@ namespace Phantasma.Simulator
                                         break;
                                 }
 
-                                var currentName = Nexus.LookUpAddressName(Nexus.RootStorage, source.Address);
+                                var currentName = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, source.Address);
                                 if (currentName == ValidationUtils.ANONYMOUS)
                                 {
                                     var lookup = Nexus.LookUpName(Nexus.RootStorage, randomName);
@@ -916,7 +997,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
 
@@ -931,7 +1012,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
 
@@ -946,7 +1027,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
         }
@@ -971,7 +1052,7 @@ namespace Phantasma.Simulator
             BeginBlock();
             var tx = GenerateCustomTransaction(_owner, ProofOfWork.None, () =>
                 ScriptUtils.BeginScript().AllowGas(_owner.Address, Address.Null, MinimumFee, 9999)
-                    .CallContract(Nexus.StakeContractName, "GetUnclaimed", _owner.Address).
+                    .CallContract(NativeContractKind.Stake, nameof(StakeContract.GetUnclaimed), _owner.Address).
                     SpendGas(_owner.Address).EndScript());
             EndBlock();
 

@@ -56,14 +56,20 @@ namespace Phantasma.VM
         SHR,
         MIN,
         MAX,
+        POW,
 
         // context
-        THIS,
         CTX,
         SWITCH,
 
         // array
         PUT,
         GET, // lookups a key and copies a reference into register
+        CLEAR, // clears a register
+        UNPACK, // unpacks serialized struct based on ref struct
+        PACK, // unused for now
+
+        //  debugger
+        DEBUG
     }
 }

@@ -95,7 +95,8 @@ namespace Phantasma.VM
                                 break;
 
                             case VMType.Number:
-                                sb.Append(BigInteger.FromSignedArray(bytes));
+                                //TODO should not matter anymore with C# BigInteger 
+                                sb.Append(BigInteger.FromUnsignedArray(bytes, true));
                                 break;
 
                             default:

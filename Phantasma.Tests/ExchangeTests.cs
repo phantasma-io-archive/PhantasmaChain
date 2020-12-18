@@ -3,17 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Phantasma.Blockchain.Contracts;
-using Phantasma.Contracts.Native;
 using Phantasma.Simulator;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Storage;
 using Phantasma.VM.Utils;
-using static Phantasma.Contracts.Native.ExchangeOrderSide;
+using static Phantasma.Blockchain.Contracts.ExchangeOrderSide;
 using static Phantasma.Numerics.BigInteger;
 using Phantasma.Domain;
 using Phantasma.Blockchain;
-using Phantasma.Contracts;
 
 namespace Phantasma.Tests
 {

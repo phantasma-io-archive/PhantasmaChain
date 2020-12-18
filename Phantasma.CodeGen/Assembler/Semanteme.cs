@@ -19,58 +19,132 @@ namespace Phantasma.CodeGen.Assembler
             this.LineNumber = lineNumber;
         }
 
-        public static IEnumerable<Semanteme> ProcessLines(IEnumerable<string> lines)
+        public static Semanteme[] ProcessLines(IEnumerable<string> lines)
         {
             ArgumentUtils.ClearAlias();
 
-            bool isInComment = false;
+
+            var semantemes = new List<Semanteme>();
+
+            bool insideComment = false;
+
             uint lineNumber = 0;
-            foreach (string line in lines)
+            foreach (string entry in lines)
             {
-                string pline = line;
-                ++lineNumber;
+                string line = entry.Trim();
+                
+                lineNumber++;
+
                 int index;
-                if (isInComment)
+
+                index = SearchStringIndex(line, "//");
+                if (index >= 0)
                 {
-                    index = pline.IndexOf("*/", StringComparison.Ordinal);
-                    if (index == -1) continue;
-                    pline = pline.Substring(index + 2);
+                    // strip single line comments
+                    line = line.Substring(0, index);
                 }
+
+                if (insideComment)
+                {
+                    index = SearchStringIndex(line, "*/");
+                    if (index == -1)
+                    {
+                        continue;
+                    }
+
+                    line = line.Substring(index + 2);
+                }
+
                 index = 0;
                 while (true)
                 {
-                    index = pline.IndexOf("/*", index, StringComparison.Ordinal);
-                    if (index == -1) break;
-                    int index2 = pline.IndexOf("*/", index + 2, StringComparison.Ordinal);
+                    index = SearchStringIndex(line, "/*", index);
+                    if (index == -1)
+                    {
+                        break;
+                    }
+
+                    int index2 = SearchStringIndex(line, "*/", index + 2);
                     if (index2 >= 0)
                     {
-                        pline = pline.Substring(0, index) + pline.Substring(index2 + 2);
+                        line = line.Substring(0, index) + line.Substring(index2 + 2);
                     }
                     else
                     {
-                        pline = pline.Substring(0, index);
-                        isInComment = true;
+                        line = line.Substring(0, index);
+                        insideComment = true;
                         break;
                     }
                 }
-                index = pline.IndexOf("//", StringComparison.Ordinal);
-                if (index >= 0) pline = pline.Substring(0, index);
-                pline = pline.Trim();
-                index = pline.IndexOf(':');
+
+                index = SearchStringIndex(line, ":");
                 if (index >= 0)
                 {
-                    yield return new Label(lineNumber, pline.Substring(0, index).AsLabel());
-                    pline = pline.Substring(index + 1).Trim();
+                    semantemes.Add(new Label(lineNumber, line.Substring(0, index).AsLabel()));
+                    line = line.Substring(index + 1).Trim();
                 }
-                if (!string.IsNullOrEmpty(pline))
+
+                if (!string.IsNullOrEmpty(line))
                 {
-                    //string[] words = pline.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    string[] words = SplitWords(pline);
+                    string[] words = SplitWords(line);
                     var name = words[0];
                     var args = words.Skip(1).ToArray();
-                    yield return new Instruction(lineNumber, name, args);
+                    semantemes.Add(new Instruction(lineNumber, name, args));
                 }
             }
+
+            return semantemes.ToArray();
+        }
+
+        private static int SearchStringIndex(string line, string target, int start = 0)
+        {
+            bool insideString = false;
+
+            int targetIndex = 0;
+            char targetChar = target[0];
+
+            char prev = '\0';
+
+            for (int i=start; i<line.Length; i++)
+            {
+                var ch = line[i];
+
+                if (insideString)
+                {
+                    if (ch == '"')
+                    {
+                        insideString = false;
+                    }
+                }
+                else
+                {
+                    if (ch == '\\' && prev == ch)
+                    {
+                        break;
+                    }
+
+                    if (ch == targetChar)
+                    {
+                        targetIndex++;
+
+                        if (targetIndex >= target.Length)
+                        {
+                            return (i + 1) - target.Length;
+                        }
+
+                        targetChar = target[targetIndex];
+                    }
+
+                    if (ch == '"')
+                    {
+                        insideString = true;
+                    }
+                }
+
+                prev = ch;
+            }
+
+            return -1;
         }
 
         private static string[] SplitWords(string line)

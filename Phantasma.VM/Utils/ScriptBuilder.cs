@@ -18,6 +18,8 @@ namespace Phantasma.VM.Utils
         private Dictionary<int, string> _jumpLocations = new Dictionary<int, string>();
         private Dictionary<string, int> _labelLocations = new Dictionary<string, int>();
 
+        public int CurrentSize => (int)writer.BaseStream.Position;
+
         public ScriptBuilder()
         {
             this.stream = new MemoryStream();
@@ -34,6 +36,13 @@ namespace Phantasma.VM.Utils
                 writer.Write(bytes);
             }
 
+            return this;
+        }
+
+        public ScriptBuilder EmitThrow(byte reg)
+        {
+            Emit(Opcode.THROW);
+            writer.Write((byte)reg);
             return this;
         }
 
@@ -216,10 +225,18 @@ namespace Phantasma.VM.Utils
             writer.Write(bytes);
             return this;
         }
-
+        
         public byte[] ToScript()
         {
+            Dictionary<string, int> temp;
+            return ToScript(out temp);
+        }
+
+        public byte[] ToScript(out Dictionary<string, int> labels)
+        {
             var script = stream.ToArray();
+
+            labels = new Dictionary<string, int>();
 
             // resolve jump offsets
             foreach (var entry in _jumpLocations)
@@ -233,6 +250,11 @@ namespace Phantasma.VM.Utils
                 {
                     script[targetOffset + i] = bytes[i];
                 }
+            }
+
+            foreach (var entry in _labelLocations)
+            {
+                labels[entry.Key] = entry.Value;
             }
 
             return script;

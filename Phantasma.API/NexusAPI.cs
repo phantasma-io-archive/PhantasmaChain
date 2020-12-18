@@ -7,7 +7,6 @@ using Phantasma.Blockchain;
 using Phantasma.Cryptography;
 using Phantasma.Numerics;
 using Phantasma.Core;
-using Phantasma.Contracts.Native;
 using Phantasma.Blockchain.Contracts;
 using Phantasma.VM;
 using Phantasma.Storage;
@@ -19,6 +18,7 @@ using Phantasma.Core.Utils;
 using Phantasma.Domain;
 using Phantasma.Core.Log;
 using LunarLabs.Parser.JSON;
+using Phantasma.Blockchain.Storage;
 
 namespace Phantasma.API
 {
@@ -311,7 +311,7 @@ namespace Phantasma.API
                         }
 
                         // convert to json string
-                        var node = APIUtils.FromAPIResult(apiResult);
+                        var node = Domain.APIUtils.FromAPIResult(apiResult);
                         result = JSONWriter.WriteToString(node);
                     }
 
@@ -418,10 +418,34 @@ namespace Phantasma.API
         }
 
         #region UTILS
-        private TokenResult FillToken(string tokenSymbol)
+        private TokenResult FillToken(string tokenSymbol, bool extended)
         {
             var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, tokenSymbol);
             var currentSupply = Nexus.RootChain.GetTokenSupply(Nexus.RootChain.Storage, tokenSymbol);
+
+            var seriesList = new List<TokenSeriesResult>();
+
+            if (!tokenInfo.IsFungible())
+            {
+                var seriesIDs = Nexus.GetAllSeriesForToken(Nexus.RootStorage, tokenSymbol);
+                //  HACK wont work if token has non-sequential series
+                foreach (var ID in seriesIDs)
+                {
+                    var series = Nexus.GetTokenSeries(Nexus.RootStorage, tokenSymbol, ID);
+                    if (series != null)
+                    {
+                        seriesList.Add(new TokenSeriesResult()
+                        {
+                            seriesID = (uint)ID,
+                            currentSupply = series.MintCount.ToString(),
+                            maxSupply = series.MaxSupply.ToString(),
+                            mode = series.Mode,
+                            script = Base16.Encode(series.Script),
+                            methods = extended ?  FillMethods(series.ABI.Methods): new ABIMethodResult[0]
+                        });
+                    }
+                }
+            }
 
             return new TokenResult
             {
@@ -431,20 +455,16 @@ namespace Phantasma.API
                 maxSupply = tokenInfo.MaxSupply.ToString(),
                 decimals = tokenInfo.Decimals,
                 flags = tokenInfo.Flags.ToString(),//.Split(',').Select(x => x.Trim()).ToArray(),
-                /*platform = tokenInfo.Platform,
-                hash = tokenInfo.Hash.ToString(),*/
-                script = tokenInfo.Script.Encode()
+                address = SmartContract.GetAddressForName(tokenInfo.Symbol).Text,
+                owner = tokenInfo.Owner.Text,
+                script = tokenInfo.Script.Encode(),
+                series = seriesList.ToArray()
             };
-        }
-
-        private TokenContent ReadNFT(string symbol, BigInteger tokenID, Chain chain)
-        {
-            return chain.ReadToken(chain.Storage, symbol, tokenID);
         }
 
         private AuctionResult FillAuction(MarketAuction auction, Chain chain)
         {
-            var nft = ReadNFT(auction.BaseSymbol, auction.TokenID, chain);
+            var nft = Nexus.ReadNFT(Nexus.RootStorage, auction.BaseSymbol, auction.TokenID);
 
             return new AuctionResult
             {
@@ -511,7 +531,7 @@ namespace Phantasma.API
                 address = evt.Address.Text,
                 contract = evt.Contract,
                 data = evt.Data.Encode(),
-                kind = evt.Kind.ToString()
+                kind = evt.Kind >= EventKind.Custom ? ((byte)evt.Kind).ToString() : evt.Kind.ToString()
             };
         }
 
@@ -598,20 +618,37 @@ namespace Phantasma.API
             return null;
         }
 
-        private ABIContractResult FillABI(string name, ContractInterface abi)
+        private ABIMethodResult[] FillMethods(IEnumerable<ContractMethod> methods)
         {
-            return new ABIContractResult
+            return methods.Select(x => new ABIMethodResult()
+            {
+                name = x.name,
+                returnType = x.returnType.ToString(),
+                parameters = x.parameters.Select(y => new ABIParameterResult()
+                {
+                    name = y.name,
+                    type = y.type.ToString()
+                }).ToArray()
+            }).ToArray();
+        }
+
+        private ContractResult FillContract(string name, SmartContract contract)
+        {
+            var customContract = contract as CustomContract;
+            var scriptBytes = customContract != null ? customContract.Script : new byte[0];
+
+            return new ContractResult
             {
                 name = name,
-                methods = abi.Methods.Select(x => new ABIMethodResult()
+                script = Base16.Encode(scriptBytes),
+                address = contract.Address.Text,
+                methods = FillMethods(contract.ABI.Methods),
+                events = contract.ABI.Events.Select(x => new ABIEventResult()
                 {
                     name = x.name,
                     returnType = x.returnType.ToString(),
-                    parameters = x.parameters.Select(y => new ABIParameterResult()
-                    {
-                        name = y.name,
-                        type = y.type.ToString()
-                    }).ToArray()
+                    value = x.value,
+                    description = Base16.Encode(x.description),
                 }).ToArray()
             };
         }
@@ -628,6 +665,65 @@ namespace Phantasma.API
                 script = Base16.Encode(receipt.message.script ?? new byte[0])
             };
         }
+
+        private ArchiveResult FillArchive(Archive archive)
+        {
+            return new ArchiveResult()
+            {
+                hash = archive.Hash.ToString(),
+                name = archive.Name,
+                time = archive.Time.Value,
+                size = (uint)archive.Size,
+                encryption = Base16.Encode(archive.Encryption.ToBytes()),
+                blockCount = (int)archive.BlockCount,
+                missingBlocks = archive.MissingBlockIndices.ToArray(),
+                owners = archive.Owners.Select(x => x.Text).ToArray()
+            };
+        }
+
+        private StorageResult FillStorage(Address address)
+        {
+            var storage = new StorageResult();
+
+            storage.used = (uint)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetUsedSpace), address).AsNumber();
+            storage.available = (uint)Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetAvailableSpace), address).AsNumber();
+
+            if (storage.used > 0)
+            {
+                var files = (Hash[]) Nexus.RootChain.InvokeContract(Nexus.RootChain.Storage, "storage", nameof(StorageContract.GetFiles), address).ToObject();
+
+                Hash avatarHash = Hash.Null;
+                storage.archives = files.Select(x => {
+                    var result = FillArchive(Nexus.GetArchive(Nexus.RootStorage, x));
+
+                    if (result.name == "avatar")
+                    {
+                        avatarHash = x;
+                    }
+
+                    return result;
+                }).ToArray();
+
+                if (avatarHash != Hash.Null)
+                {
+                    var avatarArchive = Nexus.GetArchive(Nexus.RootStorage, avatarHash);
+
+                    var avatarData = Nexus.ReadArchiveBlock(avatarArchive, 0);
+                    storage.avatar = Encoding.ASCII.GetString(avatarData);
+                }
+            }
+            else
+            {
+                storage.archives = new ArchiveResult[0];
+            }
+
+            if (storage.avatar == null)
+            {
+                storage.avatar = DefaultAvatar.Data;
+            }
+
+            return storage;
+        }
         #endregion
 
         [APIInfo(typeof(AccountResult), "Returns the account name and balance of given address.", false, 10)]
@@ -642,7 +738,7 @@ namespace Phantasma.API
             var result = new AccountResult();
             var address = Address.FromText(account);
             result.address = address.Text;
-            result.name = Nexus.LookUpAddressName(Nexus.RootStorage, address);
+            result.name = Nexus.RootChain.LookUpAddressName(Nexus.RootStorage, address);
 
             var stake = Nexus.GetStakeFromAddress(Nexus.RootStorage, address);
 
@@ -656,6 +752,8 @@ namespace Phantasma.API
             {
                 result.stakes = new StakeResult() { amount = "0", time = 0, unclaimed = "0" };
             }
+
+            result.storage = FillStorage(address);
 
             // deprecated
             result.stake = result.stakes.amount;
@@ -1065,13 +1163,25 @@ namespace Phantasma.API
 
             var changeSet = new StorageChangeSetContext(chain.Storage);
             var oracle = Nexus.GetOracleReader();
-            var vm = new RuntimeVM(-1, script, chain, Timestamp.Now, null, changeSet, oracle, true);
+            uint offset = 0;
+            var vm = new RuntimeVM(-1, script, offset, chain, Address.Null, Timestamp.Now, null, changeSet, oracle, ChainTask.Null, true);
 
-            var state = vm.Execute();
+            vm.ThrowOnFault = true;
 
-            if (state != ExecutionState.Halt)
+            string error = null;
+            ExecutionState state = ExecutionState.Fault;
+            try
             {
-                return new ErrorResult { error = $"Execution failed, state:{state}" };
+                state = vm.Execute();
+            }
+            catch (Exception e)
+            {
+                error = e.Message;
+            }
+
+            if (error != null)
+            {
+                return new ErrorResult { error = $"Execution failed: {error}"};
             }
 
             var results = new Stack<string>();
@@ -1188,14 +1298,14 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(NexusResult), "Returns info about the nexus.", false, 60)]
-        public IAPIResult GetNexus()
+        public IAPIResult GetNexus(bool extended = false)
         {
             var tokenList = new List<TokenResult>();
 
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
             foreach (var token in symbols)
             {
-                var entry = FillToken(token);
+                var entry = FillToken(token, extended);
                 tokenList.Add(entry);
             }
 
@@ -1286,22 +1396,22 @@ namespace Phantasma.API
         }
 
         [APIInfo(typeof(TokenResult[]), "Returns an array of tokens deployed in Phantasma.", false, 300)]
-        public IAPIResult GetTokens()
+        public IAPIResult GetTokens(bool extended = false)
         {
             var tokenList = new List<object>();
 
             var symbols = Nexus.GetTokens(Nexus.RootStorage);
             foreach (var token in symbols)
             {
-                var entry = FillToken(token);
+                var entry = FillToken(token, extended);
                 tokenList.Add(entry);
             }
 
             return new ArrayResult() { values = tokenList.ToArray() };
         }
 
-        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, -1)]
-        public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol)
+        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 120)]
+        public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol, bool extended = false)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
@@ -1309,13 +1419,21 @@ namespace Phantasma.API
             }
 
             var token = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
-            var result = FillToken(symbol);
+            var result = FillToken(symbol, extended);
 
             return result;
         }
 
+
+        // deprecated
         [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
         public IAPIResult GetTokenData([APIParameter("Symbol of token", "NACHO")]string symbol, [APIParameter("ID of token", "1")]string IDtext)
+        {
+            return GetNFT(symbol, IDtext, false);
+        }
+
+        [APIInfo(typeof(TokenDataResult), "Returns data of a non-fungible token, in hexadecimal format.", false, 15)]
+        public IAPIResult GetNFT([APIParameter("Symbol of token", "NACHO")] string symbol, [APIParameter("ID of token", "1")] string IDtext, bool extended = false)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
             {
@@ -1328,22 +1446,56 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            var info = ReadNFT(symbol, ID, Nexus.RootChain); // TODO support other chains
+            TokenContent info;
 
-            var chain = Nexus.GetChainByName(info.CurrentChain);
-            bool forSale;
-
-            if (chain != null && chain.IsContractDeployed(chain.Storage, "market"))
+            try
             {
-                forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
+                info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
             }
-            else
+            catch(Exception e)
             {
-                forSale = false;
+                return new ErrorResult() { error = e.Message };
             }
 
-            return new TokenDataResult() { chainName = info.CurrentChain, ownerAddress = info.CurrentOwner.Text, mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM) };
+            var properties = new List<TokenPropertyResult>();
+            if (extended)
+            {
+                var chain = FindChainByInput("main");
+                var series = Nexus.GetTokenSeries(Nexus.RootStorage, symbol, info.SeriesID);
+                if (series != null)
+                {
+                    foreach (var method in series.ABI.Methods)
+                    {
+                        if (method.IsProperty())
+                        {
+                            NFTUtils.FetchProperty(chain, method.name, series, ID, (propName, propValue) =>
+                            {
+                                properties.Add(new TokenPropertyResult() { Key = propName, Value = propValue.AsString() });
+                            });
+                        }
+                    }
+
+                }
+
+            }
+
+            var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
+
+            return new TokenDataResult() { 
+                chainName = info.CurrentChain, 
+                creatorAddress = info.Creator.Text, 
+                ownerAddress = info.CurrentOwner.Text, 
+                series = info.SeriesID.ToString(), 
+                mint = info.MintID.ToString(), 
+                ID = ID.ToString(), 
+                rom = Base16.Encode(info.ROM), 
+                ram = Base16.Encode(info.RAM), 
+                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused": "active", 
+                infusion = infusion, 
+                properties = properties.ToArray()
+            };
         }
+
 
         [APIInfo(typeof(BalanceResult), "Returns the balance for a specific token and chain, given an address.", false, 5)]
         [APIFailCase("address is invalid", "43242342")]
@@ -1499,7 +1651,7 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Market not available" };
             }
 
-            var info = ReadNFT(symbol, ID, chain);
+            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
 
             var forSale = chain.InvokeContract(chain.Storage, "market", "HasAuction", ID).AsBool();
             if (!forSale)
@@ -1531,25 +1683,17 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid hash" };
             }
 
-            var archive = Nexus.GetArchive(hash);
+            var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
             {
                 return new ErrorResult() { error = "archive not found" };
             }
 
-            return new ArchiveResult()
-            {
-                hash = hashText,
-                size = (uint)archive.Size,
-                flags = archive.Flags.ToString(),
-                key = Base16.Encode(archive.Key),
-                blockCount = (int)archive.BlockCount,
-                metadata = new string[0]// archive.Metadata.Select(x => $"{x.Key}={x.Value}").ToArray()
-            };
+            return FillArchive(archive);
         }
 
         [APIInfo(typeof(bool), "Writes the contents of an incomplete archive.", false)]
-        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, int blockIndex, [APIParameter("Block content bytes, in hex", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string blockContent)
+        public IAPIResult WriteArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex, [APIParameter("Block content bytes, in Base64", "QmFzZTY0IGVuY29kZWQgdGV4dA==")] string blockContent)
         {
             Hash hash;
 
@@ -1558,7 +1702,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid hash" };
             }
 
-            var archive = Nexus.GetArchive(hash);
+            var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
             if (archive == null)
             {
                 return new ErrorResult() { error = "archive not found" };
@@ -1569,7 +1713,7 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid block index" };
             }
 
-            var bytes = Base16.Decode(blockContent);
+            var bytes = Convert.FromBase64String(blockContent);
 
             try
             {
@@ -1585,8 +1729,43 @@ namespace Phantasma.API
             }
         }
 
-        [APIInfo(typeof(ABIContractResult), "Returns the ABI interface of specific contract.", false, 300)]
-        public IAPIResult GetABI([APIParameter("Chain address or name where the market is located", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
+        [APIInfo(typeof(string), "Reads given archive block.", false)]
+        public IAPIResult ReadArchive([APIParameter("Archive hash", "EE2CC7BA3FFC4EE7B4030DDFE9CB7B643A0199A1873956759533BB3D25D95322")] string hashText, [APIParameter("Block index, starting from 0", "0")] int blockIndex)
+        {
+            Hash hash;
+
+            if (!Hash.TryParse(hashText, out hash))
+            {
+                return new ErrorResult() { error = "invalid hash" };
+            }
+
+            var archive = Nexus.GetArchive(Nexus.RootStorage, hash);
+            if (archive == null)
+            {
+                return new ErrorResult() { error = "archive not found" };
+            }
+
+            if (blockIndex < 0 || blockIndex >= archive.BlockCount)
+            {
+                return new ErrorResult() { error = "invalid block index" };
+            }
+
+            try
+            {
+                var bytes = Nexus.ReadArchiveBlock(archive, blockIndex);
+                return new SingleResult()
+                {
+                    value = Convert.ToBase64String(bytes)
+                };
+            }
+            catch (Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
+        }
+
+        [APIInfo(typeof(ContractResult), "Returns the ABI interface of specific contract.", false, 300)]
+        public IAPIResult GetContract([APIParameter("Chain address or name where the contract is deployed", "main")] string chainAddressOrName, [APIParameter("Contract name", "account")] string contractName)
         {
             var chain = FindChainByInput(chainAddressOrName);
             if (chain == null)
@@ -1604,8 +1783,8 @@ namespace Phantasma.API
                 return new ErrorResult { error = "Contract not found" };
             }
 
-            var contract = this.Nexus.GetContractByName(Nexus.RootStorage, contractName);
-            return FillABI(contractName, contract.ABI);
+            var contract = chain.GetContractByName(chain.Storage, contractName);
+            return FillContract(contractName, contract);
         }
 
         [APIInfo(typeof(PeerResult[]), "Returns list of known peers.", false, 30)]
@@ -1841,7 +2020,7 @@ namespace Phantasma.API
 
                 if (destHash == Hash.Null)
                 {
-                    return new ErrorResult { error = "Swap failed" };
+                    return new ErrorResult { error = "Swap failed or destination hash is not yet available" };
                 }
                 else
                 {
@@ -1895,7 +2074,7 @@ namespace Phantasma.API
             var txswaps = swapList.
                 Select(x => new KeyValuePair<ChainSwap, InteropTransaction>(x, oracleReader.ReadTransaction(x.sourcePlatform, x.sourceChain, x.sourceHash))).ToArray();
 
-            var swaps = txswaps.Where(x => x.Value.Transfers.Length > 0).
+            var swaps = txswaps.Where(x => x.Value != null && x.Value.Transfers.Length > 0).
                 Select(x => new SwapResult()
                 {
                     sourcePlatform = x.Key.sourcePlatform,

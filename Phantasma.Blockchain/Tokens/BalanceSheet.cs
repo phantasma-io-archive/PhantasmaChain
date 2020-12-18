@@ -69,7 +69,8 @@ namespace Phantasma.Blockchain.Tokens
 
             var balance = Get(storage, address);
 
-            if (balance < amount)
+            var diff = balance - amount;
+            if (diff < 0)
             {
                 return false;
             }

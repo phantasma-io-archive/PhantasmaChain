@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using Phantasma.Core;
 
 namespace Phantasma.Blockchain
 {
@@ -107,6 +108,7 @@ namespace Phantasma.Blockchain
         public BigInteger ProtocolVersion => Nexus.GetGovernanceValue(Nexus.RootStorage, Nexus.NexusProtocolVersionTag);
 
         protected ConcurrentDictionary<string, OracleEntry> _entries = new ConcurrentDictionary<string, OracleEntry>();
+        protected ConcurrentDictionary<string, OracleEntry> _txEntries = new ConcurrentDictionary<string, OracleEntry>();
 
         public IEnumerable<OracleEntry> Entries => _entries.Values;
 
@@ -115,6 +117,7 @@ namespace Phantasma.Blockchain
         protected abstract BigInteger PullFee(Timestamp time, string platform);
         protected abstract InteropBlock PullPlatformBlock(string platformName, string chainName, Hash hash, NativeBigInt height = new NativeBigInt());
         protected abstract InteropTransaction PullPlatformTransaction(string platformName, string chainName, Hash hash);
+        protected abstract InteropNFT PullPlatformNFT(string platformName, string symbol, BigInteger tokenID);
         public abstract string GetCurrentHeight(string platformName, string chainName);
         public abstract void SetCurrentHeight(string platformName, string chainName, string height);
         public abstract List<InteropBlock> ReadAllBlocks(string platformName, string chainName);
@@ -137,11 +140,18 @@ namespace Phantasma.Blockchain
 
             if (url.StartsWith(interopTag))
             {
-                url = url.Substring(interopTag.Length);
-                var args = url.Split('/');
+                var tags = url.Substring(interopTag.Length);
+                var args = tags.Split('/');
 
                 var platformName = args[0];
                 var chainName = args[1];
+
+                if (chainName == "nft")
+                {
+                    args = args.Skip(2).ToArray();
+                    content = (T)(object)ReadNFTOracle(platformName, args);
+                }
+                else
                 if (Nexus.PlatformExists(Nexus.RootStorage, platformName))
                 {
                     args = args.Skip(2).ToArray();
@@ -155,22 +165,58 @@ namespace Phantasma.Blockchain
             else
             if (url.StartsWith(priceTag))
             {
-                url = url.Substring(priceTag.Length);
+                var baseSymbol = url.Substring(priceTag.Length);
 
-                if (url.Contains('/'))
+                if (baseSymbol.Contains('/'))
                 {
                     throw new OracleException("invalid oracle price request");
                 }
 
-                var baseSymbol = url;
+                BigInteger val = new BigInteger();
 
                 if (!Nexus.TokenExists(Nexus.RootStorage, baseSymbol))
                 {
                     throw new OracleException("unknown token: " + baseSymbol);
                 }
 
-                var price = PullPrice(time, baseSymbol);
-                var val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
+                if (baseSymbol == DomainSettings.FuelTokenSymbol)
+                {
+
+                    var stakingURL = priceTag + DomainSettings.StakingTokenSymbol;
+                    decimal soulPriceDec = 0;
+                    if (_entries.ContainsKey(stakingURL))
+                    {
+                        BigInteger soulPriceBi;
+                        if (ProtocolVersion >= 3)
+                        {
+                            soulPriceBi = BigInteger.FromSignedArray(_entries[url].Content);
+                        }
+                        else
+                        {
+                            content = val.ToUnsignedByteArray() as T;
+                            soulPriceBi = BigInteger.FromUnsignedArray(_entries[url].Content, true);
+                        }
+
+                        soulPriceDec = UnitConversion.ToDecimal(soulPriceBi, DomainSettings.FiatTokenDecimals);
+                    }
+                    else
+                    {
+                        soulPriceDec = PullPrice(time, DomainSettings.StakingTokenSymbol);
+                        var soulPriceBi = UnitConversion.ToBigInteger(soulPriceDec, DomainSettings.FiatTokenDecimals);
+
+                        CacheOracleData<T>(url, (ProtocolVersion >= 3) 
+                                ? soulPriceBi.ToSignedByteArray() as T
+                                : soulPriceBi.ToUnsignedByteArray() as T);
+
+                    }
+
+                    val = UnitConversion.ToBigInteger(soulPriceDec/5, DomainSettings.FiatTokenDecimals);
+                }
+                else
+                {
+                    var price = PullPrice(time, baseSymbol);
+                    val = UnitConversion.ToBigInteger(price, DomainSettings.FiatTokenDecimals);
+                }
 
                 if (ProtocolVersion >= 3)
                 {
@@ -184,14 +230,12 @@ namespace Phantasma.Blockchain
             else
             if (url.StartsWith(feeTag))
             {
-                url = url.Substring(feeTag.Length);
+                var platform = url.Substring(feeTag.Length);
 
-                if (url.Contains('/'))
+                if (platform.Contains('/'))
                 {
                     throw new OracleException("invalid oracle fee request");
                 }
-
-                var platform = url;
 
                 if (!Nexus.PlatformExists(Nexus.RootStorage, platform))
                 {
@@ -212,7 +256,14 @@ namespace Phantasma.Blockchain
             {
                 content = PullData<T>(time, url);
             }
+
+            CacheOracleData<T>(url, content);
         
+            return content;
+        }
+
+        private void CacheOracleData<T>(string url, T content)
+        {
             var value = Serialization.Serialize(content);
             if (value == null)
             {
@@ -220,12 +271,10 @@ namespace Phantasma.Blockchain
             }
 
             var entry = new OracleEntry(url, value);
-            lock (_entries)
+            lock (_txEntries)
             {
-                _entries[url] = entry;
+                _txEntries[url] = entry;
             }
-
-            return content;
         }
 
         private bool FindMatchingEvent(IEnumerable<Event> events, out Event output, Func<Event, bool> predicate)
@@ -338,6 +387,11 @@ namespace Phantasma.Blockchain
                             else
                             {
                                 tx = PullPlatformTransaction(platformName, chainName, hash);
+                                
+                                if (tx == null)
+                                {
+                                    return null;
+                                }
                             }
 
                             if (typeof(T) == typeof(byte[]))
@@ -422,6 +476,30 @@ namespace Phantasma.Blockchain
             }
         }
 
+        private InteropNFT ReadNFTOracle(string platformName, string[] input) 
+        {
+            if (input == null || input.Length != 2)
+            {
+                throw new OracleException("missing oracle input");
+            }
+
+            var symbol = input[0];
+            var tokenID = BigInteger.Parse(input[1]);
+
+            if (platformName == DomainSettings.PlatformName)
+            {
+                var nft = Nexus.ReadNFT(Nexus.RootStorage, symbol, tokenID);
+                var tokenInfo = Nexus.GetTokenInfo(Nexus.RootStorage, symbol);
+
+                var name = $"{tokenInfo.Name} #{tokenID}";
+
+                // TODO proper fetch name + description + url
+                return new InteropNFT(name, "No description", "http://TODO");
+            }
+
+            return PullPlatformNFT(platformName, symbol, tokenID);
+        }
+        
         public InteropTransaction ReadTransaction(string platform, string chain, Hash hash)
         {
             var url = DomainExtensions.GetOracleTransactionURL(platform, chain, hash);
@@ -432,6 +510,16 @@ namespace Phantasma.Blockchain
         public void Clear()
         {
             _entries.Clear();
+            _txEntries.Clear();
+        }
+
+        public void MergeTxData()
+        {
+            if (_txEntries.Count > 0)
+            {
+                _entries.Merge(_txEntries);
+                _txEntries.Clear();
+            }
         }
     }
 }
