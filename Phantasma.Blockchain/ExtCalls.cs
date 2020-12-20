@@ -189,7 +189,7 @@ namespace Phantasma.Blockchain
 
         private static ExecutionState Runtime_Notify(RuntimeVM vm)
         {
-            vm.Expect(vm.CurrentContextName != VirtualMachine.EntryContextName, "cannot notify in current context");
+            vm.Expect(vm.CurrentContext.Name != VirtualMachine.EntryContextName, "cannot notify in current context");
 
             var kind = vm.Stack.Pop().AsEnum<EventKind>();
             var address = vm.PopAddress();
@@ -367,7 +367,7 @@ namespace Phantasma.Blockchain
         private static ExecutionState Runtime_Context(RuntimeVM vm)
         {
             var result = new VMObject();
-            result.SetValue(vm.CurrentContextName);
+            result.SetValue(vm.CurrentContext.Name);
             vm.Stack.Push(result);
 
             return ExecutionState.Running;
@@ -873,7 +873,11 @@ namespace Phantasma.Blockchain
             var symbol = vm.PopString("symbol");
             var tokenID = vm.PopNumber("token ID");
 
-            return vm.ReadToken(symbol, tokenID);
+            var result = vm.ReadToken(symbol, tokenID);
+
+            vm.Expect(result.TokenID == tokenID, "retrived NFT content does not have proper tokenID");
+
+            return result;
         }
 
         private static ExecutionState Runtime_ReadToken(RuntimeVM vm)

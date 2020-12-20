@@ -82,6 +82,8 @@ namespace Phantasma.Network.P2P
         {
             Throw.If(keys.Address != mempool.ValidatorAddress, "invalid mempool");
 
+            this.Logger = Logger.Init(log);
+
             this.Version = version;
             this.Nexus = nexus;
             this.Port = port;
@@ -108,8 +110,6 @@ namespace Phantasma.Network.P2P
             Throw.IfNull(ip, nameof(ip));
 
             this.PublicIP = ip.ToString();
-
-            this.Logger = Logger.Init(log);
 
             QueueEndpoints(seeds.Select(seed => ParseEndpoint(seed)));
 
@@ -140,9 +140,13 @@ namespace Phantasma.Network.P2P
                     {
                         return IPAddress.Parse(webclient.DownloadString(service));
                     }
-                    catch { }
+                    catch
+                    { 
+                        Logger.Message($"Getting public ip from {service} failed!");
+                    }
                 }
             }
+
             return null;
         }
 

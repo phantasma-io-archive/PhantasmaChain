@@ -1410,7 +1410,7 @@ namespace Phantasma.API
             return new ArrayResult() { values = tokenList.ToArray() };
         }
 
-        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, -1)]
+        [APIInfo(typeof(TokenResult), "Returns info about a specific token deployed in Phantasma.", false, 120)]
         public IAPIResult GetToken([APIParameter("Token symbol to obtain info", "SOUL")] string symbol, bool extended = false)
         {
             if (!Nexus.TokenExists(Nexus.RootStorage, symbol))
@@ -1446,7 +1446,16 @@ namespace Phantasma.API
                 return new ErrorResult() { error = "invalid ID" };
             }
 
-            var info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+            TokenContent info;
+
+            try
+            {
+                info = Nexus.ReadNFT(Nexus.RootStorage, symbol, ID);
+            }
+            catch(Exception e)
+            {
+                return new ErrorResult() { error = e.Message };
+            }
 
             var properties = new List<TokenPropertyResult>();
             if (extended)
@@ -1472,7 +1481,19 @@ namespace Phantasma.API
 
             var infusion = info.Infusion.Select(x => new TokenPropertyResult() { Key = x.Symbol, Value = x.Value.ToString() }).ToArray();
 
-            return new TokenDataResult() { chainName = info.CurrentChain, creatorAddress = info.Creator.Text, ownerAddress = info.CurrentOwner.Text, series = info.SeriesID.ToString(), mint = info.MintID.ToString(), ID = ID.ToString(), rom = Base16.Encode(info.ROM), ram = Base16.Encode(info.RAM), infusion = infusion, properties = properties.ToArray()};
+            return new TokenDataResult() { 
+                chainName = info.CurrentChain, 
+                creatorAddress = info.Creator.Text, 
+                ownerAddress = info.CurrentOwner.Text, 
+                series = info.SeriesID.ToString(), 
+                mint = info.MintID.ToString(), 
+                ID = ID.ToString(), 
+                rom = Base16.Encode(info.ROM), 
+                ram = Base16.Encode(info.RAM), 
+                status = info.CurrentOwner == DomainSettings.InfusionAddress ? "infused": "active", 
+                infusion = infusion, 
+                properties = properties.ToArray()
+            };
         }
 
 

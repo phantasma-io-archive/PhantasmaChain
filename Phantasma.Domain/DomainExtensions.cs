@@ -142,16 +142,7 @@ namespace Phantasma.Domain
         {
             var url = GetOracleFeeURL(platform);
             var bytes = runtime.ReadOracle(url);
-            BigInteger fee;
-            if (bytes == null)
-            {
-                fee = runtime.GetGovernanceValue("interop.fee");
-            }
-            else
-            {
-                fee = BigInteger.FromUnsignedArray(bytes, true);
-            }
-            //fee = BigInteger.FromUnsignedArray(bytes, true);
+            BigInteger fee = BigInteger.FromUnsignedArray(bytes, true);
             return fee;
         }
 
