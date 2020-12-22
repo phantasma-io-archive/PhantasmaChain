@@ -255,9 +255,16 @@ namespace Phantasma.Blockchain.Contracts
             var availableSize = GetAvailableSpace(target);
             Runtime.Expect(availableSize >= writeSize, $"not enough storage space available: requires " + writeSize + ", only have: " + availableSize);
 
+            var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
+
+            if (Runtime.Storage.Has(key))
+            {
+                var oldData = Runtime.Storage.Get(key);
+                usedQuota -= oldData.Length;
+            }
+
             Runtime.Storage.Put(key, value);
 
-            var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
             usedQuota += writeSize;
             _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
 
