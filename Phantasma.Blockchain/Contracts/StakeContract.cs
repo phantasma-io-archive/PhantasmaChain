@@ -61,6 +61,8 @@ namespace Phantasma.Blockchain.Contracts
 
         public const string MasterStakeThresholdTag = "stake.master.threshold";
         public const string VotingStakeThresholdTag = "stake.vote.threshold";
+        public const string StakeSingleBonusPercentTag = "stake.bonus.percent";
+        public const string StakeMaxBonusPercentTag = "stake.bonus.max";
 
         public readonly static BigInteger MaxVotingPowerBonus = 1000;
         public readonly static BigInteger DailyVotingBonus = 1;
@@ -579,6 +581,22 @@ namespace Phantasma.Blockchain.Contracts
             var unclaimedAmount = GetUnclaimed(stakeAddress);
 
             Runtime.Expect(unclaimedAmount > 0, "nothing unclaimed");
+
+            var crownCount = Runtime.GetBalance(DomainSettings.RewardTokenSymbol, stakeAddress);
+            if (crownCount > 0)
+            {
+                var bonusPercent = Runtime.GetGovernanceValue(StakeSingleBonusPercentTag);
+                var maxPercent = Runtime.GetGovernanceValue(StakeMaxBonusPercentTag);
+
+                bonusPercent *= crownCount;
+                if (bonusPercent > maxPercent)
+                {
+                    bonusPercent = maxPercent;
+                }
+
+                var bonusAmount = (unclaimedAmount * bonusPercent) / 100;
+                unclaimedAmount += bonusAmount;
+            }
 
             var fuelAmount = unclaimedAmount;
 

@@ -1471,6 +1471,24 @@ namespace Phantasma.Blockchain
                              new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = UnitConversion.ToBigInteger(200000, DomainSettings.StakingTokenDecimals)},
                          })
                      },
+                     
+                     {
+                         StakeContract.StakeSingleBonusPercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             5, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 0},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 100 },
+                         })
+                     },
+
+                     {
+                         StakeContract.StakeMaxBonusPercentTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
+                             200, new ChainConstraint[]
+                         {
+                             new ChainConstraint() { Kind = ConstraintKind.MinValue, Value = 50},
+                             new ChainConstraint() { Kind = ConstraintKind.MaxValue, Value = 500 },
+                         })
+                     },
 
                      {
                          StakeContract.VotingStakeThresholdTag, new KeyValuePair<BigInteger, ChainConstraint[]>(
