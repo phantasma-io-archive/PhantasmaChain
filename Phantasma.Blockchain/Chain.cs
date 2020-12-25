@@ -204,7 +204,7 @@ namespace Phantasma.Blockchain
                 if (inflationReady)
                 {
                     var script = new ScriptBuilder()
-                        .AllowGas(block.Validator, Address.Null, minimumFee, 9999)
+                        .AllowGas(block.Validator, Address.Null, minimumFee, 999999)
                         .CallContract(NativeContractKind.Gas, nameof(GasContract.ApplyInflation), block.Validator)
                         .SpendGas(block.Validator)
                         .EndScript();
