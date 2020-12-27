@@ -250,16 +250,44 @@ namespace Phantasma.Blockchain.Contracts
         {
             ValidateKey(key);
 
-            var writeSize = value.Length;
-
-            var availableSize = GetAvailableSpace(target);
-            Runtime.Expect(availableSize >= writeSize, $"not enough storage space available: requires " + writeSize + ", only have: " + availableSize);
-
-            Runtime.Storage.Put(key, value);
-
             var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
-            usedQuota += writeSize;
-            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+            BigInteger deleteSize = 0;
+            if (Runtime.Storage.Has(key))
+            {
+                var oldData = Runtime.Storage.Get(key);
+                deleteSize = oldData.Length;
+            }
+
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var writeSize = value.Length;
+                if (writeSize > deleteSize)
+                {
+                    var diff = writeSize - deleteSize;
+                    var availableSize = GetAvailableSpace(target);
+                    Runtime.Expect(availableSize >= diff, $"not enough storage space available: requires " + diff + ", only have: " + availableSize);
+                }
+
+                Runtime.Storage.Put(key, value);
+
+                usedQuota -= deleteSize;
+                usedQuota += writeSize;
+
+                if (usedQuota <= 0)
+                {
+                    usedQuota = writeSize; // fix for data written in previous protocol
+                }
+
+                _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+
+                _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+            }
+            else
+            {
+                Runtime.Storage.Put(key, value);
+            }
+
 
             var temp = Runtime.Storage.Get(key);
             Runtime.Expect(temp.Length == value.Length, "storage write corruption");
@@ -276,11 +304,18 @@ namespace Phantasma.Blockchain.Contracts
 
             Runtime.Storage.Delete(key);
 
-            var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
-            usedQuota -= deleteSize;
-            _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+            if (Runtime.ProtocolVersion >= 4)
+            {
+                var usedQuota = _dataQuotas.Get<Address, BigInteger>(target);
+                usedQuota -= deleteSize;
 
-            Runtime.Expect(usedQuota >= 0, "storage delete corruption");
+                if (usedQuota < 0)
+                {
+                    usedQuota = 0;
+                }
+
+                _dataQuotas.Set<Address, BigInteger>(target, usedQuota);
+            }
         }
 
         public static BigInteger CalculateRequiredSize(string fileName, BigInteger contentSize) => contentSize + Hash.Length + fileName.Length;
