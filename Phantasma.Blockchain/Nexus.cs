@@ -1117,14 +1117,7 @@ namespace Phantasma.Blockchain
             var bytes = content.ToByteArray();
             bytes = CompressionUtils.Compress(bytes);
 
-            if (Runtime.ProtocolVersion >= 4)
-            {
-                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
-            }
-            else
-            {
-                Runtime.RootStorage.Put(tokenKey, bytes);
-            }
+            Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
 
             return content.TokenID;
         }
@@ -1153,14 +1146,7 @@ namespace Phantasma.Blockchain
 
             var tokenKey = GetKeyForNFT(symbol, tokenID);
 
-            if (Runtime.ProtocolVersion >= 4)
-            {
-                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
-            }
-            else
-            {
-                Runtime.RootStorage.Delete(tokenKey);
-            }
+            Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.DeleteData), contractAddress, tokenKey);
         }
 
         internal void WriteNFT(RuntimeVM Runtime, string symbol, BigInteger tokenID, string chainName, Address owner, byte[] rom, byte[] ram, BigInteger seriesID, IEnumerable<TokenInfusion> infusion, bool mustExist)
@@ -1198,14 +1184,7 @@ namespace Phantasma.Blockchain
                 var bytes = content.ToByteArray();
                 bytes = CompressionUtils.Compress(bytes);
 
-                if (Runtime.ProtocolVersion >= 4)
-                {
-                    Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
-                }
-                else
-                {
-                    Runtime.RootStorage.Put(tokenKey, bytes);
-                }
+                Runtime.CallNativeContext(NativeContractKind.Storage, nameof(StorageContract.WriteData), contractAddress, tokenKey, bytes);
             }
             else
             {
