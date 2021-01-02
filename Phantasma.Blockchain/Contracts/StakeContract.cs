@@ -549,8 +549,8 @@ namespace Phantasma.Blockchain.Contracts
             {
                 var crowns = Runtime.GetOwnerships(DomainSettings.RewardTokenSymbol, from);
 
-                // calculate how many days each CROWN is hold at current address
-                crownDays = crowns.Select(id => (Runtime.Time - Runtime.ReadToken(DomainSettings.RewardTokenSymbol, id).Timestamp) / SecondsInDay).ToArray();
+                // calculate how many days each CROWN is hold at current address and use older ones first
+                crownDays = crowns.Select(id => (Runtime.Time - Runtime.ReadToken(DomainSettings.RewardTokenSymbol, id).Timestamp) / SecondsInDay).OrderByDescending(k => k).ToArray();
             }
             else
             {
@@ -596,7 +596,8 @@ namespace Phantasma.Blockchain.Contracts
                                     break;
                                 }
 
-                                total += dailyBonus * bonusDays;                                
+                                var maxBonusDays = bonusDays > claimDays ? claimDays : bonusDays;
+                                total += dailyBonus * maxBonusDays;                                
                             }
                         }
                     }
@@ -619,7 +620,7 @@ namespace Phantasma.Blockchain.Contracts
 
             var unclaimedAmount = GetUnclaimed(stakeAddress);
 
-            if (Runtime.ProtocolVersion >= 5)
+            if (Runtime.ProtocolVersion < 5)
             {
                 var crownCount = Runtime.GetBalance(DomainSettings.RewardTokenSymbol, from);
 
