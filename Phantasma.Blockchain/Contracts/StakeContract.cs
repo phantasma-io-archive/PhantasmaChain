@@ -591,7 +591,7 @@ namespace Phantasma.Blockchain.Contracts
                             if (bonusDays >= 1)
                             {
                                 bonusAccum += bonusPercent;
-                                if (bonusPercent > maxPercent)
+                                if (bonusAccum > maxPercent)
                                 {
                                     break;
                                 }
