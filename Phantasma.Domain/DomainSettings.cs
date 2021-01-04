@@ -53,7 +53,7 @@ namespace Phantasma.Domain
 
     public static class DomainSettings
     {
-        public const int LatestKnownProtocol = 4;
+        public const int LatestKnownProtocol = 5;
 
         public const int MAX_TOKEN_DECIMALS = 18;
 
