@@ -1675,7 +1675,7 @@ namespace Phantasma.Blockchain
             return this.Chain.GetContractOwner(this.Storage, address);
         }
 
-        public ITask StartTask(Address from, string contractName, ContractMethod method, int frequency, TaskFrequencyMode mode, BigInteger gasLimit)
+        public ITask StartTask(Address from, string contractName, ContractMethod method, uint frequency, uint delay, TaskFrequencyMode mode, BigInteger gasLimit)
         {
             var vm = this;
 
@@ -1703,7 +1703,7 @@ namespace Phantasma.Blockchain
 
             vm.Expect(IsWitness(from), "invalid witness");
 
-            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, mode, gasLimit);
+            var result = this.Chain.StartTask(this.Storage, from, contractName, method, frequency, delay, mode, gasLimit);
             vm.Expect(result != null, "could not start task");
 
             this.Notify(EventKind.TaskStart, from, result.ID);
