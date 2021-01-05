@@ -756,10 +756,7 @@ namespace Phantasma.Blockchain
 
             var supply = new SupplySheet(token.Symbol, Runtime.Chain, this);
 
-            if (token.IsCapped())
-            {
-                Runtime.Expect(supply.Burn(Runtime.Storage, amount), $"{token.Symbol} burn failed");
-            }
+            Runtime.Expect(supply.Burn(Runtime.Storage, amount), $"{token.Symbol} burn failed");
 
             var balances = new BalanceSheet(token.Symbol);
             Runtime.Expect(balances.Subtract(Runtime.Storage, source, amount), $"{token.Symbol} balance subtract failed from {source.Text}");

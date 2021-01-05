@@ -17,6 +17,7 @@ using Phantasma.Core.Types;
 using Phantasma.VM;
 using System.Collections.Generic;
 using Phantasma.Storage;
+using Phantasma.Pay.Chains;
 
 namespace Phantasma.Tests
 {
@@ -552,18 +553,35 @@ namespace Phantasma.Tests
             nexus.SetOracleReader(new OracleSimulator(nexus));
             var simulator = new NexusSimulator(nexus, owner, 1234);
 
+            var rootChain = nexus.RootChain;
+
             var testUser = PhantasmaKeys.Generate();
 
-            var limit = 800;
+            var potAddress = SmartContract.GetAddressForNative(NativeContractKind.Swap);
 
             // 0 - just send some assets to the 
             simulator.BeginBlock();
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals));
             simulator.GenerateTransfer(owner, testUser.Address, nexus.RootChain, DomainSettings.FuelTokenSymbol, UnitConversion.ToBigInteger(10, DomainSettings.FuelTokenDecimals));
+            simulator.MintTokens(owner, potAddress, "GAS", UnitConversion.ToBigInteger(1, 8));
             simulator.EndBlock();
 
+            var oldBalance = rootChain.GetTokenBalance(rootChain.Storage, DomainSettings.StakingTokenSymbol, testUser.Address);
+            var oldSupply = rootChain.GetTokenSupply(rootChain.Storage, DomainSettings.StakingTokenSymbol);
 
-            // TODO
+            // 1 - transfer to an external interop address
+            var targetAddress = NeoWallet.EncodeAddress("AG2vKfVpTozPz2MXvye4uDCtYcTnYhGM8F");
+            simulator.BeginBlock();
+            simulator.GenerateTransfer(testUser, targetAddress, nexus.RootChain, DomainSettings.StakingTokenSymbol, UnitConversion.ToBigInteger(10, DomainSettings.StakingTokenDecimals));
+            simulator.EndBlock();
+
+            var currentBalance = rootChain.GetTokenBalance(rootChain.Storage, DomainSettings.StakingTokenSymbol, testUser.Address);
+            var currentSupply = rootChain.GetTokenSupply(rootChain.Storage, DomainSettings.StakingTokenSymbol);
+
+            Assert.IsTrue(currentBalance < oldBalance);
+            Assert.IsTrue(currentBalance == 0);
+
+            Assert.IsTrue(currentSupply < oldSupply);
         }
 
         [TestMethod]
